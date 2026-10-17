@@ -88,6 +88,32 @@ describe("the sentence a refresh finding reads as", () => {
 			'The Dependency Field names "depends on", and no Epic carries that link.',
 		);
 	});
+
+	it("a relation type with no direction is advised a type with two ends", () => {
+		expect(
+			sentenceFor({
+				kind: "RelationTypeHasNoDirection",
+				setting: "DependencyField",
+				named: "System.LinkTypes.Related",
+				seen: [],
+			}),
+		).toBe(
+			'The Dependency Field names "System.LinkTypes.Related", which has no direction. Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".',
+		);
+	});
+
+	it("a relation type named without its end is advised both of its ends, built from what was typed", () => {
+		expect(
+			sentenceFor({
+				kind: "RelationTypeNamedWithoutItsEnd",
+				setting: "DependencyField",
+				named: "Contoso.DependsOn",
+				seen: ["contoso.dependson-forward", "contoso.dependson-reverse"],
+			}),
+		).toBe(
+			'The Dependency Field names "Contoso.DependsOn" without its end. Name one end: "Contoso.DependsOn-Forward" or "Contoso.DependsOn-Reverse".',
+		);
+	});
 });
 
 describe("the date a refresh finding is shown as of", () => {

@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     internal static class PendingEpic6303
     {
-        public const string Slice04 = "Pending: an Azure DevOps Portfolio reads its dependencies from the relation end it names (epic 6303, slice 04).";
-
         public const string Slice05a = "Pending: the Teams' Parent Override Field is set once on the connection (epic 6303, slice 05a).";
 
         public const string Slice05b = "Pending: a field a default names cannot be removed, and an older client's round trip changes nothing (epic 6303, slice 05b).";

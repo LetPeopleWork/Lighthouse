@@ -1097,8 +1097,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 ACustomRelationTypeEnd("Fabrikam.Needs-Reverse", "Needed By", "Fabrikam.Needs-Forward", isForward: false),
             ];
 
+            // Listed under the base name its two ends share, so a reference to that base matches something listed
+            // and still names neither end.
+            private static readonly WorkItemRelationType ContosoDependsOnUnderItsBaseName = new()
+            {
+                ReferenceName = ContosoDependsOn,
+                Name = "Depends On",
+                Attributes = new Dictionary<string, object> { ["usage"] = "workItemLink", ["directional"] = true, ["topology"] = "dependency" },
+            };
+
             private static WorkItemRelationType AsListed(string referenceName)
-                => RelationTypesAnOrganisationAnswered.Concat(CustomRelationTypesAServerDefines)
+                => RelationTypesAnOrganisationAnswered.Concat(CustomRelationTypesAServerDefines).Append(ContosoDependsOnUnderItsBaseName)
                     .FirstOrDefault(type => type.ReferenceName == referenceName)
                     ?? throw new InvalidOperationException($"No organisation lists a relation type called {referenceName}; record it first.");
 

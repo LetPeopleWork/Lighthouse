@@ -1059,6 +1059,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
+            if (finding.Kind == RefreshFindingKind.RelationTypeHasNoDirection)
+            {
+                logger.LogWarning(
+                    "{Owner}: its {Setting} names '{Named}', which has no direction. Name a relation type with two ends, such as 'System.LinkTypes.Dependency-Reverse'.",
+                    owner,
+                    setting,
+                    finding.Named);
+                return;
+            }
+
+            if (finding.Kind == RefreshFindingKind.RelationTypeNamedWithoutItsEnd)
+            {
+                logger.LogWarning(
+                    "{Owner}: its {Setting} names '{Named}' without its end. Name one end: '{ForwardEnd}' or '{ReverseEnd}'.",
+                    owner,
+                    setting,
+                    finding.Named,
+                    $"{finding.Named}-Forward",
+                    $"{finding.Named}-Reverse");
+                return;
+            }
+
             logger.LogWarning(
                 "{Owner}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
                 owner,

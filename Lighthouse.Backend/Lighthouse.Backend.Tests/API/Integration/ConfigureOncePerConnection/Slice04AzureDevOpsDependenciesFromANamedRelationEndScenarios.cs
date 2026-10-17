@@ -1,3 +1,4 @@
+using System.Net;
 using Lighthouse.Backend.Models.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
@@ -129,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.6")]
         [Category("error")]
@@ -157,7 +157,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.6")]
         [Category("error")]
@@ -182,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.6")]
         [Category("error")]
@@ -208,6 +206,53 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
                 Assert.That(shown.TheFirstFinding?.Seen ?? Array.Empty<string>(), Is.EquivalentTo(TheRelationTypesSeen));
                 Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains(ContosoDependsOnForward, StringComparison.Ordinal)), Is.EqualTo(1));
+            }
+        }
+
+        // Without this the refresh could never say a name lacks its end: Validate would refuse it first.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_relation_type_named_without_its_end_validates_so_the_refresh_can_say_which_ends_it_has()
+        {
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, ContosoDependsOn);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), $"Validate refused it: {answer.Message}");
+                Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
+            }
+        }
+
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("contract-shape:pure-function")]
+        public async Task Related_validates_so_the_refresh_can_say_it_has_no_direction()
+        {
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, Related);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.OK), $"Validate refused it: {answer.Message}");
+                Assert.That(answer.IsValid, Is.True, $"Validate refused it: {answer.Message}");
+            }
+        }
+
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("error")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_name_without_an_end_whose_ends_are_not_both_listed_is_still_a_typo()
+        {
+            var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, "Contoso.DependsOnn");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Status, Is.EqualTo(HttpStatusCode.BadRequest), "A refused connection is answered as a bad request.");
+                Assert.That(answer.Message, Does.Contain("Contoso.DependsOnn"), "The refusal names what was not found.");
             }
         }
 

@@ -48,10 +48,18 @@ type FindingSentence = (
 const cannotBeReadHere = (settingName: string) =>
 	`The ${settingName} points at an Azure DevOps relation type, which only the Dependency Field reads.`;
 
+const hasNoDirection = (settingName: string, finding: RefreshFinding) =>
+	`The ${settingName} names "${finding.named}", which has no direction. Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".`;
+
+const namedWithoutItsEnd = (settingName: string, finding: RefreshFinding) =>
+	`The ${settingName} names "${finding.named}" without its end. Name one end: "${finding.named}-Forward" or "${finding.named}-Reverse".`;
+
 const SENTENCES: Readonly<Record<string, FindingSentence>> = {
 	NamedLinkPointsBothWays: pointsBothWays,
 	NamedLinkMatchedNothing: matchedNothing,
 	RelationTypeCannotBeReadHere: cannotBeReadHere,
+	RelationTypeHasNoDirection: hasNoDirection,
+	RelationTypeNamedWithoutItsEnd: namedWithoutItsEnd,
 };
 
 // Rows outlive the build that wrote them, so a kind or setting this browser does not know reads as

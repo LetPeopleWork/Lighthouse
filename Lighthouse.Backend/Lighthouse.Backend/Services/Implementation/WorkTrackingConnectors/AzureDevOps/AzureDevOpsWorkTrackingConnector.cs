@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static readonly string[] NoFieldsBesideTheRelations = [];
 
+        private static readonly HashSet<string> ResourceLinks = new(StringComparer.OrdinalIgnoreCase) { "AttachedFile", "Hyperlink", "ArtifactLink" };
+
         /// <summary>
         /// What one read of a batch of work items' relations yields, per work item: the parent it hangs
         /// under, and the other items it is waiting on. Both come out of the same response because that
@@ -47,9 +49,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         private sealed record RelationsOfWorkItems(
             Dictionary<string, string> ParentReferences,
-            Dictionary<string, List<string>> DependencyReferences)
+            Dictionary<string, List<string>> DependencyReferences,
+            List<string> RelationTypesSeen)
         {
-            public static RelationsOfWorkItems None() => new([], []);
+            public static RelationsOfWorkItems None() => new([], [], []);
         }
 
         /// <summary>
@@ -57,6 +60,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// relation end the Portfolio's Dependency Field named, or the Predecessor link when that is null.
         /// </summary>
         private sealed record DependenciesFromRelations(bool AreRead, string? NamedRelationEnd);
+
+        /// <summary>Why a relation type the Dependency Field names is read as nothing, and what it saw there.</summary>
+        private sealed record WhyNothingIsRead(RefreshFindingKind Kind, List<string> Seen);
 
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
@@ -645,15 +651,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, additionalFieldResolution);
 
-            var namedRelationEnd = additionalFieldResolution.TheRelationEndNamedBy(portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+            var dependencyField = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
+            var namedRelationEnd = additionalFieldResolution.TheRelationEndNamedBy(dependencyField);
+            var whyNothingIsRead = additionalFieldResolution.WhyNothingIsReadFor(dependencyField);
             var dependencies = new DependenciesFromRelations(
-                DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null, namedRelationEnd);
+                whyNothingIsRead is null && (DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null), namedRelationEnd);
             var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependencies, cancellationToken);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
+            var relations = await relationsTask;
             var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution);
 
-            var relations = await relationsTask;
+            if (whyNothingIsRead is not null)
+            {
+                relations = relations with { DependencyReferences = [] };
+                settingFindings.Add(ADependencyFieldFinding(portfolio, whyNothingIsRead.Kind, whyNothingIsRead.Seen));
+            }
+            else if (namedRelationEnd is not null && NoWorkItemCarriesTheNamedEnd(relations))
+            {
+                settingFindings.Add(ADependencyFieldFinding(portfolio, RefreshFindingKind.NamedLinkMatchedNothing, relations.RelationTypesSeen));
+            }
+
             var features = new List<Feature>();
 
             foreach (var workItem in workItemBase)
@@ -674,6 +692,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             return features;
+        }
+
+        // Having no dependencies is the ordinary case, so nothing is said when the Features carry no relations at all.
+        private static bool NoWorkItemCarriesTheNamedEnd(RelationsOfWorkItems relations)
+            => relations.RelationTypesSeen.Count > 0 && relations.DependencyReferences.Values.All(references => references.Count == 0);
+
+        private static RefreshFinding ADependencyFieldFinding(Portfolio portfolio, RefreshFindingKind kind, List<string> seen)
+        {
+            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+
+            return new RefreshFinding(kind, RefreshFindingSetting.DependencyField, named, seen);
         }
 
         /// <summary>
@@ -774,7 +804,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var relationTypes = await TheRelationTypesTheOrganisationLists(witClient, CancellationToken.None);
-            var resolvedToNothing = notAField.Where(reference => !relationTypes.HasAnEndCalled(reference)).ToList();
+            var resolvedToNothing = notAField.Where(reference => !relationTypes.Names(reference)).ToList();
 
             return resolvedToNothing.Count == 0
                 ? ConnectionValidationResult.Success()
@@ -886,10 +916,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 relationTypes ??= await TheRelationTypesTheOrganisationLists(witClient, cancellationToken);
 
-                var relationEnd = relationTypes.TheEndCalled(additionalFieldDefinition.Reference);
-                if (relationEnd is not null)
+                if (resolution.ResolvesToARelationType(additionalFieldDefinition, relationTypes))
                 {
-                    resolution.RelationTypes.Add(additionalFieldDefinition.Id, relationEnd);
                     continue;
                 }
 
@@ -1387,10 +1415,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 relations.DependencyReferences[referenceId] = namedRelationEnd is null
                     ? adoWorkItem.ExtractDependencyReferences()
                     : adoWorkItem.ExtractDependencyReferences(namedRelationEnd);
+                relations.RelationTypesSeen.AddRange(TheWorkItemLinksItCarries(adoWorkItem).Except(relations.RelationTypesSeen, StringComparer.OrdinalIgnoreCase));
             }
 
             return relations;
         }
+
+        // Attachments, hyperlinks and artifact links point at no work item, so they could never have matched.
+        private static IEnumerable<string> TheWorkItemLinksItCarries(AdoWorkItem adoWorkItem)
+            => (adoWorkItem.Relations ?? [])
+                .Select(relation => relation.Rel)
+                .Where(rel => !string.IsNullOrEmpty(rel) && !ResourceLinks.Contains(rel))
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>
         /// What one work item waits on. Azure DevOps supplies what it read off the relations - the Predecessor
@@ -1681,9 +1717,44 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// while the relation types could not be listed, so nobody can tell whether they name one. Never
         /// stored: it answers for the organisation of the fetch that built it.
         /// </summary>
-        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, Dictionary<int, string> RelationTypes, HashSet<int> CouldNotTell)
+        private sealed record AdditionalFieldResolution(
+            Dictionary<int, string> Fields, Dictionary<int, string> RelationTypes, HashSet<int> CouldNotTell, Dictionary<int, WhyNothingIsRead> ReadsNothing)
         {
-            public static AdditionalFieldResolution None() => new([], [], []);
+            public static AdditionalFieldResolution None() => new([], [], [], []);
+
+            /// <summary>
+            /// A base name whose two ends are both listed names a relation type but neither direction, and a type
+            /// without direction cannot say which end waits. Either is still a relation type, so a setting that
+            /// reads only fields says so, but the Dependency Field reads nothing off it rather than guess a direction.
+            /// The ends are checked first, since a server may also list the type under its base name.
+            /// </summary>
+            public bool ResolvesToARelationType(AdditionalFieldDefinition definition, RelationTypeListing relationTypes)
+            {
+                var bothEnds = relationTypes.TheEndsOf(definition.Reference);
+                if (bothEnds is not null)
+                {
+                    RelationTypes.Add(definition.Id, definition.Reference);
+                    ReadsNothing.Add(definition.Id, new WhyNothingIsRead(RefreshFindingKind.RelationTypeNamedWithoutItsEnd, bothEnds));
+                    return true;
+                }
+
+                var relationEnd = relationTypes.TheEndCalled(definition.Reference);
+                if (relationEnd is null)
+                {
+                    return false;
+                }
+
+                RelationTypes.Add(definition.Id, relationEnd);
+                if (relationTypes.HasNoDirection(relationEnd))
+                {
+                    ReadsNothing.Add(definition.Id, new WhyNothingIsRead(RefreshFindingKind.RelationTypeHasNoDirection, []));
+                }
+
+                return true;
+            }
+
+            public WhyNothingIsRead? WhyNothingIsReadFor(int? definitionId)
+                => definitionId.HasValue && ReadsNothing.TryGetValue(definitionId.Value, out var why) ? why : null;
 
             public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.ContainsKey(definitionId.Value);
 
@@ -1702,28 +1773,50 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// </summary>
         private sealed class RelationTypeListing
         {
-            private RelationTypeListing(List<string> ends, bool wasRefused)
+            private readonly HashSet<string> withoutDirection;
+
+            private RelationTypeListing(List<string> ends, HashSet<string> withoutDirection, bool wasRefused)
             {
                 Ends = ends;
+                this.withoutDirection = withoutDirection;
                 WasRefused = wasRefused;
             }
 
-            public static RelationTypeListing Refused => new([], true);
+            public static RelationTypeListing Refused => new([], [], true);
 
             public List<string> Ends { get; }
 
             public bool WasRefused { get; }
 
             public static RelationTypeListing Of(List<WorkItemRelationType> listed)
-                => new(listed
-                    .Where(type => !IsAResourceLink(type))
-                    .Select(type => type.ReferenceName)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToList(), false);
+            {
+                var workItemLinks = listed.Where(type => !IsAResourceLink(type)).ToList();
 
-            public bool HasAnEndCalled(string reference) => TheEndCalled(reference) is not null;
+                return new(
+                    [.. workItemLinks.Select(type => type.ReferenceName).Distinct(StringComparer.OrdinalIgnoreCase)],
+                    new HashSet<string>(workItemLinks.Where(IsWithoutDirection).Select(type => type.ReferenceName), StringComparer.OrdinalIgnoreCase),
+                    false);
+            }
+
+            public bool Names(string reference) => TheEndCalled(reference) is not null || TheEndsOf(reference) is not null;
 
             public string? TheEndCalled(string reference) => Ends.Find(end => string.Equals(end, reference, StringComparison.OrdinalIgnoreCase));
+
+            // Azure DevOps spells the two ends of a directional type as its base name with -Forward and -Reverse.
+            public List<string>? TheEndsOf(string baseName)
+            {
+                var forward = TheEndCalled($"{baseName}-Forward");
+                var reverse = TheEndCalled($"{baseName}-Reverse");
+
+                return forward is null || reverse is null ? null : [forward, reverse];
+            }
+
+            public bool HasNoDirection(string end) => withoutDirection.Contains(end);
+
+            private static bool IsWithoutDirection(WorkItemRelationType type)
+                => type.Attributes is not null
+                    && type.Attributes.TryGetValue("directional", out var directional)
+                    && string.Equals($"{directional}", "false", StringComparison.OrdinalIgnoreCase);
 
             private static bool IsAResourceLink(WorkItemRelationType type)
                 => type.Attributes is not null

@@ -47,6 +47,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
 
+        // Every kind there is has a sentence of its own, so only a kind added later reaches the fallback.
+        private const RefreshFindingKind AKindThisBuildDoesNotWord = (RefreshFindingKind)999;
+
         private static readonly string[] TheLinksSeenWhereNothingMatched = ["is blocked by", "relates to"];
 
         private static readonly string[] EveryKindOfRecord =
@@ -1517,6 +1520,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 + "Links seen: is blocked by, relates to."));
         }
 
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheRelationTypeHasNoDirection_WarnsInPlainLanguage()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeHasNoDirection, RefreshFindingSetting.DependencyField, "System.LinkTypes.Related", [])],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Dependency Field names 'System.LinkTypes.Related', which has no direction. "
+                + "Name a relation type with two ends, such as 'System.LinkTypes.Dependency-Reverse'."));
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheRelationTypeIsNamedWithoutItsEnd_WarnsInPlainLanguage()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeNamedWithoutItsEnd, RefreshFindingSetting.DependencyField, "Contoso.DependsOn", [])],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Dependency Field names 'Contoso.DependsOn' without its end. "
+                + "Name one end: 'Contoso.DependsOn-Forward' or 'Contoso.DependsOn-Reverse'."));
+        }
+
         /// <summary>
         /// Each finding is worded once. A line for a named link that matched nothing is not followed by the
         /// catch-all line the kinds without a sentence of their own get.
@@ -1557,7 +1606,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 {
                     ReferenceId = "FTR-1",
                     LastChangedRemote = TheFirstReadingDay,
-                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeHasNoDirection, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn", BothDependencyPhrases)],
+                    RefreshFindings = [new RefreshFinding(AKindThisBuildDoesNotWord, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn", BothDependencyPhrases)],
                 }]);
 
             NothingAboveTheFeaturesIsDownloaded();
