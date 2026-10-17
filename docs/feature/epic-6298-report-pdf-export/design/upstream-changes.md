@@ -1,0 +1,14 @@
+# Upstream changes from DESIGN — epic-6298-report-pdf-export
+
+For the product owner to apply to the DISCUSS artifacts (stories, ACs, journey). DESIGN does not edit them.
+Date: 2026-10-17. Source: `../feature-delta.md` → "Wave: DESIGN / [REF] Changed Assumptions".
+
+| # | Artifact | Now says | Should say | Why |
+|---|---|---|---|---|
+| U-1 | US-01 AC-1.8 | "Cancelling the dialog leaves the page as it was; nothing is stored." | "Cancelling the dialog returns the reader to the report, which shows the values that were about to be printed; nothing is stored." | The fresh read shares the report view's query key, so the screen moves to the fresh answer (D19: screen = PDF). |
+| U-2 | Journey `epic-6298-report-pdf-export.yaml`, integration checkpoint; feature delta "Journey" | "the PDF's produced date is the day its Now window ends" | "…in the instance's time zone; Produced is shown in the viewer's local date and time, so a viewer in another zone near midnight can see the two a day apart" | Days are the instance's, instants are shown locally (ADR-222). |
+| U-3 | US-01 scenario "The Lighthouse app on Linux opens the print dialog" | "the system print dialog opens on the print-designed report" | Add: "and Priya is back on the report when the dialog closes" | The maintainer chose the print page itself (MQ-1 = a, 2026-10-17); the return is part of the behaviour. |
+| U-4 | Definition of Done, item 6 | E2E: "the print view shows the header and no app chrome" | Add: "from slice 02, the Chromium PDF of the print view embeds no font but the Lighthouse typeface" | Cheapest automated proof of AC-2.1 / AC-2.2 (ADR-246). |
+| U-5 | US-04 AC-4.2 | "Values, windows and dashes exactly as the backend answers them; no recomputation." | **Unchanged.** Optionally add: "The summary names the report, its owner and both windows; it phrases no metric line." | Maintainer, MQ-3 = b (2026-10-17): the clients return raw values (ADR-247). |
+| U-6 | US-04 estimate / slice-04 brief | ~1d | **Unchanged, ~1d.** | No phrasing function or contract fixture in the clients. |
+| U-7 | US-05 AC-5.1/5.2, Tech note, slice-05 "Shared-artifact risk" | "the direction of good per metric is written in the skill" (MEDIUM risk, one eval case) | "The skill carries the web's presentation rules for each report type — metric order, which way is better, lines and decimals, units, rounding, change and percent change (incl. 'No change' and 'Then was 0'), dashes with reasons, summary groups — each naming its source in the frontend, and never shows more precision than the web. Its evals score dashboards against the lines the Reports tab shows for the same real report answers." Risk raised from MEDIUM to HIGH, mitigated by those evals and a DELIVER checklist line. Estimate: consider ~1d instead of ½d. | The client read carries raw values only (MQ-3 = b); the rules the web encodes must reach the assistant through the skill (DDD-20, DDD-23). |

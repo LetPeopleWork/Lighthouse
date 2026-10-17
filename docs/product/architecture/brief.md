@@ -10316,3 +10316,117 @@ Invariants:
 - [ADR-240](./adr-240-lighthouse-decides-staleness-once-on-the-server.md): Lighthouse decides staleness once, on the
   server, and says why. **Proposed 2026-10-16.**
 - Superseded: ADR-026's placement of the rule in the browser. Amended: ADR-070.
+
+## Application Architecture — epic-6298-report-pdf-export (Reports: PDF export and client reads)
+
+Feature: epic-6298-report-pdf-export (ADO Epic #6298 "Report PDF Export") · Wave: DESIGN · 2026-10-17 · Morgan,
+PROPOSE mode. Builds on the Reports module of Epic 5878 (ADR-219–222). Full design:
+`docs/feature/epic-6298-report-pdf-export/feature-delta.md` → "Wave: DESIGN / …" (DDD-1 … DDD-23). The maintainer
+answered the three open choices on 2026-10-17: the print page itself stands behind the dialog; drawn marks everywhere;
+the clients return raw values and the skill carries the web's presentation rules.
+
+Any report can leave Lighthouse as a PDF through the browser's or the Standalone webview's print, and any report can
+be read by an assistant through the clients. The backend does not change: no endpoint, DTO, migration or RBAC guard
+(one usage-data enum member comes from DEVOPS). No server renderer is built; the print route and its ready signal are
+the seam Scheduled Report Delivery (#5882) will load with headless Chromium.
+
+### Key invariants introduced
+
+- **6298-I1 — a printed report is its own chrome-less page.** `/print/teams/:id/reports/:reportId` and its Portfolio
+  twin sit outside the app-shell layout route (no header, footer, survey nudge or usage-data question), under the
+  same auth guard, in the light theme whatever the user's theme (ADR-245).
+- **6298-I2 — nothing prints before it is ready, and only once.** Ready = a report answer fetched after the page
+  mounted, the owner's name, the instance's terms and the fonts; exposed as `data-render-ready`. Print is called once,
+  only when the page was opened by Export PDF; a page opened directly never prints; a failure never prints.
+- **6298-I3 — the PDF shows what the screen shows.** The print page reads with the report view's query key, forced
+  fresh; the screen shows the same answer afterwards. Produced is the moment that answer arrived, in local time.
+- **6298-I4 — a report draws nothing from the machine's fonts.** Change marks are SVG icons from a mark kind;
+  Quicksand ships with the app (`@fontsource-variable/quicksand`, OFL-1.1, licence text in `public/licenses/`); no
+  runtime font request leaves the instance (ADR-246).
+- **6298-I5 — the export is counted on the click, never by the print page**, and a return from print is not a second
+  opening.
+- **6298-I6 — clients read reports, never write them.** Four read-only MCP tools and `lh report list|get` over the
+  existing endpoints, version-gated; they return the report's raw values unchanged and phrase no metric line. The
+  `lighthouse-reports` skill restates the web's presentation rules, naming their frontend sources, and its evals score
+  dashboards against the lines the Reports tab shows (ADR-247).
+
+### Component decomposition (headline)
+
+- **Frontend**: EXTEND `App` (shell layout route + print routes), the theme module (out of `main.tsx`), `ReportView` /
+  `ThenAndNowHeader` (Export PDF, event, navigation, chunk prefetch), `useReportOpenedReporter`, the comparison and mark
+  code, `index.html` / `main.tsx` (bundled font). CREATE `ReportPrintPage`, `ReportPrintDocument` (header, body from the
+  existing summary and panels, branding footer, later "how to read this"), the ready / print-once hook,
+  `ChangeMarkIcon`, `public/licenses/quicksand-OFL.txt`. REUSE `WidgetBody` for the print page's loading and failure
+  looks.
+- **Clients (`lighthouse-clients`)**: EXTEND the client package (report methods, `reports` version gate), `mcp-core`
+  (four tools), the `lighthouse` skill. CREATE the report reader with a header-only summary, the `lh report` group,
+  the `lighthouse-reports` skill (with the web's presentation rules in `references/then-and-now.md`).
+- **Backend**: unchanged.
+
+### Loading, could-not-load and late answers
+
+The report view keeps its looks; Export PDF is shown but not operable while loading and not offered when the report
+could not be loaded, no longer exists or was made by a newer version. The print page shows a lone spinner while it
+prepares and the could-not-load message with Retry on failure (both `WidgetBody`), with a screen-only Back control; it
+has no previous answer to dim, so it never shows one. A late answer for an old key lands under that key and is never
+read.
+
+### C4
+
+```mermaid
+C4Container
+  title Report PDF export and client reads
+  Person(sender, "Report reader")
+  Person(assistantUser, "Assistant user")
+  System_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "React 19, MUI 9, TanStack Query", "Report view with Export PDF; chrome-less print route with data-render-ready; bundled Quicksand")
+    Container(api, "Lighthouse API", "ASP.NET Core 10", "GET teams|portfolios/{id}/reports[/{reportId}] — unchanged")
+    ContainerDb(db, "Database", "SQLite / PostgreSQL", "Reports — unchanged")
+  }
+  System_Ext(webview, "Browser or Standalone webview", "Print dialog")
+  Container_Ext(clients, "MCP servers and lh", "Node", "lighthouse_{team,portfolio}_report_{list,get}; lh report list|get")
+  System_Ext(assistant, "AI assistant", "lighthouse-reports skill")
+  System_Ext(renderer, "Scheduled renderer (#5882, not built)", "Headless Chromium")
+  Rel(sender, webview, "Chooses Export PDF in")
+  Rel(webview, spa, "Runs")
+  Rel(spa, api, "Reads the report afresh from")
+  Rel(api, db, "Reads frozen Then from")
+  Rel(spa, webview, "Calls print() on, once ready")
+  Rel(assistantUser, assistant, "Asks")
+  Rel(assistant, clients, "Calls report tools of")
+  Rel(clients, api, "Reads reports from")
+  Rel(renderer, spa, "Will load the print route and wait for data-render-ready on")
+```
+
+L1 and the full L2 are in the feature delta. No L3: four thin new frontend components.
+
+### Architectural Enforcement (this feature)
+
+- Vitest structural scans: the print route's module tree imports none of the shell's components; `globalThis.print`
+  is called from one module; the print page never calls the usage-data reporter; `index.html` names no external font
+  host; no report mark character remains as text in `src/pages/Common/Reports`; the shipped licence file equals the
+  package's `LICENSE`.
+- E2E walking skeleton waits for `data-render-ready="true"`, checks header and no chrome, and (from slice 02) that the
+  Chromium PDF embeds only Quicksand.
+- Clients: the drift test (ADR-230) names the new tools and commands; a pass-through test pins the facts to the
+  recorded server answer; the skill's evals are scored against web-rendered lines, and a DELIVER checklist line
+  re-runs them on any change to the named frontend sources.
+- ArchUnitNET unchanged (no backend change).
+
+### Usage data
+
+One event when Export PDF is chosen, emitted by the click (DEVOPS designs the name, the next integer after the last on
+`main`, and a closed `report_template`). The print page emits nothing.
+
+### ADR References (this feature)
+
+- [ADR-245](./adr-245-a-printed-report-is-its-own-chrome-less-route-that-prints-once-its-fresh-answer-is-ready.md):
+  a printed report is its own chrome-less route, and it prints only once its fresh answer is ready. **Accepted
+  2026-10-17.**
+- [ADR-246](./adr-246-everything-a-report-draws-ships-with-the-app-marks-as-icons-and-the-typeface-bundled.md):
+  everything a report draws ships with the app — change marks are icons, and the Lighthouse typeface is bundled.
+  **Accepted 2026-10-17.**
+- [ADR-247](./adr-247-reports-are-read-through-the-clients-as-four-read-only-tools-that-return-the-reports-raw-values.md):
+  reports are read through the clients as four read-only tools that return the report's raw values. **Accepted
+  2026-10-17.** Reopens Epic 5878's "no reports in the clients" for reading only.
+- Relied on, unchanged: ADR-219, ADR-222, ADR-223, ADR-224, ADR-229, ADR-230, ADR-231, ADR-233.

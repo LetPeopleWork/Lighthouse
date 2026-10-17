@@ -876,3 +876,448 @@ These settle the questions above. Every PROPOSED default they touch is now decid
 | Q5 Slice order | **01 → 02 → 03 → 04 → 05.** |
 | Q6 Skill name | **`lighthouse-reports`**, so the zip is `lighthouse-reports-skill.zip`. |
 | ADO `Premium` tag on Epic #6298 | **The maintainer changes it.** Epic fields and states are never touched from a session. |
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-17 · **Mode**: PROPOSE, autonomous subagent. Engineering
+choices are decided and recorded; the three choices a reader would notice went to the maintainer, who answered them
+on 2026-10-17 ("Questions for the maintainer", now answered). Per-wave peer review skipped by instruction
+(consolidated review at the end of DISTILL).
+
+| Read | Status |
+|---|---|
+| This file, DISCUSS sections incl. "Maintainer answers (2026-10-17)" (locked) | ✓ |
+| `wave-decisions.md` (DIVERGE, maintainer decisions, Linux print probe), `discuss/wave-decisions.md`, `slices/slice-01..05` | ✓ |
+| `recommendation.md`, `diverge/*`, `discover/wave-decisions.md` | ⊘ — summarised in this file's DISCOVER/DIVERGE sections; nothing there the DESIGN questions need |
+| Spike `story-6052-server-side-chart-rendering/spike/findings.md` (recommendation, render route, ready flag, Standalone print) | ✓ (targeted) |
+| `docs/product/architecture/brief.md` (structure; tail sections), ADR-219, ADR-224, ADR-233; ADR-220–223, 229–231 by title | ✓ |
+| `docs/product/journeys/epic-6298-report-pdf-export.yaml` | ⊘ — the journey summary in this file was enough; no DESIGN change to it |
+| `docs/ci-learnings.md` (ledger checks, preflight rules, frontend/E2E sections) | ✓ — pre-applied below |
+| `ARCHITECTURE.md` §4, §12 | ✓ — needs an update at DELIVER (see Handoff) |
+| Frontend: `ReportView`, `ThenAndNowHeader`, `ThenAndNowSummary`, `panels/ThenNowLineParts`, `panels/thenNowComparison`, `useReportOpenedReporter`, `App.tsx`, `main.tsx`, `index.html`, `WidgetShell` (`WidgetBody`), `usageDataRouteKeys`, `package.json`, `tauri.conf.json`, `public/` | ✓ |
+| Backend: `TeamReportsController` (and Portfolio twin by search), `ReportReadModels`, `UsageDataEventName` (last = 19) | ✓ |
+| Clients (read only): `mcp-core` tool list, `cli` group help, `client` version gate, `skills/README.md`, `lighthouse-daily-flow-review` layout | ✓ |
+| `story-6217-lighthouse-skills/feature-delta.md` | ⊘ — `skills/README.md` and ADR-229/230/231 carry the packaging rules |
+| Quicksand licence and package facts | ✓ — primary sources fetched 2026-10-17 (ADR-246 "Licence verification") |
+
+## Wave: DESIGN / [REF] What DESIGN found in the code (beyond DISCUSS S1–S10)
+
+| # | Fact | Where | Consequence |
+|---|---|---|---|
+| F1 | The app shell (`Header`, `Footer`, `SurveyNudge`, `UsageDataAsk`) wraps every route in `App.tsx` | `App.tsx` | A chrome-less page needs a layout route split, not CSS. |
+| F2 | Both themes are built inside `main.tsx`; neither is importable | `main.tsx` | The light theme moves to its own module so the print page can force it. |
+| F3 | The marks in use are ✔ ✘ ± (summary), – as the no-change mark, ▲ ▼ (panels); — and − are value text | `ThenAndNowSummary.tsx`, `thenNowComparison.ts` | Five marks plus the no-change mark become drawn icons; the dash and minus stay text and are proven by the PDF font check (ADR-246). |
+| F4 | Panels already draw line icons with `@mui/icons-material` | `DailySpreadPanel`, `ThroughputPanel`, `CycleTimePanel` | Drawn marks follow the house pattern; no new dependency. |
+| F5 | `ReportRead` carries the owner's kind and id, not the owner's name | `ReportReadModels.cs` | The print page reads the name through the owner's existing read; no backend change. |
+| F6 | `ReportOpened` is reported once per mount of the report view; returning from another route remounts it | `useReportOpenedReporter.ts` | A round trip through the print page would count a second opening; the return carries a "back from print" marker the reporter honours. |
+| F7 | The page-opening detector matches `/teams/:id/:tab?` and its Portfolio twin only | `usageDataRouteKeys.ts` | A `/print/…` route counts no page opening. |
+| F8 | No CSP is set anywhere (`tauri.conf.json` `csp: null`; backend sends none) | | Bundled fonts need no policy change. |
+| F9 | The app is React 19 + MUI 9 (`package.json`), not React 18 as CLAUDE.md says | | Recorded; `CLAUDE.md` is not edited by this wave. |
+| F10 | The Standalone SPA boots once behind a `backend-ready` event and a five-second splash | `App.tsx` | Rules out printing from a second copy of the SPA (frame or new window). |
+| F11 | Browsers offer `document.title` as the PDF file name | | The print page sets a title naming the report and owner. |
+
+## Wave: DESIGN / [REF] Architecture in one paragraph
+
+Export PDF is a frontend capability over the existing report read. The report view gains the action; it counts the
+click and navigates, in the same window, to a print route that sits outside the app shell. The print page reads the
+report afresh with the report view's own query key, reads the owner's name and the instance's terms, waits for the
+fonts, and only then marks itself `data-render-ready="true"` and — when it was opened by the action — calls the
+browser's print once and goes back on `afterprint`. It is light, chrome-less, and styled for A4 and Letter. Marks are
+drawn icons and Quicksand ships with the app, so the page needs no system font. The same route is what a later
+server renderer (#5882) loads. In `lighthouse-clients`, four read-only tools and `lh report list|get` read the same
+endpoints and return the report's raw values unchanged; the `lighthouse-reports` skill carries the web's rules for
+showing them (rounding, units, change and percent change, which way is better, dashes) and its evals hold it to the
+web. The backend does not change.
+
+## Wave: DESIGN / [REF] Decisions (DDD-n)
+
+| # | Decision | Status | ADR |
+|---|---|---|---|
+| DDD-1 | **The print-designed report is its own route** per owner kind, `/print/teams/:id/reports/:reportId` and `/print/portfolios/:id/reports/:reportId`, outside a new app-shell layout route, inside the auth guard and providers | Decided | 245 |
+| DDD-2 | **Export navigates in the same window** with a one-shot "print when ready" flag in router state (never in the URL); the page prints once, then returns on `afterprint`; a screen-only Back control is always shown | **Decided by the maintainer 2026-10-17 (MQ-1 = a)** | 245 |
+| DDD-3 | **Fresh read** (D19): the print page reads with the report view's query key, forced fresh on mount; the report view shows the same answer on return. "Produced" = the moment that answer arrived (`dataUpdatedAt`), in the viewer's local date and time | Decided | 245 |
+| DDD-4 | **Ready predicate** written as `data-render-ready`: report answer fetched after mount ∧ owner name ∧ terminology answered ∧ `document.fonts.ready`; any failure → never ready, never prints | Decided | 245 |
+| DDD-5 | **Light theme forced** by wrapping the print page in the light MUI theme, moved from `main.tsx` into an importable module | Decided | 245 |
+| DDD-6 | **Print stylesheet**: `@page { margin: 12mm }`, no fixed paper size; fixed content width fitting A4 and Letter; `break-inside: avoid` on summary and panels; header kept with what follows; branding footer in flow, kept with the last panel (never alone on a page); `print-color-adjust: exact`; no animations | Decided | 245 |
+| DDD-7 | **Document title** = report name and owner name (default file name in the dialog); exact form pinned at DISTILL | Decided | 245 |
+| DDD-8 | **Body reuse**: the print document renders the existing `ThenAndNowSummary` and the panel registry's panels — the same components as the screen — inside a new print frame (header, then "how to read this" from slice 03, body, footer) | Decided | — |
+| DDD-9 | **Marks are drawn SVG icons** from a mark kind (improved, worse, mixed, up, down, none); comparison code returns the kind, the view draws it; icons `aria-hidden`, the words carry meaning | Decided | 246 |
+| DDD-10 | **Same icons on screen and in print**: the drawn marks replace the characters everywhere (slice 02 scope: summary and panels on screen and in print) | **Decided by the maintainer 2026-10-17 (MQ-2 = a)** | 246 |
+| DDD-11 | **Quicksand bundled for the whole app** via `@fontsource-variable/quicksand` 5.3.0 (OFL-1.1, published 2026-07-19 — past pnpm 12's 24-hour minimum release age); Google Fonts lines removed from `index.html`; headings declare 700 to keep today's rendered weight | Decided (scope locked by maintainer, Q4) | 246 |
+| DDD-12 | **`OFL.txt` ships** as `Lighthouse.Frontend/public/licenses/quicksand-OFL.txt` (reaches `wwwroot` → server zips, Docker `dist`, Standalone bundle), guarded byte-equal to the package's `LICENSE` | Decided | 246 |
+| DDD-13 | **Usage event emitted on the click** of Export PDF in the report view, before navigating; the print route emits nothing (DEVOPS designs the event — name, integer after the last on `main`, closed `report_template`) | Decided (placement); event = DEVOPS | 245 |
+| DDD-14 | **A return from print is not a new opening**: the navigation back carries a marker in router state and `useReportOpenedReporter` reports nothing for that mount | Decided | — |
+| DDD-15 | **Export PDF availability** follows the report view's existing status: loading → shown, not operable; could not load / no longer exists / newer version → not offered; loaded → operable (AC-1.7). Gated by nothing else: anyone who can read the report reads the print page through the same Read guard (D14). `useRbac()` is not consulted; there is nothing new to gate | Decided | — |
+| DDD-16 | **The print route's chunk is prefetched** when the report view mounts, so the dialog opens within 2 s of the click on a loaded report (G2) | Decided | — |
+| DDD-17 | **Clients: four read-only MCP tools** `lighthouse_{team,portfolio}_report_{list,get}` (inputs `{id}` / `{id, reportId}`), **`lh report list|get (--team-id|--portfolio-id) [--id]`**, client methods `get{Team,Portfolio}Report{s}`, gated by a `reports` entry in `FEATURE_REQUIRES_SERVER_NEWER_THAN` | Decided | 247 |
+| DDD-18 | **The client read returns the report's raw values**: the facts are the server's answer unchanged (header, and per shown metric each member's Then and Now value or its absence reason); nothing is rounded, signed, compared or judged in the clients. The `summary` (MCP field, `lh` pretty) names the report, owner and both windows, or for a list counts the reports; it phrases no metric line. No shared phrasing fixture. Tool descriptions point to the `lighthouse-reports` skill for how Lighthouse shows the values | **Decided by the maintainer 2026-10-17 (MQ-3 = b)** | 247 |
+| DDD-19 | **Refusal relays**: 403 → no access to that {Team}/{Portfolio}; version gate → upgrade Lighthouse; 422 `template-not-supported` → made by a newer version, can't be shown here; 404 → no such report | Decided | 247 |
+| DDD-20 | **Skill `lighthouse-reports`**: `SKILL.md` (when to use, reading procedure, guardrails, fallback) + `references/then-and-now.md` (the layout for this report type **and the web's presentation rules**, copied from the named frontend sources — see "Skill shape"); a later type adds a reference file, not a skill; `evals/` with fixtures served by `scripts/eval-fixture.mjs`; zipped by `pack-skills.sh` as `lighthouse-reports-skill.zip` | Decided (name locked, Q6) | 229–231 (existing), 247 |
+| DDD-21 | **No backend change**: no endpoint, DTO, migration or RBAC guard is added; `UsageDataEventName` gains one member (DEVOPS) | Decided | — |
+| DDD-22 | **No server rendering, no render token, no Rust print call** in this Epic; the route and its ready signal are the seam #5882 builds on | Decided | 245 |
+| DDD-23 | **The skill's presentation rules are held to the web by its evals**: eval fixtures are real report answers from the dev instance, each paired with the lines the Reports tab shows for it at the same moment; a dashboard that rounds, signs, judges or dashes differently from the web fails. Any DELIVER change to the named frontend sources, or a new Then & Now metric, updates `references/then-and-now.md` and re-runs the evals (DELIVER checklist line). Drift between web and skill is an accepted risk under MQ-3 = b | Decided | 247 |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+**Frontend (`Lighthouse.Frontend/src`)** — ports-and-adapters as today: components read through the existing
+`IReportService` / owner services from `ApiServiceContext`; no component calls `fetch` directly.
+
+| Component | Kind | Responsibility | Slice |
+|---|---|---|---|
+| `App` | EXTEND | Splits the shell (`Header`, `Footer`, `SurveyNudge`, `UsageDataAsk`) into a layout route; adds the two `/print/…` routes beside it, lazy-loaded | 01 |
+| Light theme module (moved from `main.tsx`) | EXTEND (refactor) | One importable light and dark theme; `main.tsx` keeps choosing by mode | 01 |
+| `ReportView` / `ThenAndNowHeader` | EXTEND | Export PDF action beside Edit report / Delete (place sketched at DISTILL); emits the export event; navigates with the print flag; prefetches the print chunk | 01 |
+| `useReportOpenedReporter` | EXTEND | Skips a mount that is a return from print | 01 |
+| `ReportPrintPage` | CREATE NEW | Route component: reads report, owner name, terms; drives the ready predicate; loading / failure / ready looks; light theme; print stylesheet; document title; print-once-then-return | 01 |
+| `ReportPrintDocument` | CREATE NEW | The print frame: header (owner kind and name, report name, Then and Now windows, Produced), body (existing summary and panels), branding footer; later the "how to read this" line | 01, 03 |
+| Ready / print-once hook | CREATE NEW | The ready predicate and the one-shot print with `afterprint` return, as one testable unit | 01 |
+| `ChangeMarkIcon` | CREATE NEW | Draws a mark kind as an SVG icon in its verdict colour | 02 |
+| `thenNowComparison` / `ThenNowLineParts` / `ThenAndNowSummary` | EXTEND | Mark becomes a kind; the view draws it with `ChangeMarkIcon` | 02 |
+| `main.tsx` + `index.html` | EXTEND | Import the bundled font; drop Google Fonts and the preconnect | 02 |
+| `public/licenses/quicksand-OFL.txt` | CREATE NEW | The font's licence text, shipped in every build output | 02 |
+| `UsageDataEventName` (frontend mirror) + backend enum | EXTEND | One export event (DEVOPS) | 01 |
+
+**Clients (`lighthouse-clients`, read only for this wave)**
+
+| Component | Kind | Responsibility | Slice |
+|---|---|---|---|
+| `client`: `get{Team,Portfolio}Reports`, `get{Team,Portfolio}Report`, `reports` gate | EXTEND | Calls the `/v1` report routes; maps refusals | 04 |
+| `client`: report reader + header summary | CREATE NEW | Narrow reader of the report answer (ADR-223) and the header-only summary text (report, owner, windows; list count) — no metric phrasing (DDD-18) | 04 |
+| `mcp-core`: four tool definitions + handlers | EXTEND | Object answers with a `summary` field (ADR-224 rule 1) | 04 |
+| `cli`: `report` group (`list`, `get`) | CREATE NEW (group) | Pretty = summary; `--json` / `--toon` = facts | 04 |
+| `skills/lighthouse/` | EXTEND | Names the four tools and `lh report list|get` (drift test) | 04 |
+| `skills/lighthouse-reports/` | CREATE NEW | `SKILL.md`, `references/then-and-now.md` (layout + the web's presentation rules), `evals/` with web-paired fixtures (DDD-23) | 05 |
+
+**Backend**: unchanged except the usage-data enum member (DEVOPS). The report endpoints are the driven dependency of
+both the print page and the clients.
+
+## Wave: DESIGN / [REF] Driving and driven ports
+
+**Driving (user-invocable entry points)**
+
+| Port | Who | Slice |
+|---|---|---|
+| Export PDF on the report view (Team, Portfolio) | Any reader of the report | 01 |
+| `/print/{teams|portfolios}/:id/reports/:reportId` loaded directly | A later server renderer (#5882), the E2E walking skeleton; a person with a pasted link (never prints) | 01 |
+| The browser's / webview's print dialog | The reader | 01 |
+| MCP tools `lighthouse_{team,portfolio}_report_{list,get}` (stdio and HTTP) | An assistant | 04 |
+| `lh report list|get` | A person in a terminal | 04 |
+| The `lighthouse-reports` skill | An assistant that loads it | 05 |
+
+**Driven (outbound, all existing)**
+
+| Port | Adapter | Contract shape |
+|---|---|---|
+| Report read (`GET …/reports`, `GET …/reports/{reportId}`) | `ReportService` (frontend), client package methods (clients) | Pure read; the backend's `IReportReader` is read-only by type (ADR-219) |
+| Owner read (name) | Existing Team / Portfolio services | Pure read |
+| Terminology read | `TerminologyContext` / the clients' existing terminology read | Pure read |
+| Usage-data reporter | `useUsageDataReporter` | Bounded change: one event per click, never on the print route |
+| Print | `globalThis.print()` in the browser or webview | Effect at the thin shell: called by one hook, only when ready and flagged |
+| Fonts | `document.fonts.ready` over the bundled files | Read; part of the ready predicate |
+
+Effect isolation: the print page's read path writes nothing (it only reads through read-only ports); the only effects
+are the print call and the navigation back, both inside one hook that a unit test drives with a fake `print` and a
+fake `afterprint`.
+
+## Wave: DESIGN / [REF] Export states — layout sketches (copy pinned at DISTILL)
+
+Report view (screen, the user's theme). Place and label of the action are sketched with the maintainer at DISTILL.
+
+```
+LOADED — action operable                     LOADING — action shown, not operable      COULD NOT LOAD / GONE / NEWER VERSION
+┌──────────────────────────────────────────┐ ┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐
+│ Reports › Then & Now — 90 days to 2 Oct   │ │ Reports                               │ │ Reports                               │
+│        [Export PDF] [Edit report] [Delete]│ │                  [Export PDF] (dimmed)│ │                                       │
+│ ┌ Summary ─────────────────────────────┐  │ │ ┌──────────────────────────────────┐ │ │  ⚠ This report couldn't be loaded.   │
+│ │ Then … │ Now … │ Change …            │  │ │ │        ◌  Loading report…        │ │ │    Reload to try again.   [Retry]    │
+│ └──────────────────────────────────────┘  │ │ └──────────────────────────────────┘ │ │  (no Export PDF)                      │
+│ ┌ Cycle Time: Then & Now ──────────────┐  │ │                                      │ │                                       │
+└──────────────────────────────────────────┘ └──────────────────────────────────────┘ └──────────────────────────────────────┘
+```
+
+Print page (always light; it stands behind the dialog — maintainer, MQ-1 = a). Loading and failure reuse `WidgetBody`
+(lone spinner when nothing to dim; the could-not-load message with Retry). The Back control is screen-only.
+
+```
+PREPARING (fresh read, owner, terms, fonts)  FAILED — nothing printed                  READY — dialog opens once
+┌──────────────────────────────────────────┐ ┌──────────────────────────────────────┐ ┌──────────────────────────────────────┐
+│ ‹ Back to report                          │ │ ‹ Back to report                      │ │ ‹ Back to report      (screen only)  │
+│                                           │ │                                       │ │ Team Lightspeed                      │
+│              ◌                            │ │  ⚠ This report couldn't be loaded,    │ │ Then & Now — 90 days to 2 Oct 2026   │
+│      Preparing the PDF…                   │ │    so no PDF was made.     [Retry]    │ │ Then 5 Jul – 2 Oct 2026 · Now 1 Aug – │
+│                                           │ │                                       │ │ 30 Oct 2026 · Produced 30 Oct, 09:15 │
+│  data-render-ready="false"                │ │  data-render-ready="false"            │ │ [How to read this — slice 03]        │
+└──────────────────────────────────────────┘ └──────────────────────────────────────┘ │ ┌ Summary ┐ ┌ Panels … (whole) ┐  │
+                                                                                         │ Lighthouse · LetPeopleWork (footer)  │
+                                                                                         │  data-render-ready="true"            │
+                                                                                         └──────────────────────────────────────┘
+```
+
+Never shown: the previous answer as if current (the page has no answer until the fresh one arrives — nothing to dim),
+an empty page that reads as "no data", or a print of anything but the ready state.
+
+## Wave: DESIGN / [REF] Technology choices
+
+| Choice | Version / licence | Why | Rejected |
+|---|---|---|---|
+| Browser / webview print of an SPA route | — | ≈0 MB in every distribution; Linux Standalone proven by probe; the same route serves #5882 | Server PDF now (+100–480 MB, render token, browser lifecycle); Rust print plugin (no need shown) |
+| `@fontsource-variable/quicksand` | 5.3.0, OFL-1.1, published 2026-07-19 | One variable file per subset (latin 28 KB, latin-ext 27 KB, vietnamese 9 KB); Renovate keeps it current; ships its `LICENSE` | `@fontsource/quicksand` static (more files); hand-copied woff2 (no updates, licence untied); Google Fonts at runtime (offline fallback, third-party request) |
+| `@mui/icons-material` (installed) + `createSvgIcon` | MUI 9, MIT | House pattern for symbols; no new dependency | A symbol font (another file and licence) |
+| TanStack Query (installed) | 5.x, MIT | Shared key gives the report view the fresh answer; `dataUpdatedAt` is the Produced instant | A one-off fetch outside the cache (screen and PDF could disagree) |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| # | Existing | Verdict | How it is used |
+|---|---|---|---|
+| R1 | `ReportView` | EXTEND | Export PDF action, event, navigation, chunk prefetch |
+| R2 | `ThenAndNowHeader` | EXTEND | A third action beside Edit report / Delete |
+| R3 | `reportQueryKeyOf`, `reportService.getReport` | REUSE | The print page reads with the same key |
+| R4 | `WidgetBody` status looks | REUSE | Print page loading and failure looks |
+| R5 | `ThenAndNowSummary`, panel registry, panels | REUSE | The print body is the screen's components |
+| R6 | `thenNowComparison` (mark), `ThenNowLineParts` (`ChangeMark`), `CHANGE_KIND_LOOK` | EXTEND | Mark kind instead of glyph; icon drawn by the view |
+| R7 | `App.tsx` routing | EXTEND | Shell layout route + print routes |
+| R8 | Themes in `main.tsx` | EXTEND | Moved to an importable module |
+| R9 | `index.html` font links | EXTEND | Removed in favour of the bundled font |
+| R10 | `useUsageDataReporter`, `UsageDataEventName` | EXTEND | One export event (DEVOPS) |
+| R11 | `useReportOpenedReporter` | EXTEND | Ignores a return from print |
+| R12 | Team / Portfolio owner reads | REUSE | Owner name on the print header |
+| R13 | `TerminologyContext` | REUSE | Terms on the print page |
+| R14 | Backend report endpoints and guards | REUSE | Unchanged, for the print page and the clients |
+| R15 | E2E `tests/models/reports/ReportPage.ts` | EXTEND | Export PDF action on the report POM |
+| R16 | `ReportPrintPage` | CREATE NEW | No chrome-less page exists, and a renderer needs a page of its own (D16); the shell cannot be hidden reliably by CSS (F1) |
+| R17 | `ReportPrintDocument` (print frame) | CREATE NEW | Nothing prints today (S4); header, footer and page rules have no home |
+| R18 | Ready / print-once hook | CREATE NEW | No render-ready signal exists anywhere; the print effect must sit in one testable place |
+| R19 | `ChangeMarkIcon` | CREATE NEW | No drawn mark exists; ± has no MUI icon |
+| R20 | `@fontsource-variable/quicksand` + `public/licenses/quicksand-OFL.txt` | CREATE NEW | The font is loaded from a third party today; the licence must travel with the files |
+| R21 | E2E print-page POM | CREATE NEW | A new page; its own ready wait (`data-render-ready`) |
+| R22 | Clients: report methods + `reports` gate | EXTEND | `createLighthouseClient`, `FEATURE_REQUIRES_SERVER_NEWER_THAN` |
+| R23 | Clients: `mcp-core` tool list | EXTEND | Four definitions and handlers |
+| R24 | Clients: `skills/lighthouse` | EXTEND | Names the new tools and commands |
+| R25 | Clients: `pack-skills.sh`, drift test, `eval-fixture.mjs`, `skills.evals.test.ts` | REUSE | Unchanged |
+| R26 | Clients: report reader + header summary | CREATE NEW | No reader for reports exists in the clients; the summary names report, owner and windows only |
+| R27 | Clients: `lh report` group | CREATE NEW | No reports group exists; same parser and output formats |
+| R28 | ~~Clients: `test-support/reportContract/`~~ | DROPPED | The clients phrase no metric line (MQ-3 = b), so there is no phrasing contract to pin; the skill's web-paired evals take its place (DDD-23) |
+| R29 | Clients: `skills/lighthouse-reports/` | CREATE NEW | One skill per job (ADR-229); name locked (Q6) |
+
+**Totals: EXTEND 12 · REUSE 7 · CREATE NEW 9 (R28 dropped after MQ-3) · no backend component created.**
+
+## Wave: DESIGN / [REF] Quality attributes
+
+| Attribute | Strategy | Check |
+|---|---|---|
+| Correctness (G1: PDF = screen at export) | One query key for screen and print; ready requires an answer fetched after mount; print only in the ready state | Unit tests of the predicate; AT over the print route with a stale cache entry seeded |
+| Freshness honesty (C6, D19) | Produced = `dataUpdatedAt` in local time; Now window from the answer | AT: a tab left open overnight prints today's Now |
+| Fidelity (D16, G3) | No system font needed (drawn marks, bundled typeface); one route for browser and later server | E2E `page.pdf` font check (slice 02); by-hand three-environment comparison |
+| Performance (G2: dialog ≤ 2 s) | Prefetched print chunk; one report read, one owner read; fonts already cached by the screen | Dogfood timing on the dev instance's busiest Team |
+| Size (G4: ≤ 1 MB) | ≈64 KB of woff2 + 4 KB licence | Build output size compared before and after |
+| Accessibility | Keyboard-operable action; icons `aria-hidden`, words carry meaning; selectable vector text | Component tests; black-and-white print by hand |
+| Privacy | No runtime font request to Google; PDF carries aggregates and owner/report names only (D13); usage event carries no names | Structural guard on `index.html`; DEVOPS event review |
+| Maintainability | Print page reuses screen components; the clients pass raw values through; the web's presentation rules are restated once, in the skill's reference file, naming their frontend sources | Skill evals against web-rendered lines (DDD-23); DELIVER checklist line on any change to those sources |
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+Style: ports-and-adapters on the backend (unchanged), component + hook layering on the frontend. Tools: Vitest
+structural tests (the frontend's established way, cf. the third-party-adapter scan in ARCHITECTURE.md §12), Biome,
+ArchUnitNET unchanged.
+
+- The print route's module tree imports none of `Header`, `Footer`, `SurveyNudge`, `UsageDataAsk` (Vitest import scan).
+- `globalThis.print` is called from exactly one module, the print-once hook (Vitest source scan).
+- The print page never calls the usage-data reporter (Vitest source scan + a behavioural test).
+- `index.html` names no external font host; `public/licenses/quicksand-OFL.txt` equals the package's `LICENSE`.
+- No report mark character (✔ ✘ ± ▲ ▼ and the no-change mark) remains as text in `src/pages/Common/Reports` outside
+  tests (Vitest source scan) — the glyph-free guarantee of ADR-246 is a check, not a convention.
+- Clients: the drift test (ADR-230); a pass-through test that the report facts equal the recorded server answer
+  (ADR-247); the skill's evals scored against the lines the web shows for the same answers (DDD-23).
+
+Pre-applied from `docs/ci-learnings.md`: `globalThis.print()`, not `window.print()` (S7764); `dataset.renderReady`
+when reading or writing the attribute (S7761); no `!==`-led ternaries (S7735); no nested ternary in template
+literals (S3358); locators target `data-change-kind` / `data-change` / `data-render-ready`, never icons (MUI strips
+`data-testid` from icons in production); grep `Lighthouse.EndToEndTests/` for every mark character and accessible
+name changed; module constants for user-visible copy pinned against literals (Stryker does not mutate JSX text);
+Playwright specs run live before commit.
+
+## Wave: DESIGN / [REF] C4
+
+System Context (L1)
+
+```mermaid
+C4Context
+  title Report PDF export — System Context
+  Person(sender, "Report reader", "Coach, delivery lead or PM who reads a report in Lighthouse")
+  Person(sponsor, "PDF reader", "Sponsor or steering group; never opens Lighthouse")
+  Person(assistantUser, "Assistant user", "Asks an AI assistant about a report")
+  System(lighthouse, "Lighthouse", "Web app, Docker, server zips or Standalone app; stores reports, reads Now on demand")
+  System_Ext(printDialog, "Browser / webview print dialog", "Chrome, Firefox, Edge, WebKitGTK, WKWebView, WebView2")
+  System_Ext(clients, "Lighthouse clients", "lh CLI, MCP stdio and HTTP servers, skills")
+  System_Ext(assistant, "AI assistant", "Claude Desktop or similar, with the lighthouse-reports skill")
+  Rel(sender, lighthouse, "Chooses Export PDF in")
+  Rel(lighthouse, printDialog, "Hands the print-designed page to")
+  Rel(sender, printDialog, "Saves the PDF from")
+  Rel(sender, sponsor, "Sends the PDF to")
+  Rel(assistantUser, assistant, "Asks for a dashboard of a report")
+  Rel(assistant, clients, "Calls report tools of")
+  Rel(clients, lighthouse, "Reads reports from")
+```
+
+Container (L2)
+
+```mermaid
+C4Container
+  title Report PDF export — Containers
+  Person(sender, "Report reader")
+  Person(assistantUser, "Assistant user")
+  System_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "React 19, MUI 9, TanStack Query", "Report view with Export PDF; chrome-less print route with data-render-ready; bundled Quicksand")
+    Container(api, "Lighthouse API", "ASP.NET Core 10", "GET teams|portfolios/{id}/reports[/{reportId}] under the owner's Read guard — unchanged")
+    ContainerDb(db, "Database", "SQLite / PostgreSQL", "Reports table — unchanged")
+  }
+  System_Ext(webview, "Browser or Standalone webview", "Runs the SPA; print dialog")
+  Container_Ext(mcp, "MCP servers", "Node (stdio, HTTP)", "lighthouse_{team,portfolio}_report_{list,get}")
+  Container_Ext(cli, "lh CLI", "Node", "lh report list|get")
+  System_Ext(assistant, "AI assistant", "Loads lighthouse-reports skill")
+  System_Ext(futureRenderer, "Scheduled renderer (#5882, not built)", "Headless Chromium")
+  Rel(sender, webview, "Chooses Export PDF in")
+  Rel(webview, spa, "Runs")
+  Rel(spa, api, "Reads the report afresh from")
+  Rel(api, db, "Reads frozen Then from")
+  Rel(spa, webview, "Calls print() on, once ready")
+  Rel(assistantUser, assistant, "Asks")
+  Rel(assistant, mcp, "Calls report tools of")
+  Rel(sender, cli, "Runs lh report get in")
+  Rel(mcp, api, "Reads reports from")
+  Rel(cli, api, "Reads reports from")
+  Rel(futureRenderer, spa, "Will load the print route and wait for data-render-ready on")
+```
+
+No L3: the new frontend components number four, each thin; the table above is the component view.
+
+## Wave: DESIGN / [REF] Skill shape (slice 05)
+
+- **Folder** `lighthouse-clients/skills/lighthouse-reports/`: `SKILL.md` (frontmatter `name: lighthouse-reports`, a
+  `description` saying: use when asked to show, summarise or turn a Lighthouse report into a dashboard or document;
+  points to the `lighthouse` skill for connecting), `references/then-and-now.md`, `evals/cases.json` +
+  `evals/fixtures/*.json`. Packed by the existing `pack-skills.sh` into `lighthouse-reports-skill.zip`; listed in
+  `skills/README.md` and, at finalize, `docs/aiintegration.md`.
+- **`SKILL.md`**: (1) find the report — `lighthouse_{team,portfolio}_report_list` or `lh report list`; (2) read it —
+  `…_report_get` / `lh report get`; (3) open the reference file for its type (`templateKey`); unknown type → say this
+  skill version cannot lay it out, name the values as the report holds them, and say they are unrounded; (4)
+  guardrails: present every value as Lighthouse shows it, following the reference file's rules exactly — at its line's
+  decimals and never more (no invented precision), the change and percent change derived only as the reference file
+  says; never call metric tools to rebuild Then or Now; a missing value stays "—" with its reason, never 0; the
+  instance's terms; a dated header (owner, report, Then window, Now
+  window, the day it was read); the line "Data from Lighthouse by LetPeopleWork"; (5) **the assistant's own reading**
+  goes only under a separate heading labelled as the assistant's view, after the report's content, and never changes,
+  re-colours or re-orders the report's numbers; (6) **fallback**: with no connection, work from values the user pastes
+  or a report PDF they supply, and say in the header where the numbers came from; ask for what is missing rather than
+  filling it.
+- **`references/then-and-now.md`** carries the layout **and the web's presentation rules** (the client read returns
+  raw values — maintainer, MQ-3 = b). DELIVER copies each rule from its source in
+  `Lighthouse.Frontend/src/pages/Common/Reports/` and names the source in the file:
+
+  | Rule | Source (file → symbol) |
+  |---|---|
+  | Metric order and titles (Cycle Time, Throughput, WIP, "Total" Work Item Age; instance terms) | `panels/reportPanelRegistry.ts` → `METRIC_CATALOG`, `reportPanelRegistry[*].titleOf`, `inCatalogOrder` |
+  | Which way is better: Cycle Time lower, Throughput higher, WIP lower, Total Work Item Age lower | `panels/reportPanelRegistry.ts` → `reportPanelRegistry[*].directionOfGood` |
+  | Lines and decimals: Cycle Time p95/p85/p70/p50, days, 0 decimals, all four compared; Throughput total (0 decimals, not compared) and per day (2 decimals, the one compared line); WIP and Total Work Item Age average/median/min/max, 0 decimals, all compared | `panels/CycleTimePanel.tsx` → `PERCENTILES`; `panels/ThroughputPanel.tsx` → `CHANGE_LINES`, `TOTAL_DECIMALS`, `PER_DAY_DECIMALS`; `panels/DailySpreadPanel.tsx` → `SPREAD_LINES` |
+  | Units: "N day(s)" (Cycle Time, Work Item Age), "N.NN per day" (Throughput), a plain number (WIP) | `panels/thenNowComparison.ts` → `daysText`; `ThroughputPanel.tsx` → `perDayText`; `WipPanel.tsx` → `plainNumber` |
+  | Rounding: halves away from zero, at the line's decimals | `panels/thenNowComparison.ts` → `roundForDisplay`, `shownValue` |
+  | Change: rounded Now minus rounded Then, rounded again; percent = change ÷ rounded Then × 100, whole number, signed; "Then was 0" when rounded Then is 0; "No change" when the change is 0; the minus sign − for a fall; no change at all when either side is a dash | `panels/thenNowComparison.ts` → `compareThenNow`, `changeText`, `signed`, `lineComparisonsOf` |
+  | Better / worse per line from the change and the direction of good; an unchanged line is neutral | `panels/thenNowComparison.ts` → `verdictOf` |
+  | Summary groups: per metric, Mixed if any line better and any worse, else Improved / Got worse, else Unchanged; a metric with no comparable line sits in no group; groups in that order | `panels/changeSummary.ts` → `summariseChange`; `ThenAndNowSummary.tsx` → `CHANGE_KIND_LOOK` |
+  | Absence reasons: "No finished {Work Items} in Then/Now", "Not captured for this report", "Can't be shown in this version of Lighthouse" | `panels/thenNowComparison.ts` → `reasonTexts`, `absenceTextOf` |
+  | Window line: dates and length in days; "{n} {Work Items} closed" from Throughput total, else the Cycle Time sample size | `ThenAndNowSummary.tsx` → `windowLineOf`, `closedCountOf` |
+
+  The skill never invents precision: a value appears only at its line's decimals.
+- **Evals** (ADR-231), held to the web (DDD-23): fixtures are real report answers from the dev instance, each paired
+  with the lines the Reports tab shows for it (copied text or a screenshot taken at the same moment); each case scores
+  the dashboard against those lines. Cases: every value as the web shows it (rounding and units); change and percent
+  change incl. "No change" and "Then was 0"; summary groups incl. Mixed; dates and windows present; a dash with its
+  reason; the assistant's view apart; no metric tool called; renamed terms; an older Lighthouse ("upgrade"); no
+  access. 3 runs each; guardrail cases 3 of 3.
+- **Drift risk (accepted, MQ-3 = b)**: the rules now live in the web and in the skill's prose. Mitigation: the
+  web-paired evals above; a DELIVER checklist line — any change to a source file named in the table, or a new Then &
+  Now metric, updates `references/then-and-now.md` and re-runs the skill's evals; the reference file names its sources
+  so either side leads to the other.
+
+## Wave: DESIGN / [REF] Usage data (placement only; DEVOPS designs the event)
+
+Emitted by the Export PDF click handler in `ReportView`, through `useUsageDataReporter`, before navigating — so it
+counts the choice (D27), including a cancelled dialog, and never a page a renderer or test opens. The print route
+emits nothing, and the return from print emits no `ReportOpened` (DDD-14). Client reads (K4): DEVOPS decides whether
+the clients report the web's `ReportOpened` with their source. The skill: N/A, because nothing of ours runs.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| Cancelling the dialog "leaves the page as it was" (AC-1.8) | Cancelling returns the reader to the report, which now shows the fresh values the print page read; nothing is stored | The fresh read shares the screen's query key (D19 asks for screen = PDF); "as it was" would mean the older values |
+| "The PDF's produced date is the day its Now window ends" (journey integration checkpoint) | True in the instance's time zone. "Produced" is the viewer's local date and time; Now ends on the instance's day. A viewer in another zone near midnight can see them a day apart | Instants are shown in local time, days are the instance's (ADR-222, Bug #5567 rule) |
+| Export opens the dialog on the report page | It opens over the print page (maintainer, MQ-1 = a) | A renderer-loadable route (D16) |
+| AC-4.2 "values, windows and dashes exactly as the backend answers them; no recomputation" | Unchanged for the clients (raw values, MQ-3 = b); the presentation rules move into the skill (US-05) | Maintainer, 2026-10-17 |
+| Slice 05: "the direction of good per metric is written in the skill" | Plus every presentation rule (rounding, units, change, percent, dashes, summary groups), with named web sources and web-paired evals | The client read carries raw values only |
+| Headings use weight 600 | They declare 700, which is what rendered before (600 was not loaded) | The variable font would otherwise render a true 600 and change every heading |
+| Story wording "React 18" (CLAUDE.md) | React 19, MUI 9 | `package.json` |
+| DoD 6 E2E: "the print view shows the header and no app chrome" | Plus, from slice 02, the Chromium PDF of that view embeds only Quicksand | The cheapest automated proof of AC-2.1 / AC-2.2 (ADR-246) |
+
+Story and AC wording changes are listed in `design/upstream-changes.md` for the product owner.
+
+## Wave: DESIGN / [REF] Open questions (not the maintainer's; resolved downstream)
+
+- The `reports` version-gate baseline: the last Lighthouse release without the report endpoints — DELIVER reads it
+  from the release history (slice 04).
+- The export event's name, integer and property — DEVOPS.
+- macOS Standalone print: assumed to work; the maintainer checks after slice 01 ships (Q2 answer).
+- Whether `afterprint` fires on WKWebView: unknown until the macOS check; the Back control covers it.
+
+## Wave: DESIGN / [REF] Questions for the maintainer
+
+**All three answered by the maintainer on 2026-10-17** and locked in this design (DDD-2, DDD-10, DDD-18; ADR-245,
+246, 247). The options as they were put are kept below for the record.
+
+| Q | Answer (2026-10-17) |
+|---|---|
+| MQ-1 | **(a) The print page itself** — as recommended. |
+| MQ-2 | **(a) Drawn icons everywhere, on screen too** — as recommended. |
+| MQ-3 | **(b) Raw values only** — against the recommendation. The client read returns the report's values; the `lighthouse-reports` skill carries the web's presentation rules (DDD-20, DDD-23). Slice 04 stays about one day; no shared phrasing fixture. |
+
+1. **MQ-1 — What stands behind the print dialog?** (a) **The print page itself**: Export switches the window to the
+   light, chrome-less page, the dialog opens over it, and the window returns to the report afterwards. One page for the
+   browser, the app and the later server render — the strongest guarantee for the "server render looks like the
+   browser print" requirement. Costs: a visible swap to a light page for dark-theme users; the report view reloads
+   its surroundings on return; returning relies on the browser's after-print signal (a Back link covers engines that
+   do not send it). (b) **The report stays on screen**: the same print document is rendered invisibly into the page
+   and only the printer sees it; the separate route still exists for the server render. No swap, no reload; but the
+   browser prints the document inside the app's page while the server renders the route, so the two can drift in
+   ways only a side-by-side check catches. (c) **A new tab** with the print page. Avoids the swap but leaves a tab
+   behind, may be blocked as a pop-up, and is unproven in the Standalone app. **Recommendation: (a).** **Answered: (a).**
+2. **MQ-2 — Drawn marks on screen too?** (a) **Yes**, the same icons on screen and in print — one look, and the
+   screen stops depending on system fonts as well; the shapes change slightly, meaning, colours and words do not.
+   (b) Print only — the screen keeps today's characters; two renderings of one meaning to keep in step.
+   **Recommendation: (a).** **Answered: (a).**
+3. **MQ-3 — What does a client's report read say?** (a) **The lines as the web shows them** — each value rounded and
+   unit-labelled as its panel shows it, the change with sign and percentage, dashes with reasons, the summary groups;
+   the skill quotes them. Adds a copy of the panels' rules to the clients, held to the web by a shared fixture (slice
+   04 nearer 1½ days than 1). (b) **The header only**; the assistant gets raw values and the skill teaches rounding
+   and which way is better. Smaller slice 04, but arithmetic moves into prose an assistant follows loosely, and the
+   skill's evals must catch every slip. **Recommendation: (a).** **Answered: (b).**
+
+## Wave: DESIGN / [REF] Handoff
+
+- **To DEVOPS**: the export event (name, next integer after the last on `main`, closed `report_template`); whether the
+  clients report `ReportOpened` for client reads; the frontend SBOM gains an OFL-1.1 component; build output size
+  before/after slice 02 (G4); the E2E `page.pdf` font check runs in the existing verify workflows. No external
+  integration is added; the clients' calls are to Lighthouse itself, covered by recorded-answer pass-through tests
+  (ADR-247) rather than Pact.
+- **To DISTILL**: sketch with the maintainer first (Export PDF place and label; the printed page; the preparing and
+  failed looks; the "how to read this" copy; the skill's reference layout). Pin: the ready predicate's four inputs;
+  print once, only flagged and ready; nothing printed after a failure; return without a second `ReportOpened`; light
+  page under the dark theme; no chrome; marks by kind; the E2E waits for `data-render-ready="true"`.
+- **To DELIVER**: `ARCHITECTURE.md` §12 gains the shell layout route and the print routes (a page outside the shell
+  for printing and for a later renderer) and the bundled typeface; §16 gains ADR-245–247. `docs/settings/rbac.md`,
+  `docs/settings/usagedata.md`, `docs/reports/*.md`, `docs/aiintegration.md` per the DISCUSS checklist. DELIVER
+  checklist line (DDD-23): a change to any web source named under "Skill shape", or a new Then & Now metric, updates
+  the skill's `references/then-and-now.md` and re-runs its evals.
+- **ADRs**: ADR-245 (print route), ADR-246 (marks and typeface), ADR-247 (client reads, raw values). All Accepted
+  2026-10-17.
