@@ -1641,6 +1641,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 + "which only the Dependency Field reads, so it was read as if nothing were named."));
         }
 
+        [TestCase(RefreshFindingKind.RelationTypeCannotBeReadHere)]
+        [TestCase(RefreshFindingKind.RelationTypeHasNoDirection)]
+        [TestCase(RefreshFindingKind.RelationTypeNamedWithoutItsEnd)]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWithAFindingOfAWordedKind_WritesOnlyItsOwnLine(RefreshFindingKind kind)
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(kind, RefreshFindingSetting.DependencyField, "Contoso.DependsOn", [])],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings.Where(line => line.Contains("'Contoso.DependsOn'", StringComparison.Ordinal)), Has.Exactly(1).Items,
+                "A finding with a sentence of its own is not followed by the catch-all line as well.");
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_FullRefreshWhereARecordCarriesAFinding_ReportsItOnceUnderTheTeamsName()
+        {
+            var team = CreateTeam();
+            var finding = new RefreshFinding(RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn-Forward", []);
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([
+                    new WorkItem { ReferenceId = "ITEM-1", Team = team, TeamId = team.Id, RefreshFindings = [finding] },
+                    new WorkItem { ReferenceId = "ITEM-2", Team = team, TeamId = team.Id, RefreshFindings = [finding] },
+                ]);
+
+            var outcome = await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Findings, Is.EqualTo(new[] { finding }),
+                    "Refresh History reads a Team's findings off what its refresh returns, once per kind and setting.");
+                Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                    $"Team {team.Name}: its Parent Override Field names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
+                    + "which only the Dependency Field reads, so it was read as if nothing were named."));
+            }
+        }
+
         /// <summary>
         /// A Portfolio that ignores dependencies does not read its Dependency Field at all, so whatever that
         /// field matched or missed is nothing its administrator needs to act on.

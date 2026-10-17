@@ -1,10 +1,12 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -464,6 +466,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(recordedRefresh?.Findings, Is.Null,
                     "A refresh that did not finish has not judged the configuration, so it must not replace "
                     + "what the last one that did finish said.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ConnectorCouldNotReadWhatTheRefreshNeeds_TheFailureStillStopsTheRefresh()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ThrowsAsync(new AzureDevOpsReadException(ConnectionValidationResult.Failure("relation_types_unreadable", "The relation types could not be listed.")));
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<WorkTrackingReadException>(),
+                    "Attaching a reason must not swallow the failure, or the refresh reads as one that worked.");
+                Assert.That(recordedRefresh?.Success, Is.False);
             }
         }
 

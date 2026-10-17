@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 .Setup(x => x.EnqueueUpdate(It.IsAny<UpdateType>(), It.IsAny<int>(), It.IsAny<Func<IServiceProvider, Task>>()))
                 .Callback((UpdateType updateType, int id, Func<IServiceProvider, Task> updateTask) =>
                 {
+                    WhatTheRefreshThrew = null;
+
                     try
                     {
                         updateTask(serviceProviderMock.Object).Wait();
