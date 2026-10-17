@@ -1,5 +1,7 @@
 using Serilog.Core;
 using Serilog.Events;
+using Serilog.Templates;
+using System.Globalization;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -11,8 +13,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public sealed class CapturedLogMessages : ILogEventSink
     {
+        // The console renders a message with "{@m}", which writes a text value as it is. RenderMessage puts
+        // quotes around it, so a line matched against that form says something the console never shows.
+        private static readonly ExpressionTemplate AsTheConsoleWritesIt = new("{@m}");
+
         private readonly List<string> messages = [];
         private readonly List<string> warnings = [];
+        private readonly List<string> warningsAsWritten = [];
         private readonly List<(LogEventLevel Level, string Message)> entries = [];
         private readonly Lock gate = new();
 
@@ -43,6 +50,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 message = $"{message} :: {logEvent.Exception.GetType().FullName}: {logEvent.Exception.Message}";
             }
 
+            var asWritten = AsWritten(logEvent);
+
             lock (gate)
             {
                 messages.Add(message);
@@ -51,6 +60,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 if (logEvent.Level >= LogEventLevel.Warning)
                 {
                     warnings.Add(message);
+                    warningsAsWritten.Add(asWritten);
                 }
             }
         }
@@ -65,6 +75,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             {
                 messages.Clear();
                 warnings.Clear();
+                warningsAsWritten.Clear();
                 entries.Clear();
             }
         }
@@ -107,6 +118,29 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     return [.. warnings];
                 }
             }
+        }
+
+        /// <summary>
+        /// Warnings only, worded exactly as the console writes them: a text value appears without the
+        /// quotes <see cref="Warnings"/> puts around it.
+        /// </summary>
+        public IReadOnlyList<string> WarningsAsWritten
+        {
+            get
+            {
+                lock (gate)
+                {
+                    return [.. warningsAsWritten];
+                }
+            }
+        }
+
+        private static string AsWritten(LogEvent logEvent)
+        {
+            using var written = new StringWriter(CultureInfo.InvariantCulture);
+            AsTheConsoleWritesIt.Format(logEvent, written);
+
+            return written.ToString();
         }
 
         public bool ContainsMessageFragment(string fragment)

@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private static readonly string[] TheNothingMatchedFinding = ["NamedLinkMatchedNothing"];
 
+        private const string TheNothingMatchedLine = "names 'depends on', and no Feature carries that link";
+
         [Test]
         [Category("us-02")]
         [Category("ac-2.1")]
@@ -48,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo("depends on"));
                 Assert.That(shown.TheFirstFinding?.Seen ?? Array.Empty<string>(), Is.EquivalentTo(TheLinksSeen));
                 Assert.That(shown.FindingsAsOf, Is.EqualTo(shown.NewestRunAt), "The finding is labelled with the run that found it.");
-                Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains("\"depends on\"", StringComparison.Ordinal)), Is.EqualTo(1),
+                Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains(TheNothingMatchedLine, StringComparison.Ordinal)), Is.EqualTo(1),
                     "The log carries the same finding as one aggregated line.");
             }
         }
@@ -72,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(shown.Findings, Is.Not.Null.And.Count.EqualTo(1), "A finding per Feature buries the rest of the refresh under it.");
-                Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains("\"depends on\"", StringComparison.Ordinal)), Is.EqualTo(1));
+                Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains(TheNothingMatchedLine, StringComparison.Ordinal)), Is.EqualTo(1));
             }
         }
 

@@ -377,7 +377,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsFor(string adoPortfolio)
             => WhatRefreshHistoryShowsFor(adoPortfolios[adoPortfolio].Id);
 
-        /// <summary>Every Warning the most recent refresh wrote, from the connector and the service alike.</summary>
+        /// <summary>Every Warning the most recent refresh wrote, from the connector and the service alike, worded as the console writes it.</summary>
         protected IReadOnlyList<string> WhatTheLastRefreshWarned() => warningsOfTheLastRefresh;
 
         protected int RequestsJiraAnsweredDuringTheLastRefresh { get; private set; }
@@ -663,7 +663,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var services = TheRunningLighthouse();
             var statusStore = services.GetRequiredService<IUpdateStatusStore>();
 
-            var warningsBefore = whatWasLogged.Warnings.Count;
+            var warningsBefore = whatWasLogged.WarningsAsWritten.Count;
             var requestsBefore = requestsJiraAnswered.Count;
 
             services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id);
@@ -679,7 +679,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 await Task.Delay(20);
             }
 
-            warningsOfTheLastRefresh = [.. whatWasLogged.Warnings.Skip(warningsBefore)];
+            warningsOfTheLastRefresh = [.. whatWasLogged.WarningsAsWritten.Skip(warningsBefore)];
             RequestsJiraAnsweredDuringTheLastRefresh = requestsJiraAnswered.Count - requestsBefore;
         }
 
