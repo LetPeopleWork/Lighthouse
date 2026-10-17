@@ -1,8 +1,11 @@
 # Slice 03 — Story 6312 — An Azure DevOps relation type is accepted where a field name goes
 
 **ADO**: Story #6312 (Epic #6303) · **User story**: US-03 (validation half) · **Estimate**: ~0.5 day · **Depends on**: finished #6300 (order rule, D19)
-**Release point**: no — #6312 releases after slice 04. Alone, this slice is safe: a relation-type Dependency Field
-reads nothing **and says so** on Refresh History (AC-3.9), never silently (L8).
+**Release point**: no — #6312 releases after slice 04. A relation-type Dependency Field reads nothing and says so
+(AC-3.9), but only in the log: the interim "not read yet" finding is stored on the refresh row and written as a
+warning, while the Refresh History screen has no sentence for it and shows nothing. That is safe only because
+slices 03 and 04 ship together: 03's commits stay local and are pushed after 04's, so `main` never carries, and
+no release ever contains, slice 03 without slice 04 (L8).
 **Locked decisions**: D1 (any Additional Field; field first, then relation type), D5a, D6 (ADO is its own Story #6312)
 
 ## Goal

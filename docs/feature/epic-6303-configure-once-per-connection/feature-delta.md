@@ -516,6 +516,9 @@ Scenario: A reference without its end reads nothing and says why
   dependencies **and** Refresh History shows one warning per refresh that the relation type is not yet read for
   dependencies. Chosen over refusing it, because refusing would need a tracker round trip in the Portfolio save
   path that does not exist, while the warning reuses slice 02's surface; slice 04 replaces the warning by reading.
+  *Amended in DELIVER:* the interim finding is log-only. It is stored on the refresh row and written as a warning,
+  but the Refresh History screen has no sentence for it and shows nothing. That is safe because slices 03 and 04
+  ship together: 03's commits stay local and are pushed only after 04's, so `main` is never released in between.
 - [ ] AC-3.10 A relation-type Additional Field named by any setting other than the Dependency Field (Parent
   Override, Size Estimate, Feature Owner, Estimation) is never silent: the setting reads as if nothing were
   named (for Parent Override the native parent stands), and Refresh History shows, for the owner, one warning per
