@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Models
         NamedLinkPointsBothWays,
         RelationTypeHasNoDirection,
         RelationTypeNamedWithoutItsEnd,
-        RelationTypeNotYetReadForDependencies,
         RelationTypeCannotBeReadHere,
     }
 

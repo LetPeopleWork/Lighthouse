@@ -52,6 +52,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             public static RelationsOfWorkItems None() => new([], []);
         }
 
+        /// <summary>
+        /// Whether a fetch needs the relations for the dependencies, and which end it reads them off: the
+        /// relation end the Portfolio's Dependency Field named, or the Predecessor link when that is null.
+        /// </summary>
+        private sealed record DependenciesFromRelations(bool AreRead, string? NamedRelationEnd);
+
         public bool SupportsTransitionHistory(WorkTrackingSystemConnection connection) => true;
 
         /// <summary>
@@ -101,7 +107,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
             Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, dependenciesComeFromRelations: false, cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, new DependenciesFromRelations(false, null), cancellationToken);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldResolution.Fields, cancellationToken);
             var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldResolution);
 
@@ -637,8 +643,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            var dependenciesComeFromRelations = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio);
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependenciesComeFromRelations, cancellationToken);
+            var namedRelationEnd = additionalFieldResolution.TheRelationEndNamedBy(portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+            var dependencies = new DependenciesFromRelations(
+                DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null, namedRelationEnd);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependencies, cancellationToken);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
             var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution);
@@ -652,7 +660,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheDependenciesOf(portfolio, workItem, relations))
+                var feature = new Feature(workItem, TheDependenciesOf(portfolio, workItem, relations, namedRelationEnd))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -667,15 +675,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         /// <summary>
-        /// A Dependency Field naming a relation type reads nothing until relations are read for dependencies,
-        /// which looks exactly like a Portfolio whose Features wait on nothing. Every other setting reads a
-        /// field and never a relation type, so naming one there reads as if nothing were named. Either way
-        /// the empty answer looks believable, so every record carries the finding and the refresh says it once.
+        /// Only the Dependency Field reads a relation type. Every other setting reads a field and never a
+        /// relation type, so naming one there reads as if nothing were named. That empty answer looks
+        /// believable, so every record carries the finding and the refresh says it once.
         /// </summary>
         private static List<RefreshFinding> WhatReadingThePortfoliosSettingsFound(Portfolio portfolio, AdditionalFieldResolution resolution)
             =>
             [
-                .. ARelationTypeNamedIn(portfolio, resolution, portfolio.DependencyOverrideAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeNotYetReadForDependencies, RefreshFindingSetting.DependencyField),
                 .. WhatReadingTheSettingsEveryOwnerHasFound(portfolio, resolution),
                 .. ARelationTypeNamedIn(portfolio, resolution, portfolio.SizeEstimateAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.SizeEstimateField),
                 .. ARelationTypeNamedIn(portfolio, resolution, portfolio.FeatureOwnerAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.FeatureOwnerField),
@@ -844,9 +850,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 relationTypes ??= await TheRelationTypesTheOrganisationLists(witClient, cancellationToken);
 
-                if (relationTypes.HasAnEndCalled(additionalFieldDefinition.Reference))
+                var relationEnd = relationTypes.TheEndCalled(additionalFieldDefinition.Reference);
+                if (relationEnd is not null)
                 {
-                    resolution.RelationTypes.Add(additionalFieldDefinition.Id);
+                    resolution.RelationTypes.Add(additionalFieldDefinition.Id, relationEnd);
                     continue;
                 }
 
@@ -1290,7 +1297,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             IEnumerable<AdoWorkItem> adoWorkItems,
             WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
             AdditionalFieldResolution additionalFieldResolution,
-            bool dependenciesComeFromRelations,
+            DependenciesFromRelations dependencies,
             CancellationToken cancellationToken)
         {
             // The relations carry two different things at once: the link to the parent, and the links to
@@ -1305,7 +1312,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 && !additionalFieldResolution.NamesARelationType(parentOverride)
                 && !additionalFieldResolution.CouldNotTellWhatItNames(parentOverride);
 
-            if (theParentComesFromAField && !dependenciesComeFromRelations)
+            if (theParentComesFromAField && !dependencies.AreRead)
             {
                 return RelationsOfWorkItems.None();
             }
@@ -1319,11 +1326,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             logger.LogDebug("Getting Relations for Work Items with IDs {ItemIds}", string.Join(",", itemIds));
 
-            return await ReadRelationsFromTracker(workTrackingSystemOptionOwner, itemIds, cancellationToken);
+            return await ReadRelationsFromTracker(workTrackingSystemOptionOwner, itemIds, dependencies.NamedRelationEnd, cancellationToken);
         }
 
         private async Task<RelationsOfWorkItems> ReadRelationsFromTracker(
-            WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner, List<int> itemIds, string? namedRelationEnd, CancellationToken cancellationToken)
         {
             logger.LogDebug("Reading the parent link and the dependency links off the relations of {ItemCount} Work Items", itemIds.Count);
 
@@ -1341,26 +1348,30 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var referenceId = adoWorkItem.Id.ToString() ?? "-1";
 
                 relations.ParentReferences[referenceId] = adoWorkItem.ExtractParentFromWorkItem();
-                relations.DependencyReferences[referenceId] = adoWorkItem.ExtractDependencyReferences();
+                relations.DependencyReferences[referenceId] = namedRelationEnd is null
+                    ? adoWorkItem.ExtractDependencyReferences()
+                    : adoWorkItem.ExtractDependencyReferences(namedRelationEnd);
             }
 
             return relations;
         }
 
         /// <summary>
-        /// What one work item waits on. Azure DevOps supplies what it read off the Predecessor links; which
-        /// of that is used, and what a Portfolio reading a field of its own gets instead, is not this
-        /// tracker's decision to make.
+        /// What one work item waits on. Azure DevOps supplies what it read off the relations - the Predecessor
+        /// links, or the links of the one relation end the Portfolio named instead; which of that is used, and
+        /// what a Portfolio reading a field of its own gets instead, is not this tracker's decision to make.
         /// </summary>
         private static List<FeatureDependencyReference> TheDependenciesOf(
-            Portfolio portfolio, WorkItemBase workItem, RelationsOfWorkItems relations)
+            Portfolio portfolio, WorkItemBase workItem, RelationsOfWorkItems relations, string? namedRelationEnd)
         {
             if (!relations.DependencyReferences.TryGetValue(workItem.ReferenceId, out var references))
             {
                 references = [];
             }
 
-            return DependencySourceSelector.TheDependenciesOf(portfolio, workItem, references);
+            return namedRelationEnd is null
+                ? DependencySourceSelector.TheDependenciesOf(portfolio, workItem, references)
+                : DependencySourceSelector.TheDependenciesOf(portfolio, workItem, [], references);
         }
 
         private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)
@@ -1634,11 +1645,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// while the relation types could not be listed, so nobody can tell whether they name one. Never
         /// stored: it answers for the organisation of the fetch that built it.
         /// </summary>
-        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, HashSet<int> RelationTypes, HashSet<int> CouldNotTell)
+        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, Dictionary<int, string> RelationTypes, HashSet<int> CouldNotTell)
         {
             public static AdditionalFieldResolution None() => new([], [], []);
 
-            public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.Contains(definitionId.Value);
+            public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.ContainsKey(definitionId.Value);
+
+            // Spelled as the organisation lists it, since that is how its relations spell it too.
+            public string? TheRelationEndNamedBy(int? definitionId)
+                => definitionId.HasValue && RelationTypes.TryGetValue(definitionId.Value, out var relationEnd) ? relationEnd : null;
 
             public bool CouldNotTellWhatItNames(int? definitionId) => definitionId.HasValue && CouldNotTell.Contains(definitionId.Value);
         }
@@ -1670,7 +1685,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .ToList(), false);
 
-            public bool HasAnEndCalled(string reference) => Ends.Contains(reference, StringComparer.OrdinalIgnoreCase);
+            public bool HasAnEndCalled(string reference) => TheEndCalled(reference) is not null;
+
+            public string? TheEndCalled(string reference) => Ends.Find(end => string.Equals(end, reference, StringComparison.OrdinalIgnoreCase));
 
             private static bool IsAResourceLink(WorkItemRelationType type)
                 => type.Attributes is not null

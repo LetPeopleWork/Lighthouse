@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type {
 	RefreshFinding,
+	RefreshFindingKind,
 	RefreshFindingSetting,
 	RefreshLog,
 } from "../../../models/SystemInfo/RefreshLog";
@@ -41,7 +42,7 @@ describe("the sentence a refresh finding reads as", () => {
 		expect(
 			sentenceFor({
 				...bothWays("Blocks", []),
-				kind: "RelationTypeNotYetReadForDependencies",
+				kind: "SomeLaterKind" as RefreshFindingKind,
 			}),
 		).toBeNull();
 	});
@@ -153,7 +154,7 @@ describe("the findings a Portfolio's refresh history shows", () => {
 	it("leave out a finding this browser cannot word", () => {
 		const unknown: RefreshFinding = {
 			...matchedNothing([]),
-			kind: "RelationTypeNotYetReadForDependencies",
+			kind: "SomeLaterKind" as RefreshFindingKind,
 		};
 
 		expect(
@@ -167,7 +168,7 @@ describe("the findings a Portfolio's refresh history shows", () => {
 	it("are none, with no label, when only findings this browser cannot word were recorded", () => {
 		const unknown: RefreshFinding = {
 			...matchedNothing([]),
-			kind: "RelationTypeNotYetReadForDependencies",
+			kind: "SomeLaterKind" as RefreshFindingKind,
 		};
 
 		expect(findingsShownFor([aRow(1, [unknown])], "Epic")).toEqual({

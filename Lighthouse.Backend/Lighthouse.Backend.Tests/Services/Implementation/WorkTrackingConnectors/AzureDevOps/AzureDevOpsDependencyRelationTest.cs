@@ -32,6 +32,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string Parent = "System.LinkTypes.Hierarchy-Reverse";
 
+        private const string TestedByForward = "Microsoft.VSTS.Common.TestedBy-Forward";
+
+        private const string TestedByReverse = "Microsoft.VSTS.Common.TestedBy-Reverse";
+
         private static readonly string[] TheOneItemItWaitsOn = ["1801"];
 
         private static readonly string[] TheTwoItemsItWaitsOn = ["1801", "1799"];
@@ -127,6 +131,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var references = workItem.ExtractDependencyReferences();
 
             Assert.That(references, Is.Empty);
+        }
+
+        [Test]
+        public void ExtractDependencyReferences_ForANamedForwardEnd_YieldsOnlyTheItemsThatEndPointsAt()
+        {
+            var workItem = AWorkItemRelatedTo(
+                ARelation(TestedByForward, TheUrlOf(1801), "Tested By"),
+                ARelation(TestedByReverse, TheUrlOf(3540), "Tests"),
+                APredecessorPointingAt(1799));
+
+            var references = workItem.ExtractDependencyReferences(TestedByForward);
+
+            Assert.That(references, Is.EqualTo(TheOneItemItWaitsOn),
+                "Naming one end reads that end alone. The mirror end is the same edge seen from the far side, and "
+                + "the Predecessor link no longer counts once a relation end is named.");
+        }
+
+        [Test]
+        public void ExtractDependencyReferences_ForANamedReverseEnd_ReadsTheOtherDirection()
+        {
+            var workItem = AWorkItemRelatedTo(
+                ARelation(TestedByForward, TheUrlOf(3540), "Tested By"),
+                ARelation(TestedByReverse, TheUrlOf(1801), "Tests"));
+
+            var references = workItem.ExtractDependencyReferences(TestedByReverse);
+
+            Assert.That(references, Is.EqualTo(TheOneItemItWaitsOn));
+        }
+
+        [Test]
+        public void ExtractDependencyReferences_ForANamedEnd_MatchesTheRelationInAnyCase()
+        {
+            var workItem = AWorkItemRelatedTo(ARelation("microsoft.vsts.common.testedby-forward", TheUrlOf(1801), "Tested By"));
+
+            var references = workItem.ExtractDependencyReferences(TestedByForward);
+
+            Assert.That(references, Is.EqualTo(TheOneItemItWaitsOn));
         }
 
         [Test]

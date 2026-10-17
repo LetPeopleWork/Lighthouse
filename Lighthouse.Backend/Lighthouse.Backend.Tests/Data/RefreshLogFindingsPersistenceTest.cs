@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests
     {
         private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
 
+        private static readonly RefreshFindingKind[] OnlyTheKindItKnows = [RefreshFindingKind.NamedLinkPointsBothWays];
+
         private string databasePath = string.Empty;
         private DbContextOptions<LighthouseAppContext> options = null!;
 
@@ -120,6 +122,30 @@ namespace Lighthouse.Backend.Tests
                 {
                     Assert.That(saved.EntityName, Is.EqualTo("Payments Platform"));
                     Assert.That(saved.Findings, Is.Null);
+                }
+            }
+        }
+
+        [Test]
+        public async Task A_finding_of_a_kind_this_release_no_longer_knows_is_left_out_and_the_rest_of_the_row_still_reads()
+        {
+            using (var context = CreateContext())
+            {
+                context.RefreshLogs.Add(APortfolioRefresh());
+                await context.SaveChangesAsync();
+                await context.Database.ExecuteSqlRawAsync(
+                    """UPDATE "RefreshLogs" SET "Findings" = {0}""",
+                    """[{"kind":"RelationTypeNotYetReadForDependencies","setting":"DependencyField","named":"Contoso.DependsOn-Forward","seen":[]},{"kind":"NamedLinkPointsBothWays","setting":"DependencyField","named":"Dependency","seen":["depends on","is depended on by"]}]""");
+            }
+
+            using (var context = CreateContext())
+            {
+                var saved = await context.RefreshLogs.AsNoTracking().SingleAsync();
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(saved.EntityName, Is.EqualTo("Payments Platform"));
+                    Assert.That(saved.Findings?.Select(finding => finding.Kind), Is.EqualTo(OnlyTheKindItKnows));
                 }
             }
         }

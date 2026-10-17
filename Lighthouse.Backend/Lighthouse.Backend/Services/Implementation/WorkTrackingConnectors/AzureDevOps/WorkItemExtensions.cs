@@ -52,6 +52,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// and a project administrator can rename it, so keying on it would lose dependencies without a sound.
         /// </summary>
         public static List<string> ExtractDependencyReferences(this WorkItem workItem)
+            => workItem.ExtractDependencyReferences(PredecessorLinkType);
+
+        /// <summary>
+        /// The other work items this one is waiting on, read off its relations of exactly the end a Portfolio
+        /// named. Each end of a directional relation type is a type of its own, so naming one end reads one
+        /// direction and naming the other end reads the other - the same edge is never read twice.
+        /// </summary>
+        public static List<string> ExtractDependencyReferences(this WorkItem workItem, string waitingEnd)
         {
             var references = new List<string>();
 
@@ -62,7 +70,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var relation in workItem.Relations)
             {
-                if (relation.Rel != PredecessorLinkType)
+                if (!string.Equals(relation.Rel, waitingEnd, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }

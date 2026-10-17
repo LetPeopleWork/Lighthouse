@@ -1049,16 +1049,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
-            if (finding.Kind == RefreshFindingKind.RelationTypeNotYetReadForDependencies)
-            {
-                logger.LogWarning(
-                    "{Owner}: its {Setting} names '{Named}', an Azure DevOps relation type, which this version does not read yet, so no dependencies were read.",
-                    owner,
-                    setting,
-                    finding.Named);
-                return;
-            }
-
             if (finding.Kind == RefreshFindingKind.RelationTypeCannotBeReadHere)
             {
                 logger.LogWarning(

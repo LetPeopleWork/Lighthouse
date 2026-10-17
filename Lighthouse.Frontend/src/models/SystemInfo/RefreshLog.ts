@@ -3,7 +3,6 @@ export type RefreshFindingKind =
 	| "NamedLinkPointsBothWays"
 	| "RelationTypeHasNoDirection"
 	| "RelationTypeNamedWithoutItsEnd"
-	| "RelationTypeNotYetReadForDependencies"
 	| "RelationTypeCannotBeReadHere";
 
 export type RefreshFindingSetting =

@@ -56,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.4")]
         [Category("walking_skeleton")]
@@ -78,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.4")]
         [Category("contract-shape:bounded-change")]
@@ -94,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.4")]
         [Category("contract-shape:bounded-change")]

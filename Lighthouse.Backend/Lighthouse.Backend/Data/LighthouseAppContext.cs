@@ -649,7 +649,7 @@ namespace Lighthouse.Backend.Data
         {
             var findingsConverter = new ValueConverter<List<RefreshFinding>?, string?>(
                 v => JsonSerializer.Serialize(v, RefreshFindingsJson),
-                v => JsonSerializer.Deserialize<List<RefreshFinding>>(v!, RefreshFindingsJson));
+                v => ReadFindings(v!));
 
             var findingsComparer = new ValueComparer<List<RefreshFinding>?>(
                 (c1, c2) => JsonSerializer.Serialize(c1, RefreshFindingsJson) == JsonSerializer.Serialize(c2, RefreshFindingsJson),
@@ -660,6 +660,35 @@ namespace Lighthouse.Backend.Data
                 .Property(log => log.Findings)
                 .HasConversion(findingsConverter)
                 .Metadata.SetValueComparer(findingsComparer);
+        }
+
+        /// <summary>
+        /// A finding of a kind this release no longer knows is left out rather than failing the read: a kind can
+        /// be retired once the refresh stops raising it, and a row an earlier build wrote must not take every
+        /// other finding on it, or the whole Refresh History screen, down with it.
+        /// </summary>
+        private static List<RefreshFinding>? ReadFindings(string stored)
+        {
+            using var document = JsonDocument.Parse(stored);
+
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return null;
+            }
+
+            return [.. document.RootElement.EnumerateArray().Select(AFindingThisReleaseKnows).OfType<RefreshFinding>()];
+        }
+
+        private static RefreshFinding? AFindingThisReleaseKnows(JsonElement element)
+        {
+            try
+            {
+                return element.Deserialize<RefreshFinding>(RefreshFindingsJson);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         private static void ConfigureReports(ModelBuilder modelBuilder)

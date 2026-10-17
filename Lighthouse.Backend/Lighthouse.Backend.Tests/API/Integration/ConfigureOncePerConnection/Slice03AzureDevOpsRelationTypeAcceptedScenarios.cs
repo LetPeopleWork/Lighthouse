@@ -8,9 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// Tomás Ortega's PMO records waits with the custom relation type <c>Contoso.DependsOn</c> on Azure DevOps
     /// Server 2022. Today an Additional Field referencing <c>Contoso.DependsOn-Forward</c> fails Validate as a
     /// missing field, so there is no way to name it. From this slice it validates; a typo still fails and lists
-    /// the relation types the organisation defines. Until the relation is actually read for dependencies, a Dependency Field that names a
-    /// relation type reads nothing and Refresh History says it is not read yet, so the interim is never
-    /// silent. Only the Dependency Field ever reads a relation type: naming one in any other setting reads as if
+    /// the relation types the organisation defines. Only the Dependency Field ever reads a relation type: naming one in any other setting reads as if
     /// nothing were named, and says so.
     ///
     /// Validate is posted to the validate route the connection page's Validate button posts to, and the answer
@@ -36,8 +34,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const string TheNativeParentStands = "The native parent stands.";
 
         private static readonly string[] Nothing = [];
-
-        private static readonly string[] TheNotYetReadFinding = ["RelationTypeNotYetReadForDependencies"];
 
         [SetUp]
         public void ContosoListsItsCustomRelationType()
@@ -313,34 +309,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 Assert.That(WhatTheLastRefreshWarned().Where(line => line.Contains("No field in this Azure DevOps organisation is called", StringComparison.Ordinal)), Is.Empty,
                     "A relation type is not a field nobody could find, and saying so on every refresh teaches the admin to ignore the log.");
-                Assert.That(shown.Findings?.Select(finding => finding.Kind), Is.EqualTo(TheNotYetReadFinding),
-                    "The one thing Refresh History says about it is that it is not read yet.");
-            }
-        }
-
-        // Retired once the relation is read for dependencies; reading it replaces this interim warning.
-        [Test]
-        [Category("us-03")]
-        [Category("ac-3.9")]
-        [Category("error")]
-        [Category("retired-by-epic-6303-slice-04")]
-        [Category("contract-shape:bounded-change")]
-        public async Task Until_relations_are_read_a_relation_type_Dependency_Field_reads_nothing_and_says_not_yet()
-        {
-            var contoso = TheOrganisationAt(ContosoOrganisation);
-            contoso.Holds(Item4711, Item4702);
-            contoso.Relates(Item4711, ContosoDependsOnForward, Item4702);
-            AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
-            NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
-
-            await RefreshesNow(RetailRollout);
-            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(await WhatTheWorkItemWaitsOn(Item4711), Is.EqualTo(Nothing));
-                Assert.That(shown.Findings?.Select(finding => finding.Kind), Is.EqualTo(TheNotYetReadFinding));
-                Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
+                Assert.That(shown.Findings, Is.Not.Null.And.Empty,
+                    "A relation end the Dependency Field reads is not a misconfiguration, so Refresh History has nothing to say about it.");
             }
         }
 
