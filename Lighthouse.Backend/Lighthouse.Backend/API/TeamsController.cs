@@ -123,6 +123,11 @@ namespace Lighthouse.Backend.API
 
             teamSetting.Id = 0;
             var newTeam = new Team();
+            if (workTrackingSystemConnectionRepository.GetById(teamSetting.WorkTrackingSystemConnectionId) is { } connection)
+            {
+                newTeam.WorkTrackingSystemConnection = connection;
+            }
+
             newTeam.SyncTeamWithTeamSettings(teamSetting);
 
             if (!licenseService.CanUsePremiumFeatures())

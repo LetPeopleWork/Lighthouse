@@ -72,26 +72,26 @@ namespace Lighthouse.Backend.API.Helpers
             }
         }
 
-        // A Team being created follows its connection's default unless the request names a field of its own. An
-        // existing Team's save still makes whatever field it sends the Team's own, as before sources existed.
+        // Runs before the save moves the Team to another connection, so what the Team read before the request is
+        // judged against the connection it was read from. A Team being created starts out following.
         private static void SyncParentOverride(Team team, TeamSettingDto teamSetting)
         {
-            var field = teamSetting.ParentOverrideAdditionalFieldDefinitionId;
-            var isNew = team.Id == 0;
-            var follows = isNew && teamSetting.ParentOverrideSource switch
-            {
-                SettingSource.ConnectionDefault => true,
-                SettingSource.Own => false,
-                _ => field is null,
-            };
+            var stored = new StoredSetting(team.ParentOverrideSource, team.OwnParentOverrideAdditionalFieldDefinitionId);
+            var applied = IncomingSetting.AppliedTo(
+                stored, team.ParentOverrideAdditionalFieldDefinitionId, teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId);
 
-            if (follows)
+            if (applied == stored)
+            {
+                return;
+            }
+
+            if (applied.Source == SettingSource.ConnectionDefault)
             {
                 team.FollowParentOverrideDefault();
             }
             else
             {
-                team.OwnParentOverride(field);
+                team.OwnParentOverride(applied.OwnValue);
             }
         }
 

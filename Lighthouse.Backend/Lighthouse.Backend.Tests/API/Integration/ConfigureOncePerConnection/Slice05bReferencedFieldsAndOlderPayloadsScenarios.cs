@@ -137,7 +137,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [TestCase(Ledger, ParentLink, null, "Own", ParentLink, TestName = "An owner sent another field owns that one")]
         [TestCase(FraudSignals, null, Source.Own, "Own", null, TestName = "A follower sent None as its own chooses None")]
         [TestCase(Ledger, ParentLink, Source.ConnectionDefault, "ConnectionDefault", CausedBy, TestName = "An owner sent as following drops its own value")]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.9")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

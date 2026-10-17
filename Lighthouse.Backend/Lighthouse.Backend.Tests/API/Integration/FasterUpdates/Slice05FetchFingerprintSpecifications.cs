@@ -524,7 +524,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             new("which states mean in progress", (settings, _) => settings.DoingStates = ["In Progress", "Committed"]),
             new("which states mean finished", (settings, _) => settings.DoneStates = ["Done", "Closed"]),
             new("how far back finished work still counts", (settings, _) => settings.DoneItemsCutoffDays = 90),
-            new("which field names the parent", (settings, fieldId) => settings.ParentOverrideAdditionalFieldDefinitionId = fieldId),
+            new("which field names the parent", (settings, fieldId) =>
+            {
+                settings.ParentOverrideSource = SettingSource.Own;
+                settings.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+            }),
             new("how one tracker state is read", (settings, _) => settings.StateMappings =
                 [new StateMappingDto { Name = "In Progress", States = ["Dev", "Test"] }]),
         ];
