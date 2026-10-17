@@ -121,6 +121,26 @@ namespace Lighthouse.Backend.Models
             OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
         }
 
+        public void TakeParentOverrideAsSent(SettingSource? sentSource, int? sentField)
+        {
+            var stored = new StoredSetting(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
+            var applied = IncomingSetting.AppliedTo(stored, ParentOverrideAdditionalFieldDefinitionId, sentSource, sentField);
+
+            if (applied == stored)
+            {
+                return;
+            }
+
+            if (applied.Source == SettingSource.ConnectionDefault)
+            {
+                FollowParentOverrideDefault();
+            }
+            else
+            {
+                OwnParentOverride(applied.OwnValue);
+            }
+        }
+
         public StateCategories MapStateToStateCategory(string state)
         {
             if (GetRawStatesForCategory(ToDoStates).IsItemInList(state))

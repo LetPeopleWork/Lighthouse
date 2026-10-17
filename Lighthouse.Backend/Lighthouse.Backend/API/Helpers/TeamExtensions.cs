@@ -41,7 +41,11 @@ namespace Lighthouse.Backend.API.Helpers
             {
                 team.Name = teamSetting.Name;
                 team.DataRetrievalValue = teamSetting.DataRetrievalValue;
-                SyncParentOverride(team, teamSetting);
+
+                // Taken before the save moves the Team to another connection, so what the Team read before the
+                // request is judged against the connection it was read from.
+                team.TakeParentOverrideAsSent(teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId);
+
                 team.FeatureWIP = teamSetting.FeatureWIP;
                 team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
                 team.ThroughputHistory = teamSetting.ThroughputHistory;
@@ -69,29 +73,6 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncWaitStates(team, teamSetting);
                 SyncCycleTimeDefinitions(team, teamSetting);
                 SyncRefinement(team, teamSetting);
-            }
-        }
-
-        // Runs before the save moves the Team to another connection, so what the Team read before the request is
-        // judged against the connection it was read from. A Team being created starts out following.
-        private static void SyncParentOverride(Team team, TeamSettingDto teamSetting)
-        {
-            var stored = new StoredSetting(team.ParentOverrideSource, team.OwnParentOverrideAdditionalFieldDefinitionId);
-            var applied = IncomingSetting.AppliedTo(
-                stored, team.ParentOverrideAdditionalFieldDefinitionId, teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId);
-
-            if (applied == stored)
-            {
-                return;
-            }
-
-            if (applied.Source == SettingSource.ConnectionDefault)
-            {
-                team.FollowParentOverrideDefault();
-            }
-            else
-            {
-                team.OwnParentOverride(applied.OwnValue);
             }
         }
 
