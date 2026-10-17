@@ -35,7 +35,7 @@ See `docs/product/architecture/brief.md` for full architecture documentation.
 
 ## ADO Work-Item Sync
 
-Source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.com/letpeoplework` (project `Lighthouse`). The `/ado-sync` slash command encodes the full sync workflow (Epic → child Stories/Bugs, state auto-transitions, pause-before-push, confirm-before-create/remove/Release-Notes-tag) — apply its rules proactively, not only when invoked.
+Source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.com/letpeoplework` (project `Lighthouse`). The `/ado-sync` slash command encodes the full sync workflow (Epic → child Stories/Bugs, Story/Bug state auto-transitions, Epic states left to the maintainer, pause-before-push, confirm-before-create/remove/Release-Notes-tag) — apply its rules proactively, not only when invoked.
 
 ## Wave Sequence
 

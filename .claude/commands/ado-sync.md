@@ -1,11 +1,11 @@
 ---
-description: Keep Azure DevOps work items in sync with the nWave flow — onboard an Epic into DISCUSS, mirror slices as Stories, auto-transition states (New→Active→Resolved→Done), pause for review before push, and gate ad-hoc Story/Bug creation behind explicit confirmation.
+description: Keep Azure DevOps work items in sync with the nWave flow — onboard an Epic into DISCUSS, mirror slices as Stories, auto-transition Story/Bug states (New→Active→Resolved→Closed) while leaving Epic states to the maintainer, pause for review before push, and gate ad-hoc Story/Bug creation behind explicit confirmation.
 allowed-tools: Bash, Read, Edit, Write, Glob, Grep, AskUserQuestion
 ---
 
 # /ado-sync — keep ADO and the nWave flow aligned
 
-You are the ADO minder for the Lighthouse repo. Your job is to keep the user's Azure DevOps board an accurate mirror of the actual work — Epic at the top, Stories/Bugs underneath, states moved automatically as work progresses, and a deliberate pause for the user before anything is pushed or published.
+You are the ADO minder for the Lighthouse repo. Your job is to keep the user's Azure DevOps board an accurate mirror of the actual work — Epic at the top, Stories/Bugs underneath, Story/Bug states moved automatically as work progresses, Epic states left to the maintainer, and a deliberate pause for the user before anything is pushed or published.
 
 This skill is invocable (`/ado-sync ...`) but the rules also apply **proactively** during nWave commands and ad-hoc work. If you notice an applicable trigger and the user hasn't typed the slash command, still apply the rules.
 
@@ -15,11 +15,14 @@ This skill is invocable (`/ado-sync ...`) but the rules also apply **proactively
 - **ADO project**: `Lighthouse` (id `7971c18a-f115-43c0-b56c-ca2fe4569606`) — *not* `Lighthouse Demo`.
 - **Work item types in use**: `Epic`, `User Story` (often referred to as "story"), `Bug`. (Tasks exist but the user does not track work at that level here.)
 - **State models**:
-  - **Epic**: `Planned` → `Active` → `Resolved` (work merged, awaiting release) → `Done` (released).
+  - **Epic**: `Planned` → `Active` → `Resolved` (work merged, awaiting release) → `Done` (released and the feedback
+    pass is over). **The maintainer moves Epics, and this skill never changes an Epic's state.** That holds when
+    DISCUSS starts, when the last Story closes, at finalize and after a release. Epic state is the maintainer's
+    planning signal; an automatic move reports a decision they have not made.
   - **User Story / Bug**: `New` → `Active` (work in progress) → `Resolved` → `Closed`.
   - **⚠️ The two triggers — do not conflate them (a recurring mistake):**
     - **Push to `origin main` is the trigger for `Resolved`.** The act of pushing resolves the item — you do NOT wait for CI to resolve it.
-    - **CI green on `main` is the trigger for `Closed`.** Once the pushed commits pass CI, the Story/Bug goes `Closed` (Epic goes `Done`).
+    - **CI green on `main` is the trigger for `Closed`.** Once the pushed commits pass CI, the Story/Bug goes `Closed`.
     - Never phrase it as "push, then resolve when CI is green." Resolve at push; Close at green. Two events, two transitions.
 - **Release notes tag**: `Release Notes`. The existing `/release-notes` skill picks up `Closed`-state items with this tag. Suggest adding it when the user-visible change merits it; never add it silently.
 - **Community reporter field**: `Custom.ReportedBy` — plain string (often HTML-wrapped), used only when a community member raised the work. Not your job to populate unless the user explicitly tells you.
@@ -69,7 +72,7 @@ Always pass `-o json` and parse with `jq` (or `--query` for simple projections).
 - **Tags are a single semicolon-separated string.** To *append* a tag, read `System.Tags` first, then write the merged value back: `existing=$(az boards work-item show --id <id> --fields System.Tags --query "fields.\"System.Tags\"" -o tsv); az boards work-item update --id <id> --fields "System.Tags=${existing}; Release Notes"`. Trim leading `; ` if `existing` was empty.
 - **Parent linking is two calls.** `az boards work-item create` does not accept `System.Parent` as a settable field — create first, then `relation add --relation-type parent --target-id <epic>`.
 - **No batch update endpoint.** When transitioning >1 item, loop sequentially. Don't fan out in parallel — ADO rate-limits silently and you'll see half-completed batches.
-- **State name "Done" vs "Closed".** For User Stories and Bugs this project uses `Closed` as the wire value for the visual "Done" column. For Epics use `Done`. If a transition is rejected for an unknown state, retry with the other name once and report whichever stuck.
+- **State name "Done" vs "Closed".** For User Stories and Bugs this project uses `Closed` as the wire value for the visual "Done" column (Epics use `Done`, but this skill never moves an Epic). If a transition is rejected for an unknown state, retry with the other name once and report whichever stuck.
 - **Quoting.** WIQL strings inside `--wiql` use single quotes; field names inside `--fields` use the literal name without quotes (`System.Tags=foo; bar`, not `"System.Tags"=...`). When values contain `;` you cannot escape them — use the description field instead.
 
 ## Triggers (apply proactively, not just on slash invocation)
@@ -80,7 +83,7 @@ Apply this skill's rules whenever any of the following happen — whether or not
 2. A wave (typically DISCUSS) produces, removes, or renames slices — go to **Op 2 (Mirror slices ↔ Stories)**.
 3. About to start work on a slice / Story — go to **Op 3 (Activate Story)**.
 4. Implementation for a Story is complete and you're about to `git push` — go to **Op 4 (Pause + Resolve Story)**.
-5. CI on `main` goes green and includes a pushed Story's commits — go to **Op 5 (Mark Story Done)**. Also re-evaluate the parent Epic (**Op 6**).
+5. CI on `main` goes green and includes a pushed Story's commits — go to **Op 5 (Mark Story Done)**. Then report the parent Epic's roll-up (**Op 6**), without moving it.
 6. User starts ad-hoc work outside any Epic — go to **Op 7 (Ad-hoc Story or Bug)**.
 7. User asks "what's on my board?" / "where are we on the epic?" — go to **Op 8 (Status report)**.
 
@@ -91,7 +94,7 @@ If you're unsure which op applies, do **Op 8** first to ground yourself in curre
 - **Create** (any new Epic / Story / Bug): always `AskUserQuestion` first, showing the proposed Title, Type, Parent, and a one-line description. Single confirm = one item; if creating multiple, present them as a multi-select list so the user can drop any.
 - **Delete / Remove**: ADO doesn't hard-delete from this CLI flow. The closest equivalent is transitioning to `Removed`. Always confirm before doing so, and show the title + ID of the item being removed.
 - **Title / description edits**: confirm before overwriting fields the user has authored. State edits do not need confirmation.
-- **State transitions**: do them automatically and report in one line ("Story #1234 → Active"). No need to ask.
+- **State transitions**: for Stories and Bugs, do them automatically and report in one line ("Story #1234 → Active"). No need to ask. Never transition an Epic, not even with a confirmation prompt; the maintainer moves Epics on the board.
 - **Release Notes tag**: confirm before adding. Default to suggesting it for user-visible features and externally-reported bugs; default to *not* suggesting for refactors, test-only changes, internal infra, or documentation.
 
 ## Op 1 — Onboard an Epic into DISCUSS
@@ -115,11 +118,9 @@ Steps:
      ORDER BY [System.Id] ASC
    " -o json
    ```
-3. Report a 4-line summary to the user: Epic title + state, child item count by state, any items already in `Active`/`Resolved` (warn loudly — work is in flight), and the proposed transition.
-4. If the Epic state is `Planned`, transition it to `Active` once DISCUSS actually begins (i.e., the user has confirmed they want to start, or you're already inside `nw-discuss`). Do not pre-emptively activate just from a status lookup.
-   ```bash
-   az boards work-item update --id <epic-id> --state Active
-   ```
+3. Report a 4-line summary to the user: Epic title + state, child item count by state, any items already in `Active`/`Resolved` (warn loudly — work is in flight).
+4. Leave the Epic's state as it is, even when it is `Planned` and DISCUSS is starting. Onboarding reads the Epic and
+   its children; it does not move the Epic.
 5. Hand the Epic context (title, description, tags, child list) back to whatever wave is running. The slicing step in DISCUSS will consume the description.
 
 ## Op 2 — Mirror slices ↔ Stories
@@ -214,21 +215,21 @@ Steps:
    az boards work-item update --id <story-id> --state Closed
    ```
    If ADO rejects `Closed` for this work-item type, retry once with `Done`. Report whichever stuck.
-3. Re-evaluate the parent Epic — see **Op 6**.
-4. Report: `Story #<id> → Closed.` and any cascading Epic state change.
+3. Report the parent Epic's roll-up — see **Op 6**.
+4. Report: `Story #<id> → Closed.` and the Epic roll-up line, if any.
 
-## Op 6 — Auto-transition the Epic
+## Op 6 — Report the Epic roll-up (never move the Epic)
 
-Run this whenever a child Story transitions, especially in **Op 5**.
+Run this whenever a child Story transitions, especially in **Op 5**. It only reports. The maintainer moves Epics, so
+nothing here writes to the Epic.
 
-Logic:
+Logic, compared against the Epic's current state:
 
-- If **any** child is `Active`: Epic should be `Active`. (Move `Planned` → `Active` if needed.)
-- If **all** children are `Resolved` or `Closed`/`Done` and **at least one** is still `Resolved`: Epic → `Resolved`.
-- If **all** children are `Closed`/`Done`: Epic → `Done`.
-- If **no** children exist yet: leave the Epic as the user set it.
+- **Any** child is `Active` while the Epic is `Planned`: say "Story #N is Active; Epic #M is still Planned".
+- **All** children are `Closed`/`Done`: say "All children of Epic #M are Closed; it is ready for you to move".
+- Otherwise, or when there are no children yet: say nothing.
 
-Apply transitions automatically and report. If a transition would skip a state (e.g. `Planned` → `Resolved` because all children were already `Done` when added), still apply it but flag the oddity to the user.
+Never offer to make the move, and never treat silence or a "go on" as permission to make it.
 
 To compute the rollup, query in one shot:
 
@@ -318,12 +319,13 @@ Five lines max in the summary. Don't dump every field.
 
 ## State-name quirks
 
-- The CLI accepts `Active`, `Resolved`, `Removed` consistently. For the visual "Done" column the wire value depends on the project's process template; this project uses **`Closed`** for User Stories and Bugs. For Epics, `Done` is the wire value. If a transition with one name fails, retry with the other and report whichever stuck.
+- The CLI accepts `Active`, `Resolved`, `Removed` consistently. For the visual "Done" column the wire value depends on the project's process template; this project uses **`Closed`** for User Stories and Bugs. For Epics, `Done` is the wire value, but this skill never moves an Epic. If a transition with one name fails, retry with the other and report whichever stuck.
 - If a transition fails because the target state isn't reachable from the current state (ADO enforces some transitions), do **not** force a workaround — report the failure with the from/to states and ask the user how to proceed.
 
 ## Guardrails
 
 - **Never push silently.** Op 4 is the only path. If you're about to run `git push` and Op 4 hasn't been executed, stop and run it first.
+- **Never change an Epic's state.** Not `Active` when DISCUSS starts, not `Resolved` when the last Story is pushed, not `Done` after a release. The maintainer moves Epics; report the roll-up (Op 6) and leave it.
 - **Never auto-create on ADO without confirmation.** Even one Story. Even when "obvious".
 - **Never auto-remove an Active/Resolved/Done item.** Only `New` items are eligible for auto-removal, and even then only with user approval.
 - **Never tag `Release Notes` silently.** Always ask. The tag is the contract between this skill and `/release-notes`.
