@@ -150,6 +150,26 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
+        // Only an unknown finding inside the list is tolerated. A value that is not a list at all was never
+        // written by any release, so reading it as "no findings" would hide a damaged row.
+        [Test]
+        public async Task A_findings_value_that_is_not_a_list_fails_the_read()
+        {
+            using (var context = CreateContext())
+            {
+                context.RefreshLogs.Add(APortfolioRefresh());
+                await context.SaveChangesAsync();
+                await context.Database.ExecuteSqlRawAsync(
+                    """UPDATE "RefreshLogs" SET "Findings" = {0}""",
+                    """{"kind":"NamedLinkPointsBothWays","setting":"DependencyField","named":"Dependency","seen":[]}""");
+            }
+
+            using (var context = CreateContext())
+            {
+                Assert.That(async () => await context.RefreshLogs.AsNoTracking().SingleAsync(), Throws.InstanceOf<System.Text.Json.JsonException>());
+            }
+        }
+
         private static RefreshLog APortfolioRefresh() => new()
         {
             Type = RefreshType.Portfolio,

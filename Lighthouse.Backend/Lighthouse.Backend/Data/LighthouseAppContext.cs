@@ -665,18 +665,14 @@ namespace Lighthouse.Backend.Data
         /// <summary>
         /// A finding of a kind this release no longer knows is left out rather than failing the read: a kind can
         /// be retired once the refresh stops raising it, and a row an earlier build wrote must not take every
-        /// other finding on it, or the whole Refresh History screen, down with it.
+        /// other finding on it, or the whole Refresh History screen, down with it. A value that is not a list at
+        /// all is a damaged row rather than an old one, and still fails the read.
         /// </summary>
         private static List<RefreshFinding>? ReadFindings(string stored)
         {
-            using var document = JsonDocument.Parse(stored);
+            var findings = JsonSerializer.Deserialize<List<JsonElement>>(stored, RefreshFindingsJson);
 
-            if (document.RootElement.ValueKind != JsonValueKind.Array)
-            {
-                return null;
-            }
-
-            return [.. document.RootElement.EnumerateArray().Select(AFindingThisReleaseKnows).OfType<RefreshFinding>()];
+            return findings is null ? null : [.. findings.Select(AFindingThisReleaseKnows).OfType<RefreshFinding>()];
         }
 
         private static RefreshFinding? AFindingThisReleaseKnows(JsonElement element)
