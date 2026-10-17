@@ -17,7 +17,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { appColors } from "../../../utils/theme/colors";
-import { sentenceFor } from "./refreshFindingSentences";
+import { asOfLabelFor, sentenceFor } from "./refreshFindingSentences";
 
 interface EntityOption {
 	key: string;
@@ -260,12 +260,18 @@ const RefreshHistorySection: React.FC = () => {
 			...(lastRunAt ? [{ label: "Last Run", value: lastRunAt }] : []),
 		];
 
-		const findingSentences = (
-			filtered.find((l) => l.latestFullRunFindings !== undefined)
-				?.latestFullRunFindings ?? []
-		)
-			.map(sentenceFor)
+		const latestFullRun = filtered.find(
+			(l) => l.latestFullRunFindings !== undefined,
+		);
+		const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+		const findingSentences = (latestFullRun?.latestFullRunFindings ?? [])
+			.map((finding) => sentenceFor(finding, featureTerm))
 			.filter((sentence) => sentence !== null);
+		// Only beside a finding: on its own the label would date an answer nobody was shown.
+		const asOfLabel =
+			findingSentences.length > 0
+				? asOfLabelFor(latestFullRun?.latestFullRunAt)
+				: null;
 
 		return (
 			<>
@@ -285,6 +291,11 @@ const RefreshHistorySection: React.FC = () => {
 						{sentence}
 					</Typography>
 				))}
+				{asOfLabel && (
+					<Typography variant="caption" color="text.secondary">
+						{asOfLabel}
+					</Typography>
+				)}
 			</>
 		);
 	};

@@ -114,7 +114,7 @@ const givenRefreshHistoryHolds = async (rows: RefreshLog[]) => {
 
 describe("Refresh History says what a Portfolio's settings named that its latest full download did not find", () => {
 	// @walking_skeleton @driving_port @us-02 @ac-2.2 @kpi @contract-shape:pure-function
-	it.skip("a named link nothing carries is shown with the links that were seen and when that was found", async () => {
+	it("a named link nothing carries is shown with the links that were seen and when that was found", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows([NothingMatched]));
 
 		expect(
