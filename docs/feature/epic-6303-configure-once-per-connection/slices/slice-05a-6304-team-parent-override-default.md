@@ -55,6 +55,22 @@ Dev database before the upgrade (2026-10-17, read-only count, step 05-02): 3 Tea
 Field and follow with no value change; 0 name a deleted field; 0 name another connection's field; 0 own a valid
 field. The repair clears no value, so no Team's fingerprint moves on this instance.
 
+**Dogfood result (2026-10-17, slice end).** Run on a copy of the dev database, its key ring and a separate port, so
+the maintainer's workspace was not touched. The instance has 3 Teams on 3 connections (Jira, two Azure DevOps).
+- The upgrade applied on start: all 3 Teams follow, no value was cleared, and the 3 stored fingerprints are
+  byte-equal before and after.
+- One save on the Jira connection set the Teams' default to "is caused by". The log carried exactly one entry:
+  "Connection letpeoplework.atlassian.net: the Teams' default Parent Override Field changed from none to is caused
+  by; 1 Teams follow it: Demo Dependencies Team". Saves needed: 1, against 1 per following Team before
+  (`OUT-6303-set-once`; a single follower on this instance, so the saving shows only with more Teams).
+- The follower's settings read the default's field, source `ConnectionDefault`, name "is caused by", tracker Jira.
+- A new Team created with no Parent Override Field follows the default from the start.
+- **Found:** a new Team created from a copy of a follower's settings, which carries the effective field id but no
+  source, becomes *Own* with that field, although the value equals the default. Under the round-trip rule (a value
+  that differs from the effective one makes the owner *Own*, an equal one changes nothing) it should follow. Slice
+  05b applies that rule to the Team PUT; it must apply it to creation too.
+- **Copy nit:** "1 Teams follow it" should read "1 Team follows it".
+
 ## UI
 Approved by the maintainer (UI-1, UI-2): defaults section, dropdown entry; loading / could-not-load look from
 DESIGN. No dialog for a changed default: the approved UI-3 dialog arrives with slice 06, so no unapproved dialog copy
