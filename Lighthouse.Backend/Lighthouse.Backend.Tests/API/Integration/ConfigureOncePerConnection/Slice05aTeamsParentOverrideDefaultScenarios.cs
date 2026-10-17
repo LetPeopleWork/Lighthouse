@@ -93,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.5")]
         [Category("contract-shape:bounded-change")]
         public async Task A_new_Team_follows_the_default_from_the_start()
@@ -107,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.6")]
         [Category("contract-shape:pure-function")]
         public async Task A_Team_admin_without_connection_rights_sees_which_field_the_Team_follows()

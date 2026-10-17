@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.API.DTO
             ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
             ParentOverrideSource = workTrackingSystemOptionsOwner.ParentOverrideSource;
             ParentOverrideDefaultName = workTrackingSystemOptionsOwner.ParentOverrideDefaultName;
+            WorkTrackingSystem = workTrackingSystemOptionsOwner.WorkTrackingSystemConnection?.WorkTrackingSystem;
             ProcessBehaviourChartBaselineStartDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineStartDate;
             ProcessBehaviourChartBaselineEndDate = workTrackingSystemOptionsOwner.ProcessBehaviourChartBaselineEndDate;
             EstimationAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId;
@@ -75,9 +76,12 @@ namespace Lighthouse.Backend.API.DTO
 
         public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
 
-        public SettingSource? ParentOverrideSource { get; private set; }
+        [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
+        public SettingSource? ParentOverrideSource { get; set; }
 
         public string? ParentOverrideDefaultName { get; private set; }
+
+        public WorkTrackingSystems? WorkTrackingSystem { get; private set; }
 
         public DateTime? ProcessBehaviourChartBaselineStartDate { get; set; }
 

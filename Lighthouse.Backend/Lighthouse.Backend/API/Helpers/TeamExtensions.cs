@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API.Helpers
             {
                 team.Name = teamSetting.Name;
                 team.DataRetrievalValue = teamSetting.DataRetrievalValue;
-                team.OwnParentOverride(teamSetting.ParentOverrideAdditionalFieldDefinitionId);
+                SyncParentOverride(team, teamSetting);
                 team.FeatureWIP = teamSetting.FeatureWIP;
                 team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
                 team.ThroughputHistory = teamSetting.ThroughputHistory;
@@ -62,6 +62,29 @@ namespace Lighthouse.Backend.API.Helpers
                 SyncWaitStates(team, teamSetting);
                 SyncCycleTimeDefinitions(team, teamSetting);
                 SyncRefinement(team, teamSetting);
+            }
+        }
+
+        // A Team being created follows its connection's default unless the request names a field of its own. An
+        // existing Team's save still makes whatever field it sends the Team's own, as before sources existed.
+        private static void SyncParentOverride(Team team, TeamSettingDto teamSetting)
+        {
+            var field = teamSetting.ParentOverrideAdditionalFieldDefinitionId;
+            var isNew = team.Id == 0;
+            var follows = isNew && teamSetting.ParentOverrideSource switch
+            {
+                SettingSource.ConnectionDefault => true,
+                SettingSource.Own => false,
+                _ => field is null,
+            };
+
+            if (follows)
+            {
+                team.FollowParentOverrideDefault();
+            }
+            else
+            {
+                team.OwnParentOverride(field);
             }
         }
 
