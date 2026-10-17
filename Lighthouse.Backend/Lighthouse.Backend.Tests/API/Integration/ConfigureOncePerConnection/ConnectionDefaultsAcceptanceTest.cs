@@ -285,6 +285,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheOwnerSaveIsAccepted();
         }
 
+        protected async Task GivenTheOwnerUsesAsItsOwn(string owner, OwnerSetting setting, string fieldName)
+        {
+            await WhenTheOwnersAdminSaves(owner, setting, fieldName, Source.Own);
+            ThenTheOwnerSaveIsAccepted();
+        }
+
         protected async Task GivenEveryTeamOwnsItsParentOverrideField()
         {
             foreach (var team in TheThreeFollowers)

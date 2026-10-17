@@ -63,6 +63,41 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [Category("ac-4.8")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
+        public async Task A_field_only_a_Teams_estimation_uses_cannot_be_removed()
+        {
+            await GivenTheOwnerUsesAsItsOwn(Ledger, OwnerSetting.Estimation, ReleaseTrain);
+
+            await WhenTheAdminRemovesTheField(ReleaseTrain);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
+                Assert.That(TheRefusal().Message, Is.EqualTo("\"Release Train\" cannot be removed. Ledger uses it as its own. Nothing was saved."));
+                Assert.That(await TheFieldsOfTheConnection(JiraDcPayments), Does.Contain(ReleaseTrain));
+            }
+        }
+
+        // Merchant Onboarding holds a field of its own for every setting, each a field nothing else uses.
+        [TestCase(StoryPoints, TestName = "A field only a Portfolio's estimation uses cannot be removed")]
+        [Category("ac-4.8")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_field_only_a_Portfolio_uses_as_its_own_cannot_be_removed(string field)
+        {
+            await WhenTheAdminRemovesTheField(field);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
+                Assert.That(TheRefusal().Message, Is.EqualTo($"\"{field}\" cannot be removed. Merchant Onboarding uses it as its own. Nothing was saved."));
+                Assert.That(await TheFieldsOfTheConnection(JiraDcPayments), Does.Contain(field));
+            }
+        }
+
+        [Test]
+        [Category("ac-4.8")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
         public async Task A_field_only_a_default_names_cannot_be_removed()
         {
             await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, ParentLink);
