@@ -95,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // The owners are looked up when the save commits, not when it was opened, so a Team that started using
         // the field in between still blocks its removal.
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.8")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -114,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.8")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

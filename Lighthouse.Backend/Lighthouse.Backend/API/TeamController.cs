@@ -158,6 +158,11 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stalenessError);
             }
 
+            if (storedTeam?.NamesAFieldItsConnectionLacks(teamSetting) == true)
+            {
+                return RefusedAsNamingAFieldTheConnectionLacks();
+            }
+
             var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
             if (ruleSetError != null)
             {
@@ -235,6 +240,17 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private ObjectResult RefusedAsNamingAFieldTheConnectionLacks()
+        {
+            var problem = ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "The Team names a field its connection does not have.",
+                detail: "The Parent Override Field is not an Additional Field of this Team's connection. Nothing was saved.");
+            problem.Extensions["code"] = "team-field-not-on-connection";
+            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
         }
 
         private static string? ValidateStalenessThresholds(TeamSettingDto teamSetting)
