@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// <summary>What the validate route answered: its status, and whether and why it accepted the connection.</summary>
         protected sealed record ValidateAnswer(HttpStatusCode Status, bool IsValid, string Message);
 
-        protected sealed record WhatRefreshHistoryShows(IReadOnlyList<Finding>? Findings, string? FindingsAsOf, string NewestRunMode, string NewestRunAt)
+        protected sealed record WhatRefreshHistoryShows(IReadOnlyList<Finding>? Findings, string? FindingsAsOf, string NewestRunMode, string NewestRunAt, bool NewestRunSucceeded = true)
         {
             /// <summary>The first finding, or null when there is none or no findings were sent at all.</summary>
             public Finding? TheFirstFinding => Findings is { Count: > 0 } ? Findings[0] : null;
@@ -296,7 +296,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var registered = theJiraPortfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
                 .Single(definition => !definition.IsPredefined).Id;
 
-            return PaymentsPlatformsAdminSavesItsSettings(settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = registered);
+            return TheAdminSavesTheSettingsOf(theJiraPortfolio, settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = registered);
         }
 
         // ----- What somebody does -----------------------------------------------------------------------
@@ -361,11 +361,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// again; the administrator lengthened how far back closed Features are kept.
         /// </summary>
         protected Task SomethingMakesPaymentsPlatformsNextRefreshDownloadEverything()
-            => PaymentsPlatformsAdminSavesItsSettings(settings => settings["doneItemsCutoffDays"] = settings["doneItemsCutoffDays"]!.GetValue<int>() + 30);
+            => TheAdminSavesTheSettingsOf(theJiraPortfolio, LengthenHowLongClosedFeaturesAreKept);
+
+        /// <summary>The same change on an Azure DevOps Portfolio, whose next refresh then downloads everything again.</summary>
+        protected Task SomethingMakesTheNextRefreshDownloadEverything(string adoPortfolio)
+            => TheAdminSavesTheSettingsOf(adoPortfolios[adoPortfolio], LengthenHowLongClosedFeaturesAreKept);
 
         /// <summary>The admin picks None as the Dependency Field again; the link stays registered on the connection.</summary>
         protected Task PaymentsPlatformStopsNamingADependencyField()
-            => PaymentsPlatformsAdminSavesItsSettings(settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = null);
+            => TheAdminSavesTheSettingsOf(theJiraPortfolio, settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = null);
 
         // ----- What anybody can see afterwards ----------------------------------------------------------
 
@@ -692,15 +696,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 .FirstOrDefault(feature => feature["referenceId"]?.GetValue<string>() == reference);
         }
 
+        private static void LengthenHowLongClosedFeaturesAreKept(JsonObject settings)
+            => settings["doneItemsCutoffDays"] = settings["doneItemsCutoffDays"]!.GetValue<int>() + 30;
+
         /// <summary>
         /// The Portfolio's admin opens its settings page, changes one thing and saves, through the routes the
         /// page reads and saves with.
         /// </summary>
-        private async Task PaymentsPlatformsAdminSavesItsSettings(Action<JsonObject> change)
+        private async Task TheAdminSavesTheSettingsOf(Portfolio portfolio, Action<JsonObject> change)
         {
             TheRunningLighthouse();
             using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
-            var route = $"{PortfolioRoute}{theJiraPortfolio.Id}";
+            var route = $"{PortfolioRoute}{portfolio.Id}";
 
             using var read = await client.GetAsync(new Uri($"{route}/settings", UriKind.Relative));
             var readBody = await read.Content.ReadAsStringAsync();
@@ -742,7 +749,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             var asOf = newest.TryGetProperty("latestFullRunAt", out var at) && at.ValueKind == JsonValueKind.String ? at.GetString() : null;
 
-            return new WhatRefreshHistoryShows(findings, asOf, newest.GetProperty("mode").ToString(), newest.GetProperty("executedAt").ToString());
+            return new WhatRefreshHistoryShows(
+                findings, asOf, newest.GetProperty("mode").ToString(), newest.GetProperty("executedAt").ToString(), newest.GetProperty("success").GetBoolean());
         }
 
         private static Finding AsFinding(JsonElement finding)
@@ -995,10 +1003,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
                 client
                     .Setup(c => c.GetWorkItemsAsync(It.IsAny<IEnumerable<int>>(), It.IsAny<IEnumerable<string>>(), It.IsAny<DateTime?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<WorkItemErrorPolicy?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
-                    .Returns((IEnumerable<int> ids, IEnumerable<string> _, DateTime? _, WorkItemExpand? expand, WorkItemErrorPolicy? _, object _, CancellationToken _) =>
+                    .Returns((IEnumerable<int> ids, IEnumerable<string> fields, DateTime? _, WorkItemExpand? expand, WorkItemErrorPolicy? _, object _, CancellationToken _) =>
                     {
                         var askedFor = ids.ToList();
-                        Requests.Add(expand == WorkItemExpand.Relations ? $"relations:{askedFor.Count}" : $"payload:{askedFor.Count}");
+                        Requests.Add($"{WhatTheReadIsFor(fields, expand)}:{askedFor.Count}");
 
                         return Task.FromResult<List<AdoWorkItem>>([.. askedFor
                             .Where(workItems.ContainsKey)
@@ -1065,6 +1073,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             public bool AnswersTheListingWithoutAList { get; set; }
 
             public int RelationTypeListings => Requests.Count(request => request == "relation types");
+
+            // The identity sweep reads the change stamp alone, which is not a download of the work items.
+            private static string WhatTheReadIsFor(IEnumerable<string>? fields, WorkItemExpand? expand)
+            {
+                if (expand == WorkItemExpand.Relations)
+                {
+                    return "relations";
+                }
+
+                return fields is not null && fields.SequenceEqual(TheChangeStampAlone) ? "stamps" : "payload";
+            }
+
+            private static readonly string[] TheChangeStampAlone = [AzureDevOpsFieldNames.ChangedDate];
 
             public void Holds(params int[] ids)
             {

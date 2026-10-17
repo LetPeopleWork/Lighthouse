@@ -664,8 +664,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, additionalFieldResolution);
-
             var dependencies = DependenciesFromRelations.For(portfolio, additionalFieldResolution);
             var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependencies, cancellationToken);
 
@@ -1027,8 +1025,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         /// <summary>
         /// What both fetches do once they know which ids they want: resolve the connection's additional fields,
-        /// then read the payloads in batches. An empty id set asks for nothing at all, because a keyed read of
-        /// no keys is still a remote round trip.
+        /// stop a Portfolio's refresh there if its Dependency Field could not be looked up, since nothing
+        /// downloaded after that point could be kept, then read the payloads in batches. An empty id set asks
+        /// for nothing at all, because a keyed read of no keys is still a remote round trip.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> ThePayloadsAndFieldsFor(
             WorkTrackingSystemOptionsOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
@@ -1039,6 +1038,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner, cancellationToken);
+
+            if (workItemQueryOwner is Portfolio portfolio)
+            {
+                StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, additionalFieldResolution);
+            }
+
             var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldResolution.Fields.Values, cancellationToken);
 
             return (adoWorkItems, additionalFieldResolution);

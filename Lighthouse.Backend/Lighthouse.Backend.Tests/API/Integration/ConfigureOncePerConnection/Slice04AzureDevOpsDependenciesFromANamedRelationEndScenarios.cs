@@ -310,6 +310,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // Every Feature handed back overwrites what is stored for it, so a refresh that could not tell what the
+        // Dependency Field names would empty every wait the last good refresh read.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.7")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_refresh_that_cannot_list_the_relation_types_stops_and_keeps_what_the_last_one_read()
+        {
+            RetailRolloutHolds4711DependingOn4702();
+            await RefreshesNow(RetailRollout);
+
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.RefusesToListItsRelationTypes = true;
+            var requestsBefore = contoso.Requests.Count;
+            await SomethingMakesTheNextRefreshDownloadEverything(RetailRollout);
+            await RefreshesNow(RetailRollout);
+
+            var sentWhileStopped = contoso.Requests.Skip(requestsBefore).ToList();
+            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(sentWhileStopped, Has.Some.EqualTo("relation types"), "The refresh this scenario describes never asked for the relation types.");
+                Assert.That(await WhatTheWorkItemWaitsOn(Item4711), Is.EqualTo(Waits4702));
+                Assert.That(shown.NewestRunSucceeded, Is.False, "A stopped refresh is not one that worked.");
+                Assert.That(shown.Findings ?? [], Is.Empty, "A stopped refresh records no findings of its own.");
+                Assert.That(shown.FindingsAsOf, Is.Not.EqualTo(shown.NewestRunAt), "What is shown comes from the last refresh that finished.");
+                Assert.That(sentWhileStopped, Has.None.StartsWith("payload:").And.None.StartsWith("relations:"),
+                    $"Nothing it downloads can be kept, so it downloads nothing. Requests: {string.Join(", ", sentWhileStopped)}");
+            }
+        }
+
         [Test]
         [Category("us-03")]
         [Category("ac-3.4")]
