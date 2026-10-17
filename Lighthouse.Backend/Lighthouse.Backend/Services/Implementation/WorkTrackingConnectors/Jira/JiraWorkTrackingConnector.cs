@@ -1266,14 +1266,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// known. With that list refused, or answered in a form that cannot be read, the name stays
         /// unresolved, every Feature would be read as waiting on nothing, and each Feature handed back
         /// overwrites the dependencies stored for it. Stopping the refresh leaves those as they were until
-        /// the list can be read again.
+        /// the list can be read again. A Portfolio that ignores dependencies has none to lose, and stopping
+        /// it would only freeze its Features and forecasts.
         /// </summary>
         private void StopUnlessTheDependencyFieldCouldBeLookedUp(
             Portfolio portfolio, ResolvedReference theDependencyField, IssueLinkTypeListing linkTypes)
         {
             var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
 
-            if (named is null || named.IsPredefined || !theDependencyField.ResolvedToNothing || WhatTheLinkTypeListAnswered(linkTypes) is not { } answer)
+            if (portfolio.IgnoreDependencies
+                || named is null
+                || named.IsPredefined
+                || !theDependencyField.ResolvedToNothing
+                || WhatTheLinkTypeListAnswered(linkTypes) is not { } answer)
             {
                 return;
             }

@@ -43,6 +43,21 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             return mock.Object;
         }
+
+        /// <summary>Answers a request with a whole response, for a fixture that has to say how a request was refused.</summary>
+        public static HttpMessageHandler AnsweringWith(Func<HttpRequestMessage, HttpResponseMessage> answerFor)
+        {
+            var mock = new Mock<HttpMessageHandler>();
+
+            mock.Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) => Task.FromResult(answerFor(request)));
+
+            return mock.Object;
+        }
     }
 
     /// <summary>

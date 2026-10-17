@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
+using System.Net;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -149,6 +150,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// A Portfolio that ignores dependencies loses nothing when the link type list cannot be read, so
+        /// stopping its refresh would only freeze its Features and forecasts for no gain.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_that_ignores_dependencies_is_refreshed_even_when_the_link_type_list_is_refused()
+        {
+            var portfolio = APortfolioNamingAsItsDependencyField("depends on");
+            portfolio.IgnoreDependencies = true;
+            var subject = JiraConnectorTestSetup.AConnectorOver(StubTransport.AnsweringWith(request =>
+            {
+                var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                return path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
+                    ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = new StringContent("{}") }
+                    : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(AnInstanceAnswering(request, [AFeatureThatBlocksOneAndIsBlockedByAnother()])) };
+            }));
+
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            Assert.That(features.Select(feature => feature.ReferenceId), Is.EqualTo(new List<string> { TheFeature }));
+        }
+
         private static string AFeatureThatBlocksOneAndIsBlockedByAnother()
             => JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt));
 
@@ -187,12 +211,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return JiraWireFormat.TheLinkTypeListDefining(linkTypes.Select((type, index) => JiraWireFormat.ALinkTypeDefinition(index, type)));
                 }
 
-                if (path.EndsWith(JiraWireFormat.CredentialCheckEndpoint, StringComparison.Ordinal))
-                {
-                    return "{\"accountId\":\"someone\"}";
-                }
-
-                return JiraWireFormat.ACloudResponseTo(request, issues);
+                return AnInstanceAnswering(request, issues);
             }), log);
+
+        private static string AnInstanceAnswering(HttpRequestMessage request, string[] issues)
+            => request.RequestUri?.AbsolutePath.EndsWith(JiraWireFormat.CredentialCheckEndpoint, StringComparison.Ordinal) == true
+                ? "{\"accountId\":\"someone\"}"
+                : JiraWireFormat.ACloudResponseTo(request, issues);
     }
 }
