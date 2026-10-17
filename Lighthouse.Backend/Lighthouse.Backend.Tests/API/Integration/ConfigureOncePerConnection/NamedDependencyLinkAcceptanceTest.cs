@@ -330,6 +330,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             return (lastFullDownloadAt, null!);
         }
 
+        /// <summary>Refreshes once more than Refresh History keeps rows for, so its oldest rows are pruned.</summary>
+        protected async Task PaymentsPlatformRefreshesMoreTimesThanRefreshHistoryKeeps()
+        {
+            int kept;
+            using (var scope = TheRunningLighthouse().CreateScope())
+            {
+                kept = scope.ServiceProvider.GetRequiredService<IAppSettingService>().GetRefreshLogRetentionRuns();
+            }
+
+            for (var refresh = 0; refresh <= kept; refresh++)
+            {
+                await PaymentsPlatformRefreshes();
+            }
+        }
+
         /// <summary>
         /// Something the next refresh asks the tracker for has changed, so that refresh downloads everything
         /// again; the administrator lengthened how far back closed Features are kept.

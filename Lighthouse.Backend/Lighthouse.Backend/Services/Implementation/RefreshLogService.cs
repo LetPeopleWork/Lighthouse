@@ -19,10 +19,19 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var retentionCount = appSettingService.GetRefreshLogRetentionRuns();
 
-            var excess = repository
+            var history = repository
                 .GetAllByPredicate(r => r.EntityId == entry.EntityId && r.Type == entry.Type)
                 .OrderByDescending(r => r.ExecutedAt)
+                .ThenByDescending(r => r.Id)
+                .ToList();
+
+            // Only a full download records findings, and cheap refreshes can follow it for longer than the
+            // history is kept. Refresh History shows the newest row that recorded findings, so that row stays.
+            var newestWithFindings = history.Find(r => r.Findings != null);
+
+            var excess = history
                 .Skip(retentionCount)
+                .Where(r => r != newestWithFindings)
                 .ToList();
 
             foreach (var old in excess)

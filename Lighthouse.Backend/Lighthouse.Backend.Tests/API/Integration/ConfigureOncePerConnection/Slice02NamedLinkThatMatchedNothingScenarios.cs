@@ -158,5 +158,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(afterTheNextFullDownload.Findings, Is.Not.Null.And.Empty, "A full download that found the link takes the finding away.");
             }
         }
+
+        // Cheap refreshes are the steady state, so a Portfolio can go on for weeks without another full
+        // download. Refresh History keeps only the newest rows; the full download's row must not be the one
+        // it lets go of, or the warning vanishes while the Dependency Field still reads nothing.
+        [Test]
+        [Category("us-02")]
+        [Category("ac-2.2")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task The_finding_still_shows_after_more_cheap_refreshes_than_Refresh_History_keeps()
+        {
+            JiraHoldsTheFeatures("PAY-112", "PAY-98", "PAY-50");
+            OnJira("PAY-112", "relates to", "PAY-98");
+            PaymentsPlatformNamesAsItsDependencyField("depends on");
+
+            var (theLastFullDownloadAt, _) = await PaymentsPlatformRefreshesUntilARefreshDownloadsOnlyWhatMoved();
+
+            await PaymentsPlatformRefreshesMoreTimesThanRefreshHistoryKeeps();
+            var shown = await WhatRefreshHistoryShowsForPaymentsPlatform();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(shown.NewestRunMode, Is.EqualTo("Delta"));
+                Assert.That(shown.Findings?.Select(finding => finding.Kind), Is.EqualTo(TheNothingMatchedFinding));
+                Assert.That(shown.FindingsAsOf, Is.EqualTo(theLastFullDownloadAt));
+            }
+        }
     }
 }

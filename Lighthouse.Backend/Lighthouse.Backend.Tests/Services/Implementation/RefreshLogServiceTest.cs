@@ -98,6 +98,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task LogRefreshAsync_MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings()
+        {
+            const int retention = 3;
+            appSettingServiceMock.Setup(x => x.GetRefreshLogRetentionRuns()).Returns(retention);
+
+            var fullRun = CreateEntry(1, RefreshType.Portfolio, 1, DateTime.UtcNow.AddMinutes(-60));
+            fullRun.Findings = [ANamedLinkMatchedNothingFinding()];
+            var cheapRuns = CheapRunsAfter(fullRun, retention + 2);
+            var history = cheapRuns.Prepend(fullRun).ToList();
+
+            repositoryMock.Setup(r => r.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<RefreshLog, bool>>>()))
+                .Returns(history.AsQueryable());
+
+            var service = CreateSubject();
+
+            await service.LogRefreshAsync(cheapRuns[^1]);
+
+            repositoryMock.Verify(r => r.Remove(fullRun), Times.Never);
+            repositoryMock.Verify(r => r.Remove(It.IsAny<RefreshLog>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public async Task LogRefreshAsync_NewerFullRunFoundNothing_PrunesTheOlderRunsFindings()
+        {
+            const int retention = 3;
+            appSettingServiceMock.Setup(x => x.GetRefreshLogRetentionRuns()).Returns(retention);
+
+            var olderFullRun = CreateEntry(1, RefreshType.Portfolio, 1, DateTime.UtcNow.AddMinutes(-90));
+            olderFullRun.Findings = [ANamedLinkMatchedNothingFinding()];
+            var newerFullRun = CreateEntry(2, RefreshType.Portfolio, 1, DateTime.UtcNow.AddMinutes(-60));
+            newerFullRun.Findings = [];
+            var cheapRuns = CheapRunsAfter(newerFullRun, retention + 1);
+            var history = cheapRuns.Prepend(newerFullRun).Prepend(olderFullRun).ToList();
+
+            repositoryMock.Setup(r => r.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<RefreshLog, bool>>>()))
+                .Returns(history.AsQueryable());
+
+            var service = CreateSubject();
+
+            await service.LogRefreshAsync(cheapRuns[^1]);
+
+            repositoryMock.Verify(r => r.Remove(newerFullRun), Times.Never);
+            repositoryMock.Verify(r => r.Remove(olderFullRun), Times.Once);
+            repositoryMock.Verify(r => r.Remove(It.IsAny<RefreshLog>()), Times.Exactly(2));
+        }
+
+        [Test]
         public void GetRefreshLogs_ReturnsLogsOrderedByExecutedAtDescending()
         {
             var older = CreateEntry(1, RefreshType.Team, 1, DateTime.UtcNow.AddMinutes(-60));
@@ -296,6 +343,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Still only one removal total from the first run
             repositoryMock.Verify(r => r.Remove(It.IsAny<RefreshLog>()), Times.Once);
         }
+
+        private static RefreshFinding ANamedLinkMatchedNothingFinding()
+            => new(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", ["relates to"]);
+
+        private static List<RefreshLog> CheapRunsAfter(RefreshLog fullRun, int count)
+            => [.. Enumerable.Range(1, count)
+                .Select(i => CreateEntry(fullRun.Id + i, fullRun.Type, fullRun.EntityId, fullRun.ExecutedAt.AddMinutes(i)))];
 
         private static RefreshLog CreateEntry(int id, RefreshType type, int entityId, DateTime? executedAt = null)
         {
