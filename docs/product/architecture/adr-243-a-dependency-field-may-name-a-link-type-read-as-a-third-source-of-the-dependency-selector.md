@@ -36,9 +36,16 @@ default; no fallback.
    naming the ends. Display names are never matched. The resolution is connector-local, never persisted.
    **Where the listing is remembered.** Connector instances are cached per tracker for two minutes and shared by every
    connection on that tracker (`WorkTrackingConnectorFactory.cs:15`, `:39`), so the listing is **never** stored on the
-   connector. It is a value created at the start of one Validate call or one owner's fetch, for that call's connection,
+   connector by connection or organisation. It is a value created at the start of one Validate call or one owner's fetch, for that call's connection,
    and passed down that call's chain as a parameter; it ends with the call. A second connection, a second owner's
    refresh or the next refresh asks again. (Recommended option, taken while the maintainer was AFK.)
+   **The parent fetch shares the owner fetch's listing.** A Portfolio's refresh fetches its parent Features through a
+   second call on the connector port, for the same Portfolio and settings. The port cannot carry an ADO-only value
+   without changing every connector, so the owner fetch leaves its listing against that very Portfolio object (a
+   `ConditionalWeakTable`, never keyed by connection) and the parent fetch takes it, removing it, provided the
+   organisation is still the same. Each refresh loads the Portfolio afresh and its own fetch replaces what was left,
+   so the listing still never answers for another connection or a later refresh: one refresh lists at most once,
+   parent fetch included.
 4. **The lookup is not on `IWorkTrackingConnector`.** Its only caller is the ADO adapter's own reference resolution.
 5. **Relations are read when the Dependency Field names a relation type**, whatever the Parent Override says (the
    `:1142` condition reads the resolution, not only whether a field is set). `ExtractDependencyReferences` takes the

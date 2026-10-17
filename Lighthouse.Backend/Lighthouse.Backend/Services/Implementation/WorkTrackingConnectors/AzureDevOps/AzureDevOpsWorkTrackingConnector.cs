@@ -15,6 +15,7 @@ using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 using System.Text;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Boards;
@@ -106,13 +107,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static readonly ConcurrentDictionary<string, SemaphoreSlim> OrgLimiters = new();
 
+        private readonly ConditionalWeakTable<Portfolio, ListingLeftForTheParentFetch> listingsLeftForTheParentFetch = new();
+
+        private sealed record ListingLeftForTheParentFetch(string Organisation, RelationTypeListing Listing);
+
         private static SemaphoreSlim GetLimiter(string url) => OrgLimiters.GetOrAdd(new Uri(url).Host, _ => new SemaphoreSlim(6));
 
         public async Task<IEnumerable<LighthouseWorkItem>> GetWorkItemsForTeam(Team team, CancellationToken cancellationToken)
         {
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), alreadyListed: null, cancellationToken);
 
             return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
@@ -150,7 +155,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Getting Features of Type {WorkItemTypes} and Query '{Query}'", string.Join(", ", project.WorkItemTypes), project.DataRetrievalValue);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryAPortfolioIsFetchedBy(project), cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(project, TheQueryAPortfolioIsFetchedBy(project), alreadyListed: null, cancellationToken);
+            var features = await ThePortfoliosOwnFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
 
             logger.LogInformation("Found Features with IDs {FeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
 
@@ -164,8 +170,49 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsById(project, referenceIds, cancellationToken);
 
-            return await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
+            return await ThePortfoliosOwnFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
         }
+
+        private Task<List<Feature>> ThePortfoliosOwnFeaturesFrom(
+            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
+        {
+            LeaveTheListingForTheParentFetch(portfolio, additionalFieldResolution.RelationTypesListed);
+
+            return ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldResolution, cancellationToken);
+        }
+
+        /// <summary>
+        /// A refresh fetches a Portfolio's parent Features straight after its own, for the same Portfolio and
+        /// with the same settings, so the parent fetch takes the relation-type listing the Portfolio's own fetch
+        /// made instead of asking again. The listing is kept against that very Portfolio object and taken by the
+        /// first parent fetch, so it never answers for another connection or a later refresh: each refresh loads
+        /// the Portfolio afresh, and its own fetch replaces whatever was left.
+        /// </summary>
+        private void LeaveTheListingForTheParentFetch(Portfolio portfolio, RelationTypeListing? listing)
+        {
+            if (listing is null)
+            {
+                listingsLeftForTheParentFetch.Remove(portfolio);
+                return;
+            }
+
+            listingsLeftForTheParentFetch.AddOrUpdate(portfolio, new ListingLeftForTheParentFetch(TheOrganisationOf(portfolio), listing));
+        }
+
+        private RelationTypeListing? TakeTheListingLeftForTheParentFetch(Portfolio portfolio)
+        {
+            if (!listingsLeftForTheParentFetch.TryGetValue(portfolio, out var left))
+            {
+                return null;
+            }
+
+            listingsLeftForTheParentFetch.Remove(portfolio);
+
+            return left.Organisation == TheOrganisationOf(portfolio) ? left.Listing : null;
+        }
+
+        private static string TheOrganisationOf(Portfolio portfolio)
+            => portfolio.WorkTrackingSystemConnection.FindWorkTrackingSystemConnectionOptionByKey(AzureDevOpsWorkTrackingOptionNames.Url) ?? string.Empty;
 
         public Task<IReadOnlyList<RemoteRecordStamp>> SweepFeaturesForPortfolio(Portfolio project, CancellationToken cancellationToken)
             => SweepIdentities(project, TheQueryAPortfolioIsFetchedBy(project), $"Portfolio {project.Name}", cancellationToken);
@@ -174,7 +221,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             logger.LogInformation("Getting Parent Features with IDs {ParentFeatureIds} for Project {ProjectName}", string.Join(", ", parentFeatureIds), project.Name);
 
-            var features = await GetFeaturesForProjectByQuery(project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), cancellationToken);
+            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(
+                project, TheQueryParentFeaturesAreFetchedBy(parentFeatureIds), TakeTheListingLeftForTheParentFetch(project), cancellationToken);
+            var features = await ThePortfoliosFeaturesFrom(project, adoWorkItems, additionalFieldResolution, cancellationToken);
 
             logger.LogInformation("Found Parent Features with IDs {ParentFeatureIds}", string.Join(", ", features.Select(f => f.ReferenceId)));
             return features;
@@ -350,7 +399,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 var query = PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
 
-                var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query, CancellationToken.None);
+                var (workItems, _) = await FetchAdoWorkItemsByQuery(portfolio, query, alreadyListed: null, CancellationToken.None);
                 var workItemCount = workItems.Count();
 
                 logger.LogInformation("Found a total of {NumberOfWorkItems} Features with specified Query", workItemCount);
@@ -656,13 +705,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return allProjects;
         }
 
-        private async Task<List<Feature>> GetFeaturesForProjectByQuery(Portfolio portfolio, string query, CancellationToken cancellationToken)
-        {
-            var (adoWorkItems, additionalFieldResolution) = await FetchAdoWorkItemsByQuery(portfolio, query, cancellationToken);
-
-            return await ThePortfoliosFeaturesFrom(portfolio, adoWorkItems, additionalFieldResolution, cancellationToken);
-        }
-
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
@@ -860,6 +902,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Asked for afresh on every call and handed down that call only: one connector serves every
         /// connection to Azure DevOps, so a listing kept between calls would answer for the wrong organisation.
+        /// The one exception is a refresh's parent fetch, which takes over what the Portfolio's own fetch listed.
         /// An answer that arrives without a list is read as an empty one, since nothing refused; a refusal or a
         /// failed request is kept apart, because it says nothing about which relation types exist. A request
         /// that timed out counts as failed, while one the caller cancelled still stops the caller.
@@ -897,17 +940,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// The relation types are listed at most once per fetch, and only once a reference one of the owner's
         /// own settings names missed the field list, so an owner naming only fields costs no extra request -
         /// however stale the rest of the connection's Additional Fields are. Every definition is still resolved
-        /// to its field, because the values of all of them are downloaded. The listing lives in this call alone,
-        /// for the same reason Validate keeps it there.
+        /// to its field, because the values of all of them are downloaded. A listing already made for this owner
+        /// in the same refresh is used rather than asked for again; otherwise the listing lives in this call
+        /// alone, for the same reason Validate keeps it there.
         /// </summary>
         private async Task<AdditionalFieldResolution> ResolveTheAdditionalFields(
-            WorkItemTrackingHttpClient witClient, WorkTrackingSystemOptionsOwner owner, CancellationToken cancellationToken)
+            WorkItemTrackingHttpClient witClient, WorkTrackingSystemOptionsOwner owner, RelationTypeListing? alreadyListed, CancellationToken cancellationToken)
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, cancellationToken);
             var namedByASetting = TheDefinitionsItsSettingsName(owner);
 
             var resolution = AdditionalFieldResolution.None();
-            RelationTypeListing? relationTypes = null;
+            var relationTypes = alreadyListed;
 
             foreach (var additionalFieldDefinition in owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
             {
@@ -944,6 +988,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 WarnThatNothingWillBeReadFor(additionalFieldDefinition, relationTypes);
             }
+
+            resolution.RelationTypesListed = relationTypes;
 
             return resolution;
         }
@@ -1001,12 +1047,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// has - and their blocked spells, which no tracker can rebuild, do not come back with them.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> FetchAdoWorkItemsByQuery(
-            WorkTrackingSystemOptionsOwner workItemQueryOwner, string query, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workItemQueryOwner, string query, RelationTypeListing? alreadyListed, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
             var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query, cancellationToken);
 
-            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList(), cancellationToken);
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, workItemReferences.Select(reference => reference.Id).ToList(), alreadyListed, cancellationToken);
         }
 
         /// <summary>
@@ -1022,7 +1068,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
-            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds), cancellationToken);
+            return await ThePayloadsAndFieldsFor(workItemQueryOwner, witClient, WorkItemIdsIn(referenceIds), alreadyListed: null, cancellationToken);
         }
 
         /// <summary>
@@ -1032,14 +1078,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// for nothing at all, because a keyed read of no keys is still a remote round trip.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> ThePayloadsAndFieldsFor(
-            WorkTrackingSystemOptionsOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, RelationTypeListing? alreadyListed, CancellationToken cancellationToken)
         {
             if (workItemIds.Count == 0)
             {
                 return ([], AdditionalFieldResolution.None());
             }
 
-            var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner, cancellationToken);
+            var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner, alreadyListed, cancellationToken);
 
             if (workItemQueryOwner is Portfolio portfolio)
             {
@@ -1746,6 +1792,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             Dictionary<int, string> Fields, Dictionary<int, string> RelationTypes, HashSet<int> CouldNotTell, Dictionary<int, WhyNothingIsRead> ReadsNothing)
         {
             public static AdditionalFieldResolution None() => new([], [], [], []);
+
+            /// <summary>The listing this resolution was made with, or null when nothing it resolved needed one.</summary>
+            public RelationTypeListing? RelationTypesListed { get; set; }
 
             /// <summary>
             /// A base name whose two ends are both listed names a relation type but neither direction, and a type
