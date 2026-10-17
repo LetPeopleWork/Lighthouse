@@ -80,6 +80,27 @@ until s=$(gh run view <id> -R LetPeopleWork/Lighthouse --json jobs -q '[.jobs[] 
 
 Give the user a one-line progress note when state meaningfully changes ("backend build done, frontend running"). Don't narrate every tick.
 
+## Step 3b — green is not the end: read the warnings
+
+Run this whenever the run lands on GREEN or WAITING ON RELEASE GATE. A green run can still carry
+warnings that never fail it. Read them, and report anything worth improving:
+
+- **Annotations and warnings:**
+  ```bash
+  gh api repos/LetPeopleWork/Lighthouse/check-runs/<job-id>/annotations
+  ```
+  Run it for each job. Also grep the job logs for `warning`.
+- **Test-time budget:** the warn-only `Check test-time budget` step in `ci_backend.yml`, plus the
+  frontend's equivalent. Check every unit it names over budget against an earlier main run's
+  `test-timings-backend` / frontend artifact. Did our change make it slower, or was it already over?
+  Also compare the total integration time between the two runs.
+- **Sonar on new code:** issues and hotspots that are not failing the gate yet, and coverage on new
+  code that is close to the threshold.
+
+Report each finding in one line: what it is, whether this push caused it, and a suggested improvement.
+**Do not fix any of them on your own**: they are suggestions for the maintainer to schedule. A green run
+with nothing found ends with "all good, no warnings".
+
 ## Step 4 — diagnose & fix failures
 
 For each failed job:
