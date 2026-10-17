@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Dependencies/DependencySourceSelector.cs",
+      "**/Services/Implementation/RefreshLogService.cs",
+      "**/API/DTO/RefreshLogDto.cs",
+      "**/Models/Feature.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/IssueExtensions.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Jira|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~DependencySourceSelectorTest|FullyQualifiedName~RefreshLogServiceTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~SystemInfoControllerTest|FullyQualifiedName~FeatureTest)&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&FullyQualifiedName!~IntegrationTest&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
