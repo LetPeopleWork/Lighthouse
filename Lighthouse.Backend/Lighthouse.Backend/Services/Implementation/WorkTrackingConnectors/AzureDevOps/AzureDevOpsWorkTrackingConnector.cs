@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         private static readonly HashSet<string> ResourceLinks = new(StringComparer.OrdinalIgnoreCase) { "AttachedFile", "Hyperlink", "ArtifactLink" };
 
+        private static readonly HashSet<string> HierarchyLinks = new(StringComparer.OrdinalIgnoreCase) { "System.LinkTypes.Hierarchy-Forward", "System.LinkTypes.Hierarchy-Reverse" };
+
         /// <summary>
         /// What one read of a batch of work items' relations yields, per work item: the parent it hangs
         /// under, and the other items it is waiting on. Both come out of the same response because that
@@ -1443,10 +1445,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         // Attachments, hyperlinks and artifact links point at no work item, so they could never have matched.
+        // The hierarchy places a work item under its parent rather than linking two pieces of work, and nearly
+        // every Feature has children, so counting it would say "nothing matched" on almost every refresh.
         private static IEnumerable<string> TheWorkItemLinksItCarries(AdoWorkItem adoWorkItem)
             => (adoWorkItem.Relations ?? [])
                 .Select(relation => relation.Rel)
-                .Where(rel => !string.IsNullOrEmpty(rel) && !ResourceLinks.Contains(rel))
+                .Where(rel => !string.IsNullOrEmpty(rel) && !ResourceLinks.Contains(rel) && !HierarchyLinks.Contains(rel))
                 .Distinct(StringComparer.OrdinalIgnoreCase);
 
         /// <summary>

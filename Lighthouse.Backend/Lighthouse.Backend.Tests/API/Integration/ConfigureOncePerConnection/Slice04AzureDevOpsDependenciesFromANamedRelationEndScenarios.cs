@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const string FabrikamNeedsForward = "Fabrikam.Needs-Forward";
 
+        private const string HierarchyForward = "System.LinkTypes.Hierarchy-Forward";
+
         private static readonly string[] Nothing = [];
 
         private static readonly string[] Waits4702 = ["4702"];
@@ -42,6 +44,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] Waits5102 = ["5102"];
 
         private static readonly string[] TheRelationTypesSeen = [Predecessor, Related];
+
+        private static readonly string[] OnlyRelated = [Related];
 
         private static readonly string[] BothEndsOfContosoDependsOn = [ContosoDependsOnForward, ContosoDependsOnReverse];
 
@@ -206,6 +210,53 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(shown.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
                 Assert.That(shown.TheFirstFinding?.Seen ?? Array.Empty<string>(), Is.EquivalentTo(TheRelationTypesSeen));
                 Assert.That(WhatTheLastRefreshWarned().Count(line => line.Contains(ContosoDependsOnForward, StringComparison.Ordinal)), Is.EqualTo(1));
+            }
+        }
+
+        // A Feature's children hang under it by the Hierarchy relation, so nearly every real Portfolio carries one.
+        // It places work rather than linking two pieces of it, as Jira's parent is not an issue link.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Features_carrying_only_their_hierarchy_say_nothing_about_the_named_end()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
+            contoso.Relates(Item4702, HierarchyForward, Item4711);
+            AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
+            NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
+
+            await RefreshesNow(RetailRollout);
+            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
+
+            Assert.That(shown.Findings, Is.Not.Null.And.Empty, "Having no dependencies is the ordinary case.");
+        }
+
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.6")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task The_hierarchy_is_left_out_of_the_relation_types_seen()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702, Item4690);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
+            contoso.Relates(Item4702, HierarchyForward, Item4711);
+            contoso.Relates(Item4711, Related, Item4690);
+            AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
+            NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
+
+            await RefreshesNow(RetailRollout);
+            var shown = await WhatRefreshHistoryShowsFor(RetailRollout);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(shown.TheFirstFinding?.Kind, Is.EqualTo("NamedLinkMatchedNothing"));
+                Assert.That(shown.TheFirstFinding?.Seen ?? Array.Empty<string>(), Is.EqualTo(OnlyRelated));
             }
         }
 
