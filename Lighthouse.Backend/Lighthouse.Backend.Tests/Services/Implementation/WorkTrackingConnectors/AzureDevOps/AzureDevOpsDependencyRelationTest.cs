@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const int TheDependencyFieldId = 2;
 
+        private const int TheRelationEndDefinitionId = 3;
+
         private const string TheParentThatFieldPointsAt = "4711";
 
         private const string TheFilterTheProjectIsFetchedBy = "[System.TeamProject] = 'TestProject'";
@@ -302,6 +304,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(feature.DependsOnReferences, Is.Empty);
         }
 
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheDependencyFieldNamesNoFieldAndTheRelationTypesCannotBeListed_StopsTheRefresh()
+        {
+            var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", refusesToListTheRelationTypes: true);
+
+            var stopped = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                async () => await subject.GetFeaturesForProject(APortfolioNamingARelationEndAsItsDependencyField(), CancellationToken.None));
+
+            Assert.That(stopped!.Message, Does.Contain("relation types could not be listed"),
+                "Every Feature would otherwise be stored as waiting on nothing, overwriting what was read before.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheRelationTypesCannotBeListedButThePortfolioIgnoresDependencies_StillCompletes()
+        {
+            var (subject, _) = AnAzureDevOpsHoldingOneItemOfType("Feature", refusesToListTheRelationTypes: true);
+            var portfolio = APortfolioNamingARelationEndAsItsDependencyField();
+            portfolio.IgnoreDependencies = true;
+
+            var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            Assert.That(features, Has.Count.EqualTo(1));
+        }
+
+        private static Portfolio APortfolioNamingARelationEndAsItsDependencyField()
+        {
+            var portfolio = APortfolio();
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = TheRelationEndDefinitionId,
+                DisplayName = "Depends On",
+                Reference = "Contoso.DependsOn-Forward",
+            });
+            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheRelationEndDefinitionId;
+
+            return portfolio;
+        }
+
         private static Portfolio APortfolioReadingItsDependenciesFromAField()
         {
             var portfolio = APortfolio();
@@ -329,7 +369,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// asked for - so a test can say which reads happened and not only what came back.
         /// </summary>
         private static (AzureDevOpsWorkTrackingConnector Subject, List<PayloadRead> PayloadReads) AnAzureDevOpsHoldingOneItemOfType(
-            string workItemType, string whatTheDependencyFieldSays = "")
+            string workItemType, string whatTheDependencyFieldSays = "", bool refusesToListTheRelationTypes = false)
         {
             var payloadReads = new List<PayloadRead>();
             var clientMock = new Mock<WorkItemTrackingHttpClient>(new Uri("https://dev.azure.com/lighthouse-test"), new VssCredentials());
@@ -359,6 +399,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             clientMock
                 .Setup(client => client.GetRevisionsAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<WorkItemExpand?>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([]);
+
+            if (refusesToListTheRelationTypes)
+            {
+                clientMock
+                    .Setup(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                    .ThrowsAsync(new VssServiceException("TF401027: You need the 'Read work items' permission to perform this action."));
+            }
 
             return (new RecordedAzureDevOpsConnector(clientMock.Object), payloadReads);
         }

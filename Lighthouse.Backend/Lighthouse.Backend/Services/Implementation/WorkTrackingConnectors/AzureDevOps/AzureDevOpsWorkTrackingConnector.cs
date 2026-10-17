@@ -643,6 +643,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
+            StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, additionalFieldResolution);
+
             var namedRelationEnd = additionalFieldResolution.TheRelationEndNamedBy(portfolio.DependencyOverrideAdditionalFieldDefinitionId);
             var dependencies = new DependenciesFromRelations(
                 DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null, namedRelationEnd);
@@ -672,6 +674,40 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             return features;
+        }
+
+        /// <summary>
+        /// A Dependency Field naming something that is not a field can only be read once the relation types
+        /// are known. With that listing refused or unreadable, every Feature would be read as waiting on
+        /// nothing, and each Feature handed back overwrites the dependencies stored for it. Stopping the
+        /// refresh leaves those as they were until the listing can be read again. A Portfolio that ignores
+        /// dependencies has none to lose, so it refreshes as usual.
+        /// </summary>
+        private void StopUnlessTheDependencyFieldCouldBeLookedUp(Portfolio portfolio, AdditionalFieldResolution resolution)
+        {
+            var dependencyField = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
+
+            if (portfolio.IgnoreDependencies || !resolution.CouldNotTellWhatItNames(dependencyField))
+            {
+                return;
+            }
+
+            var reference = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .FirstOrDefault(definition => definition.Id == dependencyField)?.Reference ?? string.Empty;
+
+            logger.LogWarning(
+                "The refresh of Portfolio {PortfolioName} was stopped: its Dependency Field names '{Reference}', which is not a field, "
+                + "and Azure DevOps would not list its relation types, so whether it names a relation type could not be told. "
+                + "Its stored dependencies were left as they were.",
+                portfolio.Name,
+                reference);
+
+            throw new AzureDevOpsReadException(ConnectionValidationResult.Failure(
+                "relation_types_unreadable",
+                $"The Dependency Field of {portfolio.Name} names '{reference}', which is not a field, and the relation types could not be listed, "
+                + "so the refresh was stopped. Nothing Lighthouse already holds was changed.",
+                "Give the Personal Access Token permission to read work items, or check whether a proxy in front of Azure DevOps is turning that request down.",
+                AzureDevOpsReadException.AdditionalFieldsFieldName));
         }
 
         /// <summary>
