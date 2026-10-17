@@ -1,4 +1,7 @@
-import type { RefreshFinding } from "../../../models/SystemInfo/RefreshLog";
+import type {
+	RefreshFinding,
+	RefreshLog,
+} from "../../../models/SystemInfo/RefreshLog";
 import { isValidDate } from "../../../utils/date/isValidDate";
 
 const SETTING_NAMES: Readonly<Record<string, string>> = {
@@ -34,16 +37,13 @@ const matchedNothing = (
 	return `${statement} Links seen: ${finding.seen.join(", ")}.`;
 };
 
-const SENTENCES: Readonly<
-	Record<
-		string,
-		(
-			settingName: string,
-			finding: RefreshFinding,
-			featureTerm: string,
-		) => string
-	>
-> = {
+type FindingSentence = (
+	settingName: string,
+	finding: RefreshFinding,
+	featureTerm: string,
+) => string;
+
+const SENTENCES: Readonly<Record<string, FindingSentence>> = {
 	NamedLinkPointsBothWays: pointsBothWays,
 	NamedLinkMatchedNothing: matchedNothing,
 };
@@ -86,4 +86,23 @@ export const asOfLabelFor = (fullRunAt: string | undefined): string | null => {
 		return null;
 	}
 	return `as of the full download on ${at.getDate()} ${MONTHS[at.getMonth()]}, ${twoDigits(at.getHours())}:${twoDigits(at.getMinutes())}`;
+};
+
+// Every row of an entity carries the same latest full download, so the first that carries one speaks
+// for all of them. The date goes only beside a sentence: on its own it would date an answer nobody
+// was shown.
+export const findingsShownFor = (
+	rows: readonly RefreshLog[],
+	featureTerm: string,
+): { sentences: string[]; asOfLabel: string | null } => {
+	const latestFullRun = rows.find(
+		(row) => row.latestFullRunFindings !== undefined,
+	);
+	const sentences = (latestFullRun?.latestFullRunFindings ?? [])
+		.map((finding) => sentenceFor(finding, featureTerm))
+		.filter((sentence) => sentence !== null);
+	if (sentences.length === 0) {
+		return { sentences, asOfLabel: null };
+	}
+	return { sentences, asOfLabel: asOfLabelFor(latestFullRun?.latestFullRunAt) };
 };
