@@ -1,4 +1,6 @@
 using System.Net;
+using System.Reflection;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
@@ -38,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.1")]
         [Category("driving_port")]
@@ -55,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.1")]
         [Category("edge")]
@@ -92,6 +92,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                     "The relation types are asked for only when a reference missed the field list.");
             }
         }
+
+        // The factory hands one connector to every connection of the tracker, so a listing it kept would answer
+        // the next Validate for another organisation.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.7")]
+        [Category("structural")]
+        public void The_shared_connector_keeps_no_relation_type_listing_between_calls()
+        {
+            var listing = typeof(AzureDevOpsWorkTrackingConnector).GetNestedType("RelationTypeListing", BindingFlags.NonPublic);
+            var fields = typeof(AzureDevOpsWorkTrackingConnector).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(listing, Is.Not.Null, "The connector no longer names its relation-type listing as this check expects.");
+                Assert.That(fields.Where(field => Mentions(field.FieldType, listing!)).Select(field => field.Name), Is.Empty);
+            }
+        }
+
+        private static bool Mentions(Type type, Type listing)
+            => type == listing
+                || (type.HasElementType && Mentions(type.GetElementType()!, listing))
+                || type.GetGenericArguments().Any(argument => Mentions(argument, listing));
 
         [Test]
         [Ignore(PendingEpic6303.Slice03)]
@@ -137,7 +160,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.7")]
         [Category("kpi")]

@@ -929,9 +929,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             /// <summary>
             /// The relation types the organisation lists, by reference name. A directional type is listed end by
-            /// end; a non-directional one, such as Related, under its one name.
+            /// end; a non-directional one, such as Related, under its one name. It starts as everything an Azure
+            /// DevOps Services organisation answered when asked, attachments and hyperlinks included.
             /// </summary>
-            public List<string> RelationTypesItLists { get; } = [Hierarchy, "System.LinkTypes.Hierarchy-Forward", Predecessor, Successor, Related];
+            public List<string> RelationTypesItLists { get; } = [.. RelationTypesAnOrganisationAnswered.Select(type => type.ReferenceName)];
 
             public bool RefusesToListItsRelationTypes { get; set; }
 
@@ -950,17 +951,61 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             public void Fills(int id, string field, string value) => workItems[id].FieldValues[field] = value;
 
+            /// <summary>
+            /// What an Azure DevOps Services organisation answered for its relation types, recorded from a real
+            /// one. Read from the source tree, so adding to the recording needs no change to the project file.
+            /// </summary>
+            private static readonly List<WorkItemRelationType> RelationTypesAnOrganisationAnswered = TheRecordedRelationTypes();
+
+            /// <summary>
+            /// Azure DevOps Services cannot define a link type of its own, but an on-premises Azure DevOps Server
+            /// can, and lists each end of it beside the built-in ones. Contoso's pair is such a custom type.
+            /// </summary>
+            private static readonly List<WorkItemRelationType> CustomRelationTypesAServerDefines =
+            [
+                ACustomRelationTypeEnd(ContosoDependsOnForward, "Depends On", ContosoDependsOnReverse, isForward: true),
+                ACustomRelationTypeEnd(ContosoDependsOnReverse, "Depended On By", ContosoDependsOnForward, isForward: false),
+            ];
+
             private static WorkItemRelationType AsListed(string referenceName)
+                => RelationTypesAnOrganisationAnswered.Concat(CustomRelationTypesAServerDefines)
+                    .FirstOrDefault(type => type.ReferenceName == referenceName)
+                    ?? throw new InvalidOperationException($"No organisation lists a relation type called {referenceName}; record it first.");
+
+            private static WorkItemRelationType ACustomRelationTypeEnd(string referenceName, string name, string oppositeEnd, bool isForward)
                 => new()
                 {
                     ReferenceName = referenceName,
-                    Name = referenceName,
+                    Name = name,
                     Attributes = new Dictionary<string, object>
                     {
                         ["usage"] = "workItemLink",
-                        ["directional"] = referenceName.EndsWith("-Forward", StringComparison.Ordinal) || referenceName.EndsWith("-Reverse", StringComparison.Ordinal),
+                        ["editable"] = true,
+                        ["enabled"] = true,
+                        ["directional"] = true,
+                        ["topology"] = "dependency",
+                        ["isForward"] = isForward,
+                        ["oppositeEndReferenceName"] = oppositeEnd,
                     },
                 };
+
+            private static List<WorkItemRelationType> TheRecordedRelationTypes()
+            {
+                var directory = new DirectoryInfo(AppContext.BaseDirectory);
+                while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Lighthouse.sln")))
+                {
+                    directory = directory.Parent;
+                }
+
+                var recording = Path.Combine(
+                    directory?.FullName ?? throw new InvalidOperationException("Lighthouse.sln could not be found to anchor the recorded relation types."),
+                    "Lighthouse.Backend.Tests", "API", "Integration", "ConfigureOncePerConnection", "Fixtures", "azure-devops-services-relation-types.json");
+
+                var answer = Newtonsoft.Json.Linq.JObject.Parse(File.ReadAllText(recording));
+
+                return answer["value"]?.ToObject<List<WorkItemRelationType>>()
+                    ?? throw new InvalidOperationException($"{recording} holds no relation types.");
+            }
 
             private sealed class AWorkItemThere(int id)
             {

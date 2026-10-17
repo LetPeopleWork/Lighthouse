@@ -50,4 +50,39 @@ slice 04's test vehicle is chosen from them.
 AC-3.1, AC-3.2, AC-3.3, AC-3.7 (Validate half), AC-3.9, AC-3.10.
 
 ## Changed assumptions
-(filled during DELIVER)
+
+### Spike record (2026-10-17)
+
+- `GET https://dev.azure.com/huserben/_apis/wit/workitemrelationtypes?api-version=7.1` with the ADO
+  integration-test PAT answered **200** with 16 entries. The raw answer is recorded at
+  `Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Fixtures/azure-devops-services-relation-types.json`,
+  and the acceptance harness's organisation now answers from it.
+- The organisation `lighthouse-test` answered **404** to the same PAT: the PAT belongs to `huserben`. The
+  dogfood organisation named above (letpeoplework) was not queried.
+- **No Azure DevOps Server 2022 answer was obtained.** The custom `Contoso.DependsOn-Forward/-Reverse` pair
+  the scenarios use is a hand-built addition in the harness, labelled as a custom type an on-premises Server
+  can define; Azure DevOps Services cannot define custom link types (R3: Services offers nothing beyond its
+  system types, consistent with this answer).
+- **The `vso.work`-only refusal hypothesis is NOT disproven.** The PAT's exact scope is unknown and may be
+  broader than `vso.work`, so a 200 here says nothing about a customer PAT scoped to `vso.work` alone.
+- What the organisation lists (reference name — display name, topology):
+  - Directional: `System.LinkTypes.Duplicate-Forward/-Reverse` (Duplicate / Duplicate Of, tree),
+    `Microsoft.VSTS.TestCase.SharedParameterReferencedBy-Forward/-Reverse` (Referenced By / References,
+    dependency), `Microsoft.VSTS.Common.TestedBy-Forward/-Reverse` (Tested By / Tests, dependency),
+    `Microsoft.VSTS.TestCase.SharedStepReferencedBy-Forward/-Reverse` (Test Case / Shared Steps,
+    dependency), `System.LinkTypes.Dependency-Forward/-Reverse` (Successor / Predecessor, dependency),
+    `System.LinkTypes.Hierarchy-Forward/-Reverse` (Child / Parent, tree).
+  - Not directional: `System.LinkTypes.Related` (network).
+  - Not work item links (`usage: resourceLink`): `AttachedFile`, `Hyperlink`, `ArtifactLink`. Validate
+    never matches a reference against these.
+- Recommendation for slice 04's vehicle (not decided here): `Microsoft.VSTS.Common.TestedBy` — directional,
+  dependency topology, and a link Features rarely carry for any other meaning. `System.LinkTypes.Duplicate`
+  is the fallback.
+
+### Delivered in step 03-01
+
+- Validate looks a reference up in the field list first; only references that missed it are checked against
+  the relation types, which are listed once per Validate call and not at all when every reference is a field.
+  Directional types match end by end, by reference name in any case, never by display name.
+- The listing is created inside one Validate call and passed down that call only; the shared connector holds
+  no field of its type, pinned by a reflection check in the slice's scenarios.

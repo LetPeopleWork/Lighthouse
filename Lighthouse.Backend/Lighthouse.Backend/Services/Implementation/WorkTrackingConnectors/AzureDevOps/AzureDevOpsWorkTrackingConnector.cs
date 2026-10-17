@@ -691,11 +691,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, CancellationToken.None);
 
-            return additionalFieldDefinitions
+            var notAField = additionalFieldDefinitions
                 .Where(field => string.IsNullOrEmpty(TheReferenceOfTheFieldNamed(field.Reference, availableFields)))
                 .Select(field => field.Reference)
                 .ToList();
+
+            if (notAField.Count == 0)
+            {
+                return notAField;
+            }
+
+            var relationTypes = await TheRelationTypesTheOrganisationLists(witClient, CancellationToken.None);
+
+            return notAField.Where(reference => !relationTypes.HasAnEndCalled(reference)).ToList();
         }
+
+        /// <summary>
+        /// Asked for afresh on every call and handed down that call only: one connector serves every
+        /// connection to Azure DevOps, so a listing kept between calls would answer for the wrong organisation.
+        /// </summary>
+        private static async Task<RelationTypeListing> TheRelationTypesTheOrganisationLists(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
+            => new(await witClient.GetRelationTypesAsync(cancellationToken: cancellationToken) ?? []);
 
         private async Task<List<WorkItemField2>> TheFieldsTheOrganisationDefines(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
@@ -1460,6 +1476,27 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             throw new NotSupportedException(
                 $"Authorization scheme '{header.Scheme}' produced by the auth strategy is not supported by the Azure DevOps connector.");
+        }
+
+        /// <summary>
+        /// The relation types one organisation lists, each directional type once per end. A reference matches an
+        /// end by its reference name in any case, never by the name it is displayed under, because a relation
+        /// on a work item carries the reference name and nothing else. Attachments, hyperlinks and artifact
+        /// links are listed beside them but never link one work item to another, so nothing can name them.
+        /// </summary>
+        private sealed class RelationTypeListing(List<WorkItemRelationType> listed)
+        {
+            private readonly HashSet<string> workItemLinkEnds = listed
+                .Where(type => !IsAResourceLink(type))
+                .Select(type => type.ReferenceName)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            public bool HasAnEndCalled(string reference) => workItemLinkEnds.Contains(reference);
+
+            private static bool IsAResourceLink(WorkItemRelationType type)
+                => type.Attributes is not null
+                    && type.Attributes.TryGetValue("usage", out var usage)
+                    && string.Equals($"{usage}", "resourceLink", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
