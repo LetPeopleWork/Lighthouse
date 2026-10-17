@@ -736,4 +736,41 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 	});
+
+	describe("a save the server refuses", () => {
+		// @us-6304 @driving_port
+		it("carries the refusal's reason and its sentence to the page", async () => {
+			const detail =
+				'"Caused by" cannot be removed. It is the Teams\' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.';
+			mockedAxios.isAxiosError.mockReturnValue(true);
+			mockedAxios.put.mockRejectedValue({
+				isAxiosError: true,
+				message: "Request failed with status code 409",
+				response: {
+					status: 409,
+					data: {
+						title: "An Additional Field this save removes is still in use.",
+						detail,
+						code: "additional-field-in-use",
+					},
+				},
+			});
+
+			await expect(
+				workTrackingSystemService.updateWorkTrackingSystemConnection(
+					new WorkTrackingSystemConnection({
+						id: 7,
+						name: "Nordwind Jira DC",
+						workTrackingSystem: "Jira",
+						options: [],
+						additionalFieldDefinitions: [],
+					}),
+				),
+			).rejects.toMatchObject({
+				code: 409,
+				problemCode: "additional-field-in-use",
+				message: detail,
+			});
+		});
+	});
 });

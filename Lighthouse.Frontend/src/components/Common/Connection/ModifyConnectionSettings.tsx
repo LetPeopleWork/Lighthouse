@@ -58,6 +58,8 @@ import SecretHandlingNotice, {
 const OAUTH_KEY_SUFFIX = ".oauth";
 
 const CONCURRENCY_CONFLICT_STATUS = 409;
+// The server's own sentence names the field and who still uses it, so it is shown as it stands.
+const FIELD_STILL_IN_USE_CODE = "additional-field-in-use";
 const CONCURRENCY_CONFLICT_COPY =
 	"This connection was changed by someone else since you opened it. Reload to get the latest values, then re-apply your change.";
 
@@ -714,7 +716,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				error_ instanceof ApiError &&
 				error_.code === CONCURRENCY_CONFLICT_STATUS
 			) {
-				setValidationErrorMessage(CONCURRENCY_CONFLICT_COPY);
+				setValidationErrorMessage(
+					error_.problemCode === FIELD_STILL_IN_USE_CODE
+						? error_.message
+						: CONCURRENCY_CONFLICT_COPY,
+				);
 				setValidationTechnicalDetails(null);
 				return;
 			}

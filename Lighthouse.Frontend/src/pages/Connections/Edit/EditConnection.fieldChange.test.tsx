@@ -413,6 +413,19 @@ const thenTheQuestionWaitsOnTheSave = async (answer: string) => {
 	return question;
 };
 
+const CausedByIsStillInUse =
+	'"Caused by" cannot be removed. It is the Teams\' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.';
+
+// What the server answers when the save removes a field a default or a Team still uses.
+const theFieldIsStillInUse = () =>
+	new ApiError(
+		409,
+		CausedByIsStillInUse,
+		undefined,
+		undefined,
+		"additional-field-in-use",
+	);
+
 const theUsageDataSent = () =>
 	reportUsage.mock.calls
 		.map(([use]) => use as { name: string })
@@ -913,5 +926,53 @@ describe("changing a connection's Additional Fields asks whether to update its T
 				}
 			},
 		);
+	});
+
+	describe("a save that removes a field still in use", () => {
+		// @error @us-6304 @contract-shape:unbounded-preservation
+		it("says which field cannot go and who uses it, keeps her edit and stays on the page", async () => {
+			const server = await givenPriyaOpensNordwindJiraDc({
+				save: () => Promise.reject(theFieldIsStillInUse()),
+			});
+			whenPriyaRemovesStoryPoints();
+			whenPriyaPressesSave();
+
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save only");
+
+			expect(await screen.findByText(CausedByIsStillInUse)).toBeInTheDocument();
+			expect(screen.queryByText(SomeoneElseSavedFirst)).not.toBeInTheDocument();
+			expect(screen.queryByText(StoryPoints)).not.toBeInTheDocument();
+			expect(server.updateWorkTrackingSystemConnection).toHaveBeenCalledTimes(
+				1,
+			);
+			expect(mockNavigate).not.toHaveBeenCalled();
+		});
+
+		// @error @us-6304 @contract-shape:unbounded-preservation
+		it("a stale save still says someone else changed the connection", async () => {
+			await givenPriyaOpensNordwindJiraDc({
+				save: () =>
+					Promise.reject(
+						new ApiError(
+							409,
+							"The connection was changed since it was loaded.",
+							undefined,
+							undefined,
+							"concurrency-conflict",
+						),
+					),
+			});
+			whenPriyaRemovesStoryPoints();
+			whenPriyaPressesSave();
+
+			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save only");
+
+			expect(
+				await screen.findByText(SomeoneElseSavedFirst),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByText("The connection was changed since it was loaded."),
+			).not.toBeInTheDocument();
+		});
 	});
 });

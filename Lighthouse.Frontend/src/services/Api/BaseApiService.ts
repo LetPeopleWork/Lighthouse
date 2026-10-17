@@ -86,6 +86,8 @@ export class BaseApiService {
 				message?: unknown;
 				Message?: unknown;
 				errors?: unknown;
+				detail?: unknown;
+				Detail?: unknown;
 				technicalDetails?: unknown;
 				TechnicalDetails?: unknown;
 				fieldName?: unknown;
@@ -118,6 +120,8 @@ export class BaseApiService {
 			message?: unknown;
 			Message?: unknown;
 			errors?: unknown;
+			detail?: unknown;
+			Detail?: unknown;
 		},
 		fallbackMessage: string,
 	): string {
@@ -138,7 +142,10 @@ export class BaseApiService {
 			}
 		}
 
-		return fallbackMessage;
+		return (
+			BaseApiService.extractString(payload.detail, payload.Detail) ??
+			fallbackMessage
+		);
 	}
 
 	private static extractString(...values: unknown[]): string | undefined {
