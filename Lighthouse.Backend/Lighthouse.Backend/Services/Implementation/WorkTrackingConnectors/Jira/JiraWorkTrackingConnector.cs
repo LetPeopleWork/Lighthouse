@@ -1355,8 +1355,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// reads its own "is blocked by", and as a finding on the refresh when the Dependency Field named
         /// the link, because that is a setting the administrator can go and fix.
         ///
-        /// Nothing is said when some link did match, or when the Portfolio carries no inward links at
-        /// all: having no dependencies is the ordinary case, and warning about it would train the reader
+        /// Nothing is said when some link did match, or when the Portfolio carries no links that could
+        /// have matched: having no dependencies is the ordinary case, and warning about it would train the reader
         /// to skip the line that matters. One line or finding for the whole refresh, never one per issue.
         ///
         /// Only the whole-query fetch asks this, and deliberately so. The incremental fetch downloads the
@@ -1386,11 +1386,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return;
             }
 
-            var namesSeen = issues
-                .SelectMany(issue => issue.Fields.InwardLinkNames())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Order(StringComparer.Ordinal)
-                .ToList();
+            var namesSeen = TheLinkPhrasesSeen(issues, IssueExtensions.InwardLinkNames);
+
+            // A Portfolio may hold only the end of its links that does not wait. Those links still exist, and
+            // a named link that matched none of them is worth saying, in the words its Features carry.
+            if (namesSeen.Count == 0 && namesALinkThatCanMatch)
+            {
+                namesSeen = TheLinkPhrasesSeen(issues, IssueExtensions.OutwardLinkNames);
+            }
 
             if (namesSeen.Count == 0)
             {
@@ -1412,6 +1415,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 IssueExtensions.BlockedByLinkName,
                 string.Join(", ", namesSeen));
         }
+
+        private static List<string> TheLinkPhrasesSeen(IEnumerable<Issue> issues, Func<JsonElement, List<string>> phrasesOnOneIssue)
+            => [.. issues
+                .SelectMany(issue => phrasesOnOneIssue(issue.Fields))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Order(StringComparer.Ordinal)];
 
         private static int GetEstimatedSize(Portfolio portfolio, WorkItemBase workItem)
         {

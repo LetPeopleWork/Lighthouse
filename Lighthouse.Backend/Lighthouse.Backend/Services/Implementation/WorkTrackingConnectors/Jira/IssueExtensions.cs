@@ -166,25 +166,21 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// administrator looking at the wrong half of their configuration.
         /// </summary>
         public static List<string> InwardLinkNames(this JsonElement fields)
-        {
-            var names = new List<string>();
+            => LinkNamesAtOneEnd(fields, IssueLinkInwardIssue, IssueLinkInwardName);
 
-            foreach (var link in IssueLinksOf(fields))
-            {
-                if (!link.TryGetProperty(IssueLinkInwardIssue, out _))
-                {
-                    continue;
-                }
+        /// <summary>
+        /// What this issue's outward links read as on it: "blocks" where it blocks another issue. Only wanted
+        /// where nothing on the issue reads from the waiting end, because then these are the only sign that
+        /// the issue is linked at all.
+        /// </summary>
+        public static List<string> OutwardLinkNames(this JsonElement fields)
+            => LinkNamesAtOneEnd(fields, IssueLinkOutwardIssue, IssueLinkOutwardName);
 
-                var inwardName = InwardNameOf(link);
-                if (!string.IsNullOrEmpty(inwardName))
-                {
-                    names.Add(inwardName);
-                }
-            }
-
-            return names;
-        }
+        private static List<string> LinkNamesAtOneEnd(JsonElement fields, string counterpartProperty, string phraseProperty)
+            => [.. IssueLinksOf(fields)
+                .Where(link => link.TryGetProperty(counterpartProperty, out _))
+                .Select(link => LabelOf(link, phraseProperty))
+                .Where(phrase => phrase.Length > 0)];
 
         private static IEnumerable<JsonElement> IssueLinksOf(JsonElement fields)
         {

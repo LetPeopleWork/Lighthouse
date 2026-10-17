@@ -26,7 +26,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly JiraLinkType Relates = new("Relates", "relates to", "relates to");
 
+        private static readonly JiraLinkType Dependency = new("Dependency", "is depended on by", "depends on");
+
         private static readonly string[] TheStockBlocksPhrasesOutwardFirst = ["blocks", "is blocked by"];
+
+        private static readonly string[] TheOutwardPhrasesOfBlocksAndRelates = ["blocks", "relates to"];
 
         /// <summary>
         /// Jira's stock Blocks type is named the word its outward end reads. Typed exactly as one end reads,
@@ -119,6 +123,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        /// <summary>
+        /// A link is served from both ends, and a Portfolio may hold only the end that does not wait: every
+        /// Feature blocks or relates to something outside it. Those links still exist, so a Dependency Field
+        /// that matched none of them is told so, with the phrases the Features actually carry.
+        /// </summary>
+        [Test]
+        public async Task Features_carrying_only_the_outward_end_of_other_links_are_told_the_named_link_matched_nothing()
+        {
+            var subject = AnInstanceDefining(
+                [StockBlocks, Dependency, Relates],
+                [
+                    JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                    JiraWireFormat.AnEpic(WhatGatesIt, Relates.LinkWhoseOutwardIssueIs(WhatBlocksIt), StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks)),
+                ],
+                new RecordingLogger<JiraWorkTrackingConnector>());
+
+            var features = await subject.GetFeaturesForProject(APortfolioNamingAsItsDependencyField("depends on"), CancellationToken.None);
+            var findings = features.SelectMany(feature => feature.RefreshFindings).Distinct().ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings.Select(finding => finding.Kind), Is.EqualTo(new List<RefreshFindingKind> { RefreshFindingKind.NamedLinkMatchedNothing }));
+                Assert.That(findings.Select(finding => finding.Seen).FirstOrDefault(), Is.EqualTo(TheOutwardPhrasesOfBlocksAndRelates));
+            }
+        }
+
         private static string AFeatureThatBlocksOneAndIsBlockedByAnother()
             => JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt));
 
@@ -145,6 +175,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             => AnInstanceDefining(linkTypes, issue, new RecordingLogger<JiraWorkTrackingConnector>());
 
         private static JiraWorkTrackingConnector AnInstanceDefining(JiraLinkType[] linkTypes, string issue, RecordingLogger<JiraWorkTrackingConnector> log)
+            => AnInstanceDefining(linkTypes, [issue], log);
+
+        private static JiraWorkTrackingConnector AnInstanceDefining(JiraLinkType[] linkTypes, string[] issues, RecordingLogger<JiraWorkTrackingConnector> log)
             => JiraConnectorTestSetup.AConnectorOver(StubTransport.RespondingWith(request =>
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
@@ -159,7 +192,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return "{\"accountId\":\"someone\"}";
                 }
 
-                return JiraWireFormat.ACloudResponseTo(request, [issue]);
+                return JiraWireFormat.ACloudResponseTo(request, issues);
             }), log);
     }
 }
