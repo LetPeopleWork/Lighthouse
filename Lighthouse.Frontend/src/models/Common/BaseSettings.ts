@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ICycleTimeDefinition } from "../Metrics/NamedCycleTime";
+import type { WorkTrackingSystemType } from "../WorkTracking/WorkTrackingSystemConnection";
 import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
 import type { IStateMapping } from "./StateMapping";
 
@@ -14,6 +15,8 @@ export function parseBlockedStalenessThreshold(value: unknown): number {
 	return result.success ? result.data : 0;
 }
 
+export type SettingSource = "ConnectionDefault" | "Own";
+
 export interface IBaseSettings {
 	id: number;
 	name: string;
@@ -27,6 +30,9 @@ export interface IBaseSettings {
 	serviceLevelExpectationRange: number;
 	systemWIPLimit: number;
 	parentOverrideAdditionalFieldDefinitionId: number | null;
+	parentOverrideSource?: SettingSource;
+	parentOverrideDefaultName?: string | null;
+	workTrackingSystem?: WorkTrackingSystemType;
 	blockedRuleSetJson?: string | null;
 	stateMappings: IStateMapping[];
 	cycleTimeDefinitions?: ICycleTimeDefinition[];

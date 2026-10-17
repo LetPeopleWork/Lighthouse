@@ -56,10 +56,7 @@ export abstract class BaseEditPage<T> extends BaseSettingsPage<T> {
 	}
 
 	get parentOverrideCombobox(): Locator {
-		return this.page
-			.locator("div")
-			.filter({ hasText: /.*Parent Override Field$/ })
-			.getByRole("combobox");
+		return this.page.getByRole("combobox", { name: "Parent Override Field" });
 	}
 
 	get saveButton(): Locator {

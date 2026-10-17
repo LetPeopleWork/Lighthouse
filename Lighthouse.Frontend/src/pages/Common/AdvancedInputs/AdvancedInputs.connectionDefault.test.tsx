@@ -11,8 +11,6 @@ import AdvancedInputsComponent from "./AdvancedInputs";
  * by)", with "Set on the Jira connection." beneath it. A Team admin who cannot read the connection still
  * sees the name, because it travels on the Team's own settings. Picking any other entry, None included,
  * makes the value the Team's own.
- *
- * Skipped until a Team can follow a connection default.
  */
 
 const CausedBy = "Caused by";
@@ -75,7 +73,7 @@ const whenTheAdminPicks = (entry: string) => {
 
 describe("a Team that follows the connection's Parent Override Field", () => {
 	// @driving_port @us-04 @ac-4.6 @contract-shape:pure-function
-	it.skip("shows the followed field as the first entry, with where it is set", () => {
+	it("shows the followed field as the first entry, with where it is set", () => {
 		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault" }));
 
 		expect(theDropdown()).toHaveTextContent("Connection default (Caused by)");
@@ -89,7 +87,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:pure-function
-	it.skip("names the tracker of the connection the default is set on", () => {
+	it("names the tracker of the connection the default is set on", () => {
 		givenTheTeamsSettingsPage(
 			aTeam({ source: "ConnectionDefault", tracker: "AzureDevOps" }),
 		);
@@ -100,14 +98,14 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @edge @us-04 @ac-4.6 @contract-shape:pure-function
-	it.skip("shows the followed field to a Team admin who cannot read the connection's fields", () => {
+	it("shows the followed field to a Team admin who cannot read the connection's fields", () => {
 		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault" }), []);
 
 		expect(theDropdown()).toHaveTextContent("Connection default (Caused by)");
 	});
 
 	// @error @us-04 @ac-4.3 @ac-4.6 @contract-shape:bounded-change
-	it.skip("choosing None makes None the Team's own choice", () => {
+	it("choosing None makes None the Team's own choice", () => {
 		const onSettingsChange = givenTheTeamsSettingsPage(
 			aTeam({ source: "ConnectionDefault" }),
 		);
@@ -125,7 +123,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:bounded-change
-	it.skip("choosing a field makes it the Team's own", () => {
+	it("choosing a field makes it the Team's own", () => {
 		const onSettingsChange = givenTheTeamsSettingsPage(
 			aTeam({ source: "ConnectionDefault" }),
 		);
@@ -143,7 +141,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:bounded-change
-	it.skip("a Team that chose None can go back to following the connection", () => {
+	it("a Team that chose None can go back to following the connection", () => {
 		const onSettingsChange = givenTheTeamsSettingsPage(
 			aTeam({ source: "Own" }),
 		);

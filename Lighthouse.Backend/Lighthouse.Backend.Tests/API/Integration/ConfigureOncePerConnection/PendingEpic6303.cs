@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     internal static class PendingEpic6303
     {
-        public const string Slice05a = "Pending: the Teams' Parent Override Field is set once on the connection (epic 6303, slice 05a).";
-
         public const string Slice05b = "Pending: a field a default names cannot be removed, and an older client's round trip changes nothing (epic 6303, slice 05b).";
 
         public const string Slice06 = "Pending: a changed default updates exactly the owners that follow it (epic 6303, slice 06).";
