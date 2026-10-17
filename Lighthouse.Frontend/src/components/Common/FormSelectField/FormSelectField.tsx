@@ -1,6 +1,7 @@
 import type { SelectChangeEvent } from "@mui/material";
 import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 import type React from "react";
+import { useId } from "react";
 
 interface FormSelectFieldProps<T extends string | number> {
 	label: string;
@@ -23,6 +24,8 @@ function FormSelectField<T extends string | number>({
 	fullWidth = true,
 	margin = "normal",
 }: Readonly<FormSelectFieldProps<T>>): React.ReactElement {
+	const labelId = useId();
+
 	const handleChange = (e: SelectChangeEvent<T | "">) => {
 		const selectedValue = e.target.value;
 		onChange(selectedValue === "" ? null : (selectedValue as T));
@@ -30,8 +33,13 @@ function FormSelectField<T extends string | number>({
 
 	return (
 		<FormControl fullWidth={fullWidth} margin={margin}>
-			<InputLabel>{label}</InputLabel>
-			<Select<T | ""> value={value} label={label} onChange={handleChange}>
+			<InputLabel id={labelId}>{label}</InputLabel>
+			<Select<T | "">
+				labelId={labelId}
+				value={value}
+				label={label}
+				onChange={handleChange}
+			>
 				{allowNone && (
 					<MenuItem value="">
 						<em>{noneLabel}</em>

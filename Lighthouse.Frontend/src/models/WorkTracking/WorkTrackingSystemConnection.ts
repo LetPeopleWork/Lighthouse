@@ -42,6 +42,28 @@ export interface IConnectionUsage {
 	portfolios: number;
 }
 
+export const ConnectionDefaultNames = [
+	"parentOverrideForTeams",
+	"estimationForTeams",
+	"parentOverrideForPortfolios",
+	"dependencyFieldForPortfolios",
+	"sizeEstimateFieldForPortfolios",
+	"featureOwnerFieldForPortfolios",
+	"estimationForPortfolios",
+] as const;
+
+export type ConnectionDefaultName = (typeof ConnectionDefaultNames)[number];
+
+export const isConnectionDefaultName = (
+	name: string,
+): name is ConnectionDefaultName =>
+	(ConnectionDefaultNames as readonly string[]).includes(name);
+
+/** The Additional Field each default points at, by id; null or absent means no default is set. */
+export type IConnectionDefaults = Partial<
+	Record<ConnectionDefaultName, number | null>
+>;
+
 export interface IWorkTrackingSystemConnection {
 	workTrackingSystemGetDataRetrievalDisplayName(): string;
 	id: number | null;
@@ -56,6 +78,8 @@ export interface IWorkTrackingSystemConnection {
 	requiresReconnect?: boolean;
 	concurrencyToken?: string;
 	usedBy?: IConnectionUsage;
+	defaults?: IConnectionDefaults;
+	supportedDefaults?: ConnectionDefaultName[];
 }
 
 export class WorkTrackingSystemConnection
@@ -73,6 +97,8 @@ export class WorkTrackingSystemConnection
 	requiresReconnect?: boolean;
 	concurrencyToken?: string;
 	usedBy?: IConnectionUsage;
+	defaults?: IConnectionDefaults;
+	supportedDefaults?: ConnectionDefaultName[];
 
 	constructor(data: {
 		name: string;
@@ -87,6 +113,8 @@ export class WorkTrackingSystemConnection
 		requiresReconnect?: boolean;
 		concurrencyToken?: string;
 		usedBy?: IConnectionUsage;
+		defaults?: IConnectionDefaults;
+		supportedDefaults?: ConnectionDefaultName[];
 	}) {
 		this.id = data.id ?? null;
 		this.name = data.name;
@@ -100,6 +128,8 @@ export class WorkTrackingSystemConnection
 		this.requiresReconnect = data.requiresReconnect;
 		this.concurrencyToken = data.concurrencyToken;
 		this.usedBy = data.usedBy;
+		this.defaults = data.defaults;
+		this.supportedDefaults = data.supportedDefaults;
 	}
 
 	workTrackingSystemGetDataRetrievalDisplayName(): string {

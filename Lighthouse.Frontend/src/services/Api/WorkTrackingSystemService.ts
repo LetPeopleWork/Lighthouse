@@ -1,3 +1,4 @@
+import { z } from "zod";
 import {
 	type IConnectionValidationPayload,
 	type IConnectionValidationResult,
@@ -5,6 +6,7 @@ import {
 } from "../../models/WorkTracking/ConnectionValidationResult";
 import {
 	type IWorkTrackingSystemConnection,
+	isConnectionDefaultName,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
@@ -14,6 +16,14 @@ import {
 	WriteBackValueSource,
 } from "../../models/WorkTracking/WriteBackMappingDefinition";
 import { BaseApiService } from "./BaseApiService";
+
+const ConnectionDefaultsSchema = z.object({
+	defaults: z
+		.object({ parentOverrideForTeams: z.number().nullable().optional() })
+		.nullable()
+		.optional(),
+	supportedDefaults: z.array(z.string()).nullable().optional(),
+});
 
 /**
  * The answer to the question asked after a connection's Additional Fields changed: update its Teams
@@ -158,7 +168,20 @@ export class WorkTrackingSystemService
 			requiresReconnect: workTrackingSystemConnection.requiresReconnect,
 			concurrencyToken: workTrackingSystemConnection.concurrencyToken,
 			usedBy: workTrackingSystemConnection.usedBy,
+			...this.deserializeDefaults(workTrackingSystemConnection),
 		});
+	}
+
+	private deserializeDefaults(connection: IWorkTrackingSystemConnection) {
+		const { defaults, supportedDefaults } = BaseApiService.parse(
+			ConnectionDefaultsSchema,
+			connection,
+		);
+		// A server newer than this page may offer a default the page has no row for yet.
+		return {
+			defaults: defaults ?? undefined,
+			supportedDefaults: supportedDefaults?.filter(isConnectionDefaultName),
+		};
 	}
 
 	private deserializeWriteBackMapping(

@@ -368,7 +368,7 @@ describe("defaults set once on the connection", () => {
 
 	describe("the section on the connection page", () => {
 		// @walking_skeleton @driving_port @us-04 @ac-4.7 @contract-shape:pure-function
-		it.skip("a Jira connection shows a Defaults for Teams and Portfolios section with the settings Jira honours for each", async () => {
+		it("a Jira connection shows a Defaults for Teams and Portfolios section with the settings Jira honours for each", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
 			const section = theSection();
@@ -387,7 +387,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @us-04 @ac-4.7 @contract-shape:pure-function
-		it.skip("a CSV connection offers only the Feature Owner and Estimation defaults", async () => {
+		it("a CSV connection offers only the Feature Owner and Estimation defaults", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ tracker: "Csv" }),
 			});
@@ -414,7 +414,7 @@ describe("defaults set once on the connection", () => {
 		);
 
 		// @us-04 @ac-4.7 @ac-f.4 @contract-shape:pure-function
-		it.skip("the section speaks in the words this instance uses", async () => {
+		it("the section speaks in the words this instance uses", async () => {
 			await givenPriyaOpensJiraDcPayments({ words: SquadsProgramsAndEpics });
 
 			const section = await screen.findByRole("region", {
@@ -433,7 +433,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @edge @us-04 @ac-4.7 @contract-shape:unbounded-preservation
-		it.skip("the page never says how many follow a default", async () => {
+		it("the page never says how many follow a default", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
 			expect(

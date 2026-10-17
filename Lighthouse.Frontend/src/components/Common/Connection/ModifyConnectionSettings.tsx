@@ -1,5 +1,6 @@
 import {
 	Alert,
+	Box,
 	Button,
 	Container,
 	Dialog,
@@ -26,7 +27,9 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import type {
+	ConnectionDefaultName,
 	IAuthenticationMethod,
+	IConnectionDefaults,
 	IConnectionUsage,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -44,6 +47,8 @@ import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
+import FormSelectField from "../FormSelectField";
+import InputGroup from "../InputGroup/InputGroup";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
 import SecretHandlingNotice, {
@@ -129,6 +134,117 @@ const NOBODY: IConnectionUsage = { teams: 0, portfolios: 0 };
 
 const isUsed = (usage: IConnectionUsage): boolean =>
 	usage.teams + usage.portfolios > 0;
+
+type DefaultsGroup = "teams" | "portfolios";
+
+const WhereEachDefaultSits: Record<
+	ConnectionDefaultName,
+	{ group: DefaultsGroup; label: (featureTerm: string) => string }
+> = {
+	parentOverrideForTeams: {
+		group: "teams",
+		label: () => "Parent Override Field",
+	},
+	estimationForTeams: { group: "teams", label: () => "Estimation Field" },
+	parentOverrideForPortfolios: {
+		group: "portfolios",
+		label: () => "Parent Override Field",
+	},
+	dependencyFieldForPortfolios: {
+		group: "portfolios",
+		label: () => "Dependency Field",
+	},
+	sizeEstimateFieldForPortfolios: {
+		group: "portfolios",
+		label: () => "Size Estimate Field",
+	},
+	featureOwnerFieldForPortfolios: {
+		group: "portfolios",
+		label: (featureTerm) => `${featureTerm} Owner Field`,
+	},
+	estimationForPortfolios: {
+		group: "portfolios",
+		label: () => "Estimation Field",
+	},
+};
+
+interface ConnectionDefaultsSectionProps {
+	supportedDefaults: ConnectionDefaultName[];
+	defaults: IConnectionDefaults;
+	additionalFields: IAdditionalFieldDefinition[];
+	onChange: (name: ConnectionDefaultName, fieldId: number | null) => void;
+}
+
+const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
+	supportedDefaults,
+	defaults,
+	additionalFields,
+	onChange,
+}) => {
+	const { getTerm } = useTerminology();
+	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
+	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const title = `Defaults for ${teamsTerm} and ${portfoliosTerm}`;
+
+	const fieldOptions = additionalFields.map((field) => ({
+		id: field.id,
+		label: field.displayName,
+	}));
+	const fieldIds = new Set(additionalFields.map((field) => field.id));
+	// A field removed from the list above has no entry to show, so its default reads as None.
+	const chosenFieldOf = (name: ConnectionDefaultName): number | "" => {
+		const fieldId = defaults[name];
+		return fieldId != null && fieldIds.has(fieldId) ? fieldId : "";
+	};
+
+	const groups: { group: DefaultsGroup; heading: string }[] = [
+		{ group: "teams", heading: teamsTerm },
+		{ group: "portfolios", heading: portfoliosTerm },
+	];
+
+	return (
+		<Box component="section" aria-label={title}>
+			<InputGroup title={title}>
+				<Typography variant="body2" color="text.secondary">
+					{`${teamsTerm} and ${portfoliosTerm} on this connection use these unless they set their own.`}
+				</Typography>
+				{groups
+					.map(({ group, heading }) => ({
+						heading,
+						rows: supportedDefaults.filter(
+							(name) => WhereEachDefaultSits[name].group === group,
+						),
+					}))
+					.filter(({ rows }) => rows.length > 0)
+					.map(({ heading, rows }) => (
+						<Box
+							key={heading}
+							component="fieldset"
+							sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}
+						>
+							<Typography
+								component="legend"
+								variant="subtitle2"
+								color="text.secondary"
+							>
+								{heading}
+							</Typography>
+							{rows.map((name) => (
+								<FormSelectField<number>
+									key={name}
+									label={WhereEachDefaultSits[name].label(featureTerm)}
+									value={chosenFieldOf(name)}
+									options={fieldOptions}
+									onChange={(fieldId) => onChange(name, fieldId)}
+								/>
+							))}
+						</Box>
+					))}
+			</InputGroup>
+		</Box>
+	);
+};
 
 interface UpdateQuestionProps {
 	open: boolean;
@@ -255,6 +371,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		IAdditionalFieldDefinition[]
 	>([]);
 	const [usage, setUsage] = useState<IConnectionUsage>(NOBODY);
+	const [defaults, setDefaults] = useState<IConnectionDefaults | undefined>(
+		undefined,
+	);
 	const [connectionAwaitingAnswer, setConnectionAwaitingAnswer] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [validationErrorMessage, setValidationErrorMessage] = useState<
@@ -369,6 +488,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					);
 					setLoadedFields(existingConnection.additionalFieldDefinitions ?? []);
 					setUsage(existingConnection.usedBy ?? NOBODY);
+					setDefaults(existingConnection.defaults);
 					setWriteBackMappings(
 						existingConnection.writeBackMappingDefinitions ?? [],
 					);
@@ -545,6 +665,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
 				additionalFieldDefinitions: additionalFields,
 				writeBackMappingDefinitions: writeBackMappings,
+				defaults,
 			};
 
 			try {
@@ -625,6 +746,17 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		showAuthFields ? allOptions : otherOptions,
 	);
 	const lockOAuthField = isEditMode && usesOAuth;
+	const supportedDefaults = isEditMode
+		? (selectedWorkTrackingSystem?.supportedDefaults ?? [])
+		: [];
+
+	const handleDefaultChange = (
+		name: ConnectionDefaultName,
+		fieldId: number | null,
+	) => {
+		clearValidationFeedback();
+		setDefaults((previous) => ({ ...previous, [name]: fieldId }));
+	};
 
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
@@ -802,6 +934,17 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							onChange={setAdditionalFields}
 						/>
 					</Grid>
+
+					{supportedDefaults.length > 0 && (
+						<Grid size={{ xs: 12 }}>
+							<ConnectionDefaultsSection
+								supportedDefaults={supportedDefaults}
+								defaults={defaults ?? {}}
+								additionalFields={additionalFields}
+								onChange={handleDefaultChange}
+							/>
+						</Grid>
+					)}
 
 					{/* Sync with Source (Write-Back Mappings) */}
 					<Grid size={{ xs: 12 }}>
