@@ -758,6 +758,25 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		setDefaults((previous) => ({ ...previous, [name]: fieldId }));
 	};
 
+	// A default left naming a removed field would still be sent, and every Team following it would read a
+	// field the connection no longer has.
+	const handleAdditionalFieldsChange = (
+		fields: IAdditionalFieldDefinition[],
+	) => {
+		setAdditionalFields(fields);
+		const kept = new Set(fields.map((field) => field.id));
+		setDefaults((previous) =>
+			previous === undefined
+				? previous
+				: Object.fromEntries(
+						Object.entries(previous).map(([name, fieldId]) => [
+							name,
+							fieldId != null && !kept.has(fieldId) ? null : fieldId,
+						]),
+					),
+		);
+	};
+
 	return (
 		<LoadingAnimation isLoading={loading} hasError={false}>
 			<Container maxWidth={false}>
@@ -931,7 +950,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 									: null
 							}
 							fields={additionalFields}
-							onChange={setAdditionalFields}
+							onChange={handleAdditionalFieldsChange}
 						/>
 					</Grid>
 

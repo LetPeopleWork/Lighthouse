@@ -561,6 +561,31 @@ describe("defaults set once on the connection", () => {
 				parentOverrideForTeams: 11,
 			});
 		});
+
+		// @error @us-04 @contract-shape:bounded-change
+		it("removing the field a default names clears that default in the save, and leaves the others as they were", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: { parentOverrideForTeams: 11, estimationForTeams: 13 },
+				}),
+			});
+
+			const causedBy = screen
+				.getByText(CausedBy, { selector: ".MuiListItemText-primary" })
+				.closest("li") as HTMLElement;
+			fireEvent.click(within(causedBy).getByRole("button", { name: "delete" }));
+			whenPriyaPressesSave();
+			const question = await screen.findByRole("dialog");
+			fireEvent.click(
+				within(question).getByRole("button", { name: "Save only" }),
+			);
+
+			await theSaveIsSent(server);
+			expect(theSave(server).defaults).toEqual({
+				parentOverrideForTeams: null,
+				estimationForTeams: 13,
+			});
+		});
 	});
 
 	describe("the save dialog for a changed default that is read when updating", () => {

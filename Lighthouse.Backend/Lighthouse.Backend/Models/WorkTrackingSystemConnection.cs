@@ -29,6 +29,10 @@ namespace Lighthouse.Backend.Models
         public string? DisplayNameOfField(int? additionalFieldDefinitionId)
             => AdditionalFieldDefinitions.FirstOrDefault(field => field.Id == additionalFieldDefinitionId)?.DisplayName;
 
+        // A field not stored yet carries no id of its own, so only a positive id can name one.
+        public bool HoldsStoredField(int additionalFieldDefinitionId)
+            => additionalFieldDefinitionId > 0 && AdditionalFieldDefinitions.Exists(field => field.Id == additionalFieldDefinitionId);
+
         public string GetWorkTrackingSystemConnectionOptionByKey(string key)
         {
             var workTrackingOption = Options.SingleOrDefault(x => x.Key == key);

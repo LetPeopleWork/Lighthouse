@@ -338,6 +338,48 @@ namespace Lighthouse.Backend.Tests.API
             repositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
+        [TestCase(9999, TestName = "UpdateWorkTrackingSystemConnection_ADefaultNamingAMadeUpField_IsRefusedAndNothingIsStored")]
+        [TestCase(77, TestName = "UpdateWorkTrackingSystemConnection_ADefaultNamingAnotherConnectionsField_IsRefusedAndNothingIsStored")]
+        [TestCase(-1, TestName = "UpdateWorkTrackingSystemConnection_ADefaultNamingAPlaceholderNoFieldInTheSaveCarries_IsRefusedAndNothingIsStored")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task UpdateWorkTrackingSystemConnection_ADefaultNamingNoFieldOfThisConnection_IsRefusedAndNothingIsStored(int namedFieldId)
+        {
+            const int CausedById = 5;
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira, ParentOverrideForTeams = CausedById };
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            var otherConnection = new WorkTrackingSystemConnection { Id = 13, Name = "Jira DC Treasury", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            otherConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 77, DisplayName = "Treasury Caused by", Reference = "customfield_10500" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            repositoryMock.Setup(x => x.GetById(13)).Returns(otherConnection);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = namedFieldId },
+            };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -2, DisplayName = "Epic Link", Reference = "customfield_10008" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-field-unknown"));
+                Assert.That(problem?.Detail, Does.Contain("parentOverrideForTeams"));
+                Assert.That(existingConnection.ParentOverrideForTeams, Is.EqualTo(CausedById));
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
         private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory
         {
             public override ProblemDetails CreateProblemDetails(
