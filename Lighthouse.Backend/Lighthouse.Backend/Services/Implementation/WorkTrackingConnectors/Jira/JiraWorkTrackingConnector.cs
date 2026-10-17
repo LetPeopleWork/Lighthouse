@@ -1263,21 +1263,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         /// <summary>
         /// A Dependency Field naming something that is not a field can only be read once the link types are
-        /// known. With that list refused the name stays unresolved, every Feature would be read as waiting
-        /// on nothing, and each Feature handed back overwrites the dependencies stored for it. Stopping the
-        /// refresh leaves those as they were until the list can be read again.
+        /// known. With that list refused, or answered in a form that cannot be read, the name stays
+        /// unresolved, every Feature would be read as waiting on nothing, and each Feature handed back
+        /// overwrites the dependencies stored for it. Stopping the refresh leaves those as they were until
+        /// the list can be read again.
         /// </summary>
         private void StopUnlessTheDependencyFieldCouldBeLookedUp(
             Portfolio portfolio, ResolvedReference theDependencyField, IssueLinkTypeListing linkTypes)
         {
             var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
 
-            if (named is null || named.IsPredefined || !theDependencyField.ResolvedToNothing || linkTypes.RefusedWith is not { } status)
+            if (named is null || named.IsPredefined || !theDependencyField.ResolvedToNothing || WhatTheLinkTypeListAnswered(linkTypes) is not { } answer)
             {
                 return;
             }
-
-            var answer = $"{(int)status} ({status})";
 
             logger.LogWarning(
                 "The refresh of Portfolio {PortfolioName} was stopped: its Dependency Field names '{Reference}', which is not a field, "
@@ -1294,6 +1293,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 $"GET {JiraRestRoutes.IssueLinkType} answered {answer}.",
                 JiraReadException.AdditionalFieldsFieldName));
         }
+
+        /// <summary>
+        /// How Jira answered the link type list when that answer settles nothing: a refusal, or a reply that
+        /// arrived without one but could not be read. Nothing when the list was read.
+        /// </summary>
+        private static string? WhatTheLinkTypeListAnswered(IssueLinkTypeListing linkTypes)
+            => linkTypes switch
+            {
+                { RefusedWith: { } status } => $"{(int)status} ({status})",
+                { WasNotUnderstood: true } => "a reply Lighthouse could not read",
+                _ => null,
+            };
 
         /// <summary>A finding about the Dependency Field, naming what an administrator typed into it.</summary>
         private static RefreshFinding ADependencyFieldFinding(Portfolio portfolio, RefreshFindingKind kind, IReadOnlyList<string> seen)

@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// </summary>
     public class JiraDependencyLinkTest
     {
+        private const string TheFieldOfItsOwn = "Waits On";
+
         [Test]
         public void ExtractDependencyReferences_YieldsTheIssueAnInwardBlockingLinkPointsAt()
         {
@@ -415,7 +417,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_APortfolioReadingItsOwnFieldIsNotToldItsLinksAreNamedWrong()
         {
             var logger = new RecordingLogger<JiraWorkTrackingConnector>();
-            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
+            var subject = AConnectorDefiningTheFieldOfItsOwn(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
 
             var portfolio = APortfolioReadingAFieldOfItsOwn();
 
@@ -439,7 +441,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetFeaturesForProject_TheSamePortfolioNamingNoFieldIsToldAboutItsLinksAgain()
         {
             var logger = new RecordingLogger<JiraWorkTrackingConnector>();
-            var subject = AConnectorReturning(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
+            var subject = AConnectorDefiningTheFieldOfItsOwn(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
 
             var portfolio = APortfolioReadingAFieldOfItsOwn();
             portfolio.DependencyOverrideAdditionalFieldDefinitionId = null;
@@ -450,8 +452,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         /// <summary>
-        /// A Portfolio pointed at a field of its own. The field resolves to nothing here, which is what a
-        /// Portfolio whose Features have simply not had it filled in yet looks like.
+        /// A Portfolio pointed at a field of its own, which the instance defines and no Feature has had
+        /// filled in yet.
         /// </summary>
         private static Portfolio APortfolioReadingAFieldOfItsOwn()
         {
@@ -460,8 +462,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
                 Id = 1,
-                DisplayName = "Waits On",
-                Reference = "Waits On",
+                DisplayName = TheFieldOfItsOwn,
+                Reference = TheFieldOfItsOwn,
             });
 
             portfolio.DependencyOverrideAdditionalFieldDefinitionId = 1;
@@ -475,6 +477,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static JiraWorkTrackingConnector AConnectorReturning(ILogger<JiraWorkTrackingConnector> logger, params string[] issues)
             => JiraConnectorTestSetup.AConnectorOver(
                 StubTransport.RespondingWith(request => JiraWireFormat.ACloudResponseTo(request, issues)),
+                logger);
+
+        private static JiraWorkTrackingConnector AConnectorDefiningTheFieldOfItsOwn(ILogger<JiraWorkTrackingConnector> logger, params string[] issues)
+            => JiraConnectorTestSetup.AConnectorOver(
+                StubTransport.RespondingWith(request =>
+                    request.RequestUri?.AbsolutePath.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) == true
+                        ? JiraWireFormat.TheFieldListDefining([TheFieldOfItsOwn])
+                        : JiraWireFormat.ACloudResponseTo(request, issues)),
                 logger);
 
         private static JiraWorkTrackingConnector AConnectorReturning(RecordedRequests recorded, params string[] issues)

@@ -248,6 +248,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // A proxy or maintenance page can answer the link type list with 200 and something that is not the
+        // list at all. That says no more about what the name means than a refusal does.
+        [Test]
+        [Category("us-01")]
+        [Category("ac-1.4")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task An_unreadable_link_type_list_stops_the_refresh_and_leaves_the_stored_dependencies_as_they_were()
+        {
+            JiraHoldsTheFeatures("PAY-112", "PAY-98", "PAY-50");
+            OnJira("PAY-112", "depends on", "PAY-98");
+            OnJira("PAY-112", "is blocked by", "PAY-50");
+            JiraAnswersItsLinkTypeListUnreadably();
+            PaymentsPlatformsConnectionRegisters("depends on");
+
+            await PaymentsPlatformRefreshes();
+            var beforeNamingIt = await WhatTheFeatureWaitsOn("PAY-112");
+
+            await PaymentsPlatformsAdminNamesTheRegisteredFieldAsItsDependencyField();
+            await PaymentsPlatformRefreshes();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeNamingIt, Is.EqualTo(PAY50), "positive control: a dependency was stored before the link was named");
+                Assert.That(await WhatTheFeatureWaitsOn("PAY-112"), Is.EqualTo(PAY50),
+                    "A refresh that could not read the link type list must not rewrite what was stored.");
+                Assert.That(WhatTheLastRefreshWarned(), Has.Some.Matches<string>(warning => warning.Contains(PaymentsPlatform, StringComparison.Ordinal) && warning.Contains("could not read", StringComparison.Ordinal)),
+                    "Whoever reads the log has to learn which Portfolio stopped and that Jira's reply could not be read.");
+            }
+        }
+
         // Lukas Brandt's Dependency Field names the ordinary text field "Blocked By Keys".
         [Test]
         [Category("us-01")]

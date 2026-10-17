@@ -121,6 +121,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private bool jiraRefusesToListItsLinkTypes;
 
+        private bool jiraAnswersItsLinkTypeListUnreadably;
+
         private readonly Dictionary<string, AnAzureDevOpsOrganisation> organisations = new(StringComparer.OrdinalIgnoreCase);
 
         private readonly Dictionary<string, Portfolio> adoPortfolios = new(StringComparer.Ordinal);
@@ -176,6 +178,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             jiraFieldNames.Clear();
             requestsJiraAnswered.Clear();
             jiraRefusesToListItsLinkTypes = false;
+            jiraAnswersItsLinkTypeListUnreadably = false;
             organisations.Clear();
             adoPortfolios.Clear();
             warningsOfTheLastRefresh = [];
@@ -254,6 +257,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         /// <summary>The instance answers its issue link type list with 503 Service Unavailable.</summary>
         protected void JiraRefusesToListItsLinkTypes() => jiraRefusesToListItsLinkTypes = true;
+
+        /// <summary>The instance answers its issue link type list with 200 OK and a page no JSON reader can parse.</summary>
+        protected void JiraAnswersItsLinkTypeListUnreadably() => jiraAnswersItsLinkTypeListUnreadably = true;
 
         protected void OnJiraTheFieldOf(string key, string fieldName, string value)
         {
@@ -772,6 +778,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
                 {
                     Content = new StringContent("{\"errorMessages\":[\"Service Unavailable\"]}", Encoding.UTF8, "application/json"),
+                };
+            }
+
+            if (jiraAnswersItsLinkTypeListUnreadably && path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal))
+            {
+                return new HttpResponseMessage(HttpStatusCode.OK)
+                {
+                    Content = new StringContent("<html><body>Down for maintenance</body></html>", Encoding.UTF8, "text/html"),
                 };
             }
 
