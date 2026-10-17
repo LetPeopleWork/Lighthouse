@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/RelationTypeListing.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/WorkItemExtensions.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+      "**/Models/WorkItemBase.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~PortfolioUpdaterTest|FullyQualifiedName~TeamUpdaterTest|FullyQualifiedName~UpdateServiceBaseTest|FullyQualifiedName~Tests.Models.WorkItemBase|FullyQualifiedName~Tests.Models.WorkItemTest|FullyQualifiedName~Tests.Models.FeatureTest|FullyQualifiedName~RemoteChangeStampSurvivesUpdateTest)&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&FullyQualifiedName!~IntegrationTest&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

@@ -161,3 +161,125 @@ is no label either.
   Presentation only.
 
 `git status` was clean apart from the added spec after every frontend run.
+
+## Story #6312
+
+Azure DevOps dependencies from a named relation type. Run 2026-10-17 against `main` @ `de10289e1`,
+production code frozen; only tests were added. Gate is 80 % kill rate on each stack, judged on the lines
+this story changed.
+
+| stack | score | scored | killed + timeout | survived / no cov. | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0), whole files, first run | 53.07 % | 1091 | 579 | 512 | 10 m 32 s |
+| Backend, this story's lines, first run | 48.63 % | 183 | 89 | 94 | — |
+| Backend, this story's lines, after the kill round (unit tests only) | 90.16 % | 183 | 165 | 18 | 7 m 23 s |
+| **Backend, this story's lines, final** (connector run with the two acceptance suites) | **93.99 %** | 183 | 172 | 11 | 29 m 39 s |
+| **Frontend (StrykerJS 10.0.0), this story's lines** | **100 %** | 17 | 17 | 0 | 40 s |
+
+Configs: `stryker.6312.backend.json` (the full first run), `stryker.6312.backend.kill.json` (the
+narrowed kill round), `stryker.6312.backend.connector.json` (the connector and `RelationTypeListing.cs`
+with the acceptance suites), `stryker.6312.frontend.json`, `vitest.stryker.6312.config.ts` (copied into
+`Lighthouse.Frontend/` for the run, because its `setupFiles` path is relative to the config).
+
+### How the story's lines were found
+
+A line counts as this story's when it is on the new side of a `git diff -U0 d247d6d62..HEAD` hunk. A
+mutant is on a story line when any line of its span is one. Scores come from
+`StrykerOutput/<run>/reports/mutation-report.json`: (Killed + Timeout) / (Killed + Timeout + Survived +
+NoCoverage). After the kill round, a first-run story-line survivor takes the kill round's status, matched
+on span, mutator and replacement; the final row takes the connector run's figures for
+`AzureDevOpsWorkTrackingConnector.cs` and `RelationTypeListing.cs` and the kill round's for the rest.
+
+The first run's log read `21846 mutants created` and `870 total mutants will be tested`; the kill round
+tested 664, the connector run 380. The first run's filter took every Azure DevOps unit test,
+`WorkItemServiceTest`, `PortfolioUpdaterTest`, `TeamUpdaterTest`, `UpdateServiceBaseTest`, `WorkItemBase`,
+`WorkItemTest`, `FeatureTest` and the remote-change-stamp model tests (319 tests), and left out the live
+connector categories, `*IntegrationTest`, `API.Integration` and `Dogfood`.
+
+### Why the connector run includes two acceptance suites
+
+The named-end and relation-type behaviour of the connector is pinned, before this pass, only by
+`Slice03AzureDevOpsRelationTypeAcceptedScenarios` and `Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios`
+under `API/Integration/ConfigureOncePerConnection/`. They drive the real connector over a fake Azure
+DevOps client, so they make no network call, but they boot the application, which is why the run took
+30 minutes for 380 mutants. Without them the first run scored the connector's story lines 44.09 %. The
+live categories and `Dogfood` stay out.
+
+### Per file
+
+| file | whole file, first run | story-line mutants | story-line survivors, first run | final |
+| --- | --- | --- | --- | --- |
+| `.../AzureDevOps/AzureDevOpsWorkTrackingConnector.cs` | 41.07 % (200/487); 54.00 % (263/487) with the acceptance suites | 127 | 71 | 11 |
+| `.../AzureDevOps/RelationTypeListing.cs` | 27.27 % (6/22); 100 % with the acceptance suites | 22 | 16 | 0 |
+| `.../AzureDevOps/WorkItemExtensions.cs` | 40.00 % (16/40) | 1 | 0 | 0 |
+| `.../WorkItems/WorkItemService.cs` | 65.36 % (234/358) | 25 | 5 | 0 |
+| `.../Update/UpdateServiceBase.cs` | 59.21 % (45/76) | 1 | 0 | 0 |
+| `.../Update/PortfolioUpdater.cs` | 66.67 % (28/42) | 1 | 1 | 0 |
+| `.../Update/TeamUpdater.cs` | 66.67 % (20/30) | 6 | 1 | 0 |
+| `Models/WorkItemBase.cs` | 83.33 % (30/36) | 0 | 0 | 0 |
+
+`AzureDevOpsWorkTrackingConnector.cs` was mutated whole (1,793 lines, about 470 of them this story's); its
+story lines score **91.34 % (116/127)** in the connector run, and its whole-file figure describes older
+code that the live `AdoIntegration` suites pin and this run does not. `WorkItemBase.cs`'s two story lines
+(a copied property and a `[NotMapped]` auto-property) carry no mutant.
+
+### Closed by this pass
+
+New fixture `AzureDevOpsNamedRelationEndTest` (unit, over a mocked Azure DevOps client):
+
+- Validate: references that are all fields never list the relation types; an end, an end in another
+  case, a base name with both ends listed, a type without direction and an end listed without attributes
+  are accepted; a base name with only one end listed, an attachment type and an unknown name are refused;
+  the refusal lists every reference and the relation types that do exist, or says none were listed; a
+  refused or timed-out listing reads as `relation_types_unreadable` with its full sentence, hint and field;
+  an unexpected failure is not passed off as a refusal.
+- Refresh: a carried named end is read alone, as a tracker link, and the Predecessor link is ignored; no
+  finding while one Feature carries it; a named end nobody carries is reported naming only the work-item
+  links seen (not attachments, hyperlinks, artifact links, the hierarchy, or a relation with no type, and
+  each type once in any case); nothing is said when the Features carry no relations, or when no end is
+  named; a base name and a type without direction read nothing and say why; a Parent Override Field naming
+  a base name is reported; relations are not read when the parent comes from a field and the Dependency
+  Field reads nothing; settings that read a field and name a relation type are each reported, settings
+  naming fields are not, and the listing is asked for once; a stale definition no setting names does not
+  cause a listing; a Dependency Field that cannot be looked up stops the refresh with its full verdict.
+
+`WorkItemServiceTest`: each worded finding kind writes only its own line, not also the catch-all; a Team's
+full refresh reports a finding once, under the Team's name. `TeamUpdaterTest`: a read failure still stops
+the Team's refresh.
+
+`UpdateServiceTestBase` now clears `WhatTheRefreshThrew` at the start of each enqueued update. It kept the
+previous test's exception, because NUnit reuses one fixture instance, so the existing "attaching a reason
+must not swallow the failure" assertion in `PortfolioUpdaterTest` passed on a mutant that swallowed it
+(`PortfolioUpdater.cs:155`, `throw;` removed): the test before it in the class had thrown the same type.
+
+### Accepted survivors
+
+- `AzureDevOpsWorkTrackingConnector.cs:745–748`, `:876` (two), `:972`, `:973`, `:975`: log calls removed
+  or their templates emptied. Log-only; the refresh's outcome, findings and verdicts are pinned.
+- `:1763`, `return true` to `false` for a base name with both ends listed. The definition has already been
+  recorded as a relation type and as reading nothing, so the only difference is the extra "nothing will be
+  read for it" warning. Log-only.
+- `:725`, the `?? string.Empty` fallback to another string. Not reachable: a finding is only made for a
+  definition the setting names, so the lookup never misses.
+
+### Not mutated
+
+- `Data/LighthouseAppContext.cs`: only `ReadFindings` and `AFindingThisReleaseKnows` (the findings value
+  converter) changed, in an 894-line context file whose model-building mutants would bury them and slow
+  every mutant through the DbContext. Pinned by `RefreshLogFindingsPersistenceTest`, which writes and reads
+  the column through the real SQLite migrations.
+- `Models/Feature.cs` and `Models/RefreshFinding.cs` only lost lines, so there is nothing of this story's
+  to mutate. `RefreshLog.ts` on the frontend likewise only lost a line.
+
+## Frontend (Story #6312)
+
+`refreshFindingSentences.ts:7-15`, `:48-56`, `:60-62` and `:76`, the hunks of `git diff -U0
+d247d6d62..HEAD`. Specs in the narrowed vitest config: `refreshFindingSentences.test.ts` and
+`RefreshHistorySection.findings.test.tsx`. `coverageAnalysis: perTest`, incremental file under
+`reports/mutation/` (not committed).
+
+| file | score |
+| --- | --- |
+| `refreshFindingSentences.ts` (story lines) | **100 % (17/17)** |
+
+No survivors, so no kill round. `git status` showed no change under `Lighthouse.Frontend/src` after the run.
