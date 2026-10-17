@@ -1093,6 +1093,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             [
                 ACustomRelationTypeEnd(ContosoDependsOnForward, "Depends On", ContosoDependsOnReverse, isForward: true),
                 ACustomRelationTypeEnd(ContosoDependsOnReverse, "Depended On By", ContosoDependsOnForward, isForward: false),
+                ACustomRelationTypeEnd("Fabrikam.Needs-Forward", "Needs", "Fabrikam.Needs-Reverse", isForward: true),
+                ACustomRelationTypeEnd("Fabrikam.Needs-Reverse", "Needed By", "Fabrikam.Needs-Forward", isForward: false),
             ];
 
             private static WorkItemRelationType AsListed(string referenceName)

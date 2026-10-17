@@ -108,7 +108,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // A Parent Override set today skips the download of every relation, and a Dependency Field that names a
         // relation type would then read nothing on exactly the Portfolios most likely to use both.
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.5")]
         [Category("error")]
@@ -213,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.7")]
         [Category("kpi")]
@@ -242,7 +240,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // Connector instances are shared by every connection of a tracker, so a listing remembered on the
         // connector would answer Fabrikam's question with Contoso's relation types.
         [Test]
-        [Ignore(PendingEpic6303.Slice04)]
         [Category("us-03")]
         [Category("ac-3.7")]
         [Category("error")]
