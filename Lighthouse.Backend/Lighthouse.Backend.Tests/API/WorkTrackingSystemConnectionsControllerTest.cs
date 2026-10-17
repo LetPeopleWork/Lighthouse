@@ -13,7 +13,11 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -470,6 +474,84 @@ namespace Lighthouse.Backend.Tests.API
                 AdditionalFieldDefinitionId = mappingFieldId,
             });
             return dto;
+        }
+
+        public enum DefaultNamedOnCreate
+        {
+            TheNewFieldsPlaceholder,
+            AStoredFieldId,
+            ADefaultThisVersionCannotHoldYet,
+        }
+
+        [TestCase(DefaultNamedOnCreate.TheNewFieldsPlaceholder)]
+        [TestCase(DefaultNamedOnCreate.AStoredFieldId)]
+        [TestCase(DefaultNamedOnCreate.ADefaultThisVersionCannotHoldYet)]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task CreateNewWorkTrackingSystemConnection_NamingADefault_IsRefusedAndNothingIsStored(DefaultNamedOnCreate named)
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = named switch
+                {
+                    DefaultNamedOnCreate.TheNewFieldsPlaceholder => new ConnectionDefaultsDto { ParentOverrideForTeams = -1 },
+                    DefaultNamedOnCreate.AStoredFieldId => new ConnectionDefaultsDto { ParentOverrideForTeams = 5 },
+                    _ => new ConnectionDefaultsDto { NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(-1) } },
+                },
+            };
+            newConnectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "Caused by", Reference = "customfield_10500" });
+            var subject = CreateSubjectAnsweringWithProblemDetails();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-on-create"));
+            }
+
+            repositoryMock.Verify(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task CreateNewWorkTrackingSystemConnection_WithDefaultsNamingNothing_CreatesTheConnection()
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = null },
+            };
+            var subject = CreateSubjectAnsweringWithProblemDetails();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+            repositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        private WorkTrackingSystemConnectionsController CreateSubjectAnsweringWithProblemDetails()
+        {
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            return subject;
+        }
+
+        private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory
+        {
+            public override ProblemDetails CreateProblemDetails(
+                HttpContext httpContext, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new() { Status = statusCode, Title = title, Type = type, Detail = detail, Instance = instance };
+
+            public override ValidationProblemDetails CreateValidationProblemDetails(
+                HttpContext httpContext, ModelStateDictionary modelStateDictionary, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new(modelStateDictionary) { Status = statusCode, Title = title };
         }
 
         private WorkTrackingSystemConnectionsController CreateSubject()
