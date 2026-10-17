@@ -1002,6 +1002,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             var findings = fetch.Features
                 .SelectMany(feature => feature.RefreshFindings)
+                .Where(finding => TheSettingIsRead(portfolio, finding.Setting))
                 .DistinctBy(finding => (finding.Kind, finding.Setting))
                 .ToList();
 
@@ -1012,6 +1013,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             return findings;
         }
+
+        /// <summary>
+        /// A Portfolio that ignores dependencies never reads its Dependency Field, so what that field matched
+        /// or missed is nothing for its administrator to fix.
+        /// </summary>
+        private static bool TheSettingIsRead(Portfolio portfolio, RefreshFindingSetting setting)
+            => !(portfolio.IgnoreDependencies && setting == RefreshFindingSetting.DependencyField);
 
         private void WarnAbout(Portfolio portfolio, RefreshFinding finding)
         {

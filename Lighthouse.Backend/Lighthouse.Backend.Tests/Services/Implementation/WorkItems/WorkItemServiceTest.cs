@@ -1518,6 +1518,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
+        /// A Portfolio that ignores dependencies does not read its Dependency Field at all, so whatever that
+        /// field matched or missed is nothing its administrator needs to act on.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_PortfolioIgnoringDependencies_RecordsAndWarnsNoDependencyFieldFinding()
+        {
+            var portfolio = CreatePortfolio();
+            portfolio.IgnoreDependencies = true;
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", TheLinksSeenWhereNothingMatched)],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            var outcome = await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Findings, Is.Empty);
+                Assert.That(whatTheServiceWrote.Warnings, Has.None.Contains("Dependency Field"));
+            }
+        }
+
+        /// <summary>
         /// The same misconfiguration in two different settings is two things for the administrator to fix,
         /// so each setting keeps its own finding.
         /// </summary>
