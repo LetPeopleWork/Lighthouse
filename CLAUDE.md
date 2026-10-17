@@ -13,7 +13,7 @@ project) and the `lean-ctx` skill (loads on demand). Not duplicated here — one
 This project follows the **object-oriented** paradigm. Use @nw-software-crafter for implementation.
 
 - Backend: C# .NET 10 ASP.NET Core (OOP, ports-and-adapters / hexagonal architecture)
-- Frontend: React 18 + TypeScript (functional-leaning hooks, but overall OOP project)
+- Frontend: React 19 + MUI 9 + TypeScript (functional-leaning hooks, but overall OOP project)
 - E2E Tests: Playwright with Page Object Model pattern
 - Test Framework (backend): NUnit 4.6 + Moq + Microsoft.EntityFrameworkCore.InMemory + Microsoft.AspNetCore.Mvc.Testing (WebApplicationFactory)
 - Test Framework (frontend): Vitest + React Testing Library
