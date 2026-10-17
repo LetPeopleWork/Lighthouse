@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsByQuery(team, TheQueryATeamIsFetchedBy(team), cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences.Fields, cancellationToken);
         }
 
         /// <summary>
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var (adoWorkItems, additionalFieldReferences) = await FetchAdoWorkItemsById(team, referenceIds, cancellationToken);
 
-            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences, cancellationToken);
+            return await TheTeamsWorkItemsFrom(team, adoWorkItems, additionalFieldReferences.Fields, cancellationToken);
         }
 
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
@@ -633,12 +633,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         private async Task<List<Feature>> ThePortfoliosFeaturesFrom(
-            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, Dictionary<int, string> additionalFieldReferences, CancellationToken cancellationToken)
+            Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldReferences, CancellationToken cancellationToken)
         {
             var dependenciesComeFromRelations = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio);
             var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependenciesComeFromRelations, cancellationToken);
 
-            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences, cancellationToken);
+            var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldReferences.Fields, cancellationToken);
+            var dependencyFieldFindings = WhatReadingTheDependencyFieldFound(portfolio, additionalFieldReferences);
 
             var relations = await relationsTask;
             var features = new List<Feature>();
@@ -654,12 +655,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
                     ParentReferenceId = parentReference,
+                    RefreshFindings = dependencyFieldFindings,
                 };
 
                 features.Add(feature);
             }
 
             return features;
+        }
+
+        /// <summary>
+        /// A Dependency Field naming a relation type reads nothing until relations are read for dependencies,
+        /// which looks exactly like a Portfolio whose Features wait on nothing. Recording it on every Feature
+        /// lets the refresh say so once, instead of leaving the empty answer to speak for itself.
+        /// </summary>
+        private static IReadOnlyList<RefreshFinding> WhatReadingTheDependencyFieldFound(Portfolio portfolio, AdditionalFieldResolution additionalFieldReferences)
+        {
+            if (!additionalFieldReferences.NamesARelationType(portfolio.DependencyOverrideAdditionalFieldDefinitionId))
+            {
+                return [];
+            }
+
+            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+
+            return [new RefreshFinding(RefreshFindingKind.RelationTypeNotYetReadForDependencies, RefreshFindingSetting.DependencyField, named, [])];
         }
 
         private static async Task VerifyConnection(WorkItemTrackingHttpClient witClient)
@@ -764,28 +784,56 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
         }
 
-        private async Task<Dictionary<int, string>> GetCustomFieldReferences(
+        /// <summary>
+        /// The relation types are listed at most once per fetch, and only once a reference missed the field
+        /// list, so a connection whose references are all fields costs no extra request. The listing lives in
+        /// this call alone, for the same reason Validate keeps it there.
+        /// </summary>
+        private async Task<AdditionalFieldResolution> GetCustomFieldReferences(
             WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, cancellationToken);
 
-            var customFieldMappings = new Dictionary<int, string>();
+            var resolution = AdditionalFieldResolution.None();
+            RelationTypeListing? relationTypes = null;
 
             foreach (var additionalFieldDefinition in additionalFieldDefinitions)
             {
                 var fieldReference = TheReferenceOfTheFieldNamed(additionalFieldDefinition.Reference, availableFields);
+                resolution.Fields.Add(additionalFieldDefinition.Id, fieldReference);
 
-                if (string.IsNullOrEmpty(fieldReference))
+                if (!string.IsNullOrEmpty(fieldReference))
                 {
-                    logger.LogWarning(
-                        "No field in this Azure DevOps organisation is called {AdditionalField} or references it, so nothing will be read for it",
-                        additionalFieldDefinition.Reference);
+                    continue;
                 }
 
-                customFieldMappings.Add(additionalFieldDefinition.Id, fieldReference);
+                relationTypes ??= await TheRelationTypesTheOrganisationLists(witClient, cancellationToken);
+                WarnUnlessItNamesARelationType(additionalFieldDefinition, relationTypes, resolution);
             }
 
-            return customFieldMappings;
+            return resolution;
+        }
+
+        private void WarnUnlessItNamesARelationType(
+            AdditionalFieldDefinition additionalFieldDefinition, RelationTypeListing relationTypes, AdditionalFieldResolution resolution)
+        {
+            if (relationTypes.HasAnEndCalled(additionalFieldDefinition.Reference))
+            {
+                resolution.RelationTypes.Add(additionalFieldDefinition.Id);
+                return;
+            }
+
+            if (relationTypes.WasRefused)
+            {
+                logger.LogWarning(
+                    "{AdditionalField} is not a field in this Azure DevOps organisation, and its relation types could not be listed to tell whether it names one, so nothing will be read for it",
+                    additionalFieldDefinition.Reference);
+                return;
+            }
+
+            logger.LogWarning(
+                "No field in this Azure DevOps organisation is called {AdditionalField} or references it, so nothing will be read for it",
+                additionalFieldDefinition.Reference);
         }
 
         /// <summary>
@@ -808,7 +856,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// returned, so answering a failed fetch with no records deletes every record the team or portfolio
         /// has - and their blocked spells, which no tracker can rebuild, do not come back with them.
         /// </summary>
-        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsByQuery(
+        private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> FetchAdoWorkItemsByQuery(
             IWorkItemQueryOwner workItemQueryOwner, string query, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -825,7 +873,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// It refuses on failure for the same reason the whole-query fetch does: records it answers for are
         /// the ones that survive the cycle.
         /// </summary>
-        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> FetchAdoWorkItemsById(
+        private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> FetchAdoWorkItemsById(
             IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
@@ -838,16 +886,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// then read the payloads in batches. An empty id set asks for nothing at all, because a keyed read of
         /// no keys is still a remote round trip.
         /// </summary>
-        private async Task<(IEnumerable<AdoWorkItem>, Dictionary<int, string>)> ThePayloadsAndFieldsFor(
+        private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> ThePayloadsAndFieldsFor(
             IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
         {
             if (workItemIds.Count == 0)
             {
-                return ([], new Dictionary<int, string>());
+                return ([], AdditionalFieldResolution.None());
             }
 
             var additionalFieldsRef = await GetCustomFieldReferences(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions, cancellationToken);
-            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Select(field => field.Value), cancellationToken);
+            var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldsRef.Fields.Values, cancellationToken);
 
             return (adoWorkItems, additionalFieldsRef);
         }
@@ -1521,6 +1569,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// on a work item carries the reference name and nothing else. Attachments, hyperlinks and artifact
         /// links are listed beside them but never link one work item to another, so nothing can name them.
         /// </summary>
+        /// <summary>
+        /// What each additional field definition resolved to on one fetch: the field it reads, empty when it
+        /// reads none, and which of the definitions named a relation type instead. Never stored: it answers
+        /// for the organisation of the fetch that built it.
+        /// </summary>
+        private sealed record AdditionalFieldResolution(Dictionary<int, string> Fields, HashSet<int> RelationTypes)
+        {
+            public static AdditionalFieldResolution None() => new([], []);
+
+            public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.Contains(definitionId.Value);
+        }
+
         private sealed class RelationTypeListing
         {
             private RelationTypeListing(List<string> ends, bool wasRefused)

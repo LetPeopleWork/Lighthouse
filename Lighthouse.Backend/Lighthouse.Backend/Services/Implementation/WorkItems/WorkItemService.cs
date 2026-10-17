@@ -1047,6 +1047,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
+            if (finding.Kind == RefreshFindingKind.RelationTypeNotYetReadForDependencies)
+            {
+                logger.LogWarning(
+                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', an Azure DevOps relation type, which this version does not read yet, so no dependencies were read.",
+                    portfolio.Name,
+                    setting,
+                    finding.Named);
+                return;
+            }
+
             logger.LogWarning(
                 "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
                 portfolio.Name,

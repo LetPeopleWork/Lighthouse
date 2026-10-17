@@ -177,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.3")]
         [Category("error")]
@@ -203,7 +202,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         // Retired once the relation is read for dependencies; reading it replaces this interim warning.
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.9")]
         [Category("error")]
