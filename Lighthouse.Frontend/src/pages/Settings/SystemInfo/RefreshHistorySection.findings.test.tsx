@@ -66,6 +66,13 @@ const ARelationTypeAsParentOverride: RefreshFinding = {
 	seen: [],
 };
 
+const ARelationTypeAsFeatureOwner: RefreshFinding = {
+	kind: "RelationTypeCannotBeReadHere",
+	setting: "FeatureOwnerField",
+	named: "Contoso.DependsOn-Forward",
+	seen: [],
+};
+
 const paymentsPlatformRows = (
 	findings: RefreshFinding[] | undefined,
 ): RefreshLog[] =>
@@ -145,6 +152,19 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		expect(
 			screen.getByText(
 				"The Parent Override Field points at an Azure DevOps relation type, which only the Dependency Field reads.",
+			),
+		).toBeInTheDocument();
+	});
+
+	// @error @us-03 @ac-3.10 @contract-shape:pure-function
+	it("a relation type named as the owner field is named the way this instance names its Features", async () => {
+		await givenRefreshHistoryHolds(
+			paymentsPlatformRows([ARelationTypeAsFeatureOwner]),
+		);
+
+		expect(
+			screen.getByText(
+				"The Epic Owner Field points at an Azure DevOps relation type, which only the Dependency Field reads.",
 			),
 		).toBeInTheDocument();
 	});

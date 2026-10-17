@@ -4,13 +4,15 @@ import type {
 } from "../../../models/SystemInfo/RefreshLog";
 import { isValidDate } from "../../../utils/date/isValidDate";
 
-const SETTING_NAMES: Readonly<Record<string, string>> = {
-	ParentOverrideField: "Parent Override Field",
-	DependencyField: "Dependency Field",
-	SizeEstimateField: "Size Estimate Field",
-	FeatureOwnerField: "Feature Owner Field",
-	EstimationField: "Estimation Field",
-};
+// Named as each setting's own label reads, which for the owner field carries this instance's word for a Feature.
+const SETTING_NAMES: Readonly<Record<string, (featureTerm: string) => string>> =
+	{
+		ParentOverrideField: () => "Parent Override Field",
+		DependencyField: () => "Dependency Field",
+		SizeEstimateField: () => "Size Estimate Field",
+		FeatureOwnerField: (featureTerm) => `${featureTerm} Owner Field`,
+		EstimationField: () => "Estimation Field",
+	};
 
 const twoDistinctEnds = (seen: readonly string[]) =>
 	seen.length === 2 && seen[0].toLowerCase() !== seen[1].toLowerCase();
@@ -63,7 +65,7 @@ export const sentenceFor = (
 	if (settingName === undefined || sentence === undefined) {
 		return null;
 	}
-	return sentence(settingName, finding, featureTerm);
+	return sentence(settingName(featureTerm), finding, featureTerm);
 };
 
 const MONTHS = [
