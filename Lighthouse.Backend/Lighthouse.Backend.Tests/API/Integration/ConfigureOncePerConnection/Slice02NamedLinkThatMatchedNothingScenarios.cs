@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] TheNothingMatchedFinding = ["NamedLinkMatchedNothing"];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.1")]
         [Category("ac-2.2")]
@@ -55,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.1")]
         [Category("error")]
@@ -79,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.1")]
         [Category("contract-shape:bounded-change")]
@@ -98,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.1")]
         [Category("edge")]
@@ -115,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.3")]
         [Category("edge")]

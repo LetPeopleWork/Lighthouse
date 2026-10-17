@@ -323,9 +323,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var query = PrepareQuery(project);
             var issues = await GetIssuesByQuery(project, query, cancellationToken);
-            var features = await CreateFeaturesFromIssues(project, issues);
+            var (features, theDependencyField) = await ReadFeaturesFromIssues(project, issues);
 
-            ReportLinksThatMeantNothingHere(project, issues, features);
+            ReportLinksThatMeantNothingHere(project, issues, features, theDependencyField);
 
             return features;
         }
@@ -1225,6 +1225,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 "DataRetrievalValue");
 
         private async Task<List<Feature>> CreateFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
+            => (await ReadFeaturesFromIssues(portfolio, issues)).Features;
+
+        private async Task<(List<Feature> Features, ResolvedReference TheDependencyField)> ReadFeaturesFromIssues(Portfolio portfolio, IEnumerable<Issue> issues)
         {
             var features = new List<Feature>();
 
@@ -1255,7 +1258,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 features.Add(feature);
             }
 
-            return features;
+            return (features, theDependencyField);
         }
 
         /// <summary>
@@ -1291,6 +1294,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 $"GET {JiraRestRoutes.IssueLinkType} answered {answer}.",
                 JiraReadException.AdditionalFieldsFieldName));
         }
+
+        private static string TheReferenceTheDependencyFieldNames(Portfolio portfolio)
+            => TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
 
         private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)
         {
@@ -1333,19 +1339,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return [];
             }
 
-            var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+            var named = TheReferenceTheDependencyFieldNames(portfolio);
 
             return [new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, named, theDependencyField.PhrasesOfItsEnds)];
         }
 
         /// <summary>
-        /// A Jira administrator can rename the inward link name Lighthouse reads, and a renamed instance
-        /// looks from the outside exactly like one that has no dependencies at all. Naming the inward
-        /// links that were seen turns a silent nothing into something an administrator can act on.
+        /// A Jira administrator can rename the inward link name Lighthouse reads, and a Lighthouse
+        /// administrator can mistype the link a Dependency Field names. Either looks from the outside
+        /// exactly like a Portfolio with no dependencies at all. Naming the inward links that were seen
+        /// turns a silent nothing into something an administrator can act on: in the log when Lighthouse
+        /// reads its own "is blocked by", and as a finding on the refresh when the Dependency Field named
+        /// the link, because that is a setting the administrator can go and fix.
         ///
         /// Nothing is said when some link did match, or when the Portfolio carries no inward links at
         /// all: having no dependencies is the ordinary case, and warning about it would train the reader
-        /// to skip the line that matters. One line for the whole refresh, never one per issue.
+        /// to skip the line that matters. One line or finding for the whole refresh, never one per issue.
         ///
         /// Only the whole-query fetch asks this, and deliberately so. The incremental fetch downloads the
         /// handful of Features whose stamp moved, and "none of these three carries a link Lighthouse
@@ -1353,14 +1362,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// worth knowing: on an instance running incremental sync, a rename is reported the next time the
         /// whole query runs, not on the cycle that first read past it.
         /// </summary>
-        private void ReportLinksThatMeantNothingHere(Portfolio portfolio, IEnumerable<Issue> issues, List<Feature> features)
+        private void ReportLinksThatMeantNothingHere(
+            Portfolio portfolio, IEnumerable<Issue> issues, List<Feature> features, ResolvedReference theDependencyField)
         {
             // A Portfolio reading a field of its own has deliberately stopped reading links, so telling it
             // its links are named wrong describes a decision it made on purpose, in the words of a mistake.
             // The check below cannot stand in for this one: it goes quiet as soon as anything is waiting on
             // anything, and the moment that bites is the one where the named field is still empty - which is
-            // where an administrator setting the field up actually is.
-            if (!DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio))
+            // where an administrator setting the field up actually is. A link that points both ways has
+            // already been reported as exactly that, and saying it also matched nothing would be noise.
+            var namesALinkThatCanMatch = theDependencyField is { NamesALinkType: true, NamesALinkTypeWhoseWaitingEndIsUnclear: false };
+
+            if (!namesALinkThatCanMatch && !DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio))
             {
                 return;
             }
@@ -1378,6 +1391,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (namesSeen.Count == 0)
             {
+                return;
+            }
+
+            if (namesALinkThatCanMatch)
+            {
+                var named = TheReferenceTheDependencyFieldNames(portfolio);
+                var nothingMatched = new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, named, namesSeen);
+
+                features.ForEach(feature => feature.RefreshFindings = [.. feature.RefreshFindings, nothingMatched]);
                 return;
             }
 

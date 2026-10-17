@@ -47,6 +47,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
 
+        private static readonly string[] TheLinksSeenWhereNothingMatched = ["is blocked by", "relates to"];
+
         private static readonly string[] EveryKindOfRecord =
             [TheRecordUnderAFeatureAndAnIncident, TheRecordUnderTwoIncidents, TheRecordWithOneLink, TheRecordWithNoLink];
 
@@ -1490,6 +1492,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
                 $"Portfolio {portfolio.Name}: its Dependency Field names 'Dependency', which points both ways. "
                 + "Name one end: 'depends on' or 'is depended on by'."));
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheNamedLinkMatchedNothing_WarnsInPlainLanguage()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", TheLinksSeenWhereNothingMatched)],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Dependency Field names 'depends on', and no Feature carries that link. "
+                + "Links seen: is blocked by, relates to."));
         }
 
         /// <summary>

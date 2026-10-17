@@ -24,6 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static readonly JiraLinkType Gate = new("Gate", "is gated by", "blocks");
 
+        private static readonly JiraLinkType Relates = new("Relates", "relates to", "relates to");
+
         private static readonly string[] TheStockBlocksPhrasesOutwardFirst = ["blocks", "is blocked by"];
 
         /// <summary>
@@ -95,6 +97,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(WhatItWaitsOn(feature), Is.EqualTo(new List<string> { WhatBlocksIt }));
         }
 
+        /// <summary>
+        /// A Portfolio naming no Dependency Field has no setting to point at, so a refresh whose links carry no
+        /// "is blocked by" is told so in the log, as it always was, and records no finding.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_naming_nothing_whose_links_carry_no_is_blocked_by_is_told_so_in_the_log_only()
+        {
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = AnInstanceDefining([StockBlocks, Relates], JiraWireFormat.AnEpic(TheFeature, Relates.LinkWhoseInwardIssueIs(WhatGatesIt)), log);
+            var portfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
+
+            var feature = (await subject.GetFeaturesForProject(portfolio, CancellationToken.None)).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.RefreshFindings, Is.Empty);
+                Assert.That(log.Warnings, Has.One.EqualTo(
+                    $"Portfolio {portfolio.Name} has Features linked to others, but none of those links is called 'is blocked by', "
+                    + "which is the one Lighthouse reads as waiting. The link names it did see are: relates to"));
+            }
+        }
+
         private static string AFeatureThatBlocksOneAndIsBlockedByAnother()
             => JiraWireFormat.AnEpic(TheFeature, StockBlocks.LinkWhoseOutwardIssueIs(WhatItBlocks), StockBlocks.LinkWhoseInwardIssueIs(WhatBlocksIt));
 
@@ -118,6 +142,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         private static JiraWorkTrackingConnector AnInstanceDefining(JiraLinkType[] linkTypes, string issue)
+            => AnInstanceDefining(linkTypes, issue, new RecordingLogger<JiraWorkTrackingConnector>());
+
+        private static JiraWorkTrackingConnector AnInstanceDefining(JiraLinkType[] linkTypes, string issue, RecordingLogger<JiraWorkTrackingConnector> log)
             => JiraConnectorTestSetup.AConnectorOver(StubTransport.RespondingWith(request =>
             {
                 var path = request.RequestUri?.AbsolutePath ?? string.Empty;
@@ -133,6 +160,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 }
 
                 return JiraWireFormat.ACloudResponseTo(request, [issue]);
-            }));
+            }), log);
     }
 }

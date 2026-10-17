@@ -1028,6 +1028,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
+            if (finding.Kind == RefreshFindingKind.NamedLinkMatchedNothing)
+            {
+                logger.LogWarning(
+                    "Portfolio {PortfolioName}: its {Setting} names '{Named}', and no Feature carries that link. Links seen: {LinksSeen}.",
+                    portfolio.Name,
+                    setting,
+                    finding.Named,
+                    string.Join(", ", finding.Seen));
+                return;
+            }
+
             logger.LogWarning(
                 "Portfolio {PortfolioName}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
                 portfolio.Name,
