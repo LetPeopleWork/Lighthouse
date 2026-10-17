@@ -1295,8 +1295,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 JiraReadException.AdditionalFieldsFieldName));
         }
 
-        private static string TheReferenceTheDependencyFieldNames(Portfolio portfolio)
-            => TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+        /// <summary>A finding about the Dependency Field, naming what an administrator typed into it.</summary>
+        private static RefreshFinding ADependencyFieldFinding(Portfolio portfolio, RefreshFindingKind kind, IReadOnlyList<string> seen)
+        {
+            var named = TheDefinitionNamed(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
+
+            return new RefreshFinding(kind, RefreshFindingSetting.DependencyField, named, seen);
+        }
 
         private static string GetOwningTeam(Portfolio portfolio, WorkItemBase workItem)
         {
@@ -1339,9 +1344,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return [];
             }
 
-            var named = TheReferenceTheDependencyFieldNames(portfolio);
-
-            return [new RefreshFinding(RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, named, theDependencyField.PhrasesOfItsEnds)];
+            return [ADependencyFieldFinding(portfolio, RefreshFindingKind.NamedLinkPointsBothWays, theDependencyField.PhrasesOfItsEnds)];
         }
 
         /// <summary>
@@ -1371,7 +1374,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // anything, and the moment that bites is the one where the named field is still empty - which is
             // where an administrator setting the field up actually is. A link that points both ways has
             // already been reported as exactly that, and saying it also matched nothing would be noise.
-            var namesALinkThatCanMatch = theDependencyField is { NamesALinkType: true, NamesALinkTypeWhoseWaitingEndIsUnclear: false };
+            var namesALinkThatCanMatch = theDependencyField.NamesALinkTypeWhoseWaitingEndIsClear;
 
             if (!namesALinkThatCanMatch && !DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio))
             {
@@ -1396,8 +1399,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (namesALinkThatCanMatch)
             {
-                var named = TheReferenceTheDependencyFieldNames(portfolio);
-                var nothingMatched = new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, named, namesSeen);
+                var nothingMatched = ADependencyFieldFinding(portfolio, RefreshFindingKind.NamedLinkMatchedNothing, namesSeen);
 
                 features.ForEach(feature => feature.RefreshFindings = [.. feature.RefreshFindings, nothingMatched]);
                 return;
@@ -2204,6 +2206,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 => new(string.Empty, linkTypeName, direction, dependencyDirection, phrasesOfItsEnds);
 
             public bool NamesALinkTypeWhoseWaitingEndIsUnclear => NamesALinkType && DependencyDirection == LinkDirection.Both;
+
+            public bool NamesALinkTypeWhoseWaitingEndIsClear => NamesALinkType && DependencyDirection != LinkDirection.Both;
 
             public bool NamesALinkType => LinkTypeName.Length > 0;
 
