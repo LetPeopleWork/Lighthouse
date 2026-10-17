@@ -40,6 +40,17 @@ under G-R1 (b).
 Dev instance: script the GET-then-PUT across every Team on the Jira connection with a default set; compare modes
 and effective values before and after. Try to delete the default's field; read the refusal.
 
+**Result (2026-10-17, slice end).** Run on a copy of the dev database with its key ring, on a separate port. The
+Jira connection's Teams default names "is caused by". The round trip was driven with curl, because the `lh` CLI is
+not allowed in this session's shell; it sends the same GET and PUT.
+- GET-then-PUT of a follower (Demo Dependencies Team) and an owner (Dogfood Follower Team), once echoing every
+  property and once dropping the members an older client does not know: 4 of 4 saves answered 200, and each
+  Team's source and effective field are unchanged.
+- Removing "is caused by" from the connection answered 409 `additional-field-in-use`: ""is caused by" cannot be
+  removed. It is the Teams' Parent Override Field default, and Dogfood Follower Team uses it as its own. Nothing was
+  saved." The field is still on the connection. The follower is rightly not named, because it uses the field only
+  through the default.
+
 ## UI
 Refusal copy approved by the maintainer (UI-6): "✕ "Caused by" cannot be removed. It is the Teams' Parent Override
 Field default, and Ledger uses it as its own. Nothing was saved."
