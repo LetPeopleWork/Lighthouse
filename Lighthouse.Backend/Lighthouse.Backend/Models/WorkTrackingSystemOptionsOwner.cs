@@ -97,6 +97,9 @@ namespace Lighthouse.Backend.Models
             => chosenParentOverrideSource
                 ?? (OwnParentOverrideAdditionalFieldDefinitionId.HasValue ? SettingSource.Own : SettingSource.ConnectionDefault);
 
+        [NotMapped]
+        public bool FollowsParentOverrideDefault => ParentOverrideSource == SettingSource.ConnectionDefault;
+
         protected virtual int? ParentOverrideConnectionDefault => null;
 
         /// <summary>The field the connection's default names, shown whichever source the owner chose.</summary>

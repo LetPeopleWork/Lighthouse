@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             // Where a Team's setting comes from is held on the loaded Team, so the Teams are counted in memory.
             return teamRepository.GetAllByPredicate(_ => true).AsEnumerable()
-                .Where(team => team.ParentOverrideSource == SettingSource.ConnectionDefault)
+                .Where(team => team.FollowsParentOverrideDefault)
                 .GroupBy(team => team.WorkTrackingSystemConnectionId)
                 .ToDictionary(group => group.Key, group => new ConnectionFollowers(group.Count()));
         }

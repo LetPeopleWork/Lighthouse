@@ -109,8 +109,7 @@ namespace Lighthouse.Backend.API
 
             if (updatedConnection.Defaults is { } defaults)
             {
-                save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
-                existingConnection.ParentOverrideForTeams = save.TeamsParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForTeams : null;
+                ApplyDefaults(save, defaults, newFields);
             }
 
             var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
@@ -189,6 +188,12 @@ namespace Lighthouse.Backend.API
 
                 existingOption.Value = option.Value;
             }
+        }
+
+        private static void ApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
+        {
+            save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
+            save.Connection.ParentOverrideForTeams = save.TeamsParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForTeams : null;
         }
 
         private static List<string> UnsupportedDefaultsIn(ConnectionDefaultsDto defaults, WorkTrackingSystems tracker)

@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 ? null
                 : new ConnectionSaveHandle(connection, FetchFingerprint.ForConnection(connection))
                 {
-                    TeamsParentOverrideDefaultBeforeSave = new NamedField(connection.ParentOverrideForTeams, connection.DisplayNameOfField(connection.ParentOverrideForTeams)),
+                    TeamsParentOverrideDefaultBeforeSave = TeamsParentOverrideDefaultOf(connection),
                 };
             return Task.FromResult(handle);
         }
@@ -87,7 +87,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         {
             var connection = handle.Connection;
             var before = handle.TeamsParentOverrideDefaultBeforeSave;
-            if (connection.ParentOverrideForTeams == before.FieldId)
+            var after = TeamsParentOverrideDefaultOf(connection);
+            if (after.FieldId == before.FieldId)
             {
                 return;
             }
@@ -96,7 +97,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             {
                 var followers = TeamsFollowingTheDefaultOf(connection);
                 var previousField = before.FieldName ?? NoField;
-                var newField = connection.DisplayNameOfField(connection.ParentOverrideForTeams) ?? NoField;
+                var newField = after.FieldName ?? NoField;
 
                 if (followers.Count == 0)
                 {
@@ -115,11 +116,14 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
         }
 
+        private static NamedField TeamsParentOverrideDefaultOf(WorkTrackingSystemConnection connection)
+            => new(connection.ParentOverrideForTeams, connection.DisplayNameOfField(connection.ParentOverrideForTeams));
+
         // In the order the Teams were created, which is the order an admin knows them by on the Teams list.
         private List<string> TeamsFollowingTheDefaultOf(WorkTrackingSystemConnection connection)
             => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connection.Id)
                 .AsEnumerable()
-                .Where(team => team.ParentOverrideSource == SettingSource.ConnectionDefault)
+                .Where(team => team.FollowsParentOverrideDefault)
                 .OrderBy(team => team.Id)
                 .Select(team => team.Name)];
 
