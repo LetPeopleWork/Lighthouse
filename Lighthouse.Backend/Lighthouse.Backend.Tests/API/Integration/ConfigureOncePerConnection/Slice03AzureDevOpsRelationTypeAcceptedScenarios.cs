@@ -105,14 +105,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [Category("structural")]
         public void The_shared_connector_keeps_no_relation_type_listing_between_calls()
         {
-            var listing = typeof(AzureDevOpsWorkTrackingConnector).GetNestedType("RelationTypeListing", BindingFlags.NonPublic);
             var resolution = typeof(AzureDevOpsWorkTrackingConnector).GetNestedType("AdditionalFieldResolution", BindingFlags.NonPublic);
             var fields = typeof(AzureDevOpsWorkTrackingConnector).GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-            Type[] whatAnswersForOneOrganisation = [.. new[] { listing, resolution }.OfType<Type>()];
+            Type[] whatAnswersForOneOrganisation = [.. new[] { typeof(RelationTypeListing), resolution }.OfType<Type>()];
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(listing, Is.Not.Null, "The connector no longer names its relation-type listing as this check expects.");
                 Assert.That(resolution, Is.Not.Null, "The connector no longer names its additional-field resolution as this check expects.");
                 Assert.That(fields.Where(field => whatAnswersForOneOrganisation.Any(kept => Mentions(field.FieldType, kept))).Select(field => field.Name), Is.Empty);
             }
