@@ -8370,7 +8370,8 @@ jobs:
     forces:
       push: Fourteen pages to open; a difference is found only after a forecast has been questioned.
       pull: The connection page the admin already owns.
-      anxiety: "Will moving owners onto the default change their data?" No - their effective value is unchanged.
+      anxiety: >-
+        "Will moving owners onto the default change their data?" No - their effective value is unchanged.
       habit: Opening each Team's settings in turn.
     opportunity_score:
       importance: 3
