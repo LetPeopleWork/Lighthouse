@@ -58,8 +58,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Whether a fetch needs the relations for the dependencies, and which end it reads them off: the
         /// relation end the Portfolio's Dependency Field named, or the Predecessor link when that is null.
+        /// A named relation type that cannot say which end waits is read as nothing, and says why.
         /// </summary>
-        private sealed record DependenciesFromRelations(bool AreRead, string? NamedRelationEnd);
+        private sealed record DependenciesFromRelations(bool AreRead, string? NamedRelationEnd, WhyNothingIsRead? WhyNothingIsRead)
+        {
+            public static DependenciesFromRelations NotRead() => new(false, null, null);
+
+            public static DependenciesFromRelations For(Portfolio portfolio, AdditionalFieldResolution resolution)
+            {
+                var dependencyField = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
+                var namedRelationEnd = resolution.TheRelationEndNamedBy(dependencyField);
+                var whyNothingIsRead = resolution.WhyNothingIsReadFor(dependencyField);
+                var areRead = whyNothingIsRead is null
+                    && (DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null);
+
+                return new(areRead, namedRelationEnd, whyNothingIsRead);
+            }
+        }
 
         /// <summary>Why a relation type the Dependency Field names is read as nothing, and what it saw there.</summary>
         private sealed record WhyNothingIsRead(RefreshFindingKind Kind, List<string> Seen);
@@ -113,7 +128,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
             Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, new DependenciesFromRelations(false, null), cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, DependenciesFromRelations.NotRead(), cancellationToken);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldResolution.Fields, cancellationToken);
             var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldResolution);
 
@@ -651,27 +666,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             StopUnlessTheDependencyFieldCouldBeLookedUp(portfolio, additionalFieldResolution);
 
-            var dependencyField = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
-            var namedRelationEnd = additionalFieldResolution.TheRelationEndNamedBy(dependencyField);
-            var whyNothingIsRead = additionalFieldResolution.WhyNothingIsReadFor(dependencyField);
-            var dependencies = new DependenciesFromRelations(
-                whyNothingIsRead is null && (DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null), namedRelationEnd);
+            var dependencies = DependenciesFromRelations.For(portfolio, additionalFieldResolution);
             var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependencies, cancellationToken);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
             var relations = await relationsTask;
-            var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution);
 
-            if (whyNothingIsRead is not null)
+            if (dependencies.WhyNothingIsRead is not null)
             {
                 relations = relations with { DependencyReferences = [] };
-                settingFindings.Add(ADependencyFieldFinding(portfolio, whyNothingIsRead.Kind, whyNothingIsRead.Seen));
-            }
-            else if (namedRelationEnd is not null && NoWorkItemCarriesTheNamedEnd(relations))
-            {
-                settingFindings.Add(ADependencyFieldFinding(portfolio, RefreshFindingKind.NamedLinkMatchedNothing, relations.RelationTypesSeen));
             }
 
+            var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution, dependencies, relations);
             var features = new List<Feature>();
 
             foreach (var workItem in workItemBase)
@@ -680,7 +686,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
-                var feature = new Feature(workItem, TheDependenciesOf(portfolio, workItem, relations, namedRelationEnd))
+                var feature = new Feature(workItem, TheDependenciesOf(portfolio, workItem, relations, dependencies.NamedRelationEnd))
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
@@ -698,13 +704,25 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static bool NoWorkItemCarriesTheNamedEnd(RelationsOfWorkItems relations)
             => relations.RelationTypesSeen.Count > 0 && relations.DependencyReferences.Values.All(references => references.Count == 0);
 
-        private static RefreshFinding ADependencyFieldFinding(Portfolio portfolio, RefreshFindingKind kind, List<string> seen)
+        private static IEnumerable<RefreshFinding> WhatReadingTheDependencyFieldFound(
+            Portfolio portfolio, DependenciesFromRelations dependencies, RelationsOfWorkItems relations)
         {
-            var named = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == portfolio.DependencyOverrideAdditionalFieldDefinitionId)?.Reference ?? string.Empty;
-
-            return new RefreshFinding(kind, RefreshFindingSetting.DependencyField, named, seen);
+            if (dependencies.WhyNothingIsRead is { } whyNothingIsRead)
+            {
+                yield return ADependencyFieldFinding(portfolio, whyNothingIsRead.Kind, whyNothingIsRead.Seen);
+            }
+            else if (dependencies.NamedRelationEnd is not null && NoWorkItemCarriesTheNamedEnd(relations))
+            {
+                yield return ADependencyFieldFinding(portfolio, RefreshFindingKind.NamedLinkMatchedNothing, relations.RelationTypesSeen);
+            }
         }
+
+        private static RefreshFinding ADependencyFieldFinding(Portfolio portfolio, RefreshFindingKind kind, List<string> seen)
+            => new(kind, RefreshFindingSetting.DependencyField, TheReferenceNamedBy(portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId), seen);
+
+        private static string TheReferenceNamedBy(WorkTrackingSystemOptionsOwner owner, int? definitionId)
+            => owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
+                .Find(definition => definition.Id == definitionId)?.Reference ?? string.Empty;
 
         /// <summary>
         /// A Dependency Field naming something that is not a field can only be read once the relation types
@@ -722,8 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 return;
             }
 
-            var reference = portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .FirstOrDefault(definition => definition.Id == dependencyField)?.Reference ?? string.Empty;
+            var reference = TheReferenceNamedBy(portfolio, dependencyField);
 
             logger.LogWarning(
                 "The refresh of Portfolio {PortfolioName} was stopped: its Dependency Field names '{Reference}', which is not a field, "
@@ -745,12 +762,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// relation type, so naming one there reads as if nothing were named. That empty answer looks
         /// believable, so every record carries the finding and the refresh says it once.
         /// </summary>
-        private static List<RefreshFinding> WhatReadingThePortfoliosSettingsFound(Portfolio portfolio, AdditionalFieldResolution resolution)
+        private static List<RefreshFinding> WhatReadingThePortfoliosSettingsFound(
+            Portfolio portfolio, AdditionalFieldResolution resolution, DependenciesFromRelations dependencies, RelationsOfWorkItems relations)
             =>
             [
                 .. WhatReadingTheSettingsEveryOwnerHasFound(portfolio, resolution),
                 .. ARelationTypeNamedIn(portfolio, resolution, portfolio.SizeEstimateAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.SizeEstimateField),
                 .. ARelationTypeNamedIn(portfolio, resolution, portfolio.FeatureOwnerAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.FeatureOwnerField),
+                .. WhatReadingTheDependencyFieldFound(portfolio, dependencies, relations),
             ];
 
         private static List<RefreshFinding> WhatReadingTheSettingsEveryOwnerHasFound(WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution)
@@ -768,10 +787,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 yield break;
             }
 
-            var named = owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions
-                .Find(definition => definition.Id == definitionId)?.Reference ?? string.Empty;
-
-            yield return new RefreshFinding(kind, setting, named, []);
+            yield return new RefreshFinding(kind, setting, TheReferenceNamedBy(owner, definitionId), []);
         }
 
         private static async Task VerifyConnection(WorkItemTrackingHttpClient witClient)
