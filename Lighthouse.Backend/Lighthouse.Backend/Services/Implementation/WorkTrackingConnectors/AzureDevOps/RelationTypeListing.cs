@@ -35,17 +35,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 false);
         }
 
-        public bool Names(string reference) => TheEndCalled(reference) is not null || TheEndsOf(reference) is not null;
+        public bool Names(string reference) => TheEndCalled(reference) is not null || TheEndsOf(reference).Count > 0;
 
         public string? TheEndCalled(string reference) => Ends.Find(end => string.Equals(end, reference, StringComparison.OrdinalIgnoreCase));
 
         // Azure DevOps spells the two ends of a directional type as its base name with -Forward and -Reverse.
-        public List<string>? TheEndsOf(string baseName)
+        public List<string> TheEndsOf(string baseName)
         {
             var forward = TheEndCalled($"{baseName}-Forward");
             var reverse = TheEndCalled($"{baseName}-Reverse");
 
-            return forward is null || reverse is null ? null : [forward, reverse];
+            return forward is null || reverse is null ? [] : [forward, reverse];
         }
 
         public bool HasNoDirection(string end) => withoutDirection.Contains(end);

@@ -61,7 +61,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// <summary>
         /// Whether a fetch needs the relations for the dependencies, and which end it reads them off: the
         /// relation end the Portfolio's Dependency Field named, or the Predecessor link when that is null.
-        /// A named relation type that cannot say which end waits is read as nothing, and says why.
+        /// A named relation type that cannot say which end waits is read as nothing, and says why: it names no
+        /// end, so the Feature falls back to its Dependency Field's own value, which holds nothing.
         /// </summary>
         private sealed record DependenciesFromRelations(bool AreRead, string? NamedRelationEnd, WhyNothingIsRead? WhyNothingIsRead)
         {
@@ -72,10 +73,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var dependencyField = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
                 var namedRelationEnd = resolution.TheRelationEndNamedBy(dependencyField);
                 var whyNothingIsRead = resolution.WhyNothingIsReadFor(dependencyField);
-                var areRead = whyNothingIsRead is null
-                    && (DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null);
+                if (whyNothingIsRead is not null)
+                {
+                    return new(false, null, whyNothingIsRead);
+                }
 
-                return new(areRead, namedRelationEnd, whyNothingIsRead);
+                var areRead = DependencySourceSelector.ReadsTheTrackersOwnLink(portfolio) || namedRelationEnd is not null;
+
+                return new(areRead, namedRelationEnd, null);
             }
         }
 
@@ -713,11 +718,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
             var relations = await relationsTask;
-
-            if (dependencies.WhyNothingIsRead is not null)
-            {
-                relations = relations with { DependencyReferences = [] };
-            }
 
             var settingFindings = WhatReadingThePortfoliosSettingsFound(portfolio, additionalFieldResolution, dependencies, relations);
             var features = new List<Feature>();
@@ -1805,7 +1805,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             public bool ResolvesToARelationType(AdditionalFieldDefinition definition, RelationTypeListing relationTypes)
             {
                 var bothEnds = relationTypes.TheEndsOf(definition.Reference);
-                if (bothEnds is not null)
+                if (bothEnds.Count > 0)
                 {
                     RelationTypes.Add(definition.Id, definition.Reference);
                     ReadsNothing.Add(definition.Id, new WhyNothingIsRead(RefreshFindingKind.RelationTypeNamedWithoutItsEnd, bothEnds));
