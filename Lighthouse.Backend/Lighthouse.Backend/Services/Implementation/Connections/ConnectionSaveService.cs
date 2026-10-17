@@ -68,21 +68,26 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 return [];
             }
 
-            var connectionId = connection.Id;
             var removedIds = removed.Select(field => (int?)field.Id).ToList();
+            DefaultNamingAField[] defaults = [new(TeamsParentOverrideDefault, connection.ParentOverrideForTeams)];
+            return AdditionalFieldInUse.AmongTheRemoved(
+                removed, defaults, [.. TeamsOwningAnyOf(removedIds, connection.Id), .. PortfoliosOwningAnyOf(removedIds, connection.Id)]);
+        }
 
-            var teams = teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId
-                    && removedIds.Contains(team.OwnParentOverrideAdditionalFieldDefinitionId))
+        private List<OwnerNamingFields> TeamsOwningAnyOf(List<int?> fieldIds, int connectionId)
+            => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId
+                    && fieldIds.Contains(team.OwnParentOverrideAdditionalFieldDefinitionId))
                 .OrderBy(team => team.Id)
                 .Select(team => new { team.Name, team.OwnParentOverrideAdditionalFieldDefinitionId })
                 .AsEnumerable()
-                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId]));
+                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId]))];
 
-            var portfolios = portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
-                    && (removedIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
-                        || removedIds.Contains(portfolio.DependencyOverrideAdditionalFieldDefinitionId)
-                        || removedIds.Contains(portfolio.SizeEstimateAdditionalFieldDefinitionId)
-                        || removedIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)))
+        private List<OwnerNamingFields> PortfoliosOwningAnyOf(List<int?> fieldIds, int connectionId)
+            => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
+                    && (fieldIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.DependencyOverrideAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.SizeEstimateAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)))
                 .OrderBy(portfolio => portfolio.Id)
                 .Select(portfolio => new
                 {
@@ -98,11 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.DependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.SizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
-                ]));
-
-            DefaultNamingAField[] defaults = [new(TeamsParentOverrideDefault, connection.ParentOverrideForTeams)];
-            return AdditionalFieldInUse.AmongTheRemoved(removed, defaults, [.. teams, .. portfolios]);
-        }
+                ]))];
 
         private async Task PointTheDefaultAtTheFieldAddedInThisSave(ConnectionSaveHandle handle)
         {
