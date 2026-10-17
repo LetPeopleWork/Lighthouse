@@ -100,3 +100,8 @@ maintainer-accepted risk (D2).
   metrics people actually pull out. It belongs with the existing Lighthouse agent skills (`docs/feature/story-6217-lighthouse-skills`),
   not with PDF export. DIVERGE may cite it as a complement when it weighs "PDF vs other share forms",
   but it must not fold it into this Epic's scope.
+
+**Update (maintainer, 2026-10-17): moved into scope.** The skill becomes its own slice of this Epic. It describes how
+to show each report type, starting with Then & Now, the only type that exists so far. The maintainer expects it to
+be low effort and wants to give it a try. It sits beside the PDF export, it does not replace it, and it must ship on
+its own.

@@ -1,16 +1,16 @@
 schema_version: 1
 feature_id: epic-6298-report-pdf-export
 updated: 2026-10-17
-ado: "#6298 Report PDF Export (Premium)"
+ado: "#6298 Report PDF Export (Community since the maintainer's 2026-10-17 decision; the board tag still reads Premium)"
 note: >
-  Seeded in DISCOVER (2026-10-17) as one hypothesis journey. It extends step 3 of
+  Seeded in DISCOVER (2026-10-17) as one hypothesis journey extending step 3 of
   show-what-changed-since-the-engagement-started (epic-5878-baseline.yaml), where "the sponsor needs it outside
-  Lighthouse" was out of scope, and generalises it to any report type. Evidence is second-hand (the maintainer's
-  account of their users' past behaviour, plus ADO #1822 and #4753); no Lighthouse user has walked this journey.
-  The job id job-share-numbers-outside-lighthouse is PROPOSED, not yet in docs/product/jobs.yaml - DIVERGE or
-  DISCUSS adds or re-points it. Mechanism, share form, first payload and licence gate are open (DIVERGE questions
-  in docs/feature/epic-6298-report-pdf-export/feature-delta.md). Terms in braces ({team}, {portfolio},
-  {feature}, {work items}, {delivery}) render as the instance's configured words.
+  Lighthouse" was out of scope. Refined in DISCUSS (2026-10-17) after the maintainer's decisions on the DIVERGE
+  recommendation: the PDF is Community and branded, made on demand through the browser's or the Standalone app's
+  own print, never stored; first payload Then & Now. A second journey was added for the agent skill the maintainer
+  moved into scope. Evidence stays second-hand (one informant, the maintainer); no Lighthouse user has walked
+  either journey. Both job ids are in docs/product/jobs.yaml. Terms in braces ({team}, {portfolio}, {work items},
+  {cycle time}, ...) render as the instance's configured words.
 
 journeys:
 
@@ -18,10 +18,11 @@ journeys:
     goal: >
       Someone who reads a report in Lighthouse (a flow coach per engagement, a team lead or PM on a recurring
       cadence, or anyone ad hoc) gets it in front of a reader outside Lighthouse - one who will not open the tool or
-      cannot reach it (Standalone) - without screenshots or rebuilding the numbers elsewhere.
+      cannot reach it (Standalone) - as one dated, branded file that reads on its own, without screenshots or
+      rebuilding the numbers elsewhere.
     persona: "flow-coach, delivery-lead-rte or product-owner (reader of the report in Lighthouse); outside reader: sponsor, client or stakeholder (candidate report-reader, not created)"
     jobs:
-      - job-share-numbers-outside-lighthouse   # proposed
+      - job-share-numbers-outside-lighthouse
       - job-flow-coach-show-whether-flow-changed  # when the report is a Then & Now
     emotional_arc:
       start: Burdened - "Screenshots again, then cropping them into the slide."
@@ -30,43 +31,128 @@ journeys:
     steps:
       - id: 1
         name: Open the report
-        action: "{team} or {portfolio} -> Reports -> open the report to share (first payload planned: Then & Now)"
+        action: "{team} or {portfolio} -> Reports -> open the report (v1: a Then & Now report)"
         emotional_state: {entry: Burdened, exit: Ready}
-        shared_artifacts: [report_values]
+        shared_artifacts: [report_values, report_windows, owner_name, report_name]
         failure_modes:
-          - What the user wants to share is a metrics chart or a forecast, not a report type that exists yet - today people capture metrics charts and forecasts, and the first planned report (Then & Now) has no charts
+          - What the user wants to share is a metrics chart or a forecast, not a report type that exists yet (accepted gap X2; charts arrive with Custom Metric Reports #6299)
+          - The report cannot be loaded - the existing could-not-load look, and no Export PDF action
       - id: 2
         name: Export
-        action: "Export as PDF (mechanism open: browser/Tauri print, server rendering, or another share form)"
+        action: "Export PDF on the report (anyone who can read it) -> the system print dialog opens on a print-designed version of the report -> Save as PDF"
+        tui_mockup: |
+          +-- printed page (A4 or Letter, light theme, no app chrome) -----------------+
+          | Team Lightspeed · Then & Now — 90 days to 2 Oct 2026                        |
+          | Then 5 Jul – 2 Oct 2026 (frozen)   Now 1 Aug – 30 Oct 2026                  |
+          | Produced 30 Oct 2026, 09:15                                                 |
+          | How to read this: ... (slice 03; copy sketched at DISTILL)                  |
+          |-----------------------------------------------------------------------------|
+          | SUMMARY   THEN ...        NOW ...        CHANGE  [v] Improved: Cycle Time   |
+          | CYCLE TIME: THEN & NOW   THEN 85th 21 days | NOW 85th 12 days  -9 days -43% |
+          | ... one panel per shown metric, never split across two pages ...            |
+          |-----------------------------------------------------------------------------|
+          | [Lighthouse logo] Made with Lighthouse · LetPeopleWork (copy at DISTILL)    |
+          +-----------------------------------------------------------------------------+
         emotional_state: {entry: Ready, exit: Relieved}
-        shared_artifacts: [report_values, generated_at, report_windows]
+        shared_artifacts: [report_values, generated_at, report_windows, owner_name, report_name, branding]
         failure_modes:
-          - Export unavailable on this licence - say so and why, never a silent missing button
-          - Rendering unavailable on this host (e.g. missing system libraries on a minimal Linux server) - a clear "cannot render" state
-          - Report cannot be loaded - no PDF of stale or partial numbers
-          - Reader without export permission - no export action (RBAC)
-        integration_checkpoint: The PDF shows the same values as the screen at the moment of export
+          - The report was opened on an earlier day and left open - the PDF must not carry yesterday's Now under today's date
+          - The report is still loading or could not be loaded - no Export PDF action, never a PDF of stale or partial numbers
+          - The dark theme is on - the printed page is still light
+          - App chrome (navigation, tabs, Edit, Delete, footer) leaks into the print or spills onto a near-empty last page
+          - The change marks fall back to whatever system font the machine has, so they differ per OS or are missing
+          - The instance cannot reach the internet, so the Lighthouse typeface is missing from the PDF
+          - Standalone on macOS - printing from the app's webview is unprobed; if it does not work there, the action says so instead of doing nothing
+          - The user cancels the print dialog - nothing happens and nothing is stored
+        integration_checkpoint: The PDF shows the same values as the screen at the moment of export, under a produced date that is the day those values were read
       - id: 3
         name: Put it where the reader is
         action: "Attach to an email, drop into slides or a document, or hand over at the end of an engagement"
         emotional_state: {entry: Relieved, exit: Relieved}
         shared_artifacts: [generated_at]
         failure_modes:
-          - The user needs an image for a slide, or data to rebuild, rather than a PDF - today some people export CSV or have an AI build a dashboard over the MCP connection instead of sharing a picture
+          - The user needs an image for a slide rather than a PDF (pre-committed trigger DV-4 "Copy as image", not this Epic)
       - id: 4
         name: The outside reader reads it
         action: "Sponsor, client or stakeholder reads the PDF without Lighthouse, possibly weeks later"
         emotional_state: {entry: Sceptical, exit: Oriented}
-        shared_artifacts: [report_values, generated_at, report_windows]
+        shared_artifacts: [report_values, generated_at, report_windows, owner_name, branding]
         failure_modes:
-          - Reader takes old numbers as current - the PDF names when it was produced and the windows it covers
+          - Reader takes old numbers as current - the header names when it was produced and the windows it covers
+          - Reader does not know what Then, Now or the colours mean - the "how to read this" line (slice 03)
           - Reader does not know the configured words - the PDF uses the instance's terms, nothing tool-internal
-          - Offline reader sees a fallback font - fonts ship with the app
+          - The PDF is printed in black and white - every change carries its sign and a word, never colour alone
+        gherkin: |
+          Scenario: A sponsor reads a Then & Now report without Lighthouse
+            Given Elena exported "Then & Now — 90 days to 2 Oct 2026" for Team Lightspeed on 30 Oct 2026
+            When Sabine, the client's sponsor, opens the PDF on 20 Nov 2026
+            Then she reads "Produced 30 Oct 2026" and the Then and Now windows above the numbers
+            And the Cycle Time panel shows the same values Elena saw on screen
+
+  - name: let-an-assistant-show-a-report-where-the-reader-is
+    goal: >
+      Someone who works with an AI assistant connected to Lighthouse (MCP or lh) asks it to show a report as a
+      dashboard or a document, and gets one that carries the report's own numbers, dates and windows - not numbers
+      the assistant recomputed or invented.
+    persona: "flow-coach or delivery-lead-rte who already uses the Lighthouse MCP connection or lh"
+    jobs:
+      - job-share-numbers-outside-lighthouse
+    emotional_arc:
+      start: Wary - "Last time the assistant's dashboard had numbers I could not trace back."
+      middle: Engaged - "It read the report itself, not the raw metrics."
+      end: Confident - "The dashboard says what the report says, dated, and marks what is the assistant's own comment."
+    steps:
+      - id: 1
+        name: Find the report
+        action: "Ask the assistant which reports a {team} or {portfolio} has (client read added in slice 04, if the maintainer chooses option a)"
+        emotional_state: {entry: Wary, exit: Oriented}
+        shared_artifacts: [owner_name, report_name]
+        failure_modes:
+          - The clients cannot read reports at all today (Epic 5878 excluded reports from CLI/MCP) - slice 04 closes it, or the skill works from a file the user supplies (option c)
+          - The caller has no read on the owner - relayed as no access, not as an error in the report
+          - The Lighthouse instance predates Reports - relayed as "upgrade Lighthouse"
+      - id: 2
+        name: Read the report
+        action: "The assistant reads one report through the clients"
+        emotional_state: {entry: Oriented, exit: Engaged}
+        shared_artifacts: [report_values, report_windows, read_at]
+        failure_modes:
+          - The assistant recomputes Then from today's metrics instead of reading the frozen values
+          - A report made by a newer Lighthouse cannot be shown - say so
+      - id: 3
+        name: Render it
+        action: "With the report skill installed, the assistant builds a dashboard or document following the skill's layout for the report type (Then & Now first)"
+        emotional_state: {entry: Engaged, exit: Confident}
+        shared_artifacts: [report_values, report_windows, read_at, owner_name, branding]
+        failure_modes:
+          - A dash becomes a zero, or a value is rounded
+          - Assistant commentary reads as if it were part of the report (the report itself gives no verdicts)
+          - Configured terms replaced by the tracker's or the assistant's own words
+        gherkin: |
+          Scenario: An assistant shows a Then & Now report as a dashboard
+            Given Team Lightspeed has the report "Then & Now — 90 days to 2 Oct 2026"
+            And Elena's assistant has the Lighthouse connection and the report skill
+            When Elena asks "Make me a one-page dashboard of our Then & Now report"
+            Then the dashboard names Team Lightspeed, both windows and the day the report was read
+            And the Cycle Time values are the report's, 21 days Then and 12 days Now at the 85th percentile
 
 shared_artifacts:
-  report_values: {source: "the report as shown on screen (Then frozen at creation; Now computed for its window)", consumers: [PDF body]}
-  generated_at: {source: "export time", consumers: [PDF header or footer, the outside reader]}
-  report_windows: {source: "the report's windows (Then & Now: Then and Now windows from the summary header)", consumers: [PDF header]}
+  report_values: {source: "the report as the Lighthouse backend answers it (Then frozen at creation; Now computed for its window when read)", consumers: [report view, PDF body, client read, assistant dashboard]}
+  report_windows: {source: "the report's Then and Now windows from the same answer", consumers: [report summary, PDF header, assistant dashboard header]}
+  owner_name: {source: "the Team or Portfolio the report belongs to", consumers: [PDF header, client list, assistant dashboard header]}
+  report_name: {source: "the report's saved name", consumers: [report view breadcrumb, PDF header, client list]}
+  generated_at: {source: "the moment the values shown were read for export, in the viewer's time zone", consumers: [PDF header, the outside reader]}
+  read_at: {source: "the moment the assistant read the report", consumers: [assistant dashboard header]}
+  branding: {source: "Lighthouse and LetPeopleWork brand assets already in the frontend (logo, name)", consumers: [PDF footer, assistant dashboard attribution (proposed)]}
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: report_values
+      must_match_across: [report view, PDF, client read]
+      failure_message: "The PDF or the assistant shows a number the report view does not"
+    - artifact: generated_at
+      must_match_across: [PDF header, Now window end]
+      failure_message: "The PDF is dated a day on which its Now window did not end"
 
 changelog:
   - date: 2026-10-17
@@ -74,3 +160,10 @@ changelog:
     change: >
       Seeded in DISCOVER with one hypothesis journey extending step 3 of epic-5878-baseline's
       show-what-changed-since-the-engagement-started; proposed job job-share-numbers-outside-lighthouse.
+  - date: 2026-10-17
+    feature: epic-6298-report-pdf-export
+    change: >
+      DISCUSS: job id no longer proposed (in jobs.yaml since DIVERGE); licence failure mode and server-rendering
+      failure mode removed (Community, browser print); step 2 refined with the print layout, the Linux probe's
+      findings and the stale-Now case; second journey added for the report skill moved into scope; shared
+      artifacts owner_name, report_name, read_at and branding added.

@@ -8394,6 +8394,9 @@ jobs:
       a tool I do not use without learning it) is recorded in job-analysis.md and is not an entry. Evidence is one
       informant, the maintainer (backlog #1822, #4753 and the 2026-10-17 interview); DISCOVER G1-G3 failed and
       the maintainer accepted the risk. Scores are DESK ESTIMATES by the diverger.
+      DISCUSS 2026-10-17: every story of the Epic traces here, including two slices for the AI-assistant carrier
+      the maintainer moved into scope (reports readable through MCP and lh; a skill that shows a report as a
+      dashboard), which serve the third observed workaround rather than replace it. Wording unchanged.
     job_story: >
       When someone who will not or cannot open Lighthouse needs to know where our flow or forecast stands,
       I want to hand them the numbers I already read in Lighthouse in a form that explains itself and says when
