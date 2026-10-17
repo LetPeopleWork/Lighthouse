@@ -101,6 +101,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const int TheParentOverrideFieldId = 4802;
 
+        private const int AFieldNoSettingNamesId = 14801;
+
         private const string FeatureType = "Epic";
 
         private const string AdoFeatureType = "Feature";
@@ -510,6 +512,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             });
 
             team.ParentOverrideAdditionalFieldDefinitionId = fieldId;
+        }
+
+        /// <summary>The Team's connection carries an Additional Field for <paramref name="reference"/> that no setting of the Team names.</summary>
+        protected void TheConnectionOfTheTeamAlsoRegisters(string adoTeam, string reference)
+        {
+            var connection = adoTeams[adoTeam].WorkTrackingSystemConnection;
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = AFieldNoSettingNamesId + connection.Id + connection.AdditionalFieldDefinitions.Count,
+                DisplayName = reference,
+                Reference = reference,
+            });
         }
 
         protected Task TheTeamRefreshes(string adoTeam)

@@ -267,6 +267,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // Every Additional Field on the connection is downloaded, but only what this Team's own settings name
+        // can change what it reads, so a stale entry nobody here names costs no look-up of the relation types.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.7")]
+        [Category("kpi")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_refresh_naming_only_fields_asks_for_no_relation_types_even_with_a_stale_Additional_Field_on_the_connection()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Fills(Item4711, "Custom.RemoteParent", $"{Item4702}");
+            AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
+            TheTeamNamesAsItsParentOverrideField(StoreOperations, "Custom.RemoteParent");
+            TheConnectionOfTheTeamAlsoRegisters(StoreOperations, "Custom.RetiredLongAgo");
+
+            await TheTeamRefreshes(StoreOperations);
+            var parent = await TheParentTheTeamShowsFor(StoreOperations, Item4711);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parent, Is.EqualTo($"{Item4702}"), "The parent is read from the field.");
+                Assert.That(contoso.RelationTypeListings, Is.Zero, "Nothing this Team names missed the field list.");
+            }
+        }
+
         [Test]
         [Category("us-03")]
         [Category("ac-3.3")]

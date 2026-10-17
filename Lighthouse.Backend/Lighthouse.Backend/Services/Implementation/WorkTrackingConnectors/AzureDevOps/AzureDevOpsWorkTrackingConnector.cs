@@ -806,25 +806,39 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         /// <summary>
-        /// The relation types are listed at most once per fetch, and only once a reference missed the field
-        /// list, so a connection whose references are all fields costs no extra request. The listing lives in
-        /// this call alone, for the same reason Validate keeps it there.
+        /// The relation types are listed at most once per fetch, and only once a reference one of the owner's
+        /// own settings names missed the field list, so an owner naming only fields costs no extra request -
+        /// however stale the rest of the connection's Additional Fields are. Every definition is still resolved
+        /// to its field, because the values of all of them are downloaded. The listing lives in this call alone,
+        /// for the same reason Validate keeps it there.
         /// </summary>
         private async Task<AdditionalFieldResolution> ResolveTheAdditionalFields(
-            WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions, CancellationToken cancellationToken)
+            WorkItemTrackingHttpClient witClient, WorkTrackingSystemOptionsOwner owner, CancellationToken cancellationToken)
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, cancellationToken);
+            var namedByASetting = TheDefinitionsItsSettingsName(owner);
 
             var resolution = AdditionalFieldResolution.None();
             RelationTypeListing? relationTypes = null;
 
-            foreach (var additionalFieldDefinition in additionalFieldDefinitions)
+            foreach (var additionalFieldDefinition in owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
             {
                 var fieldReference = TheReferenceOfTheFieldNamed(additionalFieldDefinition.Reference, availableFields);
                 resolution.Fields.Add(additionalFieldDefinition.Id, fieldReference);
 
                 if (!string.IsNullOrEmpty(fieldReference))
                 {
+                    continue;
+                }
+
+                // Worded so it holds whether or not the reference is a relation type that another owner on the
+                // connection names: either way no value is downloaded for it here.
+                if (!namedByASetting.Contains(additionalFieldDefinition.Id))
+                {
+                    logger.LogWarning(
+                        "{AdditionalField} is not a field in this Azure DevOps organisation, so no value is read for it on {Owner}",
+                        additionalFieldDefinition.Reference,
+                        owner.Name);
                     continue;
                 }
 
@@ -845,6 +859,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             }
 
             return resolution;
+        }
+
+        // The settings whose findings are judged above, and the only ones whose reference decides what is read.
+        private static HashSet<int> TheDefinitionsItsSettingsName(WorkTrackingSystemOptionsOwner owner)
+        {
+            int?[] named = owner is Portfolio portfolio
+                ?
+                [
+                    owner.ParentOverrideAdditionalFieldDefinitionId,
+                    owner.EstimationAdditionalFieldDefinitionId,
+                    portfolio.DependencyOverrideAdditionalFieldDefinitionId,
+                    portfolio.SizeEstimateAdditionalFieldDefinitionId,
+                    portfolio.FeatureOwnerAdditionalFieldDefinitionId,
+                ]
+                : [owner.ParentOverrideAdditionalFieldDefinitionId, owner.EstimationAdditionalFieldDefinitionId];
+
+            return [.. named.OfType<int>()];
         }
 
         private void WarnThatNothingWillBeReadFor(AdditionalFieldDefinition additionalFieldDefinition, RelationTypeListing relationTypes)
@@ -883,7 +914,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// has - and their blocked spells, which no tracker can rebuild, do not come back with them.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> FetchAdoWorkItemsByQuery(
-            IWorkItemQueryOwner workItemQueryOwner, string query, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workItemQueryOwner, string query, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
             var workItemReferences = await GetWorkItemReferencesByQuery(witClient, query, cancellationToken);
@@ -900,7 +931,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// the ones that survive the cycle.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> FetchAdoWorkItemsById(
-            IWorkItemQueryOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workItemQueryOwner, IReadOnlyCollection<string> referenceIds, CancellationToken cancellationToken)
         {
             var witClient = await GetWorkItemTrackingHttpClientAsync(workItemQueryOwner.WorkTrackingSystemConnection);
 
@@ -913,14 +944,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// no keys is still a remote round trip.
         /// </summary>
         private async Task<(IEnumerable<AdoWorkItem>, AdditionalFieldResolution)> ThePayloadsAndFieldsFor(
-            IWorkItemQueryOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
+            WorkTrackingSystemOptionsOwner workItemQueryOwner, WorkItemTrackingHttpClient witClient, List<int> workItemIds, CancellationToken cancellationToken)
         {
             if (workItemIds.Count == 0)
             {
                 return ([], AdditionalFieldResolution.None());
             }
 
-            var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions, cancellationToken);
+            var additionalFieldResolution = await ResolveTheAdditionalFields(witClient, workItemQueryOwner, cancellationToken);
             var adoWorkItems = await GetAdoWorkItemsById(workItemIds, workItemQueryOwner, additionalFieldResolution.Fields.Values, cancellationToken);
 
             return (adoWorkItems, additionalFieldResolution);
@@ -1027,7 +1058,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         private async Task<IEnumerable<AdoWorkItem>> GetAdoWorkItemsById(
-            IEnumerable<int> workItemIds, IWorkItemQueryOwner workItemQueryOwner, IEnumerable<string> additionalFields, CancellationToken cancellationToken)
+            IEnumerable<int> workItemIds, WorkTrackingSystemOptionsOwner workItemQueryOwner, IEnumerable<string> additionalFields, CancellationToken cancellationToken)
         {
             if (!workItemIds.Any())
             {
