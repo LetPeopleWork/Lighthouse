@@ -132,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // carries the link" from "the few that moved do not". The latest full download keeps speaking until
         // another full download has something else to say.
         [Test]
-        [Ignore(PendingEpic6303.Slice02)]
         [Category("us-02")]
         [Category("ac-2.2")]
         [Category("edge")]
