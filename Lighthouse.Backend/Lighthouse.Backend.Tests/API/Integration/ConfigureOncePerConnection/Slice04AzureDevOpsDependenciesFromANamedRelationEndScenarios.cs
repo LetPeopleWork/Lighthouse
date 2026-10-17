@@ -90,12 +90,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         public async Task Naming_the_reverse_end_reads_the_other_direction()
         {
             RetailRolloutHolds4711DependingOn4702();
-            TheOrganisationAt(ContosoOrganisation).Relates(Item4702, ContosoDependsOnReverse, Item4711);
             NamesAsItsDependencyField(NorthernStoresOnContoso(), ContosoDependsOnReverse);
 
             await RefreshesNow(NorthernStores);
 
-            Assert.That(await WhatTheWorkItemWaitsOn(Item4702), Is.EqualTo(Waits4711));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await WhatTheWorkItemWaitsOn(Item4702), Is.EqualTo(Waits4711));
+                Assert.That(await WhatTheWorkItemWaitsOn(Item4711), Is.EqualTo(Nothing), "Reading both ends would make the one link wait both ways.");
+            }
         }
 
         [Test]
@@ -447,6 +450,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var contoso = TheOrganisationAt(ContosoOrganisation);
             contoso.Holds(Item4711, Item4702, Item4690);
             contoso.Relates(Item4711, ContosoDependsOnForward, Item4702);
+
+            // Azure DevOps stores one link and serves it from both ends, so the other work item carries its mirror.
+            contoso.Relates(Item4702, ContosoDependsOnReverse, Item4711);
             AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
             NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
         }
