@@ -123,60 +123,10 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
         public async Task<ActionResult<TeamSettingDto>> UpdateTeam(int teamId, TeamSettingDto teamSetting)
         {
-            var baselineValidation = BaselineValidationService.Validate(
-                teamSetting.ProcessBehaviourChartBaselineStartDate,
-                teamSetting.ProcessBehaviourChartBaselineEndDate,
-                teamSetting.DoneItemsCutoffDays, clock.Today);
-
-            if (!baselineValidation.IsValid)
-            {
-                return BadRequest(baselineValidation.ErrorMessage);
-            }
-
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting);
-            if (!stateMappingValidation.IsValid)
-            {
-                return BadRequest(stateMappingValidation.Errors);
-            }
-
-            var storedTeam = teamRepository.GetById(teamId);
-
-            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, storedTeam?.RefinementSettings);
-            if (refinementErrors.Count > 0)
-            {
-                return BadRequest(refinementErrors);
-            }
-
-            if (!IsThroughputHistoryValid(storedTeam, teamSetting))
-            {
-                return BadRequest(ThroughputHistoryValidator.ErrorMessage);
-            }
-
-            var stalenessError = ValidateStalenessThresholds(teamSetting);
-            if (stalenessError != null)
-            {
-                return BadRequest(stalenessError);
-            }
-
-            if (storedTeam?.NamesAFieldItsConnectionLacks(teamSetting) == true)
-            {
-                return RefusedAsNamingAFieldTheConnectionLacks();
-            }
-
-            var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
-            if (ruleSetError != null)
-            {
-                return BadRequest(ruleSetError);
-            }
-
             var canUsePremiumFeatures = licenseService.CanUsePremiumFeatures();
-            if (canUsePremiumFeatures)
+            if (RefusalOf(teamId, teamSetting, canUsePremiumFeatures) is { } refusal)
             {
-                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting);
-                if (!cycleTimeValidation.IsValid)
-                {
-                    return BadRequest(cycleTimeValidation.Errors);
-                }
+                return refusal;
             }
 
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
@@ -240,6 +190,66 @@ namespace Lighthouse.Backend.API
         public ActionResult<WorkItemRuleSchema> GetForecastFilterSchema(int teamId)
         {
             return this.GetEntityByIdAnExecuteAction(teamRepository, teamId, team => forecastFilterRuleService.GetSchema(team));
+        }
+
+        private ObjectResult? RefusalOf(int teamId, TeamSettingDto teamSetting, bool canUsePremiumFeatures)
+        {
+            var baselineValidation = BaselineValidationService.Validate(
+                teamSetting.ProcessBehaviourChartBaselineStartDate,
+                teamSetting.ProcessBehaviourChartBaselineEndDate,
+                teamSetting.DoneItemsCutoffDays, clock.Today);
+
+            if (!baselineValidation.IsValid)
+            {
+                return BadRequest(baselineValidation.ErrorMessage);
+            }
+
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting);
+            if (!stateMappingValidation.IsValid)
+            {
+                return BadRequest(stateMappingValidation.Errors);
+            }
+
+            var storedTeam = teamRepository.GetById(teamId);
+
+            var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, storedTeam?.RefinementSettings);
+            if (refinementErrors.Count > 0)
+            {
+                return BadRequest(refinementErrors);
+            }
+
+            if (!IsThroughputHistoryValid(storedTeam, teamSetting))
+            {
+                return BadRequest(ThroughputHistoryValidator.ErrorMessage);
+            }
+
+            var stalenessError = ValidateStalenessThresholds(teamSetting);
+            if (stalenessError != null)
+            {
+                return BadRequest(stalenessError);
+            }
+
+            if (storedTeam?.NamesAFieldItsConnectionLacks(teamSetting) == true)
+            {
+                return RefusedAsNamingAFieldTheConnectionLacks();
+            }
+
+            var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
+            if (ruleSetError != null)
+            {
+                return BadRequest(ruleSetError);
+            }
+
+            if (canUsePremiumFeatures)
+            {
+                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting);
+                if (!cycleTimeValidation.IsValid)
+                {
+                    return BadRequest(cycleTimeValidation.Errors);
+                }
+            }
+
+            return null;
         }
 
         private ObjectResult RefusedAsNamingAFieldTheConnectionLacks()
