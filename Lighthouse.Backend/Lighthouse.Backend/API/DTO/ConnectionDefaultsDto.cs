@@ -1,4 +1,6 @@
 using Lighthouse.Backend.Models;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -15,5 +17,21 @@ namespace Lighthouse.Backend.API.DTO
         }
 
         public int? ParentOverrideForTeams { get; set; }
+
+        // The defaults this build cannot hold yet. They are caught here rather than dropped, so a save that
+        // names one is refused instead of appearing to succeed.
+        [JsonExtensionData]
+        public Dictionary<string, JsonElement>? NotHeldByThisBuild { get; set; }
+
+        public IEnumerable<string> NamedButNotHeld()
+            => NotHeldByThisBuild?.Where(named => named.Value.ValueKind != JsonValueKind.Null).Select(named => named.Key) ?? [];
+
+        public IEnumerable<ConnectionDefaultSetting> Named()
+        {
+            if (ParentOverrideForTeams.HasValue)
+            {
+                yield return ConnectionDefaultSetting.ParentOverrideForTeams;
+            }
+        }
     }
 }

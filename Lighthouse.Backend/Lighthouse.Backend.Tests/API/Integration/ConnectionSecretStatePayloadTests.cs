@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             "requiresReconnect",
             "concurrencyToken",
             "defaults",
+            "supportedDefaults",
         ];
 
         private static readonly string[] OptionPropertiesToday =

@@ -134,7 +134,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         [TestCase(PaymentsAzureDevOps, TestName = "Azure DevOps offers every default")]
         [TestCase(JiraDcPayments, TestName = "Jira offers every default")]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.7")]
         [Category("contract-shape:pure-function")]
         public async Task Jira_and_Azure_DevOps_offer_every_default(string connection)
@@ -145,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.7")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
@@ -158,7 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         [TestCase(PaymentsLinear, TestName = "Linear offers no default")]
         [TestCase(PaymentsServiceNow, TestName = "ServiceNow offers no default")]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.7")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
@@ -171,7 +168,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.7")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

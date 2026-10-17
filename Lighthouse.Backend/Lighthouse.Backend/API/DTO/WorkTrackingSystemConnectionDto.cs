@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
@@ -54,6 +55,7 @@ namespace Lighthouse.Backend.API.DTO
 
             ConcurrencyToken = workTrackingSystemConnection.ConcurrencyToken;
             Defaults = new ConnectionDefaultsDto(workTrackingSystemConnection);
+            SupportedDefaults = [.. SupportedConnectionDefaults.For(workTrackingSystemConnection.WorkTrackingSystem).Select(NameOf)];
         }
 
         [JsonRequired]
@@ -83,6 +85,11 @@ namespace Lighthouse.Backend.API.DTO
 
         // Nested so that a save leaving it out keeps every default, while a null inside it clears one.
         public ConnectionDefaultsDto? Defaults { get; set; }
+
+        // The setter is private so a saved body cannot claim what its tracker offers.
+        public List<string> SupportedDefaults { get; private set; } = [];
+
+        public static string NameOf(ConnectionDefaultSetting setting) => JsonNamingPolicy.CamelCase.ConvertName(setting.ToString());
 
         // Only the list of connections says who uses each one. The setter is private so a saved body that
         // still carries the counts it was read with cannot bind them back.

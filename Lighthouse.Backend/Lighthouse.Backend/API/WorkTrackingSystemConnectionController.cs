@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -93,6 +94,11 @@ namespace Lighthouse.Backend.API
             }
 
             var existingConnection = save.Connection;
+            if (updatedConnection.Defaults is { } named && UnsupportedDefaultsIn(named, existingConnection.WorkTrackingSystem) is { Count: > 0 } unsupported)
+            {
+                return RefusedAsUnsupported(unsupported);
+            }
+
             existingConnection.Name = updatedConnection.Name;
             existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
 
@@ -182,6 +188,23 @@ namespace Lighthouse.Backend.API
 
                 existingOption.Value = option.Value;
             }
+        }
+
+        private static List<string> UnsupportedDefaultsIn(ConnectionDefaultsDto defaults, WorkTrackingSystems tracker)
+            => [
+                .. defaults.Named().Where(setting => !SupportedConnectionDefaults.Honours(tracker, setting)).Select(WorkTrackingSystemConnectionDto.NameOf),
+                .. defaults.NamedButNotHeld(),
+            ];
+
+        private ObjectResult RefusedAsUnsupported(List<string> unsupported)
+        {
+            var problem = ProblemDetailsFactory.CreateProblemDetails(
+                HttpContext,
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "This connection cannot hold these defaults.",
+                detail: $"Not supported for this connection by this version of Lighthouse: {string.Join(", ", unsupported)}.");
+            problem.Extensions["code"] = "connection-default-not-supported";
+            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
         }
 
         private bool HasLicenseFor(WorkTrackingSystemConnection connection)
