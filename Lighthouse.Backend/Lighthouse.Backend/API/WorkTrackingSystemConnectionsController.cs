@@ -216,15 +216,11 @@ namespace Lighthouse.Backend.API
         // The connection page offers its defaults only once the connection exists, and a default set while
         // creating one would otherwise be dropped without a word.
         private ObjectResult RefusedAsNamedOnCreate(List<string> named)
-        {
-            var problem = ProblemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                statusCode: StatusCodes.Status400BadRequest,
+            => this.RefusedWithCode(
+                StatusCodes.Status400BadRequest,
+                "connection-default-on-create",
                 title: "A connection being created cannot hold defaults yet.",
                 detail: $"Create the connection first, then set these on it: {string.Join(", ", named)}.");
-            problem.Extensions["code"] = "connection-default-on-create";
-            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
-        }
 
         private void AddConnectionForWorkTrackingSystem(List<WorkTrackingSystemConnectionDto> supportedSystems, WorkTrackingSystems system)
         {

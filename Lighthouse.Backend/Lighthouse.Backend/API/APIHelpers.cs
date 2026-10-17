@@ -29,5 +29,12 @@ namespace Lighthouse.Backend.API
 
             return controller.Ok(result);
         }
+
+        public static ObjectResult RefusedWithCode(this ControllerBase controller, int statusCode, string code, string title, string detail)
+        {
+            var problem = controller.ProblemDetailsFactory.CreateProblemDetails(controller.HttpContext, statusCode: statusCode, title: title, detail: detail);
+            problem.Extensions["code"] = code;
+            return new ObjectResult(problem) { StatusCode = statusCode };
+        }
     }
 }

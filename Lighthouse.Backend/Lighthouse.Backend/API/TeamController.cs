@@ -243,15 +243,11 @@ namespace Lighthouse.Backend.API
         }
 
         private ObjectResult RefusedAsNamingAFieldTheConnectionLacks()
-        {
-            var problem = ProblemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                statusCode: StatusCodes.Status400BadRequest,
+            => this.RefusedWithCode(
+                StatusCodes.Status400BadRequest,
+                "team-field-not-on-connection",
                 title: "The Team names a field its connection does not have.",
                 detail: "The Parent Override Field is not an Additional Field of this Team's connection. Nothing was saved.");
-            problem.Extensions["code"] = "team-field-not-on-connection";
-            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
-        }
 
         private static string? ValidateStalenessThresholds(TeamSettingDto teamSetting)
         {

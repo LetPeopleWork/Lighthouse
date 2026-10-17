@@ -219,37 +219,25 @@ namespace Lighthouse.Backend.API
             ];
 
         private ObjectResult RefusedAsUnsupported(List<string> unsupported)
-        {
-            var problem = ProblemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                statusCode: StatusCodes.Status400BadRequest,
+            => this.RefusedWithCode(
+                StatusCodes.Status400BadRequest,
+                "connection-default-not-supported",
                 title: "This connection cannot hold these defaults.",
                 detail: $"Not supported for this connection by this version of Lighthouse: {string.Join(", ", unsupported)}.");
-            problem.Extensions["code"] = "connection-default-not-supported";
-            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
-        }
 
         private ObjectResult RefusedAsNamingNoFieldOfTheConnection()
-        {
-            var problem = ProblemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                statusCode: StatusCodes.Status400BadRequest,
+            => this.RefusedWithCode(
+                StatusCodes.Status400BadRequest,
+                "connection-default-field-unknown",
                 title: "A default names a field this connection does not have.",
                 detail: $"Not an Additional Field of this connection: {WorkTrackingSystemConnectionDto.NameOf(ConnectionDefaultSetting.ParentOverrideForTeams)}.");
-            problem.Extensions["code"] = "connection-default-field-unknown";
-            return new ObjectResult(problem) { StatusCode = StatusCodes.Status400BadRequest };
-        }
 
         private ObjectResult RefusedAsRemovingAFieldInUse(IReadOnlyList<AdditionalFieldInUse> fieldsInUse)
-        {
-            var problem = ProblemDetailsFactory.CreateProblemDetails(
-                HttpContext,
-                statusCode: StatusCodes.Status409Conflict,
+            => this.RefusedWithCode(
+                StatusCodes.Status409Conflict,
+                "additional-field-in-use",
                 title: "An Additional Field this save removes is still in use.",
                 detail: AdditionalFieldInUse.Refusal(fieldsInUse));
-            problem.Extensions["code"] = "additional-field-in-use";
-            return new ObjectResult(problem) { StatusCode = StatusCodes.Status409Conflict };
-        }
 
         private bool HasLicenseFor(WorkTrackingSystemConnection connection)
             => connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
