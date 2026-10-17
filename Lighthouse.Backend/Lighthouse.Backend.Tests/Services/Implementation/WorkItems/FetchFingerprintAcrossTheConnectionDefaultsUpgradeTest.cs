@@ -72,8 +72,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return connection;
         }
 
+        // The upgrade leaves an owner that named a field owning it, and one that named none following the
+        // connection's default, which no connection has set yet.
+        private static TOwner AsTheUpgradeLeavesIt<TOwner>(TOwner owner, int? namedField)
+            where TOwner : WorkTrackingSystemOptionsOwner
+            => namedField is { } field ? owner.OwningParentOverride(field) : owner.FollowingParentOverrideDefault();
+
         private static Team ATeam(int? parentOverride)
-            => new Team()
+            => AsTheUpgradeLeavesIt(new Team()
             {
                 Id = 31,
                 Name = "Fraud Signals",
@@ -86,10 +92,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 StateMappings = [],
                 WorkTrackingSystemConnectionId = 21,
                 WorkTrackingSystemConnection = AConnection(),
-            }.OwningParentOverride(parentOverride);
+            }, parentOverride);
 
         private static Portfolio APortfolio(bool namesItsOwnFields)
-            => new Portfolio()
+            => AsTheUpgradeLeavesIt(new Portfolio()
             {
                 Id = 41,
                 Name = "Card Issuing",
@@ -105,6 +111,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 FeatureOwnerAdditionalFieldDefinitionId = namesItsOwnFields ? ProductOwner : null,
                 WorkTrackingSystemConnectionId = 21,
                 WorkTrackingSystemConnection = AConnection(),
-            }.OwningParentOverride(namesItsOwnFields ? CausedBy : null);
+            }, namesItsOwnFields ? CausedBy : null);
     }
 }

@@ -11,5 +11,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             owner.OwnParentOverride(additionalFieldDefinitionId);
             return owner;
         }
+
+        public static TOwner FollowingParentOverrideDefault<TOwner>(this TOwner owner)
+            where TOwner : WorkTrackingSystemOptionsOwner
+        {
+            owner.FollowParentOverrideDefault();
+            return owner;
+        }
     }
 }
