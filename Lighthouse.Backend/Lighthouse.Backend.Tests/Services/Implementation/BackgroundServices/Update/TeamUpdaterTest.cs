@@ -31,6 +31,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const string RefusedTeamName = "Payments";
 
+        private static readonly RefreshFinding ARelationTypeAsParentOverride = new(
+            RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn-Forward", []);
+
+        private static readonly RefreshFinding[] TheFindingTheRefreshMade = [ARelationTypeAsParentOverride];
+
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IRepository<Team>> teamRepoMock;
         private Mock<ITeamDataService> teamDataServiceMock;
@@ -405,6 +410,60 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     + "returned nothing, and every surface reading the outcome would be told it completed.");
                 Assert.That(recordedRefresh?.Success, Is.False,
                     "A refresh the work tracking system refused to run is not a refresh that worked.");
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_TheRefreshFoundSomethingWrongWithASetting_RecordsTheFindingOnItsRow()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ReturnsAsync(SyncOutcome.FullSync(2) with { Findings = [ARelationTypeAsParentOverride] });
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            Assert.That(recordedRefresh?.Findings, Is.EqualTo(TheFindingTheRefreshMade),
+                "Refresh History reads the finding off the Team's row, so the row has to carry it.");
+        }
+
+        [Test]
+        public void TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ReturnsAsync(SyncOutcome.DeltaSync(10, 2) with { Findings = [ARelationTypeAsParentOverride] });
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            Assert.That(recordedRefresh?.Findings, Is.Null,
+                "A cheap refresh reads only what moved, so it cannot tell a setting is now fine. Anything it said "
+                + "would replace the finding the last whole download recorded.");
+        }
+
+        [Test]
+        public void TriggerUpdate_AWholeDownloadThatFailedPartWay_LeavesTheFindingsOfItsRowUnsaid()
+        {
+            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock
+                .Setup(x => x.UpdateTeamData(team))
+                .ReturnsAsync(SyncOutcome.FullSync(2) with { Findings = [ARelationTypeAsParentOverride] });
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveWriteBackForTeam(team))
+                .Throws(new InvalidOperationException("the write-back could not be resolved"));
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedRefresh?.Success, Is.False);
+                Assert.That(recordedRefresh?.Findings, Is.Null,
+                    "A refresh that did not finish has not judged the configuration, so it must not replace "
+                    + "what the last one that did finish said.");
             }
         }
 

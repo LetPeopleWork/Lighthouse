@@ -254,6 +254,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // A Team reads no relations for dependencies, so its relations are read only for the parent: the
+        // relation type it named reads nothing, and the parent link is what keeps its work in place.
+        [Test]
+        [Category("us-03")]
+        [Category("ac-3.10")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_relation_type_named_as_a_Teams_Parent_Override_Field_keeps_the_native_parent_and_says_why()
+        {
+            var contoso = TheOrganisationAt(ContosoOrganisation);
+            contoso.Holds(Item4711, Item4702);
+            contoso.Relates(Item4711, Hierarchy, Item4702);
+            contoso.Relates(Item4711, ContosoDependsOnForward, Item4702);
+            AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
+            TheTeamNamesAsItsParentOverrideField(StoreOperations, ContosoDependsOnForward);
+
+            var (theLastFullDownloadAt, afterACheapRefresh) = await TheTeamRefreshesUntilARefreshDownloadsOnlyWhatMoved(StoreOperations);
+            var parent = await TheParentTheTeamShowsFor(StoreOperations, Item4711);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(parent, Is.EqualTo($"{Item4702}"), "The native parent stands.");
+                Assert.That(afterACheapRefresh.NewestRunMode, Is.EqualTo("Delta"));
+                Assert.That(afterACheapRefresh.Findings, Is.Not.Null.And.Count.EqualTo(1),
+                    "A cheap refresh cannot tell the setting is fine now, so the full download's finding still shows.");
+                Assert.That(afterACheapRefresh.TheFirstFinding?.Kind, Is.EqualTo("RelationTypeCannotBeReadHere"));
+                Assert.That(afterACheapRefresh.TheFirstFinding?.Setting, Is.EqualTo("ParentOverrideField"));
+                Assert.That(afterACheapRefresh.TheFirstFinding?.Named, Is.EqualTo(ContosoDependsOnForward));
+                Assert.That(afterACheapRefresh.FindingsAsOf, Is.EqualTo(theLastFullDownloadAt));
+            }
+        }
+
         // A listing that was refused says nothing about whether the reference names a relation type, so the
         // parent the tracker reports for itself has to stand rather than every item losing its parent.
         [Test]
