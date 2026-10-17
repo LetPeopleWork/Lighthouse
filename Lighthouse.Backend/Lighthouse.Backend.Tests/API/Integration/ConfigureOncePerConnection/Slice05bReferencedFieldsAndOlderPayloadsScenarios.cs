@@ -159,10 +159,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [TestCase(FraudSignals, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", CausedBy)]
         [TestCase(Ledger, RoundTrip.EchoingEveryProperty, "Own", CausedBy)]
         [TestCase(Ledger, RoundTrip.DroppingWhatItDoesNotKnow, "Own", CausedBy)]
-        [TestCase(MerchantOnboarding, RoundTrip.EchoingEveryProperty, "Own", ParentLink)]
-        [TestCase(MerchantOnboarding, RoundTrip.DroppingWhatItDoesNotKnow, "Own", ParentLink)]
-        [TestCase(CardIssuing, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", null)]
-        [Ignore(PendingEpic6303.Slice05b)]
+        [TestCase(MerchantOnboarding, RoundTrip.EchoingEveryProperty, "Own", ParentLink, Ignore = PendingEpic6303.Slice08)]
+        [TestCase(MerchantOnboarding, RoundTrip.DroppingWhatItDoesNotKnow, "Own", ParentLink, Ignore = PendingEpic6303.Slice08)]
+        [TestCase(CardIssuing, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", null, Ignore = PendingEpic6303.Slice08)]
         [Category("ac-4.10")]
         [Category("contract-shape:unbounded-preservation")]
         public async Task A_script_that_saves_back_what_it_read_changes_nothing(string owner, RoundTrip shape, string staysSource, string? staysReading)
@@ -183,7 +182,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // Accepted when the rule was chosen: a copy read while the Team followed "Caused by" still says
         // "Caused by" after the default moved, and without a source that reads as the Team choosing it.
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.9")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -200,7 +198,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05b)]
         [Category("ac-4.9")]
         [Category("contract-shape:bounded-change")]
         public async Task A_stale_copy_saved_back_with_its_source_keeps_the_Team_following_the_new_default()
