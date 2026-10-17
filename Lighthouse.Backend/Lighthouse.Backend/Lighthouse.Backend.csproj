@@ -29,17 +29,17 @@
 		<PackageReference Include="CsvHelper" Version="33.1.0" />
 		<PackageReference Include="GraphQL.Client" Version="6.1.0" />
 		<PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.12" />
-		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.12" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.13" />
+		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.13" />
 		<!-- Microsoft.TeamFoundationServer.Client floors this at 6.0.1 while Microsoft.Data.SqlClient needs 8.0.0 or later; a direct reference settles the conflict. -->
-		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.12" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
+		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.13" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
 		<!-- Pin transitive SQLitePCLRaw above 2.1.11 to resolve CVE-2025-6965 (GHSA-2m69-gcr7-jv3q); EFCore.Sqlite 10.0.9 still floors it at 2.1.11. -->
 		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.12">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.13">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
@@ -91,12 +91,12 @@
 
 
 	<ItemGroup>
-  	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
-  	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+  	<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
+  	<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
   	  <PrivateAssets>all</PrivateAssets>
   	  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
   	</PackageReference>
-	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
+	<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
 	  <None Update="certs\LighthouseCert.pfx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
