@@ -51,6 +51,10 @@ count the Teams whose Parent Override pointed at a deleted field before the upgr
 entry, create one new Team and see it follow. Count the saves it took against the saves N Teams
 would need (`OUT-6303-set-once`). No E2E here: the walking skeleton lands with slice 12.
 
+Dev database before the upgrade (2026-10-17, read-only count, step 05-02): 3 Teams. 3 name no Parent Override
+Field and follow with no value change; 0 name a deleted field; 0 name another connection's field; 0 own a valid
+field. The repair clears no value, so no Team's fingerprint moves on this instance.
+
 ## UI
 Approved by the maintainer (UI-1, UI-2): defaults section, dropdown entry; loading / could-not-load look from
 DESIGN. No dialog for a changed default: the approved UI-3 dialog arrives with slice 06, so no unapproved dialog copy

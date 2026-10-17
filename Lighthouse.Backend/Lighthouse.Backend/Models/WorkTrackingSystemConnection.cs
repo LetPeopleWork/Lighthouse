@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using Lighthouse.Backend.Models.WriteBack;
+﻿using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 
@@ -24,7 +23,6 @@ namespace Lighthouse.Backend.Models
         public List<WriteBackMappingDefinition> WriteBackMappingDefinitions { get; } = [];
 
         /// <summary>The Parent Override Field every Team on this connection reads while it follows the default.</summary>
-        [NotMapped]
         public int? ParentOverrideForTeams { get; set; }
 
         public string GetWorkTrackingSystemConnectionOptionByKey(string key)

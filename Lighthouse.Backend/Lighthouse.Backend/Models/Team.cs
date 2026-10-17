@@ -32,6 +32,13 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForTeams;
 
+        // A Team stores its source, and a new Team follows the connection's default.
+        private SettingSource storedParentOverrideSource = SettingSource.ConnectionDefault;
+
+        public override SettingSource ParentOverrideSource => storedParentOverrideSource;
+
+        protected override void ChooseParentOverrideSource(SettingSource source) => storedParentOverrideSource = source;
+
         /// <summary>Null until a Team admin first saves the refinement section.</summary>
         public RefinementSettings? RefinementSettings { get; set; }
 

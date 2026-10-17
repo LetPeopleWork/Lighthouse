@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1107,10 +1107,11 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<int?>("OwningTeamId")
-                        .HasColumnType("integer");
+                    b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ParentOverrideAdditionalFieldDefinitionId");
 
-                    b.Property<int?>("ParentOverrideAdditionalFieldDefinitionId")
+                    b.Property<int?>("OwningTeamId")
                         .HasColumnType("integer");
 
                     b.Property<int?>("PercentileHistoryInDays")
@@ -1474,8 +1475,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("ParentOverrideAdditionalFieldDefinitionId")
-                        .HasColumnType("integer");
+                    b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("ParentOverrideAdditionalFieldDefinitionId");
 
                     b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
                         .HasColumnType("timestamp with time zone");
@@ -1534,6 +1536,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("WorkTrackingSystemConnectionId")
                         .HasColumnType("integer");
+
+                    b.Property<int>("storedParentOverrideSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("ParentOverrideSource");
 
                     b.HasKey("Id");
 
@@ -1757,6 +1763,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("ParentOverrideForTeams")
+                        .HasColumnType("integer");
 
                     b.Property<int>("WorkTrackingSystem")
                         .HasColumnType("integer");

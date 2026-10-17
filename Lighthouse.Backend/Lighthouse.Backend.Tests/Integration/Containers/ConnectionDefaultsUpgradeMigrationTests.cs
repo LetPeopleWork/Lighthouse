@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private sealed record Seeded(Before Was, int Id, string FingerprintBefore);
 
-        [TestCase(UpgradedSetting.TeamsParentOverrideField, Ignore = PendingEpic6303.Slice05a, Category = "slice-05a,ac-4.4")]
+        [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Ignore = PendingEpic6303.Slice08, Category = "slice-08,ac-7.5")]
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Ignore = PendingEpic6303.Slice09, Category = "slice-09,ac-8.5")]
         [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Ignore = PendingEpic6303.Slice10, Category = "slice-10,ac-9.5")]
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        [TestCase(UpgradedSetting.TeamsParentOverrideField, Ignore = PendingEpic6303.Slice05a, Category = "slice-05a,ac-4.4")]
+        [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Ignore = PendingEpic6303.Slice08, Category = "slice-08,ac-7.5")]
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Ignore = PendingEpic6303.Slice09, Category = "slice-09,ac-8.5")]
         [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Ignore = PendingEpic6303.Slice10, Category = "slice-10,ac-9.5")]

@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Data;
+﻿using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -44,6 +44,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Deliveries", "LastPublishRefusedOn", "timestamp with time zone", "AddDeliveryPublishRefusal"),
             new("Deliveries", "LastPublishRefusalReason", "TEXT", "AddDeliveryPublishRefusal"),
             new("Teams", "RefinementSettings", "TEXT", "AddRefinementSettingsToTeams"),
+            new("Teams", "ParentOverrideSource", "INTEGER", "AddTeamsParentOverrideDefault"),
+            new("WorkTrackingSystemConnections", "ParentOverrideForTeams", "INTEGER", "AddTeamsParentOverrideDefault"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

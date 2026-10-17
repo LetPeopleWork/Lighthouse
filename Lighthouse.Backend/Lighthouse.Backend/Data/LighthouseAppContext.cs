@@ -342,6 +342,10 @@ namespace Lighthouse.Backend.Data
                 .Ignore(p => p.Teams);
 
             modelBuilder.Entity<Team>()
+                .Property<SettingSource>("storedParentOverrideSource")
+                .HasColumnName(nameof(Team.ParentOverrideSource));
+
+            modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);
 

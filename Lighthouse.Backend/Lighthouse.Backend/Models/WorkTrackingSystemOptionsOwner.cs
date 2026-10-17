@@ -93,22 +93,24 @@ namespace Lighthouse.Backend.Models
         /// follows, which with no default set reads exactly what it read before.
         /// </summary>
         [NotMapped]
-        public SettingSource ParentOverrideSource
+        public virtual SettingSource ParentOverrideSource
             => chosenParentOverrideSource
                 ?? (OwnParentOverrideAdditionalFieldDefinitionId.HasValue ? SettingSource.Own : SettingSource.ConnectionDefault);
 
         protected virtual int? ParentOverrideConnectionDefault => null;
 
+        protected virtual void ChooseParentOverrideSource(SettingSource source) => chosenParentOverrideSource = source;
+
         public void FollowParentOverrideDefault()
         {
-            chosenParentOverrideSource = SettingSource.ConnectionDefault;
+            ChooseParentOverrideSource(SettingSource.ConnectionDefault);
             OwnParentOverrideAdditionalFieldDefinitionId = null;
         }
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
         public void OwnParentOverride(int? additionalFieldDefinitionId)
         {
-            chosenParentOverrideSource = SettingSource.Own;
+            ChooseParentOverrideSource(SettingSource.Own);
             OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
         }
 
