@@ -1,8 +1,8 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -11,8 +11,6 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Globalization;
-using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -24,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
-        private Mock<ILogger<WorkTrackingSystemConnectionController>> loggerMock;
 
         [SetUp]
         public void Setup()
@@ -34,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             licenseServiceMock = new Mock<ILicenseService>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
-            loggerMock = new Mock<ILogger<WorkTrackingSystemConnectionController>>();
 
             var connectorMock = new Mock<IWorkTrackingConnector>();
             connectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>()))
@@ -307,176 +303,9 @@ namespace Lighthouse.Backend.Tests.API
             repositoryMock.Verify(x => x.Save());
         }
 
-        [TestCase(FailingStep.LookingUpTheTeamsAndPortfolios)]
-        [TestCase(FailingStep.PublishingTheChange)]
-        [Category("contract-shape:bounded-change")]
-        public async Task UpdateWorkTrackingSystemConnection_StartingUpdatesFailsAfterAStoredSave_AnswersOkAndLogsOneError(FailingStep failingStep)
-        {
-            const int connectionId = 12;
-            var existingConnection = new WorkTrackingSystemConnection { Id = connectionId, Name = "Connection" };
-            repositoryMock.Setup(x => x.GetById(connectionId)).Returns(existingConnection);
-
-            var failure = new InvalidOperationException("the database went away");
-            if (failingStep == FailingStep.LookingUpTheTeamsAndPortfolios)
-            {
-                teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>())).Throws(failure);
-            }
-            else
-            {
-                teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
-                    .Returns(new List<Team> { new() { Id = 2 } }.AsQueryable());
-                portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
-                    .Returns(new List<Portfolio>().AsQueryable());
-                domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
-                    .ThrowsAsync(failure);
-            }
-
-            var subject = CreateSubject();
-
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = connectionId, Name = "Connection" };
-            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
-
-            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(connectionId, connectionDto);
-
-            var okResult = result.Result as OkObjectResult;
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(okResult?.StatusCode, Is.EqualTo(200));
-                Assert.That((okResult?.Value as WorkTrackingSystemConnectionDto)?.Id, Is.EqualTo(connectionId));
-            }
-
-            repositoryMock.Verify(x => x.Save(), Times.Once);
-            loggerMock.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((state, _) => state.ToString()!.Contains(connectionId.ToString(CultureInfo.InvariantCulture))),
-                    failure,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-                Times.Once);
-        }
-
-        [Test]
-        [Category("contract-shape:bounded-change")]
-        public async Task UpdateWorkTrackingSystemConnection_FieldAddedToAConnectionNoTeamOrPortfolioUses_PublishesNothing()
-        {
-            const int connectionId = 12;
-            var existingConnection = new WorkTrackingSystemConnection { Id = connectionId, Name = "Connection" };
-            repositoryMock.Setup(x => x.GetById(connectionId)).Returns(existingConnection);
-            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
-                .Returns(new List<Team>().AsQueryable());
-            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
-                .Returns(new List<Portfolio>().AsQueryable());
-
-            var subject = CreateSubject();
-
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = connectionId, Name = "Connection" };
-            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
-
-            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(connectionId, connectionDto);
-
-            Assert.That((result.Result as OkObjectResult)?.StatusCode, Is.EqualTo(200));
-            repositoryMock.Verify(x => x.Save(), Times.Once);
-            domainEventDispatcherMock.Verify(
-                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        [Test]
-        [Category("contract-shape:bounded-change")]
-        public async Task UpdateWorkTrackingSystemConnection_FieldAdded_PublishesTheTeamsAndPortfoliosOnThisConnectionOnly()
-        {
-            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
-            ConnectionFetchShapeChanged? published = null;
-            domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
-                .Callback<ConnectionFetchShapeChanged, CancellationToken>((change, _) => published = change)
-                .Returns(Task.CompletedTask);
-
-            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, AConnectionSaveWithAnAddedField());
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(published?.ConnectionId, Is.EqualTo(OwnedConnectionId));
-                Assert.That(published?.TeamIds, Is.EqualTo(TeamsOnTheOwnedConnection));
-                Assert.That(published?.PortfolioIds, Is.EqualTo(PortfoliosOnTheOwnedConnection));
-            }
-        }
-
-        [Test]
-        [Category("contract-shape:bounded-change")]
-        public async Task UpdateWorkTrackingSystemConnection_FieldAddedButUpdatesLeftForLater_PublishesNothing()
-        {
-            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
-
-            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, AConnectionSaveWithAnAddedField(), startUpdates: false);
-
-            repositoryMock.Verify(x => x.Save(), Times.Once);
-            domainEventDispatcherMock.Verify(
-                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        [Test]
-        [Category("contract-shape:bounded-change")]
-        public async Task UpdateWorkTrackingSystemConnection_OnlyTheNameChanged_PublishesNothing()
-        {
-            var subject = CreateSubjectForAConnectionWithOwnersHereAndElsewhere();
-
-            await subject.UpdateWorkTrackingSystemConnectionAsync(OwnedConnectionId, new WorkTrackingSystemConnectionDto { Id = OwnedConnectionId, Name = "Renamed" });
-
-            repositoryMock.Verify(x => x.Save(), Times.Once);
-            domainEventDispatcherMock.Verify(
-                x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()),
-                Times.Never);
-        }
-
-        private const int OwnedConnectionId = 12;
-
-        private const int OtherConnectionId = 99;
-
-        private static readonly int[] TeamsOnTheOwnedConnection = [2];
-
-        private static readonly int[] PortfoliosOnTheOwnedConnection = [7];
-
-        private WorkTrackingSystemConnectionController CreateSubjectForAConnectionWithOwnersHereAndElsewhere()
-        {
-            repositoryMock.Setup(x => x.GetById(OwnedConnectionId))
-                .Returns(new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection" });
-
-            var teams = new List<Team>
-            {
-                new() { Id = 2, WorkTrackingSystemConnectionId = OwnedConnectionId },
-                new() { Id = 3, WorkTrackingSystemConnectionId = OtherConnectionId },
-            };
-            var portfolios = new List<Portfolio>
-            {
-                new() { Id = 7, WorkTrackingSystemConnectionId = OwnedConnectionId },
-                new() { Id = 8, WorkTrackingSystemConnectionId = OtherConnectionId },
-            };
-            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
-                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
-            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
-                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
-
-            return CreateSubject();
-        }
-
-        private static WorkTrackingSystemConnectionDto AConnectionSaveWithAnAddedField()
-        {
-            var connectionDto = new WorkTrackingSystemConnectionDto { Id = OwnedConnectionId, Name = "Connection" };
-            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { DisplayName = "Sprint", Reference = "System.Sprint" });
-            return connectionDto;
-        }
-
-        public enum FailingStep
-        {
-            LookingUpTheTeamsAndPortfolios,
-            PublishingTheChange,
-        }
-
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, domainEventDispatcherMock.Object, loggerMock.Object);
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, new ConnectionSaveService(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, Mock.Of<ILogger<ConnectionSaveService>>()));
         }
     }
 }

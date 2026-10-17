@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.API;
+using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
@@ -15,9 +15,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string Because =
             "Telling every Team and Portfolio on a connection to update sets off a full re-download of each " +
-            "of them, so no sync path or other service may start it. Only the connection controller, the " +
+            "of them, so no sync path or other service may start it. Only the connection save, the " +
             "event itself, its handler and the composition root that registers the handler may name the " +
-            "event. The rule cannot see inside the connection controller, so it does not hold the settings " +
+            "event. The rule cannot tell which of the connection controller's requests calls the save, so it does not hold the settings " +
             "page's read of a connection, which quietly registers the connector's own fields; the acceptance " +
             "scenarios on reading a connection hold that one. A publisher written inside an async method " +
             "anywhere else is only caught in a Debug run: a Release build moves an async method's body into " +
@@ -25,10 +25,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [Test]
         // @contract-shape:unbounded-preservation
-        public void NoTypeOutsideTheConnectionController_PublishesThatAConnectionsFetchShapeChanged()
+        public void NoTypeOutsideTheConnectionSave_PublishesThatAConnectionsFetchShapeChanged()
         {
             Types().That()
-                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(WorkTrackingSystemConnectionController))).And()
+                .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionSaveService))).And()
                 .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionFetchShapeChanged))).And()
                 .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionFetchShapeChangedUpdateTriggerHandler))).And()
                 .DoNotHaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(Program)))
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheConnectionSave_IsSeenToPublishThatAConnectionsFetchShapeChanged()
         {
             Types().That()
-                .HaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(WorkTrackingSystemConnectionController)))
+                .HaveFullNameMatching(TheTypeOrOneNestedInIt(typeof(ConnectionSaveService)))
                 .Should().DependOnAny(Types().That().Are(typeof(ConnectionFetchShapeChanged)))
                 .Because("the rule above only means something while it can see the one save that does publish the event")
                 .Check(Architecture);

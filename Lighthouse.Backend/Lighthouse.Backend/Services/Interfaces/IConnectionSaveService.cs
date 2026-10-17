@@ -1,9 +1,7 @@
+using Lighthouse.Backend.Models;
+
 namespace Lighthouse.Backend.Services.Interfaces
 {
-    // SCAFFOLD: not implemented or registered yet. The acceptance tests for connection defaults decorate this
-    // service to let another save land between opening and committing a connection save, which is how they
-    // prove that a field a Team started using in that gap still blocks its removal. DELIVER implements it,
-    // registers it, and may rename it as long as the tests follow.
     public interface IConnectionSaveService
     {
         Task<ConnectionSaveHandle?> Open(int connectionId, CancellationToken cancellationToken);
@@ -11,7 +9,11 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<ConnectionSaveOutcome> Commit(ConnectionSaveHandle handle, Guid? concurrencyToken, bool startUpdates, CancellationToken cancellationToken);
     }
 
-    public sealed record ConnectionSaveHandle(int ConnectionId);
+    // The caller edits Connection between Open and Commit; FetchShapeBeforeSave is how it fetched when it was opened.
+    public sealed record ConnectionSaveHandle(WorkTrackingSystemConnection Connection, string FetchShapeBeforeSave)
+    {
+        public int ConnectionId => Connection.Id;
+    }
 
     public sealed record ConnectionSaveOutcome(bool Refused);
 }

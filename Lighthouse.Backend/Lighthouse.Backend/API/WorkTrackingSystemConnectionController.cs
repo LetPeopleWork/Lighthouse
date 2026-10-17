@@ -2,11 +2,9 @@
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
-using Lighthouse.Backend.Services.Implementation.WorkItems;
-using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
@@ -16,15 +14,19 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [Route("api/latest/worktrackingsystemconnections/{workTrackingSystemConnectionId:int}")]
     [ApiController]
+    // S6960 sees the save use none of the services that reading and deleting use, because the save's own
+    // service now reads the connection for it. It is still one job: reading, saving and deleting one
+    // connection, behind one route. Splitting it would put that route in two controllers.
+#pragma warning disable S6960
     public class WorkTrackingSystemConnectionController(
         IRepository<WorkTrackingSystemConnection> repository,
         IRepository<Team> teamRepository,
         IRepository<Portfolio> portfolioRepository,
         ILicenseService licenseService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
-        IDomainEventDispatcher domainEventDispatcher,
-        ILogger<WorkTrackingSystemConnectionController> logger)
+        IConnectionSaveService connectionSaveService)
         : ControllerBase
+#pragma warning restore S6960
     {
         [HttpGet]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnection(int workTrackingSystemConnectionId)
@@ -84,51 +86,35 @@ namespace Lighthouse.Backend.API
             [FromBody] WorkTrackingSystemConnectionDto updatedConnection,
             [FromQuery] bool startUpdates = true)
         {
-            var isForbiddenAction = false;
-            List<string>? validationErrors = null;
-
-            var result = await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async existingConnection =>
+            var save = await connectionSaveService.Open(workTrackingSystemConnectionId, CancellationToken.None);
+            if (save is null)
             {
-                var fetchShapeBeforeSave = FetchFingerprint.ForConnection(existingConnection);
-
-                existingConnection.Name = updatedConnection.Name;
-                existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
-
-                MergeOptions(existingConnection, updatedConnection.Options);
-                var newFields = new NewAdditionalFieldTargets();
-                UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
-                UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
-
-                var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
-                if (!mappingValidation.IsValid)
-                {
-                    validationErrors = mappingValidation.Errors;
-                    return new WorkTrackingSystemConnectionDto(existingConnection);
-                }
-
-                (isForbiddenAction, var shouldSave) = CheckLicensePermissions(existingConnection);
-                if (shouldSave)
-                {
-                    repository.Update(existingConnection);
-
-                    if (updatedConnection.ConcurrencyToken.HasValue)
-                    {
-                        repository.ApplyConcurrencyTokenForEdit(existingConnection, updatedConnection.ConcurrencyToken.Value);
-                    }
-
-                    await repository.Save();
-                    await StartUpdatesIfFetchShapeMoved(existingConnection, fetchShapeBeforeSave, startUpdates);
-                }
-
-                return new WorkTrackingSystemConnectionDto(existingConnection);
-            });
-
-            if (validationErrors is { Count: > 0 })
-            {
-                return BadRequest(validationErrors);
+                return NotFound();
             }
 
-            return isForbiddenAction ? StatusCode(StatusCodes.Status403Forbidden, null) : result;
+            var existingConnection = save.Connection;
+            existingConnection.Name = updatedConnection.Name;
+            existingConnection.AuthenticationMethodKey = updatedConnection.AuthenticationMethodKey;
+
+            MergeOptions(existingConnection, updatedConnection.Options);
+            var newFields = new NewAdditionalFieldTargets();
+            UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
+            UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
+
+            var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
+            if (!mappingValidation.IsValid)
+            {
+                return BadRequest(mappingValidation.Errors);
+            }
+
+            if (!HasLicenseFor(existingConnection))
+            {
+                return StatusCode(StatusCodes.Status403Forbidden, null);
+            }
+
+            await connectionSaveService.Commit(save, updatedConnection.ConcurrencyToken, startUpdates, CancellationToken.None);
+
+            return Ok(new WorkTrackingSystemConnectionDto(existingConnection));
         }
 
         [HttpDelete]
@@ -152,44 +138,6 @@ namespace Lighthouse.Backend.API
             await repository.Save();
 
             return Ok();
-        }
-
-        private async Task StartUpdatesIfFetchShapeMoved(WorkTrackingSystemConnection connection, string fetchShapeBeforeSave, bool startUpdates)
-        {
-            if (!startUpdates || FetchFingerprint.ForConnection(connection) == fetchShapeBeforeSave)
-            {
-                return;
-            }
-
-            try
-            {
-                var fetchShapeChange = FetchShapeChangeForUsersOf(connection);
-                if (fetchShapeChange != null)
-                {
-                    await domainEventDispatcher.PublishAsync(fetchShapeChange);
-                }
-            }
-#pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio still downloads the new fields at its next scheduled update.
-            catch (Exception exception)
-#pragma warning restore CA1031
-            {
-                logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", connection.Id);
-            }
-        }
-
-        // Kept synchronous so the architecture test sees the controller build this event: in a Release
-        // build an async method's body moves into a struct that the test cannot attribute to its owner.
-        private ConnectionFetchShapeChanged? FetchShapeChangeForUsersOf(WorkTrackingSystemConnection connection)
-        {
-            var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
-            var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
-
-            if (teamIds.Count == 0 && portfolioIds.Count == 0)
-            {
-                return null;
-            }
-
-            return new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds);
         }
 
         private void MergeOptions(
@@ -231,14 +179,9 @@ namespace Lighthouse.Backend.API
             }
         }
 
-        private (bool isForbidden, bool shouldSave) CheckLicensePermissions(
-            WorkTrackingSystemConnection connection)
-        {
-            var hasPermission = connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
+        private bool HasLicenseFor(WorkTrackingSystemConnection connection)
+            => connection.AdditionalFieldDefinitions.SupportsAdditionalFields(licenseService)
                 && connection.WriteBackMappingDefinitions.SupportsWriteBackMappings(licenseService);
-
-            return (!hasPermission, hasPermission);
-        }
 
         private static void UpdateWriteBackMappingDefinitions(
             WorkTrackingSystemConnection existingConnection,

@@ -1448,6 +1448,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRecurringBlackoutRuleService, RecurringBlackoutRuleService>();
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<IRefreshLogService, RefreshLogService>();
+            builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();
