@@ -47,8 +47,23 @@ type to a Feature Lighthouse stores (the tracker side) against the Features whos
 counterpart (the Lighthouse side), before and after. Baseline 0%; target 100%, allowing only counterparts outside
 every Portfolio. Record both numbers here.
 
+**Result (2026-10-17, maintainer's live review on the demo Jira Cloud site).** A "Dependency" link type
+(`depends on` / `is depended on by`) was added, and LGHTHSDMO-1 depends on -2 and -3 depends on -4 and -5, with
+-6 relates to -2 as a link that should not match. Portfolio "Demo Dependencies" (Epics 1–10) and a Team over
+their children. Tracker side: 2 Features carry 3 `depends on` links to stored Features. Lighthouse side before
+(no Dependency Field): 0 of 3, which is **0%**. After naming `depends on`: 3 of 3, which is **100%**, target
+met. All other cases matched too: `is depended on by` flips the direction; `blocks` reads Jira's stock Blocks
+from the `blocks` end; no Dependency Field still reads `is blocked by`; naming the type `Dependency` reads
+nothing and Refresh History shows the both-ways finding once; switching back clears it.
+
 ## Request budget
 No additional Jira request on the fetch path; assert the request count against the pre-change baseline.
+Live: refreshes with and without a named link took the same time (28–30 s per full download).
 
 ## Changed assumptions
-(filled during DELIVER)
+- The both-ways finding listed the two phrases in the order they were read ("is depended on by" or
+  "depends on"), not outward first as the approved copy shows. Fixed in slice 02: outward phrase first, always.
+- The log line for a finding showed code names (`DependencyField`, `NamedLinkPointsBothWays`). Rewritten in
+  slice 02 as a plain sentence an admin reads.
+- Findings appear in Refresh History only with Entity set to the Portfolio, not the Portfolio's Forecast run.
+  That is as designed, but easy to miss when testing by hand.
