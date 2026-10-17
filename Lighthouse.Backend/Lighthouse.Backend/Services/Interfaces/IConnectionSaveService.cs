@@ -16,6 +16,9 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         // Kept by name as well as id, because the save may rename or remove the field it named.
         public NamedField TeamsParentOverrideDefaultBeforeSave { get; init; } = NamedField.Nothing;
+
+        // A field created by this same save has no id until it is stored, so the default is pointed at it afterwards.
+        public AdditionalFieldDefinition? TeamsParentOverrideDefaultAddedInThisSave { get; set; }
     }
 
     public sealed record NamedField(int? FieldId, string? FieldName)

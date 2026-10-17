@@ -42,10 +42,22 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
 
             await connectionRepository.Save();
+            await PointTheDefaultAtTheFieldAddedInThisSave(handle);
             LogTheChangedDefault(handle);
             await StartUpdatesIfFetchShapeMoved(handle, startUpdates, cancellationToken);
 
             return Saved;
+        }
+
+        private async Task PointTheDefaultAtTheFieldAddedInThisSave(ConnectionSaveHandle handle)
+        {
+            if (handle.TeamsParentOverrideDefaultAddedInThisSave is not { } addedField)
+            {
+                return;
+            }
+
+            handle.Connection.ParentOverrideForTeams = addedField.Id;
+            await connectionRepository.Save();
         }
 
         private async Task StartUpdatesIfFetchShapeMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)

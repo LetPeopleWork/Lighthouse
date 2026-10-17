@@ -109,7 +109,8 @@ namespace Lighthouse.Backend.API
 
             if (updatedConnection.Defaults is { } defaults)
             {
-                existingConnection.ParentOverrideForTeams = defaults.ParentOverrideForTeams;
+                save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
+                existingConnection.ParentOverrideForTeams = save.TeamsParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForTeams : null;
             }
 
             var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);

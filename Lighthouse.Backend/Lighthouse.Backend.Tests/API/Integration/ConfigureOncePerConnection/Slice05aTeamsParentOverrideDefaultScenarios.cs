@@ -187,7 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-f.3")]
         [Category("edge")]
         [Category("contract-shape:unbounded-preservation")]
@@ -206,7 +205,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-f.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -227,7 +225,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         // A script that knows nothing of defaults must not wipe them by leaving them out.
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.1")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -246,7 +243,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.1")]
         [Category("ac-f.1")]
         [Category("contract-shape:bounded-change")]
@@ -270,7 +266,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // The connection already carries a concurrency token; a default rides on the same save, so the admin
         // whose copy is stale is told so instead of overwriting the other admin's default.
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.1")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -290,7 +285,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice05a)]
         [Category("ac-4.1")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]

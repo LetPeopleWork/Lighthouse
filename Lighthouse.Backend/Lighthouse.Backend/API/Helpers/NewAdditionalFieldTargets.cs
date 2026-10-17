@@ -26,6 +26,9 @@ namespace Lighthouse.Backend.API.Helpers
             return field;
         }
 
+        public AdditionalFieldDefinition? FieldNamedBy(int? fieldId)
+            => fieldId is < 0 && fieldsByPlaceholderId.TryGetValue(fieldId.Value, out var newField) ? newField : null;
+
         public WriteBackMappingDefinition CreateMapping(WriteBackMappingDefinitionDto mappingDto)
         {
             var mapping = mappingDto.ToModel();

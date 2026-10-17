@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -234,19 +235,91 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             Assert.That(log.Everything, Is.Empty);
         }
 
-        private ConnectionSaveService CreateSubjectForAConnectionWithNamedTeams(RecordingLogger<ConnectionSaveService> log)
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt()
         {
-            var connection = new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection" };
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log, [new Team { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(CausedById)]);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection: the Teams' default Parent Override Field changed from none to Caused by; no Team follows it"));
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log, defaultBeforeSave: CausedById);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = null;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection: the Teams' default Parent Override Field changed from Caused by to none; 2 Teams follow it: Alpha, Bravo"));
+        }
+
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Commit_TheCopyIsStale_LetsTheConflictThroughAndLogsAndPublishesNothing()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            connectionRepositoryMock.Setup(x => x.Save()).ThrowsAsync(new DbUpdateConcurrencyException("another admin saved first"));
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+            AddAField(handle);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => subject.Commit(handle, Guid.NewGuid(), startUpdates: true, CancellationToken.None), Throws.TypeOf<DbUpdateConcurrencyException>());
+                Assert.That(log.Everything, Is.Empty);
+            }
+
+            VerifyNothingWasPublished();
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField()
+        {
+            const int StoredEpicLinkId = 77;
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            var epicLink = new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" };
+            handle.Connection.AdditionalFieldDefinitions.Add(epicLink);
+            handle.TeamsParentOverrideDefaultAddedInThisSave = epicLink;
+            connectionRepositoryMock.Setup(x => x.Save()).Callback(() => epicLink.Id = StoredEpicLinkId).Returns(Task.CompletedTask);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(handle.Connection.ParentOverrideForTeams, Is.EqualTo(StoredEpicLinkId));
+                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection: the Teams' default Parent Override Field changed from none to Epic Link; 2 Teams follow it: Alpha, Bravo"));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
+        }
+
+        private ConnectionSaveService CreateSubjectForAConnectionWithNamedTeams(RecordingLogger<ConnectionSaveService> log, List<Team>? teamsOnTheConnection = null, int? defaultBeforeSave = null)
+        {
+            var connection = new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection", ParentOverrideForTeams = defaultBeforeSave };
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
             connectionRepositoryMock.Setup(x => x.GetById(OwnedConnectionId)).Returns(connection);
 
-            var teams = new List<Team>
-            {
+            var teams = teamsOnTheConnection ??
+            [
                 new() { Id = 5, Name = "Bravo", WorkTrackingSystemConnectionId = OwnedConnectionId },
                 new() { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId },
                 new Team { Id = 9, Name = "Chose None", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(null),
                 new() { Id = 3, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId },
-            };
+            ];
             teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
                 .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
 

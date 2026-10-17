@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.API;
+﻿using System.Text.Json;
+using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Factories;
@@ -8,7 +9,10 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -301,6 +305,48 @@ namespace Lighthouse.Backend.Tests.API
 
             repositoryMock.Verify(x => x.Update(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task UpdateWorkTrackingSystemConnection_ADefaultThisVersionCannotHoldYet_IsRefusedAndNothingIsStored()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Renamed",
+                Defaults = new ConnectionDefaultsDto { NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(5) } },
+            };
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-not-supported"));
+                Assert.That(problem?.Detail, Does.Contain("dependencyFieldForPortfolios"));
+                Assert.That(existingConnection.Name, Is.EqualTo("Jira DC"));
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory
+        {
+            public override ProblemDetails CreateProblemDetails(
+                HttpContext httpContext, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new() { Status = statusCode, Title = title, Type = type, Detail = detail, Instance = instance };
+
+            public override ValidationProblemDetails CreateValidationProblemDetails(
+                HttpContext httpContext, ModelStateDictionary modelStateDictionary, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new(modelStateDictionary) { Status = statusCode, Title = title };
         }
 
         private WorkTrackingSystemConnectionController CreateSubject()
