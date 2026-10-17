@@ -145,6 +145,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public async Task LogRefreshAsync_RunsRecordedAtTheSameInstant_PrunesTheOneWrittenFirst()
+        {
+            const int retention = 2;
+            appSettingServiceMock.Setup(x => x.GetRefreshLogRetentionRuns()).Returns(retention);
+
+            var sameInstant = DateTime.UtcNow.AddMinutes(-10);
+            var writtenFirst = CreateEntry(1, RefreshType.Portfolio, 1, sameInstant);
+            var writtenSecond = CreateEntry(2, RefreshType.Portfolio, 1, sameInstant);
+            var writtenLast = CreateEntry(3, RefreshType.Portfolio, 1, sameInstant);
+
+            repositoryMock.Setup(r => r.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<RefreshLog, bool>>>()))
+                .Returns(new List<RefreshLog> { writtenLast, writtenFirst, writtenSecond }.AsQueryable());
+
+            var service = CreateSubject();
+
+            await service.LogRefreshAsync(writtenLast);
+
+            repositoryMock.Verify(r => r.Remove(writtenFirst), Times.Once);
+            repositoryMock.Verify(r => r.Remove(It.IsAny<RefreshLog>()), Times.Once);
+        }
+
+        [Test]
         public void GetRefreshLogs_ReturnsLogsOrderedByExecutedAtDescending()
         {
             var older = CreateEntry(1, RefreshType.Team, 1, DateTime.UtcNow.AddMinutes(-60));

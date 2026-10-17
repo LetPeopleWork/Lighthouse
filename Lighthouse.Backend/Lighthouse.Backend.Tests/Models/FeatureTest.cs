@@ -56,6 +56,21 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        /// <summary>
+        /// A Feature rebuilt from one a connector read, to give it its dependencies, keeps what reading it
+        /// found wrong with the settings. Dropping it there would leave the refresh with nothing to report.
+        /// </summary>
+        [Test]
+        public void AFeatureRebuiltFromAnotherWithItsLinks_KeepsWhatReadingItFound()
+        {
+            var finding = new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", ["relates to"]);
+            var read = new Feature { ReferenceId = "PROJ-1", RefreshFindings = [finding] };
+
+            var rebuilt = new Feature(read, []);
+
+            Assert.That(rebuilt.RefreshFindings, Is.EqualTo(new List<RefreshFinding> { finding }));
+        }
+
         [Test]
         public void GetLikelihoodForFeature_FeatureHasNoRemainingWork_Returns100()
         {

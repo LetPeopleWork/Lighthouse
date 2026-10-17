@@ -1518,6 +1518,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
+        /// Each finding is worded once. A line for a named link that matched nothing is not followed by the
+        /// catch-all line the kinds without a sentence of their own get.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereTheNamedLinkMatchedNothing_WritesOnlyThatOneLine()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.NamedLinkMatchedNothing, RefreshFindingSetting.DependencyField, "depends on", TheLinksSeenWhereNothingMatched)],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings.Where(line => line.Contains("'depends on'", StringComparison.Ordinal)), Has.Exactly(1).Items);
+        }
+
+        /// <summary>
+        /// A kind of finding with no sentence of its own still reaches the log, naming the setting, what was
+        /// typed into it and what the refresh saw instead.
+        /// </summary>
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWithAFindingOfAnotherKind_WarnsWhatTheRefreshSaw()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn", BothDependencyPhrases)],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Parent Override Field names 'Contoso.DependsOn', which the refresh could not read as configured. "
+                + "What it saw: 'depends on', 'is depended on by'"));
+        }
+
+        /// <summary>
         /// A Portfolio that ignores dependencies does not read its Dependency Field at all, so whatever that
         /// field matched or missed is nothing its administrator needs to act on.
         /// </summary>

@@ -180,6 +180,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(names, Is.Empty);
         }
 
+        /// <summary>
+        /// A link whose end reads no phrase gives an administrator nothing to type, so it is not named.
+        /// </summary>
+        [Test]
+        public void InwardLinkNames_SaysNothingAboutALinkWhoseEndReadsNoPhrase()
+        {
+            var fields = FieldsWith(InwardLink(string.Empty, "PROJ-1"), InwardLink("relates to", "PROJ-2"));
+
+            var names = fields.InwardLinkNames();
+
+            var expected = new[] { "relates to" };
+
+            Assert.That(names, Is.EqualTo(expected));
+        }
+
         [Test]
         public void InwardLinkNames_SaysNothingWhenTheIssueCarriesNoLinksAtAll()
         {
