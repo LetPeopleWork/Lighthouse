@@ -202,6 +202,14 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 		{ group: "teams", heading: teamsTerm },
 		{ group: "portfolios", heading: portfoliosTerm },
 	];
+	const sections = groups
+		.map(({ group, heading }) => ({
+			heading,
+			rows: supportedDefaults.filter(
+				(name) => WhereEachDefaultSits[name].group === group,
+			),
+		}))
+		.filter(({ rows }) => rows.length > 0);
 
 	return (
 		<Box component="section" aria-label={title}>
@@ -209,38 +217,30 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 				<Typography variant="body2" color="text.secondary">
 					{`${teamsTerm} and ${portfoliosTerm} on this connection use these unless they set their own.`}
 				</Typography>
-				{groups
-					.map(({ group, heading }) => ({
-						heading,
-						rows: supportedDefaults.filter(
-							(name) => WhereEachDefaultSits[name].group === group,
-						),
-					}))
-					.filter(({ rows }) => rows.length > 0)
-					.map(({ heading, rows }) => (
-						<Box
-							key={heading}
-							component="fieldset"
-							sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}
+				{sections.map(({ heading, rows }) => (
+					<Box
+						key={heading}
+						component="fieldset"
+						sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}
+					>
+						<Typography
+							component="legend"
+							variant="subtitle2"
+							color="text.secondary"
 						>
-							<Typography
-								component="legend"
-								variant="subtitle2"
-								color="text.secondary"
-							>
-								{heading}
-							</Typography>
-							{rows.map((name) => (
-								<FormSelectField<number>
-									key={name}
-									label={WhereEachDefaultSits[name].label(featureTerm)}
-									value={chosenFieldOf(name)}
-									options={fieldOptions}
-									onChange={(fieldId) => onChange(name, fieldId)}
-								/>
-							))}
-						</Box>
-					))}
+							{heading}
+						</Typography>
+						{rows.map((name) => (
+							<FormSelectField<number>
+								key={name}
+								label={WhereEachDefaultSits[name].label(featureTerm)}
+								value={chosenFieldOf(name)}
+								options={fieldOptions}
+								onChange={(fieldId) => onChange(name, fieldId)}
+							/>
+						))}
+					</Box>
+				))}
 			</InputGroup>
 		</Box>
 	);
