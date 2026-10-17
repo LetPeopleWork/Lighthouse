@@ -307,6 +307,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             connectionRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
         }
 
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_PointingTheDefaultAtAFieldAddedInThisSaveFails_FailsTheSaveSayingWhichDefaultWasNotApplied()
+        {
+            const int StoredEpicLinkId = 77;
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            var epicLink = new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" };
+            handle.Connection.AdditionalFieldDefinitions.Add(epicLink);
+            handle.TeamsParentOverrideDefaultAddedInThisSave = epicLink;
+            var failure = new InvalidOperationException("the database went away");
+            connectionRepositoryMock.SetupSequence(x => x.Save())
+                .Returns(() =>
+                {
+                    epicLink.Id = StoredEpicLinkId;
+                    return Task.CompletedTask;
+                })
+                .ThrowsAsync(failure);
+
+            var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Teams' default Parent Override Field could not be set to it and is now none"));
+                Assert.That(thrown?.InnerException, Is.SameAs(failure));
+                Assert.That(log.Everything, Is.Empty);
+            }
+
+            VerifyNothingWasPublished();
+        }
+
         private ConnectionSaveService CreateSubjectForAConnectionWithNamedTeams(RecordingLogger<ConnectionSaveService> log, List<Team>? teamsOnTheConnection = null, int? defaultBeforeSave = null)
         {
             var connection = new WorkTrackingSystemConnection { Id = OwnedConnectionId, Name = "Connection", ParentOverrideForTeams = defaultBeforeSave };

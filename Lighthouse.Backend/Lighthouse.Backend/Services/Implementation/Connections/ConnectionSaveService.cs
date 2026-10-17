@@ -57,7 +57,19 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
 
             handle.Connection.ParentOverrideForTeams = addedField.Id;
-            await connectionRepository.Save();
+            try
+            {
+                await connectionRepository.Save();
+            }
+            catch (Exception exception)
+            {
+                // The new field is already stored, but the default could not follow it. Without saying so the
+                // failed save reads as if nothing was stored, and nobody can tell the Teams now follow no field.
+                // The host logs the failure as an error, so it is not logged here as well.
+                throw new InvalidOperationException(
+                    $"Connection {handle.Connection.Name} was saved with its new field {addedField.DisplayName}, but the Teams' default Parent Override Field could not be set to it and is now {NoField}",
+                    exception);
+            }
         }
 
         private async Task StartUpdatesIfFetchShapeMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
