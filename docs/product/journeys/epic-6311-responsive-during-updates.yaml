@@ -1,0 +1,83 @@
+schema_version: 1
+feature_id: epic-6311-responsive-during-updates
+updated: 2026-10-17
+note: >
+  ADO Epic #6311 "Keep Lighthouse responsive during updates", children Bug #6308, Story #6309 and a new
+  Cancel all Story. Evidence is one self-hosted (Docker) user's incident: while one Portfolio forecast ran,
+  every page hung, every Team refresh sat "Queued behind" it, and Stop left it "Stopping…" for 10+ minutes
+  until the container was restarted. DISCOVER and DIVERGE were skipped by maintainer decision.
+
+  The code reading of 2026-10-17 found the three causes: the Monte Carlo loop is a Parallel.For with no
+  ParallelOptions, so it takes every core; no cancellation token reaches it, so Stop cancels a token nobody
+  reads; and a single run may simulate 100,000 days. It also found that a run which does not finish is
+  dropped from the distribution rather than counted as late, so lowering the horizon to 5 years has to
+  come after honest counting. Queue lanes, scheduled-update visibility, pausing, server-side Stopping…,
+  held-update display, skipping unchanged forecasts and the failure toast moved to Epic #6321.
+  See docs/feature/epic-6311-responsive-during-updates/.
+
+journeys:
+
+  - name: use-and-steer-lighthouse-while-it-updates
+    goal: >
+      Platform Operator keeps using Lighthouse while it forecasts, stops what is hurting it without a
+      restart, and the Delivery Forecaster reads forecasts that admit when they cannot see far enough.
+    persona: "platform-operator (primary; Docker self-hoster and SaaS operator); delivery-forecaster
+      (forecast honesty, slices 03-04)"
+
+    emotional_arc:
+      start: Alarmed - "every page is blank, the Teams are all queued, and Stop has said Stopping… for ten
+        minutes. The only lever I have is restarting the container."
+      middle: Reassured - "the pages load while it forecasts; when I stop it, it stops, and yesterday's
+        dates are still there."
+      end: In control - "if a backlog piles up I clear it in one click, the schedule picks it back up, and a
+        Feature that cannot be forecast says so instead of inventing a date."
+
+    steps:
+      - step: Keep working
+        action: Navigate any page while a Portfolio forecast runs
+        output: Pages answer, because the simulation uses at most half the cores (minimum one).
+      - step: Stop the forecast
+        action: Task Manager, stop control on the Forecasting row
+        output: The row leaves within seconds; the Features and the tracker keep the previous forecast; the
+          refresh history records the run as cancelled.
+      - step: Clear the backlog
+        action: Task Manager, Cancel all
+        output: The running update stops and every queued row, coalesced follow-up and held forecast is
+          dropped. Deletions are left to finish. Scheduled updates carry on as usual.
+      - step: Read an honest forecast
+        action: Open a Feature or Delivery whose Team delivers very slowly
+        output: Each percentile the runs reached within 5 years shows a date; the rest read "more than 5
+          years" (wording settled at DISTILL). Never today's date, never a date from only the runs that
+          finished.
+
+    error_paths:
+      - situation: Pages still hang with the bounded simulation
+        recovery: Slice 01's learning hypothesis has failed. The incident has a second cause (for example
+          a database lock across the save), investigated before the later slices build on the assumption.
+      - situation: Stop takes minutes because a single run is very long
+        recovery: The check sits between runs; one run of a low-throughput Feature can be long until the
+          5-year horizon lands. Measured as KPI-2. If still too slow, the check moves inside a run.
+      - situation: A stopped refresh comes straight back
+        recovery: That is a coalesced follow-up. Per-row Stop keeps today's semantics; Cancel all drops
+          follow-ups and holds explicitly.
+      - situation: A released CLI/MCP client reads a beyond-horizon percentile
+        recovery: The marker is additive and expectedDate keeps its meaning, so the old client prints a
+          date about 5 years out until it upgrades; the clients release renders the marker.
+      - situation: Forecast write-back for a beyond-horizon percentile
+        recovery: Nothing is written (precedent - no answer means no write), so the tracker keeps its last
+          value; documented, and flagged for maintainer decision (NMD-2).
+
+    shared_artifacts:
+      - artifact: the simulation's degree of parallelism
+        source: max(1, processor count / 2), computed in the one simulation method every caller uses.
+      - artifact: the stop request for a running forecast
+        source: the update's AdmittedCancellations token, read through UpdateCancellationContext; the same
+          token per-row Stop and Cancel all drive.
+      - artifact: the horizon
+        source: ForecastSimulationLimits.Default; the "5 years" copy reads from it rather than a literal.
+      - artifact: beyond-horizon on a percentile
+        source: the forecast distribution (unfinished runs counted); carried on the wire as an additive
+          marker; rendered by one shared wording on every web surface and in the clients.
+      - artifact: the words on rows and labels
+        source: the tenant's Terminology (Feature, Work Item, Team, Portfolio defaults from
+          TerminologySeeder), as the Task Manager already uses.

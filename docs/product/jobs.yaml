@@ -66,6 +66,7 @@ feature_context:
   - story-6301-only-features-as-parent-candidates
   - story-6307-refresh-on-additional-fields-change
   - epic-6298-report-pdf-export
+  - epic-6311-responsive-during-updates
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8435,3 +8436,54 @@ jobs:
         user interviews. Satisfaction 2 - the workarounds reach the reader, but undated and without the report's
         explanation (OS3 14, OS1 13, OS6 12 as 1-10 desk estimates in diverge/job-analysis.md). Gap 2 until the
         3-5 user question in the DISCOVER feature delta adds informants.
+
+  - id: job-operator-keep-lighthouse-usable-while-it-forecasts
+    title: Keep using Lighthouse while it recalculates forecasts
+    persona: platform-operator
+    feature_context: epic-6311-responsive-during-updates
+    ado: "Epic #6311 Keep Lighthouse responsive during updates (Bug #6308, Story #6309)"
+    created: 2026-10-17
+    note: >
+      NEW in DISCUSS of epic-6311-responsive-during-updates. DISCOVER and DIVERGE skipped by maintainer
+      decision; evidence is one Docker self-hoster's incident report. Verified in code on 2026-10-17:
+      ForecastService.RunMonteCarloSimulation runs Parallel.For over 10,000 runs with no ParallelOptions,
+      inside Task.Run, so a forecast takes every core and pool threads web requests need; no cancellation
+      token reaches it; a run may cover 100,000 simulated days. Stopping a forecast or clearing the queue
+      traces to the reused job-operator-stop-a-refresh-that-is-doing-harm; the forecast-honesty half of the
+      5-year horizon to the reused job-forecast-no-false-certainty.
+    job_story: >
+      When Lighthouse is recalculating a Portfolio's forecasts in the background,
+      I want every page to keep answering,
+      so a forecast reads as "busy for a moment" rather than "the instance is dead", and I never restart
+      the container to get my screens back.
+    dimensions:
+      functional: >
+        The simulation leaves cores free for web requests (at most half, minimum one), and no simulated run
+        covers more than 5 years, so the slowest forecasts are also shorter.
+      emotional: >
+        From "every page is blank and I do not know why" to "it is forecasting; everything else works".
+      social: >
+        The operator does not have to tell users that Lighthouse "hangs sometimes" or apologise for a
+        restart that also threw away every queued Team refresh.
+    forces:
+      push: >
+        In the reported incident every page hung while one Portfolio forecast ran, Team refreshes queued
+        behind it, Stop said Stopping… for 10+ minutes, and only a restart helped.
+      pull: >
+        One method runs every simulation, so a single bound covers background, manual and probe forecasts;
+        the runs are already combined independently of how they were split across workers.
+      anxiety: >
+        "Will forecasts take twice as long?" (Up to, on the CPU-bound part, and slice 04's horizon pays
+        that back for the slow ones; KPI-3 measures it.) "Will the dates change?" (No; seeded percentiles
+        are asserted identical bounded and unbounded.)
+      habit: >
+        Restarting the container when the UI goes blank. Replacing it needs the UI to simply stay up, which
+        is the whole outcome.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 0
+      gap: 5
+      rationale: >
+        Importance 5 - an instance that looks dead is the most expensive failure the product has, and it
+        reached a user. Satisfaction 0 - no setting mitigates it and no workaround exists short of a
+        restart. Gap 5. Single informant; the code reading confirms the mechanism independently.

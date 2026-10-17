@@ -65,6 +65,8 @@ primary_jobs:
   - job-operator-upgrade-bundled-database-across-major  # story-6131 (2026-10-02, #6131): a chart upgrade that moves the Postgres major keeps the data and a way back
   # story-6193-usage-data-from-clients SHARED-MCP job (both flavours)
   - job-operator-decide-usage-data-for-a-shared-mcp-server  # story-6193 (2026-10-08, #6193): one variable decides whether the shared mcp-http sends usage data
+  # epic-6311-responsive-during-updates RESPONSIVENESS job (both flavours)
+  - job-operator-keep-lighthouse-usable-while-it-forecasts  # epic-6311 (2026-10-17, #6308/#6309): pages keep answering while a forecast runs; Stop and Cancel all reuse job-operator-stop-a-refresh-that-is-doing-harm
 
 goals:
   - Run Lighthouse with more than one replica behind a load balancer without duplicate
