@@ -219,17 +219,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
                 await VerifyConnection(witClient);
 
-                var missingFields = await GetMissingAdditionalFields(witClient, connection.AdditionalFieldDefinitions);
-                if (missingFields.Count > 0)
-                {
-                    return ConnectionValidationResult.Failure(
-                        "additional_fields_invalid",
-                        $"Some additional fields could not be found: {string.Join(", ", missingFields)}",
-                        "Verify field names or references in Azure DevOps and update the additional field configuration.",
-                        AzureDevOpsReadException.AdditionalFieldsFieldName);
-                }
-
-                return ConnectionValidationResult.Success();
+                return await TheVerdictOnTheAdditionalFields(witClient, connection.AdditionalFieldDefinitions);
             }
             catch (WorkTrackingReadException refusal)
             {
@@ -680,14 +670,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         }
 
         /// <summary>
-        /// Which of the configured fields this organisation has nothing to match them with. Each one is
+        /// Whether every configured field matches a field, or failing that a relation type, in this
+        /// organisation. Each one is
         /// resolved straight against the field list rather than through the id-keyed lookup below, and it
         /// has to stay that way: these definitions belong to a connection the caller loaded from the
         /// database, so the only way to make their ids unique enough to key a dictionary on would be to
         /// write to them - and writing to a stored row's identity is refused by the next save through that
         /// connection, wherever that next save happens to be (Bug #6010).
         /// </summary>
-        private async Task<List<string>> GetMissingAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
+        private async Task<ConnectionValidationResult> TheVerdictOnTheAdditionalFields(WorkItemTrackingHttpClient witClient, IEnumerable<AdditionalFieldDefinition> additionalFieldDefinitions)
         {
             var availableFields = await TheFieldsTheOrganisationDefines(witClient, CancellationToken.None);
 
@@ -698,20 +689,66 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             if (notAField.Count == 0)
             {
-                return notAField;
+                return ConnectionValidationResult.Success();
             }
 
             var relationTypes = await TheRelationTypesTheOrganisationLists(witClient, CancellationToken.None);
+            var resolvedToNothing = notAField.Where(reference => !relationTypes.HasAnEndCalled(reference)).ToList();
 
-            return notAField.Where(reference => !relationTypes.HasAnEndCalled(reference)).ToList();
+            return resolvedToNothing.Count == 0
+                ? ConnectionValidationResult.Success()
+                : TheVerdictOnReferencesThatResolvedToNothing(resolvedToNothing, relationTypes);
+        }
+
+        /// <summary>
+        /// A refused listing gets its own answer rather than the plain "not found": it says nothing about
+        /// whether the reference is wrong, and calling it missing would send the admin to correct a
+        /// configuration that may well be right.
+        /// </summary>
+        private static ConnectionValidationResult TheVerdictOnReferencesThatResolvedToNothing(
+            List<string> resolvedToNothing, RelationTypeListing relationTypes)
+        {
+            var references = string.Join(", ", resolvedToNothing);
+
+            if (relationTypes.WasRefused)
+            {
+                return ConnectionValidationResult.Failure(
+                    "relation_types_unreadable",
+                    $"Azure DevOps would not list its relation types, so the relation types could not be read and a reference naming one could not be checked at all. The references waiting on it are: {references}.",
+                    "Give the Personal Access Token permission to read work items, or check whether a proxy in front of Azure DevOps is turning that request down. Nothing about the additional field configuration is known to be wrong.",
+                    AzureDevOpsWorkTrackingOptionNames.PersonalAccessToken);
+            }
+
+            var whatItDoesDefine = relationTypes.Ends.Count == 0
+                ? "It listed no relation types at all to check them against."
+                : $"The relation types it does define are: {string.Join(", ", relationTypes.Ends)}.";
+
+            return ConnectionValidationResult.Failure(
+                "additional_fields_invalid",
+                $"Some additional fields could not be found: {references}. This Azure DevOps organisation defines no field and no relation type of that name. {whatItDoesDefine}",
+                "Verify field names or references in Azure DevOps and update the additional field configuration.",
+                AzureDevOpsReadException.AdditionalFieldsFieldName);
         }
 
         /// <summary>
         /// Asked for afresh on every call and handed down that call only: one connector serves every
         /// connection to Azure DevOps, so a listing kept between calls would answer for the wrong organisation.
+        /// An answer that arrives without a list is read as an empty one, since nothing refused; a refusal or a
+        /// failed request is kept apart, because it says nothing about which relation types exist.
         /// </summary>
-        private static async Task<RelationTypeListing> TheRelationTypesTheOrganisationLists(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
-            => new(await witClient.GetRelationTypesAsync(cancellationToken: cancellationToken) ?? []);
+        private async Task<RelationTypeListing> TheRelationTypesTheOrganisationLists(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return RelationTypeListing.Of(await witClient.GetRelationTypesAsync(cancellationToken: cancellationToken) ?? []);
+            }
+            catch (Exception failure) when (failure is VssException or HttpRequestException)
+            {
+                logger.LogWarning(failure, "Azure DevOps would not list the relation types for this organisation");
+
+                return RelationTypeListing.Refused;
+            }
+        }
 
         private async Task<List<WorkItemField2>> TheFieldsTheOrganisationDefines(WorkItemTrackingHttpClient witClient, CancellationToken cancellationToken)
         {
@@ -1484,14 +1521,28 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// on a work item carries the reference name and nothing else. Attachments, hyperlinks and artifact
         /// links are listed beside them but never link one work item to another, so nothing can name them.
         /// </summary>
-        private sealed class RelationTypeListing(List<WorkItemRelationType> listed)
+        private sealed class RelationTypeListing
         {
-            private readonly HashSet<string> workItemLinkEnds = listed
-                .Where(type => !IsAResourceLink(type))
-                .Select(type => type.ReferenceName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            private RelationTypeListing(List<string> ends, bool wasRefused)
+            {
+                Ends = ends;
+                WasRefused = wasRefused;
+            }
 
-            public bool HasAnEndCalled(string reference) => workItemLinkEnds.Contains(reference);
+            public static RelationTypeListing Refused => new([], true);
+
+            public List<string> Ends { get; }
+
+            public bool WasRefused { get; }
+
+            public static RelationTypeListing Of(List<WorkItemRelationType> listed)
+                => new(listed
+                    .Where(type => !IsAResourceLink(type))
+                    .Select(type => type.ReferenceName)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(), false);
+
+            public bool HasAnEndCalled(string reference) => Ends.Contains(reference, StringComparer.OrdinalIgnoreCase);
 
             private static bool IsAResourceLink(WorkItemRelationType type)
                 => type.Attributes is not null

@@ -117,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 || type.GetGenericArguments().Any(argument => Mentions(argument, listing));
 
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.2")]
         [Category("error")]
@@ -139,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // An organisation that refuses the listing, or answers with none, must not resolve every reference to
         // nothing: the admin is told what happened instead.
         [Test]
-        [Ignore(PendingEpic6303.Slice03)]
         [Category("us-03")]
         [Category("ac-3.2")]
         [Category("error")]
