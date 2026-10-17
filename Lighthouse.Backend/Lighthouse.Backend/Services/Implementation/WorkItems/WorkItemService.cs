@@ -1059,6 +1059,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 return;
             }
 
+            if (finding.Kind == RefreshFindingKind.RelationTypeCannotBeReadHere)
+            {
+                logger.LogWarning(
+                    "{Owner}: its {Setting} names '{Named}', an Azure DevOps relation type, which only the Dependency Field reads, so it was read as if nothing were named.",
+                    owner,
+                    setting,
+                    finding.Named);
+                return;
+            }
+
             logger.LogWarning(
                 "{Owner}: its {Setting} names '{Named}', which the refresh could not read as configured. What it saw: {Seen}",
                 owner,

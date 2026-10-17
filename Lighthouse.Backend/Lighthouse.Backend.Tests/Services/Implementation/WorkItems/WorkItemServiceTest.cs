@@ -1557,7 +1557,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 {
                     ReferenceId = "FTR-1",
                     LastChangedRemote = TheFirstReadingDay,
-                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn", BothDependencyPhrases)],
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeHasNoDirection, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn", BothDependencyPhrases)],
                 }]);
 
             NothingAboveTheFeaturesIsDownloaded();
@@ -1567,6 +1567,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
                 $"Portfolio {portfolio.Name}: its Parent Override Field names 'Contoso.DependsOn', which the refresh could not read as configured. "
                 + "What it saw: 'depends on', 'is depended on by'"));
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_FullRefreshWhereARelationTypeIsNamedInASettingThatReadsAField_WarnsInPlainLanguage()
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, "Contoso.DependsOn-Forward", [])],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
+                $"Portfolio {portfolio.Name}: its Parent Override Field names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
+                + "which only the Dependency Field reads, so it was read as if nothing were named."));
         }
 
         /// <summary>
