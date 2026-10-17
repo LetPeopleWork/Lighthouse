@@ -61,17 +61,22 @@ Edge cases:
 
 ## Step 3 — observe a running build
 
-Do NOT sit on a long blocking `sleep`. Use this pattern:
+Do NOT sit on a long blocking `sleep`, and do NOT wait on `gh run watch`. On `main`, the three Standalone
+packaging jobs park at a release-approval gate (`status: waiting`), so the run never completes and the
+watcher never exits. An agent waiting on its exit waits forever, even once everything else is green.
 
-1. Start the watcher in the background and stream it via Monitor:
-   ```bash
-   gh run watch <id> -R LetPeopleWork/Lighthouse --interval 30 --exit-status
-   ```
-   Launch with `run_in_background: true`, then use the `Monitor` tool to stream stdout — each line is a notification, you'll be woken on every progress update without polling.
-2. Every time the watch reports a state change, re-classify with Step 2.
-3. If the watch exits non-zero, a job failed — go to Step 4.
-4. If the watch exits zero, re-run Step 2 (should land on GREEN).
-5. If you observe that only release-gated jobs remain queued while everything else is green, kill the watcher (it would block forever waiting for approval) and report "all good — release gates pending".
+Instead, run a poll loop that exits as soon as there is an answer. Launch it via Bash with
+`run_in_background: true`; you are woken once, when it exits:
+
+```bash
+until s=$(gh run view <id> -R LetPeopleWork/Lighthouse --json jobs -q '[.jobs[] | select(.conclusion=="failure" or .conclusion=="timed_out" or .conclusion=="cancelled" or .conclusion=="action_required")] | length') \
+  && p=$(gh run view <id> -R LetPeopleWork/Lighthouse --json jobs -q '[.jobs[] | select(.status=="in_progress" or .status=="queued" or .status=="pending")] | length') \
+  && { [ "$s" -gt 0 ] || [ "$p" -eq 0 ]; }; do sleep 60; done; echo "failed=$s pending=$p"
+```
+
+- `failed>0`: a job failed. Go to Step 4 right away; do not wait for the rest.
+- `failed=0 pending=0`: everything except the release gates is done. Re-run Step 2. It lands on GREEN,
+  or on WAITING ON RELEASE GATE when only `waiting` jobs remain.
 
 Give the user a one-line progress note when state meaningfully changes ("backend build done, frontend running"). Don't narrate every tick.
 
