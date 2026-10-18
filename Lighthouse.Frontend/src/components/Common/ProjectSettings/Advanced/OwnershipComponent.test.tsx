@@ -62,42 +62,35 @@ describe("OwnershipComponent", () => {
 
 	const mockOnProjectSettingsChange = vi.fn();
 
+	const renderExpanded = (settings: Partial<IPortfolioSettings> = {}) => {
+		render(
+			<OwnershipComponent
+				projectSettings={{ ...initialSettings, ...settings }}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				availableTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+	};
+
+	const theFeatureOwnerField = () =>
+		screen.getByRole("combobox", { name: "Feature Owner Field" });
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
 	it("renders correctly with initial settings", () => {
-		render(
-			<OwnershipComponent
-				projectSettings={initialSettings}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
+		renderExpanded();
 
-		// Expand the collapsible section first
-		fireEvent.click(screen.getByLabelText("toggle"));
-
-		// There should be two comboboxes: Owning Team and Feature Owner Field
 		const comboboxes = screen.getAllByRole("combobox");
 		expect(comboboxes).toHaveLength(2);
 	});
 
 	it("calls onProjectSettingsChange with correct arguments when featureOwnerField changes", () => {
-		render(
-			<OwnershipComponent
-				projectSettings={initialSettings}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
+		renderExpanded();
 
-		// Expand the collapsible section first
-		fireEvent.click(screen.getByLabelText("toggle"));
-
-		// Get the Feature Owner Field dropdown (second combobox)
 		const comboboxes = screen.getAllByRole("combobox");
 		const featureOwnerSelect = comboboxes[1];
 		fireEvent.mouseDown(featureOwnerSelect);
@@ -112,17 +105,7 @@ describe("OwnershipComponent", () => {
 	});
 
 	it("calls onProjectSettingsChange with correct team when owning team changes", () => {
-		render(
-			<OwnershipComponent
-				projectSettings={initialSettings}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
-
-		// Expand the collapsible section first
-		fireEvent.click(screen.getByLabelText("toggle"));
+		renderExpanded();
 
 		fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
 		fireEvent.click(screen.getByText("Team A"));
@@ -139,22 +122,7 @@ describe("OwnershipComponent", () => {
 			name: mockTeams[0].name,
 		};
 
-		const settingsWithTeam: IPortfolioSettings = {
-			...initialSettings,
-			owningTeam: owningTeam,
-		};
-
-		render(
-			<OwnershipComponent
-				projectSettings={settingsWithTeam}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
-
-		// Expand the collapsible section first
-		fireEvent.click(screen.getByLabelText("toggle"));
+		renderExpanded({ owningTeam });
 
 		fireEvent.mouseDown(screen.getAllByRole("combobox")[0]);
 		fireEvent.click(screen.getByText("None"));
@@ -174,24 +142,8 @@ describe("OwnershipComponent", () => {
 	}[])(
 		"on $tracker, whose connection holds the Feature Owner Field default",
 		({ tracker, says }) => {
-			const on = (settings: Partial<IPortfolioSettings>) => {
-				render(
-					<OwnershipComponent
-						projectSettings={{
-							...initialSettings,
-							workTrackingSystem: tracker,
-							...settings,
-						}}
-						onProjectSettingsChange={mockOnProjectSettingsChange}
-						availableTeams={mockTeams}
-						additionalFieldDefinitions={mockAdditionalFields}
-					/>,
-				);
-				fireEvent.click(screen.getByLabelText("toggle"));
-			};
-
-			const theFeatureOwnerField = () =>
-				screen.getByRole("combobox", { name: "Feature Owner Field" });
+			const on = (settings: Partial<IPortfolioSettings>) =>
+				renderExpanded({ workTrackingSystem: tracker, ...settings });
 
 			it("a follower shows the connection default first, with where it is set", () => {
 				on({
@@ -279,23 +231,12 @@ describe("OwnershipComponent", () => {
 	);
 
 	it("offers no connection default on a tracker whose connection holds none", () => {
-		render(
-			<OwnershipComponent
-				projectSettings={{
-					...initialSettings,
-					workTrackingSystem: "Linear",
-					featureOwnerSource: "ConnectionDefault",
-				}}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
-		fireEvent.click(screen.getByLabelText("toggle"));
+		renderExpanded({
+			workTrackingSystem: "Linear",
+			featureOwnerSource: "ConnectionDefault",
+		});
 
-		fireEvent.mouseDown(
-			screen.getByRole("combobox", { name: "Feature Owner Field" }),
-		);
+		fireEvent.mouseDown(theFeatureOwnerField());
 
 		expect(
 			within(screen.getByRole("listbox")).queryByText(/^Connection default/),
@@ -303,24 +244,8 @@ describe("OwnershipComponent", () => {
 	});
 
 	it("sets featureOwnerAdditionalFieldDefinitionId to null when 'None' is selected", () => {
-		const settingsWithField: IPortfolioSettings = {
-			...initialSettings,
-			featureOwnerAdditionalFieldDefinitionId: 1,
-		};
+		renderExpanded({ featureOwnerAdditionalFieldDefinitionId: 1 });
 
-		render(
-			<OwnershipComponent
-				projectSettings={settingsWithField}
-				onProjectSettingsChange={mockOnProjectSettingsChange}
-				availableTeams={mockTeams}
-				additionalFieldDefinitions={mockAdditionalFields}
-			/>,
-		);
-
-		// Expand the collapsible section first
-		fireEvent.click(screen.getByLabelText("toggle"));
-
-		// Get the Feature Owner Field dropdown (second combobox)
 		const comboboxes = screen.getAllByRole("combobox");
 		const featureOwnerSelect = comboboxes[1];
 		fireEvent.mouseDown(featureOwnerSelect);
