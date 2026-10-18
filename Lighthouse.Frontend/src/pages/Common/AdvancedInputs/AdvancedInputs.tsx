@@ -1,12 +1,7 @@
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import {
-	FollowTheConnection,
-	nameOfTheDefault,
-	trackerHoldingTheDefaults,
-} from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
-import FormSelectField from "../../../components/Common/FormSelectField/FormSelectField";
+import ConnectionDefaultFieldSelect from "../../../components/Common/ConnectionDefault/ConnectionDefaultFieldSelect";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -27,8 +22,6 @@ type ParentOverrideDefault =
 	| "parentOverrideForTeams"
 	| "parentOverrideForPortfolios";
 
-type ParentOverrideChoice = number | typeof FollowTheConnection;
-
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	settings: teamSettings,
 	onSettingsChange: onTeamSettingsChange,
@@ -36,53 +29,28 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	connection,
 	parentOverrideDefault = "parentOverrideForTeams",
 }) => {
-	const trackerName = trackerHoldingTheDefaults(teamSettings, connection);
-	const defaultName = nameOfTheDefault(
-		teamSettings,
-		teamSettings?.parentOverrideDefaultName,
-		connection,
-		parentOverrideDefault,
-	);
-	const followsTheConnection =
-		!!trackerName && teamSettings?.parentOverrideSource === "ConnectionDefault";
-
-	const handleParentOverrideChange = (choice: ParentOverrideChoice | null) => {
-		if (choice === FollowTheConnection) {
-			onTeamSettingsChange("parentOverrideSource", "ConnectionDefault");
-			return;
-		}
-		onTeamSettingsChange("parentOverrideSource", "Own");
-		onTeamSettingsChange("parentOverrideAdditionalFieldDefinitionId", choice);
-	};
-
 	return (
 		<InputGroup title={"Advanced Configuration"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
-				<FormSelectField<ParentOverrideChoice>
+				<ConnectionDefaultFieldSelect
 					label="Parent Override Field"
-					value={
-						followsTheConnection
-							? FollowTheConnection
-							: (teamSettings?.parentOverrideAdditionalFieldDefinitionId ?? "")
+					settings={teamSettings}
+					connection={connection}
+					theDefault={parentOverrideDefault}
+					defaultNameTheSettingsCarry={teamSettings?.parentOverrideDefaultName}
+					source={teamSettings?.parentOverrideSource}
+					ownField={teamSettings?.parentOverrideAdditionalFieldDefinitionId}
+					additionalFieldDefinitions={additionalFieldDefinitions}
+					onFollow={() =>
+						onTeamSettingsChange("parentOverrideSource", "ConnectionDefault")
 					}
-					onChange={handleParentOverrideChange}
-					firstOption={
-						trackerName
-							? {
-									id: FollowTheConnection,
-									label: `Connection default (${defaultName ?? "None"})`,
-								}
-							: undefined
-					}
-					helperText={
-						followsTheConnection
-							? `Set on the ${trackerName} connection.`
-							: undefined
-					}
-					options={additionalFieldDefinitions.map((field) => ({
-						id: field.id,
-						label: field.displayName,
-					}))}
+					onOwn={(field) => {
+						onTeamSettingsChange("parentOverrideSource", "Own");
+						onTeamSettingsChange(
+							"parentOverrideAdditionalFieldDefinitionId",
+							field,
+						);
+					}}
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>

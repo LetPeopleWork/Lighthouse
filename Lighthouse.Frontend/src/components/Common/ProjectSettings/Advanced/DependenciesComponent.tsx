@@ -7,12 +7,7 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../../services/TerminologyContext";
-import {
-	FollowTheConnection,
-	nameOfTheDefault,
-	trackerHoldingTheDefaults,
-} from "../../ConnectionDefault/connectionDefaultEntry";
-import FormSelectField from "../../FormSelectField/FormSelectField";
+import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface DependenciesComponentProps {
@@ -25,8 +20,6 @@ interface DependenciesComponentProps {
 	connection?: IWorkTrackingSystemConnection | null;
 }
 
-type DependencyFieldChoice = number | typeof FollowTheConnection;
-
 // Both settings live here rather than on a team's form, because a dependency runs between two Features
 // and Features are fetched per Portfolio - a team-level copy of either would have nothing to act on.
 const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
@@ -37,60 +30,35 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const trackerName = trackerHoldingTheDefaults(projectSettings, connection);
-	const defaultName = nameOfTheDefault(
-		projectSettings,
-		projectSettings?.dependencyFieldDefaultName,
-		connection,
-		"dependencyFieldForPortfolios",
-	);
-	const followsTheConnection =
-		!!trackerName &&
-		projectSettings?.dependencyFieldSource === "ConnectionDefault";
-
-	const handleDependencyFieldChange = (
-		choice: DependencyFieldChoice | null,
-	) => {
-		if (choice === FollowTheConnection) {
-			onProjectSettingsChange("dependencyFieldSource", "ConnectionDefault");
-			return;
-		}
-		onProjectSettingsChange("dependencyFieldSource", "Own");
-		onProjectSettingsChange(
-			"dependencyOverrideAdditionalFieldDefinitionId",
-			choice,
-		);
-	};
-
 	return (
 		<InputGroup title="Dependency Settings" initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
-				<FormSelectField<DependencyFieldChoice>
+				<ConnectionDefaultFieldSelect
 					label="Dependency Field"
-					value={
-						followsTheConnection
-							? FollowTheConnection
-							: (projectSettings?.dependencyOverrideAdditionalFieldDefinitionId ??
-								"")
+					settings={projectSettings}
+					connection={connection}
+					theDefault="dependencyFieldForPortfolios"
+					defaultNameTheSettingsCarry={
+						projectSettings?.dependencyFieldDefaultName
 					}
-					onChange={handleDependencyFieldChange}
-					firstOption={
-						trackerName
-							? {
-									id: FollowTheConnection,
-									label: `Connection default (${defaultName ?? "None"})`,
-								}
-							: undefined
+					source={projectSettings?.dependencyFieldSource}
+					ownField={
+						projectSettings?.dependencyOverrideAdditionalFieldDefinitionId
 					}
-					helperText={
-						followsTheConnection
-							? `Set on the ${trackerName} connection.`
-							: undefined
+					additionalFieldDefinitions={additionalFieldDefinitions}
+					onFollow={() =>
+						onProjectSettingsChange(
+							"dependencyFieldSource",
+							"ConnectionDefault",
+						)
 					}
-					options={additionalFieldDefinitions.map((field) => ({
-						id: field.id,
-						label: field.displayName,
-					}))}
+					onOwn={(field) => {
+						onProjectSettingsChange("dependencyFieldSource", "Own");
+						onProjectSettingsChange(
+							"dependencyOverrideAdditionalFieldDefinitionId",
+							field,
+						);
+					}}
 				/>
 				<Typography variant="caption" color="text.secondary">
 					{`Read what each ${featureTerm} waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.`}
