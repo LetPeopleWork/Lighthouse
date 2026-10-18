@@ -53,7 +53,10 @@ export const followOrOwn = <Settings = never>(
 	},
 });
 
-/** The tracker's name as the helper text says it, or undefined when its connection cannot hold this default. */
+/**
+ * The tracker's name as the helper text says it, or undefined when its connection cannot hold this default.
+ * A loaded connection says itself which defaults it offers; the table above only answers when it has not.
+ */
 export const trackerHoldingTheDefault = (
 	settings: IBaseSettings | null,
 	connection: IWorkTrackingSystemConnection | null | undefined,
@@ -62,7 +65,8 @@ export const trackerHoldingTheDefault = (
 	const tracker =
 		connection?.workTrackingSystem ?? settings?.workTrackingSystem;
 	const holding = tracker ? trackersHoldingTheDefaults[tracker] : undefined;
-	return holding?.holds.includes(theDefault) ? holding.name : undefined;
+	const offered = connection?.supportedDefaults ?? holding?.holds;
+	return offered?.includes(theDefault) ? holding?.name : undefined;
 };
 
 // The settings carry the name of their stored connection's default, which an admin who cannot read the
