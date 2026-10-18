@@ -1012,9 +1012,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("DefaultWorkItemPercentile")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("DependencyOverrideAdditionalFieldDefinitionId")
-                        .HasColumnType("INTEGER");
-
                     b.PrimitiveCollection<string>("DoingStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -1052,6 +1049,10 @@ namespace Lighthouse.Backend.Migrations
                     b.PrimitiveCollection<string>("OverrideRealChildCountStates")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("OwnDependencyOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("DependencyOverrideAdditionalFieldDefinitionId");
 
                     b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER")
@@ -1111,6 +1112,10 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<int>("WorkTrackingSystemConnectionId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<int>("storedDependencyFieldSource")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("DependencyFieldSource");
 
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("INTEGER")
@@ -1685,6 +1690,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("DependencyFieldForPortfolios")
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")
                         .IsRequired()

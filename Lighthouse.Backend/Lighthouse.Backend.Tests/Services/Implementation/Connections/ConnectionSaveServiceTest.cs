@@ -560,7 +560,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 new() { Id = 15, Name = "Estimation", WorkTrackingSystemConnectionId = OwnedConnectionId, EstimationAdditionalFieldDefinitionId = CausedById },
                 new() { Id = 14, Name = "Feature Owner", WorkTrackingSystemConnectionId = OwnedConnectionId, FeatureOwnerAdditionalFieldDefinitionId = CausedById },
                 new() { Id = 13, Name = "Size", WorkTrackingSystemConnectionId = OwnedConnectionId, SizeEstimateAdditionalFieldDefinitionId = CausedById },
-                new() { Id = 12, Name = "Dependency", WorkTrackingSystemConnectionId = OwnedConnectionId, DependencyOverrideAdditionalFieldDefinitionId = CausedById },
+                new Portfolio { Id = 12, Name = "Dependency", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningDependencyField(CausedById),
                 new Portfolio { Id = 11, Name = "Parent Override", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(CausedById),
                 new() { Id = 10, Name = "Owns nothing", WorkTrackingSystemConnectionId = OwnedConnectionId },
                 new Portfolio { Id = 9, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentOverride(CausedById),

@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
@@ -199,7 +200,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
         }
 
         private static Portfolio APortfolioReadingItsOwnField()
-            => new() { DependencyOverrideAdditionalFieldDefinitionId = TheFieldTheyNamed };
+            => new Portfolio().OwningDependencyField(TheFieldTheyNamed);
 
         private static WorkItemBase AWorkItemWhoseFieldReads(string value)
         {

@@ -337,7 +337,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 DisplayName = "Depends On",
                 Reference = "Contoso.DependsOn-Forward",
             });
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheRelationEndDefinitionId;
+            portfolio.OwnDependencyField(TheRelationEndDefinitionId);
 
             return portfolio;
         }
@@ -345,7 +345,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static Portfolio APortfolioReadingItsDependenciesFromAField()
         {
             var portfolio = APortfolio();
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheDependencyFieldId;
+            portfolio.OwnDependencyField(TheDependencyFieldId);
 
             return portfolio;
         }

@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         private List<OwnerNamingFields> PortfoliosOwningAnyOf(List<int?> fieldIds, int connectionId)
             => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
                     && (fieldIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.DependencyOverrideAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.SizeEstimateAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.EstimationAdditionalFieldDefinitionId)))
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 {
                     portfolio.Name,
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
-                    portfolio.DependencyOverrideAdditionalFieldDefinitionId,
+                    portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.SizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 .AsEnumerable()
                 .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
-                    portfolio.DependencyOverrideAdditionalFieldDefinitionId,
+                    portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.SizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,

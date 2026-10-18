@@ -1066,9 +1066,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("DefaultWorkItemPercentile")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("DependencyOverrideAdditionalFieldDefinitionId")
-                        .HasColumnType("integer");
-
                     b.PrimitiveCollection<List<string>>("DoingStates")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -1106,6 +1103,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.PrimitiveCollection<List<string>>("OverrideRealChildCountStates")
                         .IsRequired()
                         .HasColumnType("text[]");
+
+                    b.Property<int?>("OwnDependencyOverrideAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("DependencyOverrideAdditionalFieldDefinitionId");
 
                     b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
@@ -1165,6 +1166,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("WorkTrackingSystemConnectionId")
                         .HasColumnType("integer");
+
+                    b.Property<int>("storedDependencyFieldSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("DependencyFieldSource");
 
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("integer")
@@ -1763,6 +1768,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<Guid>("ConcurrencyToken")
                         .IsConcurrencyToken()
                         .HasColumnType("uuid");
+
+                    b.Property<int?>("DependencyFieldForPortfolios")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()

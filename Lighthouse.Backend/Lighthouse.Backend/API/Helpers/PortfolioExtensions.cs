@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.API.Helpers
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;
-            project.DependencyOverrideAdditionalFieldDefinitionId = portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId;
+            project.TakeDependencyFieldAsSent(portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? false;
             project.EstimationAdditionalFieldDefinitionId = portfolioSetting.EstimationAdditionalFieldDefinitionId;
             project.EstimationUnit = portfolioSetting.EstimationUnit;

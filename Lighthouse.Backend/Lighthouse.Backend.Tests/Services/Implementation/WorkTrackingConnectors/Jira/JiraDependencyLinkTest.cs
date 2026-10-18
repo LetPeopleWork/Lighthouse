@@ -459,7 +459,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = AConnectorDefiningTheFieldOfItsOwn(logger, AnEpic("PROJ-1", InwardLink("is halted by", "PROJ-2")));
 
             var portfolio = APortfolioReadingAFieldOfItsOwn();
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = null;
+            portfolio.OwnDependencyField(null);
 
             await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
 
@@ -481,7 +481,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = TheFieldOfItsOwn,
             });
 
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = 1;
+            portfolio.OwnDependencyField(1);
 
             return portfolio;
         }

@@ -619,7 +619,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // ----- The running application -----------------------------------------------------------------
 
         private static void NameTheDependencyField(Portfolio portfolio, string reference)
-            => portfolio.DependencyOverrideAdditionalFieldDefinitionId = RegisterTheDependencyField(portfolio, reference);
+            => portfolio.OwnDependencyField(RegisterTheDependencyField(portfolio, reference));
 
         private static int RegisterTheDependencyField(Portfolio portfolio, string reference)
         {

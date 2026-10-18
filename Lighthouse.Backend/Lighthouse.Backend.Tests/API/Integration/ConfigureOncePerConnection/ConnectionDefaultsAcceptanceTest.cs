@@ -912,7 +912,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             if (ownsEverything)
             {
                 portfolio.OwnParentOverride(TheFieldOn(connection, ParentLink));
-                portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheFieldOn(connection, BlockedByKeys);
+                portfolio.OwnDependencyField(TheFieldOn(connection, BlockedByKeys));
                 portfolio.SizeEstimateAdditionalFieldDefinitionId = TheFieldOn(connection, TShirtSize);
                 portfolio.FeatureOwnerAdditionalFieldDefinitionId = TheFieldOn(connection, ProductOwner);
                 portfolio.EstimationAdditionalFieldDefinitionId = TheFieldOn(connection, StoryPoints);

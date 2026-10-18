@@ -9,6 +9,7 @@ namespace Lighthouse.Backend.Tests.Models
         private const int TheOwnersOwnField = 5;
         private const int TheConnectionsDefault = 9;
         private const int TheTeamsDefault = 13;
+        private const int ThePortfoliosParentOverrideDefault = 17;
 
         [TestCase(SettingSource.ConnectionDefault, null, null, null)]
         [TestCase(SettingSource.ConnectionDefault, null, TheConnectionsDefault, TheConnectionsDefault)]
@@ -96,6 +97,46 @@ namespace Lighthouse.Backend.Tests.Models
             };
 
             Assert.That(portfolio.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(TheConnectionsDefault));
+        }
+
+        [TestCase(SettingSource.ConnectionDefault, null, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, null, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.Own, null, null, null)]
+        [TestCase(SettingSource.Own, null, TheConnectionsDefault, null)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, null, TheOwnersOwnField)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, TheConnectionsDefault, TheOwnersOwnField)]
+        public void A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(
+            SettingSource source, int? ownValueBeforeTheSourceWasSet, int? dependencyDefault, int? expected)
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    ParentOverrideForPortfolios = ThePortfoliosParentOverrideDefault,
+                    DependencyFieldForPortfolios = dependencyDefault,
+                },
+            };
+
+            portfolio.OwnDependencyField(ownValueBeforeTheSourceWasSet);
+            if (source == SettingSource.ConnectionDefault)
+            {
+                portfolio.FollowDependencyFieldDefault();
+            }
+
+            Assert.That(portfolio.DependencyOverrideAdditionalFieldDefinitionId, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void A_new_Portfolio_follows_the_connections_Dependency_Field_default()
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { DependencyFieldForPortfolios = TheConnectionsDefault },
+            };
+
+            Assert.That(portfolio.DependencyOverrideAdditionalFieldDefinitionId, Is.EqualTo(TheConnectionsDefault));
         }
 
         [Test]

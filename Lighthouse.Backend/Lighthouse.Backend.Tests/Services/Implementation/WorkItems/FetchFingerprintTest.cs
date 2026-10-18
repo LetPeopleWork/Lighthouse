@@ -278,7 +278,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.OwnParentOverride(2));
             yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.FeatureOwnerAdditionalFieldDefinitionId = null);
             yield return Case(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), p => p.SizeEstimateAdditionalFieldDefinitionId = 3);
-            yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.DependencyOverrideAdditionalFieldDefinitionId = 2);
+            yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.OwnDependencyField(2));
             yield return Case(nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions), p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions[0].Reference = "customfield_99999");
             yield return Case(nameof(WorkTrackingSystemConnection.WorkTrackingSystem), p => p.WorkTrackingSystemConnection.WorkTrackingSystem = WorkTrackingSystems.AzureDevOps);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId), p => p.WorkTrackingSystemConnectionId = 8);

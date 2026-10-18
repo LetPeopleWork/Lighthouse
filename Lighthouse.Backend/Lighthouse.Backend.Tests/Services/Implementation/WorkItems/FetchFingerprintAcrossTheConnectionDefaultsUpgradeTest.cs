@@ -95,6 +95,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             }, parentOverride);
 
         private static Portfolio APortfolio(bool namesItsOwnFields)
+        {
+            var portfolio = APortfolioFollowingItsDependencyFieldDefault(namesItsOwnFields);
+            return namesItsOwnFields ? portfolio.OwningDependencyField(BlockedByKeys) : portfolio;
+        }
+
+        private static Portfolio APortfolioFollowingItsDependencyFieldDefault(bool namesItsOwnFields)
             => AsTheUpgradeLeavesIt(new Portfolio()
             {
                 Id = 41,
@@ -106,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["Implementing"],
                 DoneStates = ["Done"],
                 StateMappings = [],
-                DependencyOverrideAdditionalFieldDefinitionId = namesItsOwnFields ? BlockedByKeys : null,
                 SizeEstimateAdditionalFieldDefinitionId = namesItsOwnFields ? TShirtSize : null,
                 FeatureOwnerAdditionalFieldDefinitionId = namesItsOwnFields ? ProductOwner : null,
                 WorkTrackingSystemConnectionId = 21,

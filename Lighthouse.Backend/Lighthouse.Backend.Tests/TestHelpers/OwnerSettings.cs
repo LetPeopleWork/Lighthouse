@@ -18,5 +18,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             owner.FollowParentOverrideDefault();
             return owner;
         }
+
+        public static Portfolio OwningDependencyField(this Portfolio portfolio, int? additionalFieldDefinitionId)
+        {
+            portfolio.OwnDependencyField(additionalFieldDefinitionId);
+            return portfolio;
+        }
     }
 }

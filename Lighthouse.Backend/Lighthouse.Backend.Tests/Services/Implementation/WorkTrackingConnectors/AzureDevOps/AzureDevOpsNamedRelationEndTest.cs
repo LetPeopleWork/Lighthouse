@@ -402,7 +402,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(
                 new AdditionalFieldDefinition { Id = TheDependencyFieldId, DisplayName = "Depends On", Reference = reference });
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheDependencyFieldId;
+            portfolio.OwnDependencyField(TheDependencyFieldId);
 
             return portfolio;
         }

@@ -348,7 +348,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Reference = reference,
             });
 
-            portfolio.DependencyOverrideAdditionalFieldDefinitionId = TheDependencyFieldId;
+            portfolio.OwnDependencyField(TheDependencyFieldId);
 
             return portfolio;
         }
