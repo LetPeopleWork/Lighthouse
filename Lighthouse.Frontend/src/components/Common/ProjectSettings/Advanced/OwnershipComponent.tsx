@@ -4,7 +4,10 @@ import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioS
 import type { ITeam } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
+import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../../services/TerminologyContext";
+import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
+import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
 import FormSelectField from "../../FormSelectField/FormSelectField";
 import InputGroup from "../../InputGroup/InputGroup";
 
@@ -16,6 +19,7 @@ interface OwnershipComponentProps {
 	) => void;
 	availableTeams: ITeam[];
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
+	connection?: IWorkTrackingSystemConnection | null;
 }
 
 const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
@@ -23,6 +27,7 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 	onProjectSettingsChange,
 	availableTeams,
 	additionalFieldDefinitions = [],
+	connection,
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -45,19 +50,20 @@ const OwnershipComponent: React.FC<OwnershipComponentProps> = ({
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
-				<FormSelectField
+				<ConnectionDefaultFieldSelect
 					label={`${featureTerm} Owner Field`}
-					value={projectSettings?.featureOwnerAdditionalFieldDefinitionId ?? ""}
-					onChange={(value) => {
-						onProjectSettingsChange(
-							"featureOwnerAdditionalFieldDefinitionId",
-							value,
-						);
-					}}
-					options={additionalFieldDefinitions.map((field) => ({
-						id: field.id,
-						label: field.displayName,
-					}))}
+					settings={projectSettings}
+					connection={connection}
+					theDefault="featureOwnerFieldForPortfolios"
+					defaultNameTheSettingsCarry={projectSettings?.featureOwnerDefaultName}
+					source={projectSettings?.featureOwnerSource}
+					ownField={projectSettings?.featureOwnerAdditionalFieldDefinitionId}
+					additionalFieldDefinitions={additionalFieldDefinitions}
+					{...followOrOwn<IPortfolioSettings>(
+						onProjectSettingsChange,
+						"featureOwnerSource",
+						"featureOwnerAdditionalFieldDefinitionId",
+					)}
 				/>
 			</Grid>
 		</InputGroup>

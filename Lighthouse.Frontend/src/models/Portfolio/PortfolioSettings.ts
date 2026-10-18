@@ -16,6 +16,8 @@ export interface IPortfolioSettings extends IBaseSettings {
 	sizeEstimateSource?: SettingSource;
 	sizeEstimateDefaultName?: string | null;
 	featureOwnerAdditionalFieldDefinitionId: number | null;
+	featureOwnerSource?: SettingSource;
+	featureOwnerDefaultName?: string | null;
 	dependencyOverrideAdditionalFieldDefinitionId: number | null;
 	dependencyFieldSource?: SettingSource;
 	dependencyFieldDefaultName?: string | null;

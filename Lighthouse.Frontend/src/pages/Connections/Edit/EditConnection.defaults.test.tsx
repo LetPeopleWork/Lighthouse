@@ -752,6 +752,10 @@ describe("defaults set once on the connection", () => {
 				first: ["dependencyFieldForPortfolios", "Dependency Field"],
 				second: ["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
 			},
+			{
+				first: ["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
+				second: ["featureOwnerFieldForPortfolios", "Feature Owner Field"],
+			},
 		] as const)(
 			"3 Portfolios following both the $first.1 and $second.1 defaults, both changed, are counted once",
 			async ({

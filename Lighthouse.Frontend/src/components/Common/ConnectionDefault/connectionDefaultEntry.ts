@@ -2,21 +2,27 @@ import type {
 	IBaseSettings,
 	SettingSource,
 } from "../../../models/Common/BaseSettings";
-import type {
-	ConnectionDefaultName,
-	IWorkTrackingSystemConnection,
-	WorkTrackingSystemType,
+import {
+	type ConnectionDefaultName,
+	ConnectionDefaultNames,
+	type IWorkTrackingSystemConnection,
+	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 /** The value a field list uses for the entry that follows the connection's default. */
 export const FollowTheConnection = "connection-default";
 
-// Only these trackers hold the field defaults a Team or Portfolio can follow on their connection.
+// Only these trackers hold field defaults a Team or Portfolio can follow on their connection. A CSV file has
+// no parent, dependency or size field of its own to point at, but who owns a Feature can come from a column.
 const trackersHoldingTheDefaults: Partial<
-	Record<WorkTrackingSystemType, string>
+	Record<
+		WorkTrackingSystemType,
+		{ name: string; holds: readonly ConnectionDefaultName[] }
+	>
 > = {
-	Jira: "Jira",
-	AzureDevOps: "Azure DevOps",
+	Jira: { name: "Jira", holds: ConnectionDefaultNames },
+	AzureDevOps: { name: "Azure DevOps", holds: ConnectionDefaultNames },
+	Csv: { name: "CSV", holds: ["featureOwnerFieldForPortfolios"] },
 };
 
 type KeysHolding<Settings, Value> = NoInfer<
@@ -47,14 +53,16 @@ export const followOrOwn = <Settings = never>(
 	},
 });
 
-/** The tracker's name as the helper text says it, or undefined when its connection holds no defaults. */
-export const trackerHoldingTheDefaults = (
+/** The tracker's name as the helper text says it, or undefined when its connection cannot hold this default. */
+export const trackerHoldingTheDefault = (
 	settings: IBaseSettings | null,
 	connection: IWorkTrackingSystemConnection | null | undefined,
+	theDefault: ConnectionDefaultName,
 ): string | undefined => {
 	const tracker =
 		connection?.workTrackingSystem ?? settings?.workTrackingSystem;
-	return tracker ? trackersHoldingTheDefaults[tracker] : undefined;
+	const holding = tracker ? trackersHoldingTheDefaults[tracker] : undefined;
+	return holding?.holds.includes(theDefault) ? holding.name : undefined;
 };
 
 // The settings carry the name of their stored connection's default, which an admin who cannot read the

@@ -12,7 +12,7 @@ import FormSelectField from "../FormSelectField/FormSelectField";
 import {
 	FollowTheConnection,
 	nameOfTheDefault,
-	trackerHoldingTheDefaults,
+	trackerHoldingTheDefault,
 } from "./connectionDefaultEntry";
 
 type FieldChoice = number | typeof FollowTheConnection;
@@ -45,7 +45,11 @@ const ConnectionDefaultFieldSelect: React.FC<
 	onFollow,
 	onOwn,
 }) => {
-	const trackerName = trackerHoldingTheDefaults(settings, connection);
+	const trackerName = trackerHoldingTheDefault(
+		settings,
+		connection,
+		theDefault,
+	);
 	const defaultName = nameOfTheDefault(
 		settings,
 		defaultNameTheSettingsCarry,

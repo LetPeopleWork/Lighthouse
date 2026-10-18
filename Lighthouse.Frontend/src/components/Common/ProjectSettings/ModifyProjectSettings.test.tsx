@@ -1046,6 +1046,16 @@ describe("ModifyProjectSettings", () => {
 				dependencyOverrideAdditionalFieldDefinitionId: 21,
 			},
 		},
+		{
+			group: "Ownership Settings",
+			field: "Feature Owner Field",
+			theDefault: "featureOwnerFieldForPortfolios",
+			following: {
+				featureOwnerSource: "ConnectionDefault",
+				featureOwnerDefaultName: "T-Shirt Size",
+				featureOwnerAdditionalFieldDefinitionId: 21,
+			},
+		},
 	] as const)(
 		"a Portfolio that follows the connection's $field",
 		({ group, field, theDefault, following }) => {

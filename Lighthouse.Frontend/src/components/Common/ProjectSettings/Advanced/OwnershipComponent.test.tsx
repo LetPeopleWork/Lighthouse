@@ -4,6 +4,7 @@ import type { IEntityReference } from "../../../../models/EntityReference";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../../models/Team/Team";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
+import type { WorkTrackingSystemType } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import OwnershipComponent from "./OwnershipComponent";
 
@@ -162,6 +163,143 @@ describe("OwnershipComponent", () => {
 			"owningTeam",
 			null,
 		);
+	});
+
+	describe.each([
+		{ tracker: "Jira", says: "Jira" },
+		{ tracker: "Csv", says: "CSV" },
+	] as const satisfies readonly {
+		tracker: WorkTrackingSystemType;
+		says: string;
+	}[])(
+		"on $tracker, whose connection holds the Feature Owner Field default",
+		({ tracker, says }) => {
+			const on = (settings: Partial<IPortfolioSettings>) => {
+				render(
+					<OwnershipComponent
+						projectSettings={{
+							...initialSettings,
+							workTrackingSystem: tracker,
+							...settings,
+						}}
+						onProjectSettingsChange={mockOnProjectSettingsChange}
+						availableTeams={mockTeams}
+						additionalFieldDefinitions={mockAdditionalFields}
+					/>,
+				);
+				fireEvent.click(screen.getByLabelText("toggle"));
+			};
+
+			const theFeatureOwnerField = () =>
+				screen.getByRole("combobox", { name: "Feature Owner Field" });
+
+			it("a follower shows the connection default first, with where it is set", () => {
+				on({
+					featureOwnerSource: "ConnectionDefault",
+					featureOwnerDefaultName: "Lead Developer",
+				});
+
+				expect(theFeatureOwnerField()).toHaveTextContent(
+					/^Connection default \(Lead Developer\)$/,
+				);
+				expect(
+					screen.getByText(`Set on the ${says} connection.`),
+				).toBeInTheDocument();
+				fireEvent.mouseDown(theFeatureOwnerField());
+				const entries = within(screen.getByRole("listbox")).getAllByRole(
+					"option",
+				);
+				expect(entries.map((entry) => entry.textContent)).toEqual([
+					"Connection default (Lead Developer)",
+					"None",
+					"Feature Owner",
+					"Lead Developer",
+				]);
+			});
+
+			it("picking a field makes the Portfolio own the setting", () => {
+				on({
+					featureOwnerSource: "ConnectionDefault",
+					featureOwnerDefaultName: "Lead Developer",
+				});
+
+				fireEvent.mouseDown(theFeatureOwnerField());
+				fireEvent.click(
+					within(screen.getByRole("listbox")).getByText("Feature Owner"),
+				);
+
+				expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+					"featureOwnerSource",
+					"Own",
+				);
+				expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+					"featureOwnerAdditionalFieldDefinitionId",
+					1,
+				);
+			});
+
+			it("an owner picks the entry to follow the connection again", () => {
+				on({
+					featureOwnerSource: "Own",
+					featureOwnerAdditionalFieldDefinitionId: 1,
+					featureOwnerDefaultName: "Lead Developer",
+				});
+
+				fireEvent.mouseDown(theFeatureOwnerField());
+				fireEvent.click(
+					within(screen.getByRole("listbox")).getByText(
+						"Connection default (Lead Developer)",
+					),
+				);
+
+				expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+					"featureOwnerSource",
+					"ConnectionDefault",
+				);
+				expect(mockOnProjectSettingsChange).not.toHaveBeenCalledWith(
+					"featureOwnerAdditionalFieldDefinitionId",
+					expect.anything(),
+				);
+			});
+
+			it("the Owning Team offers no connection default", () => {
+				on({ featureOwnerSource: "ConnectionDefault" });
+
+				fireEvent.mouseDown(
+					screen.getByRole("combobox", { name: "Owning Team" }),
+				);
+
+				expect(
+					within(screen.getByRole("listbox")).queryByText(
+						/^Connection default/,
+					),
+				).not.toBeInTheDocument();
+			});
+		},
+	);
+
+	it("offers no connection default on a tracker whose connection holds none", () => {
+		render(
+			<OwnershipComponent
+				projectSettings={{
+					...initialSettings,
+					workTrackingSystem: "Linear",
+					featureOwnerSource: "ConnectionDefault",
+				}}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				availableTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		fireEvent.mouseDown(
+			screen.getByRole("combobox", { name: "Feature Owner Field" }),
+		);
+
+		expect(
+			within(screen.getByRole("listbox")).queryByText(/^Connection default/),
+		).not.toBeInTheDocument();
 	});
 
 	it("sets featureOwnerAdditionalFieldDefinitionId to null when 'None' is selected", () => {

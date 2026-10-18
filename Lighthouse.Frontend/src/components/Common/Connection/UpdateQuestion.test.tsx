@@ -39,6 +39,9 @@ const UntilDependenciesUpdated =
 const UntilSizesUpdated =
 	"Their Features' sizes change only once they have been updated. Save only: they change at their next scheduled update.";
 
+const UntilOwnersUpdated =
+	"Their Features' owners change only once they have been updated. Save only: they change at their next scheduled update.";
+
 const UntilWhatTheyReadUpdated =
 	"What they read changes only once they have been updated. Save only: they change at their next scheduled update.";
 
@@ -119,6 +122,32 @@ describe("UpdateQuestion", () => {
 				),
 				title: "Update 0 Teams and 3 Portfolios?",
 				says: `3 Portfolios follow the Dependency Field and Size Estimate Field defaults. ${UntilWhatTheyReadUpdated}`,
+			},
+			{
+				case: "the Feature Owner Field default",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(0, 2, ["Feature Owner Field"], ["owners"]),
+				title: "Update 0 Teams and 2 Portfolios?",
+				says: `2 Portfolios follow the Feature Owner Field default. ${UntilOwnersUpdated}`,
+			},
+			{
+				case: "the Feature Owner Field default, with renamed Features",
+				terms: { ...SquadsAndPrograms, features: "Epics" },
+				why: theDefaultsChanged(0, 1, ["Epic Owner Field"], ["owners"]),
+				title: "Update 0 Squads and 1 Program?",
+				says: `1 Program follows the Epic Owner Field default. Their Epics' owners change only once they have been updated. Save only: they change at their next scheduled update.`,
+			},
+			{
+				case: "the Feature Owner Field and the Size Estimate Field defaults",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(
+					0,
+					3,
+					["Size Estimate Field", "Feature Owner Field"],
+					["sizes", "owners"],
+				),
+				title: "Update 0 Teams and 3 Portfolios?",
+				says: `3 Portfolios follow the Size Estimate Field and Feature Owner Field defaults. ${UntilWhatTheyReadUpdated}`,
 			},
 			{
 				case: "two defaults",
