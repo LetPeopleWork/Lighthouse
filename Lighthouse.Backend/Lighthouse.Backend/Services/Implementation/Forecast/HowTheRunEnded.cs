@@ -13,9 +13,9 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         NothingLeftCouldBeStarted,
 
         /// <summary>
-        /// The run passed the most days a single run may cover, so what it left unfinished lies beyond the
-        /// horizon. Work that would take longer than that is enough to end a run here.
+        /// The run passed the most days a single run may cover, which is the horizon, so what it left
+        /// unfinished lies beyond it. Work that would take longer than that is enough to end a run here.
         /// </summary>
-        RanOutOfDays,
+        ReachedTheHorizon,
     }
 }

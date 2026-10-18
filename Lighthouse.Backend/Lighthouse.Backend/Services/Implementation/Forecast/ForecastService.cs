@@ -282,14 +282,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// </summary>
         private void ReportTheRunsThatReachedTheHorizon(WhatTheRunsCouldNotFinish whatWentWrong)
         {
-            if (whatWentWrong.RunsThatRanOutOfDays == 0)
+            if (whatWentWrong.RunsThatReachedTheHorizon == 0)
             {
                 return;
             }
 
             logger.LogDebug(
                 "{Trials} simulated runs reached the horizon of {Days} simulated days without finishing and count as beyond the horizon",
-                whatWentWrong.RunsThatRanOutOfDays,
+                whatWentWrong.RunsThatReachedTheHorizon,
                 limits.MostDaysOneSimulatedRunMayCover);
         }
 

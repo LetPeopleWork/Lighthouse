@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 if (day > theMostDaysARunMayCover)
                 {
-                    return HowTheRunEnded.RanOutOfDays;
+                    return HowTheRunEnded.ReachedTheHorizon;
                 }
 
                 if (!state.AnythingCanBeWorkedOn(day))

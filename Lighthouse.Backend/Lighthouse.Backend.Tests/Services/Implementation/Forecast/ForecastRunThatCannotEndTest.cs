@@ -35,8 +35,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private const int TheSecondTeam = 1;
 
-        private static readonly string[] OnlyTheFirstTeam = ["Team 1"];
-
         private static readonly string[] OnlyTheSecondTeam = ["Team 2"];
 
         private Mock<IRepository<Feature>> featureRepositoryMock;
@@ -77,39 +75,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         /// <summary>
-        /// One run ends one way, so a forecast holds both kinds only when some of its runs ran out of days
+        /// One run ends one way, so a forecast holds both kinds only when some of its runs reached the horizon
         /// and others had nothing left to start. That is a state a fixture cannot reach on purpose without
         /// tuning it to one exact draw, so it is asserted here on the thing that collects them.
         ///
-        /// It matters because the two are reported in two different lines, and the line about a circle tells
-        /// an operator to go and find one. Naming a merely slow Team in it sends them hunting for a circle
+        /// It matters because only the runs with nothing left to start are reported, in a line that tells an
+        /// operator to go and find a circle. Naming a merely slow Team in it sends them hunting for a circle
         /// that Team is not in.
         /// </summary>
         [Test]
-        public void ATeamThatMerelyRanOutOfDays_IsNotNamedAmongTheOnesCaughtInACircle()
+        public void ATeamThatMerelyReachedTheHorizon_IsNotNamedAmongTheOnesCaughtInACircle()
         {
             var plan = APlanForTwoTeams(out var state);
 
             var whatWentWrong = new WhatTheRunsCouldNotFinish();
 
             LeaveOnly(TheFirstTeam, state, plan);
-            whatWentWrong.Note(HowTheRunEnded.RanOutOfDays, trial: 3, plan, state);
+            whatWentWrong.Note(HowTheRunEnded.ReachedTheHorizon, plan, state);
 
             state.StartAgain();
             LeaveOnly(TheSecondTeam, state, plan);
-            whatWentWrong.Note(HowTheRunEnded.NothingLeftCouldBeStarted, trial: 4, plan, state);
+            whatWentWrong.Note(HowTheRunEnded.NothingLeftCouldBeStarted, plan, state);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(whatWentWrong.TeamsCaughtInACircle, Is.EqualTo(OnlyTheSecondTeam),
-                    "A Team that merely ran out of days was named as caught in a circle.");
+                    "A Team that merely reached the horizon was named as caught in a circle.");
 
-                Assert.That(whatWentWrong.TeamsThatRanOutOfDays, Is.EqualTo(OnlyTheFirstTeam),
-                    "A Team caught in a circle was named as merely having run out of days.");
-
-                Assert.That(whatWentWrong.RunsThatRanOutOfDays, Is.EqualTo(1));
+                Assert.That(whatWentWrong.RunsThatReachedTheHorizon, Is.EqualTo(1));
                 Assert.That(whatWentWrong.RunsGivenUpOn, Is.EqualTo(1));
-                Assert.That(whatWentWrong.FirstRunThatRanOutOfDays, Is.EqualTo(3));
             }
         }
 

@@ -26,11 +26,11 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 {
     /// <summary>
-    /// DISTILL acceptance harness (Epic 5500 - Quiet write-back, slice 01 / Story #5502). Single source
-    /// of truth for HOW slice-01 scenarios reach the system: through the real driving port these
+    /// Acceptance harness for quiet write-back. The single source of truth for HOW its scenarios reach
+    /// the system: through the real driving port these
     /// scenarios are about - the scheduled refresh - by triggering an updater and letting the production
     /// <see cref="UpdateQueueService"/> run it in its own DI scope. That scope is the collector's
-    /// lifetime (ADR-144), so a scenario that drove the updaters' <c>Update</c> method directly would
+    /// lifetime, so a scenario that drove the updaters' <c>Update</c> method directly would
     /// assert nothing about the seam it is testing.
     ///
     /// Real: EF over SQLite, the update queue, <see cref="IWriteBackTriggerService"/>,
@@ -56,13 +56,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         /// <summary>
         /// Every <see cref="IWorkTrackingConnector.WriteFieldsToWorkItems"/> call the refresh made, in
-        /// order, each captured as an immutable snapshot. The count IS the promise slice 01 makes.
+        /// order, each captured as an immutable snapshot. The count IS what a quiet write-back promises.
         /// </summary>
         protected List<ConnectorWrite> ConnectorWrites = null!;
 
         /// <summary>
-        /// Every log line the refresh produced, at every level. Slice 04's only signal to an admin is a
-        /// Warning, and a scenario that cannot read the log cannot see the slice.
+        /// Every log line the refresh produced, at every level. Some outcomes reach an admin only as a
+        /// Warning, and a scenario that cannot read the log cannot see them.
         /// </summary>
         protected CapturedLogMessages CapturedLogs = null!;
 
@@ -122,7 +122,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ForecastServiceMock = new Mock<IForecastService>();
             TeamDataServiceMock = new Mock<ITeamDataService>();
 
-            // Epic #5687: an unstubbed sync hands back a null outcome, which the RefreshLog write then dereferences.
+            // An unstubbed sync hands back a null outcome, which the RefreshLog write then dereferences.
             WorkItemServiceMock
                 .Setup(s => s.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()))
                 .ReturnsAsync(SyncOutcome.None);
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                     services.RemoveAll<ITeamDataService>();
                     services.AddScoped(_ => TeamDataServiceMock.Object);
 
-                    // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
+                    // Serilog is the pipeline, so an ILoggerProvider added here would be
                     // inert. Replacing the factory is what makes the refresh's own log readable.
                     services.RemoveAll<ILoggerFactory>();
                     services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
@@ -401,8 +401,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         }
 
         /// <summary>
-        /// The tracker writes the value but was not allowed to stay quiet — the SPIKE-03 Q4 shape, after
-        /// ADR-142's retry has done its job.
+        /// The tracker writes the value but was not allowed to stay quiet, even once the write has been
+        /// retried.
         /// </summary>
         protected void TheTrackerCouldNotSilence(Func<WriteBackFieldUpdate, bool> predicate)
         {
@@ -485,8 +485,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
 
         /// <summary>
         /// Overwrites the stored copy the way an inbound sync does, so a scenario can show that the
-        /// tracker still has the last word over a value write-back persisted locally (ADR-144's third
-        /// bound on the D11 exception).
+        /// tracker still has the last word over a value write-back persisted locally.
         /// </summary>
         protected void TheInboundSyncReports(string referenceId, int fieldId, string value)
         {

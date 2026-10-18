@@ -14,6 +14,6 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         public WhatTheRunsCouldNotFinish WhatWentWrong { get; } = new();
 
         public void CarryOut(SimulatedRun oneRun, int trial)
-            => WhatWentWrong.Note(oneRun.CarryOut(trial, state, Recordings), trial, plan, state);
+            => WhatWentWrong.Note(oneRun.CarryOut(trial, state, Recordings), plan, state);
     }
 }
