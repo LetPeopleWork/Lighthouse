@@ -283,3 +283,147 @@ d247d6d62..HEAD`. Specs in the narrowed vitest config: `refreshFindingSentences.
 | `refreshFindingSentences.ts` (story lines) | **100 % (17/17)** |
 
 No survivors, so no kill round. `git status` showed no change under `Lighthouse.Frontend/src` after the run.
+
+## Story 6304
+
+Teams' Parent Override Field as a connection default. Run 2026-10-18 against `main` @ `37949a071`,
+production code frozen; only tests were added. Gate is 80 % kill rate, judged on the lines this story
+changed.
+
+| stack | score | scored | killed + timeout | survived / no cov. | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0), whole files, first run | 61.85 % | 561 | 347 | 214 | 5 m 29 s |
+| Backend, this story's lines, first run | 68.78 % | 189 | 130 | 59 | — |
+| Backend, whole files, after the kill round | 71.48 % | 561 | 401 | 160 | 4 m 37 s |
+| **Backend, this story's lines, after the kill round** | **95.77 %** | 189 | 181 | 8 | — |
+
+Frontend: pending (run after the slice 06 fix round)
+
+Configs: `stryker.6304.backend.json` (the full first run) and `stryker.6304.backend.kill.json` (the
+narrowed kill round: the eleven files that had survivors on story lines, and only their unit tests).
+
+### How the story's lines were found
+
+A line counts as this story's when it is on the new side of a `git diff -U0 60d0edfae~1..HEAD` hunk. A
+mutant is on a story line when any line of its span is one. Scores come from
+`StrykerOutput/<run>/reports/mutation-report.json`: (Killed + Timeout) / (Killed + Timeout + Survived +
+NoCoverage); Ignored and CompileError are left out. After the kill round, a first-run survivor takes the
+kill round's status, matched on file, span, mutator and replacement; between the runs tests were only
+added, so a mutant the first run killed stays killed. No mutant timed out in either run.
+
+The first run's log read `22095 mutants created` and `464 total mutants will be tested`; the report
+scores 561, those plus 97 with no coverage. The kill round tested 395. The first run's filter took 380
+unit tests: the Team, Teams, connection and connections controller tests (with the write-back and licence
+gate ones), `ConnectionSaveServiceTest`, `WorkTrackingSystemConnectionUsageTest`, `TeamExtensionsTest`,
+the five settings-sync tests, the Portfolio controller tests, and the model tests of every mutated model
+file. It left out the live connector categories, `*IntegrationTest`, `API.Integration` and `Dogfood`.
+
+`TeamController.cs:195-253` counts as story lines because the story moved the existing save validation
+into `RefusalOf` to add the Parent Override check; the moved checks were pinned only by tests that a
+later check also refused, so they were closed rather than set aside.
+
+### Per file
+
+| file | whole file, first run | whole file, after kill | story-line mutants | story-line survivors, first run | after kill |
+| --- | --- | --- | --- | --- | --- |
+| `API/APIHelpers.cs` | 100 % (6/6) | 100 % | 2 | 0 | 0 |
+| `API/DTO/ConnectionDefaultsDto.cs` | 83.33 % (5/6) | 100 % | 6 | 1 | 0 |
+| `API/DTO/SettingsOwnerDtoBase.cs` | 50.00 % (1/2) | 50.00 % | 1 | 0 | 0 |
+| `API/DTO/WorkTrackingSystemConnectionDto.cs` | 50.00 % (4/8) | 50.00 % | 1 | 0 | 0 |
+| `API/Helpers/NewAdditionalFieldTargets.cs` | 62.50 % (10/16) | 75.00 % | 3 | 3 | 1 |
+| `API/Helpers/PortfolioExtensions.cs` | 39.39 % (13/33) | 42.42 % | 1 | 1 | 0 |
+| `API/Helpers/TeamExtensions.cs` | 63.49 % (40/63) | 65.08 % | 3 | 1 | 0 |
+| `API/Helpers/TeamParentOverrideRefusals.cs` | 22.22 % (2/9) | 100 % | 9 | 7 | 0 |
+| `API/TeamController.cs` | 63.93 % (39/61) | 75.41 % | 16 | 6 | 0 |
+| `API/TeamsController.cs` | 60.47 % (26/43) | 60.47 % | 0 | 0 | 0 |
+| `API/WorkTrackingSystemConnectionController.cs` | 52.27 % (46/88) | 68.18 % | 32 | 12 | 0 |
+| `API/WorkTrackingSystemConnectionsController.cs` | 71.70 % (38/53) | 77.36 % | 5 | 3 | 0 |
+| `Models/AdditionalFieldInUse.cs` | 100 % (23/23) | 100 % | 23 | 0 | 0 |
+| `Models/IncomingSetting.cs` | 100 % (3/3) | 100 % | 3 | 0 | 0 |
+| `Models/OwnersWhoseFetchMoved.cs` | 100 % (2/2) | 100 % | 2 | 0 | 0 |
+| `Models/Team.cs` | 54.55 % (6/11) | 54.55 % | 0 | 0 | 0 |
+| `Models/WorkTrackingSystemConnection.cs` | 72.22 % (13/18) | 77.78 % | 6 | 1 | 0 |
+| `Models/WorkTrackingSystemOptionsOwner.cs` | 46.15 % (24/52) | 55.77 % | 14 | 6 | 1 |
+| `Services/.../Connections/ConnectionSaveService.cs` | 70.18 % (40/57) | 91.23 % | 57 | 17 | 5 |
+| `Services/.../WorkTrackingSystemConnectionUsage.cs` | 75.00 % (3/4) | 75.00 % | 2 | 1 | 1 |
+| `Services/Interfaces/IConnectionSaveService.cs` | 100 % (3/3) | 100 % | 3 | 0 | 0 |
+
+`Models/EffectiveSetting.cs` (a two-arm switch over the enum) produced no mutant, and
+`Models/SupportedConnectionDefaults.cs` only one, which did not compile. The story lines of `Team.cs` and
+`TeamsController.cs` carry no scored mutant: Stryker makes none of `Team.cs`'s expression-bodied members,
+and the four of `TeamsController.cs:126-135` did not compile. Whole-file figures of the controllers, the
+Team and Portfolio extensions and the options owner describe older code that this pass did not triage.
+
+### Closed by this pass
+
+`ConnectionSaveServiceTest`:
+
+- `Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated`:
+  a Team that chose the field as its Parent Override or its estimation field blocks the removal, a Team
+  on another connection or one owning nothing does not, they are named in id order, and nothing is
+  stored (`ConnectionSaveService.cs:44-47`, `:81-84`).
+- `Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated`:
+  each of the five Portfolio settings on its own blocks the removal (`:90-96`).
+
+`WorkTrackingSystemConnectionControllerTest`:
+
+- `UpdateWorkTrackingSystemConnection_ACopyReadBeforeSomeoneElsesSave_IsRefusedAsStaleAndNothingIsStored`
+  (`WorkTrackingSystemConnectionController.cs:104`).
+- `UpdateWorkTrackingSystemConnection_RemovingTheFieldTheTeamsDefaultNames_IsRefusedAsInUseAndNothingIsStored`:
+  the 409 with its code, title and full sentence (`:138-140`, `:248-249`).
+- `UpdateWorkTrackingSystemConnection_TheTeamsDefaultMovedToAnotherStoredField_StoresTheDefault` (`:221-222`).
+- `UpdateWorkTrackingSystemConnection_TheTeamsDefaultNamesAFieldAddedInThisSave_StoresTheFieldFirstAndThenPointsTheDefaultAtIt`:
+  the first save stores no default and the second names the stored id (`:221`,
+  `NewAdditionalFieldTargets.cs:30`).
+- The two existing refusal tests now pin the title and the whole detail, the unsupported one with two
+  defaults so the separator counts (`:235-236`, `:242`). `GetWorkTrackingSystemConnection_ConnectionExists_ReturnsConnection`
+  now reads the Teams' default back (`ConnectionDefaultsDto.cs:15-17`).
+
+`WorkTrackingSystemConnectionsControllerTest`: `CreateNewWorkTrackingSystemConnection_NamingSeveralDefaults_IsRefusedListingEveryOne`
+(`WorkTrackingSystemConnectionsController.cs:222-223`).
+
+`TeamControllerTest`:
+
+- `UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved`, one case each for the
+  baseline, state mappings, refinement, staleness threshold and cycle time (`TeamController.cs:203-249`).
+  The older baseline and state-mapping tests sent no throughput history, so the throughput check refused
+  them too and a mutant that dropped their own check still passed.
+- `UpdateTeam_ACycleTimeEndingBeforeItStartsWithoutPremium_IsNotJudgedAndTheSaveGoesThrough` (`:243`).
+- `UpdateTeam_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedNamingTheSourcesItKnows` and
+  `UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefused`: code, title and detail
+  (`TeamParentOverrideRefusals.cs:18-29`, `TeamExtensions.cs:40`).
+
+`WorkTrackingSystemOptionsOwnerTest`: an owner stored with a field of its own before it chose a source owns
+it (`WorkTrackingSystemOptionsOwner.cs:98`); a sent field of its own is the field the owner would hold, and
+a Team that follows holds none even when its row still carries one (`:128`); taking a sent follow makes an
+owner that owned a field follow (`:143`).
+
+`WorkTrackingSystemConnectionTest.HoldsStoredField_AFieldNotStoredYet_IsNotHeldEvenThoughItsIdOfZeroMatches`
+(`WorkTrackingSystemConnection.cs:34`). `EstimationFieldSyncTest.SyncWithPortfolioSettings_TakesTheParentOverrideFieldAsThePortfoliosOwn`
+(`PortfolioExtensions.cs:33`).
+
+### Accepted survivors (this story's lines)
+
+- `NewAdditionalFieldTargets.cs:30`, `fieldId is < 0` to `<= 0`. Equivalent: only negative placeholder ids
+  are ever put in the map, so asking it about 0 finds nothing either way.
+- `WorkTrackingSystemOptionsOwner.cs:138`, the early `return` when the sent setting equals the stored one
+  removed. Equivalent: the branch below then writes the same source and the same value again.
+- `ConnectionSaveService.cs:190` (two), the error logged when the changed default cannot be logged:
+  removed, or its template emptied. Log-only, on a path reached only when writing the first log entry
+  throws; the save is already stored by then.
+- `ConnectionSaveService.cs:199-200`, `:237-240`, `:244-247` and `WorkTrackingSystemConnectionUsage.cs:22`,
+  `AsEnumerable()` to `Reverse()`. Equivalent under the unit tests' in-memory queries: each result is
+  ordered afterwards, put in a dictionary by id, or only counted per connection. Against a real database
+  EF refuses an unordered `Reverse()`, so the acceptance suites under `API/Integration/ConfigureOncePerConnection/`
+  would fail on it.
+
+### Not mutated
+
+- `API/DTO/ConnectionUsageDto.cs` (a record), `Models/SettingSource.cs` (an enum),
+  `Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs` (an interface and two records) and
+  `Models/IWorkItemQueryOwner.cs` (an interface that lost a setter). No logic to mutate.
+- `Data/LighthouseAppContext.cs`, a four-line column mapping for the Team's stored source in an
+  894-line context file whose model-building mutants would bury it. Pinned by
+  `ConnectionDefaultsUpgradeMigrationTests`, which read and write the column through the real migrations.
+- `Services/Implementation/WorkItems/FetchFingerprint.cs`: only a doc comment changed.
+- The EF migrations are generated.
