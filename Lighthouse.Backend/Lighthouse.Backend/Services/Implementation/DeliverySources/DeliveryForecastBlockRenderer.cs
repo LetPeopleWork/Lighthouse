@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 
 namespace Lighthouse.Backend.Services.Implementation.DeliverySources
@@ -39,6 +40,9 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         // 09/15/2026 and 15/09/2026 are the same string for the first twelve days of every month.
         private const string DayFormat = "yyyy-MM-dd";
 
+        private static readonly string BeyondTheHorizon =
+            string.Create(CultureInfo.InvariantCulture, $"More than {ForecastHorizon.Years} years");
+
         private readonly record struct Line(int Start, int Length);
 
         public string Render(DeliveryForecastBlock block)
@@ -68,7 +72,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             {
                 text.Append(percentile.Percentile.ToString(CultureInfo.InvariantCulture))
                     .Append("%: ")
-                    .Append(Day(percentile.ExpectedDate))
+                    .Append(WhenOf(percentile))
                     .Append(LineSeparator);
             }
 
@@ -102,6 +106,12 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         }
 
         private static string Day(DateOnly day) => day.ToString(DayFormat, CultureInfo.InvariantCulture);
+
+        // The date a percentile beyond the horizon carries is a stand-in nobody forecast, and a Release is
+        // read by people who would plan on it, so the line says it in words the way the screen does.
+        private static string WhenOf(DeliveryForecastBlockPercentile percentile) => percentile.BeyondHorizon
+            ? BeyondTheHorizon
+            : Day(percentile.ExpectedDate);
 
         /// <summary>
         /// Where a block Lighthouse wrote begins and ends, or nothing when no whole one can be found.

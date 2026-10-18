@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.API
 {
@@ -11,10 +12,34 @@ namespace Lighthouse.Backend.API
         public static DateTime EndFor(DateTime windowStart, IEnumerable<Feature> features)
         {
             var worstCaseWorkingDays = features
-                .Select(feature => feature.Forecast?.GetProbability(WorstCasePercentile) ?? 0)
+                .Select(feature => WorstCaseWorkingDaysOf(feature.Forecast))
                 .DefaultIfEmpty(0)
                 .Max();
 
+            return EndAfter(windowStart, worstCaseWorkingDays);
+        }
+
+        public static DateTime EndFor(DateTime windowStart, WhenForecast forecast)
+        {
+            return EndAfter(windowStart, WorstCaseWorkingDaysOf(forecast));
+        }
+
+        // A percentile beyond the horizon has no day of its own, but it lies further out than any that
+        // does. Sized as no days, the window would miss the blackouts of the earlier percentiles.
+        private static int WorstCaseWorkingDaysOf(WhenForecast? forecast)
+        {
+            if (forecast is null)
+            {
+                return 0;
+            }
+
+            var reading = forecast.GetPercentile(WorstCasePercentile);
+
+            return reading.IsBeyondHorizon ? ForecastHorizon.Days : reading.Day ?? 0;
+        }
+
+        private static DateTime EndAfter(DateTime windowStart, int worstCaseWorkingDays)
+        {
             var calendarSpan = (worstCaseWorkingDays * BlackoutDensityMultiplier) + CalendarHeadroomDays;
 
             return windowStart.AddDays(calendarSpan);

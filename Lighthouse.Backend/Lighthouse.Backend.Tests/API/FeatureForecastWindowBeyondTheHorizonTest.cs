@@ -1,7 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -26,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API
         private static readonly DateTime Today = new(2026, 10, 18, 0, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("error")]
         [Category("contract-shape:pure-function")]
         public void A_Feature_whose_95th_percentile_is_beyond_the_horizon_reads_blackouts_at_least_as_far_as_one_whose_95th_has_a_day()

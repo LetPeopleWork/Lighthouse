@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Implementation.DeliverySources;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 {
@@ -25,7 +24,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         private static readonly DateOnly TheStandInDate = new(2031, 10, 18);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("contract-shape:pure-function")]
         public void A_percentile_beyond_the_horizon_is_written_as_more_than_five_years_and_the_others_keep_their_dates()
         {
@@ -46,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("error")]
         [Category("contract-shape:pure-function")]
         public void A_Delivery_whose_every_percentile_is_beyond_the_horizon_still_publishes_a_block_that_says_so()
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public void A_block_with_a_percentile_beyond_the_horizon_replaces_an_older_block_and_leaves_the_teams_words_alone()

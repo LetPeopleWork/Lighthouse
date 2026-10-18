@@ -4,8 +4,8 @@ namespace Lighthouse.Backend.Models.DeliverySources
     /// One percentile of a Delivery's forecast, as the published block states it.
     /// </summary>
     /// <param name="BeyondHorizon">
-    /// SCAFFOLD: carried, not yet read. Fewer runs than this percentile finished within the simulated horizon,
-    /// so the block has to say so instead of printing the stand-in date.
+    /// Fewer runs than this percentile finished within the simulated horizon, so the block says so instead
+    /// of printing the stand-in date.
     /// </param>
     public sealed record DeliveryForecastBlockPercentile(int Percentile, DateOnly ExpectedDate, bool BeyondHorizon = false);
 

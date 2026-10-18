@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.API
 
                     var effectiveBlackoutDays = blackoutPeriodService.GetEffectiveBlackoutDays(
                         forecastWindowStart,
-                        EstimateForecastWindowEnd(whenForecast, forecastWindowStart));
+                        FeatureForecastWindow.EndFor(forecastWindowStart, whenForecast));
 
                     manualForecast.WhenForecasts.AddRange(whenForecast.CreateForecastDtos(clock.Today, effectiveBlackoutDays, 50, 70, 85, 95));
                     manualForecast.FilterApplied = whenForecast.FilterApplied;
@@ -143,17 +143,6 @@ namespace Lighthouse.Backend.API
 
                 return manualForecast;
             });
-        }
-
-        private static DateTime EstimateForecastWindowEnd(WhenForecast whenForecast, DateTime windowStart)
-        {
-            const int CalendarHeadroomDays = 14;
-            const int BlackoutDensityMultiplier = 2;
-
-            var worstCaseWorkingDays = whenForecast.GetProbability(95);
-            var calendarSpan = (worstCaseWorkingDays * BlackoutDensityMultiplier) + CalendarHeadroomDays;
-
-            return windowStart.AddDays(calendarSpan);
         }
 
         private static string? ValidateBacktestInput(BacktestInputDto input, DateOnly today)

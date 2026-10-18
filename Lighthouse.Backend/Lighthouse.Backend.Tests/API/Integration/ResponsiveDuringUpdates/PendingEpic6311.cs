@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     /// </summary>
     internal static class PendingEpic6311
     {
-        public const string Slice03 = "Pending: runs that do not finish count, and every forecast says so (epic 6311, slice 03).";
-
         public const string Slice04 = "Pending: no simulated run covers more than five years (epic 6311, slice 04).";
 
         public const string Slice05 = "Pending: Cancel all clears the Activity list except removals (epic 6311, slice 05).";

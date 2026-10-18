@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -22,7 +21,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private const int TheDayTheFinishingRunsFinish = 12;
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("epic-6311-responsive-during-updates")]
         [Category("slice-03")]
         [Category("ac-03.7")]

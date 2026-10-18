@@ -323,9 +323,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private string? ProjectFromToday(WriteBackMappingDefinition mapping, ForecastBase forecast, int percentile)
         {
-            var daysAway = forecast.GetProbability(percentile);
-
-            if (daysAway < 0)
+            // Beyond the horizon there is no day anybody forecast, and with no answer there is no day at all.
+            // Both write nothing: a board cannot say "neither", and a made-up date says something untrue.
+            if (forecast.GetPercentile(percentile).Day is not { } daysAway)
             {
                 return null;
             }

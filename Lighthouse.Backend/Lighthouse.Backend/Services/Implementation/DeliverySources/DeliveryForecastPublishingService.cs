@@ -162,7 +162,8 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
             return new DeliveryForecastBlock(
                 today,
                 [.. metrics.WhenDistribution.Select(percentile =>
-                    new DeliveryForecastBlockPercentile(percentile.Percentile, DateOnly.FromDateTime(percentile.ExpectedDate)))],
+                    new DeliveryForecastBlockPercentile(
+                        percentile.Percentile, DateOnly.FromDateTime(percentile.ExpectedDate), percentile.BeyondHorizon))],
                 DateOnly.FromDateTime(delivery.Date),
                 likelihood);
         }
