@@ -297,7 +297,13 @@ changed.
 | Backend, whole files, after the kill round | 71.48 % | 561 | 401 | 160 | 4 m 37 s |
 | **Backend, this story's lines, after the kill round** | **95.77 %** | 189 | 181 | 8 | — |
 
-Frontend: pending (run after the slice 06 fix round)
+| stack | score | scored | killed + timeout | survived / no cov. | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS 10.0.0), this story's lines, first run | 83.17 % | 309 | 257 | 52 | 21 m 34 s |
+| **Frontend, this story's lines, after the kill round** (full re-run) | **93.53 %** | 309 | 289 | 20 | 16 m 56 s |
+
+Frontend configs: `stryker.6304.frontend.json` and `vitest.stryker.6304.config.ts` (copied into
+`Lighthouse.Frontend/` for the run). See "Frontend (Story 6304)" below.
 
 Configs: `stryker.6304.backend.json` (the full first run) and `stryker.6304.backend.kill.json` (the
 narrowed kill round: the eleven files that had survivors on story lines, and only their unit tests).
@@ -427,3 +433,89 @@ owner that owned a field follow (`:143`).
   `ConnectionDefaultsUpgradeMigrationTests`, which read and write the column through the real migrations.
 - `Services/Implementation/WorkItems/FetchFingerprint.cs`: only a doc comment changed.
 - The EF migrations are generated.
+
+### Frontend (Story 6304)
+
+Run 2026-10-18 against `main` from `37949a071`, production code frozen; only tests were added (the backend
+commits that landed during the runs touched no frontend file).
+
+The mutated lines are the new side of the `git diff -U0 60d0edfae~1..HEAD` hunks in
+`ModifyConnectionSettings.tsx`, `FormSelectField.tsx`, `WorkTrackingSystemConnection.ts`,
+`AdvancedInputs.tsx`, `EditConnection.tsx`, `BaseApiService.ts` and `WorkTrackingSystemService.ts`, plus
+`UpdateQuestion.tsx` whole (a new file). Hunks that are only imports, interfaces or type aliases were
+left out, and so was `BaseSettings.ts`, whose story lines are all types. Specs in the narrowed vitest
+config: `ModifyConnectionSettings.test.tsx`, `UpdateQuestion.test.tsx`, `CreateConnectionWizard.test.tsx`,
+`FormSelectField.test.tsx`, `WorkTrackingSystemConnection.serviceNow.test.ts`,
+`AdvancedInputsComponent.test.tsx`, `AdvancedInputs.connectionDefault.test.tsx`, the three
+`EditConnection*.test.tsx`, `WorkTrackingSystemService.test.ts` and `DeliveryService.test.ts`.
+`coverageAnalysis: perTest`, incremental file under `reports/mutation/` (not committed).
+
+The vitest config carries the main config's `onUnhandledError` filter for `ExpectedTestFailure`. Without
+it the dry run dies on the save-failure tests' deliberate rejections ("Something went wrong in the
+initial test run"). The first run was started without `--incremental`, so it wrote no incremental file
+and the re-run after the kill round was a full run: no verdict was carried over.
+
+| file | first run | after the kill round |
+| --- | --- | --- |
+| `ModifyConnectionSettings.tsx` (story lines) | 88.10 % (148/168) | **95.24 % (160/168)** |
+| `UpdateQuestion.tsx` | 100 % (51/51) | **100 % (51/51)** |
+| `FormSelectField.tsx` (story lines) | 46.67 % (7/15) | **80.00 % (12/15)** |
+| `WorkTrackingSystemConnection.ts` (story lines) | 0 % (0/1) | **100 % (1/1)** |
+| `AdvancedInputs.tsx` (story lines) | 78.95 % (30/38) | **94.74 % (36/38)** |
+| `EditConnection.tsx` (story lines) | 67.86 % (19/28) | **75.00 % (21/28)** |
+| `BaseApiService.ts` (story lines) | 100 % (1/1) | **100 % (1/1)** |
+| `WorkTrackingSystemService.ts` (story lines) | 14.29 % (1/7) | **100 % (7/7)** |
+
+#### Closed by this pass
+
+- `WorkTrackingSystemService.test.ts`: "keeps the connection's defaults and the defaults it offers,
+  leaving out one this page does not know" (`WorkTrackingSystemService.ts:20-22`, `:177-185`,
+  `WorkTrackingSystemConnection.ts:61`).
+- `EditConnection.defaults.test.tsx`: "a connection that offers only Teams defaults shows no Portfolios
+  group" (`ModifyConnectionSettings.tsx:277`, `:284`); "a default naming no field / a field the
+  connection does not list reads as None" (`:270`); "Try again loads the connection that could not be
+  loaded, with its section" (`EditConnection.tsx:181-182`, no coverage before); "a changed
+  `parentOverrideForPortfolios` / `dependencyFieldForPortfolios` / `sizeEstimateFieldForPortfolios` /
+  `featureOwnerFieldForPortfolios` default 2 Portfolios follow asks whether to update them"
+  (`ModifyConnectionSettings.tsx:160-175`, `:232`); "changing a default clears the refusal the last save
+  got" (`:782`).
+- `AdvancedInputs.connectionDefault.test.tsx`: "names the … connection the default is set on", now one
+  case per tracker (`AdvancedInputs.tsx:26-28`); "before the settings arrive the dropdown offers no
+  connection default and chooses nothing" (`:36`, `:39`, `:61`).
+- `FormSelectField.test.tsx`: "without one, an empty field shows no None and keeps its label inside",
+  "with one, a picked None stays readable and the label sits above it" (`FormSelectField.tsx:44`, `:53`);
+  "shows the helper text beneath the field", "shows no helper line when there is no helper text" (`:78`).
+
+#### Accepted survivors
+
+- `EditConnection.tsx:42` and `:67`, the `useCallback` dependency lists emptied. Equivalent: the service
+  and the query's `refetch` they close over do not change while the page is open.
+- `EditConnection.tsx:50`, the query key's name emptied. Equivalent: the key still carries the
+  connection's id, and no other query on the page shares it.
+- `EditConnection.tsx:57`, `refetchOnWindowFocus` to `true`. The re-read fetches the connection the form
+  already holds, and the form keeps its own state, so nothing on the page changes.
+- `EditConnection.tsx:63`, `if (error)` to `false`, and its `throw` emptied (no coverage). Reached only
+  when the form's own re-read of the connection fails after the page has loaded it. With the throw,
+  `ModifyConnectionSettings` logs the error and leaves the form blank; with the mutant it shows the
+  connection from the first read. Not pinned, because a test would pin the blank form, which is a latent
+  issue rather than wanted behaviour.
+- `EditConnection.tsx:174`, the error look's `maxWidth={false}` to `true`. Layout only.
+- `ModifyConnectionSettings.tsx:155` and `:180`, `"pageLoads"` emptied. Equivalent: only `"updating"` is
+  compared.
+- `ModifyConnectionSettings.tsx:230`, `because: "defaults"` emptied. Equivalent: `UpdateQuestion` only
+  tests for `"fields"`.
+- `ModifyConnectionSettings.tsx:270` and `:799`, `fieldId != null` to `true`. Equivalent: a set of field
+  ids never has `null` or `undefined`, so the other half of the condition gives the same answer.
+- `ModifyConnectionSettings.tsx:775`, `selectedWorkTrackingSystem?.` to `.`. Unreachable: edit mode and the
+  selected connection are set in the same update, so edit mode never renders without one.
+- `ModifyConnectionSettings.tsx:296` (the fieldset's `sx`) and `:983` (the section's `Grid` size) emptied.
+  Layout only.
+- `FormSelectField.tsx:61` (three), `notched` forced on, off or to `undefined`. It draws only the gap the
+  outline leaves for a raised label; the label's own raising is pinned. Presentation only.
+- `AdvancedInputs.tsx:38`, `teamSettings?.` to `.`. Unreachable: the line is reached only after a default
+  name was read, which needs settings.
+- `AdvancedInputs.tsx:42`, the empty tracker name to any other text. Reached only by a Team that follows a
+  default but carries no tracker, whose sentence would read "Set on the  connection."; not pinned, since
+  that sentence is not one worth keeping.
+
+`git status` showed no change under `Lighthouse.Frontend/src` other than the added specs after both runs.
