@@ -267,6 +267,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
 
+        /// <summary>A Portfolio on the named connection that follows every default that connection holds.</summary>
+        protected Task GivenAPortfolioOn(string connection, string portfolio) => SeedPortfolio(portfolio, ownsEverything: false, connection);
+
         protected async Task GivenTheDefaultIs(ConnectionDefault theDefault, string fieldName)
         {
             await WhenTheAdminSetsTheDefault(theDefault, fieldName);
@@ -934,11 +937,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             teamIds[name] = team.Id;
         }
 
-        private async Task SeedPortfolio(string name, bool ownsEverything)
+        private async Task SeedPortfolio(string name, bool ownsEverything, string onConnection = JiraDcPayments)
         {
             using var scope = Factory.Services.CreateScope();
             var services = scope.ServiceProvider;
-            var connection = services.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionIds[JiraDcPayments])!;
+            var connection = services.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionIds[onConnection])!;
 
             var portfolio = new Portfolio
             {

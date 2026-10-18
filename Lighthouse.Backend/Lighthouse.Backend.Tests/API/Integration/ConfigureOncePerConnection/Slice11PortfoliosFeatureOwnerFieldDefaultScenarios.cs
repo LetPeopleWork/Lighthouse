@@ -12,6 +12,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     [Category("us-10")]
     public class Slice11PortfoliosFeatureOwnerFieldDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
+        private const string Settlements = "Settlements";
+
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
@@ -72,6 +74,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var shown = await WhatTheFeatureOfShows(CardIssuing);
 
             Assert.That(shown.SplitAcross, Is.EqualTo(new[] { Ledger }));
+        }
+
+        [Test]
+        [Category("ac-10.1")]
+        [Category("driving_port")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_following_Feature_on_a_CSV_connection_is_owned_by_the_Team_the_default_column_names()
+        {
+            await GivenAConnectionOfEveryOtherTracker();
+            await GivenAPortfolioOn(PaymentsCsv, Settlements);
+            GivenEveryFeatureNamesItsOwnerIn(ReleaseTrain, Ledger);
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenTheAdminSetsTheDefaultOn(PaymentsCsv, ConnectionDefault.PortfoliosFeatureOwnerField, ReleaseTrain);
+            ThenTheSaveIsAccepted();
+            await WhenTheNextScheduledUpdateOf(Settlements);
+            var shown = await WhatTheFeatureOfShows(Settlements);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheTrackerWasAskedToReadFor(Settlements, OwnerSetting.FeatureOwnerField), Is.EqualTo(ReleaseTrain));
+                Assert.That(shown.SplitAcross, Is.EqualTo(new[] { Ledger }));
+            }
         }
 
         [Test]
