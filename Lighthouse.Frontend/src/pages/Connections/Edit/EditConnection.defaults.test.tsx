@@ -15,6 +15,7 @@ import {
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { WorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
@@ -628,6 +629,42 @@ describe("defaults set once on the connection", () => {
 			expect(theSave(server).defaults).toEqual({
 				parentOverrideForTeams: null,
 				estimationForTeams: 13,
+			});
+		});
+
+		// @error @us-04 @contract-shape:unbounded-preservation
+		it("renaming the connection sends the Portfolios' default it was loaded with", async () => {
+			const asTheServerSendsIt = JSON.parse(
+				JSON.stringify(
+					jiraDcPayments({ defaults: { parentOverrideForPortfolios: 12 } }),
+				),
+			);
+			const realService = new WorkTrackingSystemService();
+			const put = vi.fn(async (_path: string, body: unknown) => ({
+				data: body,
+			}));
+			Object.assign(realService, {
+				apiService: {
+					get: async () => ({ data: [asTheServerSendsIt] }),
+					put,
+				},
+			});
+			const server = await givenPriyaOpensJiraDcPayments({
+				answers: [realService.getConfiguredWorkTrackingSystems()],
+			});
+			vi.mocked(server.updateWorkTrackingSystemConnection).mockImplementation(
+				(saved, choice) =>
+					realService.updateWorkTrackingSystemConnection(saved, choice),
+			);
+			const theName = await screen.findByDisplayValue(JiraDcPayments);
+
+			fireEvent.change(theName, { target: { value: JiraDcTreasury } });
+			whenPriyaPressesSave();
+
+			await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
+			const [, body] = put.mock.calls[0];
+			expect((body as { defaults?: unknown }).defaults).toEqual({
+				parentOverrideForPortfolios: 12,
 			});
 		});
 	});

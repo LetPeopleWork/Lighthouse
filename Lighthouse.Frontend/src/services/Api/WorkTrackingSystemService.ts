@@ -5,6 +5,8 @@ import {
 	readConnectionValidation,
 } from "../../models/WorkTracking/ConnectionValidationResult";
 import {
+	type ConnectionDefaultName,
+	ConnectionDefaultNames,
 	type IWorkTrackingSystemConnection,
 	isConnectionDefaultName,
 	WorkTrackingSystemConnection,
@@ -19,7 +21,17 @@ import { BaseApiService } from "./BaseApiService";
 
 const ConnectionDefaultsSchema = z.object({
 	defaults: z
-		.object({ parentOverrideForTeams: z.number().nullable().optional() })
+		.object(
+			Object.fromEntries(
+				ConnectionDefaultNames.map((name) => [
+					name,
+					z.number().nullable().optional(),
+				]),
+			) as Record<
+				ConnectionDefaultName,
+				z.ZodOptional<z.ZodNullable<z.ZodNumber>>
+			>,
+		)
 		.nullable()
 		.optional(),
 	supportedDefaults: z.array(z.string()).nullable().optional(),

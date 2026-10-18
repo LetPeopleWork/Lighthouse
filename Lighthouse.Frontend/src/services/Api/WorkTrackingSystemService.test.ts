@@ -725,6 +725,30 @@ describe("WorkTrackingSystemService", () => {
 			expect(connection.supportedDefaults).toEqual(["parentOverrideForTeams"]);
 		});
 
+		// @us-04 @driving_port @contract-shape:pure-function
+		it("keeps every default the connection names, for Teams and Portfolios alike", async () => {
+			mockedAxios.get.mockResolvedValueOnce({
+				data: [
+					{
+						...nordwindJiraDc,
+						defaults: {
+							parentOverrideForTeams: 11,
+							parentOverrideForPortfolios: 12,
+							aDefaultFromLater: 13,
+						},
+					},
+				],
+			});
+
+			const [connection] =
+				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+			expect(connection.defaults).toEqual({
+				parentOverrideForTeams: 11,
+				parentOverrideForPortfolios: 12,
+			});
+		});
+
 		// @us-03 @driving_port @contract-shape:bounded-change
 		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
