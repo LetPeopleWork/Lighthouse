@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
+import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import DependenciesComponent from "./DependenciesComponent";
 
@@ -164,6 +165,140 @@ describe("DependenciesComponent", () => {
 				"Read what each Feature waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.",
 			),
 		).toBeInTheDocument();
+	});
+
+	describe("on a tracker whose connection holds the Dependency Field default", () => {
+		const onJira = (settings: Partial<IPortfolioSettings>) => {
+			const onProjectSettingsChange = renderIt({
+				workTrackingSystem: "Jira",
+				...settings,
+			});
+			openTheGroup();
+			return onProjectSettingsChange;
+		};
+
+		it("a follower shows the connection default first, with where it is set", () => {
+			onJira({
+				dependencyFieldSource: "ConnectionDefault",
+				dependencyFieldDefaultName: "Waits On",
+			});
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (Waits On)",
+			);
+			expect(
+				screen.getByText("Set on the Jira connection."),
+			).toBeInTheDocument();
+			const entries = openTheFieldList().getAllByRole("option");
+			expect(entries.map((entry) => entry.textContent)).toEqual([
+				"Connection default (Waits On)",
+				"None",
+				"Waits On",
+				"Size",
+			]);
+		});
+
+		it("a follower whose default names nothing still sees the entry", () => {
+			onJira({
+				dependencyFieldSource: "ConnectionDefault",
+				dependencyFieldDefaultName: null,
+			});
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (None)",
+			);
+			expect(
+				screen.getByText("Set on the Jira connection."),
+			).toBeInTheDocument();
+		});
+
+		it("picking None makes the Portfolio own the setting with no field", () => {
+			const onProjectSettingsChange = onJira({
+				dependencyFieldSource: "ConnectionDefault",
+				dependencyFieldDefaultName: "Waits On",
+			});
+
+			fireEvent.click(openTheFieldList().getByText("None"));
+
+			expect(onProjectSettingsChange).toHaveBeenCalledWith(
+				"dependencyFieldSource",
+				"Own",
+			);
+			expect(onProjectSettingsChange).toHaveBeenCalledWith(
+				"dependencyOverrideAdditionalFieldDefinitionId",
+				null,
+			);
+		});
+
+		it("an owner picks the entry to follow the connection again", () => {
+			const onProjectSettingsChange = onJira({
+				dependencyFieldSource: "Own",
+				dependencyOverrideAdditionalFieldDefinitionId: null,
+				dependencyFieldDefaultName: "Waits On",
+			});
+			expect(
+				screen.queryByText("Set on the Jira connection."),
+			).not.toBeInTheDocument();
+
+			fireEvent.click(
+				openTheFieldList().getByText("Connection default (Waits On)"),
+			);
+
+			expect(onProjectSettingsChange).toHaveBeenCalledWith(
+				"dependencyFieldSource",
+				"ConnectionDefault",
+			);
+			expect(onProjectSettingsChange).not.toHaveBeenCalledWith(
+				"dependencyOverrideAdditionalFieldDefinitionId",
+				expect.anything(),
+			);
+		});
+
+		it("names the default of the connection chosen on the page, once another is chosen", () => {
+			render(
+				<DependenciesComponent
+					projectSettings={{
+						...createMockProjectSettings(),
+						workTrackingSystem: "Jira",
+						workTrackingSystemConnectionId: 1,
+						dependencyFieldSource: "ConnectionDefault",
+						dependencyFieldDefaultName: "Waits On",
+					}}
+					onProjectSettingsChange={vi.fn()}
+					additionalFieldDefinitions={theConnectionsFields}
+					connection={
+						new WorkTrackingSystemConnection({
+							id: 2,
+							name: "Azure DevOps Payments",
+							workTrackingSystem: "AzureDevOps",
+							options: [],
+							additionalFieldDefinitions: theConnectionsFields,
+							defaults: { dependencyFieldForPortfolios: 2 },
+						})
+					}
+				/>,
+			);
+			openTheGroup();
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (Size)",
+			);
+			expect(
+				screen.getByText("Set on the Azure DevOps connection."),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("offers no connection default on a tracker whose connection holds none", () => {
+		renderIt({
+			workTrackingSystem: "Linear",
+			dependencyFieldSource: "ConnectionDefault",
+		});
+		openTheGroup();
+
+		expect(
+			openTheFieldList().queryByText(/Connection default/),
+		).not.toBeInTheDocument();
 	});
 
 	it("shows the switch as on for a Portfolio that has set its dependencies aside", () => {

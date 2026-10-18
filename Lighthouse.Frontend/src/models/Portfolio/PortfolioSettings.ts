@@ -1,4 +1,4 @@
-import type { IBaseSettings } from "../Common/BaseSettings";
+import type { IBaseSettings, SettingSource } from "../Common/BaseSettings";
 import type { IEntityReference } from "../EntityReference";
 
 export const DEFAULT_PERCENTILE_HISTORY_DAYS = 90;
@@ -15,5 +15,7 @@ export interface IPortfolioSettings extends IBaseSettings {
 	sizeEstimateAdditionalFieldDefinitionId: number | null;
 	featureOwnerAdditionalFieldDefinitionId: number | null;
 	dependencyOverrideAdditionalFieldDefinitionId: number | null;
+	dependencyFieldSource?: SettingSource;
+	dependencyFieldDefaultName?: string | null;
 	ignoreDependencies: boolean;
 }

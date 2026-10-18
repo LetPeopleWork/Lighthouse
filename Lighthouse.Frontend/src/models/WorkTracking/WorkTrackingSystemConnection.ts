@@ -56,6 +56,13 @@ export interface IConnectionUsage {
 	teams: number;
 	portfolios: number;
 	followers?: Partial<Record<ConnectionDefaultName, number>>;
+	/** Owners that follow exactly these defaults. Each owner sits in one group, so it is counted once. */
+	followerGroups?: IFollowerGroup[];
+}
+
+export interface IFollowerGroup {
+	follows: ConnectionDefaultName[];
+	count: number;
 }
 
 export const isConnectionDefaultName = (

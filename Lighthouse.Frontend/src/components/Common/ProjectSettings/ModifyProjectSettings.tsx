@@ -344,6 +344,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
+							connection={selectedWorkTrackingSystem}
 						/>
 
 						<AdvancedInputsComponent

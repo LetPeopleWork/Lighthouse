@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import UpdateQuestion, { type WhyUpdate } from "./UpdateQuestion";
+import UpdateQuestion, {
+	type WhatChanges,
+	type WhyUpdate,
+} from "./UpdateQuestion";
 
 const { words } = vi.hoisted(() => ({
 	words: { current: {} as Record<string, string> },
@@ -29,6 +32,12 @@ const SquadsAndPrograms = {
 const UntilUpdated =
 	"Their parents change only once they have been updated. Save only: they change at their next scheduled update.";
 
+const UntilDependenciesUpdated =
+	"Their dependencies change only once they have been updated. Save only: they change at their next scheduled update.";
+
+const UntilWhatTheyReadUpdated =
+	"What they read changes only once they have been updated. Save only: they change at their next scheduled update.";
+
 const askBecause = (why: WhyUpdate) => {
 	const answers = {
 		onUpdate: vi.fn(async () => {}),
@@ -43,7 +52,8 @@ const theDefaultsChanged = (
 	teams: number,
 	portfolios: number,
 	defaults = ["Parent Override Field"],
-): WhyUpdate => ({ because: "defaults", teams, portfolios, defaults });
+	changes: WhatChanges[] = ["parents"],
+): WhyUpdate => ({ because: "defaults", teams, portfolios, defaults, changes });
 
 describe("UpdateQuestion", () => {
 	beforeEach(() => {
@@ -74,14 +84,30 @@ describe("UpdateQuestion", () => {
 				says: `3 Teams and 2 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
 			},
 			{
+				case: "the Dependency Field default",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(0, 2, ["Dependency Field"], ["dependencies"]),
+				title: "Update 0 Teams and 2 Portfolios?",
+				says: `2 Portfolios follow the Dependency Field default. ${UntilDependenciesUpdated}`,
+			},
+			{
 				case: "two defaults",
 				terms: TheDefaultWords,
-				why: theDefaultsChanged(0, 2, [
-					"Parent Override Field",
-					"Dependency Field",
-				]),
+				why: theDefaultsChanged(
+					0,
+					2,
+					["Parent Override Field", "Dependency Field"],
+					["parents", "dependencies"],
+				),
 				title: "Update 0 Teams and 2 Portfolios?",
-				says: `2 Portfolios follow the Parent Override Field and Dependency Field defaults. ${UntilUpdated}`,
+				says: `2 Portfolios follow the Parent Override Field and Dependency Field defaults. ${UntilWhatTheyReadUpdated}`,
+			},
+			{
+				case: "the Teams' and the Portfolios' Parent Override defaults",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(1, 2, ["Parent Override Field"], ["parents"]),
+				title: "Update 1 Team and 2 Portfolios?",
+				says: `1 Team and 2 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
 			},
 			{
 				case: "renamed Teams and Portfolios",

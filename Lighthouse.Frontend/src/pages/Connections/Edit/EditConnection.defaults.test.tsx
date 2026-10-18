@@ -170,6 +170,9 @@ const jiraDcPayments = ({
 	name = JiraDcPayments,
 	tracker = "Jira" as WorkTrackingSystemType,
 	followers = { parentOverrideForTeams: 3 } as Followers,
+	followerGroups = undefined as
+		| { follows: DefaultMember[]; count: number }[]
+		| undefined,
 	defaults = {} as Partial<Record<DefaultMember, unknown>>,
 } = {}) =>
 	Object.assign(
@@ -196,7 +199,7 @@ const jiraDcPayments = ({
 			additionalFieldDefinitions: TheFields,
 		}),
 		{
-			usedBy: { teams: 4, portfolios: 2, followers },
+			usedBy: { teams: 4, portfolios: 2, followers, followerGroups },
 			defaults,
 			supportedDefaults: WhatEachTrackerOffers[tracker],
 		},
@@ -737,6 +740,58 @@ describe("defaults set once on the connection", () => {
 				);
 			},
 		);
+
+		// A Portfolio following both changed defaults is one Portfolio to update, not two.
+		// @us-08 @contract-shape:bounded-change
+		it("3 Portfolios following both the Parent Override and Dependency defaults, both changed, are counted once", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: {
+						parentOverrideForPortfolios: 3,
+						dependencyFieldForPortfolios: 3,
+					},
+					followerGroups: [
+						{
+							follows: [
+								"parentOverrideForPortfolios",
+								"dependencyFieldForPortfolios",
+							],
+							count: 3,
+						},
+					],
+				}),
+			});
+
+			await whenPriyaPicks("Portfolios", "Parent Override Field", ParentLink);
+			await whenPriyaPicks("Portfolios", "Dependency Field", CausedBy);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion("Update 0 Teams and 3 Portfolios?");
+			expect(question).toHaveTextContent(
+				"3 Portfolios follow the Parent Override Field and Dependency Field defaults. What they read changes only once they have been updated.",
+			);
+		});
+
+		// @us-08 @contract-shape:bounded-change
+		it("a changed Dependency default says its followers' dependencies change once updated", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { dependencyFieldForPortfolios: 2 },
+					followerGroups: [
+						{ follows: ["dependencyFieldForPortfolios"], count: 2 },
+						{ follows: ["parentOverrideForPortfolios"], count: 1 },
+					],
+				}),
+			});
+
+			await whenPriyaPicks("Portfolios", "Dependency Field", CausedBy);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion("Update 0 Teams and 2 Portfolios?");
+			expect(question).toHaveTextContent(
+				"2 Portfolios follow the Dependency Field default. Their dependencies change only once they have been updated.",
+			);
+		});
 
 		// @error @us-05 @contract-shape:bounded-change
 		it("changing a default clears the refusal the last save got", async () => {

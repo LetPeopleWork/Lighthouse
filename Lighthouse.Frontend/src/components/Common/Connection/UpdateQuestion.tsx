@@ -12,6 +12,9 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import ActionButton from "../ActionButton/ActionButton";
 
+/** What a changed default's followers read differently once they have been updated. */
+export type WhatChanges = "parents" | "dependencies" | "sizes" | "owners";
+
 /** Why the save asks before it updates anyone, and how many it would update. */
 export type WhyUpdate =
 	| { because: "fields"; teams: number; portfolios: number }
@@ -20,6 +23,7 @@ export type WhyUpdate =
 			teams: number;
 			portfolios: number;
 			defaults: string[];
+			changes: WhatChanges[];
 	  };
 
 const counted = (count: number, singular: string, plural: string): string =>
@@ -32,7 +36,25 @@ interface Words {
 	teams: string;
 	portfolio: string;
 	portfolios: string;
+	features: string;
 }
+
+const possessiveOfPlural = (plural: string): string =>
+	plural.endsWith("s") ? `${plural}'` : `${plural}'s`;
+
+const whenTheyChange = (changes: WhatChanges[], words: Words): string => {
+	if (changes.length !== 1) {
+		return "What they read changes only once they have been updated.";
+	}
+	const features = possessiveOfPlural(words.features);
+	const sentences: Record<WhatChanges, string> = {
+		parents: "Their parents change only once they have been updated.",
+		dependencies: "Their dependencies change only once they have been updated.",
+		sizes: `Their ${features} sizes change only once they have been updated.`,
+		owners: `Their ${features} owners change only once they have been updated.`,
+	};
+	return sentences[changes[0]];
+};
 
 const followersOf = (why: WhyUpdate, words: Words): string => {
 	const groups = [
@@ -50,7 +72,7 @@ const whatTheQuestionSays = (why: WhyUpdate, words: Words): string => {
 	}
 	const verb = why.teams + why.portfolios === 1 ? "follows" : "follow";
 	const defaultWord = why.defaults.length === 1 ? "default" : "defaults";
-	return `${followersOf(why, words)} ${verb} the ${joined(why.defaults)} ${defaultWord}. Their parents change only once they have been updated. Save only: they change at their next scheduled update.`;
+	return `${followersOf(why, words)} ${verb} the ${joined(why.defaults)} ${defaultWord}. ${whenTheyChange(why.changes, words)} Save only: they change at their next scheduled update.`;
 };
 
 interface UpdateQuestionProps {
@@ -77,6 +99,7 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 		teams: getTerm(TERMINOLOGY_KEYS.TEAMS),
 		portfolio: getTerm(TERMINOLOGY_KEYS.PORTFOLIO),
 		portfolios: getTerm(TERMINOLOGY_KEYS.PORTFOLIOS),
+		features: getTerm(TERMINOLOGY_KEYS.FEATURES),
 	};
 
 	const whileSaving = (answer: () => Promise<void>) => async () => {

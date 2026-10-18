@@ -25,6 +25,7 @@ import type {
 	IAuthenticationMethod,
 	IConnectionDefaults,
 	IConnectionUsage,
+	IFollowerGroup,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
@@ -47,7 +48,10 @@ import ValidationActions from "../ValidationActions/ValidationActions";
 import SecretHandlingNotice, {
 	containsSecretField,
 } from "./SecretHandlingNotice";
-import UpdateQuestion, { type WhyUpdate } from "./UpdateQuestion";
+import UpdateQuestion, {
+	type WhatChanges,
+	type WhyUpdate,
+} from "./UpdateQuestion";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
@@ -142,12 +146,14 @@ const WhereEachDefaultSits: Record<
 	{
 		group: DefaultsGroup;
 		readWhen: ReadWhen;
+		changes?: WhatChanges;
 		label: (featureTerm: string) => string;
 	}
 > = {
 	parentOverrideForTeams: {
 		group: "teams",
 		readWhen: "updating",
+		changes: "parents",
 		label: () => "Parent Override Field",
 	},
 	estimationForTeams: {
@@ -158,21 +164,25 @@ const WhereEachDefaultSits: Record<
 	parentOverrideForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
+		changes: "parents",
 		label: () => "Parent Override Field",
 	},
 	dependencyFieldForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
+		changes: "dependencies",
 		label: () => "Dependency Field",
 	},
 	sizeEstimateFieldForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
+		changes: "sizes",
 		label: () => "Size Estimate Field",
 	},
 	featureOwnerFieldForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
+		changes: "owners",
 		label: (featureTerm) => `${featureTerm} Owner Field`,
 	},
 	estimationForPortfolios: {
@@ -182,10 +192,20 @@ const WhereEachDefaultSits: Record<
 	},
 };
 
+// A server that sends no groups is read as if every owner followed a single default.
+const followerGroupsOf = (usage: IConnectionUsage): IFollowerGroup[] =>
+	usage.followerGroups ??
+	(
+		Object.entries(usage.followers ?? {}) as [ConnectionDefaultName, number][]
+	).map(([name, count]) => ({ follows: [name], count }));
+
 const followersOfDefault = (
 	usage: IConnectionUsage,
 	name: ConnectionDefaultName,
-): number => usage.followers?.[name] ?? 0;
+): number =>
+	followerGroupsOf(usage)
+		.filter((group) => group.follows.includes(name))
+		.reduce((sum, group) => sum + group.count, 0);
 
 const changedDefaultsToUpdateFollowersOf = (
 	loaded: IConnectionDefaults,
@@ -199,14 +219,20 @@ const changedDefaultsToUpdateFollowersOf = (
 			(loaded[name] ?? null) !== (current[name] ?? null),
 	);
 
+// An owner following several of the changed defaults is one owner to update, so it is counted once.
 const followersIn = (
 	group: DefaultsGroup,
 	changed: ConnectionDefaultName[],
 	usage: IConnectionUsage,
 ): number =>
-	changed
-		.filter((name) => WhereEachDefaultSits[name].group === group)
-		.reduce((sum, name) => sum + followersOfDefault(usage, name), 0);
+	followerGroupsOf(usage)
+		.filter((followers) =>
+			followers.follows.some(
+				(name) =>
+					changed.includes(name) && WhereEachDefaultSits[name].group === group,
+			),
+		)
+		.reduce((sum, followers) => sum + followers.count, 0);
 
 // One question per save: a changed Additional Field updates everyone on the connection, which already
 // covers whoever follows a changed default.
@@ -234,6 +260,13 @@ const whyUpdate = (
 			...new Set(
 				changedDefaults.map((name) =>
 					WhereEachDefaultSits[name].label(featureTerm),
+				),
+			),
+		],
+		changes: [
+			...new Set(
+				changedDefaults.flatMap(
+					(name) => WhereEachDefaultSits[name].changes ?? [],
 				),
 			),
 		],
