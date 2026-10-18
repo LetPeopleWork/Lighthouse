@@ -46,8 +46,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 return ResolveTeamUpdates(mappings, workItems, RiskByReferenceIdFor(team, mappings));
             }
             // Resolution reads repositories and the blackout calendar, so it can still fail. Swallowing
-            // here keeps a broken mapping from cutting short the rest of the update execution, which is
-            // what the four separate try/catches did before ADR-144 collapsed them into one flush.
+            // here keeps one broken mapping from cutting short the rest of the update execution, so the
+            // other Teams' writes still go out in the same flush.
 #pragma warning disable CA1031
             catch (Exception ex)
 #pragma warning restore CA1031

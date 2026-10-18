@@ -6,18 +6,18 @@ namespace Lighthouse.Backend.Models.Forecast
 
     // Composes a delivery's completion distribution from the existing combinators, reimplementing no
     // maths. Separate from Delivery so the grain rule is machine-checkable and the mutation gate has a
-    // target needing no EF graph; Delivery keeps the guards. ADR-113 (Story #5587).
+    // target needing no EF graph; Delivery keeps the guards.
     internal static class DeliveryCompletionForecast
     {
         // Enumerated FROM FeatureWork.Where(RemainingWorkItems > 0), then LEFT JOINed to Forecasts -
-        // never the reverse and never a cartesian product of teams x features (D10 / AC-01.6).
+        // never the reverse and never a cartesian product of teams x features.
         // FeatureWork is the authoritative pair set; Forecasts is a derived, lagging projection of it.
         public static List<DeliveryForecastRow> ContributingRows(List<Feature> features)
         {
             return features.SelectMany(RowsFor).ToList();
         }
 
-        // Null when any contributing pair has no forecast row (C1 / DDD-7): the delivery reports
+        // Null when any contributing pair has no forecast row: the delivery reports
         // "cannot forecast" rather than quietly assuming that team's work is already done.
         public static AggregatedWhenForecast? Build(List<Feature> features)
         {
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Models.Forecast
         }
 
         // The Team?.Id ?? TeamId precedence matches Feature.TeamFor. The whole-feature day-0 sentinel
-        // has both null, so it matches no pair and a null-keyed bucket is unrepresentable (AC-01.8).
+        // has both null, so it matches no pair and a null-keyed bucket is unrepresentable.
         private static WhenForecast? ForecastRowFor(Feature feature, FeatureWork work)
         {
             return feature.Forecasts.FirstOrDefault(forecast => (forecast.Team?.Id ?? forecast.TeamId) == work.TeamId);
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Models.Forecast
 
             // The carrier keeps the runs its Team did not finish as a histogram entry of their own, so
             // it reaches the aggregate across Teams holding every run rather than only the finished ones.
-            return new WhenForecast(ComonotonicCompletionDistribution.Min(contributors.Select(AggregatedWhenForecast.EveryRunOf)))
+            return new WhenForecast(ComonotonicCompletionDistribution.Min(contributors.Select(WhenForecast.EveryRunOf)))
             {
                 NumberOfItems = contributors.Sum(forecast => forecast.NumberOfItems),
                 CreationTime = contributors.Min(forecast => forecast.CreationTime),

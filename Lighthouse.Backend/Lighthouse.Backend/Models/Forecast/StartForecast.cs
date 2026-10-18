@@ -31,8 +31,8 @@ namespace Lighthouse.Backend.Models.Forecast
         }
 
         /// <param name="team">
-        /// Null for the Feature's own start. ADR-111's shape: no single Team owns the Feature-grain
-        /// value, and null is the honest answer rather than a sentinel Team.
+        /// Null for the Feature's own start: no single Team owns the Feature-grain value, and null is
+        /// the honest answer rather than a sentinel Team.
         /// </param>
         public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team) : this(daysWorkBeganOn)
         {

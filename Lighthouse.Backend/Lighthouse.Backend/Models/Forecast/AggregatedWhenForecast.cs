@@ -43,28 +43,6 @@
             ExcludedSummary = summaries.Count == 0 ? null : string.Join("; ", summaries);
         }
 
-        // Later than any day, so the combinators, which read days in ascending order, treat a run that
-        // never finished as finishing after every run that did.
-        internal const int NeverFinished = int.MaxValue;
-
-        /// <summary>
-        /// A forecast's histogram holds only the runs that finished. Combining histograms alone would
-        /// drop the rest and turn a Team that falls short into one that always finishes, so the runs it
-        /// did not finish go in too, on a day later than any other.
-        /// </summary>
-        internal static Dictionary<int, int> EveryRunOf(WhenForecast forecast)
-        {
-            var everyRun = forecast.SimulationResult.ToDictionary(day => day.Key, day => day.Value);
-            var unfinished = forecast.TotalTrials - everyRun.Values.Sum();
-
-            if (unfinished > 0)
-            {
-                everyRun[NeverFinished] = everyRun.GetValueOrDefault(NeverFinished) + unfinished;
-            }
-
-            return everyRun;
-        }
-
         private static Dictionary<int, int> DaysWithoutTrials(IEnumerable<WhenForecast> forecasts)
         {
             return forecasts

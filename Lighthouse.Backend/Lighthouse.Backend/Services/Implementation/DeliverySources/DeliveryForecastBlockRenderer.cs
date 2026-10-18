@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
         /// Every opening line is tried in turn and each is matched only against a closing marker that
         /// comes before the NEXT opening line, so an opening whose own closer was deleted is passed over
         /// rather than paired with a later block's - pairing across two blocks would delete everything
-        /// between them, which is a person's own prose in the one case ADR-179 exists to survive.
+        /// between them, and that is a person's own prose, the very text the block must leave alone.
         ///
         /// Nothing at all is what a description with no whole block has to produce: a range inferred
         /// from half a pair is a guess, and the text it would delete belongs to whoever typed it. A
