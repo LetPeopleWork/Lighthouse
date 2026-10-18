@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Startup;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 using Microsoft.Extensions.Configuration;
 using System.Security.Cryptography;
 
@@ -20,7 +19,6 @@ namespace Lighthouse.Backend.Tests
     public class StartupBannerForecastCoresLineTest
     {
         [Test]
-        [Ignore(PendingEpic6311.Slice01)]
         [Category("contract-shape:pure-function")]
         public void The_banner_says_how_many_of_the_cores_a_forecast_may_use()
         {

@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     /// </summary>
     internal static class PendingEpic6311
     {
-        public const string Slice01 = "Pending: a forecast leaves half the cores free for pages (epic 6311, slice 01).";
-
         public const string Slice02 = "Pending: Stop ends a running forecast and keeps the last one (epic 6311, slice 02).";
 
         public const string Slice03 = "Pending: runs that do not finish count, and every forecast says so (epic 6311, slice 03).";

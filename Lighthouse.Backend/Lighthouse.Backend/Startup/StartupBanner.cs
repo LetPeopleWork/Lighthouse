@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using System.Globalization;
 using System.Runtime.InteropServices;
@@ -18,7 +19,8 @@ namespace Lighthouse.Backend.Startup
         bool KeyCameFromTheRetiredSetting,
         bool AllowsStartWithUnreadableSecrets = false,
         KeySupply? KeySupply = null,
-        bool ThePublishedKeyWasLeftInTheSettingsFile = false);
+        bool ThePublishedKeyWasLeftInTheSettingsFile = false,
+        ForecastSimulationLimits? ForecastLimits = null);
 
     // Said on every start for as long as the old name keeps working, because the only thing that makes it
     // safe to eventually stop reading that name is everyone having moved off it first.
@@ -139,6 +141,7 @@ namespace Lighthouse.Backend.Startup
             info.Add(Line("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
             info.Add(Line("🔢", "Process ID", Environment.ProcessId.ToString(CultureInfo.InvariantCulture)));
             info.Add(Line("💾", "Database", facts.DatabaseProvider));
+            info.Add(ForecastCoresLine(facts.ForecastLimits ?? ForecastSimulationLimits.Default));
 
             if (!string.IsNullOrEmpty(facts.LogFilePath))
             {
@@ -217,6 +220,14 @@ namespace Lighthouse.Backend.Startup
             }
 
             return lines;
+        }
+
+        // Without limits handed in, the line reads ForecastSimulationLimits.Default, which is the very instance
+        // the application registers for its forecasts, so the banner cannot claim a share of the cores that a
+        // forecast does not keep to.
+        private static string ForecastCoresLine(ForecastSimulationLimits limits)
+        {
+            return Line("🧮", "Cores", $"Forecasts use up to {limits.MostRunsAtOnce} of {limits.CoresSeen} cores");
         }
 
         private static string WarningLine(string value)
