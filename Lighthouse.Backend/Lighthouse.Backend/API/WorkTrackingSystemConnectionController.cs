@@ -230,10 +230,17 @@ namespace Lighthouse.Backend.API
 
         private static void ApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
         {
-            save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
-            save.Connection.ParentOverrideForTeams = StoredFieldNamedBy(defaults.ParentOverrideForTeams, save.TeamsParentOverrideDefaultAddedInThisSave);
-            save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
-            save.Connection.ParentOverrideForPortfolios = StoredFieldNamedBy(defaults.ParentOverrideForPortfolios, save.PortfoliosParentOverrideDefaultAddedInThisSave);
+            if (defaults.Sends(ConnectionDefaultSetting.ParentOverrideForTeams))
+            {
+                save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
+                save.Connection.ParentOverrideForTeams = StoredFieldNamedBy(defaults.ParentOverrideForTeams, save.TeamsParentOverrideDefaultAddedInThisSave);
+            }
+
+            if (defaults.Sends(ConnectionDefaultSetting.ParentOverrideForPortfolios))
+            {
+                save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
+                save.Connection.ParentOverrideForPortfolios = StoredFieldNamedBy(defaults.ParentOverrideForPortfolios, save.PortfoliosParentOverrideDefaultAddedInThisSave);
+            }
         }
 
         private static int? StoredFieldNamedBy(int? named, AdditionalFieldDefinition? addedInThisSave)

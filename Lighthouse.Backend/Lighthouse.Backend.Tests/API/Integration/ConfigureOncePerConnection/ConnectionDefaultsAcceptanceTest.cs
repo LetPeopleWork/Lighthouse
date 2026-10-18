@@ -361,6 +361,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 read["name"] = $"{JiraDcPayments} (renamed)";
             }, startUpdates: false);
 
+        /// <summary>
+        /// A page or script that does not know one default renames the connection: it sends the defaults it
+        /// read, without that one.
+        /// </summary>
+        protected Task WhenAnOlderPageSavesTheConnectionWithout(ConnectionDefault theDefault)
+            => SaveTheConnection(read =>
+            {
+                DefaultsOf(read).Remove(TheMember(theDefault));
+                read["name"] = $"{JiraDcPayments} (renamed)";
+            }, startUpdates: false);
+
         protected Task WhenTheAdminRenamesTheConnection()
             => SaveTheConnection(read => read["name"] = $"{JiraDcPayments} (renamed)", startUpdates: false);
 

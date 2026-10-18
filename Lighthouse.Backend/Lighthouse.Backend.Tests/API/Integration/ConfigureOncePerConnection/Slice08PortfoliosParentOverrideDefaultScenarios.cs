@@ -93,5 +93,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That((page.Source, page.Reads), Is.EqualTo(((string?)"Own", (string?)ParentLink)));
             }
         }
+
+        // A tab opened before a default existed, or an older client, sends the defaults it knows. Leaving one
+        // out must not read as clearing it.
+        [TestCase(ConnectionDefault.TeamsParentOverrideField)]
+        [TestCase(ConnectionDefault.PortfoliosParentOverrideField)]
+        [Category("ac-4.1")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_save_that_leaves_one_default_out_keeps_it(ConnectionDefault theDefault)
+        {
+            await GivenTheDefaultIs(theDefault, CausedBy);
+
+            await WhenAnOlderPageSavesTheConnectionWithout(theDefault);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsAccepted();
+                Assert.That(await TheDefaultNamedOnTheConnection(theDefault), Is.EqualTo(CausedBy));
+                Assert.That(TheLogEntriesAboutChangedDefaults(), Is.Empty);
+            }
+        }
+
+        [TestCase(ConnectionDefault.TeamsParentOverrideField)]
+        [TestCase(ConnectionDefault.PortfoliosParentOverrideField)]
+        [Category("ac-4.1")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_default_sent_as_empty_is_cleared(ConnectionDefault theDefault)
+        {
+            await GivenTheDefaultIs(theDefault, CausedBy);
+
+            await WhenTheAdminClearsTheDefault(theDefault);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsAccepted();
+                Assert.That(await TheDefaultNamedOnTheConnection(theDefault), Is.Null);
+                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Count.EqualTo(1));
+            }
+        }
     }
 }

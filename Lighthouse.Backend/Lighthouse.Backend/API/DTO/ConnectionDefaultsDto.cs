@@ -17,9 +17,30 @@ namespace Lighthouse.Backend.API.DTO
             ParentOverrideForPortfolios = connection.ParentOverrideForPortfolios;
         }
 
-        public int? ParentOverrideForTeams { get; set; }
+        // Which members the save actually sent. A member left out keeps what the connection holds, so a tab
+        // opened before a default existed, or an older client, cannot clear it by not knowing it. Only an
+        // explicit null clears a default.
+        private readonly HashSet<ConnectionDefaultSetting> sent = [];
 
-        public int? ParentOverrideForPortfolios { get; set; }
+        public int? ParentOverrideForTeams
+        {
+            get;
+            set => field = Sent(ConnectionDefaultSetting.ParentOverrideForTeams, value);
+        }
+
+        public int? ParentOverrideForPortfolios
+        {
+            get;
+            set => field = Sent(ConnectionDefaultSetting.ParentOverrideForPortfolios, value);
+        }
+
+        public bool Sends(ConnectionDefaultSetting setting) => sent.Contains(setting);
+
+        private int? Sent(ConnectionDefaultSetting setting, int? value)
+        {
+            sent.Add(setting);
+            return value;
+        }
 
         // The defaults this build cannot hold yet. They are caught here rather than dropped, so a save that
         // names one is refused instead of appearing to succeed.
