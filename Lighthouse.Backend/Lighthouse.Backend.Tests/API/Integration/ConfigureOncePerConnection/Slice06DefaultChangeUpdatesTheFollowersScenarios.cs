@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] OnlyTheApprovedLogEntry = [TheApprovedLogEntry];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice06)]
         [Category("ac-5.1")]
         [Category("ac-5.3")]
         [Category("walking_skeleton")]
@@ -75,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice06)]
         [Category("ac-5.3")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
@@ -121,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // A changed default is not a changed field: the page sends startUpdates with no field changed, and that
         // must not start the update of every Team and Portfolio the way a field change does.
         [Test]
-        [Ignore(PendingEpic6303.Slice06)]
         [Category("ac-5.1")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

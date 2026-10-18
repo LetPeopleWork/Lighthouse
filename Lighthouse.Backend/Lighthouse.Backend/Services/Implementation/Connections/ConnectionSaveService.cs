@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Connections
 {
@@ -26,10 +27,12 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             var connection = connectionRepository.GetById(connectionId);
             var handle = connection is null
                 ? null
-                : new ConnectionSaveHandle(connection, FetchFingerprint.ForConnection(connection))
+                : new ConnectionSaveHandle(connection)
                 {
                     TeamsParentOverrideDefaultBeforeSave = TeamsParentOverrideDefaultOf(connection),
                     StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
+                    TeamFetchesBeforeSave = WhatEachTeamFetchesOn(connectionId),
+                    PortfolioFetchesBeforeSave = WhatEachPortfolioFetchesOn(connectionId),
                 };
             return Task.FromResult(handle);
         }
@@ -52,8 +55,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
             await connectionRepository.Save();
             await PointTheDefaultAtTheFieldAddedInThisSave(handle);
-            LogTheChangedDefault(handle);
-            await StartUpdatesIfFetchShapeMoved(handle, startUpdates, cancellationToken);
+            var queued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
+            LogTheChangedDefault(handle, queued);
 
             return Saved;
         }
@@ -132,30 +135,34 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
         }
 
-        private async Task StartUpdatesIfFetchShapeMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
+        private async Task<int> StartUpdatesForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
         {
-            if (!startUpdates || FetchFingerprint.ForConnection(handle.Connection) == handle.FetchShapeBeforeSave)
+            if (!startUpdates)
             {
-                return;
+                return 0;
             }
 
             try
             {
-                var fetchShapeChange = FetchShapeChangeForUsersOf(handle.Connection);
-                if (fetchShapeChange != null)
+                var fetchShapeChange = FetchShapeChangeForTheOwnersWhoseFetchMoved(handle);
+                if (fetchShapeChange == null)
                 {
-                    await domainEventDispatcher.PublishAsync(fetchShapeChange, cancellationToken);
+                    return 0;
                 }
+
+                await domainEventDispatcher.PublishAsync(fetchShapeChange, cancellationToken);
+                return fetchShapeChange.TeamIds.Count + fetchShapeChange.PortfolioIds.Count;
             }
-#pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio still downloads the new fields at its next scheduled update.
+#pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio whose fetch moved still downloads everything at its next scheduled update.
             catch (Exception exception)
 #pragma warning restore CA1031
             {
                 logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", handle.ConnectionId);
+                return 0;
             }
         }
 
-        private void LogTheChangedDefault(ConnectionSaveHandle handle)
+        private void LogTheChangedDefault(ConnectionSaveHandle handle, int queued)
         {
             var connection = handle.Connection;
             var before = handle.TeamsParentOverrideDefaultBeforeSave;
@@ -168,21 +175,13 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             try
             {
                 var followers = TeamsFollowingTheDefaultOf(connection);
-                var previousField = before.FieldName ?? NoField;
-                var newField = after.FieldName ?? NoField;
-
-                if (followers.Count == 0)
-                {
-                    logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; no Team follows it", connection.Name, previousField, newField);
-                }
-                else if (followers.Count == 1)
-                {
-                    logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; 1 Team follows it: {Followers:l}", connection.Name, previousField, newField, followers[0]);
-                }
-                else
-                {
-                    logger.LogInformation("Connection {ConnectionName}: the Teams' default Parent Override Field changed from {PreviousField} to {NewField}; {FollowerCount} Teams follow it: {Followers:l}", connection.Name, previousField, newField, followers.Count, string.Join(", ", followers));
-                }
+                logger.LogInformation(
+                    "Connection {ConnectionName} changed the Teams' Parent Override Field default from {PreviousField} to {NewField}; {Followers:l}; {Queued:l}.",
+                    connection.Name,
+                    before.FieldName ?? NoField,
+                    after.FieldName ?? NoField,
+                    WhoFollows(followers),
+                    HowManyQueued(queued));
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request over its log entry would tell the admin it was not.
             catch (Exception exception)
@@ -203,19 +202,49 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 .OrderBy(team => team.Id)
                 .Select(team => team.Name)];
 
+        private static string WhoFollows(List<string> followers) => followers.Count switch
+        {
+            0 => "no Team follows it",
+            1 => $"1 Team follows it: {followers[0]}",
+            _ => $"{followers.Count} Teams follow it: {string.Join(", ", followers)}",
+        };
+
+        private static string HowManyQueued(int queued) => queued switch
+        {
+            0 => "no update queued",
+            1 => "1 update queued",
+            _ => $"{queued} updates queued",
+        };
+
         // Kept synchronous so the architecture test sees this service build the event: in a Release build an
         // async method's body moves into a struct that the test cannot attribute to its owner.
-        private ConnectionFetchShapeChanged? FetchShapeChangeForUsersOf(WorkTrackingSystemConnection connection)
+        private ConnectionFetchShapeChanged? FetchShapeChangeForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle)
         {
-            var teamIds = teamRepository.GetAllByPredicate(t => t.WorkTrackingSystemConnectionId == connection.Id).Select(t => t.Id).ToList();
-            var portfolioIds = portfolioRepository.GetAllByPredicate(p => p.WorkTrackingSystemConnectionId == connection.Id).Select(p => p.Id).ToList();
+            var teamIds = OwnersWhoseFetchMoved.Between(handle.TeamFetchesBeforeSave, WhatEachTeamFetchesOn(handle.ConnectionId));
+            var portfolioIds = OwnersWhoseFetchMoved.Between(handle.PortfolioFetchesBeforeSave, WhatEachPortfolioFetchesOn(handle.ConnectionId));
 
             if (teamIds.Count == 0 && portfolioIds.Count == 0)
             {
                 return null;
             }
 
-            return new ConnectionFetchShapeChanged(connection.Id, teamIds, portfolioIds);
+            return new ConnectionFetchShapeChanged(handle.ConnectionId, teamIds, portfolioIds);
         }
+
+        // Read untracked, with the connection as it is stored: before the save, the edit this request is making
+        // must not show yet, and after it, what counts is what the database now holds.
+        private Dictionary<int, string> WhatEachTeamFetchesOn(int connectionId)
+            => teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId)
+                .AsNoTracking()
+                .Include(team => team.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
+                .AsEnumerable()
+                .ToDictionary(team => team.Id, team => FetchFingerprint.For(team));
+
+        private Dictionary<int, string> WhatEachPortfolioFetchesOn(int connectionId)
+            => portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId)
+                .AsNoTracking()
+                .Include(portfolio => portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
+                .AsEnumerable()
+                .ToDictionary(portfolio => portfolio.Id, portfolio => FetchFingerprint.For(portfolio));
     }
 }

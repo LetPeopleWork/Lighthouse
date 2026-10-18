@@ -9,10 +9,15 @@ namespace Lighthouse.Backend.Services.Interfaces
         Task<ConnectionSaveOutcome> Commit(ConnectionSaveHandle handle, Guid? concurrencyToken, bool startUpdates, CancellationToken cancellationToken);
     }
 
-    // The caller edits Connection between Open and Commit; FetchShapeBeforeSave is how it fetched when it was opened.
-    public sealed record ConnectionSaveHandle(WorkTrackingSystemConnection Connection, string FetchShapeBeforeSave)
+    // The caller edits Connection between Open and Commit.
+    public sealed record ConnectionSaveHandle(WorkTrackingSystemConnection Connection)
     {
         public int ConnectionId => Connection.Id;
+
+        // What each Team and each Portfolio on the connection asked the tracker for when the save was opened, by id.
+        public IReadOnlyDictionary<int, string> TeamFetchesBeforeSave { get; init; } = new Dictionary<int, string>();
+
+        public IReadOnlyDictionary<int, string> PortfolioFetchesBeforeSave { get; init; } = new Dictionary<int, string>();
 
         // Kept by name as well as id, because the save may rename or remove the field it named.
         public NamedField TeamsParentOverrideDefaultBeforeSave { get; init; } = NamedField.Nothing;
