@@ -8,9 +8,10 @@ import {
 } from "../../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
+import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
-import FormSelectField from "../../FormSelectField/FormSelectField";
+import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
 import InputGroup from "../../InputGroup/InputGroup";
 import ItemListManager from "../../ItemListManager/ItemListManager";
 
@@ -21,12 +22,14 @@ interface FeatureSizeComponentProps {
 		value: string | number | boolean | string[] | null,
 	) => void;
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
+	connection?: IWorkTrackingSystemConnection | null;
 }
 
 const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 	projectSettings,
 	onProjectSettingsChange,
 	additionalFieldDefinitions = [],
+	connection,
 }) => {
 	const [statesSuggestions, setStatesSuggestions] = useState<string[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -175,19 +178,25 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 			)}
 
 			<Grid size={{ xs: 12 }}>
-				<FormSelectField
+				<ConnectionDefaultFieldSelect
 					label="Size Estimate Field"
-					value={projectSettings?.sizeEstimateAdditionalFieldDefinitionId ?? ""}
-					onChange={(value) => {
+					settings={projectSettings}
+					connection={connection}
+					theDefault="sizeEstimateFieldForPortfolios"
+					defaultNameTheSettingsCarry={projectSettings?.sizeEstimateDefaultName}
+					source={projectSettings?.sizeEstimateSource}
+					ownField={projectSettings?.sizeEstimateAdditionalFieldDefinitionId}
+					additionalFieldDefinitions={additionalFieldDefinitions}
+					onFollow={() =>
+						onProjectSettingsChange("sizeEstimateSource", "ConnectionDefault")
+					}
+					onOwn={(field) => {
+						onProjectSettingsChange("sizeEstimateSource", "Own");
 						onProjectSettingsChange(
 							"sizeEstimateAdditionalFieldDefinitionId",
-							value,
+							field,
 						);
 					}}
-					options={additionalFieldDefinitions.map((field) => ({
-						id: field.id,
-						label: field.displayName,
-					}))}
 				/>
 			</Grid>
 

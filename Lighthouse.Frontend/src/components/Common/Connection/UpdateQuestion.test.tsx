@@ -20,6 +20,7 @@ const TheDefaultWords = {
 	teams: "Teams",
 	portfolio: "Portfolio",
 	portfolios: "Portfolios",
+	features: "Features",
 };
 
 const SquadsAndPrograms = {
@@ -34,6 +35,9 @@ const UntilUpdated =
 
 const UntilDependenciesUpdated =
 	"Their dependencies change only once they have been updated. Save only: they change at their next scheduled update.";
+
+const UntilSizesUpdated =
+	"Their Features' sizes change only once they have been updated. Save only: they change at their next scheduled update.";
 
 const UntilWhatTheyReadUpdated =
 	"What they read changes only once they have been updated. Save only: they change at their next scheduled update.";
@@ -89,6 +93,32 @@ describe("UpdateQuestion", () => {
 				why: theDefaultsChanged(0, 2, ["Dependency Field"], ["dependencies"]),
 				title: "Update 0 Teams and 2 Portfolios?",
 				says: `2 Portfolios follow the Dependency Field default. ${UntilDependenciesUpdated}`,
+			},
+			{
+				case: "the Size Estimate Field default",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(0, 2, ["Size Estimate Field"], ["sizes"]),
+				title: "Update 0 Teams and 2 Portfolios?",
+				says: `2 Portfolios follow the Size Estimate Field default. ${UntilSizesUpdated}`,
+			},
+			{
+				case: "the Size Estimate Field default, with renamed Features",
+				terms: { ...SquadsAndPrograms, features: "Epics" },
+				why: theDefaultsChanged(0, 1, ["Size Estimate Field"], ["sizes"]),
+				title: "Update 0 Squads and 1 Program?",
+				says: `1 Program follows the Size Estimate Field default. Their Epics' sizes change only once they have been updated. Save only: they change at their next scheduled update.`,
+			},
+			{
+				case: "the Size Estimate Field and the Dependency Field defaults",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(
+					0,
+					3,
+					["Dependency Field", "Size Estimate Field"],
+					["dependencies", "sizes"],
+				),
+				title: "Update 0 Teams and 3 Portfolios?",
+				says: `3 Portfolios follow the Dependency Field and Size Estimate Field defaults. ${UntilWhatTheyReadUpdated}`,
 			},
 			{
 				case: "two defaults",

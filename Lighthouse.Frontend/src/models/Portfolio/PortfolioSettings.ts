@@ -13,6 +13,8 @@ export interface IPortfolioSettings extends IBaseSettings {
 	defaultWorkItemPercentile: number;
 	percentileHistoryInDays: number;
 	sizeEstimateAdditionalFieldDefinitionId: number | null;
+	sizeEstimateSource?: SettingSource;
+	sizeEstimateDefaultName?: string | null;
 	featureOwnerAdditionalFieldDefinitionId: number | null;
 	dependencyOverrideAdditionalFieldDefinitionId: number | null;
 	dependencyFieldSource?: SettingSource;

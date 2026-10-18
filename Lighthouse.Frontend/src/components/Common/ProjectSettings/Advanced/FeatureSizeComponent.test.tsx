@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
+import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -9,6 +10,12 @@ import {
 } from "../../../../tests/MockApiServiceProvider";
 import { createMockProjectSettings } from "../../../../tests/TestDataProvider";
 import FeatureSizeComponent from "./FeatureSizeComponent";
+
+const openTheSizeEstimateFieldList = () => {
+	fireEvent.mouseDown(screen.getByRole("combobox"));
+
+	return within(screen.getByRole("listbox"));
+};
 
 describe("FeatureSizeComponent", () => {
 	const mockAdditionalFields: IAdditionalFieldDefinition[] = [
@@ -150,6 +157,151 @@ describe("FeatureSizeComponent", () => {
 			"sizeEstimateAdditionalFieldDefinitionId",
 			null,
 		);
+	});
+
+	describe("on a tracker whose connection holds the Size Estimate Field default", () => {
+		const onJira = (settings: Partial<IPortfolioSettings>) => {
+			render(
+				<FeatureSizeComponent
+					projectSettings={{
+						...initialSettings,
+						workTrackingSystem: "Jira",
+						...settings,
+					}}
+					onProjectSettingsChange={mockOnProjectSettingsChange}
+					additionalFieldDefinitions={mockAdditionalFields}
+				/>,
+			);
+			fireEvent.click(screen.getByLabelText("toggle"));
+		};
+
+		it("a follower shows the connection default first, with where it is set", () => {
+			onJira({
+				sizeEstimateSource: "ConnectionDefault",
+				sizeEstimateDefaultName: "Story Points",
+			});
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (Story Points)",
+			);
+			expect(
+				screen.getByText("Set on the Jira connection."),
+			).toBeInTheDocument();
+			const entries = openTheSizeEstimateFieldList().getAllByRole("option");
+			expect(entries.map((entry) => entry.textContent)).toEqual([
+				"Connection default (Story Points)",
+				"None",
+				"Size Estimate",
+				"Story Points",
+			]);
+		});
+
+		it("a follower whose default names nothing still sees the entry", () => {
+			onJira({
+				sizeEstimateSource: "ConnectionDefault",
+				sizeEstimateDefaultName: null,
+			});
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (None)",
+			);
+		});
+
+		it("picking a field makes the Portfolio own the setting", () => {
+			onJira({
+				sizeEstimateSource: "ConnectionDefault",
+				sizeEstimateDefaultName: "Story Points",
+			});
+
+			fireEvent.click(
+				openTheSizeEstimateFieldList().getByText("Size Estimate"),
+			);
+
+			expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+				"sizeEstimateSource",
+				"Own",
+			);
+			expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+				"sizeEstimateAdditionalFieldDefinitionId",
+				1,
+			);
+		});
+
+		it("an owner picks the entry to follow the connection again", () => {
+			onJira({
+				sizeEstimateSource: "Own",
+				sizeEstimateAdditionalFieldDefinitionId: 1,
+				sizeEstimateDefaultName: "Story Points",
+			});
+
+			fireEvent.click(
+				openTheSizeEstimateFieldList().getByText(
+					"Connection default (Story Points)",
+				),
+			);
+
+			expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+				"sizeEstimateSource",
+				"ConnectionDefault",
+			);
+			expect(mockOnProjectSettingsChange).not.toHaveBeenCalledWith(
+				"sizeEstimateAdditionalFieldDefinitionId",
+				expect.anything(),
+			);
+		});
+
+		it("names the default of the connection chosen on the page, once another is chosen", () => {
+			render(
+				<FeatureSizeComponent
+					projectSettings={{
+						...initialSettings,
+						workTrackingSystem: "Jira",
+						workTrackingSystemConnectionId: 1,
+						sizeEstimateSource: "ConnectionDefault",
+						sizeEstimateDefaultName: "Story Points",
+					}}
+					onProjectSettingsChange={mockOnProjectSettingsChange}
+					additionalFieldDefinitions={mockAdditionalFields}
+					connection={
+						new WorkTrackingSystemConnection({
+							id: 2,
+							name: "Azure DevOps Payments",
+							workTrackingSystem: "AzureDevOps",
+							options: [],
+							additionalFieldDefinitions: mockAdditionalFields,
+							defaults: { sizeEstimateFieldForPortfolios: 1 },
+						})
+					}
+				/>,
+			);
+			fireEvent.click(screen.getByLabelText("toggle"));
+
+			expect(screen.getByRole("combobox")).toHaveTextContent(
+				"Connection default (Size Estimate)",
+			);
+			expect(
+				screen.getByText("Set on the Azure DevOps connection."),
+			).toBeInTheDocument();
+		});
+	});
+
+	it("offers no connection default on a tracker whose connection holds none", () => {
+		render(
+			<FeatureSizeComponent
+				projectSettings={{
+					...initialSettings,
+					workTrackingSystem: "Csv",
+					sizeEstimateSource: "ConnectionDefault",
+				}}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			openTheSizeEstimateFieldList().queryByText(/^Connection default/),
+		).not.toBeInTheDocument();
 	});
 
 	it("toggles the usePercentileToCalculateDefaultAmountOfWorkItems switch", () => {
