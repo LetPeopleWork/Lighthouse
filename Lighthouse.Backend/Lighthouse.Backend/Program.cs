@@ -1449,7 +1449,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ILicenseService, LicenseService>();
             builder.Services.AddScoped<IRefreshLogService, RefreshLogService>();
             builder.Services.AddScoped<IConnectionSaveService, Lighthouse.Backend.Services.Implementation.Connections.ConnectionSaveService>();
-            builder.Services.AddScoped<Lighthouse.Backend.API.Helpers.ParentOverrideRefusals>();
+            builder.Services.AddScoped<Lighthouse.Backend.API.Helpers.OwnerSettingRefusals>();
             builder.Services.AddScoped<ILicenseVerifier, LicenseVerifier>();
             builder.Services.AddScoped<IDemoDataService, DemoDataService>();
             builder.Services.AddScoped<IDeliveryRuleService, DeliveryRuleService>();

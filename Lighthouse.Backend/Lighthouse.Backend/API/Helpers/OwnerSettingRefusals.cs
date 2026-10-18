@@ -6,39 +6,27 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API.Helpers
 {
-    /// <summary>How a refusal names the kind of owner whose Parent Override it refuses.</summary>
-    public sealed record ParentOverrideOwnerKind(string Code)
+    /// <summary>How a refusal names the kind of owner whose setting it refuses.</summary>
+    public sealed record SettingsOwnerKind(string Code)
     {
-        public static readonly ParentOverrideOwnerKind Team = new("team");
+        public static readonly SettingsOwnerKind Team = new("team");
 
-        public static readonly ParentOverrideOwnerKind Portfolio = new("portfolio");
+        public static readonly SettingsOwnerKind Portfolio = new("portfolio");
 
         public string NounIn(OwnerTerms terms) => this == Team ? terms.Team : terms.Portfolio;
     }
 
     /// <summary>
-    /// The refusals a Team's or Portfolio's Parent Override, and a Portfolio's Dependency Field, can earn, whether
-    /// the save creates the owner or changes it.
+    /// The refusals a Team's or Portfolio's settings that can follow a connection default can earn, whether the
+    /// save creates the owner or changes it.
     /// </summary>
-    public class ParentOverrideRefusals(IRepository<WorkTrackingSystemConnection> connectionRepository, ITerminologyService terminologyService)
+    public class OwnerSettingRefusals(IRepository<WorkTrackingSystemConnection> connectionRepository, ITerminologyService terminologyService)
     {
         private const string NothingWasSaved = "Nothing was saved.";
 
-        public ObjectResult? RefusalOf(ControllerBase controller, ParentOverrideOwnerKind kind, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
+        public ObjectResult? RefusalOf(ControllerBase controller, SettingsOwnerKind kind, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
         {
-            // What each owner would hold is worked out only once every sent source is known, since reading a
-            // setting under a source this version does not know has no answer.
-            var sourced = new List<SourcedSetting>
-            {
-                new("Parent Override Field", setting.ParentOverrideSource,
-                    () => owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, setting.ParentOverrideAdditionalFieldDefinitionId)),
-            };
-
-            if (setting is PortfolioSettingDto portfolioSetting)
-            {
-                sourced.Add(new("Dependency Field", portfolioSetting.DependencyFieldSource,
-                    () => (owner as Portfolio)?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)));
-            }
+            var sourced = SourcedSettingsSentFor(owner, setting);
 
             if (sourced.Find(each => each.Source is { } source && !Enum.IsDefined(source)) is { } unknown)
             {
@@ -63,7 +51,27 @@ namespace Lighthouse.Backend.API.Helpers
 
         private sealed record SourcedSetting(string Setting, SettingSource? Source, Func<int?> FieldOwnedOnceTaken);
 
-        private string NounFor(ParentOverrideOwnerKind kind) => kind.NounIn(OwnerTerms.From(terminologyService.GetAll()));
+        // What each owner would hold is worked out only once every sent source is known, since reading a
+        // setting under a source this version does not know has no answer.
+        private static List<SourcedSetting> SourcedSettingsSentFor(WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
+        {
+            var sourced = new List<SourcedSetting>
+            {
+                new("Parent Override Field", setting.ParentOverrideSource,
+                    () => owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, setting.ParentOverrideAdditionalFieldDefinitionId)),
+            };
+
+            if (setting is PortfolioSettingDto portfolioSetting)
+            {
+                var portfolio = owner as Portfolio;
+                sourced.Add(new("Dependency Field", portfolioSetting.DependencyFieldSource,
+                    () => portfolio?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)));
+            }
+
+            return sourced;
+        }
+
+        private string NounFor(SettingsOwnerKind kind) => kind.NounIn(OwnerTerms.From(terminologyService.GetAll()));
 
         // Only a field the owner will hold as its own is judged. One sent along with following is not what the
         // owner reads, such as the old default's field in a copy read before the default moved. It is judged

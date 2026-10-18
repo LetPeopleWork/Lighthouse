@@ -415,7 +415,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationServiceMock.Object,
                 FeatureOrderingTestHelper.FollowingTheTracker(),
                 TestToday.Clock,
-                new ParentOverrideRefusals(workTrackingSystemConnectionRepoMock.Object, terminologyServiceMock.Object)
+                new OwnerSettingRefusals(workTrackingSystemConnectionRepoMock.Object, terminologyServiceMock.Object)
             );
         }
 

@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.API
         IBlockedItemService blockedItemService,
         ILicenseService licenseService,
         ILighthouseClock clock,
-        ParentOverrideRefusals parentOverrideRefusals)
+        OwnerSettingRefusals ownerSettingRefusals)
         : ControllerBase
     {
         internal const int MinStalenessThresholdDays = 0;
@@ -230,9 +230,9 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stalenessError);
             }
 
-            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Team, storedTeam, teamSetting) is { } parentOverrideRefusal)
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Team, storedTeam, teamSetting) is { } settingRefusal)
             {
-                return parentOverrideRefusal;
+                return settingRefusal;
             }
 
             var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);

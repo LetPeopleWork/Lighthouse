@@ -639,7 +639,7 @@ namespace Lighthouse.Backend.Tests.API
                 blockedItemServiceMock.Object,
                 updateQueueServiceMock.Object,
                 TestToday.Clock,
-                new ParentOverrideRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object)
+                new OwnerSettingRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object)
             );
         }
 

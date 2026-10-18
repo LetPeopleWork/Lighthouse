@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.API
         IRbacAdministrationService rbacAdministrationService,
         IFeatureOrdering featureOrdering,
         ILighthouseClock clock,
-        ParentOverrideRefusals parentOverrideRefusals)
+        OwnerSettingRefusals ownerSettingRefusals)
         : ControllerBase
 #pragma warning restore S107
     {
@@ -104,9 +104,9 @@ namespace Lighthouse.Backend.API
                 newPortfolio.WorkTrackingSystemConnection = connection;
             }
 
-            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } parentOverrideRefusal)
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } settingRefusal)
             {
-                return parentOverrideRefusal;
+                return settingRefusal;
             }
 
             newPortfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);

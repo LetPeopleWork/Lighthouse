@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API
         IBlockedItemService blockedItemService,
         IUpdateQueueService updateQueueService,
         ILighthouseClock clock,
-        ParentOverrideRefusals parentOverrideRefusals)
+        OwnerSettingRefusals ownerSettingRefusals)
         : ControllerBase
 #pragma warning restore S107
     {
@@ -133,9 +133,9 @@ namespace Lighthouse.Backend.API
                 }
             }
 
-            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Portfolio, portfolioForValidation, portfolioSetting) is { } parentOverrideRefusal)
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Portfolio, portfolioForValidation, portfolioSetting) is { } settingRefusal)
             {
-                return parentOverrideRefusal;
+                return settingRefusal;
             }
 
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>

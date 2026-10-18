@@ -654,7 +654,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
                 new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
-                new ParentOverrideRefusals(workTrackingSystemConnectionRepositoryMock.Object, terminologyServiceMock.Object));
+                new OwnerSettingRefusals(workTrackingSystemConnectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }
 }

@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService,
         ILighthouseClock clock,
-        ParentOverrideRefusals parentOverrideRefusals)
+        OwnerSettingRefusals ownerSettingRefusals)
         : ControllerBase
     {
         [HttpGet]
@@ -129,9 +129,9 @@ namespace Lighthouse.Backend.API
                 newTeam.WorkTrackingSystemConnection = connection;
             }
 
-            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Team, newTeam, teamSetting) is { } parentOverrideRefusal)
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Team, newTeam, teamSetting) is { } settingRefusal)
             {
-                return parentOverrideRefusal;
+                return settingRefusal;
             }
 
             newTeam.SyncTeamWithTeamSettings(teamSetting);

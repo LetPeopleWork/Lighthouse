@@ -1243,7 +1243,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new ParentOverrideRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new OwnerSettingRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }
 }
