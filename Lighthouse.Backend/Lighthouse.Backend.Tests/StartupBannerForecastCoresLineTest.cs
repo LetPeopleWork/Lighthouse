@@ -1,7 +1,10 @@
 using Lighthouse.Backend.Models.Encryption;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Startup;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using System.Security.Cryptography;
 
 namespace Lighthouse.Backend.Tests
@@ -9,7 +12,9 @@ namespace Lighthouse.Backend.Tests
     /// <summary>
     /// The startup banner says how many cores a forecast may use, so an operator reading the log of a
     /// container capped to four CPUs can see that forecasts will take two of them. The numbers are the ones
-    /// the instance itself resolved, which on this machine are its own core count and half of it.
+    /// the instance itself resolved: the core count this machine reports, and the share the forecast limits
+    /// the application registers allow. How that share follows from the cores is pinned, core count by core
+    /// count, next to the forecast itself.
     /// </summary>
     [TestFixture]
     [Category("epic-6311-responsive-during-updates")]
@@ -23,7 +28,7 @@ namespace Lighthouse.Backend.Tests
         public void The_banner_says_how_many_of_the_cores_a_forecast_may_use()
         {
             var cores = Environment.ProcessorCount;
-            var forecastsMayUse = Math.Max(1, cores / 2);
+            var forecastsMayUse = ForecastSimulationLimits.Default.MostRunsAtOnce;
 
             var lines = StartupBanner.BuildInfoLines(new StartupBannerFacts(
                 "1.2.3.4",
@@ -35,12 +40,23 @@ namespace Lighthouse.Backend.Tests
                 new KeyStoreLocation("/app/Data/keys", KeyStoreCase.ExplicitKeyStorePath),
                 false));
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(lines, Is.Not.Empty);
-                Assert.That(lines, Has.Some.Contains($"Forecasts use up to {forecastsMayUse} of {cores} cores"),
-                    "The banner does not say how many cores a forecast may use. It said: " + string.Join(" | ", lines));
-            }
+            Assert.That(lines, Has.Some.Contains($"Forecasts use up to {forecastsMayUse} of {cores} cores"),
+                "The banner does not say how many cores a forecast may use. It said: " + string.Join(" | ", lines));
+        }
+
+        /// <summary>
+        /// The banner reads the shared default limits rather than asking the container, so it is only truthful
+        /// while the application registers that very instance for its forecasts.
+        /// </summary>
+        [Test]
+        public void The_limits_the_banner_reads_are_the_ones_the_application_forecasts_with()
+        {
+            using var factory = new TestWebApplicationFactory<Program>();
+
+            var registered = factory.Services.GetRequiredService<ForecastSimulationLimits>();
+
+            Assert.That(registered, Is.SameAs(ForecastSimulationLimits.Default),
+                "The application forecasts with other limits than the ones the startup banner reports.");
         }
     }
 }

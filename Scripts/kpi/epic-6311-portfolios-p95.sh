@@ -7,7 +7,7 @@
 #
 # Usage: epic-6311-portfolios-p95.sh [base-url]        (default http://localhost:5169)
 # An instance with authentication on needs a header, passed through the environment so that it never
-# appears in the shell history or in this script's output, for example
+# appears in the process list or in this script's output, for example
 #   LIGHTHOUSE_AUTH_HEADER="Authorization: Bearer <token>" epic-6311-portfolios-p95.sh https://lighthouse.example
 set -euo pipefail
 
@@ -18,11 +18,12 @@ time_one_request() {
   local url="$1"
   local curl_args=(--silent --show-error --output /dev/null --write-out '%{http_code} %{time_total}')
   if [[ -n "${LIGHTHOUSE_AUTH_HEADER:-}" ]]; then
-    curl_args+=(--header "${LIGHTHOUSE_AUTH_HEADER}")
+    # curl reads the header from its standard input, so the token never shows up in the process list.
+    curl_args+=(--header @-)
   fi
 
   local answer
-  if ! answer="$(curl "${curl_args[@]}" "${url}")"; then
+  if ! answer="$(curl "${curl_args[@]}" "${url}" <<< "${LIGHTHOUSE_AUTH_HEADER:-}")"; then
     echo "error: could not reach ${url}" >&2
     return 1
   fi

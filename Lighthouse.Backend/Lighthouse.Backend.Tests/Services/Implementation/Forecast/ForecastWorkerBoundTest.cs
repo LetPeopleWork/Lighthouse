@@ -35,8 +35,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly int[] TheFourPercentiles = [50, 70, 85, 95];
 
-        private static readonly int[] CoresAnInstanceIsGiven = [1, 2, 3, 4, 5, 8, 16, 32, 64];
-
         private int threadsThePoolKeptReady;
 
         private int ioThreadsThePoolKeptReady;
@@ -57,27 +55,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         /// <summary>
-        /// The bound for every core count an instance plausibly reports, as a table of examples: half, rounded
+        /// The bound for the core counts an instance plausibly reports, as a table of examples: half, rounded
         /// down, and at least one, so a one-core host still forecasts. What a forecast actually does with it is
         /// the next scenario.
         /// </summary>
-        [Test]
         [Category("ac-01.2")]
         [Category("ac-01.3")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
-        public void The_runs_allowed_at_once_are_half_the_cores_and_never_fewer_than_one()
+        [TestCase(1, 1)]
+        [TestCase(2, 1)]
+        [TestCase(3, 1)]
+        [TestCase(4, 2)]
+        [TestCase(5, 2)]
+        [TestCase(8, 4)]
+        [TestCase(16, 8)]
+        [TestCase(31, 15)]
+        [TestCase(32, 16)]
+        [TestCase(64, 32)]
+        public void The_runs_allowed_at_once_are_half_the_cores_and_never_fewer_than_one(int cores, int runsAtOnce)
         {
-            using (Assert.EnterMultipleScope())
-            {
-                foreach (var cores in CoresAnInstanceIsGiven)
-                {
-                    var limits = OnePortfolioForecast.Limits(Trials, 100, cores);
+            var limits = OnePortfolioForecast.Limits(Trials, 100, cores);
 
-                    Assert.That(limits.MostRunsAtOnce, Is.EqualTo(Math.Max(1, cores / 2)),
-                        $"An instance given {cores} cores.");
-                }
-            }
+            Assert.That(limits.MostRunsAtOnce, Is.EqualTo(runsAtOnce), $"An instance given {cores} cores.");
         }
 
         /// <summary>
