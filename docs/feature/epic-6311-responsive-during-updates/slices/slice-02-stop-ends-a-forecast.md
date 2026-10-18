@@ -32,8 +32,9 @@ the check has to move inside a run (a day-loop checkpoint), and slice 04's horiz
 
 AC-02.1 to AC-02.7. Key: **AC-02.1** (no run starts after the cancel is seen, counted by an instrumented
 draw stream), **AC-02.3** (persisted forecasts unchanged), **AC-02.4** (no forecast write staged; the round's
-other writes still flush), **AC-02.7 (production data)** click-to-`Cancelled` on the slowest Portfolio of the
-restored dev instance, recorded as KPI-2.
+other writes still flush), **AC-02.7 (production data, manual gate)** click-to-`Cancelled` on the slowest
+Portfolio of the restored dev instance; pass when each of 3 tries takes 5 s or less and the Features' dates
+are unchanged (KPI-2).
 
 ## Dependencies
 

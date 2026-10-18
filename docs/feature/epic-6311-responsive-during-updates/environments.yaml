@@ -3,8 +3,9 @@
 #
 # Application change inside the existing product: no migration, no configuration key, no chart or image change,
 # no new dependency. One more Redis pub/sub channel (cancel-all) on the existing connection, used only when
-# ConnectionStrings:Redis is set. Slice 01 is expected to edit Program.cs (the startup banner fact), which puts
-# that push on the full Integration suite. The axes that matter are cores, replicas and client version.
+# ConnectionStrings:Redis is set (a proof of concept nobody is known to run, NMD-15). No slice needs to edit
+# Program.cs: the startup banner reads ForecastSimulationLimits.Default itself. If one must, that push runs the full
+# Integration suite; budget one flake re-run. The axes that matter are cores, replicas and client version.
 
 target_environments:
   - name: clean
@@ -16,10 +17,16 @@ target_environments:
     description: >
       The dev instance restored from the production backup (Restore-DbBackup.ps1), run in Docker with --cpus=4.
       Where KPI-1, KPI-2 and KPI-3 are read and the production-data ACs run (AC-01.5, AC-02.7, AC-03.8, AC-04.4).
+      KPI-1 is read a second time at --cpus=2, same p95 threshold.
     platform: [docker]
     preconditions:
-      - "KPI-3 baseline (RefreshLog.DurationMs of the slowest Portfolio forecast) taken before slice 01 lands"
-      - "Startup banner reads 'Forecasts use up to 2 of 4 cores' after slice 01"
+      - "HARD slice-01 entry: KPI-3 baseline read before slice 01 changes anything (query in feature-delta.md, DEVOPS / Slice 01 entry and finalize). baseline: TO BE READ before slice 01"
+      - "Startup banner reads 'Forecasts use up to 2 of 4 cores' (1 of 2 at --cpus=2) after slice 01"
+
+  - name: helm-no-cpu-limit
+    description: "Helm chart pod with no CPU limit: half the node's cores. Unmeasured; no KPI reading is taken here."
+    platform: [kubernetes]
+    preconditions: []
 
   - name: multi-replica-redis
     description: >
@@ -36,12 +43,13 @@ notes:
       Worker bound = max(1, floor(cores / 2)) from Environment.ProcessorCount, which honours the container CPU quota
       and rounds up (--cpus=1.5 -> 2 -> 1 worker). The Helm chart sets requests.cpu 100m and no CPU limit, so a pod
       uses half the node's cores. DOTNET_PROCESSOR_COUNT overrides the count without a Lighthouse key. Tests inject the
-      core count; never assert a wall clock.
+      core count; never assert a wall clock. 1-2-core Standalone desktop hosts get 1 worker: accepted, not optimised.
   rolling_upgrade:
     values: [old-replica, new-replica]
     why: >
       An old replica ignores the cancel-all channel, so its running work goes on during the overlap; per-row Stop keeps
-      its unchanged channel and still reaches it. No test spans two binaries.
+      its unchanged channel and still reaches it. An old replica shows today's date for a beyond percentile until the
+      next forecast run (NMD-16). No test spans two binaries.
   client_version:
     values: [released-lh-mcp, upgraded-lh-mcp, web-app]
     why: >
@@ -58,5 +66,6 @@ notes:
 
 deployment_assumptions:
   - "Rollback is the previous release: no migration, an additive wire change, and a new endpoint that just goes away."
-  - "Rows written with TotalTrials > sum of the histogram read through the old -1 path on the old binary until its next forecast run rewrites them."
-  - "Nothing owed at deploy time: no flag, no configuration, no chart change, no runbook entry."
+  - "Not clean for forecasts (NMD-16): the old binary shows today's date (a guessed date) for a beyond percentile until that Portfolio's next forecast run rewrites it."
+  - "After a rollback: run a forecast update for every Portfolio (in the release and rollback notes). KPI-4 holds again once every Portfolio has a forecast row newer than the rollback."
+  - "Nothing owed at deploy time: no flag, no configuration, no chart change."

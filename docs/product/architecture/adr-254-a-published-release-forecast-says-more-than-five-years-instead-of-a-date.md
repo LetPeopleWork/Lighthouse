@@ -14,12 +14,12 @@ line and the "Target" line, not on the percentile lines.
 
 ## Decision
 
-A percentile beyond the horizon is written as "85%: more than 5 years", with the years from the same constant
+A percentile beyond the horizon is written as "85%: More than 5 years" (the web's wording, NMD-9), with the years from the same constant
 (ADR-251). Percentiles inside the horizon keep their date. The block is still published when every percentile is beyond.
 
 ## Alternatives considered
 
-- **Write the stand-in date** (today + horizon): a real-looking date nobody forecast, in a place stakeholders read.
+- **Write the stand-in date** (`today.AddYears(horizonYears)`): a real-looking date nobody forecast, in a place stakeholders read.
 - **Drop the line**: a Delivery with every percentile beyond would publish nothing (the block must carry at least one
   percentile), leaving the last block standing as if current.
 - **Write nothing for the whole block** (as for "no forecast"): hides a true answer.

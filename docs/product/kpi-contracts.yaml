@@ -2395,21 +2395,24 @@ outcomes:
   - id: OUT-6311-pages-answer-during-a-forecast
     feature: epic-6311-responsive-during-updates
     title: Pages keep answering while the slowest Portfolio forecast runs (KPI-1)
-    target: "p95 of 20 GET /api/latest/portfolios < 1 s while the slowest Portfolio forecast runs, Docker capped to 4 CPUs"
+    target: "p95 of 20 GET /api/latest/portfolios < 1 s while the slowest Portfolio forecast runs, Docker capped to 4 CPUs and again to 2 CPUs"
     ga_baseline: "pages hang (incident report)"
     measurement_scope: vendor_demo_only
     measured_by: >
-      A script of 20 timed GET /api/latest/portfolios against the dev instance restored from the production backup
-      (Restore-DbBackup.ps1), run in Docker with --cpus=4, while the slowest Portfolio forecast runs. The startup banner
-      line "Forecasts use up to N of M cores" must read 2 of 4, which proves the setup.
+      Script Scripts/kpi/epic-6311-portfolios-p95.sh (planned, committed with slice 01): 20 timed
+      GET /api/latest/portfolios against the dev instance restored from the production backup (Restore-DbBackup.ps1),
+      run in Docker while the slowest Portfolio forecast runs, once at --cpus=4 (banner "2 of 4") and once at --cpus=2
+      (banner "1 of 2"), same threshold. The Helm topology (no CPU limit, half the node) is unmeasured.
     log_fields:
       startup_banner: ["Forecasts use up to {N} of {M} cores"]
-    measurement_window: once after slice 01 (AC-01.5)
-    gate: soft
+    measurement_window: once after slice 01 (AC-01.5), two readings
+    gate: soft   # one-off reading; no runtime alert
     alerting:
       - condition: "p95 >= 1 s"
         action: "manual: move the simulation to dedicated threads (ADR-248 fallback) before slice 02"
-    acceptance_scenarios: []   # DISTILL fills
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice01PagesKeepAnsweringScenarios.cs
+        scenario: "The_Portfolios_list_answers_while_a_Portfolio_forecast_is_held_part_way_through (leading indicator; the p95 reading is AC-01.5)"
     status: designed-not-shipped
 
   - id: OUT-6311-stop-ends-a-forecast
@@ -2419,34 +2422,42 @@ outcomes:
     ga_baseline: "> 10 min Stopping..., then a container restart (incident report)"
     measurement_scope: vendor_demo_only
     measured_by: >
-      Click time against the end of the cancelled update's RefreshLog row (start + DurationMs, outcome Cancelled) and
-      its log line, on the restored dev instance, slowest Portfolio, 3 tries. Never asserted as a wall clock in CI;
-      CI holds the forecast open and counts runs instead.
+      Click time against the cancelled update's RefreshLog row (Cancelled = true; ExecutedAt is written when the
+      update ends) and its log line, on the restored dev instance, slowest Portfolio, 3 tries. Never asserted as a wall
+      clock in CI; CI holds the forecast open and counts runs instead.
     log_fields:
-      refresh_log_row: ["Outcome = Cancelled", "DurationMs"]
+      refresh_log_row: ["Cancelled (bool)", "ExecutedAt", "DurationMs"]
     measurement_window: once after slice 02 (AC-02.7)
-    gate: soft
+    gate: soft   # one-off reading; no runtime alert
     alerting:
       - condition: "any try > 5 s"
         action: "manual: add a checkpoint inside a run (ADR-249 fallback)"
-    acceptance_scenarios: []   # DISTILL fills
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice02StopEndsAForecastScenarios.cs
+        scenario: "A_stopped_forecast_starts_no_further_run_and_its_row_ends_as_cancelled (leading indicator; the 5 s reading is AC-02.7)"
     status: designed-not-shipped
 
   - id: OUT-6311-slowest-forecast-faster
     feature: epic-6311-responsive-during-updates
     title: The slowest Portfolio forecast takes at least half as long (KPI-3)
     target: ">= 50% lower RefreshLog.DurationMs for the slowest Portfolio forecast, same database, before slice 01 vs after slice 04"
-    ga_baseline: "measured on the restored dev instance before slice 01 lands"
+    ga_baseline: "baseline: TO BE READ before slice 01 (Portfolio: ..., DurationMs: ..., read on: YYYY-MM-DD)"
+    baseline_entry_criterion: >
+      HARD entry criterion of slice 01: nothing in slice 01 changes until this baseline is recorded. On the restored
+      dev instance, Docker --cpus=4, on the release before slice 01, run a forecast update for every Portfolio, then:
+      SELECT "EntityId", "EntityName", "DurationMs", "ExecutedAt" FROM "RefreshLogs"
+      WHERE "Type" = 2 AND "Success" = true AND "Cancelled" = false ORDER BY "DurationMs" DESC LIMIT 1;
+      (Type 2 = RefreshType.Forecast). Record the number and the date here and in feature-delta.md.
     measurement_scope: vendor_demo_only
-    measured_by: "RefreshLog.DurationMs of the slowest Portfolio forecast on the restored dev instance, Docker --cpus=4."
+    measured_by: "RefreshLog.DurationMs of the slowest Portfolio forecast on the restored dev instance, Docker --cpus=4, same query and same Portfolio before and after."
     log_fields:
       refresh_log_row: ["DurationMs"]
-    measurement_window: baseline before slice 01; reading after slice 04 (AC-04.4)
+    measurement_window: baseline before slice 01 (hard entry criterion); reading after slice 04 (AC-04.4)
     gate: soft
     alerting:
       - condition: "reduction < 50%"
         action: "manual: design the early stop for a whole forecast (NMD-6 follow-up)"
-    acceptance_scenarios: []   # DISTILL fills
+    acceptance_scenarios: []   # production reading only (AC-04.4); no CI scenario can time the slowest forecast
     status: designed-not-shipped
 
   - id: OUT-6311-no-guessed-dates
@@ -2463,7 +2474,13 @@ outcomes:
     alerting:
       - condition: "an invariant or AC fails"
         action: "backend or frontend build fails (red)"
-    acceptance_scenarios: []   # DISTILL fills
+    acceptance_scenarios:
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs
+        scenario: "A_Feature_whose_runs_do_not_all_finish_reads_a_date_at_50_and_beyond_the_horizon_above_it"
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs
+        scenario: "A_Feature_no_run_can_finish_is_never_shown_as_due_today"
+      - file: Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs
+        scenario: "Every_run_counts_whether_or_not_it_finished_and_the_ones_that_did_not_are_beyond_the_horizon (the TotalTrials invariant)"
     status: designed-not-shipped
 
   - id: OUT-6311-no-restarts-during-updates
@@ -2471,6 +2488,7 @@ outcomes:
     title: Nobody has to restart Lighthouse during updates (KPI-5)
     target: "0 'had to restart Lighthouse during updates' reports in the 60 days after the release"
     ga_baseline: ">= 1 in the 60 days before (this incident)"
+    before_snapshot: "TO BE COUNTED: support mail + community Slack + GitHub issues, 60-day window YYYY-MM-DD to YYYY-MM-DD before the release carrying slices 03 and 04; count: ...; counted on: YYYY-MM-DD"
     measurement_scope: vendor_repository
     measured_by: >
       The maintainer reads GitHub issues (gh queries) for the 60 days after the release carrying slices 03 and 04,

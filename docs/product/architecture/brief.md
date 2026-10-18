@@ -10434,14 +10434,22 @@ One event when Export PDF is chosen, emitted by the click (DEVOPS designs the na
 ## Application Architecture — epic-6311-responsive-during-updates (Keep Lighthouse responsive during updates)
 
 Feature: epic-6311-responsive-during-updates (ADO Epic #6311: Bug #6308, Stories #6309 and #6322) · Wave: DESIGN ·
-2026-10-18 · Morgan, PROPOSE mode. Full design: `docs/feature/epic-6311-responsive-during-updates/feature-delta.md` →
-"Wave: DESIGN / …" (DDD-1 … DDD-13). Maintainer decisions NMD-3 … NMD-6 (2026-10-18).
+2026-10-18 · Morgan, PROPOSE mode; revised after the final review gate.
+
+- **Full design:** `docs/feature/epic-6311-responsive-during-updates/feature-delta.md` → "Wave: DESIGN / …" (DDD-1 …
+  DDD-14). Its "Reuse Analysis" table carries every component's contract shape.
+- **Maintainer decisions** NMD-3 … NMD-16 (2026-10-18):
+  - NMD-3 wire shape; NMD-4 Release block; NMD-5 one release; NMD-6 no whole-forecast early stop;
+  - NMD-7 no usage-data event; NMD-8 docs on replicas and cores;
+  - NMD-9..11 the UI wording, the drawn surfaces and Cancel all;
+  - NMD-12 `horizonYears` on history points; NMD-13 circles count as beyond; NMD-14 per-simulation core limit;
+  - NMD-15 Cancel all at most once, Redis minimal; NMD-16 old binaries accepted, rerun forecasts after a rollback.
 
 What changes:
 - The Monte Carlo simulation leaves half the cores to pages.
 - Stop and the new Cancel all end a running forecast between runs, keeping the previous forecast.
 - A run that does not finish within the 5-year horizon counts as "beyond the horizon" instead of being dropped. A
-  percentile that too few runs reach says "more than 5 years" on every surface, on the wire (additive) and in the Jira
+  percentile that too few runs reach says "More than 5 years" on every surface, on the wire (additive) and in the Jira
   Release block.
 
 What does not change: no migration, no new package or external system, the single-lane queue, and the combine maths of
@@ -10449,18 +10457,23 @@ ADR-110 / ADR-113.
 
 ### Key invariants introduced
 
-- **6311-I1 — a When/Start simulation never uses more than max(1, ⌊cores ÷ 2⌋) workers**, whoever asked for it
-  (ADR-248).
+- **6311-I1 — per simulation, a When/Start simulation never uses more than max(1, ⌊cores ÷ 2⌋) workers.** The limit
+  is not shared: two simulations at once may together use every core (NMD-14, ADR-248).
 - **6311-I2 — a cancelled forecast changes nothing.** No run starts after the cancel is seen, beyond one in flight per
   worker. No forecast row and no write-back is written. The update ends `Cancelled` (ADR-249).
-- **6311-I3 — `TotalTrials ≥ Σ histogram`, and the difference is the runs beyond the horizon.** `TotalTrials = 0` only
-  for a row with no throughput (ADR-250).
-- **6311-I4 — the horizon is one constant** (`ForecastHorizon`: 5 years → 1,826 simulated days). The run cap and every
-  "more than N years" read it (ADR-251).
-- **6311-I5 — the wire is additive.** `beyondHorizon` (+ `horizonYears`) beside an `expectedDate` that is still a day.
-  Clients key on the field's presence (ADR-252).
-- **6311-I6 — Cancel all never touches a delete and never brings anything back.** Follow-ups and holds are dropped
-  before keys are stopped, on every replica (ADR-253).
+- **6311-I3 — `TotalTrials ≥ Σ histogram`, and the difference is the runs beyond the horizon.**
+  - `TotalTrials = 0` only for a row with no throughput.
+  - Multi-Team aggregates carry the contributors' total N through a virtual `int.MaxValue` bucket. The bucket is
+    stripped only at aggregate output and never reaches a reader (ADR-250).
+- **6311-I4 — the horizon is one constant** (`ForecastHorizon`: 5 years → 1,827 simulated days). The run cap and every
+  "More than N years" read it (ADR-251).
+- **6311-I5 — the wire is additive.** `beyondHorizon` + `horizonYears` on percentiles and history points, beside an
+  `expectedDate` that is still a day (`today.AddYears(horizonYears)` when beyond). Clients key on the field's presence.
+  Points written before the change read `beyondHorizon = false` (ADR-252).
+- **6311-I6 — Cancel all never touches a delete and never brings anything back.**
+  - Follow-ups and the forecast-only holds are dropped before keys are stopped, on every replica that hears the
+    message. Delivery is at most once (ADR-253).
+  - A token source exists before a key is admitted.
 
 ### C4 — Component (L3, changed components only)
 
@@ -10475,10 +10488,10 @@ C4Component
     Component(notifier, "IUpdateCancellationNotifier", "In-process / Redis", "+ cancel-all message")
     Component(fUpd, "ForecastUpdater", "C#", "Hands the update token down")
     Component(fSvc, "ForecastService", "C#", "Bounded Parallel.For, cancellable between runs")
-    Component(model, "ForecastBase / Aggregated / DeliveryCompletionForecast", "Domain", "TotalTrials = all runs; beyond-horizon read")
-    Component(horizon, "ForecastHorizon", "Domain (new)", "5 years → 1,826 days")
+    Component(model, "ForecastBase / AggregatedWhenForecast / DeliveryCompletionForecast", "Domain", "TotalTrials = all runs; aggregates carry N; ForecastPercentile read")
+    Component(horizon, "ForecastHorizon", "Domain (new)", "5 years → 1,827 days")
     Component(dto, "WhenForecastDto / WhenDistributionPointDto", "DTO", "+ beyondHorizon, horizonYears")
-    Component(block, "DeliveryForecastBlockRenderer", "C#", "Writes 'more than 5 years'")
+    Component(block, "DeliveryForecastBlockRenderer", "C#", "Writes 'More than 5 years'")
   }
   System_Ext(redis, "Redis (when configured)", "pub/sub")
   System_Ext(jira, "Jira Release", "Description block")
@@ -10503,7 +10516,7 @@ L1 and L2 are unchanged: the containers and external systems are the same, plus 
 
 "More than N years" is a value inside views that already load, so each keeps its loading and failure looks; it is never
 drawn as a date, an empty cell or "Cannot forecast". The Task Manager's Cancel all control:
-- *idle*: enabled when there is at least one cancellable row;
+- *idle*: shown only when at least one row can be cancelled, hidden otherwise (NMD-11);
 - *in flight*: "Cancelling…" with a spinner, and every cancellable row reads "Stopping…";
 - *failed*: an inline "Could not cancel" line, and the rows revert;
 - *done*: the list is re-read.
@@ -10513,15 +10526,16 @@ The list keeps what it had on a failed read.
 ### Architectural Enforcement (this feature)
 
 - ArchUnitNET: `Lighthouse.Backend.Models` does not depend on `Services.Implementation.BackgroundServices.Update`.
-- Unit pins: the worker bound with injected core counts; `TotalTrials ≥ Σ histogram`; single-contributor combinator
-  bit-identity; a cancelled forecast leaves its rows unchanged.
+- Unit pins: the worker bound per simulation with injected core counts; `TotalTrials ≥ Σ histogram`; a multi-Team
+  Feature and a two-Team Delivery carry unfinished runs (aggregate `TotalTrials` = N, no `int.MaxValue` key out);
+  single-contributor combinator bit-identity; a cancelled forecast leaves its rows unchanged; holds are forecast-only.
 - Frontend: one formatter renders every beyond percentile; the years come from the payload.
 - Clients: a schema test against a recorded payload, with and without the new fields.
 
 ### ADR References (this feature)
 
-- [ADR-248](./adr-248-a-forecast-simulation-runs-on-at-most-half-the-cores-whoever-asked-for-it.md): a forecast
-  simulation runs on at most half the cores, whoever asked for it. **Accepted 2026-10-18.**
+- [ADR-248](./adr-248-a-forecast-simulation-runs-on-at-most-half-the-cores-whoever-asked-for-it.md): each forecast
+  simulation runs on at most half the cores, whoever asked for it (title now opens "Each": the limit is per simulation). **Accepted 2026-10-18.**
 - [ADR-249](./adr-249-a-cancelled-forecast-stops-between-runs-on-a-token-its-updater-hands-down.md): a cancelled
   forecast stops between runs, on a token its updater hands down. **Accepted 2026-10-18.**
 - [ADR-250](./adr-250-total-trials-counts-every-simulated-run-and-a-run-that-does-not-finish-is-beyond-the-horizon.md):

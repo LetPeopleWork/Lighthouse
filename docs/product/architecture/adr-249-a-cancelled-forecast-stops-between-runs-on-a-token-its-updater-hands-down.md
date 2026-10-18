@@ -30,7 +30,7 @@ the simulation returns and saved after that. The write-back staging and `Portfol
   already at 7 constructor parameters, so this trips S107. It also hides a dependency on the update pipeline inside the
   simulation, which ADR-183 chose to state explicitly for connectors.
 - **A checkpoint inside a run (each simulated day)**: only needed if a single run is long. After the 5-year horizon
-  (ADR-251) a run is at most 1,826 days. Kept as the fallback if the production-data check misses KPI-2.
+  (ADR-251) a run is at most 1,827 days. Kept as the fallback if the production-data check misses KPI-2.
 - **Hard abort**: cancellation stays cooperative.
 
 ## Consequences

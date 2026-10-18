@@ -1,6 +1,7 @@
 # Slice 03 — Runs that do not finish count, and every forecast says so
 
-**Story** #6309 / US-03 · **Job** `job-forecast-no-false-certainty`
+**Story** #6309 / US-03 · **Job** `job-forecast-no-false-certainty` · **Released** together with slice 04
+(US-05) under Story #6309 (NMD-5)
 
 ## Goal
 
@@ -10,13 +11,18 @@ today. The horizon itself is still 100,000 days.
 
 ## IN scope
 
-- Unfinished runs counted as beyond the horizon in the distribution; percentiles and likelihoods computed
-  over all runs (D6, S9). Completion and start forecasts; multi-team aggregation.
-- An **additive** beyond-horizon marker on the wire (NMD-1, D12).
-- Every web surface in S12 rendering it with one shared wording (copy from the DISTILL walk-through).
+- Unfinished runs counted as beyond the horizon in the distribution, and runs ended by a dependency circle
+  too (NMD-13); percentiles and likelihoods computed over all runs (D6, S9). Completion and start forecasts;
+  multi-team aggregation.
+- An **additive** beyond-horizon marker on the wire, `beyondHorizon` + `horizonYears`, on the forecasts and on
+  the Delivery history points (NMD-1, NMD-3, NMD-12, D12).
+- Every web surface in S12 rendering it with one shared wording, "More than 5 years" (NMD-9, NMD-10).
 - Pinned closure records and metric snapshots round-trip the marker.
 - Write-back writes nothing for a beyond-horizon percentile (NMD-2).
-- Correct the `HowTheRunEnded.RanOutOfDays` comment, which claims no data can reach the horizon (S8).
+- The Jira Release forecast block writes "85%: More than 5 years" on the line of a beyond-horizon percentile
+  (NMD-4, AC-03.9).
+- Correct the `HowTheRunEnded.RanOutOfDays` comment, which claims no data can reach the horizon (S8), and the
+  circle log's "not a forecast" sentence (NMD-13).
 
 ## OUT of scope
 
@@ -27,18 +33,21 @@ today. The horizon itself is still 100,000 days.
 
 **Disproves that every forecast surface can carry a non-date without breaking.** The timeline bar, the
 predictability chart, pinned closure records and the export table all assume a date. If any of them cannot
-carry the marker honestly, slice 04 must not ship until that surface has a design. Releasable alone: it
-removes today's biased dates and the "today" date for Features beyond 274 years.
+carry the marker honestly, slice 04 must not be built until that surface has a design. **Not releasable
+alone:** it is released together with slice 04 under Story #6309 (NMD-5). Shipped alone, it would give
+released clients a stand-in date about 274 years out.
 
 ## Acceptance criteria
 
-AC-03.1 to AC-03.8. Key: **AC-03.1** (the per-percentile rule), **AC-03.2** (never today), **AC-03.4**
-(additive wire), **AC-03.5** (every surface, one wording), **AC-03.8 (production data)** the before/after list
-of Features whose forecast changes on the restored dev instance, read by the maintainer.
+AC-03.1 to AC-03.9. Key: **AC-03.1** (the per-percentile rule, circles included), **AC-03.2** (never today),
+**AC-03.4** (additive wire), **AC-03.5** (every surface, one wording), **AC-03.9** (the Jira Release block),
+**AC-03.8 (production data, manual gate)** the before/after list of Features whose forecast changes on the
+restored dev instance; pass when 0 percentiles project to today and the maintainer accepts the list.
 
 ## Dependencies
 
-NMD-1 and NMD-2 answered. The DISTILL UI walk-through (UI-1, UI-2) done.
+NMD-1 to NMD-4 answered. The DISTILL UI walk-through (UI-1, UI-2) done (NMD-9, NMD-10). Slice 04 follows
+it, and the two are released together (NMD-5).
 
 ## Effort / reference class
 
