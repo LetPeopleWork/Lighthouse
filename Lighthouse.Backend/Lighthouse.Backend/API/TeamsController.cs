@@ -30,7 +30,8 @@ namespace Lighthouse.Backend.API
         IBlackoutPeriodService blackoutPeriodService,
         IRbacAdministrationService rbacAdministrationService,
         IForecastFilterRuleService forecastFilterRuleService,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        ParentOverrideRefusals parentOverrideRefusals)
         : ControllerBase
     {
         [HttpGet]
@@ -128,7 +129,7 @@ namespace Lighthouse.Backend.API
                 newTeam.WorkTrackingSystemConnection = connection;
             }
 
-            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Team, newTeam, teamSetting) is { } parentOverrideRefusal)
+            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Team, newTeam, teamSetting) is { } parentOverrideRefusal)
             {
                 return parentOverrideRefusal;
             }

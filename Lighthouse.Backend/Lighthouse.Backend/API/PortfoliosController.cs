@@ -17,7 +17,8 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    // S107 (too many constructor parameters): the eighth is the Feature ordering seam - see PortfolioController.
+    // S107 (too many constructor parameters): the Feature ordering seam and the Parent Override refusals each
+    // take one place - see PortfolioController.
 #pragma warning disable S107
     public class PortfoliosController(
         IRepository<Portfolio> portfolioRepository,
@@ -27,7 +28,8 @@ namespace Lighthouse.Backend.API
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
         IRbacAdministrationService rbacAdministrationService,
         IFeatureOrdering featureOrdering,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        ParentOverrideRefusals parentOverrideRefusals)
         : ControllerBase
 #pragma warning restore S107
     {
@@ -102,7 +104,7 @@ namespace Lighthouse.Backend.API
                 newPortfolio.WorkTrackingSystemConnection = connection;
             }
 
-            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } parentOverrideRefusal)
+            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } parentOverrideRefusal)
             {
                 return parentOverrideRefusal;
             }

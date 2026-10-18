@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API.Helpers
@@ -13,11 +14,11 @@ namespace Lighthouse.Backend.API.Helpers
     }
 
     /// <summary>The refusals a Team's or Portfolio's Parent Override can earn, whether the save creates the owner or changes it.</summary>
-    public static class ParentOverrideRefusals
+    public class ParentOverrideRefusals(IRepository<WorkTrackingSystemConnection> connectionRepository)
     {
         private const string NothingWasSaved = "Nothing was saved.";
 
-        public static ObjectResult? RefusalOfTheParentOverride(this ControllerBase controller, ParentOverrideOwnerKind kind, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
+        public ObjectResult? RefusalOf(ControllerBase controller, ParentOverrideOwnerKind kind, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
         {
             if (setting.ParentOverrideSource is { } source && !Enum.IsDefined(source))
             {
@@ -41,12 +42,16 @@ namespace Lighthouse.Backend.API.Helpers
         }
 
         // Only a field the owner will hold as its own is judged. One sent along with following is not what the
-        // owner reads, such as the old default's field in a copy read before the default moved. Judged against
-        // the connection the owner is on, or is being created on, before this save; a save that also moves the
-        // owner to another connection is checked against nothing here.
-        private static bool NamesAFieldItsConnectionLacks(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
+        // owner reads, such as the old default's field in a copy read before the default moved. It is judged
+        // against the connection the save leaves the owner on, which a save may also change.
+        private bool NamesAFieldItsConnectionLacks(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
             => owner.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, setting.ParentOverrideAdditionalFieldDefinitionId) is { } field
-                && owner.WorkTrackingSystemConnection?.Id == setting.WorkTrackingSystemConnectionId
-                && !owner.WorkTrackingSystemConnection.HoldsStoredField(field);
+                && TheConnectionTheSaveLeavesItOn(owner, setting) is { } connection
+                && !connection.HoldsStoredField(field);
+
+        private WorkTrackingSystemConnection? TheConnectionTheSaveLeavesItOn(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
+            => owner.WorkTrackingSystemConnection?.Id == setting.WorkTrackingSystemConnectionId
+                ? owner.WorkTrackingSystemConnection
+                : connectionRepository.GetById(setting.WorkTrackingSystemConnectionId);
     }
 }

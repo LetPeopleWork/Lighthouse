@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
@@ -410,7 +411,8 @@ namespace Lighthouse.Backend.Tests.API
                 workTrackingSystemConnectionRepoMock.Object,
                 rbacAdministrationServiceMock.Object,
                 FeatureOrderingTestHelper.FollowingTheTracker(),
-                TestToday.Clock
+                TestToday.Clock,
+                new ParentOverrideRefusals(workTrackingSystemConnectionRepoMock.Object)
             );
         }
 

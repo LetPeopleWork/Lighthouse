@@ -20,9 +20,10 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/portfolios/{portfolioId:int}")]
     [Route("api/latest/portfolios/{portfolioId:int}")]
     [ApiController]
-    // S107 (too many constructor parameters): the eighth is the Feature ordering seam. Building an
-    // ordering comparer anywhere else is how two screens end up sorting differently, so callers are
-    // handed the one seam rather than allowed to construct their own.
+    // S107 (too many constructor parameters): two of them are single seams. Building an ordering comparer
+    // anywhere else is how two screens end up sorting differently, and the Parent Override refusals must
+    // read the same way for every Team and Portfolio save, so callers are handed each one rather than
+    // allowed to construct their own.
 #pragma warning disable S107
     public class PortfolioController(
         IRepository<Portfolio> portfolioRepository,
@@ -32,7 +33,8 @@ namespace Lighthouse.Backend.API
         IFeatureOrdering featureOrdering,
         IBlockedItemService blockedItemService,
         IUpdateQueueService updateQueueService,
-        ILighthouseClock clock)
+        ILighthouseClock clock,
+        ParentOverrideRefusals parentOverrideRefusals)
         : ControllerBase
 #pragma warning restore S107
     {
@@ -131,7 +133,7 @@ namespace Lighthouse.Backend.API
                 }
             }
 
-            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Portfolio, portfolioForValidation, portfolioSetting) is { } parentOverrideRefusal)
+            if (parentOverrideRefusals.RefusalOf(this, ParentOverrideOwnerKind.Portfolio, portfolioForValidation, portfolioSetting) is { } parentOverrideRefusal)
             {
                 return parentOverrideRefusal;
             }

@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
@@ -650,7 +651,8 @@ namespace Lighthouse.Backend.Tests.API
                 blackoutPeriodServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow));
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
+                new ParentOverrideRefusals(workTrackingSystemConnectionRepositoryMock.Object));
         }
     }
 }

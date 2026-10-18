@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WorkItemRules;
@@ -25,11 +26,13 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
         private Mock<IUpdateQueueService> updateQueueServiceMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
+        private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
 
         [SetUp]
         public void Setup()
         {
             portfolioRepoMock = new Mock<IRepository<Portfolio>>();
+            connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             teamRepoMock = new Mock<IRepository<Team>>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
@@ -483,6 +486,43 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
         }
 
+        [Test]
+        public async Task UpdatePortfolio_MovingToAnotherConnectionWhileOwningAFieldOfTheOldOne_IsRefused()
+        {
+            var dto = GivenAPortfolioOwningCausedByMovesToAConnectionHoldingParentLink();
+            dto.ParentOverrideAdditionalFieldDefinitionId = 5;
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(result.Result.TheProblem()?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_MovingToAnotherConnectionWhileOwningAFieldTheNewOneHas_IsAccepted()
+        {
+            var dto = GivenAPortfolioOwningCausedByMovesToAConnectionHoldingParentLink();
+            dto.ParentOverrideAdditionalFieldDefinitionId = 7;
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        private PortfolioSettingDto GivenAPortfolioOwningCausedByMovesToAConnectionHoldingParentLink()
+        {
+            var target = new WorkTrackingSystemConnection { Id = 2, Name = "Jira Treasury" };
+            target.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 7, DisplayName = "Parent Link", Reference = "customfield_10014" });
+            connectionRepositoryMock.Setup(x => x.GetById(2)).Returns(target);
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            return new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 2, ParentOverrideSource = SettingSource.Own };
+        }
+
         private static WorkTrackingSystemConnection AConnectionHoldingCausedBy()
         {
             var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira" };
@@ -500,7 +540,8 @@ namespace Lighthouse.Backend.Tests.API
                 FeatureOrderingTestHelper.FollowingTheTracker(),
                 blockedItemServiceMock.Object,
                 updateQueueServiceMock.Object,
-                TestToday.Clock
+                TestToday.Clock,
+                new ParentOverrideRefusals(connectionRepositoryMock.Object)
             );
         }
 
