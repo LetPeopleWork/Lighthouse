@@ -120,9 +120,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         /// <summary>
         /// The answer does not depend on how many workers carried the runs: one worker against the widest the
-        /// bound allows. Once the bound lands no forecast runs unbounded, so this is the comparison left to
-        /// make. Already true, because each draw is addressed by its run, Team and day; it stays running as
-        /// the guard that bounding the runs keeps it so.
+        /// bound allows. No forecast runs unbounded, so this is the comparison there is to make. It holds
+        /// because each draw is addressed by its run, Team and day, and it guards that bounding the runs
+        /// keeps it so.
         /// </summary>
         [Test]
         [Category("ac-01.4")]
