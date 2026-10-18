@@ -7,19 +7,38 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import LocalDateTimeDisplay from "../LocalDateTimeDisplay/LocalDateTimeDisplay";
 import { ForecastLevel } from "./ForecastLevel";
+import {
+	beyondHorizonReason,
+	moreThanYearsText,
+	yearsBeyondHorizon,
+} from "./forecastPercentileText";
 
 interface ForecastInfoProps {
 	forecast: IForecast;
 }
 
-const TooltipText: React.FC<{ level: string; percentage: number }> = ({
-	level,
-	percentage,
-}) => (
-	<Typography variant="body1">
-		{level} ({percentage}% Chance)
-	</Typography>
+const TooltipText: React.FC<{
+	level: string;
+	percentage: number;
+	reason?: string;
+}> = ({ level, percentage, reason }) => (
+	<>
+		<Typography variant="body1">
+			{level} ({percentage}% Chance)
+		</Typography>
+		{reason && <Typography variant="body2">{reason}</Typography>}
+	</>
 );
+
+const isWhenForecast = (forecast: IForecast): forecast is IWhenForecast => {
+	return (forecast as IWhenForecast).expectedDate !== undefined;
+};
+
+const isHowManyForecast = (
+	forecast: IForecast,
+): forecast is IHowManyForecast => {
+	return (forecast as IHowManyForecast).value !== undefined;
+};
 
 const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
 	const forecastLevel = new ForecastLevel(forecast.probability);
@@ -27,17 +46,15 @@ const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 
-	const isWhenForecast = (forecast: IForecast): forecast is IWhenForecast => {
-		return (forecast as IWhenForecast).expectedDate !== undefined;
-	};
-
-	const isHowManyForecast = (
-		forecast: IForecast,
-	): forecast is IHowManyForecast => {
-		return (forecast as IHowManyForecast).value !== undefined;
-	};
+	const beyondYears = isWhenForecast(forecast)
+		? yearsBeyondHorizon(forecast)
+		: undefined;
 
 	const renderForecast = (): React.ReactNode => {
+		if (beyondYears !== undefined) {
+			return moreThanYearsText(beyondYears);
+		}
+
 		if (isWhenForecast(forecast)) {
 			return <LocalDateTimeDisplay utcDate={forecast.expectedDate} />;
 		}
@@ -59,6 +76,11 @@ const ForecastInfo: React.FC<ForecastInfoProps> = ({ forecast }) => {
 				<TooltipText
 					level={forecastLevel.level}
 					percentage={forecast.probability}
+					reason={
+						beyondYears === undefined
+							? undefined
+							: beyondHorizonReason(forecast.probability, beyondYears)
+					}
 				/>
 			}
 			arrow

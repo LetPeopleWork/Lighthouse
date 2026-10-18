@@ -29,9 +29,6 @@ vi.mock("@mui/x-date-pickers/LocalizationProvider", () => ({
 	AdapterDayjs: () => null,
 }));
 
-const pendingEpic6311 =
-	"Pending: a forecast asked for by hand words a percentile beyond the horizon (epic 6311, slice 03)";
-
 const percentile = (probability: number, beyondHorizon: boolean) => {
 	const forecast = WhenForecast.new(
 		probability,
@@ -72,7 +69,7 @@ const renderTheForecaster = () =>
 	);
 
 describe("the manual forecast's answer when percentiles are beyond the horizon", () => {
-	it.skip(`reads "More than 5 years" for each beyond percentile (${pendingEpic6311})`, () => {
+	it(`reads "More than 5 years" for each beyond percentile`, () => {
 		renderTheForecaster();
 
 		expect(screen.getAllByText(/^More than 5 years$/)).toHaveLength(3);

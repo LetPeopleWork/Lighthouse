@@ -4,9 +4,6 @@ import type { IFeature } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import { createForecastedStartColumn } from "./columns";
 
-const pendingEpic6311 =
-	"Pending: the forecasted start words a percentile beyond the horizon (epic 6311, slice 03)";
-
 const percentile = (probability: number, beyondHorizon: boolean) => {
 	const forecast = WhenForecast.new(
 		probability,
@@ -44,7 +41,7 @@ const renderStartCell = (row: IFeature) => {
 };
 
 describe("the forecasted start of a Feature whose start is beyond the horizon", () => {
-	it.skip(`reads "More than 5 years" for each beyond percentile and keeps the 50% date (${pendingEpic6311})`, () => {
+	it(`reads "More than 5 years" for each beyond percentile and keeps the 50% date`, () => {
 		renderStartCell(invoicePdf());
 
 		expect(screen.getAllByText(/^More than 5 years$/)).toHaveLength(3);
