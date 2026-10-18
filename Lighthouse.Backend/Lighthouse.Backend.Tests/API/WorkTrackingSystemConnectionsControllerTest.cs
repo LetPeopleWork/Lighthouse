@@ -497,7 +497,7 @@ namespace Lighthouse.Backend.Tests.API
                 {
                     DefaultNamedOnCreate.TheNewFieldsPlaceholder => new ConnectionDefaultsDto { ParentOverrideForTeams = -1 },
                     DefaultNamedOnCreate.AStoredFieldId => new ConnectionDefaultsDto { ParentOverrideForTeams = 5 },
-                    _ => new ConnectionDefaultsDto { NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(-1) } },
+                    _ => new ConnectionDefaultsDto { NotHeldByThisBuild = new() { ["aDefaultFromANewerVersion"] = JsonSerializer.SerializeToElement(-1) } },
                 },
             };
             newConnectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "Caused by", Reference = "customfield_10500" });
@@ -527,7 +527,7 @@ namespace Lighthouse.Backend.Tests.API
                 Defaults = new ConnectionDefaultsDto
                 {
                     ParentOverrideForTeams = -1,
-                    NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(-1) },
+                    NotHeldByThisBuild = new() { ["aDefaultFromANewerVersion"] = JsonSerializer.SerializeToElement(-1) },
                 },
             };
             newConnectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "Caused by", Reference = "customfield_10500" });
@@ -539,7 +539,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(problem?.Title, Is.EqualTo("A connection being created cannot hold defaults yet."));
-                Assert.That(problem?.Detail, Is.EqualTo("Create the connection first, then set these on it: parentOverrideForTeams, dependencyFieldForPortfolios."));
+                Assert.That(problem?.Detail, Is.EqualTo("Create the connection first, then set these on it: parentOverrideForTeams, aDefaultFromANewerVersion."));
             }
         }
 

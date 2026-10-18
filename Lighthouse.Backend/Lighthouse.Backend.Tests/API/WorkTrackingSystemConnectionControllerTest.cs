@@ -332,8 +332,8 @@ namespace Lighthouse.Backend.Tests.API
                 {
                     NotHeldByThisBuild = new()
                     {
-                        ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(5),
-                        ["sizeEstimateFieldForPortfolios"] = JsonSerializer.SerializeToElement(6),
+                        ["aDefaultFromANewerVersion"] = JsonSerializer.SerializeToElement(5),
+                        ["anotherDefaultFromANewerVersion"] = JsonSerializer.SerializeToElement(6),
                     },
                 },
             };
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(refusal?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-not-supported"));
                 Assert.That(problem?.Title, Is.EqualTo("This connection cannot hold these defaults."));
-                Assert.That(problem?.Detail, Is.EqualTo("Not supported for this connection by this version of Lighthouse: dependencyFieldForPortfolios, sizeEstimateFieldForPortfolios."));
+                Assert.That(problem?.Detail, Is.EqualTo("Not supported for this connection by this version of Lighthouse: aDefaultFromANewerVersion, anotherDefaultFromANewerVersion."));
                 Assert.That(existingConnection.Name, Is.EqualTo("Jira DC"));
             }
 
