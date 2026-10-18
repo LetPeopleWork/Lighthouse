@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private const string PortfoliosParentOverrideDefault = "Portfolios' Parent Override Field";
 
+        private const string PortfoliosDependencyFieldDefault = "Portfolios' Dependency Field";
+
         private static readonly OwnerWords TeamWords = new("Team", "Teams");
 
         private static readonly OwnerWords PortfolioWords = new("Portfolio", "Portfolios");
@@ -40,6 +42,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 {
                     TeamsParentOverrideDefaultBeforeSave = DefaultOf(connection, connection.ParentOverrideForTeams),
                     PortfoliosParentOverrideDefaultBeforeSave = DefaultOf(connection, connection.ParentOverrideForPortfolios),
+                    PortfoliosDependencyFieldDefaultBeforeSave = DefaultOf(connection, connection.DependencyFieldForPortfolios),
                     StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
                     TeamFetchesBeforeSave = WhatEachTeamFetchesOn(connectionId),
                     PortfolioFetchesBeforeSave = WhatEachPortfolioFetchesOn(connectionId),
@@ -66,8 +69,9 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             await connectionRepository.Save();
             await PointTheDefaultsAtTheFieldsAddedInThisSave(handle);
             var updatesQueued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
-            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, FollowersOf(teamRepository)), updatesQueued.Teams);
-            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, FollowersOf(portfolioRepository)), updatesQueued.Portfolios);
+            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, FollowersOf(teamRepository, team => team.FollowsParentOverrideDefault)), updatesQueued.Teams);
+            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, FollowersOf(portfolioRepository, portfolio => portfolio.FollowsParentOverrideDefault)), updatesQueued.Portfolios);
+            LogTheChangedDefault(handle, new(PortfoliosDependencyFieldDefault, handle.PortfoliosDependencyFieldDefaultBeforeSave, connection.DependencyFieldForPortfolios, PortfolioWords, FollowersOf(portfolioRepository, portfolio => portfolio.FollowsDependencyFieldDefault)), updatesQueued.Portfolios);
 
             return Saved;
         }
@@ -88,6 +92,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             [
                 new($"{OwnerTerms.PossessiveOfPlural(terms.Teams)} Parent Override Field", connection.ParentOverrideForTeams),
                 new($"{OwnerTerms.PossessiveOfPlural(terms.Portfolios)} Parent Override Field", connection.ParentOverrideForPortfolios),
+                new($"{OwnerTerms.PossessiveOfPlural(terms.Portfolios)} Dependency Field", connection.DependencyFieldForPortfolios),
             ];
             return AdditionalFieldInUse.AmongTheRemoved(
                 removed, defaults, [.. TeamsOwningAnyOf(removedIds, connection.Id), .. PortfoliosOwningAnyOf(removedIds, connection.Id)]);
@@ -132,13 +137,15 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         {
             var teamsField = handle.TeamsParentOverrideDefaultAddedInThisSave;
             var portfoliosField = handle.PortfoliosParentOverrideDefaultAddedInThisSave;
-            if (teamsField is null && portfoliosField is null)
+            var dependencyField = handle.PortfoliosDependencyFieldDefaultAddedInThisSave;
+            if (teamsField is null && portfoliosField is null && dependencyField is null)
             {
                 return;
             }
 
             handle.Connection.ParentOverrideForTeams = teamsField?.Id ?? handle.Connection.ParentOverrideForTeams;
             handle.Connection.ParentOverrideForPortfolios = portfoliosField?.Id ?? handle.Connection.ParentOverrideForPortfolios;
+            handle.Connection.DependencyFieldForPortfolios = dependencyField?.Id ?? handle.Connection.DependencyFieldForPortfolios;
             try
             {
                 await connectionRepository.Save();
@@ -151,12 +158,17 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 var pending = new List<PendingDefault>();
                 if (teamsField is not null)
                 {
-                    pending.Add(new(TeamWords.Many, teamsField));
+                    pending.Add(new($"{TeamWords.Many}' default Parent Override Field", teamsField));
                 }
 
                 if (portfoliosField is not null)
                 {
-                    pending.Add(new(PortfolioWords.Many, portfoliosField));
+                    pending.Add(new($"{PortfolioWords.Many}' default Parent Override Field", portfoliosField));
+                }
+
+                if (dependencyField is not null)
+                {
+                    pending.Add(new($"{PortfolioWords.Many}' default Dependency Field", dependencyField));
                 }
 
                 throw new InvalidOperationException(WhatCouldNotFollowItsNewField(handle.Connection.Name, pending), exception);
@@ -167,11 +179,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         {
             if (pending is [var only])
             {
-                return $"Connection {connectionName} was saved with its new field {only.Field.DisplayName}, but the {only.Owners}' default Parent Override Field could not be set to it and is now {NoField}";
+                return $"Connection {connectionName} was saved with its new field {only.Field.DisplayName}, but the {only.Default} could not be set to it and is now {NoField}";
             }
 
             var fields = string.Join(" and ", pending.Select(each => each.Field.DisplayName).Distinct());
-            var defaults = string.Join(" and ", pending.Select(each => $"the {each.Owners}' default Parent Override Field could not be set to {each.Field.DisplayName}"));
+            var defaults = string.Join(" and ", pending.Select(each => $"the {each.Default} could not be set to {each.Field.DisplayName}"));
             return $"Connection {connectionName} was saved with its new fields {fields}, but {defaults}; each is now {NoField}";
         }
 
@@ -233,11 +245,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             => new(fieldId, connection.DisplayNameOfField(fieldId));
 
         // In the order the owners were created, which is the order an admin knows them by on their list.
-        private static Func<WorkTrackingSystemConnection, List<string>> FollowersOf<TOwner>(IRepository<TOwner> repository)
+        private static Func<WorkTrackingSystemConnection, List<string>> FollowersOf<TOwner>(IRepository<TOwner> repository, Func<TOwner, bool> follows)
             where TOwner : WorkTrackingSystemOptionsOwner
             => connection => [.. repository.GetAllByPredicate(owner => owner.WorkTrackingSystemConnectionId == connection.Id)
                 .AsEnumerable()
-                .Where(owner => owner.FollowsParentOverrideDefault)
+                .Where(follows)
                 .OrderBy(owner => owner.Id)
                 .Select(owner => owner.Name)];
 

@@ -15,6 +15,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             ParentOverrideForTeams = connection.ParentOverrideForTeams;
             ParentOverrideForPortfolios = connection.ParentOverrideForPortfolios;
+            DependencyFieldForPortfolios = connection.DependencyFieldForPortfolios;
         }
 
         // Which members the save actually sent. A member left out keeps what the connection holds, so a tab
@@ -32,6 +33,12 @@ namespace Lighthouse.Backend.API.DTO
         {
             get;
             set => field = Sent(ConnectionDefaultSetting.ParentOverrideForPortfolios, value);
+        }
+
+        public int? DependencyFieldForPortfolios
+        {
+            get;
+            set => field = Sent(ConnectionDefaultSetting.DependencyFieldForPortfolios, value);
         }
 
         public bool Sends(ConnectionDefaultSetting setting) => sent.Contains(setting);
@@ -60,6 +67,11 @@ namespace Lighthouse.Backend.API.DTO
             if (ParentOverrideForPortfolios.HasValue)
             {
                 yield return ConnectionDefaultSetting.ParentOverrideForPortfolios;
+            }
+
+            if (DependencyFieldForPortfolios.HasValue)
+            {
+                yield return ConnectionDefaultSetting.DependencyFieldForPortfolios;
             }
         }
     }

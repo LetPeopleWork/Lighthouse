@@ -3,6 +3,8 @@ using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -88,10 +90,69 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Is.EqualTo((SettingSource.Own, (int?)null)));
         }
 
+        // An older client reads the settings and sends them back, either echoing every property or dropping
+        // the ones it does not know. Neither may move the Dependency Field off what the Portfolio reads.
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        public void An_older_clients_round_trip_keeps_the_Dependency_Fields_source_and_value(bool follows, bool echoesEveryProperty)
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            if (!follows)
+            {
+                portfolio.OwnDependencyField(ItsOwnField);
+            }
+
+            var before = (portfolio.DependencyFieldSource, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+            var read = JsonSerializer.SerializeToNode(new PortfolioSettingDto(portfolio), AsTheApiWritesIt)!.AsObject();
+            if (!echoesEveryProperty)
+            {
+                read.Remove("dependencyFieldSource");
+                read.Remove("dependencyFieldDefaultName");
+            }
+
+            portfolio.SyncWithPortfolioSettings(read.Deserialize<PortfolioSettingDto>(AsTheApiWritesIt)!, Teams());
+
+            Assert.That((portfolio.DependencyFieldSource, portfolio.DependencyOverrideAdditionalFieldDefinitionId), Is.EqualTo(before));
+        }
+
+        [Test]
+        public void A_Dependency_Field_owner_sent_as_following_drops_its_own_field()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.OwnDependencyField(ItsOwnField);
+            var settings = SettingsNaming(null);
+            settings.DependencyFieldSource = SettingSource.ConnectionDefault;
+            settings.DependencyOverrideAdditionalFieldDefinitionId = ItsOwnField;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.DependencyFieldSource, portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId, portfolio.DependencyOverrideAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.ConnectionDefault, (int?)null, (int?)TheConnectionsDefault)));
+        }
+
+        [Test]
+        public void A_Dependency_Field_follower_sent_None_as_its_own_chooses_None()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.DependencyFieldSource = SettingSource.Own;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.DependencyFieldSource, portfolio.DependencyOverrideAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.Own, (int?)null)));
+        }
+
+        private static readonly JsonSerializerOptions AsTheApiWritesIt = new(JsonSerializerDefaults.Web);
+
         private static Portfolio APortfolioFollowingTheDefault() => new()
         {
             WorkTrackingSystemConnectionId = 1,
-            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault },
+            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault, DependencyFieldForPortfolios = TheConnectionsDefault },
         };
 
         private static Portfolio APortfolioOwning(int field)

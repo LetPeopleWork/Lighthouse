@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice09)]
         [Category("ac-8.1")]
         [Category("ac-8.2")]
         [Category("ac-8.4")]
@@ -42,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice09)]
         [Category("ac-8.3")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

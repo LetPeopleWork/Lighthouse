@@ -522,6 +522,59 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task UpdatePortfolio_NamingADependencyFieldSourceThisVersionDoesNotKnow_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1 });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, DependencyFieldSource = (SettingSource)7 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
+                Assert.That(problem?.Title, Is.EqualTo("The Program names a source this version of Lighthouse does not know."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Dependency Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_OwningADependencyFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, DependencyFieldSource = SettingSource.Own, DependencyOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
+                Assert.That(problem?.Title, Is.EqualTo("The Program names a field its connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Dependency Field is not an Additional Field of this Program's connection. Nothing was saved."));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_AFollowersCopyStillNamingADependencyFieldTheConnectionDropped_IsNotRefused()
+        {
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, DependencyFieldSource = SettingSource.ConnectionDefault, DependencyOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
         private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [

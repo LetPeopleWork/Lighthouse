@@ -17,22 +17,55 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         public IReadOnlyDictionary<int, ConnectionFollowers> FollowersByConnection()
-        {
-            var teams = FollowersOfTheParentOverrideDefault(teamRepository);
-            var portfolios = FollowersOfTheParentOverrideDefault(portfolioRepository);
+            => OwnersFollowingAnyDefault()
+                .GroupBy(owner => owner.ConnectionId)
+                .ToDictionary(
+                    connection => connection.Key,
+                    connection => new ConnectionFollowers(
+                        FollowersOf(connection, ConnectionDefaultSetting.ParentOverrideForTeams),
+                        FollowersOf(connection, ConnectionDefaultSetting.ParentOverrideForPortfolios),
+                        FollowersOf(connection, ConnectionDefaultSetting.DependencyFieldForPortfolios)));
 
-            return teams.Keys.Union(portfolios.Keys).ToDictionary(
-                connectionId => connectionId,
-                connectionId => new ConnectionFollowers(teams.GetValueOrDefault(connectionId), portfolios.GetValueOrDefault(connectionId)));
+        public IReadOnlyDictionary<int, IReadOnlyList<FollowerGroup>> FollowerGroupsByConnection()
+            => OwnersFollowingAnyDefault()
+                .GroupBy(owner => owner.ConnectionId)
+                .ToDictionary(
+                    connection => connection.Key,
+                    connection => (IReadOnlyList<FollowerGroup>)[.. connection
+                        .GroupBy(owner => string.Join(",", owner.Follows))
+                        .Select(group => new FollowerGroup(group.First().Follows, group.Count()))]);
+
+        private static int FollowersOf(IEnumerable<OwnerFollowing> owners, ConnectionDefaultSetting setting)
+            => owners.Count(owner => owner.Follows.Contains(setting));
+
+        // Where an owner's setting comes from is held on the loaded owner, so the owners are read in memory.
+        private IEnumerable<OwnerFollowing> OwnersFollowingAnyDefault()
+        {
+            var teams = teamRepository.GetAllByPredicate(_ => true).AsEnumerable()
+                .Select(team => new OwnerFollowing(team.WorkTrackingSystemConnectionId, DefaultsFollowedBy(team)));
+            var portfolios = portfolioRepository.GetAllByPredicate(_ => true).AsEnumerable()
+                .Select(portfolio => new OwnerFollowing(portfolio.WorkTrackingSystemConnectionId, DefaultsFollowedBy(portfolio)));
+
+            return teams.Concat(portfolios).Where(owner => owner.Follows.Count > 0);
         }
 
-        // Where an owner's setting comes from is held on the loaded owner, so the owners are counted in memory.
-        private static Dictionary<int, int> FollowersOfTheParentOverrideDefault<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner
+        private static List<ConnectionDefaultSetting> DefaultsFollowedBy(Team team)
+            => team.FollowsParentOverrideDefault ? [ConnectionDefaultSetting.ParentOverrideForTeams] : [];
+
+        private static List<ConnectionDefaultSetting> DefaultsFollowedBy(Portfolio portfolio)
         {
-            return repository.GetAllByPredicate(_ => true).AsEnumerable()
-                .Where(owner => owner.FollowsParentOverrideDefault)
-                .GroupBy(owner => owner.WorkTrackingSystemConnectionId)
-                .ToDictionary(group => group.Key, group => group.Count());
+            var follows = new List<ConnectionDefaultSetting>();
+            if (portfolio.FollowsParentOverrideDefault)
+            {
+                follows.Add(ConnectionDefaultSetting.ParentOverrideForPortfolios);
+            }
+
+            if (portfolio.FollowsDependencyFieldDefault)
+            {
+                follows.Add(ConnectionDefaultSetting.DependencyFieldForPortfolios);
+            }
+
+            return follows;
         }
 
         private static Dictionary<int, int> CountByConnection<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner
@@ -42,5 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 .Select(group => new { ConnectionId = group.Key, Count = group.Count() })
                 .ToDictionary(entry => entry.ConnectionId, entry => entry.Count);
         }
+
+        private sealed record OwnerFollowing(int ConnectionId, List<ConnectionDefaultSetting> Follows);
     }
 }

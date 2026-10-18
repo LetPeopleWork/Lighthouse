@@ -225,6 +225,11 @@ namespace Lighthouse.Backend.API
                 return ConnectionDefaultSetting.ParentOverrideForPortfolios;
             }
 
+            if (!NamesAFieldOfTheConnection(save, defaults.DependencyFieldForPortfolios, newFields))
+            {
+                return ConnectionDefaultSetting.DependencyFieldForPortfolios;
+            }
+
             return null;
         }
 
@@ -240,6 +245,12 @@ namespace Lighthouse.Backend.API
             {
                 save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
                 save.Connection.ParentOverrideForPortfolios = StoredFieldNamedBy(defaults.ParentOverrideForPortfolios, save.PortfoliosParentOverrideDefaultAddedInThisSave);
+            }
+
+            if (defaults.Sends(ConnectionDefaultSetting.DependencyFieldForPortfolios))
+            {
+                save.PortfoliosDependencyFieldDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.DependencyFieldForPortfolios);
+                save.Connection.DependencyFieldForPortfolios = StoredFieldNamedBy(defaults.DependencyFieldForPortfolios, save.PortfoliosDependencyFieldDefaultAddedInThisSave);
             }
         }
 

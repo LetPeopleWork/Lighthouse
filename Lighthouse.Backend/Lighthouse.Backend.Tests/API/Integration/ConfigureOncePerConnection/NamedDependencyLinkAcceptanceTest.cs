@@ -296,7 +296,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var registered = theJiraPortfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions
                 .Single(definition => !definition.IsPredefined).Id;
 
-            return TheAdminSavesTheSettingsOf(theJiraPortfolio, settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = registered);
+            return TheAdminSavesTheSettingsOf(theJiraPortfolio, settings =>
+            {
+                settings["dependencyFieldSource"] = "Own";
+                settings["dependencyOverrideAdditionalFieldDefinitionId"] = registered;
+            });
         }
 
         // ----- What somebody does -----------------------------------------------------------------------

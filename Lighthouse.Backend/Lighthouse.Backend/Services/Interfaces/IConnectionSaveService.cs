@@ -24,10 +24,14 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         public NamedField PortfoliosParentOverrideDefaultBeforeSave { get; init; } = NamedField.Nothing;
 
+        public NamedField PortfoliosDependencyFieldDefaultBeforeSave { get; init; } = NamedField.Nothing;
+
         // A field created by this same save has no id until it is stored, so the default is pointed at it afterwards.
         public AdditionalFieldDefinition? TeamsParentOverrideDefaultAddedInThisSave { get; set; }
 
         public AdditionalFieldDefinition? PortfoliosParentOverrideDefaultAddedInThisSave { get; set; }
+
+        public AdditionalFieldDefinition? PortfoliosDependencyFieldDefaultAddedInThisSave { get; set; }
 
         // Kept with their names, because once the edit removes a field the connection no longer knows what it was called.
         public IReadOnlyDictionary<int, string> StoredFieldsBeforeSave { get; init; } = new Dictionary<int, string>();

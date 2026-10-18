@@ -39,6 +39,13 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public SettingSource DependencyFieldSource => storedDependencyFieldSource;
 
+        [NotMapped]
+        public bool FollowsDependencyFieldDefault => DependencyFieldSource == SettingSource.ConnectionDefault;
+
+        /// <summary>The field or link the connection's default names, shown whichever source the Portfolio chose.</summary>
+        [NotMapped]
+        public string? DependencyFieldDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(WorkTrackingSystemConnection.DependencyFieldForPortfolios);
+
         public bool IgnoreDependencies { get; set; }
 
         public bool UsePercentileToCalculateDefaultAmountOfWorkItems { get; set; }
@@ -70,15 +77,36 @@ namespace Lighthouse.Backend.Models
             OwnDependencyOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
         }
 
-        // The settings page does not send a source for this field yet, so sending back what the Portfolio
-        // already reads is no choice at all, and a following Portfolio keeps following.
-        public void TakeDependencyFieldAsSent(int? sentField)
+        /// <summary>The field this Portfolio would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
+        public int? DependencyFieldOwnedOnceTaken(SettingSource? sentSource, int? sentField)
         {
-            if (sentField != DependencyOverrideAdditionalFieldDefinitionId)
+            var applied = DependencyFieldAsSent(sentSource, sentField);
+            return applied.Source == SettingSource.Own ? applied.OwnValue : null;
+        }
+
+        public void TakeDependencyFieldAsSent(SettingSource? sentSource, int? sentField)
+        {
+            var applied = DependencyFieldAsSent(sentSource, sentField);
+
+            if (applied == StoredDependencyField)
             {
-                OwnDependencyField(sentField);
+                return;
+            }
+
+            if (applied.Source == SettingSource.ConnectionDefault)
+            {
+                FollowDependencyFieldDefault();
+            }
+            else
+            {
+                OwnDependencyField(applied.OwnValue);
             }
         }
+
+        private StoredSetting StoredDependencyField => new(DependencyFieldSource, OwnDependencyOverrideAdditionalFieldDefinitionId);
+
+        private StoredSetting DependencyFieldAsSent(SettingSource? sentSource, int? sentField)
+            => IncomingSetting.AppliedTo(StoredDependencyField, DependencyOverrideAdditionalFieldDefinitionId, sentSource, sentField);
 
         public void UpdateFeatures(IEnumerable<Feature> features)
         {

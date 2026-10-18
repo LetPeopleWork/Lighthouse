@@ -124,6 +124,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
         private static IWorkTrackingSystemConnectionUsage NobodyUsesAnyConnection()
             => Mock.Of<IWorkTrackingSystemConnectionUsage>(usage =>
                 usage.ByConnection() == new Dictionary<int, ConnectionUsage>()
-                && usage.FollowersByConnection() == new Dictionary<int, ConnectionFollowers>());
+                && usage.FollowersByConnection() == new Dictionary<int, ConnectionFollowers>()
+                && usage.FollowerGroupsByConnection() == new Dictionary<int, IReadOnlyList<FollowerGroup>>());
     }
 }

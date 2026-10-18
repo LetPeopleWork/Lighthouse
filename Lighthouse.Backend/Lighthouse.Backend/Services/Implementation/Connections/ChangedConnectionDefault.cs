@@ -6,8 +6,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
     /// <summary>How the owners a connection default is held for are named in its log entry.</summary>
     internal sealed record OwnerWords(string One, string Many);
 
-    /// <summary>A default a save pointed at a field it added, whose owners are named in the error if it could not follow.</summary>
-    internal sealed record PendingDefault(string Owners, AdditionalFieldDefinition Field);
+    /// <summary>A default a save pointed at a field it added, named in the error if it could not follow.</summary>
+    internal sealed record PendingDefault(string Default, AdditionalFieldDefinition Field);
 
     /// <summary>How many Teams and how many Portfolios a save started updating.</summary>
     internal sealed record UpdatesQueued(int Teams, int Portfolios);

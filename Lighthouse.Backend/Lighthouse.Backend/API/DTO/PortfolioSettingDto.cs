@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.API.DTO
             SizeEstimateAdditionalFieldDefinitionId = portfolio.SizeEstimateAdditionalFieldDefinitionId;
             FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
             DependencyOverrideAdditionalFieldDefinitionId = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
+            DependencyFieldSource = portfolio.DependencyFieldSource;
+            DependencyFieldDefaultName = portfolio.DependencyFieldDefaultName;
             IgnoreDependencies = portfolio.IgnoreDependencies;
 
             if (portfolio.WorkTrackingSystemConnection != null)
@@ -64,6 +66,11 @@ namespace Lighthouse.Backend.API.DTO
         public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
 
         public int? DependencyOverrideAdditionalFieldDefinitionId { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
+        public SettingSource? DependencyFieldSource { get; set; }
+
+        public string? DependencyFieldDefaultName { get; private set; }
 
         // Nullable rather than required, because every payload written before this setting existed omits
         // it - our own end-to-end helpers, the command line client, and whatever anyone has scripted.

@@ -57,10 +57,58 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(followers, Is.EquivalentTo(new Dictionary<int, ConnectionFollowers>
             {
-                [1] = new(2, 1),
-                [2] = new(1, 1),
-                [3] = new(0, 1),
+                [1] = new(2, 1, 1),
+                [2] = new(1, 1, 1),
+                [3] = new(0, 1, 1),
             }));
+        }
+
+        [Test]
+        public void FollowerGroupsByConnection_CountsEachOwnerOnceUnderTheDefaultsItFollows()
+        {
+            WithTheseTeams(FollowingTeam(1), FollowingTeam(1), TeamOwning(1, fieldId: 7));
+            WithThesePortfolios(
+                new Portfolio { WorkTrackingSystemConnectionId = 1 },
+                new Portfolio { WorkTrackingSystemConnectionId = 1 },
+                new Portfolio { WorkTrackingSystemConnectionId = 1 },
+                PortfolioOwningItsDependencyField(1),
+                PortfolioOwningBoth(2));
+
+            var groups = CreateSubject().FollowerGroupsByConnection();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(groups.Keys, Is.EquivalentTo(OnlyTheFirstConnection));
+                Assert.That(groups[1].Select(group => (string.Join("+", group.Follows), group.Count)), Is.EquivalentTo(new[]
+                {
+                    ("ParentOverrideForTeams", 2),
+                    ("ParentOverrideForPortfolios+DependencyFieldForPortfolios", 3),
+                    ("ParentOverrideForPortfolios", 1),
+                }));
+                Assert.That(CreateSubject().FollowersByConnection()[1], Is.EqualTo(new ConnectionFollowers(2, 4, 3)));
+            }
+        }
+
+        private static readonly int[] OnlyTheFirstConnection = [1];
+
+        private static Portfolio PortfolioOwningItsDependencyField(int connectionId)
+        {
+            var portfolio = new Portfolio { WorkTrackingSystemConnectionId = connectionId };
+            portfolio.OwnDependencyField(7);
+            return portfolio;
+        }
+
+        private static Portfolio PortfolioOwningBoth(int connectionId)
+        {
+            var portfolio = PortfolioOwningItsDependencyField(connectionId);
+            portfolio.OwnParentOverride(null);
+            return portfolio;
+        }
+
+        private void WithThesePortfolios(params Portfolio[] portfolios)
+        {
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
         }
 
         [Test]
