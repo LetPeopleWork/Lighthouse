@@ -14,10 +14,8 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
-using Microsoft.AspNetCore.Http;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
@@ -1061,7 +1059,7 @@ namespace Lighthouse.Backend.Tests.API
             var dto = AValidTeamSave();
             dto.ParentOverrideSource = (SettingSource)7;
 
-            var result = await CreateSubjectAnsweringWithProblemDetails().UpdateTeam(1, dto);
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdateTeam(1, dto);
 
             var refusal = result.Result as ObjectResult;
             var problem = refusal?.Value as ProblemDetails;
@@ -1086,7 +1084,7 @@ namespace Lighthouse.Backend.Tests.API
             dto.ParentOverrideSource = SettingSource.Own;
             dto.ParentOverrideAdditionalFieldDefinitionId = 9;
 
-            var result = await CreateSubjectAnsweringWithProblemDetails().UpdateTeam(1, dto);
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdateTeam(1, dto);
 
             var refusal = result.Result as ObjectResult;
             var problem = refusal?.Value as ProblemDetails;
@@ -1139,25 +1137,6 @@ namespace Lighthouse.Backend.Tests.API
                 default:
                     throw new ArgumentOutOfRangeException(nameof(refused), refused, "A setting this table does not know");
             }
-        }
-
-        private TeamController CreateSubjectAnsweringWithProblemDetails()
-        {
-            var subject = CreateSubject();
-            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
-            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
-            return subject;
-        }
-
-        private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory
-        {
-            public override ProblemDetails CreateProblemDetails(
-                HttpContext httpContext, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
-                => new() { Status = statusCode, Title = title, Type = type, Detail = detail, Instance = instance };
-
-            public override ValidationProblemDetails CreateValidationProblemDetails(
-                HttpContext httpContext, ModelStateDictionary modelStateDictionary, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
-                => new(modelStateDictionary) { Status = statusCode, Title = title };
         }
 
         private static Team CreateTeam(int id, string name)
