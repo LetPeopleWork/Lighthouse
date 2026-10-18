@@ -665,7 +665,7 @@ describe("defaults set once on the connection", () => {
 		// A default is not an Additional Field: counting it as a field change would report that fields
 		// changed when none did.
 		// @error @us-05 @contract-shape:unbounded-preservation
-		it.skip("answering the question about a default does not report that Additional Fields changed", async () => {
+		it("answering the question about a default does not report that Additional Fields changed", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
 			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);

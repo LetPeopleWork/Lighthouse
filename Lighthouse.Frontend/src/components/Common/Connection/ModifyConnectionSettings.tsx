@@ -216,14 +216,6 @@ const whyUpdate = (
 	};
 };
 
-const choiceFor = (
-	why: WhyUpdate,
-	startUpdates: boolean,
-): ISaveConnectionChoice =>
-	why.because === "fields"
-		? { startUpdates }
-		: { startUpdates, additionalFieldsChanged: false };
-
 interface ConnectionDefaultsSectionProps {
 	supportedDefaults: ConnectionDefaultName[];
 	defaults: IConnectionDefaults;
@@ -721,12 +713,18 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		}
 	};
 
-	const saveAnswering = async (choice: ISaveConnectionChoice) => {
+	const saveAnswering = async (startUpdates: boolean) => {
 		if (!connectionAwaitingAnswer) {
 			return;
 		}
 		try {
-			await save(connectionAwaitingAnswer, choice);
+			await save(connectionAwaitingAnswer, {
+				startUpdates,
+				additionalFieldsChanged: fieldsChangedSince(
+					loadedFields,
+					additionalFields,
+				),
+			});
 		} finally {
 			setConnectionAwaitingAnswer(null);
 		}
@@ -1045,8 +1043,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				<UpdateQuestion
 					open={connectionAwaitingAnswer !== null}
 					why={whyAsked}
-					onUpdate={() => saveAnswering(choiceFor(whyAsked, true))}
-					onSaveOnly={() => saveAnswering(choiceFor(whyAsked, false))}
+					onUpdate={() => saveAnswering(true)}
+					onSaveOnly={() => saveAnswering(false)}
 					onCancel={() => setConnectionAwaitingAnswer(null)}
 				/>
 			</Container>

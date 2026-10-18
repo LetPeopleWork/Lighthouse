@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     internal static class PendingEpic6303
     {
-        public const string Slice06 = "Pending: a changed default updates exactly the owners that follow it (epic 6303, slice 06).";
-
         public const string Slice08 = "Pending: the Portfolios' Parent Override Field is set once on the connection (epic 6303, slice 08).";
 
         public const string Slice09 = "Pending: the Portfolios' Dependency Field is set once on the connection (epic 6303, slice 09).";

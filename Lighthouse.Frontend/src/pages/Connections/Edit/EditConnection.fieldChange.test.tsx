@@ -768,7 +768,10 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await whenSheAnswers(TheQuestionOnNordwindJiraDc, "Save only");
 
 			await thenTheConnectionIsSavedWith(server, FixVersions);
-			expect(theChoiceTheSaveCarried(server)).toEqual({ startUpdates: false });
+			expect(theChoiceTheSaveCarried(server)).toEqual({
+				startUpdates: false,
+				additionalFieldsChanged: true,
+			});
 			await thenSheIsBackOnTheOverview();
 			thenNoNoticeAboutTheUpdatesIsShown();
 		});

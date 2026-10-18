@@ -712,7 +712,7 @@ describe("WorkTrackingSystemService", () => {
 
 			await workTrackingSystemService.updateWorkTrackingSystemConnection(
 				nordwindJiraDc,
-				{ startUpdates: false },
+				{ startUpdates: false, additionalFieldsChanged: true },
 			);
 
 			expect(theStartUpdatesTheSaveAskedFor()).toEqual({
@@ -727,7 +727,7 @@ describe("WorkTrackingSystemService", () => {
 
 			await workTrackingSystemService.updateWorkTrackingSystemConnection(
 				nordwindJiraDc,
-				{ startUpdates: true },
+				{ startUpdates: true, additionalFieldsChanged: true },
 			);
 
 			expect(theStartUpdatesTheSaveAskedFor()).toEqual({

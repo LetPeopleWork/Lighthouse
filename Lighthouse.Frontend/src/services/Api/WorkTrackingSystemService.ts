@@ -33,7 +33,7 @@ const ConnectionDefaultsSchema = z.object({
  */
 export interface ISaveConnectionChoice {
 	startUpdates: boolean;
-	additionalFieldsChanged?: boolean;
+	additionalFieldsChanged: boolean;
 }
 
 export interface IWorkTrackingSystemService {

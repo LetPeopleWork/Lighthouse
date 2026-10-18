@@ -100,9 +100,9 @@ const EditConnectionPage: React.FC = () => {
 		choice?: ISaveConnectionChoice,
 	) => {
 		await saveConnectionSettings(connection, choice);
-		// A choice is only passed once somebody answered the question, so a save that asked nothing
-		// reports nothing.
-		if (choice) {
+		// A save that asked nothing reports nothing, and neither does one that changed only defaults:
+		// a default is not an Additional Field.
+		if (choice?.additionalFieldsChanged) {
 			reportUsage({
 				name: UsageDataEventName.WorkTrackingSystemFieldsChanged,
 				updates: choice.startUpdates
