@@ -16,6 +16,7 @@
 
         public WhenForecast(SimulationResult simulationResult) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)))
         {
+            TotalTrials = Math.Max(TotalTrials, simulationResult.RunsSimulated);
             NumberOfItems = simulationResult.InitialRemainingItems;
             TeamId = simulationResult.Team?.Id;
             Team = simulationResult.Team;

@@ -15,8 +15,12 @@
                 var joint = JointCompletionDistribution.Combine(materialized.Select(f => f.SimulationResult));
 
                 // No contributor carries trials: keep the sentinel days so the percentiles still read
-                // as done today (AC-02.3). Team/TeamId stay null - the aggregate has no team (ADR-111).
+                // as done today. Team/TeamId stay null - the aggregate has no team.
                 SetSimulationResult(joint.Count > 0 ? joint : DaysWithoutTrials(materialized));
+
+                // The combined histogram counts only finished runs, so without this the runs that never
+                // finished would drop out and a Feature nobody can finish would read as due today.
+                TotalTrials = Math.Max(TotalTrials, materialized.Max(f => f.TotalTrials));
                 NumberOfItems = materialized.Sum(f => f.NumberOfItems);
                 CreationTime = materialized.Min(f => f.CreationTime);
             }

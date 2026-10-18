@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         private static readonly DateOnly FiveYearsFromToday = new(2031, 10, 18);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("ac-03.4")]
@@ -64,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.2")]
         [Category("error")]
@@ -93,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         /// Every run finishes, so nothing is beyond the horizon and the flag says so rather than being absent.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.4")]
         [Category("edge")]
@@ -121,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         /// this host was given, so a test that shrinks the runs still sees five.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice04)]
         [Category("slice-04")]
         [Category("ac-04.2")]
         [Category("ac-03.4")]

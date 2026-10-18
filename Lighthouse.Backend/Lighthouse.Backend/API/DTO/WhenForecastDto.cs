@@ -17,8 +17,17 @@ namespace Lighthouse.Backend.API.DTO
         /// </param>
         public WhenForecastDto(ForecastBase forecast, int probability, DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
         {
+            var percentile = forecast.GetPercentile(probability);
+
             Probability = probability;
-            ExpectedDate = blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), forecast.GetProbability(probability));
+            BeyondHorizon = percentile.IsBeyondHorizon;
+            HorizonYears = ForecastHorizon.Years;
+
+            // Clients that read only the date still get one for a percentile beyond the horizon: the horizon's
+            // own end, a date far enough out that nobody plans on it, rather than today.
+            ExpectedDate = percentile.IsBeyondHorizon
+                ? InstanceCalendar.AsUtcMidnight(today.AddYears(ForecastHorizon.Years))
+                : blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), percentile.Day ?? 0);
 
             if (forecast is WhenForecast completion)
             {
@@ -30,6 +39,10 @@ namespace Lighthouse.Backend.API.DTO
         public int Probability { get; set; }
 
         public DateTime ExpectedDate { get; set; }
+
+        public bool BeyondHorizon { get; set; }
+
+        public int HorizonYears { get; set; }
 
         public bool FilterApplied { get; set; }
 

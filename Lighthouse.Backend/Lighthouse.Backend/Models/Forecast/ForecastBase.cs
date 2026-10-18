@@ -50,23 +50,30 @@
             }
         }
 
-        public int GetProbability(int percentile)
+        /// <summary>The percentile as a number, -1 when it has no day; <see cref="GetPercentile"/> says which kind of none.</summary>
+        public int GetProbability(int percentile) => GetPercentile(percentile).Day ?? -1;
+
+        /// <summary>
+        /// The histogram holds only the runs that finished, while every run simulated counts towards the
+        /// total, so a percentile more runs must reach than finished at all lies beyond the horizon.
+        /// </summary>
+        public ForecastPercentile GetPercentile(int percentile)
         {
             var numberOfTrials = Math.Ceiling((double)TotalTrials / 100 * percentile);
 
             var trialCounter = 0;
 
-            foreach (var key in SimulationResult.Keys)
+            foreach (var (day, trials) in SimulationResult)
             {
-                trialCounter += SimulationResult[key];
+                trialCounter += trials;
 
                 if (trialCounter >= numberOfTrials)
                 {
-                    return key;
+                    return ForecastPercentile.On(day);
                 }
             }
 
-            return -1;
+            return TotalTrials > 0 ? ForecastPercentile.BeyondTheHorizon : ForecastPercentile.NoAnswer;
         }
 
         public double GetLikelihood(int threshold)

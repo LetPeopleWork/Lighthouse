@@ -30,6 +30,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     {
         private const int TheMostDaysOneRunMayCover = 25;
 
+        private const int TheRunsAForecastMakes = 5;
+
         private const int TheFirstTeam = 0;
 
         private const int TheSecondTeam = 1;
@@ -68,8 +70,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                     "taken for, so the run that would not end cannot be set going again on its own. " +
                     $"Reported: {string.Join(" | ", WhatWasLoggedAsAnError())}");
 
-                Assert.That(forecast.TheSlowOne.Forecast.TotalTrials, Is.Zero,
-                    "The Feature nobody could get through was reported as though it had been forecast.");
+                Assert.That(forecast.TheSlowOne.Forecast.TotalTrials, Is.EqualTo(TheRunsAForecastMakes),
+                    "The runs that gave up on the Feature nobody could get through were dropped from its count, " +
+                    "so none of its percentiles can say it lies beyond the horizon.");
 
                 Assert.That(forecast.TheOrdinaryOne.Forecast.GetProbability(85), Is.GreaterThan(0),
                     "The Portfolio's other Feature lost its forecast because a different Team could not finish.");
@@ -177,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
                 new DrawsFromAPinnedStartingNumber(4242),
-                new ForecastSimulationLimits(Trials: 5, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover));
+                new ForecastSimulationLimits(Trials: TheRunsAForecastMakes, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover));
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

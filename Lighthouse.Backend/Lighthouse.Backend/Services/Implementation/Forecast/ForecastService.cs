@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             var shares = workersThatRanThem.ToList();
 
-            RecordTheDaysEachRowFinishedOn(plan, shares);
+            RecordTheDaysEachRowFinishedOn(plan, shares, limits.Trials);
 
             var whatWentWrong = WhatTheRunsCouldNotFinish.AllOf(shares.Select(share => share.WhatWentWrong));
 
@@ -231,9 +231,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// <summary>
         /// Added up once, after every run is over. Counts add up the same whichever worker's share is taken
         /// first, and the days are written out in order, so how the work happened to be split between workers
-        /// leaves no trace in what comes out.
+        /// leaves no trace in what comes out. Every run covers every row, so each row was simulated as many
+        /// times as there were runs, whether or not those runs finished it.
         /// </summary>
-        private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
+        private static void RecordTheDaysEachRowFinishedOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares, int runs)
         {
             var total = DayCounts.EmptyPer(plan.RowCount);
 
@@ -244,6 +245,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             for (var row = 0; row < plan.RowCount; row++)
             {
+                plan.RowAt(row).RunsSimulated = runs;
+
                 foreach (var day in total[row].OrderBy(finished => finished.Key))
                 {
                     plan.RowAt(row).SimulationResults[day.Key] = day.Value;

@@ -26,5 +26,12 @@ namespace Lighthouse.Backend.Models
         public int InitialRemainingItems { get; }
 
         public Dictionary<int, int> SimulationResults { get; } = new Dictionary<int, int>();
+
+        /// <summary>
+        /// Every run simulated for this row, finished or not. The histogram above holds only the days runs
+        /// finished on, so the gap between the two is the runs that never did. Written once, after every run
+        /// is over, by the forecast that owns the runs.
+        /// </summary>
+        public int RunsSimulated { get; internal set; }
     }
 }
