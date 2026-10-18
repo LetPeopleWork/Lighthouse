@@ -34,6 +34,9 @@ namespace Lighthouse.Backend.Models
         /// <summary>The Size Estimate Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? SizeEstimateFieldForPortfolios { get; set; }
 
+        /// <summary>The Feature Owner Field every Portfolio on this connection reads while it follows the default.</summary>
+        public int? FeatureOwnerFieldForPortfolios { get; set; }
+
         /// <summary>The name an Additional Field of this connection shows; null when the id names none of them.</summary>
         public string? DisplayNameOfField(int? additionalFieldDefinitionId)
             => AdditionalFieldDefinitions.FirstOrDefault(field => field.Id == additionalFieldDefinitionId)?.DisplayName;

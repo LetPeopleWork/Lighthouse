@@ -330,7 +330,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 12, DisplayName = "Owner", Reference = ARealField });
             portfolio.OwnParentOverride(10);
             portfolio.OwnSizeEstimateField(11);
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
+            portfolio.OwnFeatureOwnerField(12);
             portfolio.EstimationAdditionalFieldDefinitionId = 12;
 
             var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");

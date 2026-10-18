@@ -1087,9 +1087,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("EstimationUnit")
                         .HasColumnType("text");
 
-                    b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("text");
 
@@ -1107,6 +1104,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("OwnDependencyOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
                         .HasColumnName("DependencyOverrideAdditionalFieldDefinitionId");
+
+                    b.Property<int?>("OwnFeatureOwnerAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("FeatureOwnerAdditionalFieldDefinitionId");
 
                     b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
@@ -1171,6 +1172,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("storedDependencyFieldSource")
                         .HasColumnType("integer")
                         .HasColumnName("DependencyFieldSource");
+
+                    b.Property<int>("storedFeatureOwnerFieldSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("FeatureOwnerFieldSource");
 
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("integer")
@@ -1775,6 +1780,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("uuid");
 
                     b.Property<int?>("DependencyFieldForPortfolios")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("FeatureOwnerFieldForPortfolios")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")

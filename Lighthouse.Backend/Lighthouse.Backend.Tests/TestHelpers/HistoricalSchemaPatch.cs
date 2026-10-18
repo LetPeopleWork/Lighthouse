@@ -52,6 +52,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("WorkTrackingSystemConnections", "DependencyFieldForPortfolios", "INTEGER", "AddPortfoliosDependencyFieldDefault"),
             new("Portfolios", "SizeEstimateFieldSource", "INTEGER", "AddPortfoliosSizeEstimateFieldDefault"),
             new("WorkTrackingSystemConnections", "SizeEstimateFieldForPortfolios", "INTEGER", "AddPortfoliosSizeEstimateFieldDefault"),
+            new("Portfolios", "FeatureOwnerFieldSource", "INTEGER", "AddPortfoliosFeatureOwnerFieldDefault"),
+            new("WorkTrackingSystemConnections", "FeatureOwnerFieldForPortfolios", "INTEGER", "AddPortfoliosFeatureOwnerFieldDefault"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

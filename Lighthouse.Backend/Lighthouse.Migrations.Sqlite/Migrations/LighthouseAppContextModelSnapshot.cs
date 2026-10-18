@@ -1033,9 +1033,6 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("EstimationUnit")
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("FeatureOwnerAdditionalFieldDefinitionId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("TEXT");
 
@@ -1053,6 +1050,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("OwnDependencyOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER")
                         .HasColumnName("DependencyOverrideAdditionalFieldDefinitionId");
+
+                    b.Property<int?>("OwnFeatureOwnerAdditionalFieldDefinitionId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("FeatureOwnerAdditionalFieldDefinitionId");
 
                     b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER")
@@ -1117,6 +1118,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("storedDependencyFieldSource")
                         .HasColumnType("INTEGER")
                         .HasColumnName("DependencyFieldSource");
+
+                    b.Property<int>("storedFeatureOwnerFieldSource")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("FeatureOwnerFieldSource");
 
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("INTEGER")
@@ -1697,6 +1702,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<int?>("DependencyFieldForPortfolios")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("FeatureOwnerFieldForPortfolios")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Name")

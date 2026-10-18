@@ -18,7 +18,20 @@ namespace Lighthouse.Backend.Models
 
         public Team? OwningTeam { get; set; }
 
-        public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
+        /// <summary>The Additional Field a Feature's owning Team is read from, as this Portfolio answers it.</summary>
+        [NotMapped]
+        public int? FeatureOwnerAdditionalFieldDefinitionId => FeatureOwnerField.ReadWith(FeatureOwnerFieldConnectionDefault);
+
+        [Column(nameof(FeatureOwnerAdditionalFieldDefinitionId))]
+        public int? OwnFeatureOwnerAdditionalFieldDefinitionId { get; private set; }
+
+        private SettingSource storedFeatureOwnerFieldSource = SettingSource.ConnectionDefault;
+
+        [NotMapped]
+        public SettingSource FeatureOwnerFieldSource => storedFeatureOwnerFieldSource;
+
+        [NotMapped]
+        public bool FollowsFeatureOwnerFieldDefault => FeatureOwnerField.FollowsTheDefault;
 
         /// <summary>The Additional Field the connectors read a Feature's estimated size from, as this Portfolio answers it.</summary>
         [NotMapped]
@@ -85,6 +98,7 @@ namespace Lighthouse.Backend.Models
             ConnectionDefaultSetting.ParentOverrideForPortfolios => FollowsParentOverrideDefault,
             ConnectionDefaultSetting.DependencyFieldForPortfolios => FollowsDependencyFieldDefault,
             ConnectionDefaultSetting.SizeEstimateFieldForPortfolios => FollowsSizeEstimateFieldDefault,
+            ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios => FollowsFeatureOwnerFieldDefault,
             _ => false,
         };
 
@@ -115,6 +129,23 @@ namespace Lighthouse.Backend.Models
             => SizeEstimateField = SizeEstimateField.Taking(sentSource, sentField, SizeEstimateFieldConnectionDefault);
 
         private int? SizeEstimateFieldConnectionDefault => WorkTrackingSystemConnection?.SizeEstimateFieldForPortfolios;
+
+        public void FollowFeatureOwnerFieldDefault() => FeatureOwnerField = StoredSetting.FollowingTheDefault;
+
+        /// <param name="additionalFieldDefinitionId">Null is a deliberate None: no owner is read, whatever the default says.</param>
+        public void OwnFeatureOwnerField(int? additionalFieldDefinitionId) => FeatureOwnerField = StoredSetting.Owning(additionalFieldDefinitionId);
+
+        public void TakeFeatureOwnerFieldAsSent(SettingSource? sentSource, int? sentField)
+            => FeatureOwnerField = FeatureOwnerField.Taking(sentSource, sentField, FeatureOwnerFieldConnectionDefault);
+
+        private int? FeatureOwnerFieldConnectionDefault => WorkTrackingSystemConnection?.FeatureOwnerFieldForPortfolios;
+
+        [NotMapped]
+        private StoredSetting FeatureOwnerField
+        {
+            get => new(storedFeatureOwnerFieldSource, OwnFeatureOwnerAdditionalFieldDefinitionId);
+            set => (storedFeatureOwnerFieldSource, OwnFeatureOwnerAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
+        }
 
         [NotMapped]
         private StoredSetting SizeEstimateField

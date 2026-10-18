@@ -357,6 +357,10 @@ namespace Lighthouse.Backend.Data
                 .Property<SettingSource>("storedSizeEstimateFieldSource")
                 .HasColumnName(nameof(Portfolio.SizeEstimateFieldSource));
 
+            modelBuilder.Entity<Portfolio>()
+                .Property<SettingSource>("storedFeatureOwnerFieldSource")
+                .HasColumnName(nameof(Portfolio.FeatureOwnerFieldSource));
+
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);

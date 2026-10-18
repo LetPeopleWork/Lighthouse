@@ -637,7 +637,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
 
             var portfolio = CreatePortfolioWithAdditionalFields($"[{AzureDevOpsFieldNames.TeamProject}] = 'CMFTTestTeamProject' AND [{AzureDevOpsFieldNames.Id}] = '{workItemId}'", additionalFieldDefs);
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = ownerFieldId;
+            portfolio.OwnFeatureOwnerField(ownerFieldId);
 
             var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == workItemId);

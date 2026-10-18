@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DoneStates), p => p.DoneStates = ["Done"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.StateMappings), p => p.StateMappings[0].States.Add("Testing"));
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.OwnParentOverride(2));
-            yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.FeatureOwnerAdditionalFieldDefinitionId = null);
+            yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.OwnFeatureOwnerField(null));
             yield return Case(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), p => p.OwnSizeEstimateField(3));
             yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.OwnDependencyField(2));
             yield return Case(nameof(WorkTrackingSystemConnection.AdditionalFieldDefinitions), p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions[0].Reference = "customfield_99999");
@@ -340,10 +340,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                         new StateMapping { Name = "Done", States = [.. InOperatorOrder("Released", "Shipped")] }),
                 ],
                 DoneItemsCutoffDays = 365,
-                FeatureOwnerAdditionalFieldDefinitionId = 1,
                 WorkTrackingSystemConnectionId = 7,
                 WorkTrackingSystemConnection = connection,
-            }.OwningParentOverride(1).OwningSizeEstimateField(2);
+            }.OwningParentOverride(1).OwningSizeEstimateField(2).OwningFeatureOwnerField(1);
         }
 
         private static WorkTrackingSystemConnection AConnection()

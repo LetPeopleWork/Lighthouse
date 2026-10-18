@@ -474,7 +474,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             additionalFieldDefs.Add(ownerField);
 
             var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 2;
+            portfolio.OwnFeatureOwnerField(2);
 
             var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == issueKey);

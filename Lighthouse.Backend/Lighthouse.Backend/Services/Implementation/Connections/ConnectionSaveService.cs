@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     && (fieldIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.OwnSizeEstimateAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.EstimationAdditionalFieldDefinitionId)))
                 .OrderBy(portfolio => portfolio.Id)
                 .Select(portfolio => new
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
-                    portfolio.FeatureOwnerAdditionalFieldDefinitionId,
+                    portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,
                 })
                 .AsEnumerable()
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
-                    portfolio.FeatureOwnerAdditionalFieldDefinitionId,
+                    portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,
                 ]))];
 

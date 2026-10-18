@@ -180,6 +180,48 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(portfolio.SizeEstimateAdditionalFieldDefinitionId, Is.EqualTo(TheConnectionsDefault));
         }
 
+        [TestCase(SettingSource.ConnectionDefault, null, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, null, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.Own, null, null, null)]
+        [TestCase(SettingSource.Own, null, TheConnectionsDefault, null)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, null, TheOwnersOwnField)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, TheConnectionsDefault, TheOwnersOwnField)]
+        public void A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(
+            SettingSource source, int? ownValueBeforeTheSourceWasSet, int? featureOwnerDefault, int? expected)
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    ParentOverrideForPortfolios = ThePortfoliosParentOverrideDefault,
+                    DependencyFieldForPortfolios = ThePortfoliosParentOverrideDefault,
+                    SizeEstimateFieldForPortfolios = ThePortfoliosParentOverrideDefault,
+                    FeatureOwnerFieldForPortfolios = featureOwnerDefault,
+                },
+            };
+
+            portfolio.OwnFeatureOwnerField(ownValueBeforeTheSourceWasSet);
+            if (source == SettingSource.ConnectionDefault)
+            {
+                portfolio.FollowFeatureOwnerFieldDefault();
+            }
+
+            Assert.That(portfolio.FeatureOwnerAdditionalFieldDefinitionId, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void A_new_Portfolio_follows_the_connections_Feature_Owner_Field_default()
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { FeatureOwnerFieldForPortfolios = TheConnectionsDefault },
+            };
+
+            Assert.That(portfolio.FeatureOwnerAdditionalFieldDefinitionId, Is.EqualTo(TheConnectionsDefault));
+        }
+
         [Test]
         public void A_Portfolio_has_no_Teams_default_to_follow()
         {

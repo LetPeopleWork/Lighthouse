@@ -680,7 +680,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.OwningTeam = null;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwnFeatureOwnerField(1);
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
@@ -720,7 +720,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
             portfolio.OwningTeam = team1;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
+            portfolio.OwnFeatureOwnerField(12);
 
             AddAdditionalField(portfolio, 12, "MyCustomField", "My Custom Field");
 
@@ -762,7 +762,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwnFeatureOwnerField(1);
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 
@@ -806,7 +806,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwnFeatureOwnerField(1);
             portfolio.OwningTeam = team1;
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
@@ -851,7 +851,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 12;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwnFeatureOwnerField(1);
             portfolio.OwningTeam = team1;
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
@@ -894,7 +894,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             var portfolio = CreatePortfolio();
             portfolio.DefaultAmountOfWorkItemsPerFeature = 15;
-            portfolio.FeatureOwnerAdditionalFieldDefinitionId = 1;
+            portfolio.OwnFeatureOwnerField(1);
 
             AddAdditionalField(portfolio, 1, "MyCustomField", "My Custom Field");
 

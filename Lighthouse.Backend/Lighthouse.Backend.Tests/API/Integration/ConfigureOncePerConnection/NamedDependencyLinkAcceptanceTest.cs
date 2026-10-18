@@ -469,7 +469,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                     portfolio.OwnSizeEstimateField(fieldId);
                     break;
                 case ASettingThatReadsAField.FeatureOwnerField:
-                    portfolio.FeatureOwnerAdditionalFieldDefinitionId = fieldId;
+                    portfolio.OwnFeatureOwnerField(fieldId);
                     break;
                 case ASettingThatReadsAField.EstimationField:
                     portfolio.EstimationAdditionalFieldDefinitionId = fieldId;

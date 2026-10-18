@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private static Portfolio APortfolio(bool namesItsOwnFields)
         {
             var portfolio = APortfolioFollowingItsFieldDefaults(namesItsOwnFields);
-            return namesItsOwnFields ? portfolio.OwningDependencyField(BlockedByKeys).OwningSizeEstimateField(TShirtSize) : portfolio;
+            return namesItsOwnFields ? portfolio.OwningDependencyField(BlockedByKeys).OwningSizeEstimateField(TShirtSize).OwningFeatureOwnerField(ProductOwner) : portfolio;
         }
 
         private static Portfolio APortfolioFollowingItsFieldDefaults(bool namesItsOwnFields)
@@ -112,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoingStates = ["Implementing"],
                 DoneStates = ["Done"],
                 StateMappings = [],
-                FeatureOwnerAdditionalFieldDefinitionId = namesItsOwnFields ? ProductOwner : null,
                 WorkTrackingSystemConnectionId = 21,
                 WorkTrackingSystemConnection = AConnection(),
             }, namesItsOwnFields ? CausedBy : null);
