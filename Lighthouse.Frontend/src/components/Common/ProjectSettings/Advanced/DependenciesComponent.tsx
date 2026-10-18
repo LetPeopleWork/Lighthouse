@@ -8,6 +8,7 @@ import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
+import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface DependenciesComponentProps {
@@ -46,19 +47,11 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 						projectSettings?.dependencyOverrideAdditionalFieldDefinitionId
 					}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					onFollow={() =>
-						onProjectSettingsChange(
-							"dependencyFieldSource",
-							"ConnectionDefault",
-						)
-					}
-					onOwn={(field) => {
-						onProjectSettingsChange("dependencyFieldSource", "Own");
-						onProjectSettingsChange(
-							"dependencyOverrideAdditionalFieldDefinitionId",
-							field,
-						);
-					}}
+					{...followOrOwn(
+						onProjectSettingsChange,
+						"dependencyFieldSource",
+						"dependencyOverrideAdditionalFieldDefinitionId",
+					)}
 				/>
 				<Typography variant="caption" color="text.secondary">
 					{`Read what each ${featureTerm} waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.`}

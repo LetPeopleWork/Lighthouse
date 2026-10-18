@@ -2,6 +2,7 @@ import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import ConnectionDefaultFieldSelect from "../../../components/Common/ConnectionDefault/ConnectionDefaultFieldSelect";
+import { followOrOwn } from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -41,16 +42,11 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					source={teamSettings?.parentOverrideSource}
 					ownField={teamSettings?.parentOverrideAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					onFollow={() =>
-						onTeamSettingsChange("parentOverrideSource", "ConnectionDefault")
-					}
-					onOwn={(field) => {
-						onTeamSettingsChange("parentOverrideSource", "Own");
-						onTeamSettingsChange(
-							"parentOverrideAdditionalFieldDefinitionId",
-							field,
-						);
-					}}
+					{...followOrOwn(
+						onTeamSettingsChange,
+						"parentOverrideSource",
+						"parentOverrideAdditionalFieldDefinitionId",
+					)}
 				/>
 			</Grid>
 			<Grid size={{ xs: 12 }}>

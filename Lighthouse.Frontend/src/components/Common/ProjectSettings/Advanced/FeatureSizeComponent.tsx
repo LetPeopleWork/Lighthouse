@@ -12,6 +12,7 @@ import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTrack
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
+import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
 import InputGroup from "../../InputGroup/InputGroup";
 import ItemListManager from "../../ItemListManager/ItemListManager";
 
@@ -187,16 +188,11 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					source={projectSettings?.sizeEstimateSource}
 					ownField={projectSettings?.sizeEstimateAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					onFollow={() =>
-						onProjectSettingsChange("sizeEstimateSource", "ConnectionDefault")
-					}
-					onOwn={(field) => {
-						onProjectSettingsChange("sizeEstimateSource", "Own");
-						onProjectSettingsChange(
-							"sizeEstimateAdditionalFieldDefinitionId",
-							field,
-						);
-					}}
+					{...followOrOwn(
+						onProjectSettingsChange,
+						"sizeEstimateSource",
+						"sizeEstimateAdditionalFieldDefinitionId",
+					)}
 				/>
 			</Grid>
 

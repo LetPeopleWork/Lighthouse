@@ -1,4 +1,7 @@
-import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type {
+	IBaseSettings,
+	SettingSource,
+} from "../../../models/Common/BaseSettings";
 import type {
 	ConnectionDefaultName,
 	IWorkTrackingSystemConnection,
@@ -15,6 +18,22 @@ const trackersHoldingTheDefaults: Partial<
 	Jira: "Jira",
 	AzureDevOps: "Azure DevOps",
 };
+
+/**
+ * What picking an entry writes into the settings: following sets only the source, while owning sets the
+ * source and the field, where a null field is a deliberate None.
+ */
+export const followOrOwn = <Key>(
+	change: (key: Key, value: SettingSource | number | null) => void,
+	sourceKey: Key,
+	ownFieldKey: Key,
+) => ({
+	onFollow: () => change(sourceKey, "ConnectionDefault"),
+	onOwn: (field: number | null) => {
+		change(sourceKey, "Own");
+		change(ownFieldKey, field);
+	},
+});
 
 /** The tracker's name as the helper text says it, or undefined when its connection holds no defaults. */
 export const trackerHoldingTheDefaults = (
