@@ -1,4 +1,5 @@
 import type { DataGridExportTable } from "../../../../../components/Common/DataGrid/types";
+import { percentileDateText } from "../../../../../components/Common/Forecasts/forecastPercentileText";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
 import type { FeatureMetric } from "../../../../../models/Delivery/DeliveryMetricsHistory";
@@ -48,7 +49,7 @@ const dateFor = (
 		(candidate) => candidate.probability === probability,
 	);
 	return forecast
-		? formatLocalDate(new Date(forecast.expectedDate))
+		? percentileDateText(forecast, (date) => formatLocalDate(new Date(date)))
 		: NOTHING_TO_SAY;
 };
 

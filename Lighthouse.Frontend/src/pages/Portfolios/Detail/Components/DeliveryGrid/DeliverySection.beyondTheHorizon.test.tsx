@@ -35,9 +35,6 @@ vi.mock(
 	}),
 );
 
-const pendingEpic6311 =
-	"Pending: the Delivery chip words a percentile beyond the horizon (epic 6311, slice 03)";
-
 const percentile = (probability: number, beyondHorizon: boolean) => {
 	const forecast = WhenForecast.new(
 		probability,
@@ -99,7 +96,7 @@ const renderSection = () =>
 	);
 
 describe("the Delivery's forecast chips when percentiles are beyond the horizon", () => {
-	it.skip(`read "85%: More than 5 years" (${pendingEpic6311})`, () => {
+	it(`read "85%: More than 5 years"`, () => {
 		renderSection();
 
 		expect(screen.getByText(/^85%: More than 5 years$/)).toBeInTheDocument();
@@ -107,7 +104,7 @@ describe("the Delivery's forecast chips when percentiles are beyond the horizon"
 		expect(screen.getByText(/^95%: More than 5 years$/)).toBeInTheDocument();
 	});
 
-	it.skip(`never show the stand-in date (${pendingEpic6311})`, () => {
+	it(`never show the stand-in date`, () => {
 		renderSection();
 
 		expect(screen.getAllByText(/^\d+%: /)).toHaveLength(4);

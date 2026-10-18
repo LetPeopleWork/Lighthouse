@@ -15,6 +15,17 @@ export const yearsBeyondHorizon = (
 export const moreThanYearsText = (horizonYears: number): string =>
 	`More than ${horizonYears} years`;
 
+/** A percentile as one line of text: its date in the caller's own format, or the words when it has none. */
+export const percentileDateText = (
+	percentile: Percentile & Pick<IWhenForecast, "expectedDate">,
+	formatDate: (date: Date) => string,
+): string => {
+	const years = yearsBeyondHorizon(percentile);
+	return years === undefined
+		? formatDate(percentile.expectedDate)
+		: moreThanYearsText(years);
+};
+
 /** Why a percentile has no date, for a tooltip or a reason line. */
 export const beyondHorizonReason = (
 	probability: number,

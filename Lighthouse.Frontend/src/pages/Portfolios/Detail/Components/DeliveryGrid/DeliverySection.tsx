@@ -43,6 +43,7 @@ import { useFeatureChildItems } from "../../../../../components/Common/FeatureLi
 import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
 import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
+import { percentileDateText } from "../../../../../components/Common/Forecasts/forecastPercentileText";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
 import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
@@ -751,7 +752,7 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 										{delivery.completionDates.map((forecast) => (
 											<Chip
 												key={forecast.probability}
-												label={`${forecast.probability}%: ${formatDate(forecast.expectedDate)}`}
+												label={`${forecast.probability}%: ${percentileDateText(forecast, formatDate)}`}
 												size="small"
 												variant="outlined"
 											/>

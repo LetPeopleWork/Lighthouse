@@ -5,9 +5,6 @@ import { WhenForecast } from "../../../../../models/Forecasts/WhenForecast";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
 
-const pendingEpic6311 =
-	"Pending: the export words a percentile beyond the horizon (epic 6311, slice 03)";
-
 const TERMS = {
 	deliveryTerm: "Delivery",
 	workItemsTerm: "Work Items",
@@ -83,7 +80,7 @@ const forecastCellsOf = (row: string[]) =>
 	FORECAST_COLUMNS.map((column) => row[column]);
 
 describe("exporting a Delivery whose percentiles are beyond the horizon", () => {
-	it.skip(`writes "More than 5 years" in the Feature's beyond cells and the date in the one that has a day (${pendingEpic6311})`, () => {
+	it(`writes "More than 5 years" in the Feature's beyond cells and the date in the one that has a day`, () => {
 		const table = buildDeliveryExportTable(
 			aDelivery([]),
 			[aFeature(sixInTenFinish())],
@@ -101,7 +98,7 @@ describe("exporting a Delivery whose percentiles are beyond the horizon", () => 
 		expect(cells[0]).not.toBe("");
 	});
 
-	it.skip(`writes "More than 5 years" in the Delivery's own beyond cells (${pendingEpic6311})`, () => {
+	it(`writes "More than 5 years" in the Delivery's own beyond cells`, () => {
 		const table = buildDeliveryExportTable(
 			aDelivery(sixInTenFinish()),
 			[],
@@ -116,7 +113,7 @@ describe("exporting a Delivery whose percentiles are beyond the horizon", () => 
 		]);
 	});
 
-	it.skip(`never writes the stand-in date, an empty cell or "Cannot forecast" for a beyond percentile (${pendingEpic6311})`, () => {
+	it(`never writes the stand-in date, an empty cell or "Cannot forecast" for a beyond percentile`, () => {
 		const table = buildDeliveryExportTable(
 			aDelivery(sixInTenFinish()),
 			[aFeature(sixInTenFinish())],
