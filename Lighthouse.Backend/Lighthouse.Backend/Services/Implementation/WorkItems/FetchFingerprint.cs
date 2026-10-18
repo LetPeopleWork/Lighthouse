@@ -101,8 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// The connection's share of <see cref="For"/>: what changes for every Team and Portfolio on
-        /// <paramref name="connection"/> at once. Two answers compare by value, so a connection save can tell
-        /// whether it moved the fingerprint of everything on the connection.
+        /// <paramref name="connection"/> at once.
         /// </summary>
         /// <remarks>
         /// Rendered, not digested, and joined with the same separator <see cref="For"/> uses between its
