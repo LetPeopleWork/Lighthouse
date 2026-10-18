@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         private static readonly TimeSpan TheLongestAPageMayTake = TimeSpan.FromSeconds(10);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice01)]
         [Category("ac-01.1")]
         [Category("ac-01.2")]
         [Category("driving_port")]

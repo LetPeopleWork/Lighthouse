@@ -16,8 +16,12 @@ namespace Lighthouse.Backend.Models.Forecast
         /// </summary>
         public int CoresSeen { get; init; } = Environment.ProcessorCount;
 
-        // SCAFFOLD: not implemented yet. -1 is what Parallel.For reads as "no limit", today's behaviour; the
-        // acceptance tests for keeping pages answering expect a bound here.
-        public int MostRunsAtOnce { get; init; } = -1;
+        /// <summary>
+        /// How many simulated runs one forecast may have under way at once: half the cores, and never fewer
+        /// than one. The other half stays free so that pages keep answering while a forecast runs. The bound
+        /// belongs to each forecast on its own, so a manual forecast asked for during a background one gets
+        /// its own half rather than queueing behind it.
+        /// </summary>
+        public int MostRunsAtOnce => Math.Max(1, CoresSeen / 2);
     }
 }

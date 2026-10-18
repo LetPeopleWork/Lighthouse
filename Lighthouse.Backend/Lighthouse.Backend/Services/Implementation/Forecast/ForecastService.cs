@@ -138,9 +138,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var oneRun = new SimulatedRun(plan, draws, limits.MostDaysOneSimulatedRunMayCover);
             var workersThatRanThem = new ConcurrentBag<OneWorkersShareOfTheRuns>();
 
+            var howTheRunsAreSpread = new ParallelOptions { MaxDegreeOfParallelism = limits.MostRunsAtOnce };
+
             Parallel.For(
                 0,
                 limits.Trials,
+                howTheRunsAreSpread,
                 () => new OneWorkersShareOfTheRuns(plan),
                 (trial, _, share) =>
                 {

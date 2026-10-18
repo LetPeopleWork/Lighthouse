@@ -62,7 +62,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// the next scenario.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice01)]
         [Category("ac-01.2")]
         [Category("ac-01.3")]
         [Category("edge")]
@@ -86,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// must reach the bound, which proves the runs really were spread over that many, and never pass it.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice01)]
         [Category("ac-01.2")]
         [Category("ac-01.3")]
         [Category("contract-shape:bounded-change")]
@@ -149,7 +147,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// same bound, of its own.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice01)]
         [Category("ac-01.2")]
         [Category("contract-shape:bounded-change")]
         public async Task A_manual_forecast_is_held_to_the_same_bound()
