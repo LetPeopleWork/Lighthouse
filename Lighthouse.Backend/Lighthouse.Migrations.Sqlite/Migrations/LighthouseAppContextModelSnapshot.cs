@@ -1058,6 +1058,10 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("ParentOverrideAdditionalFieldDefinitionId");
 
+                    b.Property<int?>("OwnSizeEstimateAdditionalFieldDefinitionId")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("SizeEstimateAdditionalFieldDefinitionId");
+
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("INTEGER");
 
@@ -1074,9 +1078,6 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("ServiceLevelExpectationRange")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int?>("SizeEstimateAdditionalFieldDefinitionId")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("StalenessThresholdDays")
@@ -1120,6 +1121,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("INTEGER")
                         .HasColumnName("ParentOverrideSource");
+
+                    b.Property<int>("storedSizeEstimateFieldSource")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("SizeEstimateFieldSource");
 
                     b.HasKey("Id");
 
@@ -1702,6 +1707,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParentOverrideForTeams")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("SizeEstimateFieldForPortfolios")
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("WorkTrackingSystem")

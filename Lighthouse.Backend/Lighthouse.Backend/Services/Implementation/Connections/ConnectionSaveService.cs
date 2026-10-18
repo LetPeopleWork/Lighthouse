@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
                     && (fieldIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.SizeEstimateAdditionalFieldDefinitionId)
+                        || fieldIds.Contains(portfolio.OwnSizeEstimateAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.FeatureOwnerAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.EstimationAdditionalFieldDefinitionId)))
                 .OrderBy(portfolio => portfolio.Id)
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.Name,
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
-                    portfolio.SizeEstimateAdditionalFieldDefinitionId,
+                    portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,
                 })
@@ -118,7 +118,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
                     portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
-                    portfolio.SizeEstimateAdditionalFieldDefinitionId,
+                    portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.EstimationAdditionalFieldDefinitionId,
                 ]))];

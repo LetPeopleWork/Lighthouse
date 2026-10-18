@@ -429,7 +429,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team = CreateTeam();
             var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.SizeEstimateAdditionalFieldDefinitionId = 1;
+            project.OwnSizeEstimateField(1);
 
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 0 };
@@ -450,7 +450,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             var team = CreateTeam();
             var project = CreatePortfolio();
             project.DefaultAmountOfWorkItemsPerFeature = 12;
-            project.SizeEstimateAdditionalFieldDefinitionId = 1; // Size field configured and feature has size
+            project.OwnSizeEstimateField(1); // Size field configured and feature has size
 
 
             var feature1 = new Feature(team, 0) { ReferenceId = "42", EstimatedSize = 7 };

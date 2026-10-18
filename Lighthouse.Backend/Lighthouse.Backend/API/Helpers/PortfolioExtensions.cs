@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.API.Helpers
             project.PercentileHistoryInDays = portfolioSetting.PercentileHistoryInDays;
             project.StalenessThresholdDays = portfolioSetting.StalenessThresholdDays;
             project.BlockedStalenessThresholdDays = portfolioSetting.BlockedStalenessThresholdDays;
-            project.SizeEstimateAdditionalFieldDefinitionId = portfolioSetting.SizeEstimateAdditionalFieldDefinitionId;
             project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
@@ -26,6 +25,7 @@ namespace Lighthouse.Backend.API.Helpers
             // the request is judged against the connection it was read from.
             project.TakeParentOverrideAsSent(portfolioSetting.ParentOverrideSource, portfolioSetting.ParentOverrideAdditionalFieldDefinitionId);
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
+            project.TakeSizeEstimateFieldAsSent(null, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;

@@ -24,5 +24,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             portfolio.OwnDependencyField(additionalFieldDefinitionId);
             return portfolio;
         }
+
+        public static Portfolio OwningSizeEstimateField(this Portfolio portfolio, int? additionalFieldDefinitionId)
+        {
+            portfolio.OwnSizeEstimateField(additionalFieldDefinitionId);
+            return portfolio;
+        }
     }
 }

@@ -86,9 +86,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 DoneStates = ["Done"],
                 StateMappings = [],
                 FeatureOwnerAdditionalFieldDefinitionId = 1,
-                SizeEstimateAdditionalFieldDefinitionId = 1,
                 WorkTrackingSystemConnectionId = 7,
                 WorkTrackingSystemConnection = AConnection(),
-            }.OwningParentOverride(null).OwningDependencyField(null);
+            }.OwningParentOverride(null).OwningDependencyField(null).OwningSizeEstimateField(1);
     }
 }

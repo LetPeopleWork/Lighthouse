@@ -329,7 +329,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 11, DisplayName = "Size", Reference = DependsOnReverse });
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 12, DisplayName = "Owner", Reference = ARealField });
             portfolio.OwnParentOverride(10);
-            portfolio.SizeEstimateAdditionalFieldDefinitionId = 11;
+            portfolio.OwnSizeEstimateField(11);
             portfolio.FeatureOwnerAdditionalFieldDefinitionId = 12;
             portfolio.EstimationAdditionalFieldDefinitionId = 12;
 

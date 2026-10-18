@@ -935,7 +935,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 portfolio.OwnParentOverride(TheFieldOn(connection, ParentLink));
                 portfolio.OwnDependencyField(TheFieldOn(connection, BlockedByKeys));
-                portfolio.SizeEstimateAdditionalFieldDefinitionId = TheFieldOn(connection, TShirtSize);
+                portfolio.OwnSizeEstimateField(TheFieldOn(connection, TShirtSize));
                 portfolio.FeatureOwnerAdditionalFieldDefinitionId = TheFieldOn(connection, ProductOwner);
                 portfolio.EstimationAdditionalFieldDefinitionId = TheFieldOn(connection, StoryPoints);
                 portfolio.EstimationUnit = Points;

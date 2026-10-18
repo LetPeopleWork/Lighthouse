@@ -50,6 +50,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("WorkTrackingSystemConnections", "ParentOverrideForPortfolios", "INTEGER", "AddPortfoliosParentOverrideDefault"),
             new("Portfolios", "DependencyFieldSource", "INTEGER", "AddPortfoliosDependencyFieldDefault"),
             new("WorkTrackingSystemConnections", "DependencyFieldForPortfolios", "INTEGER", "AddPortfoliosDependencyFieldDefault"),
+            new("Portfolios", "SizeEstimateFieldSource", "INTEGER", "AddPortfoliosSizeEstimateFieldDefault"),
+            new("WorkTrackingSystemConnections", "SizeEstimateFieldForPortfolios", "INTEGER", "AddPortfoliosSizeEstimateFieldDefault"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

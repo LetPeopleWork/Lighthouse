@@ -353,6 +353,10 @@ namespace Lighthouse.Backend.Data
                 .Property<SettingSource>("storedDependencyFieldSource")
                 .HasColumnName(nameof(Portfolio.DependencyFieldSource));
 
+            modelBuilder.Entity<Portfolio>()
+                .Property<SettingSource>("storedSizeEstimateFieldSource")
+                .HasColumnName(nameof(Portfolio.SizeEstimateFieldSource));
+
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);

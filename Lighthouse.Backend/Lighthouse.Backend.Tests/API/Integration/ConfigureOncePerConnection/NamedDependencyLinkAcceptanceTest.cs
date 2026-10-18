@@ -466,7 +466,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                     portfolio.OwnParentOverride(fieldId);
                     break;
                 case ASettingThatReadsAField.SizeEstimateField:
-                    portfolio.SizeEstimateAdditionalFieldDefinitionId = fieldId;
+                    portfolio.OwnSizeEstimateField(fieldId);
                     break;
                 case ASettingThatReadsAField.FeatureOwnerField:
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId = fieldId;

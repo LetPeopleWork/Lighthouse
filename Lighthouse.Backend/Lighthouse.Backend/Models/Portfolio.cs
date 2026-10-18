@@ -20,7 +20,20 @@ namespace Lighthouse.Backend.Models
 
         public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
 
-        public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
+        /// <summary>The Additional Field the connectors read a Feature's estimated size from, as this Portfolio answers it.</summary>
+        [NotMapped]
+        public int? SizeEstimateAdditionalFieldDefinitionId => SizeEstimateField.ReadWith(SizeEstimateFieldConnectionDefault);
+
+        [Column(nameof(SizeEstimateAdditionalFieldDefinitionId))]
+        public int? OwnSizeEstimateAdditionalFieldDefinitionId { get; private set; }
+
+        private SettingSource storedSizeEstimateFieldSource = SettingSource.ConnectionDefault;
+
+        [NotMapped]
+        public SettingSource SizeEstimateFieldSource => storedSizeEstimateFieldSource;
+
+        [NotMapped]
+        public bool FollowsSizeEstimateFieldDefault => SizeEstimateField.FollowsTheDefault;
 
         /// <summary>
         /// The Additional Field (or link type) the connectors read a Feature's dependencies from, as this Portfolio
@@ -67,6 +80,7 @@ namespace Lighthouse.Backend.Models
         {
             ConnectionDefaultSetting.ParentOverrideForPortfolios => FollowsParentOverrideDefault,
             ConnectionDefaultSetting.DependencyFieldForPortfolios => FollowsDependencyFieldDefault,
+            ConnectionDefaultSetting.SizeEstimateFieldForPortfolios => FollowsSizeEstimateFieldDefault,
             _ => false,
         };
 
@@ -83,6 +97,23 @@ namespace Lighthouse.Backend.Models
             => DependencyField = DependencyField.Taking(sentSource, sentField, DependencyFieldConnectionDefault);
 
         private int? DependencyFieldConnectionDefault => WorkTrackingSystemConnection?.DependencyFieldForPortfolios;
+
+        public void FollowSizeEstimateFieldDefault() => SizeEstimateField = StoredSetting.FollowingTheDefault;
+
+        /// <param name="additionalFieldDefinitionId">Null is a deliberate None: no size estimate is read, whatever the default says.</param>
+        public void OwnSizeEstimateField(int? additionalFieldDefinitionId) => SizeEstimateField = StoredSetting.Owning(additionalFieldDefinitionId);
+
+        public void TakeSizeEstimateFieldAsSent(SettingSource? sentSource, int? sentField)
+            => SizeEstimateField = SizeEstimateField.Taking(sentSource, sentField, SizeEstimateFieldConnectionDefault);
+
+        private int? SizeEstimateFieldConnectionDefault => WorkTrackingSystemConnection?.SizeEstimateFieldForPortfolios;
+
+        [NotMapped]
+        private StoredSetting SizeEstimateField
+        {
+            get => new(storedSizeEstimateFieldSource, OwnSizeEstimateAdditionalFieldDefinitionId);
+            set => (storedSizeEstimateFieldSource, OwnSizeEstimateAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
+        }
 
         [NotMapped]
         private StoredSetting DependencyField

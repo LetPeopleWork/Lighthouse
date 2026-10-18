@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Category = "slice-08,ac-7.5")]
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Category = "slice-09,ac-8.5")]
-        [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Ignore = PendingEpic6303.Slice10, Category = "slice-10,ac-9.5")]
+        [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Category = "slice-10,ac-9.5")]
         [TestCase(UpgradedSetting.PortfoliosFeatureOwnerField, Ignore = PendingEpic6303.Slice11, Category = "slice-11,ac-10.5")]
         [TestCase(UpgradedSetting.TeamsEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
         [TestCase(UpgradedSetting.PortfoliosEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Category = "slice-08,ac-7.5")]
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Category = "slice-09,ac-8.5")]
-        [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Ignore = PendingEpic6303.Slice10, Category = "slice-10,ac-9.5")]
+        [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Category = "slice-10,ac-9.5")]
         [TestCase(UpgradedSetting.PortfoliosFeatureOwnerField, Ignore = PendingEpic6303.Slice11, Category = "slice-11,ac-10.5")]
         [TestCase(UpgradedSetting.TeamsEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
         [TestCase(UpgradedSetting.PortfoliosEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     ((Portfolio)owner).OwnDependencyField(value);
                     break;
                 case UpgradedSetting.PortfoliosSizeEstimateField:
-                    ((Portfolio)owner).SizeEstimateAdditionalFieldDefinitionId = value;
+                    ((Portfolio)owner).OwnSizeEstimateField(value);
                     break;
                 case UpgradedSetting.PortfoliosFeatureOwnerField:
                     ((Portfolio)owner).FeatureOwnerAdditionalFieldDefinitionId = value;

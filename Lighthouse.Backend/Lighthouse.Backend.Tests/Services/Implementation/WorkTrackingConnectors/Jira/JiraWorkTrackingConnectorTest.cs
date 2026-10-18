@@ -446,7 +446,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             additionalFieldDefs.Add(sizeField);
 
             var portfolio = CreatePortfolioWithAdditionalFields($"project = LGHTHSDMO AND issuekey = {issueKey}", additionalFieldDefs);
-            portfolio.SizeEstimateAdditionalFieldDefinitionId = 1;
+            portfolio.OwnSizeEstimateField(1);
 
             var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
             var feature = features.Single(f => f.ReferenceId == issueKey);
