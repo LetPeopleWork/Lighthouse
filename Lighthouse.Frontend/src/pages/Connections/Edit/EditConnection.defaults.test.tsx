@@ -527,24 +527,6 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("saving a changed default", () => {
-		// The save dialog for a changed default arrives with the updates it asks about. Until then a changed
-		// default is saved exactly as any other change to the connection.
-		// @driving_port @us-04 @ac-5.4 @contract-shape:bounded-change @retired-by-slice-06
-		it("a default 3 Teams follow saves without asking anything, nested in the connection, as a save does today", async () => {
-			const server = await givenPriyaOpensJiraDcPayments();
-
-			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
-			whenPriyaPressesSave();
-
-			await theSaveIsSent(server);
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-			expect(theSave(server).defaults).toMatchObject({
-				parentOverrideForTeams: 11,
-			});
-			expect(theSave(server).choice).toBeUndefined();
-			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
-		});
-
 		// @error @us-04 @contract-shape:unbounded-preservation
 		it("a save that changes neither a default nor a field sends the defaults as they were and asks nothing", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
@@ -590,7 +572,7 @@ describe("defaults set once on the connection", () => {
 
 	describe("the save dialog for a changed default that is read when updating", () => {
 		// @walking_skeleton @driving_port @us-05 @ac-5.3 @ac-5.4 @ac-f.1 @contract-shape:bounded-change
-		it.skip("asks whether to update the 3 Teams that follow it, and Save and update says so", async () => {
+		it("asks whether to update the 3 Teams that follow it, and Save and update says so", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
 					defaults: { parentOverrideForTeams: 11 },
@@ -620,7 +602,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-05 @ac-5.2 @contract-shape:bounded-change
-		it.skip("Save only sends the default without starting any update", async () => {
+		it("Save only sends the default without starting any update", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
 			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);
@@ -635,7 +617,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation
-		it.skip("the dialog never names who follows", async () => {
+		it("the dialog never names who follows", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
 			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
@@ -648,7 +630,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-05 @ac-5.3 @ac-f.3 @contract-shape:bounded-change
-		it.skip("a default nobody follows saves without asking anything", async () => {
+		it("a default nobody follows saves without asking anything", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ followers: {} }),
 			});
@@ -662,7 +644,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation
-		it.skip("Cancel saves nothing and keeps Priya's choice on the page", async () => {
+		it("Cancel saves nothing and keeps Priya's choice on the page", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
 			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);

@@ -36,12 +36,6 @@ export interface IAuthenticationMethod {
 	isPremium?: boolean;
 }
 
-/** How many Teams and Portfolios read through a connection. Absent means nobody does. */
-export interface IConnectionUsage {
-	teams: number;
-	portfolios: number;
-}
-
 export const ConnectionDefaultNames = [
 	"parentOverrideForTeams",
 	"estimationForTeams",
@@ -53,6 +47,16 @@ export const ConnectionDefaultNames = [
 ] as const;
 
 export type ConnectionDefaultName = (typeof ConnectionDefaultNames)[number];
+
+/**
+ * How many Teams and Portfolios read through a connection. Absent means nobody does. Followers counts,
+ * per default, those that read the default rather than a value of their own; a default not listed has none.
+ */
+export interface IConnectionUsage {
+	teams: number;
+	portfolios: number;
+	followers?: Partial<Record<ConnectionDefaultName, number>>;
+}
 
 export const isConnectionDefaultName = (
 	name: string,

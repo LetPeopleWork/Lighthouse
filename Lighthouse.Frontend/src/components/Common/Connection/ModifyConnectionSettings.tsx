@@ -1,13 +1,7 @@
 import {
 	Alert,
 	Box,
-	Button,
 	Container,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogContentText,
-	DialogTitle,
 	FormControl,
 	InputLabel,
 	Link,
@@ -19,7 +13,7 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -43,7 +37,6 @@ import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBa
 import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import ActionButton from "../ActionButton/ActionButton";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
@@ -54,6 +47,7 @@ import ValidationActions from "../ValidationActions/ValidationActions";
 import SecretHandlingNotice, {
 	containsSecretField,
 } from "./SecretHandlingNotice";
+import UpdateQuestion, { type WhyUpdate } from "./UpdateQuestion";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
 
@@ -170,6 +164,66 @@ const WhereEachDefaultSits: Record<
 	},
 };
 
+const changedFollowedDefaults = (
+	loaded: IConnectionDefaults,
+	current: IConnectionDefaults,
+	usage: IConnectionUsage,
+): ConnectionDefaultName[] =>
+	(Object.keys(WhereEachDefaultSits) as ConnectionDefaultName[]).filter(
+		(name) =>
+			(usage.followers?.[name] ?? 0) > 0 &&
+			(loaded[name] ?? null) !== (current[name] ?? null),
+	);
+
+const followersIn = (
+	group: DefaultsGroup,
+	changed: ConnectionDefaultName[],
+	usage: IConnectionUsage,
+): number =>
+	changed
+		.filter((name) => WhereEachDefaultSits[name].group === group)
+		.reduce((sum, name) => sum + (usage.followers?.[name] ?? 0), 0);
+
+// One question per save: a changed Additional Field updates everyone on the connection, which already
+// covers whoever follows a changed default.
+const whyUpdate = (
+	fieldsChanged: boolean,
+	changedDefaults: ConnectionDefaultName[],
+	usage: IConnectionUsage,
+	featureTerm: string,
+): WhyUpdate | null => {
+	if (fieldsChanged && isUsed(usage)) {
+		return {
+			because: "fields",
+			teams: usage.teams,
+			portfolios: usage.portfolios,
+		};
+	}
+	if (changedDefaults.length === 0) {
+		return null;
+	}
+	return {
+		because: "defaults",
+		teams: followersIn("teams", changedDefaults, usage),
+		portfolios: followersIn("portfolios", changedDefaults, usage),
+		defaults: [
+			...new Set(
+				changedDefaults.map((name) =>
+					WhereEachDefaultSits[name].label(featureTerm),
+				),
+			),
+		],
+	};
+};
+
+const choiceFor = (
+	why: WhyUpdate,
+	startUpdates: boolean,
+): ISaveConnectionChoice =>
+	why.because === "fields"
+		? { startUpdates }
+		: { startUpdates, additionalFieldsChanged: false };
+
 interface ConnectionDefaultsSectionProps {
 	supportedDefaults: ConnectionDefaultName[];
 	defaults: IConnectionDefaults;
@@ -248,77 +302,6 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	);
 };
 
-interface UpdateQuestionProps {
-	open: boolean;
-	usage: IConnectionUsage;
-	onUpdate: () => Promise<void>;
-	onSaveOnly: () => Promise<void>;
-	onCancel: () => void;
-}
-
-const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
-	open,
-	usage,
-	onUpdate,
-	onSaveOnly,
-	onCancel,
-}) => {
-	const titleId = useId();
-	const descriptionId = useId();
-	const [saving, setSaving] = useState(false);
-	const { getTerm } = useTerminology();
-	const team = getTerm(TERMINOLOGY_KEYS.TEAM);
-	const portfolio = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
-	const teams = usage.teams === 1 ? team : getTerm(TERMINOLOGY_KEYS.TEAMS);
-	const portfolios =
-		usage.portfolios === 1 ? portfolio : getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
-
-	const whileSaving = (answer: () => Promise<void>) => async () => {
-		setSaving(true);
-		try {
-			await answer();
-		} finally {
-			setSaving(false);
-		}
-	};
-
-	return (
-		<Dialog
-			open={open}
-			onClose={saving ? undefined : onCancel}
-			aria-labelledby={titleId}
-			aria-describedby={descriptionId}
-		>
-			<DialogTitle id={titleId}>
-				{`Update ${usage.teams} ${teams} and ${usage.portfolios} ${portfolios}?`}
-			</DialogTitle>
-			<DialogContent>
-				<DialogContentText id={descriptionId}>
-					{`You changed the Additional Fields. Their values only fill in once each ${team} and ${portfolio} on this connection has been updated. Save only: they fill in with the next scheduled update instead.`}
-				</DialogContentText>
-			</DialogContent>
-			<DialogActions>
-				<Button onClick={onCancel} color="primary" disabled={saving}>
-					Cancel
-				</Button>
-				<ActionButton
-					buttonText="Save only"
-					onClickHandler={whileSaving(onSaveOnly)}
-					buttonVariant="text"
-					disabled={saving}
-				/>
-				<ActionButton
-					buttonText="Save and update"
-					onClickHandler={whileSaving(onUpdate)}
-					buttonVariant="text"
-					disabled={saving}
-					autoFocus
-				/>
-			</DialogActions>
-		</Dialog>
-	);
-};
-
 interface ModifyConnectionSettingsProps {
 	title: string;
 	getSupportedSystems: () => Promise<IWorkTrackingSystemConnection[]>;
@@ -376,6 +359,12 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const [defaults, setDefaults] = useState<IConnectionDefaults | undefined>(
 		undefined,
 	);
+	const [loadedDefaults, setLoadedDefaults] = useState<IConnectionDefaults>({});
+	const [whyAsked, setWhyAsked] = useState<WhyUpdate>({
+		because: "fields",
+		teams: 0,
+		portfolios: 0,
+	});
 	const [connectionAwaitingAnswer, setConnectionAwaitingAnswer] =
 		useState<IWorkTrackingSystemConnection | null>(null);
 	const [validationErrorMessage, setValidationErrorMessage] = useState<
@@ -386,6 +375,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	>(null);
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
 	const baseUrl = useBaseUrl();
@@ -491,6 +481,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					setLoadedFields(existingConnection.additionalFieldDefinitions ?? []);
 					setUsage(existingConnection.usedBy ?? NOBODY);
 					setDefaults(existingConnection.defaults);
+					setLoadedDefaults(existingConnection.defaults ?? {});
 					setWriteBackMappings(
 						existingConnection.writeBackMappingDefinitions ?? [],
 					);
@@ -692,11 +683,16 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				return;
 			}
 
-			if (
-				isEditMode &&
-				isUsed(usage) &&
-				fieldsChangedSince(loadedFields, additionalFields)
-			) {
+			const why = isEditMode
+				? whyUpdate(
+						fieldsChangedSince(loadedFields, additionalFields),
+						changedFollowedDefaults(loadedDefaults, defaults ?? {}, usage),
+						usage,
+						featureTerm,
+					)
+				: null;
+			if (why) {
+				setWhyAsked(why);
 				setConnectionAwaitingAnswer(connection);
 				return;
 			}
@@ -1048,9 +1044,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 				</Grid>
 				<UpdateQuestion
 					open={connectionAwaitingAnswer !== null}
-					usage={usage}
-					onUpdate={() => saveAnswering({ startUpdates: true })}
-					onSaveOnly={() => saveAnswering({ startUpdates: false })}
+					why={whyAsked}
+					onUpdate={() => saveAnswering(choiceFor(whyAsked, true))}
+					onSaveOnly={() => saveAnswering(choiceFor(whyAsked, false))}
 					onCancel={() => setConnectionAwaitingAnswer(null)}
 				/>
 			</Container>
