@@ -13,41 +13,39 @@ namespace Lighthouse.Backend.API.DTO
 
         public ConnectionDefaultsDto(WorkTrackingSystemConnection connection)
         {
-            ParentOverrideForTeams = connection.ParentOverrideForTeams;
-            ParentOverrideForPortfolios = connection.ParentOverrideForPortfolios;
-            DependencyFieldForPortfolios = connection.DependencyFieldForPortfolios;
+            foreach (var fieldDefault in ConnectionFieldDefaults.All)
+            {
+                sent[fieldDefault.Setting] = fieldDefault.FieldOn(connection);
+            }
         }
 
-        // Which members the save actually sent. A member left out keeps what the connection holds, so a tab
-        // opened before a default existed, or an older client, cannot clear it by not knowing it. Only an
-        // explicit null clears a default.
-        private readonly HashSet<ConnectionDefaultSetting> sent = [];
+        // The field the save actually sent for each default. A member left out keeps what the connection holds,
+        // so a tab opened before a default existed, or an older client, cannot clear it by not knowing it. Only
+        // an explicit null clears a default.
+        private readonly Dictionary<ConnectionDefaultSetting, int?> sent = [];
 
         public int? ParentOverrideForTeams
         {
-            get;
-            set => field = Sent(ConnectionDefaultSetting.ParentOverrideForTeams, value);
+            get => FieldOf(ConnectionDefaultSetting.ParentOverrideForTeams);
+            set => sent[ConnectionDefaultSetting.ParentOverrideForTeams] = value;
         }
 
         public int? ParentOverrideForPortfolios
         {
-            get;
-            set => field = Sent(ConnectionDefaultSetting.ParentOverrideForPortfolios, value);
+            get => FieldOf(ConnectionDefaultSetting.ParentOverrideForPortfolios);
+            set => sent[ConnectionDefaultSetting.ParentOverrideForPortfolios] = value;
         }
 
         public int? DependencyFieldForPortfolios
         {
-            get;
-            set => field = Sent(ConnectionDefaultSetting.DependencyFieldForPortfolios, value);
+            get => FieldOf(ConnectionDefaultSetting.DependencyFieldForPortfolios);
+            set => sent[ConnectionDefaultSetting.DependencyFieldForPortfolios] = value;
         }
 
-        public bool Sends(ConnectionDefaultSetting setting) => sent.Contains(setting);
+        public bool Sends(ConnectionDefaultSetting setting) => sent.ContainsKey(setting);
 
-        private int? Sent(ConnectionDefaultSetting setting, int? value)
-        {
-            sent.Add(setting);
-            return value;
-        }
+        /// <summary>The field the save names for a default; null when it clears the default or does not send it.</summary>
+        public int? FieldOf(ConnectionDefaultSetting setting) => sent.GetValueOrDefault(setting);
 
         // The defaults this build cannot hold yet. They are caught here rather than dropped, so a save that
         // names one is refused instead of appearing to succeed.
@@ -58,21 +56,6 @@ namespace Lighthouse.Backend.API.DTO
             => NotHeldByThisBuild?.Where(named => named.Value.ValueKind != JsonValueKind.Null).Select(named => named.Key) ?? [];
 
         public IEnumerable<ConnectionDefaultSetting> Named()
-        {
-            if (ParentOverrideForTeams.HasValue)
-            {
-                yield return ConnectionDefaultSetting.ParentOverrideForTeams;
-            }
-
-            if (ParentOverrideForPortfolios.HasValue)
-            {
-                yield return ConnectionDefaultSetting.ParentOverrideForPortfolios;
-            }
-
-            if (DependencyFieldForPortfolios.HasValue)
-            {
-                yield return ConnectionDefaultSetting.DependencyFieldForPortfolios;
-            }
-        }
+            => ConnectionFieldDefaults.All.Select(fieldDefault => fieldDefault.Setting).Where(setting => FieldOf(setting).HasValue);
     }
 }

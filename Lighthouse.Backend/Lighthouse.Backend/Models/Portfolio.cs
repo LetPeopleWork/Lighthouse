@@ -63,6 +63,13 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
 
+        public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => setting switch
+        {
+            ConnectionDefaultSetting.ParentOverrideForPortfolios => FollowsParentOverrideDefault,
+            ConnectionDefaultSetting.DependencyFieldForPortfolios => FollowsDependencyFieldDefault,
+            _ => false,
+        };
+
         public void FollowDependencyFieldDefault() => DependencyField = StoredSetting.FollowingTheDefault;
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own link, whatever the default says.</param>

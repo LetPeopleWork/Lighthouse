@@ -7,10 +7,13 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
     internal sealed record OwnerWords(string One, string Many);
 
     /// <summary>A default a save pointed at a field it added, named in the error if it could not follow.</summary>
-    internal sealed record PendingDefault(string Default, AdditionalFieldDefinition Field);
+    internal sealed record PendingDefault(ConnectionFieldDefault Default, AdditionalFieldDefinition Field);
 
     /// <summary>How many Teams and how many Portfolios a save started updating.</summary>
-    internal sealed record UpdatesQueued(int Teams, int Portfolios);
+    internal sealed record UpdatesQueued(int Teams, int Portfolios)
+    {
+        public int For(DefaultHeldFor heldFor) => heldFor == DefaultHeldFor.Teams ? Teams : Portfolios;
+    }
 
     /// <summary>A connection default as it was before a save, with what it names after it and who follows it.</summary>
     internal sealed record ChangedConnectionDefault(

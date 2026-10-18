@@ -41,32 +41,16 @@ namespace Lighthouse.Backend.Services.Implementation
         // Where an owner's setting comes from is held on the loaded owner, so the owners are read in memory.
         private IEnumerable<OwnerFollowing> OwnersFollowingAnyDefault()
         {
-            var teams = teamRepository.GetAllByPredicate(_ => true).AsEnumerable()
-                .Select(team => new OwnerFollowing(team.WorkTrackingSystemConnectionId, DefaultsFollowedBy(team)));
-            var portfolios = portfolioRepository.GetAllByPredicate(_ => true).AsEnumerable()
-                .Select(portfolio => new OwnerFollowing(portfolio.WorkTrackingSystemConnectionId, DefaultsFollowedBy(portfolio)));
+            var teams = teamRepository.GetAllByPredicate(_ => true).AsEnumerable<WorkTrackingSystemOptionsOwner>();
+            var portfolios = portfolioRepository.GetAllByPredicate(_ => true).AsEnumerable<WorkTrackingSystemOptionsOwner>();
 
-            return teams.Concat(portfolios).Where(owner => owner.Follows.Count > 0);
+            return teams.Concat(portfolios)
+                .Select(owner => new OwnerFollowing(owner.WorkTrackingSystemConnectionId, DefaultsFollowedBy(owner)))
+                .Where(owner => owner.Follows.Count > 0);
         }
 
-        private static List<ConnectionDefaultSetting> DefaultsFollowedBy(Team team)
-            => team.FollowsParentOverrideDefault ? [ConnectionDefaultSetting.ParentOverrideForTeams] : [];
-
-        private static List<ConnectionDefaultSetting> DefaultsFollowedBy(Portfolio portfolio)
-        {
-            var follows = new List<ConnectionDefaultSetting>();
-            if (portfolio.FollowsParentOverrideDefault)
-            {
-                follows.Add(ConnectionDefaultSetting.ParentOverrideForPortfolios);
-            }
-
-            if (portfolio.FollowsDependencyFieldDefault)
-            {
-                follows.Add(ConnectionDefaultSetting.DependencyFieldForPortfolios);
-            }
-
-            return follows;
-        }
+        private static List<ConnectionDefaultSetting> DefaultsFollowedBy(WorkTrackingSystemOptionsOwner owner)
+            => [.. ConnectionFieldDefaults.All.Select(fieldDefault => fieldDefault.Setting).Where(owner.FollowsConnectionDefault)];
 
         private static Dictionary<int, int> CountByConnection<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner
         {

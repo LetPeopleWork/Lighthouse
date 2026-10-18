@@ -112,6 +112,9 @@ namespace Lighthouse.Backend.Models
         public void TakeParentOverrideAsSent(SettingSource? sentSource, int? sentField)
             => ParentOverride = ParentOverride.Taking(sentSource, sentField, ParentOverrideConnectionDefault);
 
+        /// <summary>Whether this owner reads the given connection default; false for every default its kind is not offered.</summary>
+        public virtual bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => false;
+
         [NotMapped]
         private StoredSetting ParentOverride
         {

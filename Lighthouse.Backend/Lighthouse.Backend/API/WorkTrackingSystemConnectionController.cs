@@ -214,48 +214,25 @@ namespace Lighthouse.Backend.API
         // reading a field that is not there. A default left naming a field this same edit removes is kept, so
         // that the save refuses the removal and says the default still uses that field.
         private static ConnectionDefaultSetting? DefaultNamingNoFieldOfTheConnection(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
-        {
-            if (!NamesAFieldOfTheConnection(save, defaults.ParentOverrideForTeams, newFields))
-            {
-                return ConnectionDefaultSetting.ParentOverrideForTeams;
-            }
-
-            if (!NamesAFieldOfTheConnection(save, defaults.ParentOverrideForPortfolios, newFields))
-            {
-                return ConnectionDefaultSetting.ParentOverrideForPortfolios;
-            }
-
-            if (!NamesAFieldOfTheConnection(save, defaults.DependencyFieldForPortfolios, newFields))
-            {
-                return ConnectionDefaultSetting.DependencyFieldForPortfolios;
-            }
-
-            return null;
-        }
+            => ConnectionFieldDefaults.All
+                .Where(fieldDefault => !NamesAFieldOfTheConnection(save, defaults.FieldOf(fieldDefault.Setting), newFields))
+                .Select(fieldDefault => (ConnectionDefaultSetting?)fieldDefault.Setting)
+                .FirstOrDefault();
 
         private static void ApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
         {
-            if (defaults.Sends(ConnectionDefaultSetting.ParentOverrideForTeams))
+            foreach (var fieldDefault in ConnectionFieldDefaults.All.Where(fieldDefault => defaults.Sends(fieldDefault.Setting)))
             {
-                save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
-                save.Connection.ParentOverrideForTeams = StoredFieldNamedBy(defaults.ParentOverrideForTeams, save.TeamsParentOverrideDefaultAddedInThisSave);
-            }
+                var named = defaults.FieldOf(fieldDefault.Setting);
+                var addedInThisSave = newFields.FieldNamedBy(named);
+                if (addedInThisSave is not null)
+                {
+                    save.DefaultsAddedInThisSave[fieldDefault.Setting] = addedInThisSave;
+                }
 
-            if (defaults.Sends(ConnectionDefaultSetting.ParentOverrideForPortfolios))
-            {
-                save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
-                save.Connection.ParentOverrideForPortfolios = StoredFieldNamedBy(defaults.ParentOverrideForPortfolios, save.PortfoliosParentOverrideDefaultAddedInThisSave);
-            }
-
-            if (defaults.Sends(ConnectionDefaultSetting.DependencyFieldForPortfolios))
-            {
-                save.PortfoliosDependencyFieldDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.DependencyFieldForPortfolios);
-                save.Connection.DependencyFieldForPortfolios = StoredFieldNamedBy(defaults.DependencyFieldForPortfolios, save.PortfoliosDependencyFieldDefaultAddedInThisSave);
+                fieldDefault.PointAt(save.Connection, addedInThisSave is null ? named : null);
             }
         }
-
-        private static int? StoredFieldNamedBy(int? named, AdditionalFieldDefinition? addedInThisSave)
-            => addedInThisSave is null ? named : null;
 
         private static bool NamesAFieldOfTheConnection(ConnectionSaveHandle save, int? named, NewAdditionalFieldTargets newFields)
             => named is not { } fieldId

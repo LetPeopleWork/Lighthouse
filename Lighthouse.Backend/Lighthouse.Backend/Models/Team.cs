@@ -32,6 +32,9 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForTeams;
 
+        public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting)
+            => setting == ConnectionDefaultSetting.ParentOverrideForTeams && FollowsParentOverrideDefault;
+
         /// <summary>Null until a Team admin first saves the refinement section.</summary>
         public RefinementSettings? RefinementSettings { get; set; }
 

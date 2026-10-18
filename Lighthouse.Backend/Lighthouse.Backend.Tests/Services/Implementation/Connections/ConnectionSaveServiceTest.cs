@@ -323,7 +323,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             var handle = await OpenTheOwnedConnection(subject);
             var epicLink = new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" };
             handle.Connection.AdditionalFieldDefinitions.Add(epicLink);
-            handle.TeamsParentOverrideDefaultAddedInThisSave = epicLink;
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForTeams] = epicLink;
             connectionRepositoryMock.Setup(x => x.Save()).Callback(() => epicLink.Id = StoredEpicLinkId).Returns(Task.CompletedTask);
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
@@ -347,7 +347,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             var handle = await OpenTheOwnedConnection(subject);
             var epicLink = new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" };
             handle.Connection.AdditionalFieldDefinitions.Add(epicLink);
-            handle.TeamsParentOverrideDefaultAddedInThisSave = epicLink;
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForTeams] = epicLink;
             var failure = new InvalidOperationException("the database went away");
             connectionRepositoryMock.SetupSequence(x => x.Save())
                 .Returns(() =>
@@ -375,7 +375,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         {
             var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
             var handle = await OpenTheOwnedConnection(subject);
-            handle.PortfoliosParentOverrideDefaultAddedInThisSave = ANewField(handle, "Epic Link");
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForPortfolios] = ANewField(handle, "Epic Link");
             var failure = GivenTheSecondSaveFails();
 
             var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));
@@ -393,8 +393,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         {
             var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
             var handle = await OpenTheOwnedConnection(subject);
-            handle.TeamsParentOverrideDefaultAddedInThisSave = ANewField(handle, "Epic Link");
-            handle.PortfoliosParentOverrideDefaultAddedInThisSave = ANewField(handle, "Initiative Link");
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForTeams] = ANewField(handle, "Epic Link");
+            handle.DefaultsAddedInThisSave[ConnectionDefaultSetting.ParentOverrideForPortfolios] = ANewField(handle, "Initiative Link");
             GivenTheSecondSaveFails();
 
             var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));

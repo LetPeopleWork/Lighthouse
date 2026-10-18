@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Models
                 configured.GetValueOrDefault("portfolios", Seeded.Portfolios));
         }
 
+        public string PluralFor(DefaultHeldFor heldFor) => heldFor == DefaultHeldFor.Teams ? Teams : Portfolios;
+
         /// <summary>"Teams'" for a plural ending in s, "Staff's" for one that does not.</summary>
         public static string PossessiveOfPlural(string plural)
             => plural.EndsWith('s') ? $"{plural}'" : $"{plural}'s";
