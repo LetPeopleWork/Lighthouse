@@ -41,6 +41,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
+        [Category("ac-8.1")]
+        [Category("ac-8.4")]
+        [Category("contract-shape:pure-function")]
+        public async Task The_settings_page_names_the_Dependency_Field_default_not_the_Parent_Override_one()
+        {
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosParentOverrideField, ParentLink);
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosDependencyField, ReleaseTrain);
+
+            var cardIssuingsPage = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.DependencyField);
+            var merchantOnboardingsPage = await WhatTheSettingsPageShows(MerchantOnboarding, OwnerSetting.DependencyField);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cardIssuingsPage, Is.EqualTo(((string?)"ConnectionDefault", (string?)ReleaseTrain, (string?)ReleaseTrain)));
+                Assert.That(merchantOnboardingsPage, Is.EqualTo(((string?)"Own", (string?)ReleaseTrain, (string?)BlockedByKeys)));
+            }
+        }
+
+        [Test]
         [Category("ac-8.3")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

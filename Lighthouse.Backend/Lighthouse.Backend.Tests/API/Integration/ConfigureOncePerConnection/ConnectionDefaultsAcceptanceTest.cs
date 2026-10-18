@@ -1071,14 +1071,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static string TheOwnerMember(OwnerSetting setting) => setting switch
         {
             OwnerSetting.ParentOverrideField => "parentOverride",
-            OwnerSetting.DependencyField => "dependencyOverride",
+            OwnerSetting.DependencyField => "dependencyField",
             OwnerSetting.SizeEstimateField => "sizeEstimate",
             OwnerSetting.FeatureOwnerField => "featureOwner",
             OwnerSetting.Estimation => "estimation",
             _ => throw new ArgumentOutOfRangeException(nameof(setting), setting, null),
         };
 
-        private static string TheEffectiveIdMember(OwnerSetting setting) => $"{TheOwnerMember(setting)}AdditionalFieldDefinitionId";
+        // A Portfolio's settings name the Dependency Field's source and default "dependencyField…", but its id
+        // keeps the "dependencyOverride…" name it had before it could follow the connection.
+        private static string TheEffectiveIdMember(OwnerSetting setting) => setting == OwnerSetting.DependencyField
+            ? "dependencyOverrideAdditionalFieldDefinitionId"
+            : $"{TheOwnerMember(setting)}AdditionalFieldDefinitionId";
 
         private static JsonArray FieldsOf(JsonObject read) => read[AdditionalFieldDefinitions]!.AsArray();
 
