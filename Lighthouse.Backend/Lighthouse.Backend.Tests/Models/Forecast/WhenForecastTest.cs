@@ -6,6 +6,8 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
 {
     public class WhenForecastTest
     {
+        private static readonly int[] DaysTheRunsFinishedOn = [3, 5];
+
         [Test]
         [TestCase(8, 3)]
         [TestCase(30, 4)]
@@ -69,6 +71,31 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 Assert.That(subject.GetLikelihood(0), Is.Zero);
                 Assert.That(subject.GetLikelihood(5), Is.Zero);
             }
+        }
+
+        [Test]
+        public void GetPercentile_WhenNothingWasSimulated_HasNoAnswerRatherThanOneBeyondTheHorizon()
+        {
+            var subject = new WhenForecast(new Dictionary<int, int>());
+
+            var reading = subject.GetPercentile(85);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reading, Is.EqualTo(ForecastPercentile.NoAnswer));
+                Assert.That(reading.IsBeyondHorizon, Is.False);
+                Assert.That(reading.Day, Is.Null);
+            }
+        }
+
+        [Test]
+        public void EveryRunOf_WhenEveryRunFinished_AddsNoDayForRunsThatNeverFinished()
+        {
+            var subject = new WhenForecast(new Dictionary<int, int> { [3] = 6, [5] = 4 });
+
+            var everyRun = WhenForecast.EveryRunOf(subject);
+
+            Assert.That(everyRun.Keys, Is.EquivalentTo(DaysTheRunsFinishedOn));
         }
 
         private static IEnumerable<TestCaseData> HistogramsWithoutTrials()

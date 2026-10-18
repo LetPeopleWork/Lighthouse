@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly string[] OnlyTheSecondTeam = ["Team 2"];
 
+        private static readonly string[] BothTeamsInNameOrder = ["Team 1", "Team 2"];
+
         private Mock<IRepository<Feature>> featureRepositoryMock;
 
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
@@ -111,6 +113,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [Test]
+        public async Task AForecastWhoseEveryRunFinishes_SaysNothingAboutTheHorizon()
+        {
+            var ordinary = CreateTeam(2, [3, 4, 2, 5, 3]);
+            var feature = CreateFeature(2, "F-2", ordinary, 5);
+            var features = new List<Feature> { feature };
+            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+
+            var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
+            portfolio.UpdateFeatures(features);
+
+            await AForecastService().UpdateForecastsForPortfolio(portfolio);
+
+            Assert.That(WhatWasLoggedAt(LogLevel.Debug).Where(reported => reported.Contains("reached the horizon", StringComparison.Ordinal)), Is.Empty,
+                "A forecast in which every run finished still reported runs reaching the horizon.");
+        }
+
+        /// <summary>
+        /// Each worker collects what its own runs left behind, and the forecast reports the sum of them, so
+        /// no worker's share may be lost or subtracted on the way, and the Teams are named in a fixed order.
+        /// </summary>
+        [Test]
+        public void WhatEveryWorkerCollected_AddsUpToOneAccountOfTheWholeForecast()
+        {
+            var plan = APlanForTwoTeams(out var state);
+
+            var firstWorker = new WhatTheRunsCouldNotFinish();
+            LeaveOnly(TheSecondTeam, state, plan);
+            firstWorker.Note(HowTheRunEnded.NothingLeftCouldBeStarted, plan, state);
+            firstWorker.Note(HowTheRunEnded.ReachedTheHorizon, plan, state);
+
+            var secondWorker = new WhatTheRunsCouldNotFinish();
+            state.StartAgain();
+            LeaveOnly(TheFirstTeam, state, plan);
+            secondWorker.Note(HowTheRunEnded.NothingLeftCouldBeStarted, plan, state);
+            secondWorker.Note(HowTheRunEnded.ReachedTheHorizon, plan, state);
+
+            var all = WhatTheRunsCouldNotFinish.AllOf([firstWorker, secondWorker]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(all.RunsGivenUpOn, Is.EqualTo(2));
+                Assert.That(all.RunsThatReachedTheHorizon, Is.EqualTo(2));
+                Assert.That(all.TeamsCaughtInACircle, Is.EqualTo(BothTeamsInNameOrder));
+            }
+        }
+
+        private ForecastService AForecastService()
+            => new(
+                new RandomNumberService(),
+                logger.Object,
+                teamMetricsServiceMock.Object,
+                featureRepositoryMock.Object,
+                new NothingWaitsForAnything(),
+                new DrawsFromAPinnedStartingNumber(4242),
+                new ForecastSimulationLimits(Trials: TheRunsAForecastMakes, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover));
+
         /// <summary>Works every other Team's rows down to nothing, so only the one named still has work.</summary>
         private static void LeaveOnly(int teamIndex, TrialState state, ForecastRunPlan plan)
         {
@@ -168,16 +227,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);
 
-            var forecastService = new ForecastService(
-                new RandomNumberService(),
-                logger.Object,
-                teamMetricsServiceMock.Object,
-                featureRepositoryMock.Object,
-                new NothingWaitsForAnything(),
-                new DrawsFromAPinnedStartingNumber(4242),
-                new ForecastSimulationLimits(Trials: TheRunsAForecastMakes, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover));
-
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await AForecastService().UpdateForecastsForPortfolio(portfolio);
 
             return (theSlowOne, theOrdinaryOne);
         }

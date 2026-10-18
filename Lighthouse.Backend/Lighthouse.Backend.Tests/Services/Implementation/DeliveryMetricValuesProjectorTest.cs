@@ -151,6 +151,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public void Project_DeliveryNobodyCouldForecast_RecordsNoLikelihoodAndNoDistribution()
+        {
+            var delivery = DeliveryWithoutThroughput();
+
+            var projected = subject.Project(delivery, clock.Today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projected.LikelihoodPercentage, Is.Null);
+                Assert.That(projected.WhenDistributionJson, Is.Null);
+            }
+        }
+
+        [Test]
+        public void Project_DeliveryWhoseFeaturesAreAllSized_RecordsNoEstimatedPortion()
+        {
+            var projected = subject.Project(ForecastableDelivery(), clock.Today);
+
+            Assert.That(projected.EstimatedItemCount, Is.Null);
+        }
+
+        [Test]
+        public void Project_DeliveryWithAFeatureOnTheDefaultSize_RecordsHowMuchOfTheWorkIsEstimated()
+        {
+            var team = new Team { Id = 7, Name = TeamNames[0] };
+            var sized = new Feature([(team, 4, 10)]) { Id = 11, ReferenceId = "FTR-11", Name = "Checkout", Order = "1" };
+            var estimated = new Feature([(team, 3, 5)]) { Id = 12, ReferenceId = "FTR-12", Name = "Refunds", Order = "2", IsUsingDefaultFeatureSize = true };
+            var delivery = new Delivery { Id = 3, Name = "Q1 Release", PortfolioId = PortfolioId, Date = clock.TodayAsUtcMidnight.AddDays(ForecastDays * 2) };
+            delivery.ReplaceFeatures([sized, estimated]);
+
+            var projected = subject.Project(delivery, clock.Today);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(projected.TotalWork, Is.EqualTo(15));
+                Assert.That(projected.RemainingWork, Is.EqualTo(7));
+                Assert.That(projected.EstimatedItemCount, Is.EqualTo(5));
+            }
+        }
+
         private async Task<DeliveryMetricSnapshot> WhatTheDailyRecorderWrites(Delivery delivery)
         {
             var snapshot = new DeliveryMetricSnapshot { DeliveryId = delivery.Id, RecordedDay = clock.Today };

@@ -30,7 +30,25 @@ namespace Lighthouse.Backend.Tests
             var cores = Environment.ProcessorCount;
             var forecastsMayUse = ForecastSimulationLimits.Default.MostRunsAtOnce;
 
-            var lines = StartupBanner.BuildInfoLines(new StartupBannerFacts(
+            var lines = TheBanner();
+
+            Assert.That(lines, Has.Some.Contains($"Forecasts use up to {forecastsMayUse} of {cores} cores"),
+                "The banner does not say how many cores a forecast may use. It said: " + string.Join(" | ", lines));
+        }
+
+        [Test]
+        [Category("contract-shape:pure-function")]
+        public void The_cores_line_sits_in_the_banner_under_its_own_label_like_every_other_line()
+        {
+            var lines = TheBanner();
+
+            Assert.That(lines, Has.Some.StartsWith($"🧮  {"Cores",-13} : Forecasts use up to "),
+                "The cores line is not labelled like the others. The banner said: " + string.Join(" | ", lines));
+        }
+
+        private static List<string> TheBanner()
+        {
+            return StartupBanner.BuildInfoLines(new StartupBannerFacts(
                 "1.2.3.4",
                 ["http://localhost:8080"],
                 "sqlite",
@@ -38,10 +56,7 @@ namespace Lighthouse.Backend.Tests
                 new ConfigurationBuilder().Build(),
                 new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, new EncryptionKey("k-2026-10-18-01", RandomNumberGenerator.GetBytes(EncryptionKey.MaterialLength))),
                 new KeyStoreLocation("/app/Data/keys", KeyStoreCase.ExplicitKeyStorePath),
-                false));
-
-            Assert.That(lines, Has.Some.Contains($"Forecasts use up to {forecastsMayUse} of {cores} cores"),
-                "The banner does not say how many cores a forecast may use. It said: " + string.Join(" | ", lines));
+                false)).ToList();
         }
 
         /// <summary>
