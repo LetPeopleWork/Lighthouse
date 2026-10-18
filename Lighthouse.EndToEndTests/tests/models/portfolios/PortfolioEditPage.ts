@@ -86,31 +86,6 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.click();
 	}
 
-	async getSelectedFeatureOwnerField(): Promise<string> {
-		const combobox = this.featureOwnerFieldCombobox;
-		return (await combobox.textContent()) ?? "";
-	}
-
-	async selectFeatureOwnerField(additionalField: string): Promise<void> {
-		await this.featureOwnerFieldCombobox.click();
-		await this.page.getByRole("option", { name: additionalField }).click();
-	}
-
-	async getPotentialFeatureOwnerFields(): Promise<string[]> {
-		await this.featureOwnerFieldCombobox.click();
-		const options = await this.page.getByRole("option").allInnerTexts();
-		await this.page.keyboard.press("Escape");
-		return options;
-	}
-
-	get featureOwnerFieldCombobox(): Locator {
-		return this.page
-			.locator("div")
-			.filter({ hasText: /.*Feature Owner Field$/ })
-			.getByRole("combobox")
-			.nth(1);
-	}
-
 	async removeSizeOverrideState(overrideState: string): Promise<void> {
 		await this.removeChipItem(overrideState);
 	}
