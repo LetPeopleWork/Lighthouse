@@ -632,6 +632,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 "\"Caused by\" cannot be removed. It is the Programs' Dependency Field default. Nothing was saved."));
         }
 
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Commit_RemovingTheFieldThePortfoliosSizeEstimateDefaultNames_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.SizeEstimateFieldForPortfolios = CausedById;
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
+                "\"Caused by\" cannot be removed. It is the Programs' Size Estimate Field default. Nothing was saved."));
+        }
+
         private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [

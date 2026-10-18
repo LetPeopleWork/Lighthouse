@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice10)]
         [Category("ac-9.1")]
         [Category("ac-9.2")]
         [Category("ac-9.4")]
@@ -40,11 +39,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        [Test]
+        [Category("ac-9.1")]
+        [Category("contract-shape:pure-function")]
+        public async Task The_settings_page_names_the_Size_Estimate_Field_default_not_the_Dependency_one()
+        {
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosDependencyField, ReleaseTrain);
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosSizeEstimateField, StoryPoints);
+
+            var cardIssuingsPage = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.SizeEstimateField);
+            var merchantOnboardingsPage = await WhatTheSettingsPageShows(MerchantOnboarding, OwnerSetting.SizeEstimateField);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cardIssuingsPage, Is.EqualTo(((string?)"ConnectionDefault", (string?)StoryPoints, (string?)StoryPoints)));
+                Assert.That(merchantOnboardingsPage, Is.EqualTo(((string?)"Own", (string?)StoryPoints, (string?)TShirtSize)));
+            }
+        }
+
         // A Portfolio's default size, as a new Portfolio is created with it.
         private const int ThePortfoliosDefaultSize = 25;
 
         [Test]
-        [Ignore(PendingEpic6303.Slice10)]
         [Category("ac-9.3")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
@@ -65,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice10)]
         [Category("ac-9.2")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

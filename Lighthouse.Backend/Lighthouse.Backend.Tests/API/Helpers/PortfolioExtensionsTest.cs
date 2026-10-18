@@ -147,12 +147,68 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Is.EqualTo((SettingSource.Own, (int?)null)));
         }
 
+        // The same older-client round trip for the Size Estimate Field.
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        public void An_older_clients_round_trip_keeps_the_Size_Estimate_Fields_source_and_value(bool follows, bool echoesEveryProperty)
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            if (!follows)
+            {
+                portfolio.OwnSizeEstimateField(ItsOwnField);
+            }
+
+            var before = (portfolio.SizeEstimateFieldSource, portfolio.SizeEstimateAdditionalFieldDefinitionId);
+            var read = JsonSerializer.SerializeToNode(new PortfolioSettingDto(portfolio), AsTheApiWritesIt)!.AsObject();
+            if (!echoesEveryProperty)
+            {
+                read.Remove("sizeEstimateSource");
+                read.Remove("sizeEstimateDefaultName");
+            }
+
+            portfolio.SyncWithPortfolioSettings(read.Deserialize<PortfolioSettingDto>(AsTheApiWritesIt)!, Teams());
+
+            Assert.That((portfolio.SizeEstimateFieldSource, portfolio.SizeEstimateAdditionalFieldDefinitionId), Is.EqualTo(before));
+        }
+
+        [Test]
+        public void A_Size_Estimate_Field_owner_sent_as_following_drops_its_own_field()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.OwnSizeEstimateField(ItsOwnField);
+            var settings = SettingsNaming(null);
+            settings.SizeEstimateSource = SettingSource.ConnectionDefault;
+            settings.SizeEstimateAdditionalFieldDefinitionId = ItsOwnField;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.SizeEstimateFieldSource, portfolio.OwnSizeEstimateAdditionalFieldDefinitionId, portfolio.SizeEstimateAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.ConnectionDefault, (int?)null, (int?)TheConnectionsDefault)));
+        }
+
+        [Test]
+        public void A_Size_Estimate_Field_follower_sent_None_as_its_own_chooses_None()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.SizeEstimateSource = SettingSource.Own;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.SizeEstimateFieldSource, portfolio.SizeEstimateAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.Own, (int?)null)));
+        }
+
         private static readonly JsonSerializerOptions AsTheApiWritesIt = new(JsonSerializerDefaults.Web);
 
         private static Portfolio APortfolioFollowingTheDefault() => new()
         {
             WorkTrackingSystemConnectionId = 1,
-            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault, DependencyFieldForPortfolios = TheConnectionsDefault },
+            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault, DependencyFieldForPortfolios = TheConnectionsDefault, SizeEstimateFieldForPortfolios = TheConnectionsDefault },
         };
 
         private static Portfolio APortfolioOwning(int field)

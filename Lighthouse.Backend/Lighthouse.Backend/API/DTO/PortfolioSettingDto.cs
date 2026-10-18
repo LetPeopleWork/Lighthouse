@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.API.DTO
             }
 
             SizeEstimateAdditionalFieldDefinitionId = portfolio.SizeEstimateAdditionalFieldDefinitionId;
+            SizeEstimateSource = portfolio.SizeEstimateFieldSource;
+            SizeEstimateDefaultName = portfolio.SizeEstimateFieldDefaultName;
             FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
             DependencyOverrideAdditionalFieldDefinitionId = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
             DependencyFieldSource = portfolio.DependencyFieldSource;
@@ -56,6 +58,11 @@ namespace Lighthouse.Backend.API.DTO
         public int DefaultAmountOfWorkItemsPerFeature { get; set; }
 
         public int? SizeEstimateAdditionalFieldDefinitionId { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
+        public SettingSource? SizeEstimateSource { get; set; }
+
+        public string? SizeEstimateDefaultName { get; private set; }
 
         public int DoneItemsCutoffDays { get; set; } = 365;
 

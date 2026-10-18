@@ -575,6 +575,36 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
         }
 
+        [Test]
+        public async Task UpdatePortfolio_OwningASizeEstimateFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, SizeEstimateSource = SettingSource.Own, SizeEstimateAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
+                Assert.That(problem?.Detail, Is.EqualTo("The Size Estimate Field is not an Additional Field of this Program's connection. Nothing was saved."));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_NamingASizeEstimateFieldSourceThisVersionDoesNotKnow_IsRefused()
+        {
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1 });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, SizeEstimateSource = (SettingSource)7 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result.TheProblem()?.Detail, Is.EqualTo("The Size Estimate Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+        }
+
         private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [

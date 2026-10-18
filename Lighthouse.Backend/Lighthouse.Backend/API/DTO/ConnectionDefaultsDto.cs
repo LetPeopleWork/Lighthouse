@@ -42,6 +42,12 @@ namespace Lighthouse.Backend.API.DTO
             set => sent[ConnectionDefaultSetting.DependencyFieldForPortfolios] = value;
         }
 
+        public int? SizeEstimateFieldForPortfolios
+        {
+            get => FieldOf(ConnectionDefaultSetting.SizeEstimateFieldForPortfolios);
+            set => sent[ConnectionDefaultSetting.SizeEstimateFieldForPortfolios] = value;
+        }
+
         public bool Sends(ConnectionDefaultSetting setting) => sent.ContainsKey(setting);
 
         /// <summary>The field the save names for a default; null when it clears the default or does not send it.</summary>

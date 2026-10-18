@@ -547,7 +547,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 settings.ParentOverrideAdditionalFieldDefinitionId = fieldId;
             }),
             new("which field names the owning team", (settings, fieldId) => settings.FeatureOwnerAdditionalFieldDefinitionId = fieldId),
-            new("which field carries the size estimate", (settings, fieldId) => settings.SizeEstimateAdditionalFieldDefinitionId = fieldId),
+            new("which field carries the size estimate", (settings, fieldId) =>
+            {
+                settings.SizeEstimateSource = SettingSource.Own;
+                settings.SizeEstimateAdditionalFieldDefinitionId = fieldId;
+            }),
             new("how one tracker state is read", (settings, _) => settings.StateMappings =
                 [new StateMappingDto { Name = "In Progress", States = ["Dev", "Test"] }]),
         ];

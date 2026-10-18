@@ -35,6 +35,10 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public bool FollowsSizeEstimateFieldDefault => SizeEstimateField.FollowsTheDefault;
 
+        /// <summary>The field the connection's default names, shown whichever source the Portfolio chose.</summary>
+        [NotMapped]
+        public string? SizeEstimateFieldDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(SizeEstimateFieldConnectionDefault);
+
         /// <summary>
         /// The Additional Field (or link type) the connectors read a Feature's dependencies from, as this Portfolio
         /// answers it: its own choice, or the connection's default while it follows. Null means the tracker's own link.
@@ -102,6 +106,10 @@ namespace Lighthouse.Backend.Models
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: no size estimate is read, whatever the default says.</param>
         public void OwnSizeEstimateField(int? additionalFieldDefinitionId) => SizeEstimateField = StoredSetting.Owning(additionalFieldDefinitionId);
+
+        /// <summary>The field this Portfolio would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
+        public int? SizeEstimateFieldOwnedOnceTaken(SettingSource? sentSource, int? sentField)
+            => SizeEstimateField.OwnedOnceTaking(sentSource, sentField, SizeEstimateFieldConnectionDefault);
 
         public void TakeSizeEstimateFieldAsSent(SettingSource? sentSource, int? sentField)
             => SizeEstimateField = SizeEstimateField.Taking(sentSource, sentField, SizeEstimateFieldConnectionDefault);
