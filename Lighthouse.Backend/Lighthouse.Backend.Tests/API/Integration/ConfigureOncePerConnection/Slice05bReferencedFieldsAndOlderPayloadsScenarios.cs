@@ -78,6 +78,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         // Merchant Onboarding holds a field of its own for every setting, each a field nothing else uses.
+        [TestCase(ParentLink, TestName = "A field only a Portfolio's Parent Override Field uses cannot be removed")]
+        [TestCase(BlockedByKeys, TestName = "A field only a Portfolio's Dependency Field uses cannot be removed")]
+        [TestCase(TShirtSize, TestName = "A field only a Portfolio's Size Estimate Field uses cannot be removed")]
+        [TestCase(ProductOwner, TestName = "A field only a Portfolio's Feature Owner Field uses cannot be removed")]
         [TestCase(StoryPoints, TestName = "A field only a Portfolio's estimation uses cannot be removed")]
         [Category("ac-4.8")]
         [Category("error")]
