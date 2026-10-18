@@ -111,6 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private readonly Dictionary<string, int> teamIds = [];
         private readonly Dictionary<string, int> portfolioIds = [];
         private readonly Dictionary<(string Owner, OwnerSetting Setting), string?> whatTheTrackerWasAskedToRead = [];
+        private readonly Dictionary<string, int> theSizeEveryFeatureHoldsIn = [];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private CapturedLogMessages whatWasLogged = null!;
@@ -172,6 +173,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             teamIds.Clear();
             portfolioIds.Clear();
             whatTheTrackerWasAskedToRead.Clear();
+            theSizeEveryFeatureHoldsIn.Clear();
             meanwhileBeforeTheSaveCommits = null;
             lastHistoryEntryBeforeTheSave = 0;
             logLinesBeforeTheSave = 0;
@@ -300,6 +302,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(portfolio, settings);
             ThenTheOwnerSaveIsAccepted();
         }
+
+        /// <summary>Every Feature the tracker holds carries this size in the named field; any other field is empty.</summary>
+        protected void GivenEveryFeatureHoldsTheSizeIn(string fieldName, int size) => theSizeEveryFeatureHoldsIn[fieldName] = size;
 
         protected async Task GivenEveryTeamOwnsItsParentOverrideField()
         {
@@ -797,7 +802,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var parentField = Remember(portfolio.Name, OwnerSetting.ParentOverrideField, portfolio, portfolio.ParentOverrideAdditionalFieldDefinitionId);
             // A tracker reads no Dependency Field for a Portfolio that ignores its dependencies.
             Remember(portfolio.Name, OwnerSetting.DependencyField, portfolio, portfolio.IgnoreDependencies ? null : portfolio.DependencyOverrideAdditionalFieldDefinitionId);
-            Remember(portfolio.Name, OwnerSetting.SizeEstimateField, portfolio, portfolio.SizeEstimateAdditionalFieldDefinitionId);
+            var sizeField = Remember(portfolio.Name, OwnerSetting.SizeEstimateField, portfolio, portfolio.SizeEstimateAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.FeatureOwnerField, portfolio, portfolio.FeatureOwnerAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.Estimation, portfolio, portfolio.EstimationAdditionalFieldDefinitionId);
 
@@ -815,6 +820,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 })
                 {
                     LastChangedRemote = TheItemLastChangedAt,
+                    EstimatedSize = TheSizeIn(sizeField),
                 },
             ];
         }
@@ -828,6 +834,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             whatTheTrackerWasAskedToRead[(owner, setting)] = field;
             return field;
         }
+
+        // As the real trackers do, an empty or unread size field reads as size 0.
+        private int TheSizeIn(string? field)
+            => field is not null && theSizeEveryFeatureHoldsIn.TryGetValue(field, out var size) ? size : 0;
 
         private static string WhatTheFieldHolds(string? field) => field switch
         {

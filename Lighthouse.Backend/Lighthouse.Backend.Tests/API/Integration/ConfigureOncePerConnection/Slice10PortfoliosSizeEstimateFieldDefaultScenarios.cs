@@ -60,12 +60,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // A Portfolio's default size, as a new Portfolio is created with it.
         private const int ThePortfoliosDefaultSize = 25;
 
+        private const int TheSizeAFieldHolds = 8;
+
+        [Test]
+        [Category("ac-9.1")]
+        [Category("driving_port")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_following_Feature_is_sized_at_what_the_default_field_holds()
+        {
+            GivenEveryFeatureHoldsTheSizeIn(StoryPoints, TheSizeAFieldHolds);
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenTheAdminSetsTheDefault(ConnectionDefault.PortfoliosSizeEstimateField, StoryPoints, startUpdates: true);
+            ThenTheSaveIsAccepted();
+            await WhatRanSinceTheSave(CardIssuing);
+            var shown = await WhatTheFeatureOfShows(CardIssuing);
+
+            Assert.That(shown.SizedAt, Is.EqualTo(TheSizeAFieldHolds));
+        }
+
         [Test]
         [Category("ac-9.3")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
         public async Task A_following_Feature_with_no_size_in_the_default_field_takes_the_Portfolios_default_size()
         {
+            GivenEveryFeatureHoldsTheSizeIn(TShirtSize, TheSizeAFieldHolds);
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
 
             await WhenTheAdminSetsTheDefault(ConnectionDefault.PortfoliosSizeEstimateField, StoryPoints, startUpdates: true);
