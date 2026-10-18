@@ -164,6 +164,11 @@ const WhereEachDefaultSits: Record<
 	},
 };
 
+const followersOfDefault = (
+	usage: IConnectionUsage,
+	name: ConnectionDefaultName,
+): number => usage.followers?.[name] ?? 0;
+
 const changedFollowedDefaults = (
 	loaded: IConnectionDefaults,
 	current: IConnectionDefaults,
@@ -171,7 +176,7 @@ const changedFollowedDefaults = (
 ): ConnectionDefaultName[] =>
 	(Object.keys(WhereEachDefaultSits) as ConnectionDefaultName[]).filter(
 		(name) =>
-			(usage.followers?.[name] ?? 0) > 0 &&
+			followersOfDefault(usage, name) > 0 &&
 			(loaded[name] ?? null) !== (current[name] ?? null),
 	);
 
@@ -182,7 +187,7 @@ const followersIn = (
 ): number =>
 	changed
 		.filter((name) => WhereEachDefaultSits[name].group === group)
-		.reduce((sum, name) => sum + (usage.followers?.[name] ?? 0), 0);
+		.reduce((sum, name) => sum + followersOfDefault(usage, name), 0);
 
 // One question per save: a changed Additional Field updates everyone on the connection, which already
 // covers whoever follows a changed default.
