@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API.Helpers
             project.TakeParentOverrideAsSent(portfolioSetting.ParentOverrideSource, portfolioSetting.ParentOverrideAdditionalFieldDefinitionId);
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.TakeSizeEstimateFieldAsSent(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
-            project.TakeFeatureOwnerFieldAsSent(null, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId);
+            project.TakeFeatureOwnerFieldAsSent(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId);
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? project.IgnoreDependencies;

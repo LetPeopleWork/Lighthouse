@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     internal static class PendingEpic6303
     {
-        public const string Slice11 = "Pending: the Portfolios' Feature Owner Field is set once on the connection (epic 6303, slice 11).";
-
         public const string Slice12 = "Pending: Estimation is set once on the connection (epic 6303, slice 12).";
     }
 }

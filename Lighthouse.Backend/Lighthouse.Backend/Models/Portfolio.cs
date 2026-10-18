@@ -33,6 +33,10 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public bool FollowsFeatureOwnerFieldDefault => FeatureOwnerField.FollowsTheDefault;
 
+        /// <summary>The field the connection's default names, shown whichever source the Portfolio chose.</summary>
+        [NotMapped]
+        public string? FeatureOwnerFieldDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(FeatureOwnerFieldConnectionDefault);
+
         /// <summary>The Additional Field the connectors read a Feature's estimated size from, as this Portfolio answers it.</summary>
         [NotMapped]
         public int? SizeEstimateAdditionalFieldDefinitionId => SizeEstimateField.ReadWith(SizeEstimateFieldConnectionDefault);
@@ -134,6 +138,10 @@ namespace Lighthouse.Backend.Models
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: no owner is read, whatever the default says.</param>
         public void OwnFeatureOwnerField(int? additionalFieldDefinitionId) => FeatureOwnerField = StoredSetting.Owning(additionalFieldDefinitionId);
+
+        /// <summary>The field this Portfolio would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
+        public int? FeatureOwnerFieldOwnedOnceTaken(SettingSource? sentSource, int? sentField)
+            => FeatureOwnerField.OwnedOnceTaking(sentSource, sentField, FeatureOwnerFieldConnectionDefault);
 
         public void TakeFeatureOwnerFieldAsSent(SettingSource? sentSource, int? sentField)
             => FeatureOwnerField = FeatureOwnerField.Taking(sentSource, sentField, FeatureOwnerFieldConnectionDefault);

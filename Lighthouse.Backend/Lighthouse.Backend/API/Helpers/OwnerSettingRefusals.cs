@@ -68,6 +68,8 @@ namespace Lighthouse.Backend.API.Helpers
                     () => portfolio?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)));
                 sourced.Add(new("Size Estimate Field", portfolioSetting.SizeEstimateSource,
                     () => portfolio?.SizeEstimateFieldOwnedOnceTaken(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId)));
+                sourced.Add(new("Feature Owner Field", portfolioSetting.FeatureOwnerSource,
+                    () => portfolio?.FeatureOwnerFieldOwnedOnceTaken(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId)));
             }
 
             return sourced;

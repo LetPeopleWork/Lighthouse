@@ -57,9 +57,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(followers, Is.EquivalentTo(new Dictionary<int, ConnectionFollowers>
             {
-                [1] = new(2, 1, 1, 1),
-                [2] = new(1, 1, 1, 1),
-                [3] = new(0, 1, 1, 1),
+                [1] = new(2, 1, 1, 1, 1),
+                [2] = new(1, 1, 1, 1, 1),
+                [3] = new(0, 1, 1, 1, 1),
             }));
         }
 
@@ -82,10 +82,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(groups[1].Select(group => (string.Join("+", group.Follows), group.Count)), Is.EquivalentTo(new[]
                 {
                     ("ParentOverrideForTeams", 2),
-                    ("ParentOverrideForPortfolios+DependencyFieldForPortfolios+SizeEstimateFieldForPortfolios", 3),
-                    ("ParentOverrideForPortfolios+SizeEstimateFieldForPortfolios", 1),
+                    ("ParentOverrideForPortfolios+DependencyFieldForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios", 3),
+                    ("ParentOverrideForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios", 1),
                 }));
-                Assert.That(CreateSubject().FollowersByConnection()[1], Is.EqualTo(new ConnectionFollowers(2, 4, 3, 4)));
+                Assert.That(CreateSubject().FollowersByConnection()[1], Is.EqualTo(new ConnectionFollowers(2, 4, 3, 4, 4)));
             }
         }
 
@@ -103,6 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var portfolio = PortfolioOwningItsDependencyField(connectionId);
             portfolio.OwnParentOverride(null);
             portfolio.OwnSizeEstimateField(null);
+            portfolio.OwnFeatureOwnerField(null);
             return portfolio;
         }
 

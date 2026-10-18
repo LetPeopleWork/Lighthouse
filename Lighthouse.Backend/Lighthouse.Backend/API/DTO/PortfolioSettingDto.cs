@@ -32,6 +32,8 @@ namespace Lighthouse.Backend.API.DTO
             SizeEstimateSource = portfolio.SizeEstimateFieldSource;
             SizeEstimateDefaultName = portfolio.SizeEstimateFieldDefaultName;
             FeatureOwnerAdditionalFieldDefinitionId = portfolio.FeatureOwnerAdditionalFieldDefinitionId;
+            FeatureOwnerSource = portfolio.FeatureOwnerFieldSource;
+            FeatureOwnerDefaultName = portfolio.FeatureOwnerFieldDefaultName;
             DependencyOverrideAdditionalFieldDefinitionId = portfolio.DependencyOverrideAdditionalFieldDefinitionId;
             DependencyFieldSource = portfolio.DependencyFieldSource;
             DependencyFieldDefaultName = portfolio.DependencyFieldDefaultName;
@@ -71,6 +73,11 @@ namespace Lighthouse.Backend.API.DTO
         public EntityReferenceDto? OwningTeam { get; set; }
 
         public int? FeatureOwnerAdditionalFieldDefinitionId { get; set; }
+
+        [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
+        public SettingSource? FeatureOwnerSource { get; set; }
+
+        public string? FeatureOwnerDefaultName { get; private set; }
 
         public int? DependencyOverrideAdditionalFieldDefinitionId { get; set; }
 

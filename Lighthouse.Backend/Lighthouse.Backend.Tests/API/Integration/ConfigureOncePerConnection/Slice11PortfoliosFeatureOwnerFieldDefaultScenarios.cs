@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice11)]
         [Category("ac-10.1")]
         [Category("ac-10.2")]
         [Category("ac-10.4")]
@@ -28,23 +27,60 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await WhenTheAdminSetsTheDefault(ConnectionDefault.PortfoliosFeatureOwnerField, ReleaseTrain, startUpdates: true);
             ThenTheSaveIsAccepted();
             var ran = await WhatRanSinceTheSave(CardIssuing);
+            var page = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.FeatureOwnerField);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(ran, Is.EqualTo(CardIssuingDownloadsEverything));
                 Assert.That(WhatTheTrackerWasAskedToReadFor(CardIssuing, OwnerSetting.FeatureOwnerField), Is.EqualTo(ReleaseTrain));
                 Assert.That(WhatTheTrackerWasAskedToReadFor(MerchantOnboarding, OwnerSetting.FeatureOwnerField), Is.EqualTo(ProductOwner));
+                Assert.That(page, Is.EqualTo(((string?)"ConnectionDefault", (string?)ReleaseTrain, (string?)ReleaseTrain)));
                 Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("Feature Owner Field default").And.Some.Contains("Card Issuing"));
             }
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice11)]
+        [Category("ac-10.1")]
+        [Category("contract-shape:pure-function")]
+        public async Task The_settings_page_names_the_Feature_Owner_Field_default_not_the_Size_Estimate_one()
+        {
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosSizeEstimateField, StoryPoints);
+            await GivenTheDefaultIs(ConnectionDefault.PortfoliosFeatureOwnerField, ReleaseTrain);
+
+            var cardIssuingsPage = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.FeatureOwnerField);
+            var merchantOnboardingsPage = await WhatTheSettingsPageShows(MerchantOnboarding, OwnerSetting.FeatureOwnerField);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(cardIssuingsPage, Is.EqualTo(((string?)"ConnectionDefault", (string?)ReleaseTrain, (string?)ReleaseTrain)));
+                Assert.That(merchantOnboardingsPage, Is.EqualTo(((string?)"Own", (string?)ReleaseTrain, (string?)ProductOwner)));
+            }
+        }
+
+        [Test]
+        [Category("ac-10.1")]
+        [Category("driving_port")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_following_Feature_is_owned_by_the_Team_the_default_field_names()
+        {
+            GivenEveryFeatureNamesItsOwnerIn(ReleaseTrain, Ledger);
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenTheAdminSetsTheDefault(ConnectionDefault.PortfoliosFeatureOwnerField, ReleaseTrain, startUpdates: true);
+            ThenTheSaveIsAccepted();
+            await WhatRanSinceTheSave(CardIssuing);
+            var shown = await WhatTheFeatureOfShows(CardIssuing);
+
+            Assert.That(shown.SplitAcross, Is.EqualTo(new[] { Ledger }));
+        }
+
+        [Test]
         [Category("ac-10.3")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
         public async Task A_following_Feature_with_no_owner_in_the_default_field_is_shared_by_every_Team()
         {
+            GivenEveryFeatureNamesItsOwnerIn(ProductOwner, Ledger);
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
 
             await WhenTheAdminSetsTheDefault(ConnectionDefault.PortfoliosFeatureOwnerField, ReleaseTrain, startUpdates: true);
@@ -60,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice11)]
         [Category("ac-10.4")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

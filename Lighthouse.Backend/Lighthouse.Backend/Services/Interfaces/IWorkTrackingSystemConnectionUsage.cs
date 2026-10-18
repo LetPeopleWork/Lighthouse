@@ -18,14 +18,19 @@ namespace Lighthouse.Backend.Services.Interfaces
 
     /// <summary>How many owners on a connection follow each of its defaults, whether or not that default is set.</summary>
     public sealed record ConnectionFollowers(
-        int ParentOverrideForTeams, int ParentOverrideForPortfolios, int DependencyFieldForPortfolios, int SizeEstimateFieldForPortfolios)
+        int ParentOverrideForTeams,
+        int ParentOverrideForPortfolios,
+        int DependencyFieldForPortfolios,
+        int SizeEstimateFieldForPortfolios,
+        int FeatureOwnerFieldForPortfolios)
     {
         public static ConnectionFollowers CountedFrom(IReadOnlyList<FollowerGroup> groups)
             => new(
                 Following(groups, ConnectionDefaultSetting.ParentOverrideForTeams),
                 Following(groups, ConnectionDefaultSetting.ParentOverrideForPortfolios),
                 Following(groups, ConnectionDefaultSetting.DependencyFieldForPortfolios),
-                Following(groups, ConnectionDefaultSetting.SizeEstimateFieldForPortfolios));
+                Following(groups, ConnectionDefaultSetting.SizeEstimateFieldForPortfolios),
+                Following(groups, ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios));
 
         private static int Following(IReadOnlyList<FollowerGroup> groups, ConnectionDefaultSetting setting)
             => groups.Where(group => group.Follows.Contains(setting)).Sum(group => group.Count);

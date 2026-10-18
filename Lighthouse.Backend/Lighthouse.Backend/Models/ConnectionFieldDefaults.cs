@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Models
                 connection => connection.DependencyFieldForPortfolios, (connection, field) => connection.DependencyFieldForPortfolios = field),
             new(ConnectionDefaultSetting.SizeEstimateFieldForPortfolios, DefaultHeldFor.Portfolios, "Size Estimate Field",
                 connection => connection.SizeEstimateFieldForPortfolios, (connection, field) => connection.SizeEstimateFieldForPortfolios = field),
+            new(ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios, DefaultHeldFor.Portfolios, "Feature Owner Field",
+                connection => connection.FeatureOwnerFieldForPortfolios, (connection, field) => connection.FeatureOwnerFieldForPortfolios = field),
         ];
     }
 }

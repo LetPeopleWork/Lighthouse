@@ -112,6 +112,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private readonly Dictionary<string, int> portfolioIds = [];
         private readonly Dictionary<(string Owner, OwnerSetting Setting), string?> whatTheTrackerWasAskedToRead = [];
         private readonly Dictionary<string, int> theSizeEveryFeatureHoldsIn = [];
+        private readonly Dictionary<string, string> theOwnerEveryFeatureNamesIn = [];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private CapturedLogMessages whatWasLogged = null!;
@@ -174,6 +175,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             portfolioIds.Clear();
             whatTheTrackerWasAskedToRead.Clear();
             theSizeEveryFeatureHoldsIn.Clear();
+            theOwnerEveryFeatureNamesIn.Clear();
             meanwhileBeforeTheSaveCommits = null;
             lastHistoryEntryBeforeTheSave = 0;
             logLinesBeforeTheSave = 0;
@@ -305,6 +307,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         /// <summary>Every Feature the tracker holds carries this size in the named field; any other field is empty.</summary>
         protected void GivenEveryFeatureHoldsTheSizeIn(string fieldName, int size) => theSizeEveryFeatureHoldsIn[fieldName] = size;
+
+        /// <summary>Every Feature the tracker holds names this Team in the named field; any other field is empty.</summary>
+        protected void GivenEveryFeatureNamesItsOwnerIn(string fieldName, string team) => theOwnerEveryFeatureNamesIn[fieldName] = team;
 
         protected async Task GivenEveryTeamOwnsItsParentOverrideField()
         {
@@ -803,13 +808,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             // A tracker reads no Dependency Field for a Portfolio that ignores its dependencies.
             Remember(portfolio.Name, OwnerSetting.DependencyField, portfolio, portfolio.IgnoreDependencies ? null : portfolio.DependencyOverrideAdditionalFieldDefinitionId);
             var sizeField = Remember(portfolio.Name, OwnerSetting.SizeEstimateField, portfolio, portfolio.SizeEstimateAdditionalFieldDefinitionId);
-            Remember(portfolio.Name, OwnerSetting.FeatureOwnerField, portfolio, portfolio.FeatureOwnerAdditionalFieldDefinitionId);
+            var ownerField = Remember(portfolio.Name, OwnerSetting.FeatureOwnerField, portfolio, portfolio.FeatureOwnerAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.Estimation, portfolio, portfolio.EstimationAdditionalFieldDefinitionId);
 
             return
             [
                 new Feature(new WorkItemBase
                 {
+                    AdditionalFieldValues = TheOwnerIn(ownerField, portfolio.FeatureOwnerAdditionalFieldDefinitionId),
                     ReferenceId = TheItemOf(portfolio.Name),
                     Name = TheItemOf(portfolio.Name),
                     Type = "Epic",
@@ -838,6 +844,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // As the real trackers do, an empty or unread size field reads as size 0.
         private int TheSizeIn(string? field)
             => field is not null && theSizeEveryFeatureHoldsIn.TryGetValue(field, out var size) ? size : 0;
+
+        // As the real trackers do, a Feature carries the value of the owner field it was asked to read, and
+        // nothing when that field is empty.
+        private Dictionary<int, string?> TheOwnerIn(string? field, int? fieldId)
+            => field is not null && fieldId is { } id && theOwnerEveryFeatureNamesIn.TryGetValue(field, out var team) ? new() { [id] = team } : [];
 
         private static string WhatTheFieldHolds(string? field) => field switch
         {

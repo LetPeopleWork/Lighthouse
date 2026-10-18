@@ -202,12 +202,80 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Is.EqualTo((SettingSource.Own, (int?)null)));
         }
 
+        // The same older-client round trip for the Feature Owner Field.
+        [TestCase(true, true)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        public void An_older_clients_round_trip_keeps_the_Feature_Owner_Fields_source_and_value(bool follows, bool echoesEveryProperty)
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            if (!follows)
+            {
+                portfolio.OwnFeatureOwnerField(ItsOwnField);
+            }
+
+            var before = (portfolio.FeatureOwnerFieldSource, portfolio.FeatureOwnerAdditionalFieldDefinitionId);
+            var read = JsonSerializer.SerializeToNode(new PortfolioSettingDto(portfolio), AsTheApiWritesIt)!.AsObject();
+            if (!echoesEveryProperty)
+            {
+                read.Remove("featureOwnerSource");
+                read.Remove("featureOwnerDefaultName");
+            }
+
+            portfolio.SyncWithPortfolioSettings(read.Deserialize<PortfolioSettingDto>(AsTheApiWritesIt)!, Teams());
+
+            Assert.That((portfolio.FeatureOwnerFieldSource, portfolio.FeatureOwnerAdditionalFieldDefinitionId), Is.EqualTo(before));
+        }
+
+        [Test]
+        public void A_Feature_Owner_Field_owner_sent_as_following_drops_its_own_field()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            portfolio.OwnFeatureOwnerField(ItsOwnField);
+            var settings = SettingsNaming(null);
+            settings.FeatureOwnerSource = SettingSource.ConnectionDefault;
+            settings.FeatureOwnerAdditionalFieldDefinitionId = ItsOwnField;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.FeatureOwnerFieldSource, portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId, portfolio.FeatureOwnerAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.ConnectionDefault, (int?)null, (int?)TheConnectionsDefault)));
+        }
+
+        [Test]
+        public void A_Feature_Owner_Field_follower_sent_None_as_its_own_chooses_None()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.FeatureOwnerSource = SettingSource.Own;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(
+                (portfolio.FeatureOwnerFieldSource, portfolio.FeatureOwnerAdditionalFieldDefinitionId),
+                Is.EqualTo((SettingSource.Own, (int?)null)));
+        }
+
+        [Test]
+        public void A_save_never_takes_the_Owning_Team_from_the_connection()
+        {
+            var portfolio = APortfolioFollowingTheDefault();
+            var settings = SettingsNaming(null);
+            settings.FeatureOwnerSource = SettingSource.ConnectionDefault;
+
+            portfolio.SyncWithPortfolioSettings(settings, Teams());
+
+            Assert.That(portfolio.OwningTeam, Is.Null);
+        }
+
         private static readonly JsonSerializerOptions AsTheApiWritesIt = new(JsonSerializerDefaults.Web);
 
         private static Portfolio APortfolioFollowingTheDefault() => new()
         {
             WorkTrackingSystemConnectionId = 1,
-            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault, DependencyFieldForPortfolios = TheConnectionsDefault, SizeEstimateFieldForPortfolios = TheConnectionsDefault },
+            WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1, ParentOverrideForPortfolios = TheConnectionsDefault, DependencyFieldForPortfolios = TheConnectionsDefault, SizeEstimateFieldForPortfolios = TheConnectionsDefault, FeatureOwnerFieldForPortfolios = TheConnectionsDefault },
         };
 
         private static Portfolio APortfolioOwning(int field)

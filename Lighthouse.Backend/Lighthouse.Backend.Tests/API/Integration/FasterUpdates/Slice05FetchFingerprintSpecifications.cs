@@ -546,7 +546,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 settings.ParentOverrideSource = SettingSource.Own;
                 settings.ParentOverrideAdditionalFieldDefinitionId = fieldId;
             }),
-            new("which field names the owning team", (settings, fieldId) => settings.FeatureOwnerAdditionalFieldDefinitionId = fieldId),
+            new("which field names the owning team", (settings, fieldId) =>
+            {
+                settings.FeatureOwnerSource = SettingSource.Own;
+                settings.FeatureOwnerAdditionalFieldDefinitionId = fieldId;
+            }),
             new("which field carries the size estimate", (settings, fieldId) =>
             {
                 settings.SizeEstimateSource = SettingSource.Own;
