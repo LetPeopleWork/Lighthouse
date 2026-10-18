@@ -46,3 +46,20 @@ own value again, from their next update."
 ## Changed assumptions
 - 2026-10-16 (DESIGN, maintainer P-5, P-12, UI-4): save dialog count and log entry instead of a save notice;
   deleted-field values repaired at the upgrade; slice 07's list no longer exists.
+
+## Carried from slice 06 review
+Two latent issues in slice 06's update question, harmless while only one default with followers is on the wire, that
+this slice and slices 09–11 must close before they ship a second one:
+
+1. **Owners following two changed defaults are counted twice.** The question's count sums the followers of each
+   changed default, so a Portfolio following both a changed Dependency and a changed Size Estimate default is counted
+   once per default. Once a second default with followers exists, `usedBy` must let the page count distinct owners
+   across the changed defaults (for example a per-owner list of the defaults each follows, or counts the server works
+   out for the set of changed defaults). Test to add: "3 Portfolios follow both the Dependency and Size Estimate
+   defaults, both changed → *Update 0 Teams and 3 Portfolios?*".
+2. **The body sentence fits only Parent Override.** "Their parents change only once they have been updated." is true
+   of a Parent Override default alone. Dependency, Size Estimate and Feature Owner each need their own sentence; that
+   is new copy, so it gets a maintainer sketch at that slice's DISTILL (or DELIVER, if DISTILL left it open).
+
+Also: each new default states on `WhereEachDefaultSits` (in `ModifyConnectionSettings.tsx`) when it is read —
+`readWhen: "updating"` counts towards the update question, `"pageLoads"` (the Estimation defaults) does not.

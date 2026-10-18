@@ -41,3 +41,6 @@ from their next update."
 ## Changed assumptions
 - 2026-10-16 (DESIGN, maintainer P-5, P-12, P-14, UI-4): save dialog count and log entry instead of a save notice;
   deleted-field values repaired at the upgrade; offered on CSV too; slice 07's list no longer exists.
+
+## Carried from slice 06 review
+See the note of that name in [slice 08](slice-08-6313-portfolio-parent-override-default.md): distinct-owner counts across changed defaults, and this default's own body sentence in the update question.
