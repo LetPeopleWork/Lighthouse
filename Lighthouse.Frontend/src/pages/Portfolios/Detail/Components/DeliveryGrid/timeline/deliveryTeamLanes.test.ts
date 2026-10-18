@@ -428,6 +428,34 @@ describe("which Teams get a lane of their own", () => {
 		}
 	});
 
+	it("gives a Team whose finish lies beyond the horizon no lane, rather than one ending at the stand-in date", () => {
+		const beyondTheHorizon = WhenForecast.new(70, new Date(2031, 9, 18), {
+			beyondHorizon: true,
+			horizonYears: 5,
+		});
+
+		const { lanes, unlanedTeams } = lanesFor(
+			[
+				feature({
+					teamForecasts: [
+						forTeam(5, [[70, 12]], [[70, 15]]),
+						{
+							teamId: 7,
+							startPercentiles: [at(70, 12)],
+							completionPercentiles: [beyondTheHorizon],
+						},
+					],
+				}),
+			],
+			[ZENITH, MERIDIAN],
+		);
+
+		expect(lanes.map((lane) => lane.teamId)).toEqual([5]);
+		expect(unlanedTeams.get(1)?.map((one) => one.teamName)).toEqual([
+			"Meridian",
+		]);
+	});
+
 	it("tells apart two un-laned Teams this Portfolio cannot name", () => {
 		// Both are given the same fallback phrase, so the name identifies neither of them. Anything
 		// downstream that keys on it keeps one and drops the other - which shows one Team where the

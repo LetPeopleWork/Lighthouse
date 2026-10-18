@@ -106,11 +106,19 @@ const forecastAt = (
  * The date a list of percentiles gives for the probability being read, or nothing where it gives
  * none. Exported because a Feature's own ends and each contributing Team's are the same question
  * asked of two lists, and answering it twice is how the two come to disagree.
+ *
+ * A percentile beyond the horizon carries a stand-in date that nothing forecast, so it counts as no
+ * date: drawn, it would stretch the chart out to that stand-in.
  */
 export const forecastDateAt = (
 	percentiles: IWhenForecast[],
 	probability: TimelinePercentile,
-): Date | undefined => forecastAt(percentiles, probability)?.expectedDate;
+): Date | undefined => {
+	const forecast = forecastAt(percentiles, probability);
+	return forecast && yearsBeyondHorizon(forecast) === undefined
+		? forecast.expectedDate
+		: undefined;
+};
 
 /**
  * The day a Feature finished, or nothing for one still running. The field arrives as null until the
