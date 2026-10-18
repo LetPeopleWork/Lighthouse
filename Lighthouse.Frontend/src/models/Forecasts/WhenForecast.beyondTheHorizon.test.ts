@@ -7,9 +7,6 @@ import { type IWhenForecast, WhenForecast } from "./WhenForecast";
 vi.mock("axios");
 const mockedAxios = vi.mocked(axios, true);
 
-const pendingEpic6311 =
-	"Pending: every percentile carries whether it is beyond the horizon (epic 6311, slice 03)";
-
 /**
  * Every screen that words a percentile reads it from a model the client rebuilt from the wire. Each
  * rebuild has to carry the flag and the horizon's years across, or a percentile beyond the horizon turns
@@ -102,8 +99,8 @@ describe("a percentile beyond the horizon, as the client rebuilds it", () => {
 		],
 	];
 
-	it.skip.each(theFeatureRebuilds)(
-		`%s keeps the flag and the years (${pendingEpic6311})`,
+	it.each(theFeatureRebuilds)(
+		"%s keeps the flag and the years",
 		(_, rebuilt) => {
 			expect(readAs(rebuilt())).toEqual(asSent);
 		},
@@ -118,7 +115,7 @@ describe("a percentile beyond the horizon, as the client rebuilds it", () => {
 			vi.resetAllMocks();
 		});
 
-		it.skip(`keeps the flag and the years (${pendingEpic6311})`, async () => {
+		it("keeps the flag and the years", async () => {
 			mockedAxios.post.mockResolvedValueOnce({
 				data: {
 					remainingItems: 480,

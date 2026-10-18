@@ -135,7 +135,11 @@ const asWhenForecasts = (
 	percentiles: z.infer<typeof WhenForecastSchema>[],
 ): IWhenForecast[] =>
 	percentiles.map((percentile) =>
-		WhenForecast.new(percentile.probability, percentile.expectedDate),
+		WhenForecast.new(
+			percentile.probability,
+			percentile.expectedDate,
+			percentile,
+		),
 	);
 
 export class Feature implements IFeature {

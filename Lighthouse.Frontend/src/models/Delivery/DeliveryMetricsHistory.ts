@@ -1,6 +1,8 @@
 export interface WhenDistributionPoint {
 	probability: number;
 	expectedDate: Date;
+	beyondHorizon?: boolean;
+	horizonYears?: number;
 }
 
 export interface FeatureMetric {
@@ -113,6 +115,14 @@ function parseWhenDistribution(value: unknown): WhenDistributionPoint[] | null {
 		return {
 			probability: asNumber(point.probability, "whenDistribution.probability"),
 			expectedDate: asDate(point.expectedDate, "whenDistribution.expectedDate"),
+			beyondHorizon:
+				asNullableBoolean(
+					point.beyondHorizon,
+					"whenDistribution.beyondHorizon",
+				) ?? undefined,
+			horizonYears:
+				asNullableNumber(point.horizonYears, "whenDistribution.horizonYears") ??
+				undefined,
 		};
 	});
 }

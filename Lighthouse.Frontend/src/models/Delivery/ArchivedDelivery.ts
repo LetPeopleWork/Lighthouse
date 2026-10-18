@@ -57,7 +57,15 @@ export const ArchivedDeliverySchema = z.object({
 	concurrencyToken: z.string(),
 	featureBreakdown: z.array(ArchivedFeatureRowSchema),
 	whenDistribution: z.array(
-		z.object({ probability: z.number(), expectedDate: z.coerce.date() }),
+		z.object({
+			probability: z.number(),
+			expectedDate: z.coerce.date(),
+			beyondHorizon: z.boolean().optional(),
+			horizonYears: z
+				.number()
+				.nullish()
+				.transform((value) => value ?? undefined),
+		}),
 	),
 	rules: z.array(ruleConditionSchema).default([]),
 	mode: z.string().default("and"),

@@ -101,7 +101,7 @@ export class ForecastService
 	private static deserializeManualForecast(data: unknown): ManualForecast {
 		const parsed = BaseApiService.parse(ManualForecastSchema, data);
 		const whenForecasts = parsed.whenForecasts.map((forecast) =>
-			WhenForecast.new(forecast.probability, forecast.expectedDate),
+			WhenForecast.new(forecast.probability, forecast.expectedDate, forecast),
 		);
 		const howManyForecasts = parsed.howManyForecasts.map(
 			(forecast) => new HowManyForecast(forecast.probability, forecast.value),

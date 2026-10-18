@@ -20,6 +20,8 @@ export const WhenForecastSchema = z.object({
 	expectedDate: z.coerce.date(),
 	filterApplied: z.boolean().optional(),
 	excludedSummary: optionalString,
+	beyondHorizon: z.boolean().optional(),
+	horizonYears: z.number().nullable().optional(),
 });
 
 export const HowManyForecastSchema = z.object({
