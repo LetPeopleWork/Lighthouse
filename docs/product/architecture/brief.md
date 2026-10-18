@@ -10430,3 +10430,109 @@ One event when Export PDF is chosen, emitted by the click (DEVOPS designs the na
   reports are read through the clients as four read-only tools that return the report's raw values. **Accepted
   2026-10-17.** Reopens Epic 5878's "no reports in the clients" for reading only.
 - Relied on, unchanged: ADR-219, ADR-222, ADR-223, ADR-224, ADR-229, ADR-230, ADR-231, ADR-233.
+
+## Application Architecture — epic-6311-responsive-during-updates (Keep Lighthouse responsive during updates)
+
+Feature: epic-6311-responsive-during-updates (ADO Epic #6311: Bug #6308, Stories #6309 and #6322) · Wave: DESIGN ·
+2026-10-18 · Morgan, PROPOSE mode. Full design: `docs/feature/epic-6311-responsive-during-updates/feature-delta.md` →
+"Wave: DESIGN / …" (DDD-1 … DDD-13). Maintainer decisions NMD-3 … NMD-6 (2026-10-18).
+
+What changes:
+- The Monte Carlo simulation leaves half the cores to pages.
+- Stop and the new Cancel all end a running forecast between runs, keeping the previous forecast.
+- A run that does not finish within the 5-year horizon counts as "beyond the horizon" instead of being dropped. A
+  percentile that too few runs reach says "more than 5 years" on every surface, on the wire (additive) and in the Jira
+  Release block.
+
+What does not change: no migration, no new package or external system, the single-lane queue, and the combine maths of
+ADR-110 / ADR-113.
+
+### Key invariants introduced
+
+- **6311-I1 — a When/Start simulation never uses more than max(1, ⌊cores ÷ 2⌋) workers**, whoever asked for it
+  (ADR-248).
+- **6311-I2 — a cancelled forecast changes nothing.** No run starts after the cancel is seen, beyond one in flight per
+  worker. No forecast row and no write-back is written. The update ends `Cancelled` (ADR-249).
+- **6311-I3 — `TotalTrials ≥ Σ histogram`, and the difference is the runs beyond the horizon.** `TotalTrials = 0` only
+  for a row with no throughput (ADR-250).
+- **6311-I4 — the horizon is one constant** (`ForecastHorizon`: 5 years → 1,826 simulated days). The run cap and every
+  "more than N years" read it (ADR-251).
+- **6311-I5 — the wire is additive.** `beyondHorizon` (+ `horizonYears`) beside an `expectedDate` that is still a day.
+  Clients key on the field's presence (ADR-252).
+- **6311-I6 — Cancel all never touches a delete and never brings anything back.** Follow-ups and holds are dropped
+  before keys are stopped, on every replica (ADR-253).
+
+### C4 — Component (L3, changed components only)
+
+```mermaid
+C4Component
+  title Responsive during updates — changed components
+  Person(admin, "System Administrator")
+  Person(reader, "Delivery reader")
+  Container_Boundary(api, "Lighthouse API (ASP.NET Core 10)") {
+    Component(updCtl, "UpdateController", "MVC", "+ POST tasks/cancel (SystemAdmin)")
+    Component(queue, "UpdateQueueService", "C#", "+ CancelAllAsync: drops follow-ups, holds; per-key stop")
+    Component(notifier, "IUpdateCancellationNotifier", "In-process / Redis", "+ cancel-all message")
+    Component(fUpd, "ForecastUpdater", "C#", "Hands the update token down")
+    Component(fSvc, "ForecastService", "C#", "Bounded Parallel.For, cancellable between runs")
+    Component(model, "ForecastBase / Aggregated / DeliveryCompletionForecast", "Domain", "TotalTrials = all runs; beyond-horizon read")
+    Component(horizon, "ForecastHorizon", "Domain (new)", "5 years → 1,826 days")
+    Component(dto, "WhenForecastDto / WhenDistributionPointDto", "DTO", "+ beyondHorizon, horizonYears")
+    Component(block, "DeliveryForecastBlockRenderer", "C#", "Writes 'more than 5 years'")
+  }
+  System_Ext(redis, "Redis (when configured)", "pub/sub")
+  System_Ext(jira, "Jira Release", "Description block")
+  Container_Ext(clients, "lh CLI / MCP", "Node", "Render the flag when present")
+  Rel(admin, updCtl, "Cancels all through")
+  Rel(updCtl, queue, "Asks to cancel everything")
+  Rel(queue, notifier, "Broadcasts cancel-all through")
+  Rel(notifier, redis, "Publishes on its own channel to")
+  Rel(queue, fUpd, "Runs, with a token, the")
+  Rel(fUpd, fSvc, "Passes the token to")
+  Rel(fSvc, model, "Writes run totals into")
+  Rel(model, horizon, "Reads the cap from")
+  Rel(dto, model, "Reads percentiles from")
+  Rel(reader, dto, "Reads forecasts via")
+  Rel(clients, dto, "Reads forecasts via")
+  Rel(block, jira, "Publishes the forecast block to")
+```
+
+L1 and L2 are unchanged: the containers and external systems are the same, plus one Redis channel.
+
+### Loading, could-not-load and late answers
+
+"More than N years" is a value inside views that already load, so each keeps its loading and failure looks; it is never
+drawn as a date, an empty cell or "Cannot forecast". The Task Manager's Cancel all control:
+- *idle*: enabled when there is at least one cancellable row;
+- *in flight*: "Cancelling…" with a spinner, and every cancellable row reads "Stopping…";
+- *failed*: an inline "Could not cancel" line, and the rows revert;
+- *done*: the list is re-read.
+
+The list keeps what it had on a failed read.
+
+### Architectural Enforcement (this feature)
+
+- ArchUnitNET: `Lighthouse.Backend.Models` does not depend on `Services.Implementation.BackgroundServices.Update`.
+- Unit pins: the worker bound with injected core counts; `TotalTrials ≥ Σ histogram`; single-contributor combinator
+  bit-identity; a cancelled forecast leaves its rows unchanged.
+- Frontend: one formatter renders every beyond percentile; the years come from the payload.
+- Clients: a schema test against a recorded payload, with and without the new fields.
+
+### ADR References (this feature)
+
+- [ADR-248](./adr-248-a-forecast-simulation-runs-on-at-most-half-the-cores-whoever-asked-for-it.md): a forecast
+  simulation runs on at most half the cores, whoever asked for it. **Accepted 2026-10-18.**
+- [ADR-249](./adr-249-a-cancelled-forecast-stops-between-runs-on-a-token-its-updater-hands-down.md): a cancelled
+  forecast stops between runs, on a token its updater hands down. **Accepted 2026-10-18.**
+- [ADR-250](./adr-250-total-trials-counts-every-simulated-run-and-a-run-that-does-not-finish-is-beyond-the-horizon.md):
+  `TotalTrials` counts every simulated run, and a run that does not finish is beyond the horizon. **Accepted
+  2026-10-18.**
+- [ADR-251](./adr-251-the-horizon-is-five-years-of-simulated-days-held-in-one-constant-the-copy-also-reads.md): the
+  horizon is five years of simulated days, held in one constant the copy also reads. **Accepted 2026-10-18.**
+- [ADR-252](./adr-252-a-beyond-the-horizon-percentile-travels-as-an-additive-flag-beside-a-kept-date.md): a
+  beyond-the-horizon percentile travels as an additive flag beside a kept date. **Accepted 2026-10-18.**
+- [ADR-253](./adr-253-cancel-all-is-one-broadcast-each-replica-applies-to-its-own-work-follow-ups-and-holds.md): Cancel
+  all is one broadcast each replica applies to its own work, follow-ups and holds. **Accepted 2026-10-18.**
+- [ADR-254](./adr-254-a-published-release-forecast-says-more-than-five-years-instead-of-a-date.md): a published Release
+  forecast says "more than 5 years" instead of a date. **Accepted 2026-10-18.**
+- Relied on, unchanged: ADR-110, ADR-113, ADR-154, ADR-178, ADR-183, ADR-233.

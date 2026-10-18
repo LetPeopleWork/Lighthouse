@@ -65,6 +65,43 @@ tracker-facing behaviour is written down and not discovered.
 
 ---
 
+## Maintainer decisions — 2026-10-18
+
+Taken at DESIGN, on the proposal's open choices. Every other DESIGN item took its recommendation (decisions table
+below).
+
+### NMD-3 — The wire shape of "beyond the horizon"
+
+**Decided: a** (maintainer, 2026-10-18).
+- `WhenForecastDto` gains `beyondHorizon: boolean` and `horizonYears: number`. `WhenDistributionPointDto` (snapshots,
+  pinned closure records) gains `beyondHorizon: boolean`.
+- For a beyond percentile, `expectedDate` = today + the horizon's simulated days, in calendar arithmetic.
+- Lighthouse-Clients key on **whether the field is present**. This **refines** NMD-1 c's "gated on server version" and
+  does not reverse it: an older server never sends the field, which says what a version check would. ADR-252.
+
+### NMD-4 — What the Jira Release forecast block says for a beyond percentile
+
+**Finding.** A Delivery that broadcasts its forecast writes "70%: yyyy-MM-dd" lines into a Jira Release description
+(`DeliveryForecastBlockRenderer.cs:67-73`). This is a second tracker-facing write of forecast dates that NMD-2 does not
+cover.
+
+**Decided: a** — write "85%: more than 5 years" on that line (maintainer, 2026-10-18). The block is prose, and
+finding the previous block anchors on its opening and "Target" lines, not the percentile lines. ADR-254.
+
+### NMD-5 — Slices 03 and 04 ship together
+
+**Decided** (maintainer, 2026-10-18): build slice 03, then slice 04 (D7 holds), and **release them together** under
+Story #6309. Shipped alone, slice 03 would give released clients a stand-in date about 274 years out.
+
+### NMD-6 — No early stop for the whole forecast now
+
+**Decided: not now** (maintainer, 2026-10-18). The per-run cap of 1,826 simulated days is the kill switch.
+- **Why:** stopping the whole forecast early changes how many runs stand behind every percentile and likelihood. Stop
+  (slice 02) already covers the case a user sees.
+- **Deferred follow-up:** designed only if AC-04.4 misses (the slowest Portfolio forecast at least 50% faster).
+
+---
+
 ## Wave: DISCUSS / [REF] Persona IDs
 
 | Persona | Role here |
@@ -620,3 +657,176 @@ personas, 2 contexts, no regulatory terms, WS strategy C).
 **To** `nw-solution-architect` (DESIGN): this file, the slice briefs, NMD-1/2 (answered first), and DESIGN
 questions 1–9. **To** `nw-platform-architect` (DEVOPS): KPIs and the usage-data candidate. Expected to be a
 near no-op beyond the event decision.
+
+---
+
+## Wave: DESIGN / [REF] DDD list
+
+DESIGN, 2026-10-18, Morgan (propose mode). Application scope; no migration, no new package, no new external system.
+
+| ID | Decision | ADR |
+|---|---|---|
+| DDD-1 | The When/Start simulation runs on at most max(1, ⌊cores ÷ 2⌋) workers. The bound is carried by `ForecastSimulationLimits` and derived from `Environment.ProcessorCount` (which honours container CPU limits). The core count is injectable. `Task.Run` + `Parallel.For` stay. The startup banner states the bound | 248 |
+| DDD-2 | `ForecastUpdater` reads the update's token and passes it to `IForecastService.UpdateForecastsForPortfolio(portfolio, token)`, and from there to `ParallelOptions.CancellationToken`. The check sits between runs. Other callers pass none | 249 |
+| DDD-3 | `TotalTrials` counts every run simulated for a row; the histogram keeps finished days only. Beyond = `TotalTrials − Σ histogram`. Runs ended by a dependency circle count as beyond. Rows with no throughput keep `TotalTrials = 0` ("Cannot forecast") | 250 |
+| DDD-4 | A percentile is read through one value object (day / beyond / no answer). `-1` stops meaning two things. `HowManyForecast` is unchanged | 250 |
+| DDD-5 | The combinators stay closed. `AggregatedWhenForecast` and `DeliveryCompletionForecast` feed each contributor's unfinished runs in as a virtual last bucket and strip it from the result | 250 |
+| DDD-6 | The horizon is `ForecastHorizon`: 5 years → 1,826 simulated days. It is the run cap in `Default` and the source of the copy's years | 251 |
+| DDD-7 | The wire carries `beyondHorizon` + `horizonYears` on `WhenForecastDto` and `beyondHorizon` on `WhenDistributionPointDto`. A beyond `expectedDate` = today + horizon days (calendar) | 252 (NMD-3) |
+| DDD-8 | Blackout-window sizing by the 95th percentile uses the horizon when that percentile is beyond | 252 |
+| DDD-9 | The Jira Release block writes "85%: more than 5 years" | 254 (NMD-4) |
+| DDD-10 | Cancel all = `POST api/latest/update/tasks/cancel` (SystemAdmin, 204, idempotent) → one cancel-all broadcast. Each replica drops its non-delete follow-ups, then every hold (leaving their rounds), then stops its own non-delete keys through the per-key path | 253 |
+| DDD-11 | Race: what a replica holds when the message arrives is cancelled; later work runs | 253 |
+| DDD-12 | Only `ForecastSimulationLimits.Default` changes; fixtures that read the cap from `Default` follow it | 251 |
+| DDD-13 | Web: one model field set on `WhenForecast` and one shared formatter for every S12 surface. `Feature.ts:138` and `services/Api/ForecastService.ts:104` carry the flag through | 252 |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component (path) | Change |
+|---|---|
+| BE `Models/Forecast/ForecastHorizon.cs` | **new** |
+| BE `Models/Forecast/` percentile value object | **new** (one type) |
+| BE `Models/Forecast/ForecastSimulationLimits.cs`, `ForecastBase.cs`, `WhenForecast.cs`, `StartForecast.cs`, `AggregatedWhenForecast.cs`, `DeliveryCompletionForecast.cs` | modified |
+| BE `Models/Forecast/JointCompletionDistribution.cs`, `ComonotonicCompletionDistribution.cs`, `CompletionHistogram.cs` | **unchanged** |
+| BE `Models/SimulationResult.cs`, `Models/Feature.cs` (start answer), `Models/Delivery.cs`, `Models/DeliveryMetricsProjection.cs`, `Models/DeliverySources/DeliveryForecastBlock.cs` | modified |
+| BE `Services/Implementation/Forecast/ForecastService.cs`, `HowTheRunEnded.cs` (comment), `Services/Interfaces/Forecast/IForecastService.cs` | modified |
+| BE `Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs` | modified |
+| BE `API/DTO/WhenForecastDto.cs`, `DtoExtensions.cs`, `DeliveryWithLikelihoodDto.cs`, `DeliveryMetricsHistoryDto.cs`, `Archived/ArchivedDeliveryProjection.cs`; `Services/Implementation/DeliveryMetricValuesProjector.cs` | modified |
+| BE `API/FeatureForecastWindow.cs`, `API/ForecastController.cs` | modified |
+| BE `Services/Implementation/WriteBackTriggerService.cs` | modified (behaviour unchanged) |
+| BE `Services/Implementation/DeliverySources/DeliveryForecastBlockRenderer.cs`, `DeliveryForecastPublishingService.cs` | modified |
+| BE `Services/Interfaces/Update/IUpdateQueueService.cs`, `IUpdateCancellationNotifier.cs`; `…/Update/UpdateQueueService.cs`, `AdmittedCancellations.cs`, `InProcessUpdateCancellationNotifier.cs`, `RedisUpdateCancellationNotifier.cs` | modified |
+| BE `API/UpdateController.cs` | modified (4th route) |
+| BE startup banner | modified (one line) |
+| FE `models/Forecasts/WhenForecast.ts`, `forecastSchemas.ts`, `models/Feature.ts`, `models/Delivery/ArchivedDelivery.ts`, `models/Delivery/DeliveryMetricsHistory.ts`, `services/Api/ForecastService.ts` | modified |
+| FE `ForecastInfo.tsx`, `DeliverySection.tsx`, `deliveryExportTable.ts`, `deliveryTimelineModel.ts`, `DeliveryPredictabilityChart.tsx` + one shared formatter | modified (+1 util) |
+| FE `components/App/Header/TaskManager/ActivitySection.tsx`, `useTaskManagerPopover.ts`, `services/UpdateSubscriptionService.ts` | modified |
+| Clients `forecastWording.ts`, `featureWording.ts`, `deliveryWording.ts`, `cli/src/forecastOutput.ts`, schemas | modified (clients minor, at finalize) |
+
+## Wave: DESIGN / [REF] Driving ports
+
+| Port | Change | Slice |
+|---|---|---|
+| Feature, Delivery, manual-forecast, snapshot-history, archived-Delivery GETs | additive `beyondHorizon` (+ `horizonYears` on percentiles) | 03 |
+| `POST api/latest/update/tasks/{type}/{id}/cancel` | unchanged; now effective on a running forecast | 02 |
+| `POST api/latest/update/tasks/cancel` | **new**, `[RbacGuard(SystemAdmin)]`, 204, idempotent | 05 |
+| `IForecastService.UpdateForecastsForPortfolio` | + `CancellationToken` | 02 |
+| `IUpdateQueueService` | + `CancelAllAsync()` | 05 |
+| Lighthouse-Clients CLI/MCP | read the flag when present | 03 (finalize) |
+
+## Wave: DESIGN / [REF] Driven ports + adapters
+
+| Port | Adapter(s) | Change |
+|---|---|---|
+| `IUpdateCancellationNotifier` | `InProcessUpdateCancellationNotifier`, `RedisUpdateCancellationNotifier` | + cancel-all publish/subscribe; Redis on a channel of its own |
+| `IUpdateStatusStore` | in-process / Redis | unchanged (`CancelIfStillWaiting` reused) |
+| `IRepository<Feature>` | EF | unchanged; save not reached on cancel |
+| `IWriteBackCollector` | — | unchanged; nothing staged on cancel or for beyond |
+| `IDeliveryForecastPublisher` | Jira | unchanged port; block text changes (NMD-4) |
+| `IRefreshLogService` | EF | unchanged |
+
+## Wave: DESIGN / [REF] Technology choices
+
+None new. .NET `ParallelOptions` (BCL), the existing StackExchange.Redis pub/sub, System.Text.Json, zod. ArchUnitNET
+(already in the test project) gets one rule: `Lighthouse.Backend.Models` does not depend on
+`Services.Implementation.BackgroundServices.Update`.
+
+## Wave: DESIGN / [REF] Decisions table
+
+| # | Question | Decision | Status |
+|---|---|---|---|
+| Q1 | The bound | max(1, ⌊cores ÷ 2⌋), every When/Start simulation | recommendation |
+| Q2 | Pool vs dedicated threads | keep the pool; dedicated threads only if AC-01.5 fails | recommendation |
+| Q3 | Token path | explicit from `ForecastUpdater` (S107 rules out injecting it into `ForecastService`) | recommendation |
+| Q4 | Representation | `TotalTrials` = all runs; no migration | recommendation |
+| Q5 | Unit | 1,826 simulated days; copy always true | recommendation |
+| Q6 | Wire | NMD-3 a | **maintainer** |
+| Q7 | Cancel all | one broadcast, local apply | recommendation |
+| Q8 | Race | cancel what is held when the message arrives | recommendation |
+| Q9 | Fixtures | only `Default` changes | recommendation |
+| F-1 | Release block | NMD-4 a | **maintainer** |
+| F-3 | Window sizing | horizon for a beyond 95th | recommendation |
+| F-4 | Circle runs | count as beyond | recommendation |
+| F-5 | Concurrent simulations | per-call bound; no global gate | recommendation |
+| F-6 | Release packaging | NMD-5 | **maintainer** |
+| — | Early stop for a whole forecast | NMD-6: not now | **maintainer** |
+
+**Loading and failure looks.**
+- **"More than N years"** adds no data fetch. Each host keeps its existing looks (WidgetShell `status`, keyed TanStack
+  queries). A beyond percentile is never drawn as a date, as an empty cell, or as "Cannot forecast".
+- **Cancel all** has four looks:
+  - *idle*: enabled when there is at least one cancellable row;
+  - *in flight*: "Cancelling…" with a spinner, and every cancellable row reads "Stopping…" through `stopAsked`;
+  - *failed*: an inline "Could not cancel. Try again." line, and the rows revert, as per-row Stop does;
+  - *done*: the list is re-read ("Nothing is being refreshed right now."; deletes stay).
+- The list keeps "keep what was there on a failed read". Sketches are in the proposal; copy and placement are settled
+  at DISTILL UI-3..5.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification / contract shape |
+|---|---|---|---|---|
+| `ForecastService` | `Services/Implementation/Forecast/ForecastService.cs` | the simulation | EXTEND | options + runs-simulated total. Bounded-change: only the passed Features' forecasts; ∅ on cancel |
+| `ForecastSimulationLimits` | `Models/Forecast/` | limits | EXTEND | + bound; cap from `ForecastHorizon`. Pure value |
+| `ForecastBase` / `WhenForecast` / `StartForecast` | `Models/Forecast/` | percentile reads | EXTEND | `TotalTrials ≥ Σ`; value-object read. Pure |
+| `AggregatedWhenForecast`, `DeliveryCompletionForecast` | `Models/Forecast/` | combinator callers | EXTEND | virtual bucket in/out. Pure |
+| `JointCompletionDistribution`, `ComonotonicCompletionDistribution`, `CompletionHistogram` | `Models/Forecast/` | combine maths | REUSE unchanged | the maths and bit-identity are kept |
+| `WhenForecastDto`, `WhenDistributionPointDto`, `DeliveryWhenPercentile` | `API/DTO/`, `Models/` | wire | EXTEND | additive |
+| `WriteBackTriggerService` | `Services/Implementation/` | write-back | EXTEND | already writes nothing for "no answer" |
+| `DeliveryForecastBlockRenderer` | `Services/Implementation/DeliverySources/` | Release text | EXTEND | NMD-4 |
+| `ForecastUpdater`, `IForecastService` | `…/Update/`, `Services/Interfaces/Forecast/` | the update | EXTEND | token; one caller |
+| `UpdateQueueService`, `AdmittedCancellations`, notifiers | `…/Update/` | per-key cancel | EXTEND | Bounded-change: local sources and rows of non-delete keys, non-delete follow-ups, all holds and their rounds. Deletes untouched |
+| `UpdateController` | `API/` | Task Manager HTTP | EXTEND | same subsystem, same guard |
+| `ActivitySection`, `useTaskManagerPopover`, `UpdateSubscriptionService` | FE | per-row Stop | EXTEND | reuse `IconButton` / `Tooltip` / `stopAsked` |
+| `WhenForecast` (FE) | `models/Forecasts/` | percentile model | EXTEND | one formatter for all surfaces |
+| `ForecastHorizon` | `Models/Forecast/` | — | **CREATE NEW** | nothing holds "the horizon in years" that both the simulation and the copy can read |
+
+## Wave: DESIGN / [REF] Open questions
+
+**For DISTILL** (UI walk-through first):
+- UI-1..UI-5 as listed.
+- UI-2's timeline bar for a beyond end: open-ended to the window's right edge is suggested. A beyond percentile sizes the
+  window to the horizon (DDD-8), no further.
+- The demo data needs a low-throughput Team for the screenshot (DoD 7).
+- Confirm with the maintainer: a Delivery whose rows have only unfinished runs now shows "more than 5 years" with
+  likelihood 0, where it used to show "cannot forecast" (Changed Assumption 2).
+
+**For DELIVER:**
+- If AC-01.5 still shows pages hanging, move to dedicated threads (ADR-248's fallback).
+- If AC-02.7 misses KPI-2, add a checkpoint inside a run (ADR-249's fallback).
+- If AC-04.4 misses, design the early stop for a whole forecast (NMD-6).
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+1. **S2** said: *"Every simulation goes through that one method: … and the reality-check and backtest probes."*
+   Reality checks and backtests use `HowMany` (`Services/Implementation/Forecast/ForecastRealityCheckService.cs:90`,
+   `API/ForecastController.cs:137,220`), a separate single-threaded loop with no horizon. The bound covers every
+   When/Start simulation (background, manual `When`, multi-team). US-01's "manual forecast bounded the same way" holds
+   for `When` only.
+2. **S10** said: *"When no run finishes, the API shows today's date."*
+   - True for the raw DTO date only. A Feature row with no finished run has `TotalTrials = 0`, so the Feature reads
+     "Cannot forecast" (`Models/Feature.cs:189-216`) and a Delivery reads "cannot forecast"
+     (`Models/Forecast/DeliveryCompletionForecast.cs:29`).
+   - After DDD-3 both read "more than 5 years" (likelihood 0).
+3. **S11** listed `ForecastPredictabilityScore` and `ForecastRealityCheckService` as consumers of a forecast
+   percentile. Both read `HowManyForecast` (`Models/Forecast/ForecastPredictabilityScore.cs:7`); neither is touched.
+4. **NMD-1 c** said *"gated on server version"*. The gate is now on field presence (NMD-3). This refines c and does
+   not reverse it.
+5. **Pre-requisites** named only Epic #6298 as a second renderer of forecast dates. The Jira Release block
+   (`Services/Implementation/DeliverySources/DeliveryForecastBlockRenderer.cs`) is a second tracker-facing write (NMD-4).
+6. **D7** said *"Slice 03 … ships before slice 04"*. Build order unchanged; release together (NMD-5).
+
+## Wave: DESIGN / [REF] Handoff to DEVOPS
+
+- **Usage data:** the candidate is still a name-only `TaskManagerCancelAll` (KPI-6), for DEVOPS to decide. No forecast
+  event.
+- **KPIs:** KPI-1..5 are measured on the restored dev instance with Docker capped to 4 CPUs. The startup banner now
+  states the forecast's worker bound, which makes KPI-1's setup checkable.
+- **Infrastructure:** one more Redis pub/sub channel on the existing connection, used only when Redis is configured. No
+  migration; no new configuration key.
+- **External integrations needing contract tests:**
+  - Jira Release description (forecast block, existing publisher): a renderer and merge test with a beyond percentile.
+  - Lighthouse-Clients ← Lighthouse API (additive `beyondHorizon` / `horizonYears`): a consumer-driven schema test in
+    the clients repo against a recorded server payload, with and without the fields.
+- **Paradigm:** OOP, ports and adapters (unchanged).
+- **Mutation testing:** per feature, both stacks, run last on frozen code.
