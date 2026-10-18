@@ -188,7 +188,7 @@ const FeatureSizeComponent: React.FC<FeatureSizeComponentProps> = ({
 					source={projectSettings?.sizeEstimateSource}
 					ownField={projectSettings?.sizeEstimateAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					{...followOrOwn(
+					{...followOrOwn<IPortfolioSettings>(
 						onProjectSettingsChange,
 						"sizeEstimateSource",
 						"sizeEstimateAdditionalFieldDefinitionId",

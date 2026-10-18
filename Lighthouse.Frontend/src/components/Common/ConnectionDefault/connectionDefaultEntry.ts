@@ -19,14 +19,26 @@ const trackersHoldingTheDefaults: Partial<
 	AzureDevOps: "Azure DevOps",
 };
 
+type KeysHolding<Settings, Value> = NoInfer<
+	{
+		[Key in keyof Settings]-?: NonNullable<Settings[Key]> extends Value
+			? Key
+			: never;
+	}[keyof Settings]
+>;
+
 /**
  * What picking an entry writes into the settings: following sets only the source, while owning sets the
- * source and the field, where a null field is a deliberate None.
+ * source and the field, where a null field is a deliberate None. Name the settings type, as in
+ * followOrOwn<IPortfolioSettings>(...), so that handing the two keys over in the wrong order does not compile.
  */
-export const followOrOwn = <Key>(
-	change: (key: Key, value: SettingSource | number | null) => void,
-	sourceKey: Key,
-	ownFieldKey: Key,
+export const followOrOwn = <Settings = never>(
+	change: (
+		key: NoInfer<keyof Settings>,
+		value: SettingSource | number | null,
+	) => void,
+	sourceKey: KeysHolding<Settings, SettingSource>,
+	ownFieldKey: KeysHolding<Settings, number>,
 ) => ({
 	onFollow: () => change(sourceKey, "ConnectionDefault"),
 	onOwn: (field: number | null) => {

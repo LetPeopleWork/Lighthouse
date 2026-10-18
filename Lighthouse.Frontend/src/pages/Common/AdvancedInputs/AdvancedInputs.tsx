@@ -42,7 +42,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					source={teamSettings?.parentOverrideSource}
 					ownField={teamSettings?.parentOverrideAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					{...followOrOwn(
+					{...followOrOwn<IBaseSettings>(
 						onTeamSettingsChange,
 						"parentOverrideSource",
 						"parentOverrideAdditionalFieldDefinitionId",

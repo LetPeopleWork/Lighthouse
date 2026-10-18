@@ -47,7 +47,7 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 						projectSettings?.dependencyOverrideAdditionalFieldDefinitionId
 					}
 					additionalFieldDefinitions={additionalFieldDefinitions}
-					{...followOrOwn(
+					{...followOrOwn<IPortfolioSettings>(
 						onProjectSettingsChange,
 						"dependencyFieldSource",
 						"dependencyOverrideAdditionalFieldDefinitionId",
