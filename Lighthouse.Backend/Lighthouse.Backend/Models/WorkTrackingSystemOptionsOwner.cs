@@ -86,16 +86,11 @@ namespace Lighthouse.Backend.Models
         [Column(nameof(ParentOverrideAdditionalFieldDefinitionId))]
         public int? OwnParentOverrideAdditionalFieldDefinitionId { get; private set; }
 
-        private SettingSource? chosenParentOverrideSource;
+        // Stored in each owner's own table, and a new owner follows the connection's default.
+        private SettingSource storedParentOverrideSource = SettingSource.ConnectionDefault;
 
-        /// <summary>
-        /// Until the source is stored, an owner that names a field owns it and one that names none
-        /// follows, which with no default set reads exactly what it read before.
-        /// </summary>
         [NotMapped]
-        public virtual SettingSource ParentOverrideSource
-            => chosenParentOverrideSource
-                ?? (OwnParentOverrideAdditionalFieldDefinitionId.HasValue ? SettingSource.Own : SettingSource.ConnectionDefault);
+        public SettingSource ParentOverrideSource => storedParentOverrideSource;
 
         [NotMapped]
         public bool FollowsParentOverrideDefault => ParentOverrideSource == SettingSource.ConnectionDefault;
@@ -106,18 +101,16 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public string? ParentOverrideDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(ParentOverrideConnectionDefault);
 
-        protected virtual void ChooseParentOverrideSource(SettingSource source) => chosenParentOverrideSource = source;
-
         public void FollowParentOverrideDefault()
         {
-            ChooseParentOverrideSource(SettingSource.ConnectionDefault);
+            storedParentOverrideSource = SettingSource.ConnectionDefault;
             OwnParentOverrideAdditionalFieldDefinitionId = null;
         }
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
         public void OwnParentOverride(int? additionalFieldDefinitionId)
         {
-            ChooseParentOverrideSource(SettingSource.Own);
+            storedParentOverrideSource = SettingSource.Own;
             OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
         }
 

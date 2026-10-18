@@ -314,19 +314,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void An_owner_stored_with_a_field_of_its_own_before_it_chose_a_source_owns_that_field()
-        {
-            var subject = CreateSubject();
-            StoreOwnParentOverrideAsReadFromTheDatabase(subject, 4);
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.Own));
-                Assert.That(subject.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(4));
-            }
-        }
-
-        [Test]
         public void A_sent_field_of_its_own_is_the_field_the_owner_would_hold()
         {
             var subject = CreateSubject();
