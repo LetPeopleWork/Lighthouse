@@ -262,7 +262,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice04)]
         [Category("slice-04")]
         [Category("ac-04.1")]
         [Category("contract-shape:pure-function")]
