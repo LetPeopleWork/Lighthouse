@@ -307,5 +307,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             Assert.That((page.Source, page.Reads), Is.EqualTo(((string?)"ConnectionDefault", (string?)ParentLink)));
         }
+
+        // The copy still carries the field the old default named, and the connection has since dropped that field.
+        // Sent back as following, the field is not what the Team will read, so the save has nothing to refuse.
+        [Test]
+        [Category("ac-4.9")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_stale_copy_of_a_follower_still_naming_a_removed_field_keeps_the_Team_following()
+        {
+            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, ReleaseTrain);
+            var readBeforeTheDefaultMoved = await GivenAScriptReadTheSettingsOf(FraudSignals);
+            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, ParentLink);
+            await WhenTheAdminRemovesTheField(ReleaseTrain);
+            ThenTheSaveIsAccepted();
+
+            await WhenAScriptSavesBackItsStaleCopy(FraudSignals, readBeforeTheDefaultMoved, keepingTheSourceItRead: true);
+            ThenTheOwnerSaveIsAccepted();
+            var page = await WhatTheSettingsPageShows(FraudSignals, OwnerSetting.ParentOverrideField);
+
+            Assert.That((page.Source, page.Reads), Is.EqualTo(((string?)"ConnectionDefault", (string?)ParentLink)));
+        }
     }
 }

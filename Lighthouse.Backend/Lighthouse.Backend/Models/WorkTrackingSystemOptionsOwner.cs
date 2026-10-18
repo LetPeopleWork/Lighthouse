@@ -121,10 +121,17 @@ namespace Lighthouse.Backend.Models
             OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
         }
 
+        /// <summary>The field this owner would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
+        public int? ParentOverrideOwnedOnceTaken(SettingSource? sentSource, int? sentField)
+        {
+            var applied = ParentOverrideAsSent(sentSource, sentField);
+            return applied.Source == SettingSource.Own ? applied.OwnValue : null;
+        }
+
         public void TakeParentOverrideAsSent(SettingSource? sentSource, int? sentField)
         {
-            var stored = new StoredSetting(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
-            var applied = IncomingSetting.AppliedTo(stored, ParentOverrideAdditionalFieldDefinitionId, sentSource, sentField);
+            var stored = StoredParentOverride;
+            var applied = ParentOverrideAsSent(sentSource, sentField);
 
             if (applied == stored)
             {
@@ -140,6 +147,11 @@ namespace Lighthouse.Backend.Models
                 OwnParentOverride(applied.OwnValue);
             }
         }
+
+        private StoredSetting StoredParentOverride => new(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
+
+        private StoredSetting ParentOverrideAsSent(SettingSource? sentSource, int? sentField)
+            => IncomingSetting.AppliedTo(StoredParentOverride, ParentOverrideAdditionalFieldDefinitionId, sentSource, sentField);
 
         public StateCategories MapStateToStateCategory(string state)
         {
