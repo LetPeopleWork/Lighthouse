@@ -87,6 +87,9 @@ const TheIntro =
 const TheUpdateQuestion = "Update 3 Teams and 0 Portfolios?";
 const TheUpdateQuestionSays =
 	"3 Teams follow the Parent Override Field default. Their parents change only once they have been updated. Save only: they change at their next scheduled update.";
+const TheFieldsQuestion = "Update 4 Teams and 2 Portfolios?";
+const TheFieldsQuestionSays =
+	"You changed the Additional Fields. Their values only fill in once each Team and Portfolio on this connection has been updated. Save only: they fill in with the next scheduled update instead.";
 const TheEstimationQuestion = "Change the Estimation default?";
 const TheEstimationQuestionSays =
 	"4 Teams follow it; they show the new estimation the next time their pages load.";
@@ -660,6 +663,39 @@ describe("defaults set once on the connection", () => {
 					name: "Parent Override Field",
 				}),
 			).toHaveTextContent(CausedBy);
+		});
+
+		// A changed Additional Field updates everyone on the connection, which already covers whoever
+		// follows the changed default, so one save asks one question: the Additional Fields one.
+		// @error @us-05 @contract-shape:bounded-change
+		it("an Additional Field and a followed default changed in one save ask only the Additional Fields question", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: { parentOverrideForTeams: 11 },
+				}),
+			});
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);
+			const storyPoints = screen
+				.getByText(StoryPoints, { selector: ".MuiListItemText-primary" })
+				.closest("li") as HTMLElement;
+			fireEvent.click(
+				within(storyPoints).getByRole("button", { name: "delete" }),
+			);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion(TheFieldsQuestion);
+			expect(question).toHaveTextContent(TheFieldsQuestionSays);
+			expect(screen.getAllByRole("dialog")).toHaveLength(1);
+
+			await whenSheAnswers(TheFieldsQuestion, "Save and update");
+			await theSaveIsSent(server);
+			expect(theSave(server).choice).toEqual({
+				startUpdates: true,
+				additionalFieldsChanged: true,
+			});
+			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			expect(theFieldsChangedEventsSent()).toHaveLength(1);
 		});
 
 		// A default is not an Additional Field: counting it as a field change would report that fields
