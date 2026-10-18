@@ -435,6 +435,65 @@ describe("defaults set once on the connection", () => {
 			).toBeInTheDocument();
 		});
 
+		// @edge @us-04 @ac-4.7 @contract-shape:pure-function
+		it("a connection that offers only Teams defaults shows no Portfolios group", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: Object.assign(jiraDcPayments(), {
+					supportedDefaults: ["parentOverrideForTeams", "estimationForTeams"],
+				}),
+			});
+
+			expectTheRows(theGroup("Teams"), [
+				"Parent Override Field",
+				"Estimation Field",
+			]);
+			expect(
+				within(theSection()).queryByRole("group", { name: "Portfolios" }),
+			).not.toBeInTheDocument();
+		});
+
+		// @edge @us-04 @ac-4.7 @contract-shape:pure-function
+		it.each([
+			["no field", {}],
+			["a field the connection does not list", { parentOverrideForTeams: 99 }],
+		])("a default naming %s reads as None", async (_, defaults) => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({ defaults }),
+			});
+
+			fireEvent.mouseDown(
+				within(theGroup("Teams")).getByRole("combobox", {
+					name: "Parent Override Field",
+				}),
+			);
+
+			expect(
+				within(await screen.findByRole("listbox")).getByRole("option", {
+					name: "None",
+					selected: true,
+				}),
+			).toBeInTheDocument();
+		});
+
+		// @error @us-04 @contract-shape:bounded-change
+		it("Try again loads the connection that could not be loaded, with its section", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				answers: [
+					Promise.reject(new Error("The server could not be reached")),
+					Promise.resolve([jiraDcPayments()]),
+				],
+			});
+
+			fireEvent.click(
+				await screen.findByRole("button", { name: /^Try again$/ }),
+			);
+
+			expect(
+				await screen.findByRole("region", { name: TheSection }),
+			).toBeInTheDocument();
+			expect(screen.queryByText(TheCouldNotLoadLook)).not.toBeInTheDocument();
+		});
+
 		// @edge @us-04 @ac-4.7 @contract-shape:unbounded-preservation
 		it("the page never says how many follow a default", async () => {
 			await givenPriyaOpensJiraDcPayments();
@@ -617,6 +676,52 @@ describe("defaults set once on the connection", () => {
 				startUpdates: false,
 				additionalFieldsChanged: false,
 			});
+		});
+
+		// @us-05 @ac-5.3 @contract-shape:bounded-change
+		it.each([
+			["parentOverrideForPortfolios", "Parent Override Field"],
+			["dependencyFieldForPortfolios", "Dependency Field"],
+			["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
+			["featureOwnerFieldForPortfolios", "Feature Owner Field"],
+		] as const)(
+			"a changed %s default 2 Portfolios follow asks whether to update them",
+			async (name, setting) => {
+				await givenPriyaOpensJiraDcPayments({
+					connection: jiraDcPayments({ followers: { [name]: 2 } }),
+				});
+
+				await whenPriyaPicks("Portfolios", setting, ParentLink);
+				whenPriyaPressesSave();
+
+				const question = await theQuestion("Update 0 Teams and 2 Portfolios?");
+				expect(question).toHaveTextContent(
+					`2 Portfolios follow the ${setting} default.`,
+				);
+			},
+		);
+
+		// @error @us-05 @contract-shape:bounded-change
+		it("changing a default clears the refusal the last save got", async () => {
+			const server = await givenPriyaOpensJiraDcPayments();
+			vi.mocked(
+				server.validateWorkTrackingSystemConnection,
+			).mockResolvedValueOnce({
+				isValid: false,
+				message: "The Url cannot be reached.",
+			});
+			whenPriyaPressesSave();
+			expect(
+				await screen.findByText("The Url cannot be reached."),
+			).toBeInTheDocument();
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);
+
+			await waitFor(() =>
+				expect(
+					screen.queryByText("The Url cannot be reached."),
+				).not.toBeInTheDocument(),
+			);
 		});
 
 		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation

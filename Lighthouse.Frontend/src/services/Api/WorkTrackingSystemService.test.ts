@@ -706,6 +706,25 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
+		// @us-04 @driving_port @contract-shape:pure-function
+		it("keeps the connection's defaults and the defaults it offers, leaving out one this page does not know", async () => {
+			mockedAxios.get.mockResolvedValueOnce({
+				data: [
+					{
+						...nordwindJiraDc,
+						defaults: { parentOverrideForTeams: 11 },
+						supportedDefaults: ["parentOverrideForTeams", "aDefaultFromLater"],
+					},
+				],
+			});
+
+			const [connection] =
+				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+			expect(connection.defaults).toEqual({ parentOverrideForTeams: 11 });
+			expect(connection.supportedDefaults).toEqual(["parentOverrideForTeams"]);
+		});
+
 		// @us-03 @driving_port @contract-shape:bounded-change
 		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });

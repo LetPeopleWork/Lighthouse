@@ -87,13 +87,36 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:pure-function
-	it("names the tracker of the connection the default is set on", () => {
-		givenTheTeamsSettingsPage(
-			aTeam({ source: "ConnectionDefault", tracker: "AzureDevOps" }),
-		);
+	it.each([
+		["AzureDevOps", "Azure DevOps"],
+		["Linear", "Linear"],
+		["Csv", "CSV"],
+		["ServiceNow", "ServiceNow"],
+	])("names the %s connection the default is set on as %s", (tracker, name) => {
+		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault", tracker }));
 
 		expect(
-			screen.getByText("Set on the Azure DevOps connection."),
+			screen.getByText(`Set on the ${name} connection.`),
+		).toBeInTheDocument();
+	});
+
+	// @edge @contract-shape:pure-function
+	it("before the settings arrive the dropdown offers no connection default and chooses nothing", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={null}
+				onSettingsChange={vi.fn()}
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(theEntries()).toEqual(["None", CausedBy, "Parent Link"]);
+		expect(
+			within(screen.getByRole("listbox")).getByRole("option", {
+				name: "None",
+				selected: true,
+			}),
 		).toBeInTheDocument();
 	});
 

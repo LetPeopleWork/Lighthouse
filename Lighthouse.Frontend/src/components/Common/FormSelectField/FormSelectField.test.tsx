@@ -285,4 +285,71 @@ describe("FormSelectField", () => {
 			expect(menuItems).toHaveLength(1);
 		});
 	});
+
+	describe("an entry above None", () => {
+		const theLabel = (container: HTMLElement) =>
+			container.querySelector(".MuiInputLabel-root") as HTMLElement;
+
+		it("without one, an empty field shows no None and keeps its label inside", () => {
+			const { container } = render(
+				<FormSelectField
+					label="Test"
+					value=""
+					onChange={vi.fn()}
+					options={defaultOptions}
+				/>,
+			);
+
+			expect(screen.getByRole("combobox")).not.toHaveTextContent("None");
+			expect(theLabel(container).dataset.shrink).toBe("false");
+		});
+
+		it("with one, a picked None stays readable and the label sits above it", () => {
+			const { container } = render(
+				<FormSelectField
+					label="Test"
+					value=""
+					onChange={vi.fn()}
+					options={defaultOptions}
+					firstOption={{ id: 9, label: "Connection default (Option One)" }}
+				/>,
+			);
+
+			expect(screen.getByRole("combobox")).toHaveTextContent("None");
+			expect(theLabel(container).dataset.shrink).toBe("true");
+		});
+	});
+
+	describe("Helper text", () => {
+		it("shows the helper text beneath the field", () => {
+			const { container } = render(
+				<FormSelectField
+					label="Test"
+					value=""
+					onChange={vi.fn()}
+					options={defaultOptions}
+					helperText="Set on the Jira connection."
+				/>,
+			);
+
+			expect(
+				container.querySelector(".MuiFormHelperText-root"),
+			).toHaveTextContent("Set on the Jira connection.");
+		});
+
+		it("shows no helper line when there is no helper text", () => {
+			const { container } = render(
+				<FormSelectField
+					label="Test"
+					value=""
+					onChange={vi.fn()}
+					options={defaultOptions}
+				/>,
+			);
+
+			expect(
+				container.querySelector(".MuiFormHelperText-root"),
+			).not.toBeInTheDocument();
+		});
+	});
 });
