@@ -816,8 +816,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		setDefaults((previous) => ({ ...previous, [name]: fieldId }));
 	};
 
-	// A default left naming a removed field would still be sent, and every Team following it would read a
-	// field the connection no longer has.
+	// A default left naming a removed field would still be sent, and every Team or Portfolio following it
+	// would read a field the connection no longer has.
 	const handleAdditionalFieldsChange = (
 		fields: IAdditionalFieldDefinition[],
 	) => {
