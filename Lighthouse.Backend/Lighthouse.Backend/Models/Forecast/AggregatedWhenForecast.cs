@@ -12,15 +12,23 @@
 
             if (materialized.Count > 0)
             {
-                var joint = JointCompletionDistribution.Combine(materialized.Select(f => f.SimulationResult));
+                var joint = JointCompletionDistribution.Combine(materialized.Select(EveryRunOf));
 
-                // No contributor carries trials: keep the sentinel days so the percentiles still read
-                // as done today. Team/TeamId stay null - the aggregate has no team.
-                SetSimulationResult(joint.Count > 0 ? joint : DaysWithoutTrials(materialized));
+                if (joint.Count > 0)
+                {
+                    // The runs nobody finished are counted, but have no day a reader could be shown.
+                    var everyRun = joint.Values.Sum();
+                    joint.Remove(NeverFinished);
+                    SetSimulationResult(joint);
+                    TotalTrials = everyRun;
+                }
+                else
+                {
+                    // No contributor carries trials: keep the sentinel days so the percentiles still read
+                    // as done today. Team/TeamId stay null - the aggregate has no team.
+                    SetSimulationResult(DaysWithoutTrials(materialized));
+                }
 
-                // The combined histogram counts only finished runs, so without this the runs that never
-                // finished would drop out and a Feature nobody can finish would read as due today.
-                TotalTrials = Math.Max(TotalTrials, materialized.Max(f => f.TotalTrials));
                 NumberOfItems = materialized.Sum(f => f.NumberOfItems);
                 CreationTime = materialized.Min(f => f.CreationTime);
             }
@@ -33,6 +41,28 @@
                 .Distinct()
                 .ToList();
             ExcludedSummary = summaries.Count == 0 ? null : string.Join("; ", summaries);
+        }
+
+        // Later than any day, so the combinators, which read days in ascending order, treat a run that
+        // never finished as finishing after every run that did.
+        internal const int NeverFinished = int.MaxValue;
+
+        /// <summary>
+        /// A forecast's histogram holds only the runs that finished. Combining histograms alone would
+        /// drop the rest and turn a Team that falls short into one that always finishes, so the runs it
+        /// did not finish go in too, on a day later than any other.
+        /// </summary>
+        internal static Dictionary<int, int> EveryRunOf(WhenForecast forecast)
+        {
+            var everyRun = forecast.SimulationResult.ToDictionary(day => day.Key, day => day.Value);
+            var unfinished = forecast.TotalTrials - everyRun.Values.Sum();
+
+            if (unfinished > 0)
+            {
+                everyRun[NeverFinished] = everyRun.GetValueOrDefault(NeverFinished) + unfinished;
+            }
+
+            return everyRun;
         }
 
         private static Dictionary<int, int> DaysWithoutTrials(IEnumerable<WhenForecast> forecasts)

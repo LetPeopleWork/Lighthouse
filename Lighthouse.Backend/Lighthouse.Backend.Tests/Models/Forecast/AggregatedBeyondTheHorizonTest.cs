@@ -37,7 +37,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         private static readonly JsonSerializerOptions AsTheWireSendsIt = new(JsonSerializerDefaults.Web);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("error")]
         [Category("contract-shape:pure-function")]
         public void A_Feature_two_Teams_work_is_beyond_the_horizon_where_the_runs_they_finished_together_fall_short()
@@ -50,7 +49,6 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("error")]
         [Category("contract-shape:pure-function")]
         public void A_Delivery_over_two_Teams_is_beyond_the_horizon_where_the_runs_they_finished_together_fall_short()

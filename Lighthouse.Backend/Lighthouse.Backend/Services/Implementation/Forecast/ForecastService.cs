@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             ReportTheRunsThatCouldNotFinish(whatWentWrong);
             ReportTheRunsThatRanOutOfDays(whatWentWrong, draws);
 
-            return TheDaysWorkBeganOn(plan, shares);
+            return TheDaysWorkBeganOn(plan, shares, limits.Trials);
         }
 
         /// <summary>
@@ -183,8 +183,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// rows beside it. Computing it would mean combining those marginals, which can only be done by
         /// assuming the teams move independently; a Feature whose teams both wait on the same upstream
         /// work is precisely where that is false, and is also the case anyone looks at a start date for.
+        ///
+        /// Every run counts towards a start, including the ones in which work never began, so a Feature
+        /// stuck behind one that never finishes reads as starting beyond the horizon in those runs.
         /// </summary>
-        private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares)
+        private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares, int runs)
         {
             var byRow = DayCounts.EmptyPer(plan.RowCount);
             var byFeature = DayCounts.EmptyPer(plan.FeatureCount);
@@ -201,14 +204,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 if (plan.RowAt(row).Feature is { } feature)
                 {
-                    TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byRow[row]), plan.RowAt(row).Team));
+                    TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byRow[row]), plan.RowAt(row).Team, runs));
                 }
             }
 
             for (var featureIndex = 0; featureIndex < plan.FeatureCount; featureIndex++)
             {
                 var feature = plan.FeatureAt(featureIndex);
-                TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byFeature[featureIndex]), null));
+                TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byFeature[featureIndex]), null, runs));
             }
 
             return startForecasts;
@@ -268,7 +271,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             }
 
             logger.LogError(
-                "Abandoned {Trials} simulated runs for teams {Teams}: every Feature with work left was waiting on one that had not finished, which can only happen if the Features are waiting on each other in a circle. The dates for those Features are not a forecast",
+                "Abandoned {Trials} simulated runs for teams {Teams}: every Feature with work left was waiting on one that had not finished, which can only happen if the Features are waiting on each other in a circle. Those runs count as beyond the horizon for those Features",
                 whatWentWrong.RunsGivenUpOn,
                 string.Join(", ", whatWentWrong.TeamsCaughtInACircle));
         }

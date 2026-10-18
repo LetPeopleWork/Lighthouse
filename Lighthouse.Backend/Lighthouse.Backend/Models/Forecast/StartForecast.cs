@@ -40,6 +40,14 @@ namespace Lighthouse.Backend.Models.Forecast
             Team = team;
         }
 
+        /// <param name="runsSimulated">
+        /// Every run, including those in which work never began: those read as starting beyond the horizon.
+        /// </param>
+        public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team, int runsSimulated) : this(daysWorkBeganOn, team)
+        {
+            TotalTrials = Math.Max(TotalTrials, runsSimulated);
+        }
+
         public int FeatureId { get; set; }
 
         public Feature Feature { get; set; }

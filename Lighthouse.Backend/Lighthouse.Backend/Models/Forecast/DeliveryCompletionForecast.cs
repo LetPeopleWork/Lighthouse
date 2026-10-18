@@ -67,7 +67,9 @@ namespace Lighthouse.Backend.Models.Forecast
                 .Distinct()
                 .ToList();
 
-            return new WhenForecast(ComonotonicCompletionDistribution.Min(contributors.Select(forecast => forecast.SimulationResult)))
+            // The carrier keeps the runs its Team did not finish as a histogram entry of their own, so
+            // it reaches the aggregate across Teams holding every run rather than only the finished ones.
+            return new WhenForecast(ComonotonicCompletionDistribution.Min(contributors.Select(AggregatedWhenForecast.EveryRunOf)))
             {
                 NumberOfItems = contributors.Sum(forecast => forecast.NumberOfItems),
                 CreationTime = contributors.Min(forecast => forecast.CreationTime),

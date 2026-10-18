@@ -152,7 +152,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("ac-03.4")]
@@ -186,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("error")]
@@ -212,7 +210,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.6")]
         [Category("error")]
