@@ -96,6 +96,12 @@ export function timelineWindow(
 const NO_START = "No forecast for when work on this begins.";
 const NO_END = "No forecast for when work on this finishes.";
 
+const forecastAt = (
+	percentiles: IWhenForecast[],
+	probability: TimelinePercentile,
+): IWhenForecast | undefined =>
+	percentiles.find((forecast) => forecast.probability === probability);
+
 /**
  * The date a list of percentiles gives for the probability being read, or nothing where it gives
  * none. Exported because a Feature's own ends and each contributing Team's are the same question
@@ -105,12 +111,6 @@ export const forecastDateAt = (
 	percentiles: IWhenForecast[],
 	probability: TimelinePercentile,
 ): Date | undefined => forecastAt(percentiles, probability)?.expectedDate;
-
-const forecastAt = (
-	percentiles: IWhenForecast[],
-	probability: TimelinePercentile,
-): IWhenForecast | undefined =>
-	percentiles.find((forecast) => forecast.probability === probability);
 
 /**
  * The day a Feature finished, or nothing for one still running. The field arrives as null until the

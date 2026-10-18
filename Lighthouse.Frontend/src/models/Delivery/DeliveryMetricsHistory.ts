@@ -9,9 +9,9 @@ export interface FeatureMetric {
 	referenceId: string;
 	name: string;
 	completion: number;
-	// null when no contributing team has throughput to forecast from (ADR-120).
+	// null when no contributing team has throughput to forecast from.
 	likelihood: number | null;
-	// Optional: snapshots recorded before Epic #5585 slice 02 carry neither (D5, no backfill).
+	// Optional: snapshots recorded before these were kept carry neither, and are not backfilled.
 	totalItems: number | null;
 	isUsingDefaultSize: boolean | null;
 	// Where the Feature lived when the row was written. Absent on rows written before it was kept,
