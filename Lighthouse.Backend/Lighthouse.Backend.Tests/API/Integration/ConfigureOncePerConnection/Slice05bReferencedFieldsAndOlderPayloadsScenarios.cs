@@ -163,6 +163,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             using (Assert.EnterMultipleScope())
             {
                 ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo("team-field-not-on-connection"));
                 Assert.That(fraudSignalsPage.Source, Is.EqualTo("ConnectionDefault"), "Nothing was saved.");
             }
         }

@@ -179,6 +179,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             using (Assert.EnterMultipleScope())
             {
                 ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo("connection-default-not-supported"));
                 Assert.That(csvAfterwards["defaults"], Is.InstanceOf<JsonObject>(), "The connection page reads the connection's defaults.");
                 Assert.That(csvAfterwards["defaults"]?["parentOverrideForTeams"], Is.Null);
             }
