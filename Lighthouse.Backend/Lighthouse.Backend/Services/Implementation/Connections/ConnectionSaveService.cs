@@ -63,8 +63,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             await connectionRepository.Save();
             await PointTheDefaultsAtTheFieldsAddedInThisSave(handle);
             var updatesQueued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
-            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, TeamsFollowingTheDefaultOf), updatesQueued);
-            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, PortfoliosFollowingTheDefaultOf), updatesQueued);
+            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, FollowersOf(teamRepository)), updatesQueued);
+            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, FollowersOf(portfolioRepository)), updatesQueued);
 
             return Saved;
         }
@@ -208,20 +208,14 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         private static NamedField DefaultOf(WorkTrackingSystemConnection connection, int? fieldId)
             => new(fieldId, connection.DisplayNameOfField(fieldId));
 
-        // In the order the Teams were created, which is the order an admin knows them by on the Teams list.
-        private List<string> TeamsFollowingTheDefaultOf(WorkTrackingSystemConnection connection)
-            => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connection.Id)
+        // In the order the owners were created, which is the order an admin knows them by on their list.
+        private static Func<WorkTrackingSystemConnection, List<string>> FollowersOf<TOwner>(IRepository<TOwner> repository)
+            where TOwner : WorkTrackingSystemOptionsOwner
+            => connection => [.. repository.GetAllByPredicate(owner => owner.WorkTrackingSystemConnectionId == connection.Id)
                 .AsEnumerable()
-                .Where(team => team.FollowsParentOverrideDefault)
-                .OrderBy(team => team.Id)
-                .Select(team => team.Name)];
-
-        private List<string> PortfoliosFollowingTheDefaultOf(WorkTrackingSystemConnection connection)
-            => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connection.Id)
-                .AsEnumerable()
-                .Where(portfolio => portfolio.FollowsParentOverrideDefault)
-                .OrderBy(portfolio => portfolio.Id)
-                .Select(portfolio => portfolio.Name)];
+                .Where(owner => owner.FollowsParentOverrideDefault)
+                .OrderBy(owner => owner.Id)
+                .Select(owner => owner.Name)];
 
         private static string WhoFollows(List<string> followers, OwnerWords owners) => followers.Count switch
         {
