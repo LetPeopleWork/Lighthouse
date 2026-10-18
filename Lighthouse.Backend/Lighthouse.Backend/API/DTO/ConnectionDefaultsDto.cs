@@ -14,9 +14,12 @@ namespace Lighthouse.Backend.API.DTO
         public ConnectionDefaultsDto(WorkTrackingSystemConnection connection)
         {
             ParentOverrideForTeams = connection.ParentOverrideForTeams;
+            ParentOverrideForPortfolios = connection.ParentOverrideForPortfolios;
         }
 
         public int? ParentOverrideForTeams { get; set; }
+
+        public int? ParentOverrideForPortfolios { get; set; }
 
         // The defaults this build cannot hold yet. They are caught here rather than dropped, so a save that
         // names one is refused instead of appearing to succeed.
@@ -31,6 +34,11 @@ namespace Lighthouse.Backend.API.DTO
             if (ParentOverrideForTeams.HasValue)
             {
                 yield return ConnectionDefaultSetting.ParentOverrideForTeams;
+            }
+
+            if (ParentOverrideForPortfolios.HasValue)
+            {
+                yield return ConnectionDefaultSetting.ParentOverrideForPortfolios;
             }
         }
     }

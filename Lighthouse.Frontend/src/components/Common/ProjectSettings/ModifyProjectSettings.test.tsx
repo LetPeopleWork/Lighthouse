@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
@@ -873,6 +879,90 @@ describe("ModifyProjectSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("a Portfolio that follows the connection's Parent Override Field", () => {
+		const givenThePortfolioFollowsTheDefault = async () => {
+			mockGetWorkTrackingSystems.mockResolvedValue([
+				{
+					...workTrackingSystems[0],
+					additionalFieldDefinitions: [
+						{ id: 21, displayName: "Parent Link", reference: "customfield_1" },
+						{ id: 22, displayName: "Caused by", reference: "customfield_2" },
+					],
+				},
+				workTrackingSystems[1],
+			]);
+			mockGetProjectSettings.mockResolvedValue({
+				...createMockProjectSettings(),
+				workTrackingSystem: "Jira",
+				parentOverrideSource: "ConnectionDefault",
+				parentOverrideDefaultName: "Parent Link",
+				parentOverrideAdditionalFieldDefinitionId: 21,
+			});
+
+			renderWithProvider(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			const advanced = screen
+				.getByText("Advanced Configuration")
+				.closest(".MuiCard-root") as HTMLElement;
+			fireEvent.click(within(advanced).getByLabelText("toggle"));
+			return screen.getByRole("combobox", { name: "Parent Override Field" });
+		};
+
+		// @driving_port @us-07 @ac-7.5 @contract-shape:pure-function
+		it("shows the followed field as the selected first entry", async () => {
+			const dropdown = await givenThePortfolioFollowsTheDefault();
+
+			expect(dropdown).toHaveTextContent("Connection default (Parent Link)");
+			expect(
+				screen.getByText("Set on the Jira connection."),
+			).toBeInTheDocument();
+			fireEvent.mouseDown(dropdown);
+			expect(
+				within(screen.getByRole("listbox"))
+					.getAllByRole("option")
+					.map((entry) => entry.textContent),
+			).toEqual([
+				"Connection default (Parent Link)",
+				"None",
+				"Parent Link",
+				"Caused by",
+			]);
+		});
+
+		// @us-07 @ac-7.5 @contract-shape:bounded-change
+		it("picking another entry makes the value the Portfolio's own", async () => {
+			const dropdown = await givenThePortfolioFollowsTheDefault();
+
+			fireEvent.mouseDown(dropdown);
+			fireEvent.click(
+				within(screen.getByRole("listbox")).getByRole("option", {
+					name: "Caused by",
+				}),
+			);
+
+			await waitFor(() =>
+				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						parentOverrideSource: "Own",
+						parentOverrideAdditionalFieldDefinitionId: 22,
+					}),
+				),
+			);
 		});
 	});
 });

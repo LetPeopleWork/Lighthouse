@@ -18,11 +18,21 @@ namespace Lighthouse.Backend.Services.Implementation
 
         public IReadOnlyDictionary<int, ConnectionFollowers> FollowersByConnection()
         {
-            // Where a Team's setting comes from is held on the loaded Team, so the Teams are counted in memory.
-            return teamRepository.GetAllByPredicate(_ => true).AsEnumerable()
-                .Where(team => team.FollowsParentOverrideDefault)
-                .GroupBy(team => team.WorkTrackingSystemConnectionId)
-                .ToDictionary(group => group.Key, group => new ConnectionFollowers(group.Count()));
+            var teams = FollowersOfTheParentOverrideDefault(teamRepository);
+            var portfolios = FollowersOfTheParentOverrideDefault(portfolioRepository);
+
+            return teams.Keys.Union(portfolios.Keys).ToDictionary(
+                connectionId => connectionId,
+                connectionId => new ConnectionFollowers(teams.GetValueOrDefault(connectionId), portfolios.GetValueOrDefault(connectionId)));
+        }
+
+        // Where an owner's setting comes from is held on the loaded owner, so the owners are counted in memory.
+        private static Dictionary<int, int> FollowersOfTheParentOverrideDefault<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner
+        {
+            return repository.GetAllByPredicate(_ => true).AsEnumerable()
+                .Where(owner => owner.FollowsParentOverrideDefault)
+                .GroupBy(owner => owner.WorkTrackingSystemConnectionId)
+                .ToDictionary(group => group.Key, group => group.Count());
         }
 
         private static Dictionary<int, int> CountByConnection<TOwner>(IRepository<TOwner> repository) where TOwner : WorkTrackingSystemOptionsOwner

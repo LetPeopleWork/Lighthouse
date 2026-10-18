@@ -13,8 +13,8 @@ namespace Lighthouse.Backend.Services.Interfaces
     }
 
     /// <summary>How many owners on a connection follow each of its defaults, whether or not that default is set.</summary>
-    public sealed record ConnectionFollowers(int ParentOverrideForTeams)
+    public sealed record ConnectionFollowers(int ParentOverrideForTeams, int ParentOverrideForPortfolios)
     {
-        public static readonly ConnectionFollowers None = new(0);
+        public static readonly ConnectionFollowers None = new(0, 0);
     }
 }

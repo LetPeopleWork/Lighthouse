@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private static readonly string[] CardIssuingDownloadsEverything = [$"{CardIssuing} Full"];
 
         [Test]
-        [Ignore(PendingEpic6303.Slice08)]
         [Category("ac-7.1")]
         [Category("ac-7.2")]
         [Category("driving_port")]
@@ -56,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice08)]
         [Category("ac-7.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -74,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice08)]
         [Category("ac-7.4")]
         [Category("contract-shape:bounded-change")]
         public async Task A_Portfolio_with_its_own_field_is_unaffected()

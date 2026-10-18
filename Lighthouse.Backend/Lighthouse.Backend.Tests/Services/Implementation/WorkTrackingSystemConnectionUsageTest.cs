@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void FollowersByConnection_CountsOnlyTheTeamsThatFollowTheParentOverrideDefault()
+        public void FollowersByConnection_CountsOnlyTheOwnersThatFollowTheirParentOverrideDefault()
         {
             WithTheseTeams(
                 FollowingTeam(1), FollowingTeam(1), TeamOwning(1, fieldId: 7), TeamOwning(1, fieldId: null),
@@ -57,8 +57,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(followers, Is.EquivalentTo(new Dictionary<int, ConnectionFollowers>
             {
-                [1] = new(2),
-                [2] = new(1),
+                [1] = new(2, 1),
+                [2] = new(1, 1),
+                [3] = new(0, 1),
             }));
         }
 

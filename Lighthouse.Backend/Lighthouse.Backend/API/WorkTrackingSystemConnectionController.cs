@@ -117,9 +117,9 @@ namespace Lighthouse.Backend.API
             UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
             UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
 
-            if (updatedConnection.Defaults is { } defaults && !TryApplyDefaults(save, defaults, newFields))
+            if (updatedConnection.Defaults is { } defaults && DefaultNamingNoFieldOfTheConnection(save, defaults, newFields) is { } namingNoField)
             {
-                return RefusedAsNamingNoFieldOfTheConnection();
+                return RefusedAsNamingNoFieldOfTheConnection(namingNoField);
             }
 
             var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
@@ -205,22 +205,33 @@ namespace Lighthouse.Backend.API
         }
 
         // A default must name a field this connection still has once the save is merged, or one this save adds.
-        // Anything else, such as another connection's field, would leave every Team that follows the default
+        // Anything else, such as another connection's field, would leave every owner that follows the default
         // reading a field that is not there. A default left naming a field this same edit removes is kept, so
         // that the save refuses the removal and says the default still uses that field.
-        private static bool TryApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
+        private static ConnectionDefaultSetting? DefaultNamingNoFieldOfTheConnection(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
         {
-            var named = defaults.ParentOverrideForTeams;
-            var addedInThisSave = newFields.FieldNamedBy(named);
-            if (named is { } fieldId && addedInThisSave is null && !save.Connection.HoldsStoredField(fieldId) && !save.Removes(fieldId))
+            if (!NamesAFieldOfTheConnection(save, defaults.ParentOverrideForTeams, newFields))
             {
-                return false;
+                return ConnectionDefaultSetting.ParentOverrideForTeams;
             }
 
-            save.TeamsParentOverrideDefaultAddedInThisSave = addedInThisSave;
-            save.Connection.ParentOverrideForTeams = addedInThisSave is null ? named : null;
-            return true;
+            if (!NamesAFieldOfTheConnection(save, defaults.ParentOverrideForPortfolios, newFields))
+            {
+                return ConnectionDefaultSetting.ParentOverrideForPortfolios;
+            }
+
+            save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
+            save.Connection.ParentOverrideForTeams = save.TeamsParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForTeams : null;
+            save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
+            save.Connection.ParentOverrideForPortfolios = save.PortfoliosParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForPortfolios : null;
+            return null;
         }
+
+        private static bool NamesAFieldOfTheConnection(ConnectionSaveHandle save, int? named, NewAdditionalFieldTargets newFields)
+            => named is not { } fieldId
+                || newFields.FieldNamedBy(fieldId) is not null
+                || save.Connection.HoldsStoredField(fieldId)
+                || save.Removes(fieldId);
 
         private static List<string> UnsupportedDefaultsIn(ConnectionDefaultsDto defaults, WorkTrackingSystems tracker)
             => [
@@ -235,12 +246,12 @@ namespace Lighthouse.Backend.API
                 title: "This connection cannot hold these defaults.",
                 detail: $"Not supported for this connection by this version of Lighthouse: {string.Join(", ", unsupported)}.");
 
-        private ObjectResult RefusedAsNamingNoFieldOfTheConnection()
+        private ObjectResult RefusedAsNamingNoFieldOfTheConnection(ConnectionDefaultSetting namingNoField)
             => this.RefusedWithCode(
                 StatusCodes.Status400BadRequest,
                 "connection-default-field-unknown",
                 title: "A default names a field this connection does not have.",
-                detail: $"Not an Additional Field of this connection: {WorkTrackingSystemConnectionDto.NameOf(ConnectionDefaultSetting.ParentOverrideForTeams)}.");
+                detail: $"Not an Additional Field of this connection: {WorkTrackingSystemConnectionDto.NameOf(namingNoField)}.");
 
         private ObjectResult RefusedAsRemovingAFieldInUse(IReadOnlyList<AdditionalFieldInUse> fieldsInUse)
             => this.RefusedWithCode(
