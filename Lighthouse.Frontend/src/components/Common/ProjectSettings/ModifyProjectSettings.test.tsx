@@ -1024,4 +1024,85 @@ describe("ModifyProjectSettings", () => {
 			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
 		});
 	});
+
+	describe.each([
+		{
+			group: "Default Feature Size",
+			field: "Size Estimate Field",
+			theDefault: "sizeEstimateFieldForPortfolios",
+			following: {
+				sizeEstimateSource: "ConnectionDefault",
+				sizeEstimateDefaultName: "T-Shirt Size",
+				sizeEstimateAdditionalFieldDefinitionId: 21,
+			},
+		},
+		{
+			group: "Dependency Settings",
+			field: "Dependency Field",
+			theDefault: "dependencyFieldForPortfolios",
+			following: {
+				dependencyFieldSource: "ConnectionDefault",
+				dependencyFieldDefaultName: "T-Shirt Size",
+				dependencyOverrideAdditionalFieldDefinitionId: 21,
+			},
+		},
+	] as const)(
+		"a Portfolio that follows the connection's $field",
+		({ group, field, theDefault, following }) => {
+			// @us-09 @ac-9.1 @contract-shape:bounded-change
+			it("switching the connection shows the default of the connection now chosen", async () => {
+				mockGetWorkTrackingSystems.mockResolvedValue([
+					{
+						...workTrackingSystems[0],
+						additionalFieldDefinitions: [
+							{
+								id: 21,
+								displayName: "T-Shirt Size",
+								reference: "customfield_1",
+							},
+						],
+					},
+					{
+						...workTrackingSystems[1],
+						additionalFieldDefinitions: [
+							{ id: 31, displayName: "Effort", reference: "System.Effort" },
+						],
+						defaults: { [theDefault]: 31 },
+					},
+				]);
+				mockGetProjectSettings.mockResolvedValue({
+					...createMockProjectSettings(),
+					workTrackingSystem: "Jira",
+					...following,
+				});
+				renderWithProvider(
+					<ModifyProjectSettings
+						title="Modify Project Settings"
+						getWorkTrackingSystems={mockGetWorkTrackingSystems}
+						getProjectSettings={mockGetProjectSettings}
+						getAllTeams={mockGetAllTeams}
+						saveProjectSettings={mockSaveProjectSettings}
+						validateProjectSettings={mockValidateProjectSettings}
+					/>,
+				);
+				await waitFor(() =>
+					expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+				);
+				const section = screen
+					.getByText(group)
+					.closest(".MuiCard-root") as HTMLElement;
+				fireEvent.click(within(section).getByLabelText("toggle"));
+				const dropdown = screen.getByRole("combobox", { name: field });
+				expect(dropdown).toHaveTextContent(
+					/^Connection default \(T-Shirt Size\)$/,
+				);
+
+				fireEvent.click(screen.getByText("Change Work Tracking System"));
+
+				await waitFor(() =>
+					expect(dropdown).toHaveTextContent(/^Connection default \(Effort\)$/),
+				);
+			});
+		},
+	);
 });
