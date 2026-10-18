@@ -30,11 +30,11 @@ namespace Lighthouse.Backend.API.Helpers
                 return teamDto;
             }
 
-            // Only checkable while the save keeps the Team on the connection it was read with; a save that moves
-            // the Team to another connection is checked against nothing here.
+            // Judged against the connection the Team is on, or is being created on, before this save. A save that
+            // also moves the Team to another connection is checked against nothing here.
             public bool NamesAFieldItsConnectionLacks(TeamSettingDto teamSetting)
                 => teamSetting.ParentOverrideAdditionalFieldDefinitionId is { } field
-                    && teamSetting.WorkTrackingSystemConnectionId == team.WorkTrackingSystemConnectionId
+                    && team.WorkTrackingSystemConnection?.Id == teamSetting.WorkTrackingSystemConnectionId
                     && !team.WorkTrackingSystemConnection.HoldsStoredField(field);
 
             public void SyncTeamWithTeamSettings(TeamSettingDto teamSetting)

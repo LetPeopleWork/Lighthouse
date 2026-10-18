@@ -84,6 +84,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected static readonly string[] TheThreeFollowers = [FraudSignals, OpsTooling, MobileWallet];
 
         private const string ConnectionsRoute = "/api/latest/worktrackingsystemconnections";
+        private const string TeamsRoute = "/api/latest/teams";
         private const string TaskListRoute = "/api/latest/update/tasks";
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
         private const string JsonMediaType = "application/json";
@@ -468,18 +469,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// <summary>A new Team on the connection, created with a body copied from a Team that names nothing.</summary>
         protected async Task WhenANewTeamIsCreated(string name)
         {
+            var settings = await ANewTeamCopiedFromFraudSignals(name);
+
+            using var content = AsJson(settings);
+            using var response = await Client.PostAsync(new Uri(TeamsRoute, UriKind.Relative), content);
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+            teamIds[name] = JsonNode.Parse(body)!["id"]!.GetValue<int>();
+        }
+
+        /// <summary>A new Team created with a field of another connection as its own Parent Override Field.</summary>
+        protected async Task WhenANewTeamIsCreatedNamingAFieldOf(string name, string connection, string fieldName)
+        {
+            var settings = await ANewTeamCopiedFromFraudSignals(name);
+            SetTheOwnersValue(settings, OwnerSetting.ParentOverrideField, await TheFieldId(connection, fieldName), Source.Own);
+
+            using var content = AsJson(settings);
+            using var response = await Client.PostAsync(new Uri(TeamsRoute, UriKind.Relative), content);
+
+            SaveAnswer = response.StatusCode;
+            SaveAnswerBody = await response.Content.ReadAsStringAsync();
+        }
+
+        private async Task<JsonObject> ANewTeamCopiedFromFraudSignals(string name)
+        {
             var settings = await TheSettingsOf(FraudSignals);
             settings["id"] = 0;
             settings["name"] = name;
             settings["dataRetrievalValue"] = $"project = {name.Replace(' ', '_')}";
             settings.Remove("concurrencyToken");
-
-            using var content = AsJson(settings);
-            using var response = await Client.PostAsync(new Uri("/api/latest/teams", UriKind.Relative), content);
-            var body = await response.Content.ReadAsStringAsync();
-
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-            teamIds[name] = JsonNode.Parse(body)!["id"]!.GetValue<int>();
+            return settings;
         }
 
         // Only the refresh history is set aside: what the save before it logged is still that save's to read.
@@ -629,6 +649,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             var read = await TheConnectionAsThePageReadsIt(connection);
             return [.. FieldsOf(read).Select(field => field?[DisplayName]?.ToString() ?? string.Empty)];
+        }
+
+        protected async Task<IReadOnlyList<string>> TheTeamsOnTheTeamsList()
+        {
+            using var response = await Client.GetAsync(new Uri(TeamsRoute, UriKind.Relative));
+            var body = await response.Content.ReadAsStringAsync();
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+            return [.. JsonNode.Parse(body)!.AsArray().Select(team => team?["name"]?.ToString() ?? string.Empty)];
         }
 
         /// <summary>Every Information entry about a changed default the saves since the scenario's start wrote.</summary>

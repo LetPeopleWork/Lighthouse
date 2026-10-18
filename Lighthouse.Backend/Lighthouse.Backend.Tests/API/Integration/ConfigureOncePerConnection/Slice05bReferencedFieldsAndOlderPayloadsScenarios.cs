@@ -191,6 +191,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
+        [Category("ac-4.8")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_new_Team_cannot_name_a_field_its_connection_does_not_have()
+        {
+            await WhenANewTeamIsCreatedNamingAFieldOf("Chargebacks", JiraDcTreasury, TreasuryCausedBy);
+            var teams = await TheTeamsOnTheTeamsList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo("team-field-not-on-connection"));
+                Assert.That(teams, Does.Not.Contain("Chargebacks"));
+            }
+        }
+
+        [Test]
         [Category("ac-4.9")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

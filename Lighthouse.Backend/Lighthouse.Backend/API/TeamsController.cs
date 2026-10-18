@@ -128,6 +128,11 @@ namespace Lighthouse.Backend.API
                 newTeam.WorkTrackingSystemConnection = connection;
             }
 
+            if (this.RefusalOfTheParentOverride(newTeam, teamSetting) is { } parentOverrideRefusal)
+            {
+                return parentOverrideRefusal;
+            }
+
             newTeam.SyncTeamWithTeamSettings(teamSetting);
 
             if (!licenseService.CanUsePremiumFeatures())
