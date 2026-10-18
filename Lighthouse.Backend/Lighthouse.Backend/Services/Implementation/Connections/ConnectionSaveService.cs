@@ -13,6 +13,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         IRepository<Team> teamRepository,
         IRepository<Portfolio> portfolioRepository,
         IDomainEventDispatcher domainEventDispatcher,
+        ITerminologyService terminologyService,
         ILogger<ConnectionSaveService> logger)
         : IConnectionSaveService
     {
@@ -82,10 +83,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
 
             var removedIds = removed.Select(field => (int?)field.Id).ToList();
+            var terms = OwnerTerms.From(terminologyService.GetAll());
             DefaultNamingAField[] defaults =
             [
-                new(TeamsParentOverrideDefault, connection.ParentOverrideForTeams),
-                new(PortfoliosParentOverrideDefault, connection.ParentOverrideForPortfolios),
+                new($"{OwnerTerms.PossessiveOfPlural(terms.Teams)} Parent Override Field", connection.ParentOverrideForTeams),
+                new($"{OwnerTerms.PossessiveOfPlural(terms.Portfolios)} Parent Override Field", connection.ParentOverrideForPortfolios),
             ];
             return AdditionalFieldInUse.AmongTheRemoved(
                 removed, defaults, [.. TeamsOwningAnyOf(removedIds, connection.Id), .. PortfoliosOwningAnyOf(removedIds, connection.Id)]);

@@ -44,6 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
         private Mock<ILogger<ConnectionSaveService>> loggerMock;
+        private Mock<ITerminologyService> terminologyServiceMock;
 
         [SetUp]
         public void Setup()
@@ -53,6 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             loggerMock = new Mock<ILogger<ConnectionSaveService>>();
+            terminologyServiceMock = new Mock<ITerminologyService>();
         }
 
         [Test]
@@ -597,6 +599,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             }
         }
 
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Commit_RemovingAFieldBothDefaultsName_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Staff");
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.ParentOverrideForTeams = CausedById;
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.ParentOverrideForPortfolios = CausedById;
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
+                "\"Caused by\" cannot be removed. It is the Squads' Parent Override Field default and the Staff's Parent Override Field default. Nothing was saved."));
+        }
+
+        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
+            => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
+            [
+                new TerminologyEntry { Id = 1, Key = "team", DefaultValue = "Team", Value = team },
+                new TerminologyEntry { Id = 2, Key = "teams", DefaultValue = "Teams", Value = teams },
+                new TerminologyEntry { Id = 3, Key = "portfolio", DefaultValue = "Portfolio", Value = portfolio },
+                new TerminologyEntry { Id = 4, Key = "portfolios", DefaultValue = "Portfolios", Value = portfolios },
+            ]);
+
         private ConnectionSaveService CreateSubjectWithOwnersOfTheCausedByField(List<Team> teams, List<Portfolio> portfolios)
         {
             var connection = GivenTheOwnedConnection();
@@ -655,7 +683,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
                 .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
 
-            return new(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, log);
+            return new(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, terminologyServiceMock.Object, log);
         }
 
         private WorkTrackingSystemConnection GivenTheOwnedConnection()
@@ -704,6 +732,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 Times.Never);
 
         private ConnectionSaveService CreateSubject()
-            => new(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, loggerMock.Object);
+            => new(connectionRepositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, domainEventDispatcherMock.Object, terminologyServiceMock.Object, loggerMock.Object);
     }
 }

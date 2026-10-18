@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Connections;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -316,7 +317,7 @@ namespace Lighthouse.Backend.Tests.API.WriteBack
 
         private WorkTrackingSystemConnectionController CreateSubject()
         {
-            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, new ConnectionSaveService(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, Mock.Of<IDomainEventDispatcher>(), Mock.Of<ILogger<ConnectionSaveService>>()));
+            return new WorkTrackingSystemConnectionController(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, licenseServiceMock.Object, workTrackingConnectorFactoryMock.Object, new ConnectionSaveService(repositoryMock.Object, teamRepositoryMock.Object, portfolioRepositoryMock.Object, Mock.Of<IDomainEventDispatcher>(), Mock.Of<ITerminologyService>(), Mock.Of<ILogger<ConnectionSaveService>>()));
         }
     }
 }

@@ -26,6 +26,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
+        private Mock<ITerminologyService> terminologyServiceMock;
 
         private Mock<ITeamUpdater> teamUpdateServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
@@ -41,6 +42,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock = new Mock<IRepository<Team>>();
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            terminologyServiceMock = new Mock<ITerminologyService>();
             licenseServiceMock = new Mock<ILicenseService>();
             teamUpdateServiceMock = new Mock<ITeamUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
@@ -652,7 +654,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
                 new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow),
-                new ParentOverrideRefusals(workTrackingSystemConnectionRepositoryMock.Object));
+                new ParentOverrideRefusals(workTrackingSystemConnectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }
 }

@@ -38,12 +38,14 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
+        private Mock<ITerminologyService> terminologyServiceMock;
 
         [SetUp]
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
             connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            terminologyServiceMock = new Mock<ITerminologyService>();
             portfolioRepositoryMock = new Mock<IPortfolioRepository>();
             portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(It.IsAny<int>())).Returns([]);
             workItemRepoMock = new Mock<IWorkItemRepository>();
@@ -1103,6 +1105,36 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira" };
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = connection });
+            var dto = AValidTeamSave();
+            dto.ParentOverrideSource = SettingSource.Own;
+            dto.ParentOverrideAdditionalFieldDefinitionId = 9;
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdateTeam(1, dto);
+
+            var problem = (result.Result as ObjectResult)?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("team-field-not-on-connection"));
+                Assert.That(problem?.Title, Is.EqualTo("The Squad names a field its connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Squad's connection. Nothing was saved."));
+            }
+        }
+
+        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
+            => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
+            [
+                new TerminologyEntry { Id = 1, Key = "team", DefaultValue = "Team", Value = team },
+                new TerminologyEntry { Id = 2, Key = "teams", DefaultValue = "Teams", Value = teams },
+                new TerminologyEntry { Id = 3, Key = "portfolio", DefaultValue = "Portfolio", Value = portfolio },
+                new TerminologyEntry { Id = 4, Key = "portfolios", DefaultValue = "Portfolios", Value = portfolios },
+            ]);
+
+        [Test]
         public async Task UpdateTeam_MovingToAnotherConnectionWhileOwningAFieldOfTheOldOne_IsRefused()
         {
             var dto = GivenATeamOwningCausedByMovesToAConnectionHolding(new AdditionalFieldDefinition { Id = 7, DisplayName = "Parent Link", Reference = "customfield_10014" });
@@ -1211,7 +1243,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
 
             return new TeamController(
-                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new ParentOverrideRefusals(connectionRepositoryMock.Object));
+                teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new ParentOverrideRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));
         }
     }
 }

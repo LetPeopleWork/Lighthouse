@@ -1,20 +1,23 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Lighthouse.Backend.API.Helpers
 {
     /// <summary>How a refusal names the kind of owner whose Parent Override it refuses.</summary>
-    public sealed record ParentOverrideOwnerKind(string Noun, string Code)
+    public sealed record ParentOverrideOwnerKind(string Code)
     {
-        public static readonly ParentOverrideOwnerKind Team = new("Team", "team");
+        public static readonly ParentOverrideOwnerKind Team = new("team");
 
-        public static readonly ParentOverrideOwnerKind Portfolio = new("Portfolio", "portfolio");
+        public static readonly ParentOverrideOwnerKind Portfolio = new("portfolio");
+
+        public string NounIn(OwnerTerms terms) => this == Team ? terms.Team : terms.Portfolio;
     }
 
     /// <summary>The refusals a Team's or Portfolio's Parent Override can earn, whether the save creates the owner or changes it.</summary>
-    public class ParentOverrideRefusals(IRepository<WorkTrackingSystemConnection> connectionRepository)
+    public class ParentOverrideRefusals(IRepository<WorkTrackingSystemConnection> connectionRepository, ITerminologyService terminologyService)
     {
         private const string NothingWasSaved = "Nothing was saved.";
 
@@ -25,7 +28,7 @@ namespace Lighthouse.Backend.API.Helpers
                 return controller.RefusedWithCode(
                     StatusCodes.Status400BadRequest,
                     $"{kind.Code}-setting-source-unknown",
-                    title: $"The {kind.Noun} names a source this version of Lighthouse does not know.",
+                    title: $"The {NounFor(kind)} names a source this version of Lighthouse does not know.",
                     detail: $"The Parent Override Field source must be one of: {string.Join(", ", Enum.GetNames<SettingSource>())}. {NothingWasSaved}");
             }
 
@@ -34,12 +37,14 @@ namespace Lighthouse.Backend.API.Helpers
                 return controller.RefusedWithCode(
                     StatusCodes.Status400BadRequest,
                     $"{kind.Code}-field-not-on-connection",
-                    title: $"The {kind.Noun} names a field its connection does not have.",
-                    detail: $"The Parent Override Field is not an Additional Field of this {kind.Noun}'s connection. {NothingWasSaved}");
+                    title: $"The {NounFor(kind)} names a field its connection does not have.",
+                    detail: $"The Parent Override Field is not an Additional Field of this {NounFor(kind)}'s connection. {NothingWasSaved}");
             }
 
             return null;
         }
+
+        private string NounFor(ParentOverrideOwnerKind kind) => kind.NounIn(OwnerTerms.From(terminologyService.GetAll()));
 
         // Only a field the owner will hold as its own is judged. One sent along with following is not what the
         // owner reads, such as the old default's field in a copy read before the default moved. It is judged

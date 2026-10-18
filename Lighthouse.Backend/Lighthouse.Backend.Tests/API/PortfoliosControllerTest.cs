@@ -2,6 +2,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
@@ -28,6 +29,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
 
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepoMock;
+        private Mock<ITerminologyService> terminologyServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
 
         [SetUp]
@@ -38,6 +40,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             workTrackingSystemConnectionRepoMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            terminologyServiceMock = new Mock<ITerminologyService>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
@@ -412,7 +415,7 @@ namespace Lighthouse.Backend.Tests.API
                 rbacAdministrationServiceMock.Object,
                 FeatureOrderingTestHelper.FollowingTheTracker(),
                 TestToday.Clock,
-                new ParentOverrideRefusals(workTrackingSystemConnectionRepoMock.Object)
+                new ParentOverrideRefusals(workTrackingSystemConnectionRepoMock.Object, terminologyServiceMock.Object)
             );
         }
 

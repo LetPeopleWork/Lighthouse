@@ -27,12 +27,14 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IUpdateQueueService> updateQueueServiceMock;
         private Mock<IBlockedItemService> blockedItemServiceMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
+        private Mock<ITerminologyService> terminologyServiceMock;
 
         [SetUp]
         public void Setup()
         {
             portfolioRepoMock = new Mock<IRepository<Portfolio>>();
             connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            terminologyServiceMock = new Mock<ITerminologyService>();
             teamRepoMock = new Mock<IRepository<Team>>();
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
@@ -487,6 +489,49 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdatePortfolio_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1 });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, ParentOverrideSource = (SettingSource)7 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
+                Assert.That(problem?.Title, Is.EqualTo("The Program names a source this version of Lighthouse does not know."));
+            }
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideSource = SettingSource.Own, ParentOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem?.Title, Is.EqualTo("The Program names a field its connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Program's connection. Nothing was saved."));
+            }
+        }
+
+        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
+            => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
+            [
+                new TerminologyEntry { Id = 1, Key = "team", DefaultValue = "Team", Value = team },
+                new TerminologyEntry { Id = 2, Key = "teams", DefaultValue = "Teams", Value = teams },
+                new TerminologyEntry { Id = 3, Key = "portfolio", DefaultValue = "Portfolio", Value = portfolio },
+                new TerminologyEntry { Id = 4, Key = "portfolios", DefaultValue = "Portfolios", Value = portfolios },
+            ]);
+
+        [Test]
         public async Task UpdatePortfolio_MovingToAnotherConnectionWhileOwningAFieldOfTheOldOne_IsRefused()
         {
             var dto = GivenAPortfolioOwningCausedByMovesToAConnectionHoldingParentLink();
@@ -541,7 +586,7 @@ namespace Lighthouse.Backend.Tests.API
                 blockedItemServiceMock.Object,
                 updateQueueServiceMock.Object,
                 TestToday.Clock,
-                new ParentOverrideRefusals(connectionRepositoryMock.Object)
+                new ParentOverrideRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object)
             );
         }
 
