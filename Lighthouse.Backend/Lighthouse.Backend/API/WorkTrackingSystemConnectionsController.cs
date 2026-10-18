@@ -63,7 +63,6 @@ namespace Lighthouse.Backend.API
                 .GetAll()
                 .ToDictionary(c => c.WorkTrackingSystemConnectionId);
             var usageByConnectionId = connectionUsage.ByConnection();
-            var followersByConnectionId = connectionUsage.FollowersByConnection();
             var followerGroupsByConnectionId = connectionUsage.FollowerGroupsByConnection();
 
             var connectionDtos = existingConnections.Select(c =>
@@ -72,7 +71,6 @@ namespace Lighthouse.Backend.API
                 return new WorkTrackingSystemConnectionDto(c, credential, cryptoService)
                     .WithUsage(
                         usageByConnectionId.GetValueOrDefault(c.Id, ConnectionUsage.Unused),
-                        followersByConnectionId.GetValueOrDefault(c.Id, ConnectionFollowers.None),
                         followerGroupsByConnectionId.GetValueOrDefault(c.Id) ?? []);
             });
             return Ok(connectionDtos);

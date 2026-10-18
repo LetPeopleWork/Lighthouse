@@ -96,9 +96,9 @@ namespace Lighthouse.Backend.API.DTO
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ConnectionUsageDto? UsedBy { get; private set; }
 
-        public WorkTrackingSystemConnectionDto WithUsage(ConnectionUsage usage, ConnectionFollowers followers, IEnumerable<FollowerGroup> followerGroups)
+        public WorkTrackingSystemConnectionDto WithUsage(ConnectionUsage usage, IReadOnlyList<FollowerGroup> followerGroups)
         {
-            UsedBy = new ConnectionUsageDto(usage.Teams, usage.Portfolios, followers, [.. followerGroups.Select(FollowerGroupDto.From)]);
+            UsedBy = new ConnectionUsageDto(usage.Teams, usage.Portfolios, ConnectionFollowers.CountedFrom(followerGroups), [.. followerGroups.Select(FollowerGroupDto.From)]);
             return this;
         }
     }

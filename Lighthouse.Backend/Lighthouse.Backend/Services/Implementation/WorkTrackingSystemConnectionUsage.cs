@@ -17,14 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         public IReadOnlyDictionary<int, ConnectionFollowers> FollowersByConnection()
-            => OwnersFollowingAnyDefault()
-                .GroupBy(owner => owner.ConnectionId)
-                .ToDictionary(
-                    connection => connection.Key,
-                    connection => new ConnectionFollowers(
-                        FollowersOf(connection, ConnectionDefaultSetting.ParentOverrideForTeams),
-                        FollowersOf(connection, ConnectionDefaultSetting.ParentOverrideForPortfolios),
-                        FollowersOf(connection, ConnectionDefaultSetting.DependencyFieldForPortfolios)));
+            => FollowerGroupsByConnection().ToDictionary(
+                connection => connection.Key,
+                connection => ConnectionFollowers.CountedFrom(connection.Value));
 
         public IReadOnlyDictionary<int, IReadOnlyList<FollowerGroup>> FollowerGroupsByConnection()
             => OwnersFollowingAnyDefault()
@@ -34,9 +29,6 @@ namespace Lighthouse.Backend.Services.Implementation
                     connection => (IReadOnlyList<FollowerGroup>)[.. connection
                         .GroupBy(owner => string.Join(",", owner.Follows))
                         .Select(group => new FollowerGroup(group.First().Follows, group.Count()))]);
-
-        private static int FollowersOf(IEnumerable<OwnerFollowing> owners, ConnectionDefaultSetting setting)
-            => owners.Count(owner => owner.Follows.Contains(setting));
 
         // Where an owner's setting comes from is held on the loaded owner, so the owners are read in memory.
         private IEnumerable<OwnerFollowing> OwnersFollowingAnyDefault()

@@ -20,6 +20,15 @@ namespace Lighthouse.Backend.Services.Interfaces
     public sealed record ConnectionFollowers(int ParentOverrideForTeams, int ParentOverrideForPortfolios, int DependencyFieldForPortfolios)
     {
         public static readonly ConnectionFollowers None = new(0, 0, 0);
+
+        public static ConnectionFollowers CountedFrom(IReadOnlyList<FollowerGroup> groups)
+            => new(
+                Following(groups, ConnectionDefaultSetting.ParentOverrideForTeams),
+                Following(groups, ConnectionDefaultSetting.ParentOverrideForPortfolios),
+                Following(groups, ConnectionDefaultSetting.DependencyFieldForPortfolios));
+
+        private static int Following(IReadOnlyList<FollowerGroup> groups, ConnectionDefaultSetting setting)
+            => groups.Where(group => group.Follows.Contains(setting)).Sum(group => group.Count);
     }
 
     /// <summary>
