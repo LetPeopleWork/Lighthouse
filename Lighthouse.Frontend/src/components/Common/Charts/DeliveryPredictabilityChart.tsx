@@ -26,6 +26,7 @@ import {
 } from "../../../utils/theme/colors";
 import { FORECAST_LEVEL_THRESHOLDS } from "../Forecasts/ForecastLevel";
 import {
+	drawableDate,
 	moreThanYearsText,
 	yearsBeyondHorizon,
 } from "../Forecasts/forecastPercentileText";
@@ -112,10 +113,7 @@ const completionDateAt = (
 	point: DeliveryMetricsHistoryPoint,
 	percentile: number,
 ): number | null => {
-	const match = percentileOn(point, percentile);
-	return match && yearsBeyondHorizon(match) === undefined
-		? match.expectedDate.getTime()
-		: null;
+	return drawableDate(percentileOn(point, percentile))?.getTime() ?? null;
 };
 
 /** The years come from each day's own point: the horizon may have changed since that day was recorded. */

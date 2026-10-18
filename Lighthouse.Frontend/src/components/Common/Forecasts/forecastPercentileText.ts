@@ -11,6 +11,17 @@ export const yearsBeyondHorizon = (
 ): number | undefined =>
 	percentile.beyondHorizon === true ? percentile.horizonYears : undefined;
 
+/**
+ * The date a percentile can be drawn at, or undefined for none. One beyond the horizon carries only a
+ * stand-in date years out that nothing forecast: drawn, it would read as a real day and stretch the axis.
+ */
+export const drawableDate = (
+	percentile: (Percentile & Pick<IWhenForecast, "expectedDate">) | undefined,
+): Date | undefined =>
+	percentile && yearsBeyondHorizon(percentile) === undefined
+		? percentile.expectedDate
+		: undefined;
+
 /** The words shown in place of a date for a percentile too few simulated runs reached. */
 export const moreThanYearsText = (horizonYears: number): string =>
 	`More than ${horizonYears} years`;
