@@ -91,6 +91,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const string AdditionalFieldDefinitions = "additionalFieldDefinitions";
         private const string DisplayName = "displayName";
         private const string DefaultsMember = "defaults";
+        private const string IgnoreDependencies = "ignoreDependencies";
 
         private static readonly DateTime TheItemLastChangedAt = new(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc);
         private static readonly TimeSpan LongEnoughForAnyUpdateToFinish = TimeSpan.FromSeconds(30);
@@ -292,6 +293,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheOwnerSaveIsAccepted();
         }
 
+        protected async Task GivenThePortfolioIgnoresItsDependencies(string portfolio)
+        {
+            var settings = await TheSettingsOf(portfolio);
+            settings[IgnoreDependencies] = true;
+            await PutTheOwner(portfolio, settings);
+            ThenTheOwnerSaveIsAccepted();
+        }
+
         protected async Task GivenEveryTeamOwnsItsParentOverrideField()
         {
             foreach (var team in TheThreeFollowers)
@@ -464,6 +473,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
+        /// <summary>A script that does not know Ignore Dependencies saves back the settings it read, without it.</summary>
+        protected async Task WhenAScriptSavesBackTheSettingsWithoutIgnoreDependencies(string portfolio)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(portfolio);
+            settings.Remove(IgnoreDependencies);
+            await PutTheOwner(portfolio, settings);
+        }
+
         /// <summary>A script saves back settings it read earlier, before the default moved, without any source.</summary>
         protected async Task WhenAScriptSavesBackItsStaleCopy(string owner, JsonObject readEarlier, bool keepingTheSourceItRead)
         {
@@ -632,6 +650,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// <summary>The connection's defaults and who follows them, as the connection page reads them.</summary>
         protected async Task<JsonObject> WhatTheConnectionPageReads(string connection) => await TheConnectionAsThePageReadsIt(connection);
 
+        protected async Task<bool?> WhetherThePortfolioIgnoresItsDependencies(string portfolio)
+            => (await TheSettingsOf(portfolio))[IgnoreDependencies]?.GetValue<bool?>();
+
         protected async Task<string?> TheDefaultNamedOnTheConnection(ConnectionDefault theDefault)
         {
             var read = await TheConnectionAsThePageReadsIt(JiraDcPayments);
@@ -774,7 +795,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private List<Feature> TheFeatureOf(Portfolio portfolio)
         {
             var parentField = Remember(portfolio.Name, OwnerSetting.ParentOverrideField, portfolio, portfolio.ParentOverrideAdditionalFieldDefinitionId);
-            Remember(portfolio.Name, OwnerSetting.DependencyField, portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId);
+            // A tracker reads no Dependency Field for a Portfolio that ignores its dependencies.
+            Remember(portfolio.Name, OwnerSetting.DependencyField, portfolio, portfolio.IgnoreDependencies ? null : portfolio.DependencyOverrideAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.SizeEstimateField, portfolio, portfolio.SizeEstimateAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.FeatureOwnerField, portfolio, portfolio.FeatureOwnerAdditionalFieldDefinitionId);
             Remember(portfolio.Name, OwnerSetting.Estimation, portfolio, portfolio.EstimationAdditionalFieldDefinitionId);

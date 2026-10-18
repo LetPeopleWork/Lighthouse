@@ -65,13 +65,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [Category("contract-shape:unbounded-preservation")]
         public async Task Ignore_Dependencies_is_never_taken_from_the_connection()
         {
+            await GivenThePortfolioIgnoresItsDependencies(CardIssuing);
             await GivenTheDefaultIs(ConnectionDefault.PortfoliosDependencyField, ReleaseTrain);
 
+            await WhenAScriptSavesBackTheSettingsWithoutIgnoreDependencies(CardIssuing);
+            ThenTheOwnerSaveIsAccepted();
+            await WhenTheNextScheduledUpdateOf(CardIssuing);
+
+            var cardIssuingsPage = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.DependencyField);
             var page = await WhatTheConnectionPageReads(JiraDcPayments);
             var offered = await WhatTheConnectionOffersAsDefaults(JiraDcPayments);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(await WhetherThePortfolioIgnoresItsDependencies(CardIssuing), Is.True);
+                Assert.That(cardIssuingsPage.Source, Is.EqualTo("ConnectionDefault"), "Card Issuing still follows the default.");
+                Assert.That(WhatTheTrackerWasAskedToReadFor(CardIssuing, OwnerSetting.DependencyField), Is.Null);
                 Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.PortfoliosDependencyField), Is.EqualTo(ReleaseTrain));
                 Assert.That(offered, Is.Not.Null.And.Contains("dependencyFieldForPortfolios"));
                 Assert.That(page["defaults"], Is.InstanceOf<JsonObject>(), "The connection page reads the connection's defaults.");
