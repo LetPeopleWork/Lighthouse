@@ -196,19 +196,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
                 $"Stop is the driving port here; it answered {(int)response.StatusCode}.");
         }
 
+        /// <summary>
+        /// Settled means the browser has been told how the run ended, not only that the key has left the
+        /// status store: the queue drops the key before it pushes the terminal status. Endings told before
+        /// the forecast is let go belong to earlier runs, so only a new one counts.
+        /// </summary>
         protected async Task TheForecastIsLetGoAndSettles(SeededPortfolio portfolio)
         {
+            var endingsToldBefore = TheEndingsToldFor(portfolio);
+
             Draws.LetItCarryOn();
 
             var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
             var key = new UpdateKey(UpdateType.Forecasts, portfolio.Id);
             var deadline = DateTime.UtcNow + TheLongestAScenarioWaits;
 
-            while (store.TryGet(key, out _) && DateTime.UtcNow < deadline)
+            while (store.TryGet(key, out _) || TheEndingsToldFor(portfolio) == endingsToldBefore)
             {
+                if (DateTime.UtcNow > deadline)
+                {
+                    Assert.Fail($"The forecast let go after the stop never settled within {TheLongestAScenarioWaits.TotalSeconds}s: "
+                        + $"still in the status store: {store.TryGet(key, out _)}. The browser was told: {TheBrowserWasTold.Describe()}");
+                }
+
                 await Task.Delay(20);
             }
         }
+
+        private int TheEndingsToldFor(SeededPortfolio portfolio)
+            => TheBrowserWasTold.For(UpdateType.Forecasts, portfolio.Id).Count(progress => progress
+                is UpdateProgress.Completed or UpdateProgress.Failed or UpdateProgress.Cancelled);
 
         // --- Then (what the instance says afterwards) ---
 
