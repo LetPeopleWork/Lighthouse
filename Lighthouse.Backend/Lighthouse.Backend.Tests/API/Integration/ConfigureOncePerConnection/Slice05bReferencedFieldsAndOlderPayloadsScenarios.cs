@@ -190,6 +190,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        [Test]
+        [Category("ac-4.9")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_Team_saved_with_a_source_Lighthouse_does_not_know_is_refused()
+        {
+            await WhenTheOwnersAdminSendsTheSourceAsTheNumber(FraudSignals, 99);
+            var fraudSignalsPage = await WhatTheSettingsPageShows(FraudSignals, OwnerSetting.ParentOverrideField);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo("team-setting-source-unknown"));
+                Assert.That(fraudSignalsPage.Source, Is.EqualTo("ConnectionDefault"));
+            }
+        }
+
         // A client that sends no source keeps the stored source, unless it sends a value that is set and
         // differs from what the Team reads, and then the Team owns that value.
         [TestCase(FraudSignals, CausedBy, null, "ConnectionDefault", CausedBy, TestName = "A follower sent back what it reads keeps following")]

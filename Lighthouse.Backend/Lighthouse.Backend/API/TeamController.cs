@@ -229,9 +229,9 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stalenessError);
             }
 
-            if (storedTeam?.NamesAFieldItsConnectionLacks(teamSetting) == true)
+            if (this.RefusalOfTheParentOverride(storedTeam, teamSetting) is { } parentOverrideRefusal)
             {
-                return RefusedAsNamingAFieldTheConnectionLacks();
+                return parentOverrideRefusal;
             }
 
             var ruleSetError = ValidateTeamRuleSets(storedTeam, teamSetting);
@@ -251,13 +251,6 @@ namespace Lighthouse.Backend.API
 
             return null;
         }
-
-        private ObjectResult RefusedAsNamingAFieldTheConnectionLacks()
-            => this.RefusedWithCode(
-                StatusCodes.Status400BadRequest,
-                "team-field-not-on-connection",
-                title: "The Team names a field its connection does not have.",
-                detail: "The Parent Override Field is not an Additional Field of this Team's connection. Nothing was saved.");
 
         private static string? ValidateStalenessThresholds(TeamSettingDto teamSetting)
         {

@@ -429,6 +429,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
+        /// <summary>An owner saved with its Parent Override source sent as a number no version of Lighthouse defines.</summary>
+        protected async Task WhenTheOwnersAdminSendsTheSourceAsTheNumber(string owner, int source)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(owner);
+            settings[$"{TheOwnerMember(OwnerSetting.ParentOverrideField)}Source"] = source;
+            await PutTheOwner(owner, settings);
+        }
+
         /// <summary>A script saves back, unchanged, the settings it read.</summary>
         protected async Task WhenAScriptSavesBackWhatItRead(string owner, RoundTrip shape)
         {
