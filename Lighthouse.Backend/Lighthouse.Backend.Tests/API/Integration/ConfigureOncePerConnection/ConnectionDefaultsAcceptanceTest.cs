@@ -385,6 +385,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await Put(JiraDcPayments, openedEarlier, startUpdates: null);
         }
 
+        /// <summary>The admin saves the copy of the connection they opened earlier, with this field removed.</summary>
+        protected async Task WhenThatAdminRemovesTheField(JsonObject openedEarlier, string fieldName)
+        {
+            await SetTheRestAside();
+            FieldsOf(openedEarlier).Remove(TheField(FieldsOf(openedEarlier), fieldName));
+            await Put(JiraDcPayments, openedEarlier, startUpdates: null);
+        }
+
         protected async Task WhenSomeoneWithoutConnectionRightsSetsTheDefault(string team)
         {
             var read = await TheConnectionAsThePageReadsIt(JiraDcPayments);

@@ -151,6 +151,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // The admin never saw the save that landed after they opened the page, so telling them the field cannot be
+        // removed would answer a question about a connection they are not looking at. They are told to reload first.
+        [Test]
+        [Category("ac-4.8")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_stale_copy_that_removes_a_field_in_use_is_refused_as_stale()
+        {
+            var openedEarlier = await GivenAnAdminOpenedTheConnection();
+            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, ParentLink);
+
+            await WhenThatAdminRemovesTheField(openedEarlier, CausedBy);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
+                Assert.That(TheRefusal().Code, Is.EqualTo("concurrency-conflict"));
+                Assert.That(await TheFieldsOfTheConnection(JiraDcPayments), Does.Contain(CausedBy));
+                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.EqualTo(ParentLink));
+            }
+        }
+
         [Test]
         [Category("ac-4.8")]
         [Category("error")]

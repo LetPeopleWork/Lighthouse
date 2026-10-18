@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.API
 {
@@ -94,6 +95,15 @@ namespace Lighthouse.Backend.API
             }
 
             var existingConnection = save.Connection;
+
+            // Judged before anything the copy asks for. A copy read before someone else's save would otherwise be
+            // told that a field it removes is in use, about a connection the admin is not looking at. The stale
+            // answer is the one every other stale save gets, so it is raised the way they raise it.
+            if (updatedConnection.ConcurrencyToken is { } token && token != existingConnection.ConcurrencyToken)
+            {
+                throw new DbUpdateConcurrencyException($"Connection {workTrackingSystemConnectionId} was saved by someone else after this copy was read.");
+            }
+
             if (updatedConnection.Defaults is { } named && UnsupportedDefaultsIn(named, existingConnection.WorkTrackingSystem) is { Count: > 0 } unsupported)
             {
                 return RefusedAsUnsupported(unsupported);
