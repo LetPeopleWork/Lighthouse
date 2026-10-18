@@ -117,9 +117,14 @@ namespace Lighthouse.Backend.API
             UpdateAdditionalFieldDefinitions(existingConnection, updatedConnection.AdditionalFieldDefinitions, newFields);
             UpdateWriteBackMappingDefinitions(existingConnection, updatedConnection.WriteBackMappingDefinitions, newFields);
 
-            if (updatedConnection.Defaults is { } defaults && DefaultNamingNoFieldOfTheConnection(save, defaults, newFields) is { } namingNoField)
+            if (updatedConnection.Defaults is { } defaults)
             {
-                return RefusedAsNamingNoFieldOfTheConnection(namingNoField);
+                if (DefaultNamingNoFieldOfTheConnection(save, defaults, newFields) is { } namingNoField)
+                {
+                    return RefusedAsNamingNoFieldOfTheConnection(namingNoField);
+                }
+
+                ApplyDefaults(save, defaults, newFields);
             }
 
             var mappingValidation = WriteBackMappingValidator.Validate(existingConnection.WriteBackMappingDefinitions);
@@ -220,12 +225,19 @@ namespace Lighthouse.Backend.API
                 return ConnectionDefaultSetting.ParentOverrideForPortfolios;
             }
 
-            save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
-            save.Connection.ParentOverrideForTeams = save.TeamsParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForTeams : null;
-            save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
-            save.Connection.ParentOverrideForPortfolios = save.PortfoliosParentOverrideDefaultAddedInThisSave is null ? defaults.ParentOverrideForPortfolios : null;
             return null;
         }
+
+        private static void ApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
+        {
+            save.TeamsParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForTeams);
+            save.Connection.ParentOverrideForTeams = StoredFieldNamedBy(defaults.ParentOverrideForTeams, save.TeamsParentOverrideDefaultAddedInThisSave);
+            save.PortfoliosParentOverrideDefaultAddedInThisSave = newFields.FieldNamedBy(defaults.ParentOverrideForPortfolios);
+            save.Connection.ParentOverrideForPortfolios = StoredFieldNamedBy(defaults.ParentOverrideForPortfolios, save.PortfoliosParentOverrideDefaultAddedInThisSave);
+        }
+
+        private static int? StoredFieldNamedBy(int? named, AdditionalFieldDefinition? addedInThisSave)
+            => addedInThisSave is null ? named : null;
 
         private static bool NamesAFieldOfTheConnection(ConnectionSaveHandle save, int? named, NewAdditionalFieldTargets newFields)
             => named is not { } fieldId
