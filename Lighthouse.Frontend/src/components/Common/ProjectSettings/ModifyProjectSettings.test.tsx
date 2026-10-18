@@ -883,7 +883,9 @@ describe("ModifyProjectSettings", () => {
 	});
 
 	describe("a Portfolio that follows the connection's Parent Override Field", () => {
-		const givenThePortfolioFollowsTheDefault = async () => {
+		const givenThePortfolioFollowsTheDefault = async (
+			theOtherConnection: Partial<IWorkTrackingSystemConnection> = {},
+		) => {
 			mockGetWorkTrackingSystems.mockResolvedValue([
 				{
 					...workTrackingSystems[0],
@@ -892,7 +894,7 @@ describe("ModifyProjectSettings", () => {
 						{ id: 22, displayName: "Caused by", reference: "customfield_2" },
 					],
 				},
-				workTrackingSystems[1],
+				{ ...workTrackingSystems[1], ...theOtherConnection },
 			]);
 			mockGetProjectSettings.mockResolvedValue({
 				...createMockProjectSettings(),
@@ -963,6 +965,63 @@ describe("ModifyProjectSettings", () => {
 					}),
 				),
 			);
+		});
+
+		// @us-07 @ac-7.5 @contract-shape:bounded-change
+		it("switching the connection shows the default of the connection now chosen", async () => {
+			const dropdown = await givenThePortfolioFollowsTheDefault({
+				additionalFieldDefinitions: [
+					{ id: 31, displayName: "Epic Link", reference: "System.Parent" },
+				],
+				defaults: {
+					parentOverrideForTeams: null,
+					parentOverrideForPortfolios: 31,
+				},
+			});
+
+			fireEvent.click(screen.getByText("Change Work Tracking System"));
+
+			await waitFor(() =>
+				expect(dropdown).toHaveTextContent(
+					/^Connection default \(Epic Link\)$/,
+				),
+			);
+			expect(
+				screen.getByText(/^Set on the Azure DevOps connection\.$/),
+			).toBeInTheDocument();
+		});
+
+		// @us-07 @ac-7.5 @contract-shape:bounded-change
+		it("switching to a connection whose default names nothing shows None", async () => {
+			const dropdown = await givenThePortfolioFollowsTheDefault({
+				defaults: { parentOverrideForTeams: 31 },
+			});
+
+			fireEvent.click(screen.getByText("Change Work Tracking System"));
+
+			await waitFor(() =>
+				expect(dropdown).toHaveTextContent(/^Connection default \(None\)$/),
+			);
+		});
+
+		// @us-07 @ac-7.5 @contract-shape:bounded-change
+		it("switching to a connection whose tracker holds no default offers no connection default", async () => {
+			const dropdown = await givenThePortfolioFollowsTheDefault({
+				workTrackingSystem: "Linear",
+			});
+
+			fireEvent.click(screen.getByText("Change Work Tracking System"));
+
+			await waitFor(() =>
+				expect(dropdown).not.toHaveTextContent(/^Connection default/),
+			);
+			fireEvent.mouseDown(dropdown);
+			expect(
+				within(screen.getByRole("listbox"))
+					.getAllByRole("option")
+					.map((entry) => entry.textContent),
+			).not.toContainEqual(expect.stringMatching(/^Connection default/));
+			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
 		});
 	});
 });

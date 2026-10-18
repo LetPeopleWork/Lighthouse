@@ -16,11 +16,16 @@ vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
 	__esModule: true,
 	default: ({
 		onSettingsChange,
+		connection,
+		parentOverrideDefault,
 	}: {
 		onSettingsChange: (key: keyof IBaseSettings, value: string) => void;
+		connection?: IWorkTrackingSystemConnection | null;
+		parentOverrideDefault?: string;
 	}) => (
 		<div>
 			<div>AdvancedInputsComponent</div>
+			<div>{`Default ${parentOverrideDefault} of ${connection?.name}`}</div>
 			<button type="button" onClick={() => onSettingsChange("name", "value")}>
 				Change Advanced
 			</button>
@@ -341,6 +346,16 @@ describe("ModifyTeamSettings", () => {
 				expect.objectContaining({ workTrackingSystemConnectionId: 2 }),
 			),
 		);
+	});
+
+	it("the Parent Override Field reads the Teams' default of the connection now chosen", async () => {
+		await renderModifyTeamSettings();
+
+		fireEvent.click(screen.getByText("Change Work Tracking System"));
+
+		expect(
+			await screen.findByText(/^Default parentOverrideForTeams of System 2$/),
+		).toBeInTheDocument();
 	});
 
 	it("auto-saves a valid change after the debounce window", async () => {

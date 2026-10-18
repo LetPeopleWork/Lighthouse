@@ -5,7 +5,10 @@ import FormSelectField from "../../../components/Common/FormSelectField/FormSele
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
-import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	IWorkTrackingSystemConnection,
+	WorkTrackingSystemType,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 interface AdvancedInputsComponentProps {
 	settings: IBaseSettings | null;
@@ -14,7 +17,13 @@ interface AdvancedInputsComponentProps {
 		value: string | number | null,
 	) => void;
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
+	connection?: IWorkTrackingSystemConnection | null;
+	parentOverrideDefault?: ParentOverrideDefault;
 }
+
+type ParentOverrideDefault =
+	| "parentOverrideForTeams"
+	| "parentOverrideForPortfolios";
 
 const FollowTheConnection = "connection-default";
 
@@ -28,14 +37,40 @@ const trackersHoldingTheDefault: Partial<
 	AzureDevOps: "Azure DevOps",
 };
 
+// The settings carry the name of their stored connection's default, which a Team admin who cannot read
+// the connection needs. Once another connection is chosen, that name is read off the chosen one instead.
+const nameOfTheDefault = (
+	settings: IBaseSettings | null,
+	connection: IWorkTrackingSystemConnection | null | undefined,
+	parentOverrideDefault: ParentOverrideDefault,
+): string | null | undefined => {
+	if (
+		!connection ||
+		connection.id === settings?.workTrackingSystemConnectionId
+	) {
+		return settings?.parentOverrideDefaultName;
+	}
+	const named = connection.defaults?.[parentOverrideDefault];
+	return connection.additionalFieldDefinitions.find(
+		(field) => field.id === named,
+	)?.displayName;
+};
+
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	settings: teamSettings,
 	onSettingsChange: onTeamSettingsChange,
 	additionalFieldDefinitions = [],
+	connection,
+	parentOverrideDefault = "parentOverrideForTeams",
 }) => {
-	const trackerName = teamSettings?.workTrackingSystem
-		? trackersHoldingTheDefault[teamSettings.workTrackingSystem]
-		: undefined;
+	const tracker =
+		connection?.workTrackingSystem ?? teamSettings?.workTrackingSystem;
+	const trackerName = tracker ? trackersHoldingTheDefault[tracker] : undefined;
+	const defaultName = nameOfTheDefault(
+		teamSettings,
+		connection,
+		parentOverrideDefault,
+	);
 	const followsTheConnection =
 		!!trackerName && teamSettings?.parentOverrideSource === "ConnectionDefault";
 
@@ -63,7 +98,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 						trackerName
 							? {
 									id: FollowTheConnection,
-									label: `Connection default (${teamSettings?.parentOverrideDefaultName ?? "None"})`,
+									label: `Connection default (${defaultName ?? "None"})`,
 								}
 							: undefined
 					}

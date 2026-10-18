@@ -91,6 +91,40 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:pure-function
+	it("once another connection is chosen, shows the Teams' default of that connection", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={aTeam({ source: "ConnectionDefault" })}
+				onSettingsChange={vi.fn()}
+				additionalFieldDefinitions={TheFields}
+				connection={{
+					id: 2,
+					name: "Payments Azure DevOps",
+					workTrackingSystem: "AzureDevOps",
+					options: [],
+					authenticationMethodKey: "ado.pat",
+					additionalFieldDefinitions: TheFields,
+					writeBackMappingDefinitions: [],
+					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
+					defaults: {
+						parentOverrideForTeams: 12,
+						parentOverrideForPortfolios: 11,
+					},
+				}}
+				parentOverrideDefault="parentOverrideForTeams"
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(theDropdown()).toHaveTextContent(
+			/^Connection default \(Parent Link\)$/,
+		);
+		expect(
+			screen.getByText(/^Set on the Azure DevOps connection\.$/),
+		).toBeInTheDocument();
+	});
+
+	// @us-04 @ac-4.6 @contract-shape:pure-function
 	it("names the Azure DevOps connection the default is set on", () => {
 		givenTheTeamsSettingsPage(
 			aTeam({ source: "ConnectionDefault", tracker: "AzureDevOps" }),

@@ -336,6 +336,8 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
+							connection={selectedWorkTrackingSystem}
+							parentOverrideDefault="parentOverrideForTeams"
 						/>
 
 						{validationError && (
