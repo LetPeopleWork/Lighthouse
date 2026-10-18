@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -127,8 +128,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {
-                    options.UseSqlite($"DataSource={databaseFileName};Pooling=False",
-                        x => x.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
+                    options.UseSqlite($"DataSource={databaseFileName};Pooling=False", DatabaseConfigurator.ConfigureSqlite);
                     options.AddInterceptors(NoWaitingForTheDisk.Instance);
                 });
             });
@@ -145,21 +145,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             services.RemoveAll<IHostedService>();
         }
 
+        // Removing the built options alone is not enough: the product's own configuration step stays
+        // registered and runs first every time a scope builds options, opening a connection to the
+        // product's database file that nothing ever closes.
         private static void RemoveAllDbContextFromServices(IServiceCollection services)
         {
-            var dbContextDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<LighthouseAppContext>));
-
-            if (dbContextDescriptor != null)
-            {
-                services.Remove(dbContextDescriptor);
-            }
-
-            var dbConnectionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbConnection));
-
-            if (dbConnectionDescriptor != null)
-            {
-                services.Remove(dbConnectionDescriptor);
-            }
+            services.RemoveAll<DbContextOptions<LighthouseAppContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<LighthouseAppContext>>();
+            services.RemoveAll<DbConnection>();
         }
 
         private static void DeleteDatabaseFiles(string fileName)
