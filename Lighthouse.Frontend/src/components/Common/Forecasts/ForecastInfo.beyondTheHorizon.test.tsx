@@ -74,4 +74,20 @@ describe("ForecastInfo, a percentile beyond the horizon", () => {
 		expect(screen.getByText(/2029/)).toBeInTheDocument();
 		expect(screen.queryByText(/More than/)).not.toBeInTheDocument();
 	});
+
+	it("gives a percentile within the horizon a tooltip with only its level, and no reason line", async () => {
+		const withinTheHorizon: IWhenForecast = {
+			probability: 50,
+			expectedDate: new Date("2029-03-14T00:00:00Z"),
+			beyondHorizon: false,
+			horizonYears: 5,
+		};
+		render(<ForecastInfo forecast={withinTheHorizon} />);
+
+		await userEvent.hover(screen.getByText(/2029/));
+
+		const tooltip = await screen.findByRole("tooltip");
+		expect(tooltip).toHaveTextContent(/^\w+ \(50% Chance\)$/);
+		expect(tooltip.querySelectorAll("p")).toHaveLength(1);
+	});
 });

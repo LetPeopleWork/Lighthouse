@@ -228,6 +228,33 @@ describe("parseDeliveryMetricsHistory", () => {
 			"whenDistribution.expectedDate",
 		],
 		[
+			"whenDistribution.beyondHorizon",
+			responseWithPoint({
+				whenDistribution: [
+					{
+						probability: 85,
+						expectedDate: "2031-06-05T00:00:00Z",
+						beyondHorizon: "yes",
+					},
+				],
+			}),
+			"whenDistribution.beyondHorizon",
+		],
+		[
+			"whenDistribution.horizonYears",
+			responseWithPoint({
+				whenDistribution: [
+					{
+						probability: 85,
+						expectedDate: "2031-06-05T00:00:00Z",
+						beyondHorizon: true,
+						horizonYears: "five",
+					},
+				],
+			}),
+			"whenDistribution.horizonYears",
+		],
+		[
 			"deliveryDate",
 			getValidResponse({ deliveryDate: "not-a-date" }),
 			"deliveryDate",

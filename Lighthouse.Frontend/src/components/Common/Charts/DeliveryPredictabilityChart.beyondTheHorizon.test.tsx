@@ -98,6 +98,16 @@ describe("the Delivery predictability chart on a day a percentile was beyond the
 		expect(formatted).toBe("More than 5 years");
 	});
 
+	it("shows the date in the tooltip for a day whose percentile had one", () => {
+		const theDate = new Date("2027-03-01T00:00:00Z").getTime();
+
+		const formatted = theSeries("when-85")?.valueFormatter?.(theDate, {
+			dataIndex: 0,
+		});
+
+		expect(formatted).toBe(new Date(theDate).toLocaleDateString());
+	});
+
 	/** Already true; the guard that only the beyond percentile loses its point. */
 	it("still draws the days and percentiles that had a date", () => {
 		expect(theSeries("when-85")?.data?.[0]).toBe(
@@ -106,5 +116,35 @@ describe("the Delivery predictability chart on a day a percentile was beyond the
 		expect(theSeries("when-50")?.data?.[1]).toBe(
 			new Date("2027-01-12T00:00:00Z").getTime(),
 		);
+	});
+});
+
+describe("the Delivery predictability chart after the horizon was changed between two days", () => {
+	const beyondUnder = (horizonYears: number) => ({
+		probability: 85,
+		expectedDate: "2031-10-17T00:00:00Z",
+		beyondHorizon: true,
+		horizonYears,
+	});
+
+	beforeEach(() => {
+		lineChartMock.mockClear();
+		const history = parseDeliveryMetricsHistory({
+			deliveryDate: "2026-12-15T00:00:00Z",
+			firstSnapshotDate: "2026-10-16T00:00:00Z",
+			points: [
+				aDay("2026-10-16T00:00:00Z", [beyondUnder(7)]),
+				aDay("2026-10-17T00:00:00Z", [beyondUnder(3)]),
+			],
+		});
+		render(<DeliveryPredictabilityChart history={history} />);
+		fireEvent.click(screen.getByRole("button", { name: /^when\?$/i }));
+	});
+
+	it("words each day with the horizon that day was recorded under", () => {
+		const formatter = theSeries("when-85")?.valueFormatter;
+
+		expect(formatter?.(null, { dataIndex: 0 })).toBe("More than 7 years");
+		expect(formatter?.(null, { dataIndex: 1 })).toBe("More than 3 years");
 	});
 });

@@ -104,6 +104,42 @@ describe("ArchivedDelivery", () => {
 		);
 	});
 
+	it("keeps a closing-day percentile beyond the horizon, with the horizon's years", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse({
+				...wireRow,
+				whenDistribution: [
+					{
+						probability: 95,
+						expectedDate: "2031-08-20T00:00:00Z",
+						beyondHorizon: true,
+						horizonYears: 5,
+					},
+				],
+			}),
+		);
+
+		expect(archived.whenDistribution[0].beyondHorizon).toBe(true);
+		expect(archived.whenDistribution[0].horizonYears).toBe(5);
+	});
+
+	it("reads a closing-day percentile with no horizon years as having none", () => {
+		const archived = ArchivedDelivery.fromParsed(
+			ArchivedDeliverySchema.parse({
+				...wireRow,
+				whenDistribution: [
+					{
+						probability: 85,
+						expectedDate: "2026-06-14T00:00:00Z",
+						horizonYears: null,
+					},
+				],
+			}),
+		);
+
+		expect(archived.whenDistribution[0].horizonYears).toBeUndefined();
+	});
+
 	it("keeps the rule the Delivery was picking its Features by", () => {
 		const archived = ArchivedDelivery.fromParsed(
 			ArchivedDeliverySchema.parse({
