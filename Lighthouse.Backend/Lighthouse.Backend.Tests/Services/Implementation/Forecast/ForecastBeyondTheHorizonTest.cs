@@ -50,7 +50,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private static readonly int[] EveryShareOfRuns = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("property")]
@@ -72,7 +71,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("ac-03.4")]
@@ -97,7 +95,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.1")]
         [Category("ac-03.4")]
@@ -121,7 +118,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.2")]
         [Category("error")]
@@ -143,7 +139,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("slice-03")]
         [Category("ac-03.3")]
         [Category("error")]
