@@ -74,3 +74,15 @@ owner follows. Do it in this slice, for Teams (`AdvancedInputs.tsx`) and Portfol
 `parentOverrideSource === "ConnectionDefault"`, no longer "and the default names a field". Frontend only; the server
 already accepts *Connection default* with no default set. Flip the test that pins "no entry without a default" and add
 one for picking the entry to switch back from *None*.
+
+## Maintainer decision 2026-10-18 — the update question's body sentence per default
+Approved copy for slices 08–11 (configurable terms render in the instance's words; the closing "Save only: they change
+at their next scheduled update." stays as it is):
+
+| Changed default | Sentence after "N <owners> follow the … default." |
+|---|---|
+| Parent Override Field (Teams or Portfolios) | Their parents change only once they have been updated. |
+| Dependency Field | Their dependencies change only once they have been updated. |
+| Size Estimate Field | Their Features' sizes change only once they have been updated. |
+| Feature Owner Field | Their Features' owners change only once they have been updated. |
+| Several defaults changed at once | What they read changes only once they have been updated. |
