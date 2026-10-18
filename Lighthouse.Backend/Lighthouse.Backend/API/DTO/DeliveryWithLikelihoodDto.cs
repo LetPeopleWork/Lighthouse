@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API.DTO
     {
         public int FeatureId { get; set; }
 
-        // null = cannot be forecast; the named teams say why (ADR-112).
+        // null = cannot be forecast; the named teams say why.
         public double? LikelihoodPercentage { get; set; }
 
         public List<string> TeamsWithoutForecast { get; set; } = [];
@@ -117,6 +117,8 @@ namespace Lighthouse.Backend.API.DTO
             {
                 Probability = percentile.Percentile,
                 ExpectedDate = percentile.ExpectedDate,
+                BeyondHorizon = percentile.BeyondHorizon,
+                HorizonYears = percentile.HorizonYears,
                 FilterApplied = percentile.FilterApplied,
                 ExcludedSummary = percentile.ExcludedSummary,
             };

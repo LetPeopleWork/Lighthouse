@@ -3,9 +3,19 @@ using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.API.DTO
 {
-    public sealed record WhenDistributionPointDto(double Probability, DateTime ExpectedDate);
+    /// <summary>
+    /// One percentile of a recorded day. Points recorded before the horizon marker existed carry neither
+    /// field and read as not beyond, with no horizon. A point keeps the horizon it was forecast with, so it
+    /// still says what it meant if the horizon is ever changed.
+    /// </summary>
+    public sealed record WhenDistributionPointDto(double Probability, DateTime ExpectedDate)
+    {
+        public bool BeyondHorizon { get; init; }
 
-    // Likelihood is nullable: an un-forecastable feature reports UNKNOWN (ADR-112), recorded as null (ADR-120).
+        public int? HorizonYears { get; init; }
+    }
+
+    // Likelihood is nullable: a feature that cannot be forecast reports unknown, recorded as null.
     public sealed record DeliveryFeatureMetricDto(string ReferenceId, string Name, double Completion, double? Likelihood)
     {
         public int? TotalItems { get; init; }

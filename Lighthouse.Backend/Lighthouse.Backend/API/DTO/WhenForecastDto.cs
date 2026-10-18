@@ -1,6 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.API.DTO
 {
@@ -23,11 +22,7 @@ namespace Lighthouse.Backend.API.DTO
             BeyondHorizon = percentile.IsBeyondHorizon;
             HorizonYears = ForecastHorizon.Years;
 
-            // Clients that read only the date still get one for a percentile beyond the horizon: the horizon's
-            // own end, a date far enough out that nobody plans on it, rather than today.
-            ExpectedDate = percentile.IsBeyondHorizon
-                ? InstanceCalendar.AsUtcMidnight(today.AddYears(ForecastHorizon.Years))
-                : blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), percentile.Day ?? 0);
+            ExpectedDate = percentile.ExpectedDateFrom(today, blackoutPeriods);
 
             if (forecast is WhenForecast completion)
             {

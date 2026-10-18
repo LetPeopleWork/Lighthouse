@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         private static readonly DateTime TheDelivery = new(2026, 12, 15, 0, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("contract-shape:pure-function")]
         public void A_snapshot_percentile_that_was_beyond_the_horizon_reads_back_as_beyond()
         {
@@ -39,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         /// written under another horizon keeps the one it was forecast with rather than today's.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("ac-03.4")]
         [Category("ac-04.2")]
         [Category("edge")]
@@ -59,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice03)]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
         public void A_snapshot_written_before_the_flag_existed_reads_back_as_not_beyond()

@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Services.Implementation;
+
 namespace Lighthouse.Backend.Models.Forecast
 {
     /// <summary>
@@ -23,5 +25,17 @@ namespace Lighthouse.Backend.Models.Forecast
         public bool IsBeyondHorizon { get; }
 
         public static ForecastPercentile On(int day) => new(day, false);
+
+        /// <summary>
+        /// The date the percentile reads as from today. One beyond the horizon still gets a date, for clients
+        /// that read only the date: the horizon's own end, far enough out that nobody plans on it, rather
+        /// than today.
+        /// </summary>
+        public DateTime ExpectedDateFrom(DateOnly today, IReadOnlyList<BlackoutPeriod> blackoutPeriods)
+        {
+            return IsBeyondHorizon
+                ? InstanceCalendar.AsUtcMidnight(today.AddYears(ForecastHorizon.Years))
+                : blackoutPeriods.ProjectWorkingDays(InstanceCalendar.AsUtcMidnight(today), Day ?? 0);
+        }
     }
 }

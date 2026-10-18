@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 LikelihoodPercentage = hasForecast ? metrics.LikelihoodPercentage : null,
                 WhenDistributionJson = hasForecast
                     ? JsonSerializer.Serialize(
-                        metrics.WhenDistribution.Select(point => new { Probability = (double)point.Percentile, point.ExpectedDate }),
+                        metrics.WhenDistribution.Select(point => new { Probability = (double)point.Percentile, point.ExpectedDate, point.BeyondHorizon, point.HorizonYears }),
                         MetricJsonOptions)
                     : null,
                 FeatureBreakdownJson = metrics.FeatureBreakdown.Count > 0
