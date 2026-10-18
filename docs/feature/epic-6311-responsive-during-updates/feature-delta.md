@@ -100,6 +100,21 @@ Story #6309. Shipped alone, slice 03 would give released clients a stand-in date
   (slice 02) already covers the case a user sees.
 - **Deferred follow-up:** designed only if AC-04.4 misses (the slowest Portfolio forecast at least 50% faster).
 
+### NMD-7 — No usage-data event for Cancel all
+
+**Decided: no event** (maintainer, 2026-10-18, at DEVOPS). The candidate `TaskManagerCancelAll` is not added.
+- **Effect:** KPI-6 (Cancel all in use) is **dropped as unmeasured**; it had no target. `UsageDataEventName` and
+  `docs/settings/usagedata.md` are untouched, and no DELIVER step emits anything.
+
+### NMD-8 — What the docs say about replicas and cores
+
+**Decided** (maintainer, 2026-10-18, at DEVOPS):
+- The slice-05 docs do **not** mention that a replica still on the old version ignores Cancel all during a
+  rolling upgrade. The window lasts only as long as the rollout, and per-row Stop still reaches that replica.
+- The docs **do** name `DOTNET_PROCESSOR_COUNT` in one line: it is .NET's own setting for the core count, and
+  through it an operator can change the forecast's half-the-cores limit without a Lighthouse setting. This is
+  a slice-01 finalize item.
+
 ---
 
 ## Wave: DISCUSS / [REF] Persona IDs
@@ -830,3 +845,215 @@ None new. .NET `ParallelOptions` (BCL), the existing StackExchange.Redis pub/sub
     the clients repo against a recorded server payload, with and without the fields.
 - **Paradigm:** OOP, ports and adapters (unchanged).
 - **Mutation testing:** per feature, both stacks, run last on frozen code.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and prior-wave reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-18 · **Mode**: autonomous subagent, documents only (no
+code, no commit, no test run). Application change inside the existing product: no new workflow, job, dependency,
+configuration key, migration or chart value. One more Redis pub/sub channel on the existing connection.
+
+- ✓ This file: NMD-1..7, DISCUSS Outcome KPIs, Pre-requisites, DESIGN in full; ADR-248..254; `brief.md` 6311 section.
+- ✓ `CLAUDE.md` (gates, usage-data rule); `docs/ci-learnings.md` (Program.cs rule, test-time budget, D13's wall-clock rule).
+- ✓ `.github/workflows/` (`ci.yml` and its called jobs); `Scripts/test-selection/path-classifier.sh`;
+  `Scripts/test-timings/test-time-budget.json`; `chart/values.yaml`; `Dockerfile`.
+- ✓ `Program.cs:1561` (`AddSingleton(ForecastSimulationLimits.Default)`), `:1761` (`StartupBanner.BuildInfoLines(new
+  StartupBannerFacts(…))`); `RedisUpdateCancellationNotifier.cs:16` (channel `lighthouse:update-cancelled`);
+  `Integration/Containers/TaskManagerMultiReplicaTests.cs` (real Redis via `RedisContainerFixture`).
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+| # | Pre-requisite | State | Blocks |
+|---|---|---|---|
+| P1 | Dev instance restored from the production backup (`Restore-DbBackup.ps1`), run in Docker with `--cpus=4` | Procedure | KPI-1/2/3 readings; production-data ACs |
+| P2 | KPI-3 baseline: `RefreshLog.DurationMs` of the slowest Portfolio forecast, read **before** slice 01 lands | Not taken | Slice 01 entry (AC-04.4 compares against it) |
+| P3 | Premium licence fixture copied into the worktree | Procedure | Local `dotnet test` only (2 Licensing tests) |
+| P4 | Docker running locally (Testcontainers Redis for the cancel-all channel test) | Procedure | Slice 05 local run |
+| P5 | `/storage/repos/lighthouse-clients` on clean `main` | Procedure | Clients release at finalize |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+| Axis | Values | What differs | Covered by |
+|---|---|---|---|
+| Cores seen by .NET | 1, 2, 4, 32; Docker `--cpus=N`; k8s with no CPU limit | Worker bound max(1, ⌊cores ÷ 2⌋). `Environment.ProcessorCount` honours the cgroup quota and rounds up (`--cpus=1.5` → 2 → 1 worker). The chart sets `requests.cpu: 100m` and **no** CPU limit, so a pod sees the node's cores and uses half the node | Unit test with injected core counts 1, 2, 4 (ADR-248); the banner line on the dev instance |
+| Replicas | single (in-process notifier), several (Redis) | Cancel all: direct call vs one broadcast on its own channel | Queue tests in process; a container test against real Redis (Testcontainers) for the new channel |
+| Server version during a rolling deploy | old + new replica | An old replica ignores the cancel-all channel; per-row Stop still works across versions (old channel unchanged) | ADR-253 consequence; no test (two binaries) |
+| Client version | released lh/MCP, upgraded lh/MCP, web app | Old clients read `expectedDate` (a date 5 years out); upgraded clients key on `beyondHorizon` presence | Clients schema test with and without the field |
+| Database provider | SQLite, PostgreSQL | Nothing: no migration, no new column, no query change | `verifysqlite` / `verifypostgres` start the app as today |
+| Tracker writes | Write-back (all trackers), Jira Release block | Write-back writes nothing for beyond (unchanged code path); Jira block writes "85%: more than 5 years" | Renderer + merge test (ADR-254); no live connector test needed |
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+No new workflow, job or step. What the existing `ci.yml` pipeline does with this change:
+
+| Existing job | What it proves here |
+|---|---|
+| `ci_changes` → `path-classifier.sh` | No connector path changes. `Program.cs` **is** in the shared whitelist: if a slice edits it, every live connector category joins that push (see below) |
+| `ci_backend` | Build (`TreatWarningsAsErrors`), unit + acceptance (`Category!=Integration`), including `Integration/Containers/*` Redis tests through Testcontainers. Ends with the test-time budget check (`--warn-only` today) |
+| `ci_frontend` | Vitest, `tsc -b`, `vite build`, Biome (prebuild runs `biome check --write`) |
+| `ci_sonar_gates` | No new issue. A red backend job skips Sonar, so a red live-connector run must be cleared first |
+| `ci_verifysqlite`, `ci_verifypostgres` | App start + Playwright E2E. **Single replica, no Redis**: E2E never exercises the cancel-all channel. Any new Task Manager or "more than 5 years" POM step runs here |
+| `ci_verifywindows`, `ci_verifymacos`, `ci_docker`, packaging, `ci_chart` | Unchanged. No chart change |
+
+**CI points this feature triggers:**
+- **Program.cs (ci-learnings 791-798, 1467-1469).** Slice 01's banner line needs a new `StartupBannerFacts` value built at
+  `Program.cs:1761`, so slice 01 almost certainly edits `Program.cs` and forces the full Integration suite (every live
+  connector) on that push. Expect the longer run and the flake cluster; budget one re-run. Slices 02-05 should not need a
+  `Program.cs` edit (the notifiers and `UpdateQueueService` are already registered); if DELIVER finds one, call it out.
+  Keeping `AddSingleton(ForecastSimulationLimits.Default)` as is (the bound computed inside `Default`) avoids a second edit.
+- **Test-time budget (ADR-237).** Two opposite effects on forecast-heavy test classes. Slice 01 halves the workers
+  (2 on a 4-vCPU runner), so a class that runs real simulations on `Default` can get slower until slice 04. Slice 04
+  cuts the run cap from 100,000 to 1,826 days, so fixtures with unfinished runs get faster. `ForecastServiceTest` is
+  already allowlisted. The backend step is `--warn-only`, so a breach is a `::warning::` on a green job: read the
+  annotation on the slice-01 and slice-04 pushes. If a class crosses, speed it up first (tests may pin the core count,
+  ADR-248), or adjust its allowlist ceiling with a reason (ci-learnings 442). Re-check after slice 04: a ceiling raised
+  for slice 01 may then be loose.
+- **D13 / ci-learnings 552-558.** No wall-clock assertion; timings stay in KPI readings and `[Explicit]` probes.
+
+**Local gates (mirror CI)**, every one green before a step is committed: `dotnet build` (zero warnings); the analyzer
+sweep `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`, filtered to this
+change's files (the worktree runs no ledger hook); `dotnet test` with the non-connector filter from `CLAUDE.md`;
+`pnpm test`; `pnpm build`. Clients: the repo's own `pnpm ci` pre-commit hook. Existing pre-push hooks unchanged.
+
+## Wave: DEVOPS / [REF] Monitoring contracts (KPI → instrument)
+
+Self-hosted: no vendor dashboard, no alert to the vendor, **no new dashboard**. Contracts in
+`docs/product/kpi-contracts.yaml` (`OUT-6311-*`).
+
+| KPI | Instrument | Method | Threshold |
+|---|---|---|---|
+| KPI-1 page answers during a forecast | Script: 20 × `GET /api/latest/portfolios`, p95; the banner line "Forecasts use up to N of M cores" proves the cap (`--cpus=4` → 2 of 4) | Restored dev instance (P1), while the slowest Portfolio forecast runs, after slice 01 (AC-01.5) | p95 < 1 s. Miss → ADR-248's dedicated-threads fallback |
+| KPI-2 Stop latency | Task Manager click time vs the update's `RefreshLog` row (`Cancelled`; end = start + `DurationMs`) and its Information log line | Same instance, slowest Portfolio, 3 tries (AC-02.7) | ≤ 5 s each. Miss → ADR-249's in-run checkpoint |
+| KPI-3 slowest forecast wall time | `RefreshLog.DurationMs` of the slowest Portfolio forecast | Same DB, P2 baseline vs after slice 04 (AC-04.4) | ≥ 50% lower. Miss → NMD-6 follow-up |
+| KPI-4 no guessed date | Test suite (slice 03 ACs, `TotalTrials ≥ Σ histogram` invariant); AC-03.8 before/after list on the restored instance | CI every push; once at slice 03 | 0. Any failure = build red |
+| KPI-5 restart reports | Support mail, GitHub issues, community Slack | Maintainer, 60 days after the release vs the 60 days before | 0 |
+| KPI-6 Cancel all in use | **None (NMD-7)** | Not measured | **Dropped**; not entered in `kpi-contracts.yaml` |
+
+## Wave: DEVOPS / [REF] Observability stack
+
+Existing, unchanged: Serilog / `ILogger` lines (an update's cancel line, plus one Information line per cancel-all apply on
+each replica, with counts only), the `RefreshLog` table and Refresh History, the Task Manager list, and **one new
+StartupBanner line** stating the forecast worker bound. No metric, trace, dashboard or alert is added. OpenTelemetry
+stays off by default. No new data leaves the instance.
+
+## Wave: DEVOPS / [REF] Usage-data event
+
+**N/A, because the maintainer chose not to count Cancel all** (NMD-7, 2026-10-18). KPI-6 is dropped as unmeasured.
+Slices 01, 02 and 04 have no user action to count; KPI-4 is verified by tests, not telemetry. Nothing appended to
+`UsageDataEventName`; `docs/settings/usagedata.md` unchanged.
+
+## Wave: DEVOPS / [REF] Deployment strategy and rollback
+
+Ships in ordinary releases (standalone, Docker image, Helm chart appVersion); the release process is unchanged. No flag.
+Slices 01, 02 and 05 can each go out in a release; **03 and 04 release together** under Story #6309 (NMD-5).
+
+**Rollback first.** Roll back by installing the previous release (re-pin the image tag, `helm rollback`, or reinstall the
+standalone). Safe because:
+- **No migration** and no persisted shape change (`TotalTrials` keeps its column and now counts every run; ADR-250).
+  On the old binary, a row the new one wrote with `TotalTrials > Σ histogram` reads a beyond percentile through the old
+  `-1` path (`ForecastBase.cs:55-69`): the raw date is today and write-back writes nothing, the pre-feature behaviour,
+  not corruption. The old binary's next forecast run rewrites the row with `TotalTrials = Σ`; a manual Portfolio update
+  after rollback does it at once.
+- **The wire change is additive.** The old server stops sending `beyondHorizon` / `horizonYears`; upgraded clients key on
+  presence and fall back to the date.
+- **The new endpoint disappears**; a web app still loaded on the new bundle gets 404 on Cancel all and shows its failed
+  look ("Could not cancel. Try again."). A reload fixes it.
+- **Trackers**: a Jira Release block saying "more than 5 years" is overwritten by the old binary's next publish (the
+  block is found by its opening and "Target" lines, not the percentile lines; ADR-254).
+
+**Clients release order** (NMD-1 c, NMD-3): **server first, clients any time after.** Clients key on whether the field
+is present, so a new client against an old server is safe and needs no version gate. At finalize: land the change with
+its `.changeset/*.md` in lighthouse-clients (client and cli minor; mcp packages patch through
+`updateInternalDependencies`), run `pnpm release:version`, commit the bump (`SKIP_SIMPLE_GIT_HOOKS=1`), push, and only
+then is the `Release` gate approved by the maintainer on the new run.
+
+**Production validation** (per instance, advisory): the banner shows the bound; a Stop on a running forecast lands
+`Cancelled` in Refresh History; Cancel all empties the list except deletes.
+
+## Wave: DEVOPS / [REF] Multi-replica and containers
+
+- **Redis.** One more channel on the existing connection, used only when `ConnectionStrings:Redis` is set. No Helm,
+  k8s or compose change, and no new key: the chart's `redis.connectionString` already carries it.
+- **Rolling upgrade.** The chart's default `RollingUpdate` overlaps an old and a new pod for seconds. An old replica
+  ignores the cancel-all channel (ADR-253), so its running work goes on; per-row Stop still reaches it. Acceptable for
+  that window, and stated in the slice-05 docs only if the maintainer wants it (see open point).
+- **Test coverage of Redis.** E2E and the verify workflows run one replica without Redis, so they never touch the
+  channel. The only real-Redis proof is a `Integration/Containers` test (Testcontainers, in `ci_backend`), following
+  `TaskManagerMultiReplicaTests`. DISTILL places the cancel-all broadcast test there.
+- **CPU limit.** `Environment.ProcessorCount` honours the container's CPU quota. Docker image (no CPU setting in the
+  `Dockerfile`): `--cpus=4` → 2 workers; a 2-core host → 1 worker, so a forecast there takes about twice as long as with
+  every core, which is the trade D3 chose and slice 04 offsets. Helm: no CPU limit, so half the node. No config or chart
+  change. .NET's own `DOTNET_PROCESSOR_COUNT` overrides the count without a Lighthouse key; mentioning it in the docs
+  is optional (open point).
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+`per-feature` (CLAUDE.md, unchanged), ≥ 80% kill rate, run **last on frozen code**, one survivor-kill round plus one
+cheap re-run. Backend config `Lighthouse.Backend/Lighthouse.Backend.Tests/stryker.6311.backend.json`, created at
+mutation time: whole-file `mutate` entries only (Stryker.NET ignores line spans) and a `test-case-filter` excluding the
+`API.Integration` containers and the live categories. StrykerJS in place for the frontend, after the backend, never
+concurrently.
+
+| Scope | Files (whole file) |
+|---|---|
+| Backend, in | `Models/Forecast/ForecastHorizon.cs`, the percentile value object, `ForecastSimulationLimits.cs`, `ForecastBase.cs`, `WhenForecast.cs`, `StartForecast.cs`, `AggregatedWhenForecast.cs`, `DeliveryCompletionForecast.cs`; `Services/Implementation/Forecast/ForecastService.cs`; `…/Update/ForecastUpdater.cs`, `AdmittedCancellations.cs`, `InProcessUpdateCancellationNotifier.cs`; `DeliverySources/DeliveryForecastBlockRenderer.cs` |
+| Backend, in with triage | `UpdateQueueService.cs`, `Models/Delivery.cs`, `API/DTO/DtoExtensions.cs`: score and triage only survivors in the changed members, per line from `mutation-report.json` |
+| Backend, out | `RedisUpdateCancellationNotifier.cs` (container test excluded from the filter; mutants unscored), `UpdateController.cs` (one route, acceptance-covered), DTO property files, `StartupBanner.cs` |
+| Frontend | the shared "more than N years" formatter, `models/Forecasts/WhenForecast.ts`, `ActivitySection.tsx`, `useTaskManagerPopover.ts`, `UpdateSubscriptionService.ts` |
+| Clients | out of the project rule (both stacks = backend and frontend); the clients repo's own tests cover the wording |
+
+Disbelieve any score whose per-file coverage is not checked in `mutation-report.json`.
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+Trunk-based on `main`, unchanged: one focused commit per step, pushed to `origin main` only when green and when the
+maintainer releases the hold. Releases cut from `main` by `/release`. No branch, no PR. Clients: trunk on their `main`.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Existing thing | Must not break | Guard |
+|---|---|---|
+| Per-row Stop and its `lighthouse:update-cancelled` channel | yes | Unchanged message and channel; cancel-all on its own channel |
+| Deletes on the Task Manager list | yes | Never cancelled (D8); queue test |
+| Scheduled updates after Cancel all | yes | Queue test: the next scheduled round runs |
+| Write-back rounds of other work | yes | Holds leave their rounds (ADR-253); staged writes still flush |
+| Released lh/MCP clients | yes | `expectedDate` kept as a date (NMD-3) |
+| Archived Deliveries, snapshot history, pinned closure records | yes | Additive `beyondHorizon` on `WhenDistributionPointDto`; old rows read without it |
+| Jira Release block merge over an older block | yes | Renderer + merge test (ADR-254) |
+| `HowMany` (reality check, backtests) | yes | Not touched (DESIGN Changed Assumption 1) |
+| Seeded forecast baselines finishing inside 5 years | yes | Unchanged; any that move are listed (ADR-251) |
+| SonarCloud gate, E2E POMs on the Task Manager | yes | Pre-applied ledger rules; grep `Lighthouse.EndToEndTests/` before any label change |
+| Epic #6298 PDF export | yes | Whichever ships second renders the beyond state (DISCUSS pre-requisite) |
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+- **CA-O1: DESIGN's handoff said "no new configuration key"; still true, and `Program.cs` is still touched.** The banner
+  line needs a new fact passed at `Program.cs:1761`, which puts slice 01 on the full-Integration path. Now: expect it
+  for slice 01, avoid it for 02-05.
+- **CA-O2: KPI-6 said "Usage-data event if DEVOPS adds one".** Now: none added (NMD-7); KPI-6 dropped as unmeasured.
+
+None changes a product decision.
+
+## Wave: DEVOPS / [REF] Wave decisions
+
+- **[O1]** No new infrastructure, workflow, job, flag, key or dependency; one Redis channel on the existing connection.
+- **[O2]** Slice 01 is expected to edit `Program.cs` (full Integration suite on that push); 02-05 should not.
+- **[O3]** Rollback = previous release; no migration, additive wire, the new endpoint just goes away.
+- **[O4]** Usage data **N/A** (NMD-7); KPI-6 dropped.
+- **[O5]** KPI-1..3 on the restored dev instance under `--cpus=4`; KPI-4 in CI; KPI-5 by the maintainer. Contracts
+  appended to `kpi-contracts.yaml`; no dashboard or alert.
+- **[O6]** Mutation per feature, whole-file scope as tabled; Redis notifier out.
+- **[O7]** Release order: server first, clients any time after; 03 + 04 in one release.
+- Peer review skipped: no trigger (no deployment change, no new SLO, no new infrastructure beyond one channel).
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+**To** `nw-acceptance-designer`: this file, ADR-248..254, `environments.yaml`, and the `OUT-6311-*` contracts.
+- Start with the UI walk-through (UI-1..UI-5), then write scenarios.
+- Place the cancel-all broadcast test under `Integration/Containers` against real Redis; E2E has no Redis.
+- Parametrize the bound over injected core counts 1, 2, 4; never a wall clock (D13).
+- Clients: schema test against a recorded payload, with and without `beyondHorizon`.
+- Tag KPI scenarios `@kpi-OUT-6311-*` and fill `acceptance_scenarios` in `kpi-contracts.yaml`.
+- Open for the maintainer: (1) whether slice-05 docs mention the rolling-upgrade window; (2) whether the docs mention
+  `DOTNET_PROCESSOR_COUNT`.

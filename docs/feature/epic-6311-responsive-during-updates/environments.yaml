@@ -1,0 +1,62 @@
+# Environment inventory - epic-6311-responsive-during-updates
+# Consumed by DISTILL for environmental realism.
+#
+# Application change inside the existing product: no migration, no configuration key, no chart or image change,
+# no new dependency. One more Redis pub/sub channel (cancel-all) on the existing connection, used only when
+# ConnectionStrings:Redis is set. Slice 01 is expected to edit Program.cs (the startup banner fact), which puts
+# that push on the full Integration suite. The axes that matter are cores, replicas and client version.
+
+target_environments:
+  - name: clean
+    description: "Any supported runtime, one replica. Nothing to install or configure."
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions: []
+
+  - name: restored-dev-instance
+    description: >
+      The dev instance restored from the production backup (Restore-DbBackup.ps1), run in Docker with --cpus=4.
+      Where KPI-1, KPI-2 and KPI-3 are read and the production-data ACs run (AC-01.5, AC-02.7, AC-03.8, AC-04.4).
+    platform: [docker]
+    preconditions:
+      - "KPI-3 baseline (RefreshLog.DurationMs of the slowest Portfolio forecast) taken before slice 01 lands"
+      - "Startup banner reads 'Forecasts use up to 2 of 4 cores' after slice 01"
+
+  - name: multi-replica-redis
+    description: >
+      Two or more replicas sharing Redis. Only reached in CI by Integration/Containers tests (Testcontainers Redis in
+      ci_backend), following TaskManagerMultiReplicaTests. E2E and the verify workflows run one replica without Redis.
+    platform: [linux]
+    preconditions:
+      - "Docker available to Testcontainers (locally and on the runner)"
+
+notes:
+  cores:
+    values: [1, 2, 4, 32]
+    why: >
+      Worker bound = max(1, floor(cores / 2)) from Environment.ProcessorCount, which honours the container CPU quota
+      and rounds up (--cpus=1.5 -> 2 -> 1 worker). The Helm chart sets requests.cpu 100m and no CPU limit, so a pod
+      uses half the node's cores. DOTNET_PROCESSOR_COUNT overrides the count without a Lighthouse key. Tests inject the
+      core count; never assert a wall clock.
+  rolling_upgrade:
+    values: [old-replica, new-replica]
+    why: >
+      An old replica ignores the cancel-all channel, so its running work goes on during the overlap; per-row Stop keeps
+      its unchanged channel and still reaches it. No test spans two binaries.
+  client_version:
+    values: [released-lh-mcp, upgraded-lh-mcp, web-app]
+    why: >
+      Released clients read expectedDate (a date 5 years out for a beyond percentile). Upgraded clients key on whether
+      beyondHorizon is present, so a new client against an old server is safe. Release order: server first, clients
+      any time after. Slices 03 and 04 ship in one release.
+  db_provider:
+    values: [sqlite, postgres]
+    why: "N/A, because nothing is migrated or queried differently. verifysqlite / verifypostgres start the app as today."
+  trackers:
+    why: >
+      Write-back writes nothing for a beyond percentile (existing no-answer path). The Jira Release forecast block
+      writes '85%: more than 5 years'; covered by renderer and merge tests, no live connector test needed.
+
+deployment_assumptions:
+  - "Rollback is the previous release: no migration, an additive wire change, and a new endpoint that just goes away."
+  - "Rows written with TotalTrials > sum of the histogram read through the old -1 path on the old binary until its next forecast run rewrites them."
+  - "Nothing owed at deploy time: no flag, no configuration, no chart change, no runbook entry."

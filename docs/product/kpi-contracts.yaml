@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-17
+updated: 2026-10-18
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2388,4 +2388,96 @@ outcomes:
       - condition: "a value or font assertion fails"
         action: "frontend or E2E build fails (red)"
     acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  # epic-6311-responsive-during-updates (DEVOPS 2026-10-18). KPI-6 "Cancel all in use" is NOT entered: the
+  # maintainer chose not to count Cancel all (NMD-7), so nothing measures it and it is dropped.
+  - id: OUT-6311-pages-answer-during-a-forecast
+    feature: epic-6311-responsive-during-updates
+    title: Pages keep answering while the slowest Portfolio forecast runs (KPI-1)
+    target: "p95 of 20 GET /api/latest/portfolios < 1 s while the slowest Portfolio forecast runs, Docker capped to 4 CPUs"
+    ga_baseline: "pages hang (incident report)"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      A script of 20 timed GET /api/latest/portfolios against the dev instance restored from the production backup
+      (Restore-DbBackup.ps1), run in Docker with --cpus=4, while the slowest Portfolio forecast runs. The startup banner
+      line "Forecasts use up to N of M cores" must read 2 of 4, which proves the setup.
+    log_fields:
+      startup_banner: ["Forecasts use up to {N} of {M} cores"]
+    measurement_window: once after slice 01 (AC-01.5)
+    gate: soft
+    alerting:
+      - condition: "p95 >= 1 s"
+        action: "manual: move the simulation to dedicated threads (ADR-248 fallback) before slice 02"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6311-stop-ends-a-forecast
+    feature: epic-6311-responsive-during-updates
+    title: Stop ends a running forecast promptly (KPI-2)
+    target: "<= 5 s from the Task Manager click to the update's RefreshLog row reading Cancelled, 3 of 3 tries"
+    ga_baseline: "> 10 min Stopping..., then a container restart (incident report)"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      Click time against the end of the cancelled update's RefreshLog row (start + DurationMs, outcome Cancelled) and
+      its log line, on the restored dev instance, slowest Portfolio, 3 tries. Never asserted as a wall clock in CI;
+      CI holds the forecast open and counts runs instead.
+    log_fields:
+      refresh_log_row: ["Outcome = Cancelled", "DurationMs"]
+    measurement_window: once after slice 02 (AC-02.7)
+    gate: soft
+    alerting:
+      - condition: "any try > 5 s"
+        action: "manual: add a checkpoint inside a run (ADR-249 fallback)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6311-slowest-forecast-faster
+    feature: epic-6311-responsive-during-updates
+    title: The slowest Portfolio forecast takes at least half as long (KPI-3)
+    target: ">= 50% lower RefreshLog.DurationMs for the slowest Portfolio forecast, same database, before slice 01 vs after slice 04"
+    ga_baseline: "measured on the restored dev instance before slice 01 lands"
+    measurement_scope: vendor_demo_only
+    measured_by: "RefreshLog.DurationMs of the slowest Portfolio forecast on the restored dev instance, Docker --cpus=4."
+    log_fields:
+      refresh_log_row: ["DurationMs"]
+    measurement_window: baseline before slice 01; reading after slice 04 (AC-04.4)
+    gate: soft
+    alerting:
+      - condition: "reduction < 50%"
+        action: "manual: design the early stop for a whole forecast (NMD-6 follow-up)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6311-no-guessed-dates
+    feature: epic-6311-responsive-during-updates
+    title: No forecast percentile shows a guessed date (KPI-4)
+    target: "0 percentiles projecting to today or computed from finished runs only"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      CI: slice 03 ACs and the unit invariant TotalTrials >= sum of the histogram for every forecast ForecastService
+      builds. Once at slice 03: the AC-03.8 before/after list on the restored dev instance, read by the maintainer.
+    log_fields: {}
+    measurement_window: every push (CI); once at slice 03 (manual list)
+    gate: hard
+    alerting:
+      - condition: "an invariant or AC fails"
+        action: "backend or frontend build fails (red)"
+    acceptance_scenarios: []   # DISTILL fills
+    status: designed-not-shipped
+
+  - id: OUT-6311-no-restarts-during-updates
+    feature: epic-6311-responsive-during-updates
+    title: Nobody has to restart Lighthouse during updates (KPI-5)
+    target: "0 'had to restart Lighthouse during updates' reports in the 60 days after the release"
+    ga_baseline: ">= 1 in the 60 days before (this incident)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      The maintainer reads GitHub issues (gh queries) for the 60 days after the release carrying slices 03 and 04,
+      against the 60 days before; support mail and community Slack reports are read by hand for the same windows.
+    log_fields: {}
+    measurement_window: 60 days from the release carrying slices 03 and 04
+    gate: soft
+    alerting: []
+    acceptance_scenarios: []   # outcome KPI, no scenario
     status: designed-not-shipped
