@@ -55,8 +55,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
             await connectionRepository.Save();
             await PointTheDefaultAtTheFieldAddedInThisSave(handle);
-            var queued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
-            LogTheChangedDefault(handle, queued);
+            var updatesQueued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
+            LogTheChangedDefault(handle, updatesQueued);
 
             return Saved;
         }
@@ -162,7 +162,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
         }
 
-        private void LogTheChangedDefault(ConnectionSaveHandle handle, int queued)
+        private void LogTheChangedDefault(ConnectionSaveHandle handle, int updatesQueued)
         {
             var connection = handle.Connection;
             var before = handle.TeamsParentOverrideDefaultBeforeSave;
@@ -181,7 +181,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     before.FieldName ?? NoField,
                     after.FieldName ?? NoField,
                     WhoFollows(followers),
-                    HowManyQueued(queued));
+                    HowManyQueued(updatesQueued));
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request over its log entry would tell the admin it was not.
             catch (Exception exception)
@@ -209,11 +209,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             _ => $"{followers.Count} Teams follow it: {string.Join(", ", followers)}",
         };
 
-        private static string HowManyQueued(int queued) => queued switch
+        private static string HowManyQueued(int updatesQueued) => updatesQueued switch
         {
             0 => "no update queued",
             1 => "1 update queued",
-            _ => $"{queued} updates queued",
+            _ => $"{updatesQueued} updates queued",
         };
 
         // Kept synchronous so the architecture test sees this service build the event: in a Release build an
