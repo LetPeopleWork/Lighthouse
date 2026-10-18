@@ -227,10 +227,6 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
         }
 
-        private sealed record PendingDefault(string Owners, AdditionalFieldDefinition Field);
-
-        private sealed record UpdatesQueued(int Teams, int Portfolios);
-
         private static NamedField DefaultOf(WorkTrackingSystemConnection connection, int? fieldId)
             => new(fieldId, connection.DisplayNameOfField(fieldId));
 
