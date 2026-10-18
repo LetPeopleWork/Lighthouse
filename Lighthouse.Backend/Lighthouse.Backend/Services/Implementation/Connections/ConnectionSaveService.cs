@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             var removedIds = removed.Select(field => (int?)field.Id).ToList();
             var terms = OwnerTerms.From(terminologyService.GetAll());
             var defaults = ConnectionFieldDefaults.All.Select(fieldDefault => new DefaultNamingAField(
-                $"{OwnerTerms.PossessiveOfPlural(terms.PluralFor(fieldDefault.HeldFor))} {fieldDefault.FieldName}", fieldDefault.FieldOn(connection)));
+                $"{OwnerTerms.PossessiveOfPlural(terms.PluralFor(fieldDefault.HeldFor))} {fieldDefault.NameIn(terms)}", fieldDefault.FieldOn(connection)));
             return AdditionalFieldInUse.AmongTheRemoved(
                 removed, defaults, [.. TeamsOwningAnyOf(removedIds, connection.Id), .. PortfoliosOwningAnyOf(removedIds, connection.Id)]);
         }

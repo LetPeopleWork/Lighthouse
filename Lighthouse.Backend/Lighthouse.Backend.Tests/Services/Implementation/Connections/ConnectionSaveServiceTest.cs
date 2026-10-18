@@ -652,7 +652,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_RemovingTheFieldThePortfoliosFeatureOwnerDefaultNames_IsRefusedInTheWordsThisInstanceUses()
         {
-            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs", feature: "Epic");
             var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);
             connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.FeatureOwnerFieldForPortfolios = CausedById;
             var handle = await OpenTheOwnedConnection(subject);
@@ -661,16 +661,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
 
             Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Programs' Feature Owner Field default. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Programs' Epic Owner Field default. Nothing was saved."));
         }
 
-        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
+        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios, string feature = "Feature")
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [
                 new TerminologyEntry { Id = 1, Key = "team", DefaultValue = "Team", Value = team },
                 new TerminologyEntry { Id = 2, Key = "teams", DefaultValue = "Teams", Value = teams },
                 new TerminologyEntry { Id = 3, Key = "portfolio", DefaultValue = "Portfolio", Value = portfolio },
                 new TerminologyEntry { Id = 4, Key = "portfolios", DefaultValue = "Portfolios", Value = portfolios },
+                new TerminologyEntry { Id = 5, Key = "feature", DefaultValue = "Feature", Value = feature },
             ]);
 
         private ConnectionSaveService CreateSubjectWithOwnersOfTheCausedByField(List<Team> teams, List<Portfolio> portfolios)

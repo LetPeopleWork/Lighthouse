@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API.Helpers
 
         public ObjectResult? RefusalOf(ControllerBase controller, SettingsOwnerKind kind, WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
         {
-            var sourced = SourcedSettingsSentFor(owner, setting);
+            var sourced = SourcedSettingsSentFor(owner, setting, TheTermsThisInstanceUses());
 
             if (sourced.Find(each => each.Source is { } source && !Enum.IsDefined(source)) is { } unknown)
             {
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.API.Helpers
 
         // What each owner would hold is worked out only once every sent source is known, since reading a
         // setting under a source this version does not know has no answer.
-        private static List<SourcedSetting> SourcedSettingsSentFor(WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
+        private static List<SourcedSetting> SourcedSettingsSentFor(WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting, OwnerTerms terms)
         {
             var sourced = new List<SourcedSetting>
             {
@@ -68,14 +68,16 @@ namespace Lighthouse.Backend.API.Helpers
                     () => portfolio?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)));
                 sourced.Add(new("Size Estimate Field", portfolioSetting.SizeEstimateSource,
                     () => portfolio?.SizeEstimateFieldOwnedOnceTaken(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId)));
-                sourced.Add(new("Feature Owner Field", portfolioSetting.FeatureOwnerSource,
+                sourced.Add(new(ConnectionFieldDefaults.FeatureOwnerFieldIn(terms), portfolioSetting.FeatureOwnerSource,
                     () => portfolio?.FeatureOwnerFieldOwnedOnceTaken(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId)));
             }
 
             return sourced;
         }
 
-        private string NounFor(SettingsOwnerKind kind) => kind.NounIn(OwnerTerms.From(terminologyService.GetAll()));
+        private string NounFor(SettingsOwnerKind kind) => kind.NounIn(TheTermsThisInstanceUses());
+
+        private OwnerTerms TheTermsThisInstanceUses() => OwnerTerms.From(terminologyService.GetAll());
 
         // Only a field the owner will hold as its own is judged. One sent along with following is not what the
         // owner reads, such as the old default's field in a copy read before the default moved. It is judged

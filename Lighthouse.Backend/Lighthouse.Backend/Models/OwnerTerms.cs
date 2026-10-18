@@ -1,12 +1,12 @@
 namespace Lighthouse.Backend.Models
 {
     /// <summary>
-    /// What this instance calls its Teams and Portfolios, as set under Settings, Terminology. A term left
-    /// empty reads as the word Lighthouse seeds it with.
+    /// What this instance calls its Teams, Portfolios and Features, as set under Settings, Terminology. A term
+    /// left empty reads as the word Lighthouse seeds it with.
     /// </summary>
-    public sealed record OwnerTerms(string Team, string Teams, string Portfolio, string Portfolios)
+    public sealed record OwnerTerms(string Team, string Teams, string Portfolio, string Portfolios, string Feature)
     {
-        public static readonly OwnerTerms Seeded = new("Team", "Teams", "Portfolio", "Portfolios");
+        public static readonly OwnerTerms Seeded = new("Team", "Teams", "Portfolio", "Portfolios", "Feature");
 
         public static OwnerTerms From(IEnumerable<TerminologyEntry> entries)
         {
@@ -19,7 +19,8 @@ namespace Lighthouse.Backend.Models
                 configured.GetValueOrDefault("team", Seeded.Team),
                 configured.GetValueOrDefault("teams", Seeded.Teams),
                 configured.GetValueOrDefault("portfolio", Seeded.Portfolio),
-                configured.GetValueOrDefault("portfolios", Seeded.Portfolios));
+                configured.GetValueOrDefault("portfolios", Seeded.Portfolios),
+                configured.GetValueOrDefault("feature", Seeded.Feature));
         }
 
         public string PluralFor(DefaultHeldFor heldFor) => heldFor == DefaultHeldFor.Teams ? Teams : Portfolios;

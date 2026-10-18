@@ -608,7 +608,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task UpdatePortfolio_OwningAFeatureOwnerFieldItsConnectionDoesNotHave_IsRefusedInTheWordsThisInstanceUses()
         {
-            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs", feature: "Epic");
             portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
             var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, FeatureOwnerSource = SettingSource.Own, FeatureOwnerAdditionalFieldDefinitionId = 9 };
 
@@ -618,7 +618,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
-                Assert.That(problem?.Detail, Is.EqualTo("The Feature Owner Field is not an Additional Field of this Program's connection. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Epic Owner Field is not an Additional Field of this Program's connection. Nothing was saved."));
             }
 
             portfolioRepoMock.Verify(x => x.Save(), Times.Never);
@@ -635,13 +635,14 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Result.TheProblem()?.Detail, Is.EqualTo("The Feature Owner Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
         }
 
-        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios)
+        private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios, string feature = "Feature")
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [
                 new TerminologyEntry { Id = 1, Key = "team", DefaultValue = "Team", Value = team },
                 new TerminologyEntry { Id = 2, Key = "teams", DefaultValue = "Teams", Value = teams },
                 new TerminologyEntry { Id = 3, Key = "portfolio", DefaultValue = "Portfolio", Value = portfolio },
                 new TerminologyEntry { Id = 4, Key = "portfolios", DefaultValue = "Portfolios", Value = portfolios },
+                new TerminologyEntry { Id = 5, Key = "feature", DefaultValue = "Feature", Value = feature },
             ]);
 
         [Test]

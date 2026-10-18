@@ -11,24 +11,30 @@ namespace Lighthouse.Backend.Models
     public sealed record ConnectionFieldDefault(
         ConnectionDefaultSetting Setting,
         DefaultHeldFor HeldFor,
-        string FieldName,
+        Func<OwnerTerms, string> NameIn,
         Func<WorkTrackingSystemConnection, int?> FieldOn,
-        Action<WorkTrackingSystemConnection, int?> PointAt);
+        Action<WorkTrackingSystemConnection, int?> PointAt)
+    {
+        /// <summary>The name in the words Lighthouse seeds, for the log an operator reads.</summary>
+        public string FieldName => NameIn(OwnerTerms.Seeded);
+    }
 
     public static class ConnectionFieldDefaults
     {
+        public static string FeatureOwnerFieldIn(OwnerTerms terms) => $"{terms.Feature} Owner Field";
+
         /// <summary>Every default a connection holds as one of its fields, in the order they are checked, logged and named.</summary>
         public static readonly IReadOnlyList<ConnectionFieldDefault> All =
         [
-            new(ConnectionDefaultSetting.ParentOverrideForTeams, DefaultHeldFor.Teams, "Parent Override Field",
+            new(ConnectionDefaultSetting.ParentOverrideForTeams, DefaultHeldFor.Teams, _ => "Parent Override Field",
                 connection => connection.ParentOverrideForTeams, (connection, field) => connection.ParentOverrideForTeams = field),
-            new(ConnectionDefaultSetting.ParentOverrideForPortfolios, DefaultHeldFor.Portfolios, "Parent Override Field",
+            new(ConnectionDefaultSetting.ParentOverrideForPortfolios, DefaultHeldFor.Portfolios, _ => "Parent Override Field",
                 connection => connection.ParentOverrideForPortfolios, (connection, field) => connection.ParentOverrideForPortfolios = field),
-            new(ConnectionDefaultSetting.DependencyFieldForPortfolios, DefaultHeldFor.Portfolios, "Dependency Field",
+            new(ConnectionDefaultSetting.DependencyFieldForPortfolios, DefaultHeldFor.Portfolios, _ => "Dependency Field",
                 connection => connection.DependencyFieldForPortfolios, (connection, field) => connection.DependencyFieldForPortfolios = field),
-            new(ConnectionDefaultSetting.SizeEstimateFieldForPortfolios, DefaultHeldFor.Portfolios, "Size Estimate Field",
+            new(ConnectionDefaultSetting.SizeEstimateFieldForPortfolios, DefaultHeldFor.Portfolios, _ => "Size Estimate Field",
                 connection => connection.SizeEstimateFieldForPortfolios, (connection, field) => connection.SizeEstimateFieldForPortfolios = field),
-            new(ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios, DefaultHeldFor.Portfolios, "Feature Owner Field",
+            new(ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios, DefaultHeldFor.Portfolios, FeatureOwnerFieldIn,
                 connection => connection.FeatureOwnerFieldForPortfolios, (connection, field) => connection.FeatureOwnerFieldForPortfolios = field),
         ];
     }
