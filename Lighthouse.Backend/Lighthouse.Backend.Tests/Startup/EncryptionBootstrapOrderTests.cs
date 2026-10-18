@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -896,27 +897,18 @@ namespace Lighthouse.Backend.Tests.Startup
                     {
                         options.UseSqlite(
                             $"DataSource={databaseFileName};Pooling=False",
-                            x => x.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
+                            DatabaseConfigurator.ConfigureSqlite);
                     });
                 });
             }
 
+            // The product's own configuration step must go too: left registered, it runs before ours whenever
+            // a scope builds options and opens a connection to the product's database file.
             private static void RemoveDbContextRegistrations(IServiceCollection services)
             {
-                var dbContextDescriptor = services.SingleOrDefault(
-                    d => d.ServiceType == typeof(DbContextOptions<LighthouseAppContext>));
-
-                if (dbContextDescriptor != null)
-                {
-                    services.Remove(dbContextDescriptor);
-                }
-
-                var dbConnectionDescriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbConnection));
-
-                if (dbConnectionDescriptor != null)
-                {
-                    services.Remove(dbConnectionDescriptor);
-                }
+                services.RemoveAll<DbContextOptions<LighthouseAppContext>>();
+                services.RemoveAll<IDbContextOptionsConfiguration<LighthouseAppContext>>();
+                services.RemoveAll<DbConnection>();
             }
 
             protected override void Dispose(bool disposing)
