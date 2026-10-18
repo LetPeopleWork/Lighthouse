@@ -742,35 +742,39 @@ describe("defaults set once on the connection", () => {
 		);
 
 		// A Portfolio following both changed defaults is one Portfolio to update, not two.
-		// @us-08 @contract-shape:bounded-change
-		it("3 Portfolios following both the Parent Override and Dependency defaults, both changed, are counted once", async () => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: {
-						parentOverrideForPortfolios: 3,
-						dependencyFieldForPortfolios: 3,
-					},
-					followerGroups: [
-						{
-							follows: [
-								"parentOverrideForPortfolios",
-								"dependencyFieldForPortfolios",
-							],
-							count: 3,
-						},
-					],
-				}),
-			});
+		// @us-08 @us-09 @contract-shape:bounded-change
+		it.each([
+			{
+				first: ["parentOverrideForPortfolios", "Parent Override Field"],
+				second: ["dependencyFieldForPortfolios", "Dependency Field"],
+			},
+			{
+				first: ["dependencyFieldForPortfolios", "Dependency Field"],
+				second: ["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
+			},
+		] as const)(
+			"3 Portfolios following both the $first.1 and $second.1 defaults, both changed, are counted once",
+			async ({
+				first: [firstName, firstSetting],
+				second: [secondName, secondSetting],
+			}) => {
+				await givenPriyaOpensJiraDcPayments({
+					connection: jiraDcPayments({
+						followers: { [firstName]: 3, [secondName]: 3 },
+						followerGroups: [{ follows: [firstName, secondName], count: 3 }],
+					}),
+				});
 
-			await whenPriyaPicks("Portfolios", "Parent Override Field", ParentLink);
-			await whenPriyaPicks("Portfolios", "Dependency Field", CausedBy);
-			whenPriyaPressesSave();
+				await whenPriyaPicks("Portfolios", firstSetting, ParentLink);
+				await whenPriyaPicks("Portfolios", secondSetting, CausedBy);
+				whenPriyaPressesSave();
 
-			const question = await theQuestion("Update 0 Teams and 3 Portfolios?");
-			expect(question).toHaveTextContent(
-				"3 Portfolios follow the Parent Override Field and Dependency Field defaults. What they read changes only once they have been updated.",
-			);
-		});
+				const question = await theQuestion("Update 0 Teams and 3 Portfolios?");
+				expect(question).toHaveTextContent(
+					`3 Portfolios follow the ${firstSetting} and ${secondSetting} defaults. What they read changes only once they have been updated.`,
+				);
+			},
+		);
 
 		// @us-08 @contract-shape:bounded-change
 		it("a changed Dependency default says its followers' dependencies change once updated", async () => {
