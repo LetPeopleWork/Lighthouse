@@ -52,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice06)]
         [Category("ac-5.2")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -94,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice06)]
         [Category("ac-5.1")]
         [Category("ac-f.3")]
         [Category("error")]

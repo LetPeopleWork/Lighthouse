@@ -45,6 +45,53 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }));
         }
 
+        [Test]
+        public void FollowersByConnection_CountsOnlyTheTeamsThatFollowTheParentOverrideDefault()
+        {
+            WithTheseTeams(
+                FollowingTeam(1), FollowingTeam(1), TeamOwning(1, fieldId: 7), TeamOwning(1, fieldId: null),
+                FollowingTeam(2), TeamOwning(2, fieldId: 7));
+            WithPortfolios(1, 2, 3);
+
+            var followers = CreateSubject().FollowersByConnection();
+
+            Assert.That(followers, Is.EquivalentTo(new Dictionary<int, ConnectionFollowers>
+            {
+                [1] = new(2),
+                [2] = new(1),
+            }));
+        }
+
+        [Test]
+        public void FollowersByConnection_ConnectionWhoseTeamsAllOwnTheirValue_IsNotListed()
+        {
+            WithTheseTeams(TeamOwning(4, fieldId: 7), TeamOwning(4, fieldId: null));
+
+            var followers = CreateSubject().FollowersByConnection();
+
+            Assert.That(followers, Is.Empty);
+        }
+
+        private static Team FollowingTeam(int connectionId)
+        {
+            var team = new Team { WorkTrackingSystemConnectionId = connectionId };
+            team.FollowParentOverrideDefault();
+            return team;
+        }
+
+        private static Team TeamOwning(int connectionId, int? fieldId)
+        {
+            var team = new Team { WorkTrackingSystemConnectionId = connectionId };
+            team.OwnParentOverride(fieldId);
+            return team;
+        }
+
+        private void WithTheseTeams(params Team[] teams)
+        {
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
+        }
+
         private void WithTeams(params int[] connectionIds)
         {
             var teams = connectionIds.Select(id => new Team { WorkTrackingSystemConnectionId = id }).ToList();
