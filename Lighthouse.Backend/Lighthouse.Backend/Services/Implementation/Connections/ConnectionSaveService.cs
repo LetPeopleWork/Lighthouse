@@ -144,11 +144,31 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 // The new field is already stored, but the default could not follow it. Without saying so the
                 // failed save reads as if nothing was stored, and nobody can tell the owners now follow no field.
                 // The host logs the failure as an error, so it is not logged here as well.
-                var (addedField, owners) = teamsField is not null ? (teamsField, TeamWords.Many) : (portfoliosField!, PortfolioWords.Many);
-                throw new InvalidOperationException(
-                    $"Connection {handle.Connection.Name} was saved with its new field {addedField.DisplayName}, but the {owners}' default Parent Override Field could not be set to it and is now {NoField}",
-                    exception);
+                var pending = new List<PendingDefault>();
+                if (teamsField is not null)
+                {
+                    pending.Add(new(TeamWords.Many, teamsField));
+                }
+
+                if (portfoliosField is not null)
+                {
+                    pending.Add(new(PortfolioWords.Many, portfoliosField));
+                }
+
+                throw new InvalidOperationException(WhatCouldNotFollowItsNewField(handle.Connection.Name, pending), exception);
             }
+        }
+
+        private static string WhatCouldNotFollowItsNewField(string connectionName, List<PendingDefault> pending)
+        {
+            if (pending is [var only])
+            {
+                return $"Connection {connectionName} was saved with its new field {only.Field.DisplayName}, but the {only.Owners}' default Parent Override Field could not be set to it and is now {NoField}";
+            }
+
+            var fields = string.Join(" and ", pending.Select(each => each.Field.DisplayName).Distinct());
+            var defaults = string.Join(" and ", pending.Select(each => $"the {each.Owners}' default Parent Override Field could not be set to {each.Field.DisplayName}"));
+            return $"Connection {connectionName} was saved with its new fields {fields}, but {defaults}; each is now {NoField}";
         }
 
         private async Task<int> StartUpdatesForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
@@ -204,6 +224,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 logger.LogError(exception, "Connection {ConnectionId} was saved, but the change to its {Owners:l}' default could not be logged", handle.ConnectionId, changed.Owners.Many);
             }
         }
+
+        private sealed record PendingDefault(string Owners, AdditionalFieldDefinition Field);
 
         private static NamedField DefaultOf(WorkTrackingSystemConnection connection, int? fieldId)
             => new(fieldId, connection.DisplayNameOfField(fieldId));

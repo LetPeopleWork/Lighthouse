@@ -115,6 +115,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        [Test]
+        [Category("ac-7.1")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_field_added_in_the_same_save_can_be_the_Portfolios_default()
+        {
+            await WhenTheAdminAddsAFieldAndMakesItTheDefault(ConnectionDefault.PortfoliosParentOverrideField, "Epic Link", "customfield_10008");
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsAccepted();
+                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.PortfoliosParentOverrideField), Is.EqualTo("Epic Link"));
+                Assert.That(await TheDefaultNamedOnTheConnection(ConnectionDefault.TeamsParentOverrideField), Is.Null);
+            }
+        }
+
         [TestCase(ConnectionDefault.TeamsParentOverrideField)]
         [TestCase(ConnectionDefault.PortfoliosParentOverrideField)]
         [Category("ac-4.1")]

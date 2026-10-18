@@ -361,6 +361,55 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             VerifyNothingWasPublished();
         }
 
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_PointingThePortfoliosDefaultAtAFieldAddedInThisSaveFails_SaysThePortfoliosDefaultWasNotApplied()
+        {
+            var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.PortfoliosParentOverrideDefaultAddedInThisSave = ANewField(handle, "Epic Link");
+            var failure = GivenTheSecondSaveFails();
+
+            var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Portfolios' default Parent Override Field could not be set to it and is now none"));
+                Assert.That(thrown?.InnerException, Is.SameAs(failure));
+            }
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_PointingBothDefaultsAtFieldsAddedInThisSaveFails_SaysNeitherDefaultWasApplied()
+        {
+            var subject = CreateSubjectForAConnectionWithNamedTeams(new RecordingLogger<ConnectionSaveService>());
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.TeamsParentOverrideDefaultAddedInThisSave = ANewField(handle, "Epic Link");
+            handle.PortfoliosParentOverrideDefaultAddedInThisSave = ANewField(handle, "Initiative Link");
+            GivenTheSecondSaveFails();
+
+            var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));
+
+            Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new fields Epic Link and Initiative Link, but the Teams' default Parent Override Field could not be set to Epic Link and the Portfolios' default Parent Override Field could not be set to Initiative Link; each is now none"));
+        }
+
+        private static AdditionalFieldDefinition ANewField(ConnectionSaveHandle handle, string displayName)
+        {
+            var field = new AdditionalFieldDefinition { DisplayName = displayName, Reference = $"customfield_{displayName.Length}" };
+            handle.Connection.AdditionalFieldDefinitions.Add(field);
+            return field;
+        }
+
+        private InvalidOperationException GivenTheSecondSaveFails()
+        {
+            var failure = new InvalidOperationException("the database went away");
+            connectionRepositoryMock.SetupSequence(x => x.Save())
+                .Returns(Task.CompletedTask)
+                .ThrowsAsync(failure);
+            return failure;
+        }
+
         public enum TheTeamsParentOverride
         {
             Own,
