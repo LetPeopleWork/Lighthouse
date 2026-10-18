@@ -259,15 +259,22 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void A_save_never_takes_the_Owning_Team_from_the_connection()
+        public void A_save_following_the_Feature_Owner_Field_default_keeps_the_Portfolios_own_Owning_Team()
         {
+            var ledger = new Team { Id = 4, Name = "Ledger" };
             var portfolio = APortfolioFollowingTheDefault();
+            portfolio.OwningTeam = ledger;
             var settings = SettingsNaming(null);
             settings.FeatureOwnerSource = SettingSource.ConnectionDefault;
+            settings.OwningTeam = new EntityReferenceDto(ledger.Id, ledger.Name);
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(repository => repository.GetById(ledger.Id)).Returns(ledger);
 
-            portfolio.SyncWithPortfolioSettings(settings, Teams());
+            portfolio.SyncWithPortfolioSettings(settings, teams.Object);
 
-            Assert.That(portfolio.OwningTeam, Is.Null);
+            Assert.That(
+                (portfolio.OwningTeam, portfolio.FeatureOwnerFieldSource, portfolio.FeatureOwnerAdditionalFieldDefinitionId),
+                Is.EqualTo((ledger, SettingSource.ConnectionDefault, (int?)TheConnectionsDefault)));
         }
 
         private static readonly JsonSerializerOptions AsTheApiWritesIt = new(JsonSerializerDefaults.Web);
