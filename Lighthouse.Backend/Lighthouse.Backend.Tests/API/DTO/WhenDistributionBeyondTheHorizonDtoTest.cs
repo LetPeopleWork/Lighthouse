@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {

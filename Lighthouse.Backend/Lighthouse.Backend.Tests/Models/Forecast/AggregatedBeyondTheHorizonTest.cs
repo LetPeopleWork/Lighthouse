@@ -2,7 +2,6 @@ using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 
 namespace Lighthouse.Backend.Tests.Models.Forecast
 {

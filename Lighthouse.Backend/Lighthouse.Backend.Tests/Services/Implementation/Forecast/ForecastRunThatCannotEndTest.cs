@@ -31,6 +31,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private const int TheRunsAForecastMakes = 5;
 
+        // The leading space keeps a count of 5 from matching inside 15 or 25.
+        private static readonly string EveryRunReachedTheHorizon =
+            $" {TheRunsAForecastMakes} simulated runs reached the horizon of {TheMostDaysOneRunMayCover} simulated days";
+
         private const int TheFirstTeam = 0;
 
         private const int TheSecondTeam = 1;
@@ -61,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(WhatWasLoggedAt(LogLevel.Error), Is.Empty,
                     "Work that takes longer than the horizon is an ordinary answer, yet it was logged as an error.");
 
-                Assert.That(WhatWasLoggedAt(LogLevel.Debug).Any(reported => reported.Contains(TheMostDaysOneRunMayCover.ToString(), StringComparison.Ordinal)), Is.True,
+                Assert.That(WhatWasLoggedAt(LogLevel.Debug).Any(reported => reported.Contains(EveryRunReachedTheHorizon, StringComparison.Ordinal)), Is.True,
                     "Nothing at Debug says how many runs reached the horizon. " +
                     $"Reported: {string.Join(" | ", WhatWasLoggedAt(LogLevel.Debug))}");
 
