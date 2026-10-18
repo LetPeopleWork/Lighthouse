@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -268,7 +269,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
                 new EncryptionKeyRingHolder(new EncryptionKeyRing(KeyCustody.GeneratedForThisInstance, KeyInForce, AnEarlierKey)),
                 NullLogger<CryptoService>.Instance));
             services.AddDbContext<LighthouseAppContext>(options =>
-                options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
+                options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite"))
+                    .AddInterceptors(NoWaitingForTheDisk.Instance));
 
             return services.BuildServiceProvider();
         }

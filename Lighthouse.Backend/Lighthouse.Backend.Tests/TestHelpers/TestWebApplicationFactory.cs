@@ -3,7 +3,9 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -51,6 +53,43 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
     }
 
+    /// <summary>
+    /// By default SQLite waits for the disk to confirm every commit, and with several test hosts writing at
+    /// once that wait was most of the time it took to create and seed a test database. Each test's database is
+    /// thrown away afterwards, so it has no crash to survive and its commits need not wait. Only test databases
+    /// get this; the product keeps its own setting.
+    /// </summary>
+    internal sealed class NoWaitingForTheDisk : DbConnectionInterceptor
+    {
+        public static readonly NoWaitingForTheDisk Instance = new();
+
+        private const string CommitWithoutWaitingForTheDisk = "PRAGMA synchronous=OFF;";
+
+        public override void ConnectionOpened(DbConnection connection, ConnectionEndEventData eventData)
+        {
+            if (connection is not SqliteConnection)
+            {
+                return;
+            }
+
+            using var pragma = connection.CreateCommand();
+            pragma.CommandText = CommitWithoutWaitingForTheDisk;
+            pragma.ExecuteNonQuery();
+        }
+
+        public override async Task ConnectionOpenedAsync(DbConnection connection, ConnectionEndEventData eventData, CancellationToken cancellationToken = default)
+        {
+            if (connection is not SqliteConnection)
+            {
+                return;
+            }
+
+            await using var pragma = connection.CreateCommand();
+            pragma.CommandText = CommitWithoutWaitingForTheDisk;
+            await pragma.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
     public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
         private readonly List<string> usedDatabaseFileNames = [];
@@ -90,6 +129,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 {
                     options.UseSqlite($"DataSource={databaseFileName};Pooling=False",
                         x => x.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
+                    options.AddInterceptors(NoWaitingForTheDisk.Instance);
                 });
             });
         }

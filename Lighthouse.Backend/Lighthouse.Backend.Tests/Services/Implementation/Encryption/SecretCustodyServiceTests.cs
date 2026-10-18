@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Encryption;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -1251,6 +1252,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             services.AddDbContext<LighthouseAppContext>(options =>
             {
                 options.UseSqlite(connectionString, sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite"));
+                options.AddInterceptors(NoWaitingForTheDisk.Instance);
 
                 if (counter is not null)
                 {
