@@ -20,12 +20,12 @@ const FollowTheConnection = "connection-default";
 
 type ParentOverrideChoice = number | typeof FollowTheConnection;
 
-const trackerNames: Record<WorkTrackingSystemType, string> = {
+// Only these trackers hold a Parent Override Field default on their connection.
+const trackersHoldingTheDefault: Partial<
+	Record<WorkTrackingSystemType, string>
+> = {
 	Jira: "Jira",
 	AzureDevOps: "Azure DevOps",
-	Linear: "Linear",
-	Csv: "CSV",
-	ServiceNow: "ServiceNow",
 };
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
@@ -33,13 +33,11 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	onSettingsChange: onTeamSettingsChange,
 	additionalFieldDefinitions = [],
 }) => {
-	const defaultName = teamSettings?.parentOverrideDefaultName;
-	const followsTheConnection =
-		!!defaultName && teamSettings?.parentOverrideSource === "ConnectionDefault";
 	const trackerName = teamSettings?.workTrackingSystem
-		? (trackerNames[teamSettings.workTrackingSystem] ??
-			teamSettings.workTrackingSystem)
-		: "";
+		? trackersHoldingTheDefault[teamSettings.workTrackingSystem]
+		: undefined;
+	const followsTheConnection =
+		!!trackerName && teamSettings?.parentOverrideSource === "ConnectionDefault";
 
 	const handleParentOverrideChange = (choice: ParentOverrideChoice | null) => {
 		if (choice === FollowTheConnection) {
@@ -62,10 +60,10 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					}
 					onChange={handleParentOverrideChange}
 					firstOption={
-						defaultName
+						trackerName
 							? {
 									id: FollowTheConnection,
-									label: `Connection default (${defaultName})`,
+									label: `Connection default (${teamSettings?.parentOverrideDefaultName ?? "None"})`,
 								}
 							: undefined
 					}

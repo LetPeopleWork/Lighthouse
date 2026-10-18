@@ -8,9 +8,10 @@ import AdvancedInputsComponent from "./AdvancedInputs";
 /**
  * A Team on "Jira DC – Payments" whose Parent Override Field follows the connection's default. Its
  * settings page shows which field that is, as the first entry of the dropdown, "Connection default (Caused
- * by)", with "Set on the Jira connection." beneath it. A Team admin who cannot read the connection still
- * sees the name, because it travels on the Team's own settings. Picking any other entry, None included,
- * makes the value the Team's own.
+ * by)", with "Set on the Jira connection." beneath it, and "Connection default (None)" while the default
+ * names nothing. A Team admin who cannot read the connection still sees the name, because it travels on
+ * the Team's own settings. Picking any other entry, None included, makes the value the Team's own. Only
+ * Jira and Azure DevOps connections hold this default, so no other tracker offers the entry.
  */
 
 const CausedBy = "Caused by";
@@ -26,15 +27,18 @@ const aTeam = ({
 	source,
 	own = null,
 	tracker = "Jira",
+	defaultName = CausedBy,
 }: {
 	source: Source;
 	own?: number | null;
 	tracker?: string;
+	defaultName?: string | null;
 }) =>
 	Object.assign(createMockTeamSettings(), {
-		parentOverrideAdditionalFieldDefinitionId: source === "Own" ? own : 11,
+		parentOverrideAdditionalFieldDefinitionId:
+			source === "Own" || defaultName === null ? own : 11,
 		parentOverrideSource: source,
-		parentOverrideDefaultName: CausedBy,
+		parentOverrideDefaultName: defaultName,
 		workTrackingSystem: tracker,
 	}) as IBaseSettings;
 
@@ -87,17 +91,59 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	});
 
 	// @us-04 @ac-4.6 @contract-shape:pure-function
-	it.each([
-		["AzureDevOps", "Azure DevOps"],
-		["Linear", "Linear"],
-		["Csv", "CSV"],
-		["ServiceNow", "ServiceNow"],
-	])("names the %s connection the default is set on as %s", (tracker, name) => {
-		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault", tracker }));
+	it("names the Azure DevOps connection the default is set on", () => {
+		givenTheTeamsSettingsPage(
+			aTeam({ source: "ConnectionDefault", tracker: "AzureDevOps" }),
+		);
 
 		expect(
-			screen.getByText(`Set on the ${name} connection.`),
+			screen.getByText("Set on the Azure DevOps connection."),
 		).toBeInTheDocument();
+	});
+
+	// @edge @us-04 @ac-4.6 @contract-shape:pure-function
+	it.each(["Linear", "Csv", "ServiceNow"])(
+		"offers no connection default on a %s connection, which holds none",
+		(tracker) => {
+			givenTheTeamsSettingsPage(
+				aTeam({ source: "ConnectionDefault", tracker, defaultName: null }),
+			);
+
+			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
+			expect(theEntries()).toEqual(["None", CausedBy, "Parent Link"]);
+		},
+	);
+
+	// @edge @us-04 @ac-4.6 @contract-shape:pure-function
+	it("following a default that names nothing reads Connection default (None), with where it is set", () => {
+		givenTheTeamsSettingsPage(
+			aTeam({ source: "ConnectionDefault", defaultName: null }),
+		);
+
+		expect(theDropdown()).toHaveTextContent("Connection default (None)");
+		expect(screen.getByText("Set on the Jira connection.")).toBeInTheDocument();
+		expect(theEntries()).toEqual([
+			"Connection default (None)",
+			"None",
+			CausedBy,
+			"Parent Link",
+		]);
+	});
+
+	// @us-04 @ac-4.6 @contract-shape:bounded-change
+	it("a Team that chose None can go back to following a default that names nothing", () => {
+		const onSettingsChange = givenTheTeamsSettingsPage(
+			aTeam({ source: "Own", defaultName: null }),
+		);
+
+		expect(theDropdown()).toHaveTextContent("None");
+		expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
+		whenTheAdminPicks("Connection default (None)");
+
+		expect(onSettingsChange).toHaveBeenCalledWith(
+			"parentOverrideSource",
+			"ConnectionDefault",
+		);
 	});
 
 	// @edge @contract-shape:pure-function
