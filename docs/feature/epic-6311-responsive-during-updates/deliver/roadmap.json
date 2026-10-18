@@ -1,0 +1,627 @@
+{
+  "roadmap": {
+    "project_id": "epic-6311-responsive-during-updates",
+    "created_at": "2026-10-18",
+    "total_steps": 18,
+    "total_phases": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "goal": "Epic #6311: Lighthouse stays usable while it forecasts. Slice 01 bounds every When/Start simulation to max(1, cores / 2) workers and says so on the startup banner. Slice 02 lets Stop end a running forecast between runs, keeping the Features' previous forecast and writing nothing to the tracker. Slices 03 and 04 (released together under Story #6309) count runs that never finish as beyond the horizon, carry beyondHorizon + horizonYears on the wire, render 'More than 5 years' on every surface, and cut the horizon from 100,000 to 1,827 simulated days. Slice 05 adds a System-Administrator-only Cancel all that stops the running update and clears every queued, coalesced and held non-delete update on every replica. Done when no [Ignore(PendingEpic6311.SliceNN)] and no pendingEpic6311 it.skip remains, dotnet build has zero warnings, the filtered backend suite is green, and pnpm test + pnpm build are clean.",
+    "paradigm_note": "The Hypothesis + state-delta mandate from nw-roadmap does not apply: C# + NUnit 4.6 + Moq + WebApplicationFactory and TypeScript + Vitest + RTL, with no property-testing library in either project. DISTILL authored every acceptance test, example-based, with finite axes as [TestCase] / it.each. RED means removing [Ignore(PendingEpic6311.SliceNN)] or the pendingEpic6311 it.skip and watching the test fail as DISTILL's RED classification records (all MISSING_FUNCTIONALITY). GREEN means production code. If a listed test already passes before its step's production change, prove it can fail by sabotage-by-substitution, restore, then un-mark. Existing tests change only where DISTILL's Existing-test disposition says so, plus the mechanical signature follow-ups each step names.",
+    "standing_constraints": [
+      "Before every step, read docs/ci-learnings.md and pre-apply every rule in it.",
+      "Comments are rare, explain why, and are written for a stranger. Never cite DDD-n, NMD-n, AC-n, ADR-n or slice ids in code comments.",
+      "Un-mark discipline: within a slice, un-mark the driving_port / walking-skeleton scenario first, then the unit-level ones. At the end of each slice `grep -rn 'PendingEpic6311.SliceNN' Lighthouse.Backend` returns nothing for that slice and that constant is deleted from API/Integration/ResponsiveDuringUpdates/PendingEpic6311.cs. Active guards (green today) stay green.",
+      "SCAFFOLD inventory at hand-off: ForecastSimulationLimits.MostRunsAtOnce (01-01), DeliveryForecastBlockPercentile.BeyondHorizon not yet rendered (03-05), IUpdateQueueService.CancelAllAsync + UpdateQueueService.CancelAllAsync (05-01), frontend IWhenForecast/WhenForecast beyondHorizon + horizonYears not yet decoded (03-06), frontend IUpdateSubscriptionService.cancelAllTasks (05-04). `grep -rn SCAFFOLD` over both production trees is empty after 05-04.",
+      "UI copy and layout are pinned by NMD-9, NMD-10 and NMD-11, which the maintainer reviewed at DISTILL, and by the tests. Use the copy verbatim; DELIVER does not re-sketch these surfaces.",
+      "Program.cs stays untouched (DEVOPS checked it): the banner reads ForecastSimulationLimits through a trailing optional fact or Default, and the notifiers and UpdateQueueService are already registered. If a step must edit Program.cs after all, say so: that push runs the full live-connector Integration suite.",
+      "Test-time budget (Scripts/test-timings/test-time-budget.json, warn-only): 01-01 records the durations of ForecastWorkerBoundTest and ForecastBeyondTheHorizonTest and sets their ceilings, each with a reason. Each later slice does the same for the ResponsiveDuringUpdates.Slice0N class it un-marks. Re-check ForecastServiceTest (36 s ceiling) after 01-01 and again after 04-02. No wall-clock assertion anywhere.",
+      "Local gates before each step's commit: dotnet build (zero warnings); the analyzer sweep `dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore` filtered to the change's files (git diff plus untracked); `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. For frontend steps also pnpm test, then pnpm build (prebuild runs biome check --write). ArchUnit rules are verified with a Release build (`dotnet build -c Release && dotnet test -c Release --filter FullyQualifiedName~Architecture`).",
+      "Usage data: none (NMD-7). Do not append to UsageDataEventName; docs/settings/usagedata.md is unchanged.",
+      "Not in this roadmap (finalize, after the maintainer's hold): docs prose including the DOTNET_PROCESSOR_COUNT line, @screenshots and the low-throughput demo Team, release and rollback notes, the Lighthouse-Clients minor release, ARCHITECTURE.md concept updates, ADO transitions and Stryker on frozen code (both stacks, 80 percent or more)."
+    ],
+    "manual_gates": [
+      "AC-01.5 / KPI-1, after phase 01: on the dev instance restored with Restore-DbBackup.ps1, with the slowest Portfolio forecast running, run Scripts/kpi/epic-6311-portfolios-p95.sh (20 x GET /api/latest/portfolios). p95 must be under 1 s at --cpus=4 and again at --cpus=2. Read the banner line 'Forecasts use up to N of M cores'. If it misses, apply ADR-248's dedicated-threads fallback.",
+      "AC-02.7 / KPI-2, after phase 02: click-to-Cancelled on the slowest Portfolio, 3 tries, each 5 s or less with the Features' dates unchanged. If it misses, apply ADR-249's in-run checkpoint.",
+      "AC-03.8 / KPI-4, after phase 03: before/after list of the Features whose forecast changes on the restored instance. 0 percentiles may project to today, and the maintainer accepts the list.",
+      "AC-04.4 / KPI-3, after phase 04: cold start, then the first forecast of 'New Portfolio', read 3 times with the P2 query. RefreshLog.DurationMs must be at least 50 percent below the 1,766 ms baseline. If it misses, follow up per NMD-6.",
+      "AC-05.7, after phase 05: Update All, then Cancel all. Once the running row ends, the list holds only removals, and no cancelled row comes back before the next periodic tick."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed": "2026-10-18",
+    "notes": "APPROVED, 0 blockers. HIGH 1-4 applied by the orchestrator: 02-01 sabotage proof for the new ArchUnit rule; stand-in-date scenario moved to 03-01, cap scenario moved to 04-01; 04-02 log criterion marked untested; 03-07 and 05-04 tagged for sizing. LOWs left to the crafters: duplicate name A_Feature_no_run_can_finish_is_never_shown_as_due_today in two classes; SCAFFOLD comment in DeliveryForecastBlock.cs removed in 03-05."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-6311-responsive-during-updates/feature-delta.md",
+    "slices": "docs/feature/epic-6311-responsive-during-updates/slices/slice-01-forecast-leaves-cores-free.md, slice-02-stop-ends-a-forecast.md, slice-03-unfinished-runs-count.md, slice-04-five-year-horizon.md, slice-05-cancel-all.md",
+    "adrs": "docs/product/architecture/adr-248 .. adr-254",
+    "harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/ForecastWhileItUpdatesAcceptanceTest.cs, TestDoubles/CountedDrawStream.cs, Services/Implementation/Forecast/OnePortfolioForecast.cs"
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 - The forecast leaves cores free for pages",
+      "description": "Bug #6308 / US-01. Every When/Start simulation (background, manual, multi-Team) runs on at most max(1, cores / 2) workers, derived from an injectable core count that defaults to Environment.ProcessorCount. The startup banner states the bound. Reality checks and backtests (HowMany) are untouched. Entry criterion met: the KPI-3 baseline (1,766 ms cold, New Portfolio) was recorded on 2026-10-18. Releasable alone.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A forecast runs on at most half the cores, and the Portfolios list answers while it runs",
+          "agent": "nw-software-crafter",
+          "step_type": "driving-port",
+          "tags": [
+            "@driving_port",
+            "@kpi"
+          ],
+          "description": "Implement ForecastSimulationLimits.MostRunsAtOnce = max(1, cores / 2) over an injectable core count (default Environment.ProcessorCount) and apply it as ParallelOptions.MaxDegreeOfParallelism in the one ForecastService path every When/Start simulation goes through. Task.Run + Parallel.For stay. Un-mark the driving-port scenario first, then the bound unit tests.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice01PagesKeepAnsweringScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice01PagesKeepAnsweringScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastWorkerBoundTest.cs"
+          ],
+          "scenario_name": "The_Portfolios_list_answers_while_a_Portfolio_forecast_is_held_part_way_through; The_runs_allowed_at_once_are_half_the_cores_and_never_fewer_than_one; A_forecast_runs_exactly_as_many_runs_at_once_as_half_the_cores (TestCases A_one_core_host_runs_one_run_at_a_time, A_two_core_host_runs_one_run_at_a_time, A_four_core_host_runs_two_runs_at_once); A_manual_forecast_is_held_to_the_same_bound; active guard Bounding_the_runs_does_not_change_any_percentile_of_a_seeded_forecast",
+          "criteria": [
+            "While a Portfolio forecast is held part way through, GET /api/latest/portfolios answers before the forecast finishes. The pass condition is ordering, never elapsed time.",
+            "For every core count from 1 to 64, the runs allowed at once equal max(1, cores / 2).",
+            "On hosts given 1, 2 and 4 cores, a forecast has exactly 1, 1 and 2 runs under way at once, drops no run, and still gives the answer the work implies.",
+            "A manual forecast is held to the same bound, its own, independent of any background forecast.",
+            "Seeded percentiles are identical at 1 and 64 cores (active guard stays green)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice01PagesKeepAnsweringScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastWorkerBoundTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+            "Scripts/test-timings/test-time-budget.json"
+          ],
+          "dependencies": [],
+          "implementation_notes": "~2h. The bound is per simulation (NMD-14): no global gate, so a manual forecast during a background one may use the other half. The core count is a value on ForecastSimulationLimits (OnePortfolioForecast.Limits(trials, maxDays, cores) already passes it), so the ForecastService constructor should not need to change. If it does, every fixture that constructs ForecastService and DependencySingleDecisionArchUnitTest follow in this commit (Existing-test disposition). Only DependencySingleDecisionArchUnitTest is listed by name; grep for `new ForecastService(` before the edit. Keep the cores test on small injected counts. Record the durations of ForecastWorkerBoundTest and ForecastBeyondTheHorizonTest and set their ceilings with a reason; watch ForecastServiceTest (ceiling 36 s), which may slow down with 2 workers on a 4-vCPU runner until slice 04. Contract shape: ForecastSimulationLimits is pure; ForecastService is bounded-change (the forecast rows of the Features passed in, and log lines). EXEMPT FROM PARADIGM: C# / NUnit project without a PBT library; the bound is pinned by an exhaustive core-count table."
+        },
+        {
+          "id": "01-02",
+          "name": "The startup banner says how many cores a forecast may use, and the KPI-1 script is committed",
+          "agent": "nw-software-crafter",
+          "description": "Add the banner line 'Forecasts use up to N of M cores', read from the same ForecastSimulationLimits instance the container resolves, without editing Program.cs: either BuildInfoLines reads ForecastSimulationLimits.Default, or StartupBannerFacts gains a trailing optional `ForecastSimulationLimits? Limits = null` that falls back to Default (the AllowsStartWithUnreadableSecrets precedent). Commit the KPI-1 measurement script in the same step.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastCoresLineTest.cs",
+          "scenario_name": "The_banner_says_how_many_of_the_cores_a_forecast_may_use",
+          "criteria": [
+            "The startup banner contains one line 'Forecasts use up to N of M cores' whose N and M come from the resolved limits, not from a second computation.",
+            "Program.cs is unchanged.",
+            "Scripts/kpi/epic-6311-portfolios-p95.sh issues 20 GET /api/latest/portfolios requests against a given base URL and prints their p95 in milliseconds. It needs nothing beyond bash and curl and changes nothing on the instance."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Startup/StartupBanner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastCoresLineTest.cs",
+            "Scripts/kpi/epic-6311-portfolios-p95.sh"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "~45 min. The script is the instrument for AC-01.5 (a manual gate, not a step). Keep it read-only (GET only) and parameterised on base URL and auth header, and never echo a token. Commit it as `chore(kpi): ...` or with the banner change, but in slice 01 (DEVOPS). EXEMPT FROM PARADIGM: a single formatted banner line; an exact-string assertion is the contract."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 - Stop ends a running forecast and keeps the last one",
+      "description": "Bug #6308 / US-02. ForecastUpdater reads the update's cancellation token and passes it to IForecastService.UpdateForecastsForPortfolio(portfolio, token), and from there to ParallelOptions.CancellationToken. The check sits between runs. Nothing is saved and no forecast write-back is staged on cancel, and the RefreshLog row reads Cancelled. Other callers pass no token. Releasable alone.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Walking skeleton: a stopped forecast starts no further run, keeps the Features' forecast and the tracker's dates, and is recorded as cancelled",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port",
+            "@kpi"
+          ],
+          "description": "Thread the update's CancellationToken from ForecastUpdater (UpdateCancellationContext) through IForecastService.UpdateForecastsForPortfolio into ParallelOptions.CancellationToken, and let OperationCanceledException leave before the save and before write-back staging. Add the ArchUnit rule from DESIGN Technology choices and ADR-249: Lighthouse.Backend.Models does not depend on Services.Implementation.BackgroundServices.Update.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice02StopEndsAForecastScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice02StopEndsAForecastScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs"
+          ],
+          "scenario_name": "A_stopped_forecast_starts_no_further_run_and_its_row_ends_as_cancelled; The_Features_keep_the_forecast_they_had_before_the_stopped_run; A_stopped_forecast_sends_the_tracker_no_forecast_dates; Refresh_history_records_the_stopped_forecast_as_cancelled; active guard: a manual forecast outside an update runs every run",
+          "criteria": [
+            "After POST /api/latest/update/tasks/Forecasts/{id}/cancel lands on a running forecast, no further simulated run begins (counted by the instrumented draw stream), and the task's row ends as Cancelled.",
+            "Every Feature of the Portfolio keeps the forecast it had before the stopped run.",
+            "The tracker receives no forecast dates from the stopped run. The positive control (an unstopped forecast does write) runs first in the same scenario.",
+            "Refresh history records the stopped forecast as Cancelled.",
+            "A manual forecast outside an update still runs every run (active guard).",
+            "Architecture rule: no type in Lighthouse.Backend.Models depends on Lighthouse.Backend.Services.Implementation.BackgroundServices.Update, verified on a Release build.",
+            "The new architecture rule is proven able to fail: temporarily add a reference from a Models type to a type in BackgroundServices.Update, see the rule go red, remove it. Record the red run in the step report."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice02StopEndsAForecastScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs",
+            "Scripts/test-timings/test-time-budget.json"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "implementation_notes": "~3h. Pass the token explicitly (Q3: injecting it into ForecastService would break S107). Give it a default of CancellationToken.None so ForecastController, the manual forecast and the dependency-aware fixtures compile unchanged. The Moq setups and Verify calls in ForecastUpdaterTest (about 20 sites of UpdateForecastsForPortfolio(...)) and DependencySingleDecisionArchUnitTest follow the signature change in this commit (Existing-test disposition). Grep `UpdateForecastsForPortfolio(` across both projects first. ForecastUpdater already records Cancelled once something throws, so check that OperationCanceledException reaches that branch and is not swallowed or logged as an error. Known gap 1: the 'staged writes still flush' half of AC-02.4 is not observable here; the epic-5511 slice 04 scenarios already pin the flush, so add no test for it. Set the Slice02StopEndsAForecastScenarios ceiling in the budget file. Contract shape: ForecastUpdater is bounded-change (forecast rows, refresh-log row, staged write-back); the delta on cancel is the refresh-log row only. EXEMPT FROM PARADIGM: a single-shot cancellation flow through the real host. The ArchUnit file is NEW (DESIGN technology choices name the rule; DISTILL wrote no test for it). It is green on creation, so the sabotage proof in the criteria is mandatory."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 - Runs that do not finish count, and every forecast says so",
+      "description": "Story #6309 / US-03, released together with slice 04 (NMD-5). First lands ForecastHorizon (Years = 5) per DISTILL Upstream issue 2, so the Jira Release block and the wire can read the years before slice 04 lowers the cap. TotalTrials counts every simulated run, and the histogram keeps finished days only, so beyond = TotalTrials minus the histogram sum. Circle-ended runs count as beyond. Percentiles are read through the ForecastPercentile value object (a day, beyond the horizon, or no answer). Multi-Team aggregates carry a virtual int.MaxValue bucket in and strip it out. The wire gains beyondHorizon + horizonYears on WhenForecastDto and WhenDistributionPointDto. Write-back writes nothing for a beyond percentile, the Jira block writes '85%: More than 5 years', and every web surface uses one shared wording. Not releasable alone. The horizon stays 100,000 days until 04-01.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "A Feature whose runs do not all finish reads a date at 50 and 'beyond the horizon' above it, on the wire",
+          "agent": "nw-software-crafter",
+          "step_type": "driving-port",
+          "tags": [
+            "@driving_port",
+            "@kpi"
+          ],
+          "description": "Create Models/Forecast/ForecastHorizon.cs (Years = 5; the 1,827-day figure is derived but not yet used as the cap) and the ForecastPercentile value object. ForecastService sets TotalTrials to every run simulated for a row. ForecastBase/WhenForecast read percentiles through ForecastPercentile. WhenForecastDto/DtoExtensions add BeyondHorizon + HorizonYears, and a beyond expectedDate is today.AddYears(horizonYears). Rewrite ForecastRunThatCannotEndTest to the new count in this same step.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastRunThatCannotEndTest.cs"
+          ],
+          "scenario_name": "A_Feature_whose_runs_do_not_all_finish_reads_a_date_at_50_and_beyond_the_horizon_above_it; A_Feature_no_run_can_finish_is_never_shown_as_due_today; A_Feature_whose_every_run_finishes_says_none_of_its_percentiles_is_beyond_the_horizon; A_percentile_beyond_the_horizon_carries_five_years_and_a_stand_in_date_five_years_out (re-tag its [Ignore] from PendingEpic6311.Slice04 to Slice03 and un-mark it here: horizonYears and the stand-in expectedDate are built in this step)",
+          "criteria": [
+            "Through GET /api/latest/features, a Feature with some unfinished runs shows a date at 50 and beyondHorizon true above it, horizonYears present, and expectedDate kept on every percentile.",
+            "A Feature no run can finish is never shown as due today: every percentile is beyond the horizon.",
+            "A Feature whose every run finishes has beyondHorizon false on every percentile.",
+            "The field is additive: no existing member is renamed or removed, and an absent flag reads as not beyond.",
+            "A row with no throughput keeps TotalTrials = 0 and still reads 'Cannot forecast'.",
+            "ForecastRunThatCannotEndTest asserts the new count (every run simulated) instead of TotalTrials zero.",
+            "A beyond percentile carries horizonYears = 5 and expectedDate = today.AddYears(5) on the Features read."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastPercentile.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/WhenForecast.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/SimulationResult.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WhenForecastDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DtoExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastRunThatCannotEndTest.cs",
+            "Scripts/test-timings/test-time-budget.json"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "~3h. Land ForecastHorizon first in this step (DISTILL Upstream issue 2), with Years = 5 and the day count 5 x 365 + 2 = 1,827. Do not wire it into ForecastSimulationLimits.Default yet; that is 04-01. ForecastPercentile ends the double meaning of -1: HowManyForecast is unchanged, and ForecastPredictabilityScore and ForecastRealityCheckService (which read HowManyForecast) are untouched. Invariant TotalTrials >= sum of histogram (KPI-4). An old binary reading the new rows projects -1 to today (NMD-16); that is accepted and needs no test. Set the Slice03BeyondTheHorizonScenarios ceiling in the budget file. Contract shape: ForecastPercentile and DTO projection are pure. EXEMPT FROM PARADIGM: the wire shape is pinned by single-example driving-port scenarios; the share rule gets its exhaustive table in 03-02."
+        },
+        {
+          "id": "03-02",
+          "name": "Every run counts; a percentile is beyond exactly when fewer than that share of runs finished; likelihood counts unfinished runs as late",
+          "agent": "nw-software-crafter",
+          "description": "Unit-level rules for a single-Team completion forecast: the counting, the per-percentile beyond rule (share x 10 < p over shares 0..10 and the four percentiles), never today when no run finishes, and the likelihood over all runs.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+          "scenario_name": "Every_run_counts_whether_or_not_it_finished_and_the_ones_that_did_not_are_beyond_the_horizon; A_forecast_whose_every_run_finishes_has_nothing_beyond_the_horizon; A_percentile_is_beyond_the_horizon_exactly_when_fewer_than_that_share_of_runs_finished; A_Feature_no_run_can_finish_is_never_shown_as_due_today; A_likelihood_counts_the_runs_that_did_not_finish_as_late; active guards: every run finishes -> every flag false, Team without history still 'cannot forecast'",
+          "criteria": [
+            "TotalTrials equals the number of runs simulated (100 of 100), not the number that finished.",
+            "For every share of finished runs from 0 to 10 tenths and each of the 50/70/85/95 percentiles, the percentile is beyond the horizon exactly when share x 10 < p.",
+            "When no run finishes, no percentile reads as today.",
+            "A likelihood for a target date counts unfinished runs as late (60, not 100, when 40 of 100 runs never finish).",
+            "A Team without history still reads 'cannot forecast'."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/WhenForecast.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "implementation_notes": "~1.5h. Most of this may already be green after 03-01. If so, prove each test can fail by sabotage-by-substitution before un-marking. The likelihood reads over TotalTrials, not over the histogram sum. Contract shape: pure reads over the forecast's own state. EXEMPT FROM PARADIGM: the share rule is already an exhaustive TestCase table (11 shares x 4 percentiles), the C# substitute for a property."
+        },
+        {
+          "id": "03-03",
+          "name": "Start forecasts, dependency circles and multi-Team aggregates count unfinished runs as beyond",
+          "agent": "nw-software-crafter",
+          "description": "Extend the counting to the start forecast (a Feature waiting behind one that never finishes) and to circle-ended runs. Implement DDD-5: every contributor enters Combine / Min with one virtual bucket at key int.MaxValue holding TotalTrials minus the histogram sum. DeliveryCompletionForecast carriers keep the bucket. AggregatedWhenForecast strips it only at output and sets TotalTrials to the carried total N. Apply the DDD-14 wording changes that belong to slice 03.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/AggregatedBeyondTheHorizonTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/AggregatedBeyondTheHorizonTest.cs"
+          ],
+          "scenario_name": "A_Feature_that_waits_behind_one_that_never_finishes_counts_every_run_in_its_start_forecast; Runs_that_end_because_two_Features_wait_on_each_other_count_as_beyond_the_horizon; A_Feature_two_Teams_share_is_beyond_the_horizon_wherever_either_Team_falls_short; A_Feature_two_Teams_work_is_beyond_the_horizon_where_the_runs_they_finished_together_fall_short; A_Delivery_over_two_Teams_is_beyond_the_horizon_where_the_runs_they_finished_together_fall_short; active guard: both Teams finish every run -> the later Team's day",
+          "criteria": [
+            "The start forecast of a Feature behind one that never finishes counts every run, and on the wire 50 reads not beyond, 85 reads beyond, and horizonYears is 5.",
+            "Runs ended by a dependency circle count as beyond the horizon.",
+            "A two-Team Feature and a two-Team Delivery report the joint beyond share, 1 minus the product of the finished shares, with the right percentiles. The aggregate's TotalTrials is N, and no projected histogram ever contains the int.MaxValue key.",
+            "When both Teams finish every run, the aggregate reads the later Team's day (active guard).",
+            "The circle log line stays an error, without the sentence calling the result 'not a forecast'. The HowTheRunEnded.RanOutOfDays comment no longer claims that no data can reach the horizon."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/StartForecast.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/AggregatedWhenForecast.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/DeliveryCompletionForecast.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Feature.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/HowTheRunEnded.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/AggregatedBeyondTheHorizonTest.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "implementation_notes": "~3h. JointCompletionDistribution, ComonotonicCompletionDistribution and CompletionHistogram stay unchanged; the maths and their bit-identity are kept. The bucket is added on input only when TotalTrials minus the sum is > 0; a carrier already holds its bucket and has TotalTrials equal to the sum, so the rule adds nothing to it. AggregatedWhenForecast no longer takes TotalTrials from SetSimulationResult(joint)'s histogram sum (Existing-test disposition item 3). Feature.cs carries the start answer. A Delivery whose runs all fail to finish now reads 'More than 5 years' with likelihood 0, not 'cannot forecast' (Changed Assumption 2, consistent with NMD-9). The ran-out-of-days LogError is NOT changed here; that is 04-02. Contract shape: pure. EXEMPT FROM PARADIGM: example-based two-Team fixtures with known shares; the 1 minus product rule is checked on fixed inputs."
+        },
+        {
+          "id": "03-04",
+          "name": "Delivery forecasts, snapshots and history points carry beyondHorizon and the horizonYears they were forecast with",
+          "agent": "nw-software-crafter",
+          "description": "Add BeyondHorizon + HorizonYears to WhenDistributionPointDto and DeliveryWhenPercentile. Project them through DeliveryMetricValuesProjector, DeliveryWithLikelihoodDto, DeliveryMetricsHistoryDto and ArchivedDeliveryProjection, so that live Deliveries, metric snapshots and pinned closure records round-trip the marker (NMD-12).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WhenDistributionBeyondTheHorizonDtoTest.cs",
+          "scenario_name": "A_snapshot_percentile_that_was_beyond_the_horizon_reads_back_as_beyond; A_snapshot_percentile_keeps_the_years_of_the_horizon_it_was_forecast_with; A_snapshot_written_before_the_flag_existed_reads_back_as_not_beyond",
+          "criteria": [
+            "A snapshot percentile that was beyond the horizon reads back as beyond.",
+            "A history point keeps the horizonYears it was forecast with, not the current horizon.",
+            "A snapshot written before the flag existed reads back with beyondHorizon false.",
+            "No migration and no new column: the marker lives inside the existing snapshot JSON."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryMetricsHistoryDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/DeliveryMetricsProjection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Delivery.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryMetricValuesProjector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/DeliveryWithLikelihoodDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/Archived/ArchivedDeliveryProjection.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/WhenDistributionBeyondTheHorizonDtoTest.cs"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "implementation_notes": "~2h. Before editing these shared records, grep their short and fully qualified names in both projects and extend the test builders first (shared-contract rule). Records deserialised from older snapshots must default to BeyondHorizon = false and HorizonYears = null. Anything that deserialises outside a controller sets PropertyNameCaseInsensitive = true. Contract shape: pure projection. EXEMPT FROM PARADIGM: round-trip of fixed JSON payloads, old and new."
+        },
+        {
+          "id": "03-05",
+          "name": "Tracker-facing writes and the blackout window read a beyond percentile honestly",
+          "agent": "nw-software-crafter",
+          "description": "WriteBackTriggerService stages nothing for a beyond percentile and still writes the ones that have a day (reads through ForecastPercentile). DeliveryForecastBlockRenderer renders the line of a beyond percentile as 'NN%: More than {ForecastHorizon.Years} years' (NMD-4), and DeliveryForecastPublishingService passes BeyondHorizon into DeliveryForecastBlockPercentile. FeatureForecastWindow (and its ForecastController caller) sizes the blackout window by the horizon when the 95th percentile is beyond.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureForecastWindowBeyondTheHorizonTest.cs"
+          ],
+          "scenario_name": "ResolveForecastWriteBackForPortfolio_PercentileBeyondTheHorizon_WritesNothingAndKeepsThePercentileThatHasADay; A_percentile_beyond_the_horizon_is_written_as_more_than_five_years_and_the_others_keep_their_dates; A_Delivery_whose_every_percentile_is_beyond_the_horizon_still_publishes_a_block_that_says_so; A_block_with_a_percentile_beyond_the_horizon_replaces_an_older_block_and_leaves_the_teams_words_alone; A_Feature_whose_95th_percentile_is_beyond_the_horizon_reads_blackouts_at_least_as_far_as_one_whose_95th_has_a_day",
+          "criteria": [
+            "For a two-Team Feature whose 85th percentile is beyond the horizon, write-back stages nothing for the 85 and still stages the 50 (clock pinned at 2026-03-10).",
+            "The Jira Release block reads '85%: More than 5 years' on the beyond line, and the other percentiles keep their dates.",
+            "A Delivery whose every percentile is beyond still publishes a block that says so.",
+            "Merging replaces the older block between the markers and leaves the Team's own words outside them unchanged.",
+            "The blackout window for a Feature whose 95th percentile is beyond reaches at least as far as a day 1,827 days out."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/DeliverySources/DeliveryForecastBlock.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastBlockRenderer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliveryForecastPublishingService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeatureForecastWindow.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.BeyondTheHorizon.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliveryForecastBlockRendererBeyondTheHorizonTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeatureForecastWindowBeyondTheHorizonTest.cs"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "implementation_notes": "~2.5h. The block's years come from ForecastHorizon.Years (landed in 03-01), never a second literal. Write-back behaviour for 'no answer' is unchanged; beyond joins it. The window test only asks for 'at least as far as' 1,827 days, so it stays green when 04-01 lowers the cap. External integration: the Jira Release description; this renderer + merge test is its contract test (DEVOPS). Contract shapes: the renderer is pure; WriteBackTriggerService and DeliveryForecastPublishingService are bounded-change with an unchanged universe. EXEMPT FROM PARADIGM: exact rendered strings and staged-field lists."
+        },
+        {
+          "id": "03-06",
+          "name": "The web model keeps beyondHorizon and horizonYears on every forecast it rebuilds",
+          "agent": "nw-software-crafter",
+          "description": "Decode beyondHorizon (optional, default false) and horizonYears (optional) in forecastSchemas.ts and WhenForecast.ts, and carry them through every rebuild: Feature forecasts and the start forecast (models/Feature.ts), a Team's share, WhenForecast.fromBackend, the manual forecast (services/Api/ForecastService.ts), archived Deliveries and Delivery history points.",
+          "test_file": "Lighthouse.Frontend/src/models/Forecasts/WhenForecast.beyondTheHorizon.test.ts",
+          "scenario_name": "'%s keeps the flag and the years' (it.skip.each: Feature forecasts, start forecast, Team share, fromBackend); manual forecast 'keeps the flag and the years'; active guard: an older backend (no flag) reads as a date",
+          "criteria": [
+            "beyondHorizon and horizonYears survive Feature forecasts, the start forecast, a Team's share and fromBackend, each.",
+            "They survive the manual forecast answer.",
+            "A payload from an older backend without the fields reads as a date (beyondHorizon false).",
+            "zod: horizonYears is .nullable() for the backend's int?; beyondHorizon is optional because older backends omit it."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/Forecasts/forecastSchemas.ts",
+            "Lighthouse.Frontend/src/models/Forecasts/WhenForecast.ts",
+            "Lighthouse.Frontend/src/models/Feature.ts",
+            "Lighthouse.Frontend/src/models/Delivery/ArchivedDelivery.ts",
+            "Lighthouse.Frontend/src/models/Delivery/DeliveryMetricsHistory.ts",
+            "Lighthouse.Frontend/src/services/Api/ForecastService.ts",
+            "Lighthouse.Frontend/src/models/Forecasts/WhenForecast.beyondTheHorizon.test.ts"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "implementation_notes": "~1.5h. The rebuild sites DESIGN names are Feature.ts:138 and services/Api/ForecastService.ts:104; re-read them with fresh=true before editing. One model field on WhenForecast (DDD-13). Do not add the formatter here; that is 03-07. EXEMPT FROM PARADIGM: Vitest without a PBT library; the rebuild paths are enumerated with it.each."
+        },
+        {
+          "id": "03-07",
+          "name": "One shared wording 'More than N years' on the forecast info, the forecasted-start column and the manual forecaster",
+          "agent": "nw-software-crafter",
+          "description": "Create components/Common/Forecasts/forecastPercentileText.ts, the one pure formatter that turns a percentile into its date text or 'More than {horizonYears} years'. Use it in ForecastInfo (the level icon stays, and the tooltip reads 'Confident (85% Chance)' plus 'Fewer than 85% of simulated runs finished within 5 years.'), in the forecasted-start column and in the ManualForecaster answer.",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastInfo.beyondTheHorizon.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastInfo.beyondTheHorizon.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.forecastedStart.beyondTheHorizon.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.beyondTheHorizon.test.tsx"
+          ],
+          "scenario_name": "reads \"More than 5 years\" instead of a date; takes the years from the forecast, not from a number of its own; keeps the level icon and says why in the tooltip; reads \"More than 5 years\" for each beyond percentile and keeps the 50% date (forecasted-start column); reads \"More than 5 years\" for each beyond percentile (ManualForecaster); active guards: never 'Cannot forecast', within horizon shows a date, drawn as a forecast, answer shown with its 2029 date",
+          "criteria": [
+            "A beyond percentile reads 'More than 5 years', never a date, and the years come from the payload (7 reads 'More than 7 years').",
+            "The level icon stays. The tooltip reads 'Confident (85% Chance)' and 'Fewer than 85% of simulated runs finished within 5 years.'",
+            "A beyond percentile never reads 'Cannot forecast', and a percentile within the horizon shows its date.",
+            "The forecasted-start column shows 'More than 5 years' for the three beyond percentiles and keeps '10/12/2026' at 50%.",
+            "The manual forecast answer shows 'More than 5 years' for the three beyond percentiles."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Forecasts/forecastPercentileText.ts",
+            "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastInfo.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/ForecastedStartCell.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.tsx",
+            "Lighthouse.Frontend/src/components/Common/Forecasts/ForecastInfo.beyondTheHorizon.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/columns.forecastedStart.beyondTheHorizon.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/ManualForecaster.beyondTheHorizon.test.tsx"
+          ],
+          "dependencies": [
+            "03-06"
+          ],
+          "implementation_notes": "~2h. Copy is pinned (NMD-9). A phrase repeated three times lives in one const (S1192); avoid nested template ternaries (S3358). If the forecasted-start cell renders through ForecastInfo, ForecastedStartCell.tsx may need no edit; drop it from the commit if untouched. 'Feature' as a user-facing word goes through Terminology; the formatter's copy names no configurable term. No new fetch, so no new loading or failure look (DESIGN). EXEMPT FROM PARADIGM: exact rendered copy.",
+          "tags": [
+            "@sizing-review-needed"
+          ]
+        },
+        {
+          "id": "03-08",
+          "name": "The Delivery chips and the export table read 'More than 5 years' for a beyond percentile",
+          "agent": "nw-software-crafter",
+          "description": "DeliverySection chips and deliveryExportTable cells (Feature rows and the Delivery's own row) use forecastPercentileText, so a beyond percentile is never the stand-in date, an empty cell or 'Cannot forecast'.",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.beyondTheHorizon.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.beyondTheHorizon.test.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.beyondTheHorizon.test.tsx"
+          ],
+          "scenario_name": "writes \"More than 5 years\" in the Feature's beyond cells and the date in the one that has a day; writes \"More than 5 years\" in the Delivery's own beyond cells; never writes the stand-in date, an empty cell or \"Cannot forecast\" for a beyond percentile; read \"85%: More than 5 years\" (DeliverySection chips); never show the stand-in date (DeliverySection chips); active guard: 50% keeps its date",
+          "criteria": [
+            "Export: the Feature row's beyond cells read 'More than 5 years' and the 50% cell keeps its date. The Delivery row behaves the same way.",
+            "Across 2 rows x 4 cells, no beyond cell holds the stand-in date, an empty string or 'Cannot forecast'.",
+            "The Delivery section draws four chips, the beyond ones reading '85%: More than 5 years', none with the stand-in date, and the 50% chip keeps its date."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.beyondTheHorizon.test.ts",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.beyondTheHorizon.test.tsx"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "implementation_notes": "~1.5h. The PDF export shares deliveryExportTable's cells and is covered by Epic 6298, not here. Keep the existing deliveryExportTable and DeliverySection suites green. EXEMPT FROM PARADIGM: exact cell copy over a fixed 2 x 4 grid."
+        },
+        {
+          "id": "03-09",
+          "name": "The timeline draws no bar and the predictability chart no point for a beyond percentile",
+          "agent": "nw-software-crafter",
+          "description": "NMD-10: deliveryTimelineModel gives a beyond Feature no bar and lists it with the reason 'Ends more than 5 years out at NN%' for the percentile being read. DeliveryPredictabilityChart plots no point on a day whose percentile was beyond, so the line breaks, and its tooltip reads 'More than 5 years', using the history point's horizonYears.",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.beyondTheHorizon.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.beyondTheHorizon.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryPredictabilityChart.beyondTheHorizon.test.tsx"
+          ],
+          "scenario_name": "gets no bar and is listed with the reason; 'names the percentile being read, here %i%, in the reason' (it.skip.each 70/85/95); has no point there, so the line breaks; says \"More than 5 years\" for that day in the tooltip; active guards: bar within the horizon, finished Feature ends where it stopped, other days keep their points",
+          "criteria": [
+            "A Feature beyond the horizon at the percentile being read gets no timeline bar and is listed with the reason 'Ends more than 5 years out at 85%' (and likewise at 70% and 95%).",
+            "A Feature within the horizon keeps its bar, and a finished Feature ends where it stopped.",
+            "On a day whose percentile was beyond, the predictability chart has no point, so the line breaks there. The tooltip for that day reads 'More than 5 years', and other days keep their points."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryPredictabilityChart.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.beyondTheHorizon.test.ts",
+            "Lighthouse.Frontend/src/components/Common/Charts/DeliveryPredictabilityChart.beyondTheHorizon.test.tsx"
+          ],
+          "dependencies": [
+            "03-08"
+          ],
+          "implementation_notes": "~2h. The chart's years come from each history point's horizonYears (NMD-12), never the current horizon. The reason text goes through forecastPercentileText or a sibling in the same module so the 'more than N years' wording has one owner. Respect the gantt adapter boundary (ganttAdapterBoundary.enforcement.test.ts). End of phase: grep confirms no PendingEpic6311.Slice03 and no slice-03 pendingEpic6311 skip remains; run the nine *.beyondTheHorizon / *.cancelAll Vitest files plus pnpm build. EXEMPT FROM PARADIGM: rendered model and chart points over fixed inputs."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 - Five-year horizon",
+      "description": "Story #6309 / US-05, released together with slice 03 (NMD-5). ForecastSimulationLimits.Default takes its run cap from ForecastHorizon: 1,827 simulated days instead of 100,000. The 'ran out of days' LogError becomes one Debug line with the count (DDD-14, DISTILL Known gap 2). Fixture baselines that move are explained. Only Default changes (DDD-12).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The default run cap is the 1,827 simulated days of the five-year horizon",
+          "agent": "nw-software-crafter",
+          "step_type": "unit",
+          "tags": [],
+          "description": "Set ForecastSimulationLimits.Default's maximum simulated days from ForecastHorizon (1,827). Un-mark The_product_lets_one_run_cover_five_years_of_simulated_days first; it is red today (cap 100,000).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+          "scenario_name": "The_product_lets_one_run_cover_five_years_of_simulated_days",
+          "criteria": [
+            "The default cap lets one run cover exactly 1,827 simulated days, taken from ForecastHorizon."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastSimulationLimits.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastHorizon.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs"
+          ],
+          "dependencies": [
+            "03-09"
+          ],
+          "implementation_notes": "~1h. Fixtures that pin their own ForecastSimulationLimits (BenchmarkPortfolio, wall-clock probes) are unaffected; fixtures that read the cap from Default follow it. Run the whole forecast area after the change and note any baseline that moves in 04-02. EXEMPT FROM PARADIGM: a constant and one driving-port scenario."
+        },
+        {
+          "id": "04-02",
+          "name": "A centuries-long Feature stops being simulated after five years, and reaching the horizon is logged at Debug, not as an error",
+          "agent": "nw-software-crafter",
+          "description": "Un-mark the two slice-04 unit scenarios. Replace the 'ran out of days' LogError in ForecastService with one Debug line carrying the count of runs that reached the horizon (DDD-14; DISTILL Known gap 2: no test, since a log level is not a user outcome). Re-check fixture baselines (S18) and the test-time budget.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+          "scenario_name": "A_Feature_that_would_take_centuries_stops_being_simulated_after_five_years; active guard: near-term Features unchanged under the 5-year horizon",
+          "criteria": [
+            "A Feature that would take centuries is simulated for no more than 1,827 days per run and reads beyond the horizon at 85%.",
+            "Near-term Features' percentiles are unchanged under the 5-year horizon (active guard).",
+            "Documented, not tested (DISTILL Known gap 2): the ran-out-of-days LogError is replaced by one Debug line with the count. Verified by reading the diff, not by a test.",
+            "Every fixture baseline that moved is explained in the commit body."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastBeyondTheHorizonTest.cs",
+            "Scripts/test-timings/test-time-budget.json"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "implementation_notes": "~1.5h. These tests are probably green after 04-01; prove each can fail by sabotage-by-substitution before un-marking. The Debug line carries counts only. The circle LogError stays (its wording changed in 03-03). Re-read the budget annotations: a ceiling raised for slice 01 (ForecastServiceTest, ForecastWorkerBoundTest) may now be loose, so tighten it with a reason. If an existing fixture's numbers move, fix the fixture's expectation only when the move is explained by the cap; otherwise stop and report. End of phase: no PendingEpic6311.Slice04 remains. EXEMPT FROM PARADIGM: fixed-input cap checks; the log level has no test by design."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 - Cancel all",
+      "description": "Story #6322 / US-04. POST api/{latest,v1}/update/tasks/cancel, [RbacGuard(SystemAdmin)], 204, idempotent. It reaches IUpdateQueueService.CancelAllAsync, then IUpdateCancellationNotifier.PublishCancelAllAsync / SubscribeToCancelAll. Each replica drops its non-delete follow-ups, then every hold (holds are forecast-only, their rounds left to flush), then stops its own non-delete keys through the per-key path. Delivered at most once (NMD-15). EnqueueAndAwaitAsync moves cancellations.Admit before statusStore.TryAdmit. The web app gets a 'Cancel all' control at the right end of the Activity heading (NMD-11). Releasable alone.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Walking skeleton: Cancel all clears every queued refresh at once and stops the running one; removals are left; only system administrators may ask",
+          "agent": "nw-software-crafter",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port"
+          ],
+          "description": "Add the fourth UpdateController route POST update/tasks/cancel (SystemAdmin, 204). Implement UpdateQueueService.CancelAllAsync (replacing the SCAFFOLD) as one broadcast through IUpdateCancellationNotifier, applied locally: cancel every admitted non-delete key through the existing per-key path and mark waiting non-delete rows Cancelled via CancelIfStillWaiting. Add PublishCancelAllAsync / SubscribeToCancelAll to the port and the in-process adapter.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+          "scenario_name": "Cancel_all_clears_every_queued_refresh_at_once_and_stops_the_running_one; A_removal_on_the_list_is_left_to_finish; Cancel_all_with_nothing_to_cancel_is_accepted_and_can_be_asked_again; Cancel_all_is_refused_to_somebody_who_is_not_a_system_administrator",
+          "criteria": [
+            "A system administrator's POST /api/latest/update/tasks/cancel answers 204. Every queued non-delete refresh leaves the list at once, and the running one ends as Cancelled. Waits are queue quiescence, never a fixed delay.",
+            "A removal (delete) on the list is left to finish.",
+            "With nothing to cancel, the call answers 204, and a second call answers 204 again.",
+            "A caller who is not a system administrator gets 403 and nothing is cancelled.",
+            "The same route answers under api/v1/."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Update/IUpdateCancellationNotifier.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/InProcessUpdateCancellationNotifier.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/RedisUpdateCancellationNotifier.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+            "Scripts/test-timings/test-time-budget.json"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "implementation_notes": "~3h. The port change forces RedisUpdateCancellationNotifier to implement the two members so the build stays green. Here it only delivers to its own process's subscribers; the cross-replica channel is 05-03. UpdateController's constructor must not grow past S107; the route uses the IUpdateQueueService it already has. One Information log line per cancel-all apply on each replica, with counts only. Contract shape: bounded-change over this replica's token sources, follow-ups, holds and status rows; deletes untouched. Set the Slice05CancelAllScenarios ceiling in the budget file. EXEMPT FROM PARADIGM: single-shot HTTP flow through the real host."
+        },
+        {
+          "id": "05-02",
+          "name": "Cancel all drops parked follow-ups and held forecasts, lets later refreshes run, and stops work admitted mid-click",
+          "agent": "nw-software-crafter",
+          "description": "Before cancelling keys, the local apply drops this replica's non-delete follow-ups and every hold, leaving their write-back rounds to flush. Move cancellations.Admit before statusStore.TryAdmit in EnqueueAndAwaitAsync (as EnqueueUpdate already does), so no admitted key lacks a token source when the message arrives.",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/CancelAllWhileWorkIsAdmittedTest.cs"
+          ],
+          "scenario_name": "A_follow_up_parked_behind_the_running_refresh_never_runs; A_forecast_held_until_a_Team_finishes_is_let_go_without_running; A_refresh_asked_for_after_Cancel_all_runs_as_usual; Cancel_all_landing_just_as_awaited_work_is_admitted_stops_that_work; active guards (UpdateHoldsAreForecastOnlyArchUnitTest): Nothing_but_the_forecast_updater_holds_an_update_until_other_work_clears, The_forecast_updater_is_seen_to_hold_its_forecast",
+          "criteria": [
+            "A follow-up parked behind the running refresh never runs; this is read off update notifications.",
+            "A forecast held until a Team finishes is let go without running (IsHeld false, never completed), and the round that held it still finishes.",
+            "A refresh asked for after Cancel all runs as usual.",
+            "A Cancel all landing between Admit and TryAdmit still stops that work.",
+            "Only the forecast updater ever holds an update (active ArchUnit guards stay green)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateQueueService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/AdmittedCancellations.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/CancelAllWhileWorkIsAdmittedTest.cs"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "implementation_notes": "~2.5h. Order of the local apply (DDD-10): follow-ups, then holds, then per-key stops. The race rule (DDD-11): what this replica holds when the message arrives is cancelled, and later work runs. Every Try* result is captured (CA1806). Contract shape: bounded-change, as in 05-01. EXEMPT FROM PARADIGM: the race is pinned by a deterministic interleaving, not a property."
+        },
+        {
+          "id": "05-03",
+          "name": "Cancel all clicked on one replica stops the refresh running on another",
+          "agent": "nw-software-crafter",
+          "description": "RedisUpdateCancellationNotifier publishes and subscribes on its own cancel-all channel, separate from lighthouse:update-cancelled, on the existing connection, so every replica runs its local apply once (at most once, no hardening, NMD-15).",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs",
+          "scenario_name": "Cancel_all_clicked_on_one_replica_stops_the_refresh_running_on_another",
+          "criteria": [
+            "With two replicas sharing a real Redis (Testcontainers), Cancel all on replica B stops the refresh running on replica A.",
+            "The existing per-row Stop channel is unchanged, so an old replica still honours per-row Stop.",
+            "No new configuration key; the channel is used only when Redis is configured."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/RedisUpdateCancellationNotifier.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CancelAllMultiReplicaTests.cs"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "implementation_notes": "~1.5h. Needs Docker locally (P4). Follow TaskManagerMultiReplicaTests and RedisContainerFixture. This is a proof-of-concept path: the minimum implementation plus this one real-Redis test. Contract shape: bounded-change. Earned Trust: the real Redis container is this adapter's probe. EXEMPT FROM PARADIGM: adapter-integration against real Redis."
+        },
+        {
+          "id": "05-04",
+          "name": "The Activity heading offers Cancel all, shows it in flight, and recovers from a refusal",
+          "agent": "nw-software-crafter",
+          "description": "Implement UpdateSubscriptionService.cancelAllTasks (replacing the SCAFFOLD) as one POST to update/tasks/cancel. SectionHeading gains an optional action slot. ActivitySection and useTaskManagerPopover render 'Cancel all' at the right end of the Activity heading for an administrator when at least one row can be cancelled. There is no confirmation dialog. While the call is in flight the control reads 'Cancelling…' with a spinner and is disabled, and the rows read '— Stopping…', with removals still '— Queued'. On failure, 'Could not cancel. Try again.' appears and the rows revert. When done, the list is re-read.",
+          "test_file": "Lighthouse.Frontend/src/components/App/Header/TaskManagerIcon.cancelAll.test.tsx",
+          "scenario_name": "offers \"Cancel all\" in the Activity heading when there is something to cancel; says what it stops and what it leaves; asks the instance once and puts no confirmation in the way; reads \"Cancelling…\" with a spinner and cannot be pressed again while the instance answers; has every row it can stop read \"Stopping…\" and leaves the removal as it was; says \"Could not cancel. Try again.\" under the heading and puts the rows back when the instance refuses; re-reads the list once the instance has answered, so only the removals remain; active guards: hidden when empty, hidden for removals only, non-admin subsumed",
+          "criteria": [
+            "'Cancel all' appears in the Activity heading only when at least one non-removal row can be cancelled, and its tooltip says what it stops and what it leaves.",
+            "One click sends exactly one cancel-all request, with no confirmation dialog.",
+            "While in flight, the control reads 'Cancelling…' with a spinner and cannot be pressed again. Cancellable rows read '— Stopping…' and the removal row stays '— Queued'.",
+            "When the instance refuses, 'Could not cancel. Try again.' appears under the heading and the rows return to '— Running' / '— Queued'.",
+            "After the answer the list is re-read, so only removals remain.",
+            "The control is hidden when the list is empty and when it holds only removals."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/UpdateSubscriptionService.ts",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/SectionHeading.tsx",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/ActivitySection.tsx",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManager/useTaskManagerPopover.ts",
+            "Lighthouse.Frontend/src/components/App/Header/TaskManagerIcon.cancelAll.test.tsx"
+          ],
+          "dependencies": [
+            "05-03"
+          ],
+          "implementation_notes": "~3h. Copy and layout are pinned by NMD-11; reuse IconButton / Tooltip and the existing stopAsked mechanism. The control is rendered from the admin check alone, through useRbac() and never a direct my-summary fetch. Frontend preflight: S6754 destructured useState, S7735 no negated ternary, readonly props, catch parameter named error_. Before changing any visible label in the Task Manager, grep Lighthouse.EndToEndTests/ for it; no Playwright spec is added (E2E stays thin). End of phase: grep confirms no PendingEpic6311 constant and no pendingEpic6311 skip remains anywhere, and PendingEpic6311.cs can be deleted if empty. Run pnpm test and pnpm build. EXEMPT FROM PARADIGM: single-shot UI flow.",
+          "tags": [
+            "@sizing-review-needed"
+          ]
+        }
+      ]
+    }
+  ]
+}
