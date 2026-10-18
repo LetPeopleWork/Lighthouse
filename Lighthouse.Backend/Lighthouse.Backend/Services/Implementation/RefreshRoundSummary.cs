@@ -23,5 +23,8 @@ namespace Lighthouse.Backend.Services.Implementation
         public long? ForecastDurationMs { get; init; }
 
         public bool ForecastSucceeded { get; init; } = true;
+
+        /// <summary>A forecast someone stopped did not succeed, but it did not break either.</summary>
+        public bool ForecastCancelled { get; init; }
     }
 }

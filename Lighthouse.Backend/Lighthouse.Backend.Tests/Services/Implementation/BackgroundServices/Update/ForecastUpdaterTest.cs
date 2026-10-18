@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IRefreshLogService> refreshLogServiceMock;
         private Mock<IUpdateStatusStore> updateStatusStoreMock;
         private InProcessUpdateStatusStore inProcessUpdateStatusStore;
+        private UpdateCancellationContext cancellationContext;
+        private Mock<ILogger<ForecastUpdater>> loggerMock;
 
         private int idCounter = 0;
 
@@ -52,6 +54,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Returns(Task.CompletedTask);
 
             updateStatusStoreMock = new Mock<IUpdateStatusStore>();
+            cancellationContext = new UpdateCancellationContext();
+            loggerMock = new Mock<ILogger<ForecastUpdater>>();
             inProcessUpdateStatusStore = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
 
             refreshLogServiceMock = new Mock<IRefreshLogService>();
@@ -208,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()))
-                .Returns(Task.Delay(SlowForecastMilliseconds));
+                .Returns(Task.Delay(SlowForecastMilliseconds, CancellationToken.None));
 
             var recorded = CaptureRefreshLog();
 
@@ -245,9 +249,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            forecastServiceMock
-                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new OperationCanceledException());
+            TheForecastIsStopped();
 
             var recorded = CaptureRefreshLog();
 
@@ -267,6 +269,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     "Recording the cancel is half of it. Swallowed here the forecast returns as though it "
                     + "finished, and the queue tells the browser the work completed.");
             }
+        }
+
+        [Test]
+        public void Update_ShouldRecordAFailureNotACancel_WhenACancellationArrivesThatNobodyAskedFor()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new TaskCanceledException("A call inside the forecast timed out."));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Cancelled, Is.False,
+                    "Nobody stopped this forecast, and the queue reports it as failed; the refresh history must agree.");
+                Assert.That(recorded.Entry.Success, Is.False);
+                Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=failed after "));
+            }
+        }
+
+        [Test]
+        public void Update_ShouldSayTheForecastWasCancelled_InTheSummaryLine_WhenTheForecastIsStopped()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastIsStopped();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=cancelled after "),
+                "An operator who stopped a forecast would otherwise read that it broke.");
         }
 
         [Test]
@@ -478,7 +517,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Exactly(2)));
 
-            await updateQueue.DrainAsync();
+            await updateQueue.DrainAsync(CancellationToken.None);
 
             forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
@@ -488,6 +527,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             inProcessUpdateStatusStore.TryAdmit(
                 new UpdateKey(updateType, id),
                 new UpdateStatus { UpdateType = updateType, Id = id, Status = progress });
+        }
+
+        private void TheForecastIsStopped()
+        {
+            var stopped = new CancellationToken(canceled: true);
+            cancellationContext.Current = stopped;
+
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new OperationCanceledException(stopped));
+        }
+
+        private string ReadUpdateSummary()
+        {
+            var summary = loggerMock.Invocations
+                .Where(i => i.Arguments[0] is LogLevel.Information)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
+                .SingleOrDefault(message => message.Contains("Update completed", StringComparison.Ordinal));
+
+            Assert.That(summary, Is.Not.Null, "The forecast wrote no summary line.");
+
+            return summary!;
         }
 
         private RecordedRefreshLog CaptureRefreshLog()
@@ -525,7 +586,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private ForecastUpdater CreateSubject(IUpdateStatusStore statusStore, IUpdateQueueService updateQueueService)
         {
-            return new ForecastUpdater(Mock.Of<ILogger<ForecastUpdater>>(), ServiceScopeFactory, updateQueueService, domainEventDispatcherMock.Object, statusStore, new UpdateCancellationContext());
+            return new ForecastUpdater(loggerMock.Object, ServiceScopeFactory, updateQueueService, domainEventDispatcherMock.Object, statusStore, cancellationContext);
         }
 
         private UpdateQueueService CreateRealUpdateQueue()

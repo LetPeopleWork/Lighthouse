@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 itemCount = await ForecastPortfolio(portfolio, serviceProvider);
                 success = true;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationContext.Current.IsCancellationRequested)
             {
                 cancelled = true;
                 throw;
@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 stopwatch.Stop();
 
                 await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success, cancelled);
-                ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success);
+                ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success, cancelled);
             }
         }
 

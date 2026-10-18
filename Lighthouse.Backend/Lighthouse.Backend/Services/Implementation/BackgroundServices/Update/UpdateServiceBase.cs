@@ -86,12 +86,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// What the forecast of this round did. It reads what an earlier refresh already fetched, so the
         /// time it took is all it has to add to the round's line.
         /// </summary>
-        protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success)
+        protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success, bool cancelled)
         {
             var summary = new RefreshRoundSummary(EntityTypeName, entityName, durationMs, success)
             {
                 ForecastDurationMs = durationMs,
                 ForecastSucceeded = success,
+                ForecastCancelled = cancelled,
             };
 
             HandToRound(serviceProvider, summary, static (round, reported) => round.ReportForecast(reported));
@@ -171,8 +172,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return string.Empty;
             }
 
-            return summary.ForecastSucceeded
-                ? string.Create(CultureInfo.InvariantCulture, $" | forecast={forecastMs}ms")
+            if (summary.ForecastSucceeded)
+            {
+                return string.Create(CultureInfo.InvariantCulture, $" | forecast={forecastMs}ms");
+            }
+
+            return summary.ForecastCancelled
+                ? string.Create(CultureInfo.InvariantCulture, $" | forecast=cancelled after {forecastMs}ms")
                 : string.Create(CultureInfo.InvariantCulture, $" | forecast=failed after {forecastMs}ms");
         }
 

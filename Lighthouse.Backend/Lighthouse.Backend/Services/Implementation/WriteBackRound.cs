@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 {
                     ForecastDurationMs = forecastSummary?.ForecastDurationMs,
                     ForecastSucceeded = forecastSummary?.ForecastSucceeded ?? true,
+                    ForecastCancelled = forecastSummary?.ForecastCancelled ?? false,
                 };
 
             refreshSummary = null;
