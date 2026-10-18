@@ -6,17 +6,18 @@ namespace Lighthouse.Backend.Tests.Models
     [Category("epic-6303-configure-once-per-connection")]
     public class EffectiveSettingTest
     {
-        private const int TheTeamsOwnField = 5;
+        private const int TheOwnersOwnField = 5;
         private const int TheConnectionsDefault = 9;
+        private const int TheTeamsDefault = 13;
 
         [TestCase(SettingSource.ConnectionDefault, null, null, null)]
         [TestCase(SettingSource.ConnectionDefault, null, TheConnectionsDefault, TheConnectionsDefault)]
-        [TestCase(SettingSource.ConnectionDefault, TheTeamsOwnField, null, null)]
-        [TestCase(SettingSource.ConnectionDefault, TheTeamsOwnField, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, TheConnectionsDefault, TheConnectionsDefault)]
         [TestCase(SettingSource.Own, null, null, null)]
         [TestCase(SettingSource.Own, null, TheConnectionsDefault, null)]
-        [TestCase(SettingSource.Own, TheTeamsOwnField, null, TheTeamsOwnField)]
-        [TestCase(SettingSource.Own, TheTeamsOwnField, TheConnectionsDefault, TheTeamsOwnField)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, null, TheOwnersOwnField)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, TheConnectionsDefault, TheOwnersOwnField)]
         public void A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(
             SettingSource source, int? ownValueBeforeTheSourceWasSet, int? connectionDefault, int? expected)
         {
@@ -42,6 +43,59 @@ namespace Lighthouse.Backend.Tests.Models
             team.FollowParentOverrideDefault();
 
             Assert.That(team.ParentOverrideAdditionalFieldDefinitionId, Is.Null);
+        }
+
+        [TestCase(SettingSource.ConnectionDefault, null, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, null, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, null, null)]
+        [TestCase(SettingSource.ConnectionDefault, TheOwnersOwnField, TheConnectionsDefault, TheConnectionsDefault)]
+        [TestCase(SettingSource.Own, null, null, null)]
+        [TestCase(SettingSource.Own, null, TheConnectionsDefault, null)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, null, TheOwnersOwnField)]
+        [TestCase(SettingSource.Own, TheOwnersOwnField, TheConnectionsDefault, TheOwnersOwnField)]
+        public void A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(
+            SettingSource source, int? ownValueBeforeTheSourceWasSet, int? portfoliosDefault, int? expected)
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection
+                {
+                    ParentOverrideForTeams = TheTeamsDefault,
+                    ParentOverrideForPortfolios = portfoliosDefault,
+                },
+            };
+
+            portfolio.OwnParentOverride(ownValueBeforeTheSourceWasSet);
+            if (source == SettingSource.ConnectionDefault)
+            {
+                portfolio.FollowParentOverrideDefault();
+            }
+
+            Assert.That(portfolio.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void A_Team_has_no_Portfolios_default_to_follow()
+        {
+            var team = new Team
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { ParentOverrideForPortfolios = TheConnectionsDefault },
+            };
+
+            team.FollowParentOverrideDefault();
+
+            Assert.That(team.ParentOverrideAdditionalFieldDefinitionId, Is.Null);
+        }
+
+        [Test]
+        public void A_new_Portfolio_follows_the_connections_Portfolio_default()
+        {
+            var portfolio = new Portfolio
+            {
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { ParentOverrideForPortfolios = TheConnectionsDefault },
+            };
+
+            Assert.That(portfolio.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(TheConnectionsDefault));
         }
 
         [Test]

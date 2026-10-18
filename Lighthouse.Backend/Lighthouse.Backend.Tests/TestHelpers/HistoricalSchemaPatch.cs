@@ -46,6 +46,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("Teams", "RefinementSettings", "TEXT", "AddRefinementSettingsToTeams"),
             new("Teams", "ParentOverrideSource", "INTEGER", "AddTeamsParentOverrideDefault"),
             new("WorkTrackingSystemConnections", "ParentOverrideForTeams", "INTEGER", "AddTeamsParentOverrideDefault"),
+            new("Portfolios", "ParentOverrideSource", "INTEGER", "AddPortfoliosParentOverrideDefault"),
+            new("WorkTrackingSystemConnections", "ParentOverrideForPortfolios", "INTEGER", "AddPortfoliosParentOverrideDefault"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

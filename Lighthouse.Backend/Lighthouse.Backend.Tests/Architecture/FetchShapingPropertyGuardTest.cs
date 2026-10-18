@@ -103,6 +103,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "The owner's own choice, read through ParentOverrideAdditionalFieldDefinitionId only while the owner does not follow the connection's default."),
             new(nameof(WorkTrackingSystemConnection.ParentOverrideForTeams), Cost.ThroughTheOwnersEffectiveValue,
                 "CONNECTION-SCOPED, and never in the connection's share: it reaches the fingerprint of each Team that follows it, as that Team's ParentOverrideAdditionalFieldDefinitionId, and of no Team that names its own field."),
+            new(nameof(WorkTrackingSystemConnection.ParentOverrideForPortfolios), Cost.ThroughTheOwnersEffectiveValue,
+                "CONNECTION-SCOPED, and never in the connection's share: it reaches the fingerprint of each Portfolio that follows it, as that Portfolio's ParentOverrideAdditionalFieldDefinitionId, and of no Portfolio that names its own field."),
             new(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), Cost.AFullDownload,
                 "Read at sync time and stored as Feature.OwningTeam. Under delta an unchanged Feature is never re-derived, so the old owner survives the edit."),
             new(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), Cost.AFullDownload,

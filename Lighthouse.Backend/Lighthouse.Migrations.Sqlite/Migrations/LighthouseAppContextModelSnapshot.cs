@@ -1112,6 +1112,10 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int>("WorkTrackingSystemConnectionId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<int>("storedParentOverrideSource")
+                        .HasColumnType("INTEGER")
+                        .HasColumnName("ParentOverrideSource");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OwningTeamId");
@@ -1685,6 +1689,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
+
+                    b.Property<int?>("ParentOverrideForPortfolios")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParentOverrideForTeams")
                         .HasColumnType("INTEGER");

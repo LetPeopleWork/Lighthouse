@@ -345,6 +345,10 @@ namespace Lighthouse.Backend.Data
                 .Property<SettingSource>("storedParentOverrideSource")
                 .HasColumnName(nameof(Team.ParentOverrideSource));
 
+            modelBuilder.Entity<Portfolio>()
+                .Property<SettingSource>("storedParentOverrideSource")
+                .HasColumnName(nameof(Portfolio.ParentOverrideSource));
+
             modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);

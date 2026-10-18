@@ -40,6 +40,15 @@ namespace Lighthouse.Backend.Models
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
+        protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
+
+        // A Portfolio stores its source, and a new Portfolio follows the connection's default.
+        private SettingSource storedParentOverrideSource = SettingSource.ConnectionDefault;
+
+        public override SettingSource ParentOverrideSource => storedParentOverrideSource;
+
+        protected override void ChooseParentOverrideSource(SettingSource source) => storedParentOverrideSource = source;
+
         public void UpdateFeatures(IEnumerable<Feature> features)
         {
             Features.Clear();
