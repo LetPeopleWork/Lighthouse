@@ -37,20 +37,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice08)]
         [Category("ac-7.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public async Task The_Teams_default_never_reaches_a_Portfolio()
         {
-            await GivenTheDefaultIs(ConnectionDefault.TeamsParentOverrideField, CausedBy);
+            var portfoliosFollowingBefore = await HowManyFollow(ConnectionDefault.PortfoliosParentOverrideField);
 
+            await WhenTheAdminSetsTheDefault(ConnectionDefault.TeamsParentOverrideField, CausedBy);
+            ThenTheSaveIsAccepted();
+            var logged = TheLogEntriesAboutChangedDefaults();
             await WhenTheNextScheduledUpdateOf(CardIssuing);
+            var page = await WhatTheSettingsPageShows(CardIssuing, OwnerSetting.ParentOverrideField);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(page, Is.EqualTo(((string?)"ConnectionDefault", (string?)null, (string?)null)), "Card Issuing follows the Portfolios' default, which names nothing.");
                 Assert.That(await WhereTheItemOfHangs(CardIssuing), Is.EqualTo(TheTrackersOwnParent));
-                Assert.That(await HowManyFollow(ConnectionDefault.PortfoliosParentOverrideField), Is.Zero);
+                Assert.That(await HowManyFollow(ConnectionDefault.PortfoliosParentOverrideField), Is.EqualTo(portfoliosFollowingBefore));
+                Assert.That(logged, Has.Count.EqualTo(1));
+                Assert.That(logged, Has.None.Contains("Portfolio").And.None.Contains(CardIssuing).And.None.Contains(MerchantOnboarding));
             }
         }
 
