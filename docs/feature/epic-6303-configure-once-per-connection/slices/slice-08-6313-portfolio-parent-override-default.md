@@ -63,3 +63,14 @@ this slice and slices 09–11 must close before they ship a second one:
 
 Also: each new default states on `WhereEachDefaultSits` (in `ModifyConnectionSettings.tsx`) when it is read —
 `readWhen: "updating"` counts towards the update question, `"pageLoads"` (the Estimation defaults) does not.
+
+## Maintainer decision 2026-10-18 — the "Connection default" entry shows even when the default names nothing
+Found in #6304's manual review: an owner following a default that names nothing showed no *Connection default* entry
+and no helper text, so it looked exactly like an owner that chose *None*, and once it picked *None* there was no way
+back to following until a default was set. Decided (option B): on a tracker that honours the default (Jira, Azure
+DevOps), the first entry is always offered — `Connection default (None)` when the default names nothing,
+`Connection default (<value>)` otherwise — and the helper text "Set on the <tracker> connection." shows whenever the
+owner follows. Do it in this slice, for Teams (`AdvancedInputs.tsx`) and Portfolios alike: "follows" means only
+`parentOverrideSource === "ConnectionDefault"`, no longer "and the default names a field". Frontend only; the server
+already accepts *Connection default* with no default set. Flip the test that pins "no entry without a default" and add
+one for picking the entry to switch back from *None*.
