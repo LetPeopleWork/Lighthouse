@@ -1,3 +1,7 @@
+import {
+	endsBeyondHorizonText,
+	yearsBeyondHorizon,
+} from "../../../../../../components/Common/Forecasts/forecastPercentileText";
 import type { IFeature } from "../../../../../../models/Feature";
 import type { IWhenForecast } from "../../../../../../models/Forecasts/WhenForecast";
 import {
@@ -100,9 +104,13 @@ const NO_END = "No forecast for when work on this finishes.";
 export const forecastDateAt = (
 	percentiles: IWhenForecast[],
 	probability: TimelinePercentile,
-): Date | undefined =>
-	percentiles.find((forecast) => forecast.probability === probability)
-		?.expectedDate;
+): Date | undefined => forecastAt(percentiles, probability)?.expectedDate;
+
+const forecastAt = (
+	percentiles: IWhenForecast[],
+	probability: TimelinePercentile,
+): IWhenForecast | undefined =>
+	percentiles.find((forecast) => forecast.probability === probability);
 
 /**
  * The day a Feature finished, or nothing for one still running. The field arrives as null until the
@@ -110,6 +118,39 @@ export const forecastDateAt = (
  */
 const finishedOn = (feature: IFeature): Date | undefined =>
 	feature.closedDate ?? undefined;
+
+type BarEnd = { endsOn: Date; endIsObserved: boolean } | { reason: string };
+
+/**
+ * Where a Feature's bar ends, or why it has none.
+ *
+ * Work that has finished ends where it stopped, not where it was predicted to. A closed Feature is
+ * still handed a completion forecast: one running into the future while a child of it stays open,
+ * or an empty one that resolves to today once nothing is left to simulate. Either drawn as the end
+ * of the bar reads as work that is still going and badly overdue.
+ *
+ * A percentile too few simulated runs reached carries only a stand-in date, years out; drawn, it
+ * would stretch the axis so far that every other bar shrinks to a sliver, and read as a real day.
+ */
+const barEndOf = (
+	feature: IFeature,
+	percentile: TimelinePercentile,
+): BarEnd => {
+	const observedEnd = finishedOn(feature);
+	if (observedEnd) {
+		return { endsOn: observedEnd, endIsObserved: true };
+	}
+
+	const forecast = forecastAt(feature.forecasts, percentile);
+	if (!forecast?.expectedDate) {
+		return { reason: NO_END };
+	}
+
+	const years = yearsBeyondHorizon(forecast);
+	return years === undefined
+		? { endsOn: forecast.expectedDate, endIsObserved: false }
+		: { reason: endsBeyondHorizonText(percentile, years) };
+};
 
 /**
  * Every Feature in a Delivery, sorted into the ones that can be drawn and the ones that cannot.
@@ -152,15 +193,10 @@ export function buildDeliveryTimeline(
 			continue;
 		}
 
-		// Work that has finished ends where it stopped, not where it was predicted to. A closed
-		// Feature is still handed a completion forecast: one running into the future while a child
-		// of it stays open, or an empty one that resolves to today once nothing is left to simulate.
-		// Either drawn as the end of the bar reads as work that is still going and badly overdue.
-		const observedEnd = finishedOn(feature);
-		const endsOn = observedEnd ?? forecastDateAt(feature.forecasts, percentile);
+		const end = barEndOf(feature, percentile);
 
-		if (!endsOn) {
-			cannotPlace(NO_END);
+		if ("reason" in end) {
+			cannotPlace(end.reason);
 			continue;
 		}
 
@@ -168,9 +204,9 @@ export function buildDeliveryTimeline(
 			featureId: feature.id,
 			name: feature.name,
 			start: startsOn,
-			end: endsOn,
+			end: end.endsOn,
 			startIsObserved: observedStart !== undefined,
-			endIsObserved: observedEnd !== undefined,
+			endIsObserved: end.endIsObserved,
 		});
 	}
 

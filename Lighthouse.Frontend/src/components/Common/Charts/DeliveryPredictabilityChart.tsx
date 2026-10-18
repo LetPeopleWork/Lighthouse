@@ -25,6 +25,10 @@ import {
 	riskyColor,
 } from "../../../utils/theme/colors";
 import { FORECAST_LEVEL_THRESHOLDS } from "../Forecasts/ForecastLevel";
+import {
+	moreThanYearsText,
+	yearsBeyondHorizon,
+} from "../Forecasts/forecastPercentileText";
 
 interface DeliveryPredictabilityChartProps {
 	history: DeliveryMetricsHistory;
@@ -87,17 +91,45 @@ const hasLikelihood = (point: DeliveryMetricsHistoryPoint): boolean =>
 const hasWhenDistribution = (point: DeliveryMetricsHistoryPoint): boolean =>
 	point.whenDistribution !== null && point.whenDistribution.length > 0;
 
+const percentileOn = (
+	point: DeliveryMetricsHistoryPoint | undefined,
+	percentile: number,
+) => point?.whenDistribution?.find((entry) => entry.probability === percentile);
+
+const yearsBeyondOn = (
+	point: DeliveryMetricsHistoryPoint | undefined,
+	percentile: number,
+): number | undefined => {
+	const match = percentileOn(point, percentile);
+	return match ? yearsBeyondHorizon(match) : undefined;
+};
+
+/**
+ * A day whose percentile was beyond the horizon gets no value, so the line breaks there rather than
+ * leaping to a stand-in date years out.
+ */
 const completionDateAt = (
 	point: DeliveryMetricsHistoryPoint,
 	percentile: number,
 ): number | null => {
-	const match = point.whenDistribution?.find(
-		(entry) => entry.probability === percentile,
-	);
-	return match ? match.expectedDate.getTime() : null;
+	const match = percentileOn(point, percentile);
+	return match && yearsBeyondHorizon(match) === undefined
+		? match.expectedDate.getTime()
+		: null;
 };
 
+/** The years come from each day's own point: the horizon may have changed since that day was recorded. */
+const whenValueFormatter =
+	(points: DeliveryMetricsHistoryPoint[], percentile: number) =>
+	(value: number | null, context: { dataIndex: number }): string => {
+		const years = yearsBeyondOn(points[context.dataIndex], percentile);
+		return years === undefined
+			? formatDateValue(value)
+			: moreThanYearsText(years);
+	};
+
 interface WhenSeriesConfig {
+	percentile: number;
 	id: string;
 	label: string;
 	data: Array<number | null>;
@@ -110,6 +142,7 @@ const buildWhenSeries = (
 	palette: Record<number, string>,
 ): WhenSeriesConfig[] =>
 	WHEN_PERCENTILES.map((percentile) => ({
+		percentile,
 		id: `when-${percentile}`,
 		label: `${percentile}%`,
 		data: points.map((point) => completionDateAt(point, percentile)),
@@ -226,7 +259,7 @@ const WhenView = ({
 		data: entry.data,
 		showMark: entry.emphasized,
 		color: entry.color,
-		valueFormatter: formatDateValue,
+		valueFormatter: whenValueFormatter(points, entry.percentile),
 	}));
 
 	const series =

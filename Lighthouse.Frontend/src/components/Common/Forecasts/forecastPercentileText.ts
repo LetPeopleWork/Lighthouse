@@ -32,3 +32,10 @@ export const beyondHorizonReason = (
 	horizonYears: number,
 ): string =>
 	`Fewer than ${probability}% of simulated runs finished within ${horizonYears} years.`;
+
+/** Why a Feature has no end to draw at a percentile too few simulated runs reached. */
+export const endsBeyondHorizonText = (
+	probability: number,
+	horizonYears: number,
+): string =>
+	`Ends ${moreThanYearsText(horizonYears).toLowerCase()} out at ${probability}%`;

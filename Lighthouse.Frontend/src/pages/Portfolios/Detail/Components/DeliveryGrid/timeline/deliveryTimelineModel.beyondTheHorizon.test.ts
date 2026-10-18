@@ -7,9 +7,6 @@ import {
 	type TimelinePercentile,
 } from "./deliveryTimelineModel";
 
-const pendingEpic6311 =
-	"Pending: the timeline leaves out a Feature that ends beyond the horizon (epic 6311, slice 03)";
-
 const october = (day: number) => new Date(2026, 9, day);
 
 const theStandInDate = new Date(2031, 9, 18);
@@ -44,7 +41,7 @@ const aFeature = (overrides: Partial<IFeature> = {}): IFeature =>
 	}) as IFeature;
 
 describe("a Feature that ends beyond the horizon, on the Delivery timeline", () => {
-	it.skip(`gets no bar and is listed with the reason (${pendingEpic6311})`, () => {
+	it(`gets no bar and is listed with the reason`, () => {
 		const { bars, unplaceable } = buildDeliveryTimeline([aFeature()], 85);
 
 		expect(bars).toEqual([]);
@@ -57,8 +54,8 @@ describe("a Feature that ends beyond the horizon, on the Delivery timeline", () 
 		]);
 	});
 
-	it.skip.each(TIMELINE_PERCENTILES)(
-		`names the percentile being read, here %i%, in the reason (${pendingEpic6311})`,
+	it.each(TIMELINE_PERCENTILES)(
+		`names the percentile being read, here %i%, in the reason`,
 		(percentile) => {
 			const { bars, unplaceable } = buildDeliveryTimeline(
 				[aFeature({ forecasts: endsBeyondFrom(percentile) })],

@@ -30,9 +30,6 @@ vi.mock("@mui/x-charts", () => ({
 
 import DeliveryPredictabilityChart from "./DeliveryPredictabilityChart";
 
-const pendingEpic6311 =
-	"Pending: the chart leaves a gap where a percentile was beyond the horizon (epic 6311, slice 03)";
-
 interface SeriesEntry {
 	id?: string;
 	data?: Array<number | null>;
@@ -69,6 +66,7 @@ const aHistoryWithABeyondDay = () =>
 					probability: 85,
 					expectedDate: "2031-10-17T00:00:00Z",
 					beyondHorizon: true,
+					horizonYears: 5,
 				},
 			]),
 		],
@@ -88,11 +86,11 @@ describe("the Delivery predictability chart on a day a percentile was beyond the
 		fireEvent.click(screen.getByRole("button", { name: /^when\?$/i }));
 	});
 
-	it.skip(`has no point there, so the line breaks (${pendingEpic6311})`, () => {
+	it(`has no point there, so the line breaks`, () => {
 		expect(theSeries("when-85")?.data?.[1]).toBeNull();
 	});
 
-	it.skip(`says "More than 5 years" for that day in the tooltip (${pendingEpic6311})`, () => {
+	it(`says "More than 5 years" for that day in the tooltip`, () => {
 		const formatted = theSeries("when-85")?.valueFormatter?.(null, {
 			dataIndex: 1,
 		});
