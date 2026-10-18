@@ -14,14 +14,13 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {
     /// <summary>
-    /// A simulated run ends when the work is done, or when nothing is left that anybody could start. Neither
-    /// depends on the numbers drawn, so no data should ever reach the ceiling on how many days one run may
-    /// cover. The ceiling is there for the day that reasoning turns out to be wrong: a forecast runs on a
-    /// background refresh rather than behind a request, so without it a mistake would tie up a thread for
-    /// good with nothing anywhere saying why.
+    /// A simulated run ends when the work is done, when nothing is left that anybody could start, or when it
+    /// reaches the ceiling on how many days one run may cover. That ceiling is the forecast horizon: work
+    /// that would take longer reads as beyond it rather than tying up a background thread for years of
+    /// simulated days.
     ///
     /// The limits are handed in rather than fixed, so this can be shown in a fraction of a second on a run
-    /// covering a few dozen days instead of the hundred thousand production allows.
+    /// covering a few dozen days instead of the five years production allows.
     /// </summary>
     [TestFixture]
     [Category("epic-5792-dependency-aware-forecasting")]
@@ -55,20 +54,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        public async Task ARunThatPassesTheCeiling_IsGivenUpOnAndSaysWhichRunItWas()
+        public async Task ARunThatReachesTheCeiling_CountsAsBeyondTheHorizonAndIsNoError()
         {
             var forecast = await TheForecastOfAPortfolioOneTeamCannotGetThrough();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(WhatWasLoggedAsAnError(), Is.Not.Empty,
-                    "The forecast gave up on runs and said nothing, so an operator reading logs has no way to " +
-                    "know the dates on screen are not a forecast.");
+                Assert.That(WhatWasLoggedAt(LogLevel.Error), Is.Empty,
+                    "Work that takes longer than the horizon is an ordinary answer, yet it was logged as an error.");
 
-                Assert.That(TheStartingNumberAndTheCeilingNamed(), Is.True,
-                    "What was reported does not name the number the draws came from and the run they were " +
-                    "taken for, so the run that would not end cannot be set going again on its own. " +
-                    $"Reported: {string.Join(" | ", WhatWasLoggedAsAnError())}");
+                Assert.That(WhatWasLoggedAt(LogLevel.Debug).Any(reported => reported.Contains(TheMostDaysOneRunMayCover.ToString(), StringComparison.Ordinal)), Is.True,
+                    "Nothing at Debug says how many runs reached the horizon. " +
+                    $"Reported: {string.Join(" | ", WhatWasLoggedAt(LogLevel.Debug))}");
 
                 Assert.That(forecast.TheSlowOne.Forecast.TotalTrials, Is.EqualTo(TheRunsAForecastMakes),
                     "The runs that gave up on the Feature nobody could get through were dropped from its count, " +
@@ -187,13 +184,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             return (theSlowOne, theOrdinaryOne);
         }
 
-        private bool TheStartingNumberAndTheCeilingNamed()
-            => WhatWasLoggedAsAnError().Any(reported => reported.Contains("4242", StringComparison.Ordinal)
-                && reported.Contains(TheMostDaysOneRunMayCover.ToString(), StringComparison.Ordinal));
-
-        private List<string> WhatWasLoggedAsAnError()
+        private List<string> WhatWasLoggedAt(LogLevel level)
             => logger.Invocations
-                .Where(invocation => invocation.Arguments.Contains(LogLevel.Error))
+                .Where(invocation => invocation.Arguments.Contains(level))
                 .Select(invocation => string.Join(" ", invocation.Arguments.Select(argument => argument?.ToString() ?? string.Empty)))
                 .ToList();
 

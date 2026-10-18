@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 
@@ -271,7 +270,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice04)]
         [Category("slice-04")]
         [Category("ac-04.1")]
         [Category("error")]
@@ -282,7 +280,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var payments = forecast.ATeamThatDelivers(1, OneItemEveryTenDays);
             var billing = OnePortfolioForecast.AFeature(1, "Billing Migration", "10", (payments, 480));
 
-            using var draws = new CountedDrawStream();
+            // Every run draws the empty days of that history, so no run ever finishes the 480 items.
+            using var draws = new CountedDrawStream(runsInTenThatDrawTheFirstDay: 0);
             await forecast.RunsOver(draws, ForecastSimulationLimits.Default with { Trials = 20, CoresSeen = 4 }, billing);
 
             using (Assert.EnterMultipleScope())

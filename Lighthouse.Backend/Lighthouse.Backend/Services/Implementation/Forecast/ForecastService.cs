@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var whatWentWrong = WhatTheRunsCouldNotFinish.AllOf(shares.Select(share => share.WhatWentWrong));
 
             ReportTheRunsThatCouldNotFinish(whatWentWrong);
-            ReportTheRunsThatRanOutOfDays(whatWentWrong, draws);
+            ReportTheRunsThatReachedTheHorizon(whatWentWrong);
 
             return TheDaysWorkBeganOn(plan, shares, limits.Trials);
         }
@@ -277,24 +277,20 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         }
 
         /// <summary>
-        /// Reported apart from the runs that simply had nothing left to start, and named down to the single
-        /// run and the number its draws came from, because those two together set that exact run going again
-        /// on its own. No data can put a run here: it means the way runs end is itself wrong.
+        /// Work that would take longer than the horizon is an ordinary answer, not a fault: those runs count
+        /// towards every percentile and read as beyond the horizon. So the count is only worth a Debug line.
         /// </summary>
-        private void ReportTheRunsThatRanOutOfDays(WhatTheRunsCouldNotFinish whatWentWrong, IDrawStream draws)
+        private void ReportTheRunsThatReachedTheHorizon(WhatTheRunsCouldNotFinish whatWentWrong)
         {
             if (whatWentWrong.RunsThatRanOutOfDays == 0)
             {
                 return;
             }
 
-            logger.LogError(
-                "Gave up on {Trials} simulated runs that passed {Days} simulated days without finishing, for teams {Teams}. Set the first of them going again on its own with starting number {StartingNumber} and run {Trial}. Those teams have no dates from this forecast",
+            logger.LogDebug(
+                "{Trials} simulated runs reached the horizon of {Days} simulated days without finishing and count as beyond the horizon",
                 whatWentWrong.RunsThatRanOutOfDays,
-                limits.MostDaysOneSimulatedRunMayCover,
-                string.Join(", ", whatWentWrong.TeamsThatRanOutOfDays),
-                draws.StartingNumber,
-                whatWentWrong.FirstRunThatRanOutOfDays);
+                limits.MostDaysOneSimulatedRunMayCover);
         }
 
         private static void UpdateFeatureForecasts(
