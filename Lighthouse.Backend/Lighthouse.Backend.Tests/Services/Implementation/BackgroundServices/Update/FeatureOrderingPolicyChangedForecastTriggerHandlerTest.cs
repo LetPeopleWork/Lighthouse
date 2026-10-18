@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await WhenTheOrderChangesTo(FeatureOrderingPolicy.ManualOrder, ARealForecastUpdater());
 
-            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio), Times.Once);
+            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private void GivenThePortfolios(params int[] portfolioIds)
@@ -149,7 +149,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 ServiceScopeFactory,
                 UpdateQueueService,
                 domainEventDispatcherMock.Object,
-                updateStatusStoreMock.Object);
+                updateStatusStoreMock.Object,
+                new UpdateCancellationContext());
         }
 
         private Task WhenTheOrderChangesTo(FeatureOrderingPolicy policy)

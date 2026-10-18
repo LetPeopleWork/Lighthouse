@@ -57,19 +57,24 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             logger.LogDebug("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items (mode {Mode}).", team.Name, remainingItems, mode);
 
             var fakeFeature = new Feature(team, remainingItems);
-            await ForecastFeatures([fakeFeature], mode);
+            await ForecastFeatures([fakeFeature], mode, CancellationToken.None);
 
             logger.LogDebug("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
             return fakeFeature.Forecast;
         }
 
-        public async Task UpdateForecastsForPortfolio(Portfolio portfolio)
+        /// <summary>
+        /// A stop asked for while the runs are going ends the forecast between two runs: the cancellation
+        /// leaves before anything is saved, so the Features keep the forecast they already had rather than
+        /// one built from part of the runs.
+        /// </summary>
+        public async Task UpdateForecastsForPortfolio(Portfolio portfolio, CancellationToken cancellationToken = default)
         {
-            await UpdateForecastsForTeams(portfolio.Teams);
+            await UpdateForecastsForTeams(portfolio.Teams, cancellationToken);
         }
 
-        private async Task UpdateForecastsForTeams(IEnumerable<Team> teams)
+        private async Task UpdateForecastsForTeams(IEnumerable<Team> teams, CancellationToken cancellationToken)
         {
             logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
@@ -77,12 +82,12 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             logger.LogDebug("Features that are being forecasted: {Features}", string.Join(",", features.Select(f => f.Name)));
 
-            await ForecastFeatures(features);
+            await ForecastFeatures(features, ThroughputFilterMode.RespectTeamSetting, cancellationToken);
 
             await featureRepository.Save();
         }
 
-        private async Task ForecastFeatures(IEnumerable<Feature> features, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
+        private async Task ForecastFeatures(IEnumerable<Feature> features, ThroughputFilterMode mode, CancellationToken cancellationToken)
         {
             var featuresToForecast = features as IReadOnlyCollection<Feature> ?? features.ToList();
             var throughputByTeam = InitializeThroughputPerTeam(featuresToForecast, mode, out var chipStatusByTeam);
@@ -91,7 +96,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var waits = whatTheForecastWaitsFor.Of(featuresToForecast);
             var draws = drawStreamFactory.ForOneRun();
 
-            var startForecasts = await Task.Run(() => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws));
+            var startForecasts = await Task.Run(
+                () => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws, cancellationToken), cancellationToken);
 
             UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam, startForecasts);
         }
@@ -126,7 +132,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             List<SimulationResult> simulationResults,
             Dictionary<int, RunChartData> throughputByTeam,
             ForecastWaits waits,
-            IDrawStream draws)
+            IDrawStream draws,
+            CancellationToken cancellationToken)
         {
             var plan = ForecastRunPlan.For(simulationResults, throughputByTeam, waits);
 
@@ -138,7 +145,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var oneRun = new SimulatedRun(plan, draws, limits.MostDaysOneSimulatedRunMayCover);
             var workersThatRanThem = new ConcurrentBag<OneWorkersShareOfTheRuns>();
 
-            var howTheRunsAreSpread = new ParallelOptions { MaxDegreeOfParallelism = limits.MostRunsAtOnce };
+            var howTheRunsAreSpread = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = limits.MostRunsAtOnce,
+                CancellationToken = cancellationToken,
+            };
 
             Parallel.For(
                 0,

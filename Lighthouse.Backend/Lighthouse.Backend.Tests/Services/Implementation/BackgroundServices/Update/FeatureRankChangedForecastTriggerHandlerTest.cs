@@ -104,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await WhenTheFeatureChangedPlaces(1, ARealForecastUpdater());
 
-            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio), Times.Once);
+            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private void GivenTheMovedFeatureBelongsTo(int featureId, params int[] portfolioIds)
@@ -150,7 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 ServiceScopeFactory,
                 UpdateQueueService,
                 domainEventDispatcherMock.Object,
-                updateStatusStoreMock.Object);
+                updateStatusStoreMock.Object,
+                new UpdateCancellationContext());
         }
 
         private Task WhenTheFeatureChangedPlaces(int featureId)

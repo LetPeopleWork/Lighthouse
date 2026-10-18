@@ -15,7 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         IServiceScopeFactory serviceScopeFactory,
         IUpdateQueueService updateQueueService,
         IDomainEventDispatcher domainEventDispatcher,
-        IUpdateStatusStore updateStatusStore)
+        IUpdateStatusStore updateStatusStore,
+        UpdateCancellationContext cancellationContext)
         : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts),
             IForecastUpdater
     {
@@ -185,7 +186,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task<int> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
         {
-            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio);
+            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, cancellationContext.Current);
 
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(

@@ -690,7 +690,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// <summary>The shipped forecast engine, except that a horizon the scenario scripted gets the scripted forecast.</summary>
         private sealed class ForecastWithScriptedHorizons(ForecastService shipped, NeedForecastScript script) : IForecastService
         {
-            public Task UpdateForecastsForPortfolio(Portfolio portfolio) => shipped.UpdateForecastsForPortfolio(portfolio);
+            public Task UpdateForecastsForPortfolio(Portfolio portfolio, CancellationToken cancellationToken = default)
+                => shipped.UpdateForecastsForPortfolio(portfolio, cancellationToken);
 
             public HowManyForecast HowMany(RunChartData throughput, int days)
                 => script.ForecastFor(days) ?? shipped.HowMany(throughput, days);

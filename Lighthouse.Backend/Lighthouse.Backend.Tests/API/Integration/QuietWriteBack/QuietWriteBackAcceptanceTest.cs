@@ -382,8 +382,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         protected void TheForecastRunProduces(int workingDaysToCompletion)
         {
             ForecastServiceMock
-                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>()))
-                .Callback((Portfolio portfolio) =>
+                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Callback((Portfolio portfolio, CancellationToken _) =>
                 {
                     foreach (var feature in portfolio.Features)
                     {

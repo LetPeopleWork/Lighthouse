@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     public class Slice02StopEndsAForecastScenarios : ForecastWhileItUpdatesAcceptanceTest
     {
         [Test]
-        [Ignore(PendingEpic6311.Slice02)]
         [Category("ac-02.1")]
         [Category("ac-02.2")]
         [Category("walking_skeleton")]
@@ -49,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice02)]
         [Category("ac-02.3")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -69,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice02)]
         [Category("ac-02.4")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -96,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice02)]
         [Category("ac-02.5")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
