@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private static readonly ConnectionSaveOutcome Saved = new([]);
 
+        private static readonly UpdatesQueued NoUpdatesQueued = new(0, 0);
+
         public Task<ConnectionSaveHandle?> Open(int connectionId, CancellationToken cancellationToken)
         {
             var connection = connectionRepository.GetById(connectionId);
@@ -63,8 +65,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             await connectionRepository.Save();
             await PointTheDefaultsAtTheFieldsAddedInThisSave(handle);
             var updatesQueued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
-            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, FollowersOf(teamRepository)), updatesQueued);
-            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, FollowersOf(portfolioRepository)), updatesQueued);
+            LogTheChangedDefault(handle, new(TeamsParentOverrideDefault, handle.TeamsParentOverrideDefaultBeforeSave, connection.ParentOverrideForTeams, TeamWords, FollowersOf(teamRepository)), updatesQueued.Teams);
+            LogTheChangedDefault(handle, new(PortfoliosParentOverrideDefault, handle.PortfoliosParentOverrideDefaultBeforeSave, connection.ParentOverrideForPortfolios, PortfolioWords, FollowersOf(portfolioRepository)), updatesQueued.Portfolios);
 
             return Saved;
         }
@@ -171,11 +173,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             return $"Connection {connectionName} was saved with its new fields {fields}, but {defaults}; each is now {NoField}";
         }
 
-        private async Task<int> StartUpdatesForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
+        private async Task<UpdatesQueued> StartUpdatesForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
         {
             if (!startUpdates)
             {
-                return 0;
+                return NoUpdatesQueued;
             }
 
             try
@@ -183,18 +185,18 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 var fetchShapeChange = FetchShapeChangeForTheOwnersWhoseFetchMoved(handle);
                 if (fetchShapeChange == null)
                 {
-                    return 0;
+                    return NoUpdatesQueued;
                 }
 
                 await domainEventDispatcher.PublishAsync(fetchShapeChange, cancellationToken);
-                return fetchShapeChange.TeamIds.Count + fetchShapeChange.PortfolioIds.Count;
+                return new(fetchShapeChange.TeamIds.Count, fetchShapeChange.PortfolioIds.Count);
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio whose fetch moved still downloads everything at its next scheduled update.
             catch (Exception exception)
 #pragma warning restore CA1031
             {
                 logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", handle.ConnectionId);
-                return 0;
+                return NoUpdatesQueued;
             }
         }
 
@@ -226,6 +228,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         }
 
         private sealed record PendingDefault(string Owners, AdditionalFieldDefinition Field);
+
+        private sealed record UpdatesQueued(int Teams, int Portfolios);
 
         private static NamedField DefaultOf(WorkTrackingSystemConnection connection, int? fieldId)
             => new(fieldId, connection.DisplayNameOfField(fieldId));

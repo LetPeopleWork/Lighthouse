@@ -31,6 +31,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private static readonly string[] TeamsOwningCausedByInCreationOrder = ["Yankee", "Zulu"];
 
+        private static readonly string[] EachDefaultWithTheUpdatesQueuedForItsOwnGrain =
+        [
+            "Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued.",
+            "Connection Connection changed the Portfolios' Parent Override Field default from none to Caused by; 1 Portfolio follows it: Card Issuing; 1 update queued.",
+        ];
+
         private static readonly string[] PortfoliosOwningCausedByInCreationOrder = ["Parent Override", "Dependency", "Size", "Feature Owner", "Estimation"];
 
         private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
@@ -499,6 +505,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
             Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 1 update queued."));
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var portfolio = new Portfolio { Id = 7, Name = "Card Issuing", WorkTrackingSystemConnectionId = OwnedConnectionId, WorkTrackingSystemConnection = connectionRepositoryMock.Object.GetById(OwnedConnectionId)! };
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns(() => new List<Portfolio> { portfolio }.AsQueryable());
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+            handle.Connection.ParentOverrideForPortfolios = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Is.EquivalentTo(EachDefaultWithTheUpdatesQueuedForItsOwnGrain));
         }
 
         [Test]
