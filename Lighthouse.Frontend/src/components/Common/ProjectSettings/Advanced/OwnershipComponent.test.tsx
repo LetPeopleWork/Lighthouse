@@ -243,16 +243,22 @@ describe("OwnershipComponent", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("sets featureOwnerAdditionalFieldDefinitionId to null when 'None' is selected", () => {
-		renderExpanded({ featureOwnerAdditionalFieldDefinitionId: 1 });
+	it("a follower that picks 'None' owns no field", () => {
+		renderExpanded({
+			workTrackingSystem: "Jira",
+			featureOwnerSource: "ConnectionDefault",
+			featureOwnerAdditionalFieldDefinitionId: 1,
+		});
 
-		const comboboxes = screen.getAllByRole("combobox");
-		const featureOwnerSelect = comboboxes[1];
-		fireEvent.mouseDown(featureOwnerSelect);
+		fireEvent.mouseDown(theFeatureOwnerField());
 
 		const listbox = within(screen.getByRole("listbox"));
 		fireEvent.click(listbox.getByText("None"));
 
+		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
+			"featureOwnerSource",
+			"Own",
+		);
 		expect(mockOnProjectSettingsChange).toHaveBeenCalledWith(
 			"featureOwnerAdditionalFieldDefinitionId",
 			null,
