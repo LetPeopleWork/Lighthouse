@@ -26,11 +26,7 @@ namespace Lighthouse.Backend.Data
             }
             else
             {
-                optionsBuilder.UseSqlite(connectionString, options =>
-                {
-                    options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                    options.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
-                });
+                optionsBuilder.UseSqlite(connectionString, DatabaseConfigurator.ConfigureSqlite);
             }
 
             return new LighthouseAppContext(

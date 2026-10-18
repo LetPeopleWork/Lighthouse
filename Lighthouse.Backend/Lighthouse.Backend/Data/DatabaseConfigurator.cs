@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Lighthouse.Backend.Data
 {
@@ -13,7 +14,6 @@ namespace Lighthouse.Backend.Data
     {
         public static void AddDatabaseConfiguration(WebApplicationBuilder builder)
         {
-            // Configure database settings from appsettings.json
             builder.Services.Configure<DatabaseConfiguration>(
                 builder.Configuration.GetSection("Database"));
         }
@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Data
                                 npgsql.CommandTimeout(30);
                             });
 
-                        // Log slow queries in development
                         if (builder.Environment.IsDevelopment())
                         {
                             options.EnableSensitiveDataLogging();
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Data
                         }
                         break;
                     case "sqlite":
-                        // Ensure the directory for the SQLite database exists
                         var connectionStringBuilder = new SqliteConnectionStringBuilder(dbConfig.ConnectionString);
                         var dataSource = connectionStringBuilder.DataSource;
                         var directory = Path.GetDirectoryName(dataSource);
@@ -56,7 +54,6 @@ namespace Lighthouse.Backend.Data
                             Directory.CreateDirectory(directory);
                         }
 
-                        // Create and configure SQLite connection with WAL mode
                         var connection = new SqliteConnection(dbConfig.ConnectionString);
                         connection.Open();
 
@@ -64,7 +61,6 @@ namespace Lighthouse.Backend.Data
                         // double-quoted-string handling directly (SQLitePCLRaw 2.1.12 / CVE-2025-6965).
                         SqliteLegacyDoubleQuotedStringInterceptor.EnableLegacyDoubleQuotedStrings(connection);
 
-                        // Enable WAL mode and other optimizations
                         using (var command = connection.CreateCommand())
                         {
                             command.CommandText = @"
@@ -75,17 +71,18 @@ namespace Lighthouse.Backend.Data
                             command.ExecuteNonQuery();
                         }
 
-                        options.UseSqlite(connection,
-                            sqliteOptions =>
-                            {
-                                sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                                sqliteOptions.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
-                            });
+                        options.UseSqlite(connection, ConfigureSqlite);
                         break;
                     default:
                         throw new NotSupportedException($"Database provider '{dbConfig.Provider}' is not supported.");
                 }
             });
+        }
+
+        public static void ConfigureSqlite(SqliteDbContextOptionsBuilder sqliteOptions)
+        {
+            sqliteOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+            sqliteOptions.MigrationsAssembly("Lighthouse.Migrations.Sqlite");
         }
 
         private const string AcquireMigrationLockSql = "SELECT pg_advisory_lock(53055308)";
