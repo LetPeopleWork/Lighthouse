@@ -14,7 +14,10 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using System.Security.Claims;
@@ -1010,6 +1013,151 @@ namespace Lighthouse.Backend.Tests.API
             var result = await subject.UpdateTeam(1, dto);
 
             Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        public enum RefusedSetting
+        {
+            Baseline,
+            StateMappings,
+            Refinement,
+            StalenessThreshold,
+            CycleTime,
+        }
+
+        [TestCase(RefusedSetting.Baseline)]
+        [TestCase(RefusedSetting.StateMappings)]
+        [TestCase(RefusedSetting.Refinement)]
+        [TestCase(RefusedSetting.StalenessThreshold)]
+        [TestCase(RefusedSetting.CycleTime)]
+        public async Task UpdateTeam_OneSettingOfAnOtherwiseValidSaveRefused_IsRefusedAndNothingIsSaved(RefusedSetting refused)
+        {
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, DoneItemsCutoffDays = 180 });
+            var dto = AValidTeamSave();
+            Spoil(dto, refused);
+
+            var result = await CreateSubject().UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
+            teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateTeam_ACycleTimeEndingBeforeItStartsWithoutPremium_IsNotJudgedAndTheSaveGoesThrough()
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, DoneItemsCutoffDays = 180 });
+            var dto = AValidTeamSave();
+            Spoil(dto, RefusedSetting.CycleTime);
+
+            var result = await CreateSubject().UpdateTeam(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        [Test]
+        public async Task UpdateTeam_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedNamingTheSourcesItKnows()
+        {
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, DoneItemsCutoffDays = 180 });
+            var dto = AValidTeamSave();
+            dto.ParentOverrideSource = (SettingSource)7;
+
+            var result = await CreateSubjectAnsweringWithProblemDetails().UpdateTeam(1, dto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("team-setting-source-unknown"));
+                Assert.That(problem?.Title, Is.EqualTo("The Team names a source this version of Lighthouse does not know."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+            }
+
+            teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateTeam_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefused()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira" };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 5, DisplayName = "Caused by", Reference = "customfield_10500" });
+            teamRepositoryMock.Setup(x => x.GetById(1)).Returns(new Team { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = connection });
+            var dto = AValidTeamSave();
+            dto.ParentOverrideSource = SettingSource.Own;
+            dto.ParentOverrideAdditionalFieldDefinitionId = 9;
+
+            var result = await CreateSubjectAnsweringWithProblemDetails().UpdateTeam(1, dto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("team-field-not-on-connection"));
+                Assert.That(problem?.Title, Is.EqualTo("The Team names a field its connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Team's connection. Nothing was saved."));
+            }
+
+            teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        private static TeamSettingDto AValidTeamSave()
+            => new()
+            {
+                WorkTrackingSystemConnectionId = 1,
+                DoneItemsCutoffDays = 180,
+                ThroughputHistory = 30,
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Done"],
+            };
+
+        private static void Spoil(TeamSettingDto dto, RefusedSetting refused)
+        {
+            switch (refused)
+            {
+                case RefusedSetting.Baseline:
+                    dto.ProcessBehaviourChartBaselineStartDate = DateTime.UtcNow.Date.AddDays(-10);
+                    dto.ProcessBehaviourChartBaselineEndDate = DateTime.UtcNow.Date.AddDays(-1);
+                    break;
+                case RefusedSetting.StateMappings:
+                    dto.StateMappings =
+                    [
+                        new StateMappingDto { Name = "Group A", States = ["Active"] },
+                        new StateMappingDto { Name = "Group A", States = ["Done"] },
+                    ];
+                    break;
+                case RefusedSetting.Refinement:
+                    dto.Refinement = new RefinementSettingsDto { Cadence = new RefinementCadenceDto { Weekdays = ["Funday"] } };
+                    break;
+                case RefusedSetting.StalenessThreshold:
+                    dto.StalenessThresholdDays = 400;
+                    break;
+                case RefusedSetting.CycleTime:
+                    dto.CycleTimeDefinitions = [new CycleTimeDefinitionDto { Name = "Lead", StartState = "Done", EndState = "New" }];
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(refused), refused, "A setting this table does not know");
+            }
+        }
+
+        private TeamController CreateSubjectAnsweringWithProblemDetails()
+        {
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            return subject;
+        }
+
+        private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory
+        {
+            public override ProblemDetails CreateProblemDetails(
+                HttpContext httpContext, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new() { Status = statusCode, Title = title, Type = type, Detail = detail, Instance = instance };
+
+            public override ValidationProblemDetails CreateValidationProblemDetails(
+                HttpContext httpContext, ModelStateDictionary modelStateDictionary, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
+                => new(modelStateDictionary) { Status = statusCode, Title = title };
         }
 
         private static Team CreateTeam(int id, string name)

@@ -43,6 +43,22 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public void SyncWithPortfolioSettings_TakesTheParentOverrideFieldAsThePortfoliosOwn()
+        {
+            var portfolio = new Portfolio();
+            var teamRepoMock = new Mock<IRepository<Team>>();
+            var dto = new PortfolioSettingDto { ParentOverrideAdditionalFieldDefinitionId = 9, WorkTrackingSystemConnectionId = 1 };
+
+            portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.ParentOverrideSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(portfolio.OwnParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(9));
+            }
+        }
+
+        [Test]
         public void SyncWithPortfolioSettings_ClearsEstimationFieldWhenNull()
         {
             var portfolio = new Portfolio { EstimationAdditionalFieldDefinitionId = 7 };

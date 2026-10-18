@@ -313,6 +313,57 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.ConnectionDefault));
         }
 
+        [Test]
+        public void An_owner_stored_with_a_field_of_its_own_before_it_chose_a_source_owns_that_field()
+        {
+            var subject = CreateSubject();
+            StoreOwnParentOverrideAsReadFromTheDatabase(subject, 4);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(subject.ParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(4));
+            }
+        }
+
+        [Test]
+        public void A_sent_field_of_its_own_is_the_field_the_owner_would_hold()
+        {
+            var subject = CreateSubject();
+
+            Assert.That(subject.ParentOverrideOwnedOnceTaken(SettingSource.Own, 4), Is.EqualTo(4));
+        }
+
+        [Test]
+        public void A_Team_that_follows_the_default_would_hold_no_field_of_its_own_even_one_its_row_still_carries()
+        {
+            var team = new Team();
+            StoreOwnParentOverrideAsReadFromTheDatabase(team, 4);
+
+            Assert.That(team.ParentOverrideOwnedOnceTaken(null, null), Is.Null);
+        }
+
+        [Test]
+        public void Taking_a_sent_follow_the_default_makes_an_owner_that_owned_a_field_follow()
+        {
+            var subject = CreateSubject();
+            subject.OwnParentOverride(4);
+
+            subject.TakeParentOverrideAsSent(SettingSource.ConnectionDefault, null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ParentOverrideSource, Is.EqualTo(SettingSource.ConnectionDefault));
+                Assert.That(subject.OwnParentOverrideAdditionalFieldDefinitionId, Is.Null);
+            }
+        }
+
+        // The setter is private because only EF, loading a stored row, writes the value without choosing a source.
+        private static void StoreOwnParentOverrideAsReadFromTheDatabase(WorkTrackingSystemOptionsOwner owner, int fieldId)
+            => typeof(WorkTrackingSystemOptionsOwner)
+                .GetProperty(nameof(WorkTrackingSystemOptionsOwner.OwnParentOverrideAdditionalFieldDefinitionId))!
+                .SetValue(owner, fieldId);
+
         private static WorkTrackingSystemOptionsOwnerTestClass CreateSubject()
         {
             return new WorkTrackingSystemOptionsOwnerTestClass();

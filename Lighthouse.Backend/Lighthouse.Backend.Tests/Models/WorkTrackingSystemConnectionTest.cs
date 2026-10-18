@@ -106,6 +106,15 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(subject.AdditionalFieldDefinitions[0].Id, Is.EqualTo(originalId));
         }
 
+        [Test]
+        public void HoldsStoredField_AFieldNotStoredYet_IsNotHeldEvenThoughItsIdOfZeroMatches()
+        {
+            var subject = new WorkTrackingSystemConnection();
+            subject.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { DisplayName = "Epic Link", Reference = "customfield_10008" });
+
+            Assert.That(subject.HoldsStoredField(0), Is.False);
+        }
+
         private WorkTrackingSystemConnection CreateSubject()
         {
             var subject = new WorkTrackingSystemConnection();

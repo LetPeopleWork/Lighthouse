@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -26,6 +27,10 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILicenseService> licenseServiceMock;
         private Mock<IWorkTrackingConnectorFactory> workTrackingConnectorFactoryMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+
+        private const int StoredIdOfTheNewField = 50;
+
+        private static readonly int?[] TheNewFieldStoredBeforeTheDefaultNamesIt = [null, StoredIdOfTheNewField];
 
         [SetUp]
         public void Setup()
@@ -51,6 +56,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Id = 12,
                 Name = "ADO",
+                ParentOverrideForTeams = 5,
                 WorkTrackingSystem = WorkTrackingSystems.AzureDevOps,
             };
             repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
@@ -69,6 +75,7 @@ namespace Lighthouse.Backend.Tests.API
                 var dto = okResult?.Value as WorkTrackingSystemConnectionDto;
                 Assert.That(dto?.Id, Is.EqualTo(12));
                 Assert.That(dto?.Name, Is.EqualTo("ADO"));
+                Assert.That(dto?.Defaults?.ParentOverrideForTeams, Is.EqualTo(5));
             }
         }
 
@@ -320,7 +327,14 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Id = 12,
                 Name = "Renamed",
-                Defaults = new ConnectionDefaultsDto { NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(5) } },
+                Defaults = new ConnectionDefaultsDto
+                {
+                    NotHeldByThisBuild = new()
+                    {
+                        ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(5),
+                        ["sizeEstimateFieldForPortfolios"] = JsonSerializer.SerializeToElement(6),
+                    },
+                },
             };
 
             var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
@@ -331,7 +345,8 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(refusal?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-not-supported"));
-                Assert.That(problem?.Detail, Does.Contain("dependencyFieldForPortfolios"));
+                Assert.That(problem?.Title, Is.EqualTo("This connection cannot hold these defaults."));
+                Assert.That(problem?.Detail, Is.EqualTo("Not supported for this connection by this version of Lighthouse: dependencyFieldForPortfolios, sizeEstimateFieldForPortfolios."));
                 Assert.That(existingConnection.Name, Is.EqualTo("Jira DC"));
             }
 
@@ -373,11 +388,116 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(refusal?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-field-unknown"));
-                Assert.That(problem?.Detail, Does.Contain("parentOverrideForTeams"));
+                Assert.That(problem?.Title, Is.EqualTo("A default names a field this connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("Not an Additional Field of this connection: parentOverrideForTeams."));
                 Assert.That(existingConnection.ParentOverrideForTeams, Is.EqualTo(CausedById));
             }
 
             repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_ACopyReadBeforeSomeoneElsesSave_IsRefusedAsStaleAndNothingIsStored()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira, ConcurrencyToken = Guid.NewGuid() };
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            var subject = CreateSubject();
+            var staleCopy = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Renamed", ConcurrencyToken = Guid.NewGuid() };
+
+            var stale = await Assert.ThrowsAsync<DbUpdateConcurrencyException>(() => subject.UpdateWorkTrackingSystemConnectionAsync(12, staleCopy));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stale?.Message, Is.EqualTo("Connection 12 was saved by someone else after this copy was read."));
+                Assert.That(existingConnection.Name, Is.EqualTo("Jira DC"));
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_RemovingTheFieldTheTeamsDefaultNames_IsRefusedAsInUseAndNothingIsStored()
+        {
+            const int CausedById = 5;
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira, ParentOverrideForTeams = CausedById };
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            var withoutTheField = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, withoutTheField);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(409));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("additional-field-in-use"));
+                Assert.That(problem?.Title, Is.EqualTo("An Additional Field this save removes is still in use."));
+                Assert.That(problem?.Detail, Is.EqualTo("\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default. Nothing was saved."));
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_TheTeamsDefaultMovedToAnotherStoredField_StoresTheDefault()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira, ParentOverrideForTeams = 5 };
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 5, DisplayName = "Caused by", Reference = "customfield_10500" });
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 6, DisplayName = "Epic Link", Reference = "customfield_10008" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var subject = CreateSubject();
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = 6 },
+            };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = 5, DisplayName = "Caused by", Reference = "customfield_10500" });
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = 6, DisplayName = "Epic Link", Reference = "customfield_10008" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(existingConnection.ParentOverrideForTeams, Is.EqualTo(6));
+            }
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_TheTeamsDefaultNamesAFieldAddedInThisSave_StoresTheFieldFirstAndThenPointsTheDefaultAtIt()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            var defaultAtEachSave = new List<int?>();
+            repositoryMock.Setup(x => x.Save()).Callback(() =>
+            {
+                existingConnection.AdditionalFieldDefinitions.ForEach(field => field.Id = field.Id == 0 ? StoredIdOfTheNewField : field.Id);
+                defaultAtEachSave.Add(existingConnection.ParentOverrideForTeams);
+            });
+            var subject = CreateSubject();
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = -2 },
+            };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -2, DisplayName = "Epic Link", Reference = "customfield_10008" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(defaultAtEachSave, Is.EqualTo(TheNewFieldStoredBeforeTheDefaultNamesIt));
+            }
         }
 
         private sealed class PlainProblemDetailsFactory : ProblemDetailsFactory

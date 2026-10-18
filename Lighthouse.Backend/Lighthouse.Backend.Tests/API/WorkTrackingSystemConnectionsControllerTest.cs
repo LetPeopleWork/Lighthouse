@@ -518,6 +518,32 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task CreateNewWorkTrackingSystemConnection_NamingSeveralDefaults_IsRefusedListingEveryOne()
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto
+                {
+                    ParentOverrideForTeams = -1,
+                    NotHeldByThisBuild = new() { ["dependencyFieldForPortfolios"] = JsonSerializer.SerializeToElement(-1) },
+                },
+            };
+            newConnectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = -1, DisplayName = "Caused by", Reference = "customfield_10500" });
+            var subject = CreateSubjectAnsweringWithProblemDetails();
+
+            var result = await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            var problem = (result.Result as ObjectResult)?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(problem?.Title, Is.EqualTo("A connection being created cannot hold defaults yet."));
+                Assert.That(problem?.Detail, Is.EqualTo("Create the connection first, then set these on it: parentOverrideForTeams, dependencyFieldForPortfolios."));
+            }
+        }
+
+        [Test]
         [Category("contract-shape:bounded-change")]
         public async Task CreateNewWorkTrackingSystemConnection_WithDefaultsNamingNothing_CreatesTheConnection()
         {

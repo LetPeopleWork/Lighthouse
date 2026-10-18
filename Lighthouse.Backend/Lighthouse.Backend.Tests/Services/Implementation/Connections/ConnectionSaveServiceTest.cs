@@ -29,6 +29,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private static readonly string[] TokenThenSave = ["token", "save"];
 
+        private static readonly string[] TeamsOwningCausedByInCreationOrder = ["Yankee", "Zulu"];
+
+        private static readonly string[] PortfoliosOwningCausedByInCreationOrder = ["Parent Override", "Dependency", "Size", "Feature Owner", "Estimation"];
+
         private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
         private Mock<IRepository<Team>> teamRepositoryMock;
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
@@ -446,6 +450,78 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
             Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 1 update queued."));
+        }
+
+        [Test]
+        public async Task Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated()
+        {
+            var teams = new List<Team>
+            {
+                new Team { Id = 8, Name = "Zulu", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(CausedById),
+                new() { Id = 4, Name = "Yankee", WorkTrackingSystemConnectionId = OwnedConnectionId, EstimationAdditionalFieldDefinitionId = CausedById },
+                new() { Id = 6, Name = "Owns nothing", WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new Team { Id = 3, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentOverride(CausedById),
+            };
+            var subject = CreateSubjectWithOwnersOfTheCausedByField(teams, []);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Refused, Is.True);
+                Assert.That(outcome.FieldsInUse.Single().Owners, Is.EqualTo(TeamsOwningCausedByInCreationOrder));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_IsRefusedNamingThosePortfoliosInTheOrderTheyWereCreated()
+        {
+            var portfolios = new List<Portfolio>
+            {
+                new() { Id = 15, Name = "Estimation", WorkTrackingSystemConnectionId = OwnedConnectionId, EstimationAdditionalFieldDefinitionId = CausedById },
+                new() { Id = 14, Name = "Feature Owner", WorkTrackingSystemConnectionId = OwnedConnectionId, FeatureOwnerAdditionalFieldDefinitionId = CausedById },
+                new() { Id = 13, Name = "Size", WorkTrackingSystemConnectionId = OwnedConnectionId, SizeEstimateAdditionalFieldDefinitionId = CausedById },
+                new() { Id = 12, Name = "Dependency", WorkTrackingSystemConnectionId = OwnedConnectionId, DependencyOverrideAdditionalFieldDefinitionId = CausedById },
+                new Portfolio { Id = 11, Name = "Parent Override", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(CausedById),
+                new() { Id = 10, Name = "Owns nothing", WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new Portfolio { Id = 9, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentOverride(CausedById),
+            };
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], portfolios);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Refused, Is.True);
+                Assert.That(outcome.FieldsInUse.Single().Owners, Is.EqualTo(PortfoliosOwningCausedByInCreationOrder));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        private ConnectionSaveService CreateSubjectWithOwnersOfTheCausedByField(List<Team> teams, List<Portfolio> portfolios)
+        {
+            var connection = GivenTheOwnedConnection();
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = CausedById, DisplayName = "Caused by", Reference = "customfield_10500" });
+            var elsewhere = new WorkTrackingSystemConnection { Id = OtherConnectionId, Name = "Elsewhere" };
+
+            foreach (var owner in teams.Cast<WorkTrackingSystemOptionsOwner>().Concat(portfolios))
+            {
+                owner.WorkTrackingSystemConnection = owner.WorkTrackingSystemConnectionId == OwnedConnectionId ? connection : elsewhere;
+            }
+
+            teamRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Returns((Expression<Func<Team, bool>> predicate) => teams.AsQueryable().Where(predicate));
+            portfolioRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Portfolio, bool>>>()))
+                .Returns((Expression<Func<Portfolio, bool>> predicate) => portfolios.AsQueryable().Where(predicate));
+
+            return CreateSubject();
         }
 
         private static void Apply(TheEdit edit, ConnectionSaveHandle handle)
