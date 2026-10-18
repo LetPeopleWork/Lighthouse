@@ -1112,7 +1112,7 @@ configuration key, migration or chart value. One more Redis pub/sub channel on t
 | # | Pre-requisite | State | Blocks |
 |---|---|---|---|
 | P1 | Dev instance restored from the production backup (`Restore-DbBackup.ps1`), run in Docker with `--cpus=4` (KPI-1 also once at `--cpus=2`) | Procedure | KPI-1/2/3 readings; production-data ACs |
-| P2 | KPI-3 baseline: `RefreshLog.DurationMs` of the slowest Portfolio forecast, read **before** slice 01 changes anything. **Hard entry criterion of slice 01** (see Slice 01 entry and finalize) | **baseline: TO BE READ before slice 01** | Slice 01 entry (AC-04.4 compares against it) |
+| P2 | KPI-3 baseline: `RefreshLog.DurationMs` of the slowest Portfolio forecast, read **before** slice 01 changes anything. **Hard entry criterion of slice 01** (see Slice 01 entry and finalize) | **baseline read 2026-10-18: New Portfolio, 1,766 ms** (see Slice 01 entry) | Slice 01 entry (AC-04.4 compares against it) |
 | P3 | Premium licence fixture copied into the worktree | Procedure | Local `dotnet test` only (2 Licensing tests) |
 | P4 | Docker running locally (Testcontainers Redis for the cancel-all channel test) | Procedure | Slice 05 local run |
 | P5 | `/storage/repos/lighthouse-clients` on clean `main` | Procedure | Clients release at finalize |
@@ -1131,7 +1131,15 @@ ORDER BY "DurationMs" DESC
 LIMIT 1;
 ```
 
-- **baseline: TO BE READ before slice 01** — Portfolio: `…` · `DurationMs`: `…` · read on: `YYYY-MM-DD` · release: `…`
+- **baseline** — Portfolio: `New Portfolio` (id 1) · `DurationMs`: `1766` · read on: `2026-10-18` · release:
+  `ghcr.io/letpeoplework/lighthouse:dev-latest` built 2026-10-18 01:04 UTC from `main` (production code as of
+  `7dac84590`), `--cpus=4`, on a throwaway copy of `DB_Backup/LighthouseAppContext.db`.
+  - The 1,766 ms is the **first forecast after a cold start**. Two warm repeats on the same container read 987 ms and
+    357 ms, and the other two Portfolios took 100 ms and 106 ms. The run-to-run spread is wider than the 50% KPI-3
+    asks for, so AC-04.4 has to compare like with like: a cold start, then the first forecast of `New Portfolio`,
+    read three times.
+  - The backup's slowest forecast is under 2 s, far from the multi-minute freeze in the incident report. KPI-3 on
+    this database checks for a regression; it does not reproduce the reported freeze.
 - AC-04.4 reads the same Portfolio with the same query after slice 04.
 
 **Finalize (slice 01), on top of the DELIVER checklist:** one docs line naming `DOTNET_PROCESSOR_COUNT` as .NET's own
@@ -1203,7 +1211,7 @@ Self-hosted: no vendor dashboard, no alert to the vendor, **no new dashboard**. 
 |---|---|---|---|
 | KPI-1 page answers during a forecast | Script `Scripts/kpi/epic-6311-portfolios-p95.sh` (planned, committed with slice 01): 20 × `GET /api/latest/portfolios`, p95; the banner line "Forecasts use up to N of M cores" proves the cap | Restored dev instance (P1), while the slowest Portfolio forecast runs, after slice 01 (AC-01.5): once at `--cpus=4` (2 of 4) and once at `--cpus=2` (1 of 2). Helm (no CPU limit, half the node) is **unmeasured** | p95 < 1 s at both. Miss → ADR-248's dedicated-threads fallback |
 | KPI-2 Stop latency | Task Manager click time vs the update's `RefreshLog` row (bool `Cancelled` = true; `ExecutedAt` is written when the update ends) and its Information log line | Same instance, slowest Portfolio, 3 tries (AC-02.7) | ≤ 5 s each. Miss → ADR-249's in-run checkpoint |
-| KPI-3 slowest forecast wall time | `RefreshLog.DurationMs` of the slowest Portfolio forecast | Same DB, P2 baseline (**TO BE READ before slice 01**, query in Slice 01 entry and finalize) vs after slice 04 (AC-04.4) | ≥ 50% lower. Miss → NMD-6 follow-up |
+| KPI-3 slowest forecast wall time | `RefreshLog.DurationMs` of the slowest Portfolio forecast | Same DB, P2 baseline (1,766 ms cold, New Portfolio, read 2026-10-18; see Slice 01 entry and finalize) vs after slice 04 (AC-04.4) | ≥ 50% lower. Miss → NMD-6 follow-up |
 | KPI-4 no guessed date | Test suite (slice 03 ACs, `TotalTrials ≥ Σ histogram` invariant); AC-03.8 before/after list on the restored instance | CI every push; once at slice 03 | 0. Any failure = build red |
 | KPI-5 restart reports | Support mail, GitHub issues, community Slack | Maintainer, 60 days after the release vs the 60 days before. **Before snapshot: TO BE COUNTED** — support mail + community Slack + GitHub issues, window `YYYY-MM-DD` to `YYYY-MM-DD` (the 60 days before the release carrying slices 03 + 04), count `…`, counted on `YYYY-MM-DD` | 0 |
 | KPI-6 Cancel all in use | **None (NMD-7)** | Not measured | **Dropped**; not entered in `kpi-contracts.yaml` |
@@ -1476,7 +1484,7 @@ included). Every failure is **MISSING_FUNCTIONALITY**; none is BROKEN.
 - Docker for `Integration/Containers` (the class runs in the filtered suite, no `Integration` category).
 - Scoped run: `dotnet test --filter "Category=epic-6311-responsive-during-updates&TestCategory!=Integration&…"`
   (the standard exclusions). Frontend: `pnpm vitest run <the nine *.beyondTheHorizon / *.cancelAll files>`.
-- P2 (the KPI-3 baseline) is still not taken; it has to be read before slice 01 lands.
+- P2 (the KPI-3 baseline) was read on 2026-10-18 before slice 01: 1,766 ms cold (see Slice 01 entry and finalize).
 
 ## Wave: DISTILL / [REF] Known gaps (for DELIVER)
 
