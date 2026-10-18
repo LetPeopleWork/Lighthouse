@@ -133,33 +133,51 @@ const isUsed = (usage: IConnectionUsage): boolean =>
 
 type DefaultsGroup = "teams" | "portfolios";
 
+// A default read while updating changes nothing until its followers are updated, so changing it asks
+// whether to update them. A default read when a page loads takes effect by itself, so there is nothing to ask.
+type ReadWhen = "updating" | "pageLoads";
+
 const WhereEachDefaultSits: Record<
 	ConnectionDefaultName,
-	{ group: DefaultsGroup; label: (featureTerm: string) => string }
+	{
+		group: DefaultsGroup;
+		readWhen: ReadWhen;
+		label: (featureTerm: string) => string;
+	}
 > = {
 	parentOverrideForTeams: {
 		group: "teams",
+		readWhen: "updating",
 		label: () => "Parent Override Field",
 	},
-	estimationForTeams: { group: "teams", label: () => "Estimation Field" },
+	estimationForTeams: {
+		group: "teams",
+		readWhen: "pageLoads",
+		label: () => "Estimation Field",
+	},
 	parentOverrideForPortfolios: {
 		group: "portfolios",
+		readWhen: "updating",
 		label: () => "Parent Override Field",
 	},
 	dependencyFieldForPortfolios: {
 		group: "portfolios",
+		readWhen: "updating",
 		label: () => "Dependency Field",
 	},
 	sizeEstimateFieldForPortfolios: {
 		group: "portfolios",
+		readWhen: "updating",
 		label: () => "Size Estimate Field",
 	},
 	featureOwnerFieldForPortfolios: {
 		group: "portfolios",
+		readWhen: "updating",
 		label: (featureTerm) => `${featureTerm} Owner Field`,
 	},
 	estimationForPortfolios: {
 		group: "portfolios",
+		readWhen: "pageLoads",
 		label: () => "Estimation Field",
 	},
 };
@@ -169,13 +187,14 @@ const followersOfDefault = (
 	name: ConnectionDefaultName,
 ): number => usage.followers?.[name] ?? 0;
 
-const changedFollowedDefaults = (
+const changedDefaultsToUpdateFollowersOf = (
 	loaded: IConnectionDefaults,
 	current: IConnectionDefaults,
 	usage: IConnectionUsage,
 ): ConnectionDefaultName[] =>
 	(Object.keys(WhereEachDefaultSits) as ConnectionDefaultName[]).filter(
 		(name) =>
+			WhereEachDefaultSits[name].readWhen === "updating" &&
 			followersOfDefault(usage, name) > 0 &&
 			(loaded[name] ?? null) !== (current[name] ?? null),
 	);
@@ -683,7 +702,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			const why = isEditMode
 				? whyUpdate(
 						fieldsChangedSince(loadedFields, additionalFields),
-						changedFollowedDefaults(loadedDefaults, defaults ?? {}, usage),
+						changedDefaultsToUpdateFollowersOf(
+							loadedDefaults,
+							defaults ?? {},
+							usage,
+						),
 						usage,
 						featureTerm,
 					)
