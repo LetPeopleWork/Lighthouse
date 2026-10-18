@@ -340,18 +340,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         // --- When: the System Admin saves the connection ---
 
-        protected Task WhenTheAdminSetsTheDefault(ConnectionDefault theDefault, string fieldName, bool? startUpdates = null)
+        protected Task WhenTheAdminSetsTheDefault(ConnectionDefault theDefault, string fieldName, bool startUpdates = false)
             => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = TheFieldIdIn(read, fieldName), startUpdates);
 
         protected Task WhenTheAdminSetsTheDefaultOn(string connection, ConnectionDefault theDefault, string fieldName)
-            => SaveTheConnection(connection, read => DefaultsOf(read)[TheMember(theDefault)] = TheFieldIdIn(read, fieldName), startUpdates: null);
+            => SaveTheConnection(connection, read => DefaultsOf(read)[TheMember(theDefault)] = TheFieldIdIn(read, fieldName), startUpdates: false);
 
-        protected Task WhenTheAdminSetsTheEstimationDefault(ConnectionDefault theDefault, string fieldName, string unit, bool? startUpdates = null)
+        protected Task WhenTheAdminSetsTheEstimationDefault(ConnectionDefault theDefault, string fieldName, string unit, bool startUpdates = false)
             => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = AnEstimationBundle(TheFieldIdIn(read, fieldName), unit), startUpdates);
 
         /// <summary>The default is sent as empty: the admin cleared it.</summary>
         protected Task WhenTheAdminClearsTheDefault(ConnectionDefault theDefault)
-            => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = null, startUpdates: null);
+            => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = null, startUpdates: false);
 
         /// <summary>A script that knows nothing of defaults saves the connection with its name changed.</summary>
         protected Task WhenAScriptSavesTheConnectionWithoutItsDefaults()
@@ -359,10 +359,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 read.Remove(DefaultsMember);
                 read["name"] = $"{JiraDcPayments} (renamed)";
-            }, startUpdates: null);
+            }, startUpdates: false);
 
         protected Task WhenTheAdminRenamesTheConnection()
-            => SaveTheConnection(read => read["name"] = $"{JiraDcPayments} (renamed)", startUpdates: null);
+            => SaveTheConnection(read => read["name"] = $"{JiraDcPayments} (renamed)", startUpdates: false);
 
         /// <summary>
         /// The admin adds an Additional Field and, in the same save, names it as the default, the way the page
@@ -373,17 +373,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             {
                 FieldsOf(read).Add(new JsonObject { ["id"] = -1, [DisplayName] = displayName, ["reference"] = reference, ["isPredefined"] = false });
                 DefaultsOf(read)[TheMember(theDefault)] = -1;
-            }, startUpdates: null);
+            }, startUpdates: false);
 
         protected Task WhenTheAdminRemovesTheField(string fieldName)
-            => SaveTheConnection(read => FieldsOf(read).Remove(TheField(FieldsOf(read), fieldName)), startUpdates: null);
+            => SaveTheConnection(read => FieldsOf(read).Remove(TheField(FieldsOf(read), fieldName)), startUpdates: false);
 
         /// <summary>The admin saves the copy of the connection they opened earlier, with this edit.</summary>
         protected async Task WhenThatAdminSavesTheDefault(JsonObject openedEarlier, ConnectionDefault theDefault, string fieldName)
         {
             await SetTheRestAside();
             DefaultsOf(openedEarlier)[TheMember(theDefault)] = TheFieldIdIn(openedEarlier, fieldName);
-            await Put(JiraDcPayments, openedEarlier, startUpdates: null);
+            await Put(JiraDcPayments, openedEarlier, startUpdates: false);
         }
 
         /// <summary>The admin saves the copy of the connection they opened earlier, with this field removed.</summary>
@@ -391,7 +391,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             await SetTheRestAside();
             FieldsOf(openedEarlier).Remove(TheField(FieldsOf(openedEarlier), fieldName));
-            await Put(JiraDcPayments, openedEarlier, startUpdates: null);
+            await Put(JiraDcPayments, openedEarlier, startUpdates: false);
         }
 
         protected async Task WhenSomeoneWithoutConnectionRightsSetsTheDefault(string team)
@@ -928,9 +928,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private async Task SetTheRefreshHistoryAside()
             => lastHistoryEntryBeforeTheSave = (await TheRefreshHistory()).Select(entry => entry.Id).DefaultIfEmpty(0).Max();
 
-        private Task SaveTheConnection(Action<JsonObject> edit, bool? startUpdates) => SaveTheConnection(JiraDcPayments, edit, startUpdates);
+        private Task SaveTheConnection(Action<JsonObject> edit, bool startUpdates) => SaveTheConnection(JiraDcPayments, edit, startUpdates);
 
-        private async Task SaveTheConnection(string connection, Action<JsonObject> edit, bool? startUpdates)
+        private async Task SaveTheConnection(string connection, Action<JsonObject> edit, bool startUpdates)
         {
             await SetTheRestAside();
             var read = await TheConnectionAsThePageReadsIt(connection);
@@ -938,11 +938,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await Put(connection, read, startUpdates);
         }
 
-        private async Task Put(string connection, JsonObject body, bool? startUpdates)
+        // A save left to the route's own choice updates every Team and Portfolio whose fetch it moved, and the
+        // test then waits for those updates to finish. Only the scenarios that look at the updates ask for them.
+        private async Task Put(string connection, JsonObject body, bool startUpdates)
         {
-            var route = startUpdates is null
-                ? $"{ConnectionsRoute}/{connectionIds[connection]}"
-                : $"{ConnectionsRoute}/{connectionIds[connection]}?startUpdates={(startUpdates.Value ? "true" : "false")}";
+            var route = $"{ConnectionsRoute}/{connectionIds[connection]}?startUpdates={(startUpdates ? "true" : "false")}";
 
             using var content = AsJson(body);
             using var response = await Client.PutAsync(new Uri(route, UriKind.Relative), content);
