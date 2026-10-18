@@ -432,6 +432,64 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(result.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
+        [Test]
+        public async Task UpdatePortfolio_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedNamingTheSourcesItKnows()
+        {
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1 });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, ParentOverrideSource = (SettingSource)7 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
+                Assert.That(problem?.Title, Is.EqualTo("The Portfolio names a source this version of Lighthouse does not know."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefused()
+        {
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideSource = SettingSource.Own, ParentOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            var problem = result.Result.TheProblem();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
+                Assert.That(problem?.Title, Is.EqualTo("The Portfolio names a field its connection does not have."));
+                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Portfolio's connection. Nothing was saved."));
+            }
+
+            portfolioRepoMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_AFollowersCopyStillNamingAFieldTheConnectionDropped_IsNotRefused()
+        {
+            portfolioRepoMock.Setup(x => x.GetById(1)).Returns(new Portfolio { Id = 1, WorkTrackingSystemConnectionId = 1, WorkTrackingSystemConnection = AConnectionHoldingCausedBy() });
+            var dto = new PortfolioSettingDto { Id = 1, DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideSource = SettingSource.ConnectionDefault, ParentOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdatePortfolio(1, dto);
+
+            Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+        }
+
+        private static WorkTrackingSystemConnection AConnectionHoldingCausedBy()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira" };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 5, DisplayName = "Caused by", Reference = "customfield_10500" });
+            return connection;
+        }
+
         private PortfolioController CreateSubject()
         {
             return new PortfolioController(

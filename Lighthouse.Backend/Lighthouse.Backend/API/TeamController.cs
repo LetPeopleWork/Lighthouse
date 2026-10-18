@@ -229,7 +229,7 @@ namespace Lighthouse.Backend.API
                 return BadRequest(stalenessError);
             }
 
-            if (this.RefusalOfTheParentOverride(storedTeam, teamSetting) is { } parentOverrideRefusal)
+            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Team, storedTeam, teamSetting) is { } parentOverrideRefusal)
             {
                 return parentOverrideRefusal;
             }

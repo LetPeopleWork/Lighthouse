@@ -358,6 +358,48 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(attribute!.Requirement, Is.EqualTo(RbacGuardRequirement.SystemAdmin));
         }
 
+        [Test]
+        public async Task CreatePortfolio_OwningAParentOverrideFieldItsConnectionDoesNotHave_IsRefusedAndNothingIsCreated()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = 1, Name = "Jira" };
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 5, DisplayName = "Caused by", Reference = "customfield_10500" });
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1)).Returns(connection);
+            var dto = new PortfolioSettingDto { Name = "New Portfolio", DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideAdditionalFieldDefinitionId = 9 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().CreatePortfolio(dto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(result.Result.TheProblem()?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
+            }
+
+            portfolioRepoMock.Verify(x => x.Add(It.IsAny<Portfolio>()), Times.Never);
+        }
+
+        [Test]
+        public async Task CreatePortfolio_NamingAParentOverrideSourceThisVersionDoesNotKnow_IsRefusedAndNothingIsCreated()
+        {
+            var dto = new PortfolioSettingDto { Name = "New Portfolio", DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideSource = (SettingSource)7 };
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().CreatePortfolio(dto);
+
+            Assert.That(result.Result.TheProblem()?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
+            portfolioRepoMock.Verify(x => x.Add(It.IsAny<Portfolio>()), Times.Never);
+        }
+
+        [Test]
+        public async Task CreatePortfolio_CopiedFromAFollowerWithoutItsSource_FollowsTheDefault()
+        {
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1)).Returns(new WorkTrackingSystemConnection { Id = 1, Name = "Jira", ParentOverrideForPortfolios = 5 });
+            var dto = new PortfolioSettingDto { Name = "New Portfolio", DoneItemsCutoffDays = 180, WorkTrackingSystemConnectionId = 1, ParentOverrideAdditionalFieldDefinitionId = 5 };
+
+            var result = await CreateSubject().CreatePortfolio(dto);
+
+            var created = (result.Result as OkObjectResult)?.Value as PortfolioSettingDto;
+            Assert.That(created?.ParentOverrideSource, Is.EqualTo(SettingSource.ConnectionDefault));
+        }
+
         private PortfoliosController CreateSubject()
         {
             return new PortfoliosController(

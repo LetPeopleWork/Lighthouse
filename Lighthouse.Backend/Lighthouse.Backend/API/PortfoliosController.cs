@@ -97,6 +97,16 @@ namespace Lighthouse.Backend.API
             portfolioSetting.Id = 0;
 
             var newPortfolio = new Portfolio();
+            if (workTrackingSystemConnectionRepository.GetById(portfolioSetting.WorkTrackingSystemConnectionId) is { } connection)
+            {
+                newPortfolio.WorkTrackingSystemConnection = connection;
+            }
+
+            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Portfolio, newPortfolio, portfolioSetting) is { } parentOverrideRefusal)
+            {
+                return parentOverrideRefusal;
+            }
+
             newPortfolio.SyncWithPortfolioSettings(portfolioSetting, teamRepository);
 
             portfolioRepository.Add(newPortfolio);

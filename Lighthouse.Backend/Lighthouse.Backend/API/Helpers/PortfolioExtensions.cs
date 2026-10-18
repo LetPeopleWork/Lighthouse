@@ -22,6 +22,10 @@ namespace Lighthouse.Backend.API.Helpers
             project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
+            // Taken before the save moves the Portfolio to another connection, so what the Portfolio read before
+            // the request is judged against the connection it was read from.
+            project.TakeParentOverrideAsSent(portfolioSetting.ParentOverrideSource, portfolioSetting.ParentOverrideAdditionalFieldDefinitionId);
+
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.FeatureOwnerAdditionalFieldDefinitionId = portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId;
             project.DependencyOverrideAdditionalFieldDefinitionId = portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId;
@@ -30,7 +34,6 @@ namespace Lighthouse.Backend.API.Helpers
             project.EstimationUnit = portfolioSetting.EstimationUnit;
             project.UseNonNumericEstimation = portfolioSetting.UseNonNumericEstimation;
             project.EstimationCategoryValues = portfolioSetting.EstimationCategoryValues;
-            project.OwnParentOverride(portfolioSetting.ParentOverrideAdditionalFieldDefinitionId);
             project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
             project.ProcessBehaviourChartBaselineStartDate = portfolioSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
             project.ProcessBehaviourChartBaselineEndDate = portfolioSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;

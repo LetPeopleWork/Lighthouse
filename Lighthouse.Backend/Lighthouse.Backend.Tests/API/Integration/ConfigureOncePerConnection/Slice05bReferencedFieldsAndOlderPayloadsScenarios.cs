@@ -255,9 +255,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [TestCase(FraudSignals, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", CausedBy)]
         [TestCase(Ledger, RoundTrip.EchoingEveryProperty, "Own", CausedBy)]
         [TestCase(Ledger, RoundTrip.DroppingWhatItDoesNotKnow, "Own", CausedBy)]
-        [TestCase(MerchantOnboarding, RoundTrip.EchoingEveryProperty, "Own", ParentLink, Ignore = PendingEpic6303.Slice08)]
-        [TestCase(MerchantOnboarding, RoundTrip.DroppingWhatItDoesNotKnow, "Own", ParentLink, Ignore = PendingEpic6303.Slice08)]
-        [TestCase(CardIssuing, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", null, Ignore = PendingEpic6303.Slice08)]
+        [TestCase(MerchantOnboarding, RoundTrip.EchoingEveryProperty, "Own", ParentLink)]
+        [TestCase(MerchantOnboarding, RoundTrip.DroppingWhatItDoesNotKnow, "Own", ParentLink)]
+        [TestCase(CardIssuing, RoundTrip.DroppingWhatItDoesNotKnow, "ConnectionDefault", null)]
         [Category("ac-4.10")]
         [Category("contract-shape:unbounded-preservation")]
         public async Task A_script_that_saves_back_what_it_read_changes_nothing(string owner, RoundTrip shape, string staysSource, string? staysReading)

@@ -30,15 +30,6 @@ namespace Lighthouse.Backend.API.Helpers
                 return teamDto;
             }
 
-            // Only a field the Team will hold as its own is judged. One sent along with following is not what the
-            // Team reads, such as the old default's field in a copy read before the default moved. Judged against
-            // the connection the Team is on, or is being created on, before this save; a save that also moves the
-            // Team to another connection is checked against nothing here.
-            public bool NamesAFieldItsConnectionLacks(TeamSettingDto teamSetting)
-                => team.ParentOverrideOwnedOnceTaken(teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId) is { } field
-                    && team.WorkTrackingSystemConnection?.Id == teamSetting.WorkTrackingSystemConnectionId
-                    && !team.WorkTrackingSystemConnection.HoldsStoredField(field);
-
             public void SyncTeamWithTeamSettings(TeamSettingDto teamSetting)
             {
                 team.Name = teamSetting.Name;

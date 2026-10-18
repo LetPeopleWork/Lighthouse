@@ -131,6 +131,11 @@ namespace Lighthouse.Backend.API
                 }
             }
 
+            if (this.RefusalOfTheParentOverride(ParentOverrideOwnerKind.Portfolio, portfolioForValidation, portfolioSetting) is { } parentOverrideRefusal)
+            {
+                return parentOverrideRefusal;
+            }
+
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
                 if (portfolio.WorkItemRelatedSettingsChanged(portfolioSetting))
