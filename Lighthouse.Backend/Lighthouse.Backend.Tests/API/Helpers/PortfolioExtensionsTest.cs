@@ -147,7 +147,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Is.EqualTo((SettingSource.Own, (int?)null)));
         }
 
-        // The same older-client round trip for the Size Estimate Field.
         [TestCase(true, true)]
         [TestCase(true, false)]
         [TestCase(false, true)]
