@@ -4,6 +4,8 @@ export interface IWhenForecast extends IForecast {
 	expectedDate: Date;
 	filterApplied?: boolean;
 	excludedSummary?: string;
+	beyondHorizon?: boolean;
+	horizonYears?: number;
 }
 
 export class WhenForecast implements IWhenForecast {
@@ -11,6 +13,8 @@ export class WhenForecast implements IWhenForecast {
 	expectedDate: Date = new Date();
 	filterApplied?: boolean;
 	excludedSummary?: string;
+	beyondHorizon?: boolean;
+	horizonYears?: number;
 
 	static fromBackend(data: IWhenForecast): WhenForecast {
 		const forecast = WhenForecast.new(

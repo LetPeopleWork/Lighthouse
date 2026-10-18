@@ -66,6 +66,7 @@ export interface IUpdateSubscriptionService {
 	getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus>;
 	getRunningTasks(): Promise<IUpdateTask[]>;
 	cancelTask(updateType: UpdateTaskType, id: number): Promise<void>;
+	cancelAllTasks(): Promise<void>;
 	subscribeToAllUpdates(callback: () => void): Promise<void>;
 	unsubscribeFromAllUpdates(): Promise<void>;
 	subscribeToTeamUpdates(
@@ -263,6 +264,13 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		await this.ensureConnected();
 
 		await this.apiService.post(`/update/tasks/${updateType}/${id}/cancel`);
+	}
+
+	// SCAFFOLD: Cancel all is not built yet.
+	public async cancelAllTasks(): Promise<void> {
+		await this.ensureConnected();
+
+		throw new Error("SCAFFOLD: Cancel all is not built yet.");
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {

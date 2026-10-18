@@ -126,6 +126,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return cancellationNotifier.PublishCancellationAsync(key);
         }
 
+        // SCAFFOLD: not implemented yet. The Cancel all acceptance tests drive this through the new route.
+        public Task CancelAllAsync()
+            => throw new NotImplementedException($"SCAFFOLD: Cancel all is not built yet ({cancellationNotifier.GetType().Name}).");
+
         public async Task DrainAsync(CancellationToken cancellationToken = default)
         {
             queue.Writer.TryComplete();

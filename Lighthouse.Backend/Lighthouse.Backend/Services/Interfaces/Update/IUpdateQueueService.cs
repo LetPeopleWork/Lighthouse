@@ -35,6 +35,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         /// </summary>
         Task CancelAsync(UpdateKey key);
 
+        /// <summary>
+        /// Stops everything this instance is running or holding, on every replica, except removals. Work
+        /// asked for afterwards, scheduled or by hand, runs as usual. Idempotent.
+        /// </summary>
+        Task CancelAllAsync();
+
         Task DrainAsync(CancellationToken cancellationToken = default);
     }
 }
