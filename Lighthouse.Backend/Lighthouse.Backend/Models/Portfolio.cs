@@ -27,8 +27,7 @@ namespace Lighthouse.Backend.Models
         /// answers it: its own choice, or the connection's default while it follows. Null means the tracker's own link.
         /// </summary>
         [NotMapped]
-        public int? DependencyOverrideAdditionalFieldDefinitionId
-            => EffectiveSetting.Of(DependencyFieldSource, OwnDependencyOverrideAdditionalFieldDefinitionId, WorkTrackingSystemConnection?.DependencyFieldForPortfolios);
+        public int? DependencyOverrideAdditionalFieldDefinitionId => DependencyField.ReadWith(DependencyFieldConnectionDefault);
 
         // The column keeps its old name so that renaming what the code reads costs no schema change.
         [Column(nameof(DependencyOverrideAdditionalFieldDefinitionId))]
@@ -40,11 +39,11 @@ namespace Lighthouse.Backend.Models
         public SettingSource DependencyFieldSource => storedDependencyFieldSource;
 
         [NotMapped]
-        public bool FollowsDependencyFieldDefault => DependencyFieldSource == SettingSource.ConnectionDefault;
+        public bool FollowsDependencyFieldDefault => DependencyField.FollowsTheDefault;
 
         /// <summary>The field or link the connection's default names, shown whichever source the Portfolio chose.</summary>
         [NotMapped]
-        public string? DependencyFieldDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(WorkTrackingSystemConnection.DependencyFieldForPortfolios);
+        public string? DependencyFieldDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(DependencyFieldConnectionDefault);
 
         public bool IgnoreDependencies { get; set; }
 
@@ -64,49 +63,26 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
 
-        public void FollowDependencyFieldDefault()
-        {
-            storedDependencyFieldSource = SettingSource.ConnectionDefault;
-            OwnDependencyOverrideAdditionalFieldDefinitionId = null;
-        }
+        public void FollowDependencyFieldDefault() => DependencyField = StoredSetting.FollowingTheDefault;
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own link, whatever the default says.</param>
-        public void OwnDependencyField(int? additionalFieldDefinitionId)
-        {
-            storedDependencyFieldSource = SettingSource.Own;
-            OwnDependencyOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
-        }
+        public void OwnDependencyField(int? additionalFieldDefinitionId) => DependencyField = StoredSetting.Owning(additionalFieldDefinitionId);
 
         /// <summary>The field this Portfolio would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
         public int? DependencyFieldOwnedOnceTaken(SettingSource? sentSource, int? sentField)
-        {
-            var applied = DependencyFieldAsSent(sentSource, sentField);
-            return applied.Source == SettingSource.Own ? applied.OwnValue : null;
-        }
+            => DependencyField.OwnedOnceTaking(sentSource, sentField, DependencyFieldConnectionDefault);
 
         public void TakeDependencyFieldAsSent(SettingSource? sentSource, int? sentField)
+            => DependencyField = DependencyField.Taking(sentSource, sentField, DependencyFieldConnectionDefault);
+
+        private int? DependencyFieldConnectionDefault => WorkTrackingSystemConnection?.DependencyFieldForPortfolios;
+
+        [NotMapped]
+        private StoredSetting DependencyField
         {
-            var applied = DependencyFieldAsSent(sentSource, sentField);
-
-            if (applied == StoredDependencyField)
-            {
-                return;
-            }
-
-            if (applied.Source == SettingSource.ConnectionDefault)
-            {
-                FollowDependencyFieldDefault();
-            }
-            else
-            {
-                OwnDependencyField(applied.OwnValue);
-            }
+            get => new(storedDependencyFieldSource, OwnDependencyOverrideAdditionalFieldDefinitionId);
+            set => (storedDependencyFieldSource, OwnDependencyOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
         }
-
-        private StoredSetting StoredDependencyField => new(DependencyFieldSource, OwnDependencyOverrideAdditionalFieldDefinitionId);
-
-        private StoredSetting DependencyFieldAsSent(SettingSource? sentSource, int? sentField)
-            => IncomingSetting.AppliedTo(StoredDependencyField, DependencyOverrideAdditionalFieldDefinitionId, sentSource, sentField);
 
         public void UpdateFeatures(IEnumerable<Feature> features)
         {

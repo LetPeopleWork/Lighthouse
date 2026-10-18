@@ -1,7 +1,24 @@
 namespace Lighthouse.Backend.Models
 {
     /// <summary>Where an owner's setting comes from, and the value it holds as its own.</summary>
-    public readonly record struct StoredSetting(SettingSource Source, int? OwnValue);
+    public readonly record struct StoredSetting(SettingSource Source, int? OwnValue)
+    {
+        public static readonly StoredSetting FollowingTheDefault = new(SettingSource.ConnectionDefault, null);
+
+        /// <param name="value">Null is a deliberate None, whatever the connection's default says.</param>
+        public static StoredSetting Owning(int? value) => new(SettingSource.Own, value);
+
+        public bool FollowsTheDefault => Source == SettingSource.ConnectionDefault;
+
+        public int? ReadWith(int? connectionDefault) => EffectiveSetting.Of(Source, OwnValue, connectionDefault);
+
+        public StoredSetting Taking(SettingSource? sentSource, int? sentValue, int? connectionDefault)
+            => IncomingSetting.AppliedTo(this, ReadWith(connectionDefault), sentSource, sentValue);
+
+        /// <summary>The value the owner would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
+        public int? OwnedOnceTaking(SettingSource? sentSource, int? sentValue, int? connectionDefault)
+            => Taking(sentSource, sentValue, connectionDefault) is { Source: SettingSource.Own } taken ? taken.OwnValue : null;
+    }
 
     public static class IncomingSetting
     {
@@ -13,9 +30,9 @@ namespace Lighthouse.Backend.Models
 #pragma warning disable CS8524
         public static StoredSetting AppliedTo(StoredSetting stored, int? effectiveBefore, SettingSource? sentSource, int? sentValue) => sentSource switch
         {
-            SettingSource.Own => new StoredSetting(SettingSource.Own, sentValue),
-            SettingSource.ConnectionDefault => new StoredSetting(SettingSource.ConnectionDefault, null),
-            null when sentValue is not null && sentValue != effectiveBefore => new StoredSetting(SettingSource.Own, sentValue),
+            SettingSource.Own => StoredSetting.Owning(sentValue),
+            SettingSource.ConnectionDefault => StoredSetting.FollowingTheDefault,
+            null when sentValue is not null && sentValue != effectiveBefore => StoredSetting.Owning(sentValue),
             null => stored,
         };
 #pragma warning restore CS8524

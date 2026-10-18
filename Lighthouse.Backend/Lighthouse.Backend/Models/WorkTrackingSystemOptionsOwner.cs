@@ -79,8 +79,7 @@ namespace Lighthouse.Backend.Models
         /// own choice, or the connection's default while it follows. Null means the tracker's own parent.
         /// </summary>
         [NotMapped]
-        public int? ParentOverrideAdditionalFieldDefinitionId
-            => EffectiveSetting.Of(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId, ParentOverrideConnectionDefault);
+        public int? ParentOverrideAdditionalFieldDefinitionId => ParentOverride.ReadWith(ParentOverrideConnectionDefault);
 
         // The column keeps its old name so that renaming what the code reads costs no schema change.
         [Column(nameof(ParentOverrideAdditionalFieldDefinitionId))]
@@ -93,7 +92,7 @@ namespace Lighthouse.Backend.Models
         public SettingSource ParentOverrideSource => storedParentOverrideSource;
 
         [NotMapped]
-        public bool FollowsParentOverrideDefault => ParentOverrideSource == SettingSource.ConnectionDefault;
+        public bool FollowsParentOverrideDefault => ParentOverride.FollowsTheDefault;
 
         protected virtual int? ParentOverrideConnectionDefault => null;
 
@@ -101,50 +100,24 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public string? ParentOverrideDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(ParentOverrideConnectionDefault);
 
-        public void FollowParentOverrideDefault()
-        {
-            storedParentOverrideSource = SettingSource.ConnectionDefault;
-            OwnParentOverrideAdditionalFieldDefinitionId = null;
-        }
+        public void FollowParentOverrideDefault() => ParentOverride = StoredSetting.FollowingTheDefault;
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
-        public void OwnParentOverride(int? additionalFieldDefinitionId)
-        {
-            storedParentOverrideSource = SettingSource.Own;
-            OwnParentOverrideAdditionalFieldDefinitionId = additionalFieldDefinitionId;
-        }
+        public void OwnParentOverride(int? additionalFieldDefinitionId) => ParentOverride = StoredSetting.Owning(additionalFieldDefinitionId);
 
         /// <summary>The field this owner would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
         public int? ParentOverrideOwnedOnceTaken(SettingSource? sentSource, int? sentField)
-        {
-            var applied = ParentOverrideAsSent(sentSource, sentField);
-            return applied.Source == SettingSource.Own ? applied.OwnValue : null;
-        }
+            => ParentOverride.OwnedOnceTaking(sentSource, sentField, ParentOverrideConnectionDefault);
 
         public void TakeParentOverrideAsSent(SettingSource? sentSource, int? sentField)
+            => ParentOverride = ParentOverride.Taking(sentSource, sentField, ParentOverrideConnectionDefault);
+
+        [NotMapped]
+        private StoredSetting ParentOverride
         {
-            var stored = StoredParentOverride;
-            var applied = ParentOverrideAsSent(sentSource, sentField);
-
-            if (applied == stored)
-            {
-                return;
-            }
-
-            if (applied.Source == SettingSource.ConnectionDefault)
-            {
-                FollowParentOverrideDefault();
-            }
-            else
-            {
-                OwnParentOverride(applied.OwnValue);
-            }
+            get => new(storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
+            set => (storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
         }
-
-        private StoredSetting StoredParentOverride => new(ParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
-
-        private StoredSetting ParentOverrideAsSent(SettingSource? sentSource, int? sentField)
-            => IncomingSetting.AppliedTo(StoredParentOverride, ParentOverrideAdditionalFieldDefinitionId, sentSource, sentField);
 
         public StateCategories MapStateToStateCategory(string state)
         {
