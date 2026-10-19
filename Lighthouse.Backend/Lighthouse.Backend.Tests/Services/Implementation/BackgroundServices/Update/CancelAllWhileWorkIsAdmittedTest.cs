@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private static readonly TimeSpan LongerThanAnyTestWaits = TimeSpan.FromSeconds(30);
 
+        private readonly List<UpdateQueueService> queues = [];
+
         [Test]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -39,18 +41,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var queue = AQueueOver(store, cancellationContext);
             store.TheClick = () => queue.CancelAllAsync().GetAwaiter().GetResult();
 
-            var stoppedByTheClick = false;
+            var reachedTheTracker = false;
             var awaited = queue.EnqueueAndAwaitAsync(UpdateType.Team, 7, async _ =>
             {
-                try
-                {
-                    await Task.Delay(LongerThanAnyTestWaits, cancellationContext.Current);
-                }
-                catch (OperationCanceledException)
-                {
-                    stoppedByTheClick = true;
-                    throw;
-                }
+                reachedTheTracker = true;
+                await Task.Delay(LongerThanAnyTestWaits, cancellationContext.Current);
             });
 
             var settled = await Task.WhenAny(awaited, Task.Delay(TheLongestTheStopMayTake)) == awaited;
@@ -60,7 +55,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(store.TheClickLanded, Is.True, "The click never landed while the work was being admitted.");
                 Assert.That(settled, Is.True,
                     "Work admitted just as Cancel all arrived had no way to be stopped, so it ran on.");
-                Assert.That(stoppedByTheClick || awaited.IsCompleted, Is.True);
+                Assert.That(awaited.IsCanceled, Is.True,
+                    "A caller awaiting work that was stopped must hear that it was cancelled, not that it finished.");
+                Assert.That(reachedTheTracker, Is.False,
+                    "The work was stopped while it was still waiting its turn, so it should never have reached the tracker.");
             }
         }
 
@@ -72,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var cancellationContext = new UpdateCancellationContext();
             var inner = new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc);
             var store = new AnotherCallerSlipsInWhileAdmitting(inner);
-            using var queue = AQueueOver(store, cancellationContext);
+            var queue = AQueueOver(store, cancellationContext);
             var key = new UpdateKey(UpdateType.Team, 8);
 
             var stopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -123,7 +121,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             return false;
         }
 
-        private static UpdateQueueService AQueueOver(IUpdateStatusStore store, UpdateCancellationContext cancellationContext)
+        [TearDown]
+        public void LetGoOfEveryQueue()
+        {
+            foreach (var queue in queues)
+            {
+                queue.Dispose();
+            }
+
+            queues.Clear();
+        }
+
+        private UpdateQueueService AQueueOver(IUpdateStatusStore store, UpdateCancellationContext cancellationContext)
         {
             var hubContext = new Mock<IHubContext<UpdateNotificationHub>>();
             hubContext.Setup(context => context.Clients.Group(It.IsAny<string>())).Returns(new Mock<IClientProxy>().Object);
@@ -133,7 +142,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var serviceScopeFactory = new Mock<IServiceScopeFactory>();
             serviceScopeFactory.Setup(factory => factory.CreateScope()).Returns(serviceScope.Object);
 
-            return new UpdateQueueService(
+            var queue = new UpdateQueueService(
                 Mock.Of<ILogger<UpdateQueueService>>(),
                 hubContext.Object,
                 new UpdateSubstrate(store, new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier(), new InProcessUpdateCancellationNotifier()),
@@ -141,6 +150,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc)),
                 new WriteBackRoundContext(),
                 cancellationContext);
+
+            queues.Add(queue);
+            return queue;
         }
 
         /// <summary>

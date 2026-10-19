@@ -1,5 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -256,11 +257,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             using var factory = RootFactory.WithWebHostBuilder(builder =>
                 builder.ConfigureServices(services =>
                 {
+                    // Everything but system administration is granted, so a route guarded by anything weaker
+                    // would let this caller through and the test would say so.
                     var refuses = new Mock<IRbacAdministrationService>();
                     refuses
                         .Setup(s => s.CanSatisfyRequirementAsync(
                             It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            It.IsAny<Lighthouse.Backend.Models.Authorization.RbacGuardRequirement>(),
+                            It.IsAny<RbacGuardRequirement>(),
+                            It.IsAny<int?>(),
+                            It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(true);
+                    refuses
+                        .Setup(s => s.CanSatisfyRequirementAsync(
+                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                            RbacGuardRequirement.SystemAdmin,
                             It.IsAny<int?>(),
                             It.IsAny<CancellationToken>()))
                         .ReturnsAsync(false);
