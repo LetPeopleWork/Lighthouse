@@ -11,10 +11,14 @@
 #   - work tracking system kind. Only stored reports are read.
 #   - hosted (Kubernetes) tenant. Torn down 2026-09-26.
 #   - auth on with RBAC off. Same permissive branch as auth off; no new guard.
+#
+# Deferred (revised after review 2026-10-19):
+#   - forecasts beyond the horizon (Epic 6311 beyondHorizon). N/A for Then & Now, which prints no forecast
+#     date or likelihood; the first forecast report type pins forecastPercentileText in its own DISTILL.
 
 schema_version: 1
 feature_id: epic-6298-report-pdf-export
-updated: 2026-10-17
+updated: 2026-10-19
 wave: DEVOPS
 
 target_environments:
@@ -56,8 +60,11 @@ target_environments:
   - name: standalone-macos-wkwebview
     description: >
       Tauri on WKWebView. Only released, non-inspectable builds exist, so it is checked by the maintainer
-      after the first release carrying slice 01 (Q2). afterprint may not fire; the screen-only Back control
-      covers it. A failure becomes a follow-up (D28).
+      after the first release carrying the PDF (Q2). afterprint may not fire; the screen-only Back control
+      covers it. OPEN, maintainer decides the trigger; recommended default: one export in the macOS app
+      within the first week after the release; if no dialog opens or there is no way back, a follow-up
+      disables Export PDF there (a hotfix if a user reports it); the release note does not claim macOS
+      until the check passes.
     platform: [macos]
     verification: manual-after-release
     status: unverified
@@ -99,7 +106,7 @@ target_environments:
     platform: [linux]
 
   - name: auth-on-rbac-on
-    description: "A Viewer with TeamRead / PortfolioRead sees and uses Export PDF (D14); no role -> the report is not readable, as today."
+    description: "A Viewer with TeamRead / PortfolioRead sees and uses Export PDF (D14), on the report view and in the Reports list, where the Viewer now gets an Actions column holding only the Export PDF icon (NMD-2); no role -> the report is not readable, as today."
     platform: [linux]
     preconditions: ["Authentication enabled", "RBAC on", "Viewer profile"]
 
@@ -116,6 +123,14 @@ target_environments:
     platform: [linux]
 
 scenario_axes:
+  entry_point:
+    slices: ["01"]
+    vary_over: [report-view, reports-list]
+    rationale: >
+      NMD-2 (2026-10-19): Export PDF starts from the report view's button or from the Reports list's icon,
+      for every reader. Both go through one export starter: one ReportPdfExportStarted with the report's
+      type per click, the same print page, and Back returns to where the export started ("Back to report" /
+      "Back to Reports"). A list row of a type this version cannot show has no icon and reports nothing.
   export_and_print_route:
     slices: ["01"]
     vary_over: [clean, browser-chromium]
@@ -127,7 +142,7 @@ scenario_axes:
   usage_data_emission:
     slices: ["01", "04"]
     vary_over: [usage-data-consented]
-    rationale: "01: one ReportPdfExportStarted per click with report_template ThenAndNow (an unmapped type reports nothing); print route emits nothing; return from print emits no ReportOpened. 04: lh report get / *_report_get emit ReportOpened with ThenAndNow, source Cli / Mcp; list, refusals and unknown types emit nothing. Each with and without consent."
+    rationale: "01: one ReportPdfExportStarted per click with report_template ThenAndNow, from the report view's button or the Reports list's icon (an unmapped type reports nothing; a list row of such a type shows no icon); print route emits nothing; return from print emits no ReportOpened. 04: lh report get / *_report_get emit ReportOpened with ThenAndNow, source Cli / Mcp; list, refusals and unknown types emit nothing. Each with and without consent."
   fonts_and_marks:
     slices: ["02"]
     vary_over: [browser-chromium, offline-instance]
@@ -143,7 +158,7 @@ scenario_axes:
   access:
     slices: ["01"]
     vary_over: [clean, auth-on-rbac-on]
-    rationale: "Export follows read access only; Viewer included. Component/AT level, no @auth E2E."
+    rationale: "Export follows read access only; Viewer included, on the report view and as the only icon in a Viewer's Actions column in the Reports list (NMD-2). Component/AT level, no @auth E2E."
   manual_fidelity:
     slices: ["01", "02", "03"]
     vary_over: [browser-firefox, browser-webkit-safari, standalone-linux-webkitgtk, standalone-windows-webview2]
@@ -159,7 +174,7 @@ scenario_axes:
   standalone_macos:
     slices: ["01"]
     vary_over: [standalone-macos-wkwebview]
-    rationale: "Post-release maintainer check (Q2); no automated scenario."
+    rationale: "Post-release maintainer check (Q2), trigger OPEN with a recommended default (first week after the release); no automated scenario."
 
 coexistence_matrix:
   - tool: "App shell (header, footer, survey nudge, usage-data ask) on every page"
@@ -177,6 +192,9 @@ coexistence_matrix:
   - tool: "Usage-data disclosure test and docs/settings/usagedata.md counts"
     must_not_break: true
     note: "One row added; every 'other N events' count +1; integers appended, never renumbered."
+  - tool: "Reports list Edit / Delete for editors"
+    must_not_break: true
+    note: "ReportListActions becomes an export action for every reader plus an optional editor group (NMD-2); Viewers gain an Actions column."
   - tool: "Route-key matcher"
     must_not_break: true
     note: "/print/... maps to no key."
@@ -199,6 +217,7 @@ platform_coverage:
 deployment_assumptions:
   - "Ships in the existing artifacts: server zips, Docker image + Helm chart, Standalone Tauri app. No chart change."
   - "No migration, no endpoint, no stored data; rollback = previous release, nothing to undo."
+  - "Each slice lands green on trunk; the release cut is the maintainer's choice (OPEN; recommended: the first release carrying the PDF only after slice 02); G3 is evaluated on the cut release."
   - "public/licenses/quicksand-OFL.txt and the woff2 files reach wwwroot, the Docker image and the Tauri bundle with no config change."
   - "One usage-data enum member (ReportPdfExportStarted, provisional 20, carrying report_template like ReportOpened); SPA and backend ship together."
   - "Clients release independent of a Lighthouse release (reports endpoints shipped in v26.10.16.6); manual pnpm release:version + commit before it; one clients release carries slices 04 and 05 (maintainer, 2026-10-17, locked)."

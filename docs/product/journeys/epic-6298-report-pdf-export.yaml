@@ -1,6 +1,6 @@
 schema_version: 1
 feature_id: epic-6298-report-pdf-export
-updated: 2026-10-17
+updated: 2026-10-19
 ado: "#6298 Report PDF Export (Community since the maintainer's 2026-10-17 decision; the board tag still reads Premium)"
 note: >
   Seeded in DISCOVER (2026-10-17) as one hypothesis journey extending step 3 of
@@ -36,35 +36,43 @@ journeys:
         shared_artifacts: [report_values, report_windows, owner_name, report_name]
         failure_modes:
           - What the user wants to share is a metrics chart or a forecast, not a report type that exists yet (accepted gap X2; charts arrive with Custom Metric Reports #6299)
-          - The report cannot be loaded - the existing could-not-load look, and no Export PDF action
+          - The report is still loading - Export PDF is shown disabled (NMD-1)
+          - The report cannot be loaded, no longer exists, or was made by a newer version - the existing look, and no Export PDF action
       - id: 2
         name: Export
-        action: "Export PDF on the report (anyone who can read it) -> the system print dialog opens on a print-designed version of the report -> Save as PDF"
+        action: "Export PDF on the report view, or the PDF icon on the report's row in the Reports list (anyone who can read it; NMD-1, NMD-2) -> the print page reads the report afresh ('Preparing the PDF...') -> the system print dialog opens over it -> Save as PDF -> back to where Export started"
         tui_mockup: |
-          +-- printed page (A4 or Letter, light theme, no app chrome) -----------------+
-          | Team Lightspeed · Then & Now — 90 days to 2 Oct 2026                        |
-          | Then 5 Jul – 2 Oct 2026 (frozen)   Now 1 Aug – 30 Oct 2026                  |
+          +-- printed page (A4 or Letter, light theme, no app chrome; NMD-3) -----------+
+          | Team Lightspeed                                                             |
+          | Then & Now — 90 days to 2 Oct 2026                                          |
+          | Then 5 Jul – 2 Oct 2026 · Now 2 Aug – 30 Oct 2026                            |
           | Produced 30 Oct 2026, 09:15                                                 |
-          | How to read this: ... (slice 03; copy sketched at DISTILL)                  |
           |-----------------------------------------------------------------------------|
-          | SUMMARY   THEN ...        NOW ...        CHANGE  [v] Improved: Cycle Time   |
-          | CYCLE TIME: THEN & NOW   THEN 85th 21 days | NOW 85th 12 days  -9 days -43% |
+          | How to read this (slice 03, three lines, NMD-5)                             |
+          | SUMMARY   [drawn icon] Improved: Cycle Time   [drawn icon] Got worse: WIP   |
+          | CYCLE TIME   85th percentile   21 days -> 12 days   v 9 days  -43 %          |
           | ... one panel per shown metric, never split across two pages ...            |
           |-----------------------------------------------------------------------------|
-          | [Lighthouse logo] Made with Lighthouse · LetPeopleWork (copy at DISTILL)    |
+          | [Lighthouse logo] Made with Lighthouse by LetPeopleWork · letpeople.work     |
           +-----------------------------------------------------------------------------+
+          File name: "Then & Now — 90 days to 2 Oct 2026 — Team Lightspeed"
         emotional_state: {entry: Ready, exit: Relieved}
         shared_artifacts: [report_values, generated_at, report_windows, owner_name, report_name, branding]
         failure_modes:
           - The report was opened on an earlier day and left open - the PDF must not carry yesterday's Now under today's date
-          - The report is still loading or could not be loaded - no Export PDF action, never a PDF of stale or partial numbers
+          - The report is still loading - Export PDF is shown disabled; never a PDF of stale or partial numbers
+          - The export's own fresh read fails - "This report couldn't be loaded, so no PDF was made." with Retry; no dialog opens; a successful Retry prints once (PD-1, PROVISIONAL - maintainer confirms). A report gone or made by a newer version shows its own sentence, no Retry, and Back leads to the Reports list
           - The dark theme is on - the printed page is still light
           - App chrome (navigation, tabs, Edit, Delete, footer) leaks into the print or spills onto a near-empty last page
           - The change marks fall back to whatever system font the machine has, so they differ per OS or are missing
           - The instance cannot reach the internet, so the Lighthouse typeface is missing from the PDF
-          - Standalone on macOS - printing from the app's webview is unprobed; if it does not work there, the action says so instead of doing nothing
-          - The user cancels the print dialog - nothing happens and nothing is stored
-        integration_checkpoint: The PDF shows the same values as the screen at the moment of export, under a produced date that is the day those values were read
+          - Standalone on macOS - printing from the app's webview is unprobed; assumed to work and checked by the maintainer after slice 01 is released (Q2 answer). Slice 01 has no disabled state; if the check fails, a follow-up sketches and builds the fallback (NMD-7)
+          - The user cancels the print dialog - the reader returns to where Export started (the report, now showing the values that were about to be printed, or the Reports list); nothing is stored
+          - The print page was opened from its address - Back leads to the Reports list (PD-5, PROVISIONAL - maintainer confirms)
+        integration_checkpoint: >
+          The PDF shows the same values as the screen at the moment of export. Its Now window ends on the day those
+          values were read, in the instance's time zone; Produced is shown in the viewer's local date and time, so a
+          viewer in another zone near midnight can see the two a day apart.
       - id: 3
         name: Put it where the reader is
         action: "Attach to an email, drop into slides or a document, or hand over at the end of an engagement"
@@ -104,16 +112,16 @@ journeys:
     steps:
       - id: 1
         name: Find the report
-        action: "Ask the assistant which reports a {team} or {portfolio} has (client read added in slice 04, if the maintainer chooses option a)"
+        action: "Ask the assistant which reports a {team} or {portfolio} has (client read added in slice 04)"
         emotional_state: {entry: Wary, exit: Oriented}
         shared_artifacts: [owner_name, report_name]
         failure_modes:
-          - The clients cannot read reports at all today (Epic 5878 excluded reports from CLI/MCP) - slice 04 closes it, or the skill works from a file the user supplies (option c)
+          - The clients cannot read reports at all today (Epic 5878 excluded reports from CLI/MCP) - slice 04 closes it; the skill also works from a PDF or values the user supplies
           - The caller has no read on the owner - relayed as no access, not as an error in the report
           - The Lighthouse instance predates Reports - relayed as "upgrade Lighthouse"
       - id: 2
         name: Read the report
-        action: "The assistant reads one report through the clients"
+        action: "The assistant reads one report through the clients - raw values, unrounded and uncompared; a successful read reports ReportOpened after usage-data consent"
         emotional_state: {entry: Oriented, exit: Engaged}
         shared_artifacts: [report_values, report_windows, read_at]
         failure_modes:
@@ -125,7 +133,7 @@ journeys:
         emotional_state: {entry: Engaged, exit: Confident}
         shared_artifacts: [report_values, report_windows, read_at, owner_name, branding]
         failure_modes:
-          - A dash becomes a zero, or a value is rounded
+          - A dash becomes a zero, or a value is rounded differently from the Reports tab (the skill carries the web's presentation rules; its evals score against the Reports tab)
           - Assistant commentary reads as if it were part of the report (the report itself gives no verdicts)
           - Configured terms replaced by the tracker's or the assistant's own words
         gherkin: |
@@ -151,8 +159,8 @@ integration_validation:
       must_match_across: [report view, PDF, client read]
       failure_message: "The PDF or the assistant shows a number the report view does not"
     - artifact: generated_at
-      must_match_across: [PDF header, Now window end]
-      failure_message: "The PDF is dated a day on which its Now window did not end"
+      must_match_across: [report read used for the PDF, Now window end]
+      failure_message: "The read the PDF was made from ended its Now window on another day than the export day, both in the instance's time zone. Produced is shown in the viewer's local date and time and may differ by a day near midnight; that is not a failure."
 
 changelog:
   - date: 2026-10-17
@@ -167,3 +175,12 @@ changelog:
       failure mode removed (Community, browser print); step 2 refined with the print layout, the Linux probe's
       findings and the stale-Now case; second journey added for the report skill moved into scope; shared
       artifacts owner_name, report_name, read_at and branding added.
+  - date: 2026-10-19
+    feature: epic-6298-report-pdf-export
+    change: >
+      Revised after the final review gate and the DISTILL UI walk-through (NMD-1..7): example Now window corrected
+      to 2 Aug - 30 Oct 2026 (90 days); step 2 starts from the report view or the Reports list icon, uses the
+      two-line header, footer copy and file name of NMD-3, the print page's preparing and failed looks with Retry,
+      and returns to where Export started; Export PDF shown disabled while loading; macOS failure mode follows the
+      Q2 answer and NMD-7 (no disabled state in slice 01); integration checkpoint states the time-zone rule; the
+      skill journey drops the option-a conditional and notes raw client values and consent-gated usage reporting.

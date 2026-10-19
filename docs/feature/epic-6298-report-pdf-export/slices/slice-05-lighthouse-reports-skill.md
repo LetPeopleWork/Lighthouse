@@ -1,7 +1,8 @@
 # Slice 05 — Lighthouse reports skill: show a Then & Now as a dashboard or document
 
-**Feature**: epic-6298-report-pdf-export · **Epic**: #6298 · **Story**: US-05 (ADO: to be created) · **Estimate**: ~½d ·
-**Tier**: Community · **Ships alone**: yes (builds on finished slice 04; with Q1 option c, on nothing) · **Repo**:
+**Feature**: epic-6298-report-pdf-export · **Epic**: #6298 · **Story**: US-05 (ADO: to be created) · **Estimate**: ~1d (rev. 2026-10-19, was ~½d: the skill now carries the
+web's presentation rules) · **Risk**: HIGH ·
+**Tier**: Community · **Ships alone**: yes (builds on finished slice 04; Q1 answered (a)) · **Repo**:
 `lighthouse-clients/skills/` · `job_id: job-share-numbers-outside-lighthouse`
 
 ## Goal
@@ -14,15 +15,20 @@ own kept apart — the same way every time. Then & Now is the first (and today o
 
 - New skill folder, name `lighthouse-reports` (D24, Q6), `SKILL.md` with frontmatter `name` = folder name and a
   `description` that says when to use it (and points to the `lighthouse` skill for connecting).
-- The Then & Now layout: dated header (owner, report name, Then window, Now window, the day the report was read);
-  the summary groups (Improved, Got worse, Mixed, Unchanged); one block per shown metric with Then, Now, change and
-  % change; the direction of good per metric; "—" with its reason.
+- The Then & Now layout, mirroring the PDF (NMD-6, `references/then-and-now.md`): dated header (owner, report name,
+  "Then 5 Jul – 2 Oct 2026 · Now 2 Aug – 30 Oct 2026", "Read from Lighthouse on {day}"); the summary groups
+  (Improved, Got worse, Mixed, Unchanged); one block per shown metric with its lines as Then | Now | Change | %; the
+  assistant's view only when asked, under its own heading; "Data from Lighthouse by LetPeopleWork".
+- The web's presentation rules, because the client read carries raw values only (U-7): metric order, which way is
+  better, lines and decimals, units, rounding, change and percent change (including "No change" and "Then was 0"),
+  dashes with reasons, summary groups — each naming its source in the web app; never more precision than the web.
 - Guardrails (D25, Q3): quote values exactly, never rebuild Then from metric tools, dashes stay dashes, instance
   terms, attribution line "Data from Lighthouse by LetPeopleWork", own comments under their own labelled heading.
-- Fallback (Q1 c): works from a report PDF or pasted values the user supplies, saying where the numbers came from.
+- Fallback: works from a report PDF or pasted values the user supplies, saying where the numbers came from.
 - Written so a later report type adds a section, not a new skill.
 - Eval cases (`evals/cases.json` + fixtures), run by hand before the release, 3 runs each; results recorded in
-  `docs/feature/story-6217-lighthouse-skills/evals/<date>-lighthouse-reports.md`.
+  `docs/feature/story-6217-lighthouse-skills/evals/<date>-lighthouse-reports.md`. The evals score dashboards against
+  the lines the Reports tab shows for the same real report answers.
 - Its own zip `lighthouse-reports-skill.zip` through the existing packing; listed in `docs/aiintegration.md` at
   finalize.
 
@@ -38,8 +44,10 @@ the dates or windows, turns "—" into 0, or mixes the assistant's comment into 
 
 ## Shared-artifact risk
 
-The direction of good per metric lives in the frontend panels; the skill writes a second copy. MEDIUM risk: an eval
-case checks it, and a later metric added to Then & Now must update the skill (note in the DELIVER checklist).
+**HIGH** (raised from MEDIUM on 2026-10-19, U-7). Every presentation rule the web encodes — not only the direction of
+good — now has a second copy in the skill, because the client read carries raw values only. Mitigation: each rule
+names its web source; the evals score against the Reports tab's lines for the same real answers; a DELIVER checklist
+line says a change to any named web source, or a new Then & Now metric, updates the skill and re-runs its evals.
 
 ## Usage data
 
@@ -51,4 +59,4 @@ AC-5.1 … AC-5.5 in `feature-delta.md` (US-05).
 
 ## Dependencies
 
-Slice 04 (finished) under Q1 option (a). No dependency on slices 01–03, except that option (c) can read their PDF.
+Slice 04 (finished). No dependency on slices 01–03, except that the fallback can read their PDF.

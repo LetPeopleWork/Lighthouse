@@ -10319,9 +10319,11 @@ Invariants:
 
 ## Application Architecture — epic-6298-report-pdf-export (Reports: PDF export and client reads)
 
-Feature: epic-6298-report-pdf-export (ADO Epic #6298 "Report PDF Export") · Wave: DESIGN · 2026-10-17 · Morgan,
-PROPOSE mode. Builds on the Reports module of Epic 5878 (ADR-219–222). Full design:
-`docs/feature/epic-6298-report-pdf-export/feature-delta.md` → "Wave: DESIGN / …" (DDD-1 … DDD-23). The maintainer
+Feature: epic-6298-report-pdf-export (ADO Epic #6298 "Report PDF Export") · Wave: DESIGN · 2026-10-17, revised
+2026-10-19 (twice, after review) · Morgan, PROPOSE mode. Builds on the Reports module of Epic 5878 (ADR-219–222). Full
+design: `docs/feature/epic-6298-report-pdf-export/feature-delta.md` → "Wave: DESIGN / …" (DDD-1 … DDD-32). Six
+defaults applied while the maintainer was away are **PROVISIONAL — maintainer confirms**: PD-1 … PD-6 in that file's
+"Wave: DESIGN / [REF] Questions for the maintainer". The maintainer
 answered the three open choices on 2026-10-17: the print page itself stands behind the dialog; drawn marks everywhere;
 the clients return raw values and the skill carries the web's presentation rules.
 
@@ -10335,16 +10337,24 @@ the seam Scheduled Report Delivery (#5882) will load with headless Chromium.
 - **6298-I1 — a printed report is its own chrome-less page.** `/print/teams/:id/reports/:reportId` and its Portfolio
   twin sit outside the app-shell layout route (no header, footer, survey nudge or usage-data question), under the
   same auth guard, in the light theme whatever the user's theme (ADR-245).
-- **6298-I2 — nothing prints before it is ready, and only once.** Ready = a report answer fetched after the page
-  mounted, the owner's name, the instance's terms and the fonts; exposed as `data-render-ready`. Print is called once,
-  only when the page was opened by Export PDF; a page opened directly never prints; a failure never prints.
-- **6298-I3 — the PDF shows what the screen shows.** The print page reads with the report view's query key, forced
-  fresh; the screen shows the same answer afterwards. Produced is the moment that answer arrived, in local time.
+- **6298-I2 — nothing prints before it is ready, and only once.** Ready is a pure function of explicit inputs: a
+  report answer that arrived at or after the page mounted, the owner's name, the instance's terms and the fonts (asked
+  for after the document renders, through the effect port); exposed as `data-render-ready`. Print is called once, only when the page was opened
+  by Export PDF; the one-shot flag (with the origin, `report` or `list`) travels in router state and is **consumed**
+  — the history entry is replaced with the flag cleared before print is called — so a reload, Forward or React
+  StrictMode's double effect never prints again. The flag is consumed only by an actual print. A page opened directly
+  never prints; a failure never prints.
+- **6298-I3 — the PDF shows what the screen shows.** The print page reads with the report view's query key through its
+  own observer with `refetchOnMount: "always"` (the app's `staleTime` is 5 min, so the default would serve a cached
+  answer); the report view's options are unchanged. Fresh means `dataUpdatedAt ≥ mountedAt`; the screen shows the same
+  answer afterwards. Produced is the moment that answer arrived, in local time.
 - **6298-I4 — a report draws nothing from the machine's fonts.** Change marks are SVG icons from a mark kind;
   Quicksand ships with the app (`@fontsource-variable/quicksand`, OFL-1.1, licence text in `public/licenses/`); no
   runtime font request leaves the instance (ADR-246).
-- **6298-I5 — the export is counted on the click, never by the print page**, and a return from print is not a second
-  opening.
+- **6298-I5 — the export is counted on the click, by the surface that starts it, never by the print page.** Two
+  surfaces — the report view's button and the Reports list's icon — both go through one export starter: exactly one
+  `ReportPdfExportStarted` per click, before navigating. A return from print is not a second `ReportOpened`; a return
+  to the Reports list may count one tab opening, accepted.
 - **6298-I6 — clients read reports, never write them.** Four read-only MCP tools and `lh report list|get` over the
   existing endpoints, version-gated; they return the report's raw values unchanged and phrase no metric line. The
   `lighthouse-reports` skill restates the web's presentation rules, naming their frontend sources, and its evals score
@@ -10352,12 +10362,24 @@ the seam Scheduled Report Delivery (#5882) will load with headless Chromium.
 
 ### Component decomposition (headline)
 
-- **Frontend**: EXTEND `App` (shell layout route + print routes), the theme module (out of `main.tsx`), `ReportView` /
-  `ThenAndNowHeader` (Export PDF, event, navigation, chunk prefetch), `useReportOpenedReporter`, the comparison and mark
-  code, `index.html` / `main.tsx` (bundled font). CREATE `ReportPrintPage`, `ReportPrintDocument` (header, body from the
-  existing summary and panels, branding footer, later "how to read this"), the ready / print-once hook,
-  `ChangeMarkIcon`, `public/licenses/quicksand-OFL.txt`. REUSE `WidgetBody` for the print page's loading and failure
-  looks.
+- **Frontend**: EXTEND `App` (shell layout route, with the shell's container, + print routes), the theme module (out
+  of `main.tsx`), `ReportView` / `ThenAndNowHeader` (Export PDF button, chunk prefetch), `ReportsTab` / `ReportList`
+  (PDF icon first in the Actions column for every reader; `ReportListActions` becomes an export action for everyone
+  plus an optional editor group; chunk prefetch), `useReportOpenedReporter`, the comparison and mark code,
+  `index.html` / `main.tsx` (bundled font). CREATE the export starter (one event, then navigation with flag and
+  origin, for both surfaces), `reportPrintRoutes` (wires the two ports), `ReportPrintPage`, `ReportPrintDocument`
+  (header, body from the existing summary and panels, branding footer, later "how to read this"), the pure
+  `printPageStateOf`, the print-once hook, `ChangeMarkIcon`, `public/licenses/quicksand-OFL.txt`. REUSE `WidgetBody`
+  for the print page's loading and failure looks.
+- **The print page's two ports** (rev. 2026-10-19): a **read port** with no write method — `Pick<IReportService,
+  "getReport">` plus `getTeam` / `getPortfolio` for the owner's name, built from `ApiServiceContext` by the route
+  wiring as an object literal of exactly those three reads and passed as a prop, members pinned by an `expectTypeOf`
+  test and, because a `Pick` is erased at runtime, by a runtime key test; and an **effect port** — print, the
+  `afterprint` subscription (one per mount, independent of the flag), navigation and (rev. 2) font loading
+  (`loadFonts`, an effect on the document's font set) — whose browser binding is the one module naming
+  `globalThis.print` and `document.fonts`. The terms come through a narrow read of `getTerm`, `isLoading` and
+  `error`, never the whole terminology context. `reportPrintRoutes` is the page's composition root: a bounded change
+  that builds those literals and passes the binding, nothing else.
 - **Clients (`lighthouse-clients`)**: EXTEND the client package (report methods, `reports` version gate), `mcp-core`
   (four tools), the `lighthouse` skill. CREATE the report reader with a header-only summary, the `lh report` group,
   the `lighthouse-reports` skill (with the web's presentation rules in `references/then-and-now.md`).
@@ -10366,10 +10388,19 @@ the seam Scheduled Report Delivery (#5882) will load with headless Chromium.
 ### Loading, could-not-load and late answers
 
 The report view keeps its looks; Export PDF is shown but not operable while loading and not offered when the report
-could not be loaded, no longer exists or was made by a newer version. The print page shows a lone spinner while it
-prepares and the could-not-load message with Retry on failure (both `WidgetBody`), with a screen-only Back control; it
-has no previous answer to dim, so it never shows one. A late answer for an old key lands under that key and is never
-read.
+could not be loaded, no longer exists, was made by a newer version, or has a type this version cannot show (PD-3,
+**PROVISIONAL — maintainer confirms**). The Reports list's icon depends on the row's type only (PD-4, **PROVISIONAL —
+maintainer confirms**); the print page owns the export's looks from either surface. It shows a lone spinner while it
+prepares and the could-not-load message with Retry on failure (both `WidgetBody`), with a screen-only Back control
+whose label and target follow the origin; a final failure and a directly loaded page go back to the Reports list (PD-5,
+**PROVISIONAL — maintainer confirms**). A successful Retry continues the export and prints once (PD-1, **PROVISIONAL —
+maintainer confirms**). A failed report read says "This report couldn't be loaded, so no PDF was made."; when the
+report was read but the owner's name, the terms or the fonts could not be loaded, the page says "Part of the page
+couldn't be loaded, so no PDF was made." — both with Retry (PD-6, **PROVISIONAL — maintainer confirms**). A 404 or
+422 is final and is not retried. The dialog opens within 2 s of the click on a loaded report (checked by hand on the
+dev instance). A cached answer from before the page mounted is held but never shown as the print, so there is
+no previous answer to dim. A late answer for an old key lands under that key and is never read. A renamed panel reads
+the term alone ("Lead Time"), as on screen (PD-2, **PROVISIONAL — maintainer confirms**).
 
 ### C4
 
@@ -10398,12 +10429,14 @@ C4Container
   Rel(renderer, spa, "Will load the print route and wait for data-render-ready on")
 ```
 
-L1 and the full L2 are in the feature delta. No L3: four thin new frontend components.
+L1, the full L2 and an L3 of the print subsystem (export starter, the two ports, the pure state function, the
+print-once hook) are in the feature delta.
 
 ### Architectural Enforcement (this feature)
 
 - Vitest structural scans: the print route's module tree imports none of the shell's components; `globalThis.print`
-  is called from one module; the print page never calls the usage-data reporter; `index.html` names no external font
+  and `document.fonts` are named in one module (the effect port's binding); the print read port's and terms read's
+  keys are pinned at runtime; the print page never calls the usage-data reporter; `index.html` names no external font
   host; no report mark character remains as text in `src/pages/Common/Reports`; the shipped licence file equals the
   package's `LICENSE`.
 - E2E walking skeleton waits for `data-render-ready="true"`, checks header and no chrome, and (from slice 02) that the

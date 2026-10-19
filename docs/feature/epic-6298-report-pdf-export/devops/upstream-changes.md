@@ -1,6 +1,6 @@
 # Upstream changes from DEVOPS — epic-6298-report-pdf-export
 
-For DESIGN and the product owner to apply. DEVOPS does not edit their sections. Date: 2026-10-17. Source:
+For DESIGN and the product owner to apply. DEVOPS does not edit their sections. Date: 2026-10-17; revised after review 2026-10-19 (DU-7, from NMD-2 and the K1 numerator fix). Source:
 `../feature-delta.md` → "Wave: DEVOPS / [REF] Changed Assumptions".
 
 | # | Artifact | Now says | Should say | Why |
@@ -10,4 +10,5 @@ For DESIGN and the product owner to apply. DEVOPS does not edit their sections. 
 | DU-6 | DISCUSS D26 / Project DISCUSS Checklist (clients row) | Clients release timing not stated | **One clients release carries slices 04 and 05** (maintainer, 2026-10-17, locked) | A skill-only change triggers no clients release |
 | DU-2 | DESIGN "Usage data" / Open questions; slice-04 brief "Usage data"; US-04 | "DEVOPS decides whether the clients report `ReportOpened`" | The clients report `ReportOpened` (`ThenAndNow`, source `Cli` / `Mcp`) on a successful `report get` only. List, refusals and unknown types report nothing. Slice 04 gains this step; `docs/settings/usagedata.md`'s "A report was opened" row is extended at finalize | K4 has no other instrument (D27) |
 | DU-3 | DESIGN Reuse R25 ("`pack-skills.sh` … unchanged") | Unchanged | `pack-skills.sh` and the release glob unchanged; **the clients `ci.yml` "Pack skills (dry run)" `expected=(…)` list gains `lighthouse-reports`** in slice 05 | The list is hard-coded, so without the entry the dry run would not prove the new zip |
+| DU-7 | (2026-10-19) DISCUSS D20 ("not on the Reports list in v1"), DISCUSS Outcome KPIs K1 "Measured by", slice-01 brief usage-data section | Export from the report view only; K1 = export event ÷ instances with `ReportOpened` | Export PDF **also from the Reports list icon, for every reader** (NMD-2, superseding D20's exclusion); the same `ReportPdfExportStarted` with the row's type, one per click; a row of a type this version cannot show has no icon and reports nothing. K1's numerator counts only exporting browsers that also report `ReportOpened` (source `Browser`) in the 90-day window; K2 and K6 follow | NMD-2 (maintainer, 2026-10-19); without the subset rule the K1 ratio is not a share of the readers it names |
 | DU-4 | DESIGN Open questions: "`reports` version-gate baseline — DELIVER reads it at release" | Open | `v26.10.10.1` (the endpoints first shipped in `v26.10.16.6`); DELIVER re-checks it against the fields the client reads | Git tags on this checkout |

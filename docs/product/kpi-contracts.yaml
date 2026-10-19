@@ -2295,11 +2295,13 @@ outcomes:
     acceptance_scenarios: []   # DISTILL fills
     status: designed-not-shipped
 
-  # --- epic-6298-report-pdf-export (DEVOPS 2026-10-17) ------------------------------------------------------
+  # --- epic-6298-report-pdf-export (DEVOPS 2026-10-17, revised after review 2026-10-19) ---------------------
   # One new event, ReportPdfExportStarted (provisional 20, re-read on main at landing), carrying report_template
   # exactly as ReportCreated / ReportOpened do. That is the maintainer's explicit exception to name-only-first
   # (2026-10-17: "would have taken the property, so we can see which reports get printed"), like epic-5878's.
-  # Emitted on the Export PDF click; it counts the choice, cancelled print dialogs included. The clients (slice 04) report the
+  # Emitted on the Export PDF click, from the report view's button or the Reports list's icon (NMD-2, every reader);
+  # it counts the choice, cancelled print dialogs included. K1, K2 and K6's per-type rate count an exporting browser only
+  # when it also reported ReportOpened (source Browser) in the window, so each numerator is a subset of its denominator. The clients (slice 04) report the
   # existing ReportOpened (report_template ThenAndNow) with source Cli / Mcp for a report read. Per-browser
   # proxies as in epic-5878. K3 (cold readers, conversation log), K5 (skill eval record), G2 (dogfood timing)
   # and G4 (build size before/after slice 02) are measured by hand and have no contract here.
@@ -2311,28 +2313,28 @@ outcomes:
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
-        - "ReportPdfExportStarted (provisional 20), slice 01, property report_template in {ThenAndNow}: the Export PDF click on the report view, before navigating to the print page. Never from the print route."
-        - "Denominator: ReportOpened (existing, epic-5878), filtered to source Browser."
-      derivation: "Distinct browsers with >= 1 ReportPdfExportStarted / distinct browsers with >= 1 ReportOpened from source Browser, 90 days from the release carrying slice 01."
+        - "ReportPdfExportStarted (provisional 20), slice 01, property report_template in {ThenAndNow}: the Export PDF click on the report view's button or on the Reports list's icon (the row's own type, only on rows that show the icon), before navigating to the print page. Never from the print route."
+        - "ReportOpened (existing, epic-5878), filtered to source Browser: the denominator, and the second condition of the numerator."
+      derivation: "Numerator: distinct browsers with >= 1 ReportPdfExportStarted AND >= 1 ReportOpened (source Browser) in the 90-day window. Denominator: distinct browsers with >= 1 ReportOpened (source Browser) in the same window. Window: the 90 days from the release carrying slice 01."
       surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
-    acceptance_scenarios: "@kpi-OUT-6298-K1-pdf-export-used - Vitest: consented click on Export PDF reports exactly ReportPdfExportStarted with report_template ThenAndNow, once per click; a type the browser cannot map reports nothing; not consented reports nothing; the print route reports nothing; returning from print reports no ReportOpened. Backend: the name maps to its integer; Fits refuses ReportPdfExportStarted without report_template and report_template on any event but the three report events"
+    acceptance_scenarios: "@kpi-OUT-6298-K1-pdf-export-used - Vitest: consented click on Export PDF, on the report view or on a Reports list row's icon, reports exactly ReportPdfExportStarted with report_template ThenAndNow, once per click; a type the browser cannot map reports nothing, and a list row of such a type shows no icon; not consented reports nothing; the print route reports nothing; returning from print reports no ReportOpened. Backend: the name is appended after WorkTrackingSystemFieldsChanged = 19 and 0..19 keep their numbers; Fits refuses ReportPdfExportStarted without report_template and report_template on any event but the three report events"
     measurement_window: "90 days from the release carrying slice 01"
     alerting: []
     status: designed-not-shipped
-    caveat: "Counts the choice, not a saved file: a cancelled dialog counts. Per browser, not per instance."
+    caveat: "Counts the choice, not a saved file: a cancelled dialog counts. Per browser, not per instance. Exports from the Reports list icon count like any other, but a browser counts in the numerator only when it also reported ReportOpened (source Browser) in the window; a browser that only ever exports from the list without staying 5 s on a report counts in neither numerator nor denominator, so K1 is a lower bound for list-only exporters."
 
   - id: OUT-6298-K2-pdf-export-recurs
     feature: epic-6298-report-pdf-export
     title: Exporters export again in another week (recurring cadence)
-    target: ">= 30% of browsers that reported ReportPdfExportStarted report it in >= 2 distinct ISO weeks within 90 days"
+    target: ">= 30% of K1's numerator browsers report ReportPdfExportStarted in >= 2 distinct ISO weeks within the 90-day window"
     measurement_scope: opt_in_telemetry_required
     measurement_plan:
       data_collection:
         - "ReportPdfExportStarted (OUT-6298-K1)."
-      derivation: "Per browser: count distinct ISO weeks with >= 1 ReportPdfExportStarted within 90 days of its first; success at >= 2."
+      derivation: "Of K1's numerator browsers, the share that report ReportPdfExportStarted in >= 2 distinct ISO weeks within the same 90-day window."
       surfacing: ["collector dashboard"]
     acceptance_scenarios: "covered by OUT-6298-K1's scenarios"
-    measurement_window: "90 days from the release carrying slice 01, cohorts by first-export week"
+    measurement_window: "90 days from the release carrying slice 01 (K1's window)"
     alerting: []
     status: designed-not-shipped
     caveat: "Lower bound: a person on two browsers is two exporters, never one recurring one."
@@ -2347,7 +2349,7 @@ outcomes:
       data_collection:
         - "ReportPdfExportStarted, property report_template (closed UsageDataReportTemplate; values appended as report types ship)."
         - "ReportOpened, property report_template, source Browser, for the per-type rate."
-      derivation: "Exports grouped by report_template / all exports; per type, distinct exporting browsers / distinct browsers reporting ReportOpened with that report_template."
+      derivation: "Share: exports grouped by report_template / all exports. Per type T: distinct browsers with >= 1 ReportPdfExportStarted of type T AND >= 1 ReportOpened (source Browser) of type T / distinct browsers with >= 1 ReportOpened (source Browser) of type T, in the same 90-day window."
       surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
     acceptance_scenarios: "covered by OUT-6298-K1's scenarios (the exact report_template value)"
     measurement_window: "from the release carrying slice 01; read once a second report type has been released for 90 days"
@@ -2387,7 +2389,7 @@ outcomes:
     alerting:
       - condition: "a value or font assertion fails"
         action: "frontend or E2E build fails (red)"
-    acceptance_scenarios: []   # DISTILL fills
+    acceptance_scenarios: "@kpi-OUT-6298-G-pdf-matches-screen - Vitest (print/ReportPrintPage.test.tsx): the print page prints the same summary and panels the report view shows; with an older answer held in the cache it never prints it and reads the report afresh. Playwright (specs/teams/ReportPdfExport.spec.ts, slice 02): the Chromium PDF of the print page embeds only Quicksand"
     status: designed-not-shipped
 
   # epic-6311-responsive-during-updates (DEVOPS 2026-10-18). KPI-6 "Cancel all in use" is NOT entered: the

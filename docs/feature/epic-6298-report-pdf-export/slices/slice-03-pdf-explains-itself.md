@@ -10,11 +10,14 @@ from the PDF alone which side is frozen and since when, what Now covers, and wha
 
 ## IN
 
-- One "how to read this" line under the PDF header (D13, D21), in the instance's terms: Then is frozen (its window,
-  as captured then); Now is the window up to the produced date; green better, red worse, the sign and word always
-  shown; "—" means no data in that window.
+- Three short lines under a "How to read this" label below the PDF header (D13, D21; NMD-5, locked 2026-10-19,
+  superseding "one line"):
+  - "Then is frozen: the {90} days to {2 Oct 2026}, exactly as captured on that day."
+  - "Now is the {90} days up to {30 Oct 2026}, read when this PDF was produced."
+  - "Each line compares Now with Then. ✔ Improved and ✘ Got worse say which way it moved (green better, red worse);
+    — means there is no value, and the reason is printed beside it."
+  The braces are values from the report; the lines name no renamable term.
 - Shown in the PDF only; the screen is unchanged.
-- Copy confirmed with the maintainer at the start of DISTILL (sketch).
 
 ## OUT
 
@@ -22,7 +25,7 @@ A legend per panel · explanations for report types that do not exist yet · a c
 
 ## Learning hypothesis
 
-**Disproves "one line explains the report to a cold reader"** if someone who has never opened Lighthouse, handed
+**Disproves "three short lines explain the report to a cold reader"** if someone who has never opened Lighthouse, handed
 the PDF by the maintainer, cannot say which side is frozen and whether {Cycle Time} got better (K3: target ≥ 2 of
 3 people).
 
@@ -30,7 +33,8 @@ the PDF by the maintainer, cannot say which side is frozen and whether {Cycle Ti
 
 - Dev instance (`:5169`): export the busiest Team's report; the maintainer hands it to up to three people who do not
   use Lighthouse and logs their answers (K3).
-- An instance with renamed terms (e.g. Cycle Time → "Lead Time", Work Items → "Tickets") checked once.
+- An instance with renamed terms (e.g. Cycle Time → "Lead Time", Work Items → "Tickets") checked once: the lines
+  still read true and the panels below say "Lead Time".
 - E2E: none added.
 
 ## Acceptance criteria

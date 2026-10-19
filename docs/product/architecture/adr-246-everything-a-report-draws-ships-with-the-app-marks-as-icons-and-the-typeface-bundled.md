@@ -2,6 +2,7 @@
 
 - **Status**: Accepted (2026-10-17). The maintainer decided both halves on 2026-10-17: the typeface is bundled for
   the whole app (DISCUSS Q4), and the drawn marks are used everywhere, on screen as well as in print (MQ-2 = a).
+  Revised after review 2026-10-19 (decision 2 and the earned-trust timing; see the section at the end).
 - **Feature**: epic-6298-report-pdf-export (ADO Epic #6298), slice 02
 - **Deciders**: the maintainer (typeface scope, marks everywhere); Morgan (Solution Architect)
 - **Relies on**: ADR-245 (the print route)
@@ -42,7 +43,14 @@ licence against the actual font files.
    maintain and the screen stops depending on system fonts too.
 2. **Text characters that stay text** are the dash (—), the minus sign (−), the en dash in ranges, the middle dot and
    the ellipsis. They are expected to be in the bundled typeface; the PDF font check below proves it rather than
-   assuming it.
+   assuming it. (rev. 2026-10-19) That coverage is **not yet verified** and is **checked in slice 02**, as one of its
+   steps: each of the five characters — U+2014 —, U+2212 −, U+2013 –, U+00B7 · and U+2026 … — is looked up once in
+   the subset file its `unicode-range` routes it to (a font tool lists the file's glyphs; the result goes in the slice
+   notes), because a `unicode-range` that lists a code point is no proof the file draws it. The E2E font check then
+   guards every one of them the printed demo report shows (the windows line carries – and ·, a fall carries −, a
+   missing value —), failing when the PDF embeds any font but Quicksand, which is what a missing glyph produces; the
+   ellipsis appears only in on-screen copy, so its lookup is its check. If a character is missing, slice 02 draws it
+   as an icon like the marks or uses one the subset has — decided then, not assumed now.
 3. **Quicksand is bundled for the whole app from `@fontsource-variable/quicksand` 5.3.0** (published 2026-07-19, well
    past pnpm's 24-hour minimum release age; licence field `OFL-1.1`). One import in `main.tsx` replaces the two
    Google Fonts lines in `index.html`. The variable font covers weights 300–700, so the theme's 600 renders as a true
@@ -108,12 +116,29 @@ licence against the actual font files.
 
 ## Earned trust (what is probed, not assumed)
 
-- **Behavioural, every CI run**: the E2E walking skeleton prints the print route with Chromium (`page.pdf`) and fails
-  when any embedded font in the PDF is not Quicksand. That catches a missing glyph (a fallback font would be
+- **Behavioural, on every CI run once slice 02 has shipped** (before that the font check does not exist, and the
+  walking skeleton it extends is parked until slice 01 ships): the E2E walking skeleton prints the print route with
+  Chromium (`page.pdf`) and fails when any embedded font in the PDF is not Quicksand. That catches a missing glyph (a fallback font would be
   embedded), a font that failed to load, and a regression to runtime loading. It runs with the network as CI has it,
   so it is paired with the offline check below.
 - **Structural**: a Vitest guard that `index.html` references no external font host, and the licence-copy guard of
   decision 5.
 - **By hand, slice 02**: the app served with no internet (or the Standalone app with networking off); `pdffonts` on
   the PDF lists only Quicksand. Chrome on Windows, Firefox on Linux and the Linux Standalone app compared side by side
-  on A4 and Letter.
+  on A4 and Letter. (rev. 2026-10-19) Plus the one-time glyph lookup of decision 2.
+
+## Revised after review 2026-10-19
+
+- Decision 2 no longer only expects the dash, minus, en dash, middle dot and ellipsis to be in the subset: slice 02
+  looks each one up in the file that serves it and records the answer; the PDF font check guards the ones the
+  printed report shows.
+- The end-to-end font check is described as running on every CI run once slice 02 has shipped, not before.
+- The story's AC-2.4 ("the screen keeps looking as it does today") predates the maintainer's choice of drawn marks on
+  screen too (decision 1). The marks' shapes on screen change; their meaning, colours and words do not. The product
+  owner rewords AC-2.4 accordingly (DESIGN upstream change U-13).
+
+Second revision 2026-10-19: the print page asks for the bundled faces through its injected effect port (ADR-245
+decisions 3 and 4), whose browser binding is the one module naming `document.fonts`; loading a face changes the
+document's font set, so it is treated as an effect rather than a read. A face that cannot be loaded leaves the page
+unprinted with "Part of the page couldn't be loaded, so no PDF was made." and Retry (**PROVISIONAL — maintainer
+confirms**). The typeface decisions above are unchanged.

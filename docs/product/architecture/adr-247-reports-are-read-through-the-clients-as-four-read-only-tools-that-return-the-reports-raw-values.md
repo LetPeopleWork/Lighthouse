@@ -2,7 +2,8 @@
 
 - **Status**: Accepted (2026-10-17). Read-only client access decided by the maintainer in DISCUSS (Q1 = a); the
   content of the read decided by the maintainer on 2026-10-17 (raw values, not the web's phrased lines — MQ-3 = b,
-  against the architect's recommendation, which is recorded below as the rejected alternative).
+  against the architect's recommendation, which is recorded below as the rejected alternative). Revised after review
+  2026-10-19 (what the pass-through test proves; see the section at the end).
 - **Feature**: epic-6298-report-pdf-export (ADO Epic #6298), slice 04 — repo `lighthouse-clients`
 - **Deciders**: the maintainer; Morgan (Solution Architect)
 - **Reopens, for reading only**: Epic 5878's exclusion of reports from the CLI and MCP. Creating, editing and deleting
@@ -64,7 +65,7 @@ The knowledge the web encodes for showing a Then & Now report moves into the `li
 |---|---|
 | Metric order and titles; direction of good (Cycle Time lower, Throughput higher, WIP lower, Total Work Item Age lower) | `panels/reportPanelRegistry.ts` (`METRIC_CATALOG`, `reportPanelRegistry`) |
 | Lines per metric, their labels and decimals: Cycle Time p95/p85/p70/p50 in days, 0 decimals; Throughput total (0) and per day (2 decimals, the only change line); WIP and Total Work Item Age average/median/min/max, 0 decimals | `panels/CycleTimePanel.tsx` (`PERCENTILES`), `panels/ThroughputPanel.tsx` (`CHANGE_LINES`, `TOTAL_DECIMALS`, `PER_DAY_DECIMALS`), `panels/DailySpreadPanel.tsx` (`SPREAD_LINES`), `panels/WipPanel.tsx`, `panels/WorkItemAgePanel.tsx` |
-| Rounding (halves away from zero, at the line's decimals), the change computed from the two rounded values, percent change of the rounded Then rounded to a whole number, "Then was 0" when Then rounds to 0, "No change" when the rounded values are equal, the minus sign, a dash when either side has no value | `panels/thenNowComparison.ts` (`roundForDisplay`, `shownValue`, `compareThenNow`, `changeText`, `signed`, `DASH`) |
+| Rounding (halves away from zero, at the line's decimals), the change computed from the two rounded values, percent change of the rounded Then rounded to a whole number and written with a space before the percent sign ("−43 %"), "Then was 0" when Then rounds to 0, "No change" when the rounded values are equal, the minus sign, a dash when either side has no value | `panels/thenNowComparison.ts` (`roundForDisplay`, `shownValue`, `compareThenNow`, `changeText`, `signed`, `DASH`) |
 | Units: "N day(s)", "N.NN per day", plain numbers for WIP | `panels/thenNowComparison.ts` (`daysText`), `ThroughputPanel.tsx` (`perDayText`), `WipPanel.tsx` (`plainNumber`) |
 | Absence reasons ("No finished {Work Items} in Then/Now", "Not captured for this report", "Can't be shown in this version of Lighthouse") | `panels/thenNowComparison.ts` (`reasonTexts`, `absenceTextOf`) |
 | Summary groups: Improved / Got worse / Mixed / Unchanged, per metric from its change lines; a metric with no comparable line is in none | `panels/changeSummary.ts` (`summariseChange`), `ThenAndNowSummary.tsx` |
@@ -104,6 +105,24 @@ side finds the other.
 ## Earned trust (what is probed, not assumed)
 
 - Refusal relays tested with recorded answers: 403, 404, 422 `template-not-supported`, an older server version.
-- A pass-through test: the facts block equals the recorded server answer.
+- A pass-through test: the facts block equals the recorded server answer. (rev. 2026-10-19) **This proves
+  pass-through, not wire compatibility**: the clients hand on whatever they were given unchanged, but the recorded
+  answers they are given are, at DISTILL, written by hand to the wire shape, so the test cannot tell whether the real
+  server sends that shape. DELIVER replaces the hand-written answers with a capture from the dev instance (no customer
+  data: demo or dev-only owners and report names) in slice 04, before the test counts as evidence of the wire; the
+  slice 05 eval fixtures are captures from the start. A later change to the backend's report read model is caught by
+  re-capturing, not by this test.
 - The dev-instance dogfood compares `lh report get` against the Reports tab value by value (raw vs rounded).
 - The skill evals against web-rendered lines (above).
+
+## Revised after review 2026-10-19
+
+The pass-through test was described as if it pinned the facts to the server's answer. It pins them to the recorded
+answer, which at DISTILL is hand-written. The earned-trust list now says what it proves (pass-through) and what
+closes the gap (a dev-instance capture in slice 04, no customer data). Nothing else in this decision changed.
+Rejected for closing the gap: a consumer-driven contract (Pact) between the clients and Lighthouse — both are ours,
+released from two repositories, and a capture re-taken when the read model changes costs less than a broker.
+
+Second revision 2026-10-19: the presentation-rules table now states how the web writes a percent change — with a
+space before the percent sign ("−43 %"), as `changeText` does — so the skill copies the web's form rather than the
+more common "−43%". Nothing else in this decision changed.

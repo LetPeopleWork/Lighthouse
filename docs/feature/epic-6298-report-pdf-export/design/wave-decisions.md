@@ -5,6 +5,9 @@
 maintainer's answers of 2026-10-17, locked) · **Successor**: DEVOPS (`nw-platform-architect`). Per-wave peer review
 skipped by instruction; the consolidated review runs at the end of DISTILL.
 
+**Revised after review 2026-10-19** — see the section of that name below; the decisions listed here are amended by
+it where they differ.
+
 Full text: `../feature-delta.md` → "Wave: DESIGN" sections. ADRs: ADR-245, ADR-246, ADR-247 in
 `docs/product/architecture/`. Brief: `docs/product/architecture/brief.md` → "Application Architecture —
 epic-6298-report-pdf-export".
@@ -62,9 +65,9 @@ epic-6298-report-pdf-export".
 
 | Existing | Verdict |
 |---|---|
-| `ReportView`, `ThenAndNowHeader`, comparison / mark code, `App` routing, themes, `index.html`, usage-data reporter and enum, `useReportOpenedReporter`, E2E `ReportPage` POM, clients' client package, `mcp-core` tools, `lighthouse` skill | EXTEND (12) |
+| `ReportView`, `ThenAndNowHeader`, comparison / mark code, `App` routing, themes, `index.html`, usage-data enum, `useReportOpenedReporter`, E2E `ReportPage` POM, clients' client package, `mcp-core` tools, `lighthouse` skill; (rev. 2026-10-19) `ReportList`, `ReportsTab` | EXTEND (14) |
 | Report query key and service, `WidgetBody` looks, summary and panels, owner reads, `TerminologyContext`, backend report endpoints, clients' packing / drift / eval tooling | REUSE (7) |
-| Print page, print frame, ready / print-once hook, `ChangeMarkIcon`, bundled font + licence file, print POM, clients' report reader + header summary, `lh report` group, `lighthouse-reports` skill | CREATE NEW (9; the report contract fixture was dropped after MQ-3 = b), each justified in the feature delta |
+| Print page, print frame, `printPageStateOf`, print-once hook, `ChangeMarkIcon`, bundled font + licence file, print POM, clients' report reader + header summary, `lh report` group, `lighthouse-reports` skill; (rev. 2026-10-19) export starter, print read port, print effect port; (rev. 2) `reportPrintRoutes` as the print page's composition root | CREATE NEW (14; the report contract fixture was dropped after MQ-3 = b), each justified, with its contract shape, in the feature delta |
 
 ## Technology Stack
 
@@ -84,7 +87,8 @@ epic-6298-report-pdf-export".
 
 ## Upstream Changes
 
-- AC-1.8 rewording (cancelling returns to the report, now showing the fresh values) and the journey's
+- AC-1.8 rewording (rev. 2: cancelling returns to where the export started — the report, now showing the fresh
+  values, or the Reports list) and the journey's
   produced-date/Now-end checkpoint (instance zone vs viewer zone): `upstream-changes.md`.
 - DoD 6 gains the PDF font check from slice 02.
 - AC-4.2 stands for the clients; slice 04 stays ~1 day; slice 05 carries the presentation rules (U-5 to U-7).
@@ -94,6 +98,75 @@ epic-6298-report-pdf-export".
 
 All answered by the maintainer on 2026-10-17: MQ-1 = (a) the print page itself; MQ-2 = (a) drawn icons everywhere;
 MQ-3 = (b) raw values only (against the recommendation of (a)). Options as put are kept in the feature delta.
+
+## Revised after review 2026-10-19
+
+Autonomous revision (Morgan); the maintainer was away and was not asked. Closes the review gate's F-01..F-14 and
+folds in the DISTILL walk-through (NMD-1..7, locked). Full text in the feature delta (DESIGN sections, marked
+"rev. 2026-10-19"); ADR-245, 246, 247 each carry a "Revised after review 2026-10-19" section.
+
+- **DDD-3 (amended)** Fresh read by mechanism: the print page's own observer uses `refetchOnMount: "always"` (the
+  app's `staleTime` is 5 min); fresh = `dataUpdatedAt ≥ mountedAt`; a cached answer from before mount is never
+  rendered as the print. The report view's query options are unchanged.
+- **DDD-4 (amended)** `printPageStateOf` — a pure function of explicit inputs (fetchedAt, mountedAt, report error,
+  owner name/error, terms loading/error, fonts) → preparing / failedRetryable / failedFinal / ready.
+- **DDD-13 (amended)** The surface that starts the export emits, before navigating: the report view's button and
+  the Reports list's icon, both through one export starter. Exactly one event per click; the print route emits none.
+- **DDD-15 / DDD-16 (amended)** No Export PDF for a report this version cannot show (PD-3); the list icon follows the
+  row's type only (PD-4); the print chunk is prefetched from the list too.
+- **DDD-24** Read-only port for the print page (`Pick` of `getReport` and the owner reads), passed as a prop; no
+  write method reachable; type test.
+- **DDD-25** Print, after-print and navigation are an injected effect port of the print-once hook.
+- **DDD-26** The flag is consumed (entry replaced without it) before print; reload, Forward and StrictMode's double
+  effect never print again; consumed only by an actual print.
+- **DDD-27** Origin (`report` | `list`) travels with the flag; Back and the after-print return follow it; a final
+  failure and a direct load (PD-5) go to the Reports list.
+- **DDD-28** Fonts asked for after the document renders, with `document.fonts.load` per face and weight shown.
+- **DDD-29** A return to the Reports list may count one tab opening — accepted, so the page-opening detector keeps
+  reading the path alone.
+- **DDD-30** The print page paints its own light ground (`color-scheme: light`, full height; `html`/`body` white in
+  print); the shell's container moves into the shell layout route.
+- **DDD-31** A successful Retry prints once (PD-1).
+- **DDD-32** Two surfaces, one starter; `ReportListActions` becomes an export action for every reader plus an
+  optional editor group; viewers get an Actions column holding the icon alone.
+- Earned-trust wording: the E2E checks run on every CI run once slice 01 (walking skeleton) / slice 02 (font check)
+  has shipped; the clients' pass-through test proves pass-through, not wire compatibility, until DELIVER swaps the
+  hand-written answers for a dev-instance capture; the Quicksand subset's coverage of — − – · … is checked in
+  slice 02.
+- Example window corrected: the 90-day Now ending 30 Oct 2026 is 2 Aug – 30 Oct 2026.
+
+**Provisional defaults — PROVISIONAL, maintainer confirms**: PD-1 Retry continues the export; PD-2 a renamed panel
+reads the term alone ("Lead Time"); PD-3 no Export PDF on the view for a report this version cannot show; PD-4 the
+list icon for every row whose type this version can show; PD-5 Back on a directly loaded print page goes to the
+Reports list. Story wording changes for the product owner: `upstream-changes.md` U-8..U-15.
+
+## Second revision 2026-10-19
+
+Second revision 2026-10-19: N1–N8, PD-6. Autonomous (Morgan); the maintainer was away and was not asked. Full text in
+the feature delta (marked "rev. 2, 2026-10-19") and in each ADR's "Revised after review 2026-10-19" section.
+
+- **DDD-25 / DDD-28 (N1)** Font loading is an effect, so it sits on the effect port: `loadFonts(faces) → "loaded" |
+  "failed"`, called by the page after the document rendered; the production binding is the only module naming
+  `document.fonts` (and `globalThis.print`). Contract shape: bounded change over the document's `FontFaceSet`. The
+  page's only effects outside its own declared set (title, its attribute, one cache entry) now really all go through
+  the port, and its tests pass a fake.
+- **DDD-25 (N2)** One `afterprint` subscription per mount, released on unmount, independent of the flag and the state;
+  clearing the flag must not drop it.
+- **DDD-24 (N3, N8)** `reportPrintRoutes` builds the read port as an object literal of exactly `getReport`, `getTeam`,
+  `getPortfolio` (bound), and the terms read as `{ getTerm, isLoading, error }`; a runtime test pins both literals'
+  keys, because `Pick` is erased at runtime.
+- **N4** Cancel returns the reader to where the export started (the report or the Reports list): Changed Assumptions,
+  U-1.
+- **N5** brief.md's epic-6298 header names this revision, DDD-1..32 and PD-1..PD-6.
+- **R35 (N6)** `reportPrintRoutes` is a bounded change (universe: the port literals and the browser binding it passes).
+  **DDD-4 (N6)** the report error is an `ApiError` read through its status; 404 / 422 are final.
+- **DDD-3 (N7)** The print observer does not retry a 404 / 422 (as `ReportView`'s `retriesUnlessFinal`), the app
+  default otherwise; budget: dialog within 2 s of the click on the dev instance, checked by hand.
+- **DDD-4 (PD-6)** A fifth state, `failedPart`: the report read did not fail but the owner's name, the terms or the
+  fonts could not be loaded → "Part of the page couldn't be loaded, so no PDF was made." with Retry. **PD-6 —
+  PROVISIONAL, maintainer confirms.** U-16 for AC-1.11.
+- The skill's presentation rules write a percent change as the web does, with a space before the percent sign
+  ("−43 %").
 
 ## Outcome collision check
 
