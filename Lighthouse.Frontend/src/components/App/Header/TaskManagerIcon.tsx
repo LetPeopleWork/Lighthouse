@@ -42,10 +42,16 @@ const TaskManagerIcon = () => {
 		refresh,
 		cancel,
 		cancelAll,
+		forgetTheRefusedCancelAll,
 		test,
 	} = useTaskManagerPopover(isSystemAdmin);
 
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+
+	const close = () => {
+		setAnchor(null);
+		forgetTheRefusedCancelAll();
+	};
 
 	const showWhatIsHappeningNow = (opener: HTMLElement) => {
 		setAnchor(opener);
@@ -83,7 +89,7 @@ const TaskManagerIcon = () => {
 			<Popover
 				open={anchor !== null}
 				anchorEl={anchor}
-				onClose={() => setAnchor(null)}
+				onClose={close}
 				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 				transformOrigin={{ vertical: "top", horizontal: "right" }}
 				// A popover is already bounded to the window's height and scrolls. Its width is not bounded
@@ -101,11 +107,7 @@ const TaskManagerIcon = () => {
 				>
 					{/* Clicking beside the box is the only way out MUI gives away for free, and it is the
 					    first thing to go when the box fills the screen. */}
-					<IconButton
-						aria-label="Close"
-						size="small"
-						onClick={() => setAnchor(null)}
-					>
+					<IconButton aria-label="Close" size="small" onClick={close}>
 						<CloseIcon fontSize="small" />
 					</IconButton>
 				</Box>

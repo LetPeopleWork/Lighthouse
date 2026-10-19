@@ -90,6 +90,12 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 				setStopAsked((asked) =>
 					forgetWhatTheInstanceNoLongerReports(asked, running),
 				);
+
+				// "Try again" with nothing left to try it on would be read as a warning about whatever is
+				// listed next.
+				if (!running.some(isStoppedByCancelAll)) {
+					setCancelAllFailed(false);
+				}
 			},
 		);
 
@@ -160,6 +166,14 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 	}, [refresh, stopAsked, tasks, updateSubscriptionService]);
 
 	/**
+	 * The hook outlives the popover, so a refusal left standing would greet the next opening over rows the
+	 * click never touched.
+	 */
+	const forgetTheRefusedCancelAll = useCallback(() => {
+		setCancelAllFailed(false);
+	}, []);
+
+	/**
 	 * The answer comes back from the instance and replaces the row wholesale. Deciding locally what the
 	 * test must have meant would let the header disagree with the popover it was opened from.
 	 */
@@ -218,6 +232,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 		refresh,
 		cancel,
 		cancelAll,
+		forgetTheRefusedCancelAll,
 		test,
 	};
 };

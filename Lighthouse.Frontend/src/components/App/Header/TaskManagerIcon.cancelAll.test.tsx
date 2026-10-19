@@ -218,6 +218,49 @@ describe("Cancel all in the Task Manager", () => {
 		expect(await cancelAll()).toBeEnabled();
 	});
 
+	it(`does not bring "Could not cancel. Try again." back over the next popover's rows`, async () => {
+		const service = renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
+			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
+		});
+
+		await openThePopover();
+		await userEvent.click(await cancelAll());
+		await screen.findByText(/^Could not cancel\. Try again\.$/);
+
+		await userEvent.click(screen.getByRole("button", { name: /^Close$/ }));
+		vi.mocked(service.getRunningTasks).mockResolvedValue([aQueuedPortfolio]);
+		await openThePopover();
+		await screen.findByTestId("task-manager-row-Features-3");
+
+		expect(
+			screen.queryByText(/^Could not cancel\. Try again\.$/),
+		).not.toBeInTheDocument();
+	});
+
+	it(`drops "Could not cancel. Try again." once the list shows nothing left to cancel`, async () => {
+		const service = renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
+			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
+		});
+
+		await openThePopover();
+		await userEvent.click(await cancelAll());
+		await screen.findByText(/^Could not cancel\. Try again\.$/);
+
+		vi.mocked(service.getRunningTasks).mockResolvedValue([aQueuedRemoval]);
+		const somethingChanged = vi.mocked(service.subscribeToAllUpdates).mock
+			.calls[0][0];
+		somethingChanged();
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText(/^Could not cancel\. Try again\.$/),
+			).not.toBeInTheDocument();
+		});
+		expect(
+			screen.getByTestId("task-manager-row-TeamDelete-9"),
+		).toBeInTheDocument();
+	});
+
 	it(`re-reads the list once the instance has answered, so only the removals remain`, async () => {
 		const service = renderIcon([
 			aRunningTeam,
