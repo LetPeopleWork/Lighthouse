@@ -309,6 +309,84 @@ describe("Cancel all in the Task Manager", () => {
 		).toBeInTheDocument();
 	});
 
+	it(`says nothing about a refusal before "Cancel all" was pressed`, async () => {
+		renderIcon([aRunningTeam, aQueuedPortfolio]);
+
+		await openThePopover();
+		await cancelAll();
+
+		expect(
+			screen.queryByText(/^Could not cancel\. Try again\.$/),
+		).not.toBeInTheDocument();
+	});
+
+	it(`drops "Could not cancel. Try again." once a second try is heard`, async () => {
+		renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
+			svc.cancelAllTasks = vi
+				.fn()
+				.mockRejectedValueOnce(new Error("refused"))
+				.mockResolvedValue(undefined);
+		});
+
+		await openThePopover();
+		await userEvent.click(await cancelAll());
+		await screen.findByText(/^Could not cancel\. Try again\.$/);
+		await userEvent.click(await cancelAll());
+
+		await waitFor(() => {
+			expect(
+				screen.queryByText(/^Could not cancel\. Try again\.$/),
+			).not.toBeInTheDocument();
+		});
+		expect(await cancelAll()).toBeEnabled();
+	});
+
+	it(`keeps "Could not cancel. Try again." while a removal is listed beside work that can still be stopped`, async () => {
+		const service = renderIcon([aRunningTeam, aQueuedRemoval], (svc) => {
+			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
+		});
+
+		await openThePopover();
+		await screen.findByTestId("task-manager-row-Team-7");
+		vi.mocked(service.getRunningTasks).mockResolvedValue([
+			aRunningTeam,
+			aQueuedPortfolio,
+			aQueuedRemoval,
+		]);
+		await userEvent.click(await cancelAll());
+
+		// The row only the re-read reports proves the re-read after the refusal has landed.
+		await screen.findByTestId("task-manager-row-Features-3");
+		expect(
+			screen.getByText(/^Could not cancel\. Try again\.$/),
+		).toBeInTheDocument();
+	});
+
+	it(`leaves a row stopped on its own still stopping when "Cancel all" is refused`, async () => {
+		renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
+			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
+		});
+
+		await openThePopover();
+		await userEvent.click(
+			await screen.findByRole("button", { name: /^Stop refreshing Payments$/ }),
+		);
+		await waitFor(() => {
+			expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+				/— Stopping…$/,
+			);
+		});
+		await userEvent.click(await cancelAll());
+
+		await screen.findByText(/^Could not cancel\. Try again\.$/);
+		expect(screen.getByTestId("task-manager-row-Team-7")).toHaveTextContent(
+			/— Stopping…$/,
+		);
+		expect(screen.getByTestId("task-manager-row-Features-3")).toHaveTextContent(
+			/— Queued$/,
+		);
+	});
+
 	/** Already true while there is no such button; it has to stay true once there is. */
 	it("is not offered when nothing is running or queued", async () => {
 		renderIcon([]);

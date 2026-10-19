@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type {
 	IUpdateTask,
@@ -274,5 +275,23 @@ describe("ActivitySection – what a row offers to stop", () => {
 		expect(
 			screen.queryByRole("button", { name: "Stop refreshing Legacy" }),
 		).not.toBeInTheDocument();
+	});
+
+	it("names what its Stop would stop when the reader points at it", async () => {
+		renderRows([aTask({ updateType: "Team", id: 1, name: "Payments" })]);
+
+		await userEvent.hover(
+			screen.getByRole("button", { name: "Stop refreshing Payments" }),
+		);
+
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			/^Stop refreshing Payments$/,
+		);
+	});
+
+	it("warns about no refused Cancel all unless it is told one was refused", () => {
+		renderRows([aTask({ updateType: "Team", id: 1, name: "Payments" })]);
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 });

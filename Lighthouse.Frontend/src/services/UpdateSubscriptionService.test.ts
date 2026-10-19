@@ -212,6 +212,14 @@ describe("UpdateSubscriptionService", () => {
 
 			await expect(service.cancelTask("Team", 7)).rejects.toThrow("refused");
 		});
+
+		it("asks the instance to stop everything in one request", async () => {
+			mockedAxios.post.mockResolvedValueOnce({ data: undefined });
+
+			await service.cancelAllTasks();
+
+			expect(mockedAxios.post).toHaveBeenCalledWith("/update/tasks/cancel");
+		});
 	});
 
 	describe("when the connection drops", () => {
