@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.API.Helpers
             project.OverrideRealChildCountStates = portfolioSetting.OverrideRealChildCountStates;
             project.DoneItemsCutoffDays = portfolioSetting.DoneItemsCutoffDays;
 
-            // Taken before the save moves the Portfolio to another connection, so what the Portfolio read before
-            // the request is judged against the connection it was read from.
             project.TakeFollowableSettingsAsSent(portfolioSetting);
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.TakeSizeEstimateFieldAsSent(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
