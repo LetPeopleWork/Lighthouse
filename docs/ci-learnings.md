@@ -243,6 +243,7 @@ get re-applied.
 **Integration tests:**
 - Live external-API tests (GitHub = 60 req/hr/IP, connectors) must be path-scoped or they flake the gate.
 - `IntegrationTestBase` is `[NonParallelizable]`; EF InMemory does not enforce FKs — FK-dependent tests must run on SQLite.
+- **A class with several Postgres cases shares one container.** Start it lazily through `SharedPostgresContainer`, give each case its own database (`ConnectionStringToANewDatabase()`), dispose it in `[OneTimeTearDown]`; never `PostgresContainerFixture.StartFreshAsync()` per case. A container costs 5–8 s to start, a database milliseconds. Only server-level tests (replicas, cross-database locks, substrate probes) get a server per case, with a comment saying why. (See the 2026-10-19 entry under Tests.)
 
 **Process / when violations surface:**
 - ~~Sonar only re-scans **PRs + the Nightly**, NOT pushes to `main`.~~ **WRONG — corrected 2026-08-01.** The `sonar-gates` job runs on pushes to `main` too, and failed one (run `30701901338`). Do not push a batch of feature commits to `main` assuming the gate will not judge them; it will, at the moment they land. What remains true is the second half: unpushed feature commits enter "new code" the moment they land, so a batch push is judged as one diff.
@@ -424,6 +425,20 @@ get re-applied.
 - **Rule going forward**: Any reverse-proxy, preview-deploy, or dev-tunnel deployment of Lighthouse MUST include the *public* (browser-facing) origin in `Authentication:AllowedOrigins`, not just the internal container URL. The IdP-driven callback redirect path uses the same CORS fail-closed guard as direct UI traffic — if you can reach the Lighthouse UI in a browser but OAuth callbacks fail with no `OAuthController` log line, check `AllowedOrigins` against the public origin first.
 
 ## Tests
+
+### 2026-10-19 — a migration test class started a Postgres container per case and spent most of its time waiting for them
+- **Symptom**: `ConnectionDefaultsUpgradeMigrationTests` took 55 s in CI run 39242773897, against the 34 s backend class budget.
+- **Root cause**: each Postgres case started its own `postgres:18-alpine` container through `PostgresContainerFixture.StartFreshAsync()` and threw it away at the end. A start costs 5–8 s; the migrations the case is about take under a second. Seven Postgres cases paid for seven starts. Most other container test classes were written the same way.
+- **Fix**: `SharedPostgresContainer` (ceea676a0) starts one container for the fixture, lazily on its first Postgres case, and hands each case a database of its own (`t_<guid>`) inside it; EF's migrator creates that database on its first run. `ConnectionStringToANewCreatedDatabaseAsync()` creates it up front for code that opens its own connection before anything migrates (the advisory-lock startup path). Six more classes moved onto it. Local numbers, each class run alone by name, baseline and converted builds interleaved under the same load (class total, before → after):
+  - `ConcurrentStartupMigrationTests` (4 Postgres cases): 63.1 / 38.6 / 39.7 s → 19.1 / 24.0 / 20.1 / 21.5 s.
+  - `ProcessBehaviorSnapshotMigrationTests` (3): 33.4 / 34.7 / 57.1 s → 21.5 / 19.8 / 18.9 / 24.5 s.
+  - `BlockedRuleSetMigrationTests` (2): 28.1 / 29.9 / 29.5 s → 17.9 / 25.7 / 17.4 / 22.1 s.
+  - `PercentilesOverTimeSnapshotMigrationTests` (2): 26.7 / 19.7 / 24.7 s → 15.9 / 22.1 / 15.8 / 19.8 s.
+  - `ViewerEmbedStorageGuaranteeTests` (2): 25.2 / 20.7 / 25.5 s → 15.7 / 22.0 / 15.7 / 17.9 s.
+  - `DeliveryMetricSnapshotDayKeyMigrationTests` (2): 29.1 / 35.1 / 25.6 s → 17.1 / 27.6 / 26.6 / 24.3 s.
+
+  Every Postgres case after the first now takes 1–2 s instead of 6–14 s. Classes with a single Postgres case (`BlockedCountSnapshot`, `BlockedDuration`, `BlockedStalenessThreshold`, `FeatureDependencyReference`, `PredefinedAdditionalField` migration tests, `LongSecretRoundTripTests`) still start exactly one container, so they were left alone: there is nothing to share.
+- **Rule going forward**: a test class with several Postgres cases starts ONE container, lazily on its first Postgres case, through `SharedPostgresContainer`, and gives each case its own database via `ConnectionStringToANewDatabase()` (or `ConnectionStringToANewCreatedDatabaseAsync()` when the code under test opens a connection before migrating). Dispose it in `[OneTimeTearDown]`. Never call `PostgresContainerFixture.StartFreshAsync()` per case. A fresh server per case is only for tests whose point is server-level behaviour: several replicas, locks that span databases, substrate and cluster probes; say why in a comment there. This applies when DISTILL writes a new migration or container test, not only when CI complains.
 
 ### 2026-10-16 — Jira dates were stored shifted by the server's UTC offset, and every test was green on any zone
 - **Symptom**: on a server outside UTC, a Jira item's created date and its status-change times were stored off by the server's offset (an hour or two in Europe). No test failed, locally or in CI — not even under the suite's `TZ=Europe/Zurich`.
