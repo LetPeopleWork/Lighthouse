@@ -1669,3 +1669,14 @@ To `nw-acceptance-designer`: `environments.yaml` (`scenario_axes` per slice) and
 | The clients' `ReportOpened` for K4: "if DEVOPS maps it" | Mapped: `report get` only, source `Cli` / `Mcp` | K4 has no other instrument |
 | R25 "pack-skills.sh … unchanged", no CI change | The clients' CI dry-run `expected=(…)` list gains `lighthouse-reports` | The list is hard-coded |
 | The `reports` gate baseline would be "read at release" | `v26.10.10.1` now, re-checked at landing | Tags on this checkout |
+
+## Carried in from Epic #6311 (2026-10-19) — input for DISTILL
+
+Epic #6311 shipped percentiles that lie beyond the five-year simulation horizon. Every forecast
+percentile on the wire may now carry `beyondHorizon: true` with `horizonYears` (5 today) beside a
+stand-in `expectedDate` that is **not** a real date. The web app reads such a percentile as
+**"More than 5 years"** (the number from `horizonYears`, never a literal 5), draws no timeline bar and
+no predictability point for it, and the Delivery export table writes the same words. The PDF must do
+the same wherever it prints a forecast date or likelihood, reusing the web app's shared wording
+(`forecastPercentileText`) rather than printing the stand-in date. DISTILL should pin it with one
+scenario per surface the PDF prints.

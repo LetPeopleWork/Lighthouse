@@ -173,7 +173,7 @@ follow up to `53a3c0fbd`. No migration in any slice, no new permission, no licen
 | RBAC | No new permission. Cancel all is `SystemAdmin`, as the Task Manager and per-row Stop. |
 | Website | N/A, because this is a fix, not a new capability. |
 | Migrations | None. |
-| Epic #6298 (PDF export) | Not yet noted in its workspace that the PDF must render a beyond percentile; owed. |
+| Epic #6298 (PDF export) | Noted in its workspace: the PDF must print a beyond percentile as "More than 5 years", for DISTILL to pin. |
 
 ## Follow-ups worth raising
 
