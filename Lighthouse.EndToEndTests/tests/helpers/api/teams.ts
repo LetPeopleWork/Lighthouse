@@ -43,3 +43,30 @@ export async function createTeam(
 export async function updateTeam(api: APIRequestContext, teamId: number) {
 	await api.post(`/api/latest/teams/${teamId}`);
 }
+
+/** Has the named Team read its Estimation from its connection's default. */
+export async function followTheConnectionsEstimation(
+	api: APIRequestContext,
+	teamName: string,
+): Promise<void> {
+	const teams = (await (await api.get("/api/latest/teams")).json()) as {
+		id: number;
+		name: string;
+	}[];
+	const team = teams.find((t) => t.name === teamName);
+	if (!team) {
+		throw new Error(`No Team named ${teamName}`);
+	}
+
+	const settings = await (
+		await api.get(`/api/latest/teams/${team.id}/settings`)
+	).json();
+	const response = await api.put(`/api/latest/teams/${team.id}`, {
+		data: { ...settings, estimationSource: "ConnectionDefault" },
+	});
+	if (!response.ok()) {
+		throw new Error(
+			`Could not have ${teamName} follow the Estimation default: ${response.status()} ${await response.text()}`,
+		);
+	}
+}

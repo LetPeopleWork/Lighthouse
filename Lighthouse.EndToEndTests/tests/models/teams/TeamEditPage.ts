@@ -129,12 +129,17 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 		await this.waitForChangesSaved();
 	}
 
-	/** What the Estimation Field shows, once its section is open. */
-	async getSelectedEstimation(): Promise<string> {
-		await this.page
-			.getByRole("heading", { name: "Estimation", exact: true })
-			.click();
-		return (await this.estimationFieldCombobox.textContent()) ?? "";
+	/** Opens Estimation once the page has loaded, leaving it open when it already is. */
+	async openEstimationSettings(): Promise<void> {
+		const heading = this.page.getByRole("heading", {
+			name: "Estimation",
+			exact: true,
+		});
+		await expect(heading).toBeVisible();
+		if (!(await this.estimationFieldCombobox.isVisible())) {
+			await heading.click();
+		}
+		await expect(this.estimationFieldCombobox).toBeVisible();
 	}
 
 	async hasSaveButton(): Promise<boolean> {

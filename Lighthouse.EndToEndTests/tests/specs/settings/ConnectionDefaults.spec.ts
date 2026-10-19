@@ -4,22 +4,22 @@ import {
 	waitForBackgroundUpdates,
 } from "../../helpers/api/demo";
 import { followTheConnectionsFeatureOwnerField } from "../../helpers/api/portfolios";
+import { followTheConnectionsEstimation } from "../../helpers/api/teams";
 
 const DEMO_SCENARIO_ID = 0;
 const DEMO_CONNECTION = "Demo Data CSV Connector";
-const A_TEAM_WITHOUT_AN_ESTIMATION = "Team Voyager";
+const THE_DEMO_TEAM = "Team Zenith";
 const THE_DEMO_PORTFOLIO = "Project Apollo";
 // The only Additional Field the CSV demo connection defines.
 const A_FIELD_OF_THE_CONNECTION = "Story Points";
 
-// Until the Estimation default exists, the connection page has no defaults section, so this
-// walking skeleton waits for it.
-test.fixme("@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team without one shows it", async ({
+test("@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team that follows it shows it", async ({
 	request,
 	overviewPage,
 }) => {
 	await loadDemoScenario(request, DEMO_SCENARIO_ID);
 	await waitForBackgroundUpdates(request);
+	await followTheConnectionsEstimation(request, THE_DEMO_TEAM);
 
 	const overview = await overviewPage.lighthousePage.open();
 	const connection = await overview.editConnection(DEMO_CONNECTION);
@@ -29,12 +29,13 @@ test.fixme("@walking_skeleton @US-11 an admin sets the Teams' Estimation once on
 		"Change the Estimation default?",
 	);
 
-	const team = await afterTheSave.goToTeam(A_TEAM_WITHOUT_AN_ESTIMATION);
+	const team = await afterTheSave.goToTeam(THE_DEMO_TEAM);
 	const settings = await team.editTeam();
+	await settings.openEstimationSettings();
 
-	await expect
-		.poll(() => settings.getSelectedEstimation())
-		.toBe("Connection default (Story Points, Points)");
+	await expect(settings.estimationFieldCombobox).toHaveText(
+		"Connection default (Story Points, Points)",
+	);
 });
 
 test("@walking_skeleton @US-10 an admin sets the Portfolios' Feature Owner Field once on the connection and a Portfolio that follows it shows it", async ({
