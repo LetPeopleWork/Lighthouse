@@ -70,9 +70,36 @@ export const isConnectionDefaultName = (
 ): name is ConnectionDefaultName =>
 	(ConnectionDefaultNames as readonly string[]).includes(name);
 
-/** The Additional Field each default points at, by id; null or absent means no default is set. */
+export type EstimationDefaultName = Extract<
+	ConnectionDefaultName,
+	"estimationForTeams" | "estimationForPortfolios"
+>;
+
+export type FieldDefaultName = Exclude<
+	ConnectionDefaultName,
+	EstimationDefaultName
+>;
+
+export const isEstimationDefaultName = (
+	name: ConnectionDefaultName,
+): name is EstimationDefaultName =>
+	name === "estimationForTeams" || name === "estimationForPortfolios";
+
+/** How the owners following an Estimation default estimate their items, as one bundle. */
+export interface IEstimationDefault {
+	additionalFieldDefinitionId: number | null;
+	unit: string | null;
+	useNonNumericEstimation: boolean;
+	estimationCategoryValues: string[];
+}
+
+/**
+ * The Additional Field each default points at, by id, and the whole bundle for an Estimation default; null
+ * or absent means no default is set.
+ */
 export type IConnectionDefaults = Partial<
-	Record<ConnectionDefaultName, number | null>
+	Record<FieldDefaultName, number | null> &
+		Record<EstimationDefaultName, IEstimationDefault | null>
 >;
 
 export interface IWorkTrackingSystemConnection {

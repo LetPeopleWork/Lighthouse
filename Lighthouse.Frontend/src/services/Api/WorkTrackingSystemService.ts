@@ -5,10 +5,12 @@ import {
 	readConnectionValidation,
 } from "../../models/WorkTracking/ConnectionValidationResult";
 import {
-	type ConnectionDefaultName,
 	ConnectionDefaultNames,
+	type EstimationDefaultName,
+	type FieldDefaultName,
 	type IWorkTrackingSystemConnection,
 	isConnectionDefaultName,
+	isEstimationDefaultName,
 	WorkTrackingSystemConnection,
 } from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
@@ -19,18 +21,42 @@ import {
 } from "../../models/WorkTracking/WriteBackMappingDefinition";
 import { BaseApiService } from "./BaseApiService";
 
+const FieldDefaultSchema = z.number().nullable().optional();
+
+const EstimationDefaultSchema = z
+	.object({
+		additionalFieldDefinitionId: z
+			.number()
+			.nullish()
+			.transform((id) => id ?? null),
+		unit: z
+			.string()
+			.nullish()
+			.transform((unit) => unit ?? null),
+		useNonNumericEstimation: z
+			.boolean()
+			.nullish()
+			.transform((nonNumeric) => nonNumeric ?? false),
+		estimationCategoryValues: z
+			.array(z.string())
+			.nullish()
+			.transform((values) => values ?? []),
+	})
+	.nullable()
+	.optional();
+
 const ConnectionDefaultsSchema = z.object({
 	defaults: z
 		.object(
 			Object.fromEntries(
 				ConnectionDefaultNames.map((name) => [
 					name,
-					z.number().nullable().optional(),
+					isEstimationDefaultName(name)
+						? EstimationDefaultSchema
+						: FieldDefaultSchema,
 				]),
-			) as Record<
-				ConnectionDefaultName,
-				z.ZodOptional<z.ZodNullable<z.ZodNumber>>
-			>,
+			) as Record<FieldDefaultName, typeof FieldDefaultSchema> &
+				Record<EstimationDefaultName, typeof EstimationDefaultSchema>,
 		)
 		.nullable()
 		.optional(),

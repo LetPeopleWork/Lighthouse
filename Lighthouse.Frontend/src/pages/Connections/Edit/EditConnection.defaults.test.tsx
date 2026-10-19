@@ -920,28 +920,8 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("the Estimation default", () => {
-		// Estimation is read when a page loads, so changing it queues no update to ask about.
-		// @error @us-11 @contract-shape:unbounded-preservation
-		it("a changed Estimation default 4 Teams follow does not ask whether to update them", async () => {
-			const server = await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({ followers: { estimationForTeams: 4 } }),
-			});
-
-			await whenPriyaPicks("Teams", "Estimation Field", StoryPoints);
-			whenPriyaPressesSave();
-
-			await theSaveIsSent(server);
-			expect(
-				screen.queryByRole("dialog", { name: /^Update .*\?$/ }),
-			).not.toBeInTheDocument();
-			expect(theSave(server).defaults).toMatchObject({
-				estimationForTeams: 13,
-			});
-			expect(theSave(server).choice).toBeUndefined();
-		});
-
 		// @driving_port @us-11 @ac-11.4 @contract-shape:bounded-change
-		it.skip("a changed Estimation default 4 Teams follow asks only to save, because nothing needs updating", async () => {
+		it("a changed Estimation default 4 Teams follow asks only to save, because nothing needs updating", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ followers: { estimationForTeams: 4 } }),
 			});
@@ -976,7 +956,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		// @edge @us-11 @ac-11.5 @contract-shape:pure-function
-		it.skip("the Estimation default stays collapsed to its field until a field is chosen", async () => {
+		it("the Estimation default stays collapsed to its field until a field is chosen", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
 			expect(

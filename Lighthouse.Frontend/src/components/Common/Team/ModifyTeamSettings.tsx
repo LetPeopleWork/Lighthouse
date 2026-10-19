@@ -10,6 +10,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useRef } from "react";
 import { useModifySettings } from "../../../hooks/useModifySettings";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -23,6 +24,7 @@ import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation"
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
+import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -328,6 +330,16 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
+							followable={{
+								settings: teamSettings,
+								connection: selectedWorkTrackingSystem,
+								theDefault: "estimationForTeams",
+								...followOrOwn<IBaseSettings>(
+									updateSettings,
+									"estimationSource",
+									"estimationAdditionalFieldDefinitionId",
+								),
+							}}
 						/>
 
 						<AdvancedInputsComponent

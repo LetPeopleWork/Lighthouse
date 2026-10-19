@@ -20,13 +20,17 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
-import type {
-	ConnectionDefaultName,
-	IAuthenticationMethod,
-	IConnectionDefaults,
-	IConnectionUsage,
-	IFollowerGroup,
-	IWorkTrackingSystemConnection,
+import {
+	type ConnectionDefaultName,
+	type EstimationDefaultName,
+	type FieldDefaultName,
+	type IAuthenticationMethod,
+	type IConnectionDefaults,
+	type IConnectionUsage,
+	type IEstimationDefault,
+	type IFollowerGroup,
+	type IWorkTrackingSystemConnection,
+	isEstimationDefaultName,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	type IWorkTrackingSystemOption,
@@ -41,6 +45,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
+import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import FormSelectField from "../FormSelectField";
 import InputGroup from "../InputGroup/InputGroup";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
@@ -219,6 +224,42 @@ const changedDefaultsToUpdateFollowersOf = (
 			(loaded[name] ?? null) !== (current[name] ?? null),
 	);
 
+// The Additional Field a default points at, which for an Estimation default sits inside its bundle.
+const fieldOfDefault = (
+	name: ConnectionDefaultName,
+	defaults: IConnectionDefaults,
+): number | null | undefined =>
+	isEstimationDefaultName(name)
+		? defaults[name]?.additionalFieldDefinitionId
+		: defaults[name];
+
+const describedInOrder = (bundle: IEstimationDefault) => [
+	bundle.additionalFieldDefinitionId,
+	bundle.unit,
+	bundle.useNonNumericEstimation,
+	bundle.estimationCategoryValues,
+];
+
+const sameEstimation = (
+	loaded: IEstimationDefault | null | undefined,
+	current: IEstimationDefault | null | undefined,
+): boolean =>
+	JSON.stringify(loaded ? describedInOrder(loaded) : null) ===
+	JSON.stringify(current ? describedInOrder(current) : null);
+
+const changedEstimationDefaultsWithFollowers = (
+	loaded: IConnectionDefaults,
+	current: IConnectionDefaults,
+	usage: IConnectionUsage,
+): EstimationDefaultName[] =>
+	(Object.keys(WhereEachDefaultSits) as ConnectionDefaultName[])
+		.filter(isEstimationDefaultName)
+		.filter(
+			(name) =>
+				followersOfDefault(usage, name) > 0 &&
+				!sameEstimation(loaded[name], current[name]),
+		);
+
 // An owner following several of the changed defaults is one owner to update, so it is counted once.
 const followersIn = (
 	group: DefaultsGroup,
@@ -235,10 +276,12 @@ const followersIn = (
 		.reduce((sum, followers) => sum + followers.count, 0);
 
 // One question per save: a changed Additional Field updates everyone on the connection, which already
-// covers whoever follows a changed default.
+// covers whoever follows a changed default, and a question about updating also saves a changed Estimation
+// default. Only a save that changes nothing but Estimation defaults asks just whether to save.
 const whyUpdate = (
 	fieldsChanged: boolean,
 	changedDefaults: ConnectionDefaultName[],
+	changedEstimations: EstimationDefaultName[],
 	usage: IConnectionUsage,
 	featureTerm: string,
 ): WhyUpdate | null => {
@@ -247,6 +290,14 @@ const whyUpdate = (
 			because: "fields",
 			teams: usage.teams,
 			portfolios: usage.portfolios,
+		};
+	}
+	if (changedDefaults.length === 0 && changedEstimations.length > 0) {
+		return {
+			because: "estimation",
+			teams: followersIn("teams", changedEstimations, usage),
+			portfolios: followersIn("portfolios", changedEstimations, usage),
+			defaults: changedEstimations.length,
 		};
 	}
 	if (changedDefaults.length === 0) {
@@ -277,14 +328,26 @@ interface ConnectionDefaultsSectionProps {
 	supportedDefaults: ConnectionDefaultName[];
 	defaults: IConnectionDefaults;
 	additionalFields: IAdditionalFieldDefinition[];
-	onChange: (name: ConnectionDefaultName, fieldId: number | null) => void;
+	onChange: (name: FieldDefaultName, fieldId: number | null) => void;
+	onEstimationChange: (
+		name: EstimationDefaultName,
+		bundle: IEstimationDefault | null,
+	) => void;
 }
+
+const NoEstimation: IEstimationDefault = {
+	additionalFieldDefinitionId: null,
+	unit: null,
+	useNonNumericEstimation: false,
+	estimationCategoryValues: [],
+};
 
 const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	supportedDefaults,
 	defaults,
 	additionalFields,
 	onChange,
+	onEstimationChange,
 }) => {
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
@@ -299,8 +362,53 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	const fieldIds = new Set(additionalFields.map((field) => field.id));
 	// A field removed from the list above has no entry to show, so its default reads as None.
 	const chosenFieldOf = (name: ConnectionDefaultName): number | "" => {
-		const fieldId = defaults[name];
+		const fieldId = fieldOfDefault(name, defaults);
 		return fieldId != null && fieldIds.has(fieldId) ? fieldId : "";
+	};
+
+	const estimationEditorFor = (name: EstimationDefaultName) => {
+		const bundle = defaults[name] ?? NoEstimation;
+		const change = (part: Partial<IEstimationDefault>) =>
+			onEstimationChange(name, { ...bundle, ...part });
+		const chosen = chosenFieldOf(name);
+		return (
+			<EstimationFieldComponent
+				key={name}
+				inline
+				estimationFieldDefinitionId={chosen === "" ? null : chosen}
+				onEstimationFieldChange={(fieldId) =>
+					fieldId === null
+						? onEstimationChange(name, null)
+						: change({ additionalFieldDefinitionId: fieldId })
+				}
+				estimationUnit={bundle.unit}
+				onEstimationUnitChange={(unit) => change({ unit: unit || null })}
+				useNonNumericEstimation={bundle.useNonNumericEstimation}
+				onUseNonNumericEstimationChange={(useNonNumericEstimation) =>
+					change({ useNonNumericEstimation })
+				}
+				estimationCategoryValues={bundle.estimationCategoryValues}
+				onAddCategoryValue={(value) =>
+					change({
+						estimationCategoryValues: [
+							...bundle.estimationCategoryValues,
+							value.trim(),
+						],
+					})
+				}
+				onRemoveCategoryValue={(value) =>
+					change({
+						estimationCategoryValues: bundle.estimationCategoryValues.filter(
+							(kept) => kept !== value,
+						),
+					})
+				}
+				onReorderCategoryValues={(estimationCategoryValues) =>
+					change({ estimationCategoryValues })
+				}
+				additionalFieldDefinitions={additionalFields}
+			/>
+		);
 	};
 
 	const groups: { group: DefaultsGroup; heading: string }[] = [
@@ -335,15 +443,19 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 						>
 							{heading}
 						</Typography>
-						{rows.map((name) => (
-							<FormSelectField<number>
-								key={name}
-								label={WhereEachDefaultSits[name].label(featureTerm)}
-								value={chosenFieldOf(name)}
-								options={fieldOptions}
-								onChange={(fieldId) => onChange(name, fieldId)}
-							/>
-						))}
+						{rows.map((name) =>
+							isEstimationDefaultName(name) ? (
+								estimationEditorFor(name)
+							) : (
+								<FormSelectField<number>
+									key={name}
+									label={WhereEachDefaultSits[name].label(featureTerm)}
+									value={chosenFieldOf(name)}
+									options={fieldOptions}
+									onChange={(fieldId) => onChange(name, fieldId)}
+								/>
+							),
+						)}
 					</Box>
 				))}
 			</InputGroup>
@@ -740,6 +852,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 							defaults ?? {},
 							usage,
 						),
+						changedEstimationDefaultsWithFollowers(
+							loadedDefaults,
+							defaults ?? {},
+							usage,
+						),
 						usage,
 						featureTerm,
 					)
@@ -810,10 +927,10 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 
 	const handleDefaultChange = (
 		name: ConnectionDefaultName,
-		fieldId: number | null,
+		value: number | IEstimationDefault | null,
 	) => {
 		clearValidationFeedback();
-		setDefaults((previous) => ({ ...previous, [name]: fieldId }));
+		setDefaults((previous) => ({ ...previous, [name]: value }));
 	};
 
 	// A default left naming a removed field would still be sent, and every Team or Portfolio following it
@@ -827,10 +944,18 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 			previous === undefined
 				? previous
 				: Object.fromEntries(
-						Object.entries(previous).map(([name, fieldId]) => [
-							name,
-							fieldId != null && !kept.has(fieldId) ? null : fieldId,
-						]),
+						(
+							Object.entries(previous) as [
+								ConnectionDefaultName,
+								IConnectionDefaults[ConnectionDefaultName],
+							][]
+						).map(([name, value]) => {
+							const fieldId = fieldOfDefault(name, previous);
+							return [
+								name,
+								fieldId != null && !kept.has(fieldId) ? null : value,
+							];
+						}),
 					),
 		);
 	};
@@ -1019,6 +1144,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 								defaults={defaults ?? {}}
 								additionalFields={additionalFields}
 								onChange={handleDefaultChange}
+								onEstimationChange={handleDefaultChange}
 							/>
 						</Grid>
 					)}

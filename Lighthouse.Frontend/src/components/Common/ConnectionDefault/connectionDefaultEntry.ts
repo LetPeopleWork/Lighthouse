@@ -5,7 +5,9 @@ import type {
 import {
 	type ConnectionDefaultName,
 	ConnectionDefaultNames,
+	type IEstimationDefault,
 	type IWorkTrackingSystemConnection,
+	isEstimationDefaultName,
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
@@ -13,7 +15,8 @@ import {
 export const FollowTheConnection = "connection-default";
 
 // Only these trackers hold field defaults a Team or Portfolio can follow on their connection. A CSV file has
-// no parent, dependency or size field of its own to point at, but who owns a Feature can come from a column.
+// no parent, dependency or size field of its own to point at, but who owns a Feature and how items are
+// estimated can come from a column.
 const trackersHoldingTheDefaults: Partial<
 	Record<
 		WorkTrackingSystemType,
@@ -22,7 +25,14 @@ const trackersHoldingTheDefaults: Partial<
 > = {
 	Jira: { name: "Jira", holds: ConnectionDefaultNames },
 	AzureDevOps: { name: "Azure DevOps", holds: ConnectionDefaultNames },
-	Csv: { name: "CSV", holds: ["featureOwnerFieldForPortfolios"] },
+	Csv: {
+		name: "CSV",
+		holds: [
+			"estimationForTeams",
+			"featureOwnerFieldForPortfolios",
+			"estimationForPortfolios",
+		],
+	},
 };
 
 type KeysHolding<Settings, Value> = NoInfer<
@@ -69,22 +79,52 @@ export const trackerHoldingTheDefault = (
 	return offered?.includes(theDefault) ? holding?.name : undefined;
 };
 
+/** Whether the owner reads the connection's default, which it can only while its tracker holds one. */
+export const followsTheConnection = (
+	settings: IBaseSettings | null,
+	connection: IWorkTrackingSystemConnection | null | undefined,
+	theDefault: ConnectionDefaultName,
+	source: SettingSource | undefined,
+): boolean =>
+	!!trackerHoldingTheDefault(settings, connection, theDefault) &&
+	source === "ConnectionDefault";
+
+const fieldNamed = (
+	connection: IWorkTrackingSystemConnection,
+	fieldId: number | null | undefined,
+): string | undefined =>
+	connection.additionalFieldDefinitions.find((field) => field.id === fieldId)
+		?.displayName;
+
+// The unit tells two defaults on the same field apart, so it is named beside the field.
+const describeEstimation = (
+	connection: IWorkTrackingSystemConnection,
+	bundle: IEstimationDefault | null | undefined,
+): string | undefined => {
+	const field = fieldNamed(connection, bundle?.additionalFieldDefinitionId);
+	return field && bundle?.unit ? `${field}, ${bundle.unit}` : field;
+};
+
 // The settings carry the name of their stored connection's default, which an admin who cannot read the
-// connection needs. Once another connection is chosen, that name is read off the chosen one instead.
+// connection needs. Once another connection is chosen, that name is read off the chosen one instead. An
+// Estimation default is read off a loaded connection either way, because only that one carries its unit.
 export const nameOfTheDefault = (
 	settings: IBaseSettings | null,
 	nameTheSettingsCarry: string | null | undefined,
 	connection: IWorkTrackingSystemConnection | null | undefined,
 	theDefault: ConnectionDefaultName,
 ): string | null | undefined => {
+	if (isEstimationDefaultName(theDefault) && connection?.defaults) {
+		return describeEstimation(connection, connection.defaults[theDefault]);
+	}
 	if (
 		!connection ||
 		connection.id === settings?.workTrackingSystemConnectionId
 	) {
 		return nameTheSettingsCarry;
 	}
-	const named = connection.defaults?.[theDefault];
-	return connection.additionalFieldDefinitions.find(
-		(field) => field.id === named,
-	)?.displayName;
+	if (isEstimationDefaultName(theDefault)) {
+		return undefined;
+	}
+	return fieldNamed(connection, connection.defaults?.[theDefault]);
 };

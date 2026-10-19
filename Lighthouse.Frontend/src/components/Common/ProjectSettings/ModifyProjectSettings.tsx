@@ -11,6 +11,7 @@ import type React from "react";
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useModifySettings } from "../../../hooks/useModifySettings";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
@@ -23,6 +24,7 @@ import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation"
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
+import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -338,6 +340,16 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							additionalFieldDefinitions={
 								selectedWorkTrackingSystem?.additionalFieldDefinitions ?? []
 							}
+							followable={{
+								settings: projectSettings,
+								connection: selectedWorkTrackingSystem,
+								theDefault: "estimationForPortfolios",
+								...followOrOwn<IBaseSettings>(
+									updateSettings,
+									"estimationSource",
+									"estimationAdditionalFieldDefinitionId",
+								),
+							}}
 						/>
 
 						<DependenciesComponent

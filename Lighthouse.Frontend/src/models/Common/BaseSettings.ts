@@ -46,6 +46,8 @@ export interface IBaseSettings {
 	estimationUnit: string | null;
 	useNonNumericEstimation: boolean;
 	estimationCategoryValues: string[];
+	estimationSource?: SettingSource;
+	estimationDefaultName?: string | null;
 	dataRetrievalSchema?: IDataRetrievalSchema | null;
 	concurrencyToken?: string;
 }

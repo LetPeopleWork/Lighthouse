@@ -1,6 +1,9 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
+import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
 import EstimationFieldComponent from "./EstimationFieldComponent";
 
 describe("EstimationFieldComponent", () => {
@@ -207,5 +210,91 @@ describe("EstimationFieldComponent", () => {
 
 		fireEvent.click(screen.getByLabelText("toggle"));
 		expect(screen.queryByText("Estimation Categories")).not.toBeInTheDocument();
+	});
+});
+
+describe("an Estimation that can follow the connection's default", () => {
+	const storyPoints = {
+		id: 13,
+		displayName: "Story Points",
+		reference: "customfield_10016",
+	};
+	const payments = Object.assign(
+		new WorkTrackingSystemConnection({
+			id: 7,
+			name: "Jira DC – Payments",
+			workTrackingSystem: "Jira",
+			options: [],
+			additionalFieldDefinitions: [storyPoints],
+		}),
+		{
+			defaults: {
+				estimationForTeams: {
+					additionalFieldDefinitionId: 13,
+					unit: "Points",
+					useNonNumericEstimation: false,
+					estimationCategoryValues: [],
+				},
+			},
+			supportedDefaults: ["estimationForTeams" as const],
+		},
+	);
+	const following = {
+		workTrackingSystemConnectionId: 7,
+		estimationSource: "ConnectionDefault",
+		estimationDefaultName: "Story Points",
+	} as IBaseSettings;
+
+	const renderTheEstimation = (change = vi.fn()) => {
+		render(
+			<EstimationFieldComponent
+				estimationFieldDefinitionId={null}
+				onEstimationFieldChange={vi.fn()}
+				onEstimationUnitChange={vi.fn()}
+				additionalFieldDefinitions={[storyPoints]}
+				followable={{
+					settings: following,
+					connection: payments,
+					theDefault: "estimationForTeams",
+					...followOrOwn<IBaseSettings>(
+						change,
+						"estimationSource",
+						"estimationAdditionalFieldDefinitionId",
+					),
+				}}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+		return change;
+	};
+
+	it("a following Team's Estimation shows the connection's field and unit, and none of its own", () => {
+		renderTheEstimation();
+
+		expect(
+			screen.getByRole("combobox", { name: "Estimation Field" }),
+		).toHaveTextContent(/^Connection default \(Story Points, Points\)$/);
+		expect(
+			screen.getByText(/^Set on the Jira connection\.$/),
+		).toBeInTheDocument();
+		expect(screen.queryByLabelText("Estimation Unit")).not.toBeInTheDocument();
+	});
+
+	it("picking None makes the Estimation the Team's own", () => {
+		const change = renderTheEstimation();
+
+		fireEvent.mouseDown(
+			screen.getByRole("combobox", { name: "Estimation Field" }),
+		);
+		fireEvent.click(
+			within(screen.getByRole("listbox")).getByRole("option", {
+				name: /^None$/,
+			}),
+		);
+
+		expect(change.mock.calls).toEqual([
+			["estimationSource", "Own"],
+			["estimationAdditionalFieldDefinitionId", null],
+		]);
 	});
 });

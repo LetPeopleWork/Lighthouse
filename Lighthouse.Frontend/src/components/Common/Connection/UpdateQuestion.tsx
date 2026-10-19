@@ -24,6 +24,12 @@ export type WhyUpdate =
 			portfolios: number;
 			defaults: string[];
 			changes: WhatChanges[];
+	  }
+	| {
+			because: "estimation";
+			teams: number;
+			portfolios: number;
+			defaults: number;
 	  };
 
 const counted = (count: number, singular: string, plural: string): string =>
@@ -71,9 +77,18 @@ const whatTheQuestionSays = (why: WhyUpdate, words: Words): string => {
 		return `You changed the Additional Fields. Their values only fill in once each ${words.team} and ${words.portfolio} on this connection has been updated. Save only: they fill in with the next scheduled update instead.`;
 	}
 	const verb = why.teams + why.portfolios === 1 ? "follows" : "follow";
+	if (why.because === "estimation") {
+		const them = why.defaults === 1 ? "it" : "them";
+		return `${followersOf(why, words)} ${verb} ${them}; they show the new estimation the next time their pages load.`;
+	}
 	const defaultWord = why.defaults.length === 1 ? "default" : "defaults";
 	return `${followersOf(why, words)} ${verb} the ${joined(why.defaults)} ${defaultWord}. ${whenTheyChange(why.changes, words)} Save only: they change at their next scheduled update.`;
 };
+
+const titleOf = (why: WhyUpdate, words: Words): string =>
+	why.because === "estimation"
+		? `Change the Estimation ${why.defaults === 1 ? "default" : "defaults"}?`
+		: `Update ${counted(why.teams, words.team, words.teams)} and ${counted(why.portfolios, words.portfolio, words.portfolios)}?`;
 
 interface UpdateQuestionProps {
 	open: boolean;
@@ -102,6 +117,9 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 		features: getTerm(TERMINOLOGY_KEYS.FEATURES),
 	};
 
+	// An Estimation default is read when a page loads, so there is no update to offer, only the save.
+	const asksToUpdate = why.because !== "estimation";
+
 	const whileSaving = (answer: () => Promise<void>) => async () => {
 		setSaving(true);
 		try {
@@ -118,9 +136,7 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 			aria-labelledby={titleId}
 			aria-describedby={descriptionId}
 		>
-			<DialogTitle id={titleId}>
-				{`Update ${counted(why.teams, words.team, words.teams)} and ${counted(why.portfolios, words.portfolio, words.portfolios)}?`}
-			</DialogTitle>
+			<DialogTitle id={titleId}>{titleOf(why, words)}</DialogTitle>
 			<DialogContent>
 				<DialogContentText id={descriptionId}>
 					{whatTheQuestionSays(why, words)}
@@ -130,14 +146,16 @@ const UpdateQuestion: React.FC<UpdateQuestionProps> = ({
 				<Button onClick={onCancel} color="primary" disabled={saving}>
 					Cancel
 				</Button>
+				{asksToUpdate && (
+					<ActionButton
+						buttonText="Save only"
+						onClickHandler={whileSaving(onSaveOnly)}
+						buttonVariant="text"
+						disabled={saving}
+					/>
+				)}
 				<ActionButton
-					buttonText="Save only"
-					onClickHandler={whileSaving(onSaveOnly)}
-					buttonVariant="text"
-					disabled={saving}
-				/>
-				<ActionButton
-					buttonText="Save and update"
+					buttonText={asksToUpdate ? "Save and update" : "Save"}
 					onClickHandler={whileSaving(onUpdate)}
 					buttonVariant="text"
 					disabled={saving}

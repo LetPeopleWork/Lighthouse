@@ -44,6 +44,8 @@ describe("trackerHoldingTheDefault", () => {
 	it.each([
 		["Jira", "parentOverrideForTeams", "Jira"],
 		["Csv", "featureOwnerFieldForPortfolios", "CSV"],
+		["Csv", "estimationForTeams", "CSV"],
+		["Csv", "estimationForPortfolios", "CSV"],
 		["Csv", "sizeEstimateFieldForPortfolios", undefined],
 	] as const)(
 		"on a %s connection that says nothing of what it offers, %s is held by %s",

@@ -11,6 +11,7 @@ import type {
 import FormSelectField from "../FormSelectField/FormSelectField";
 import {
 	FollowTheConnection,
+	followsTheConnection,
 	nameOfTheDefault,
 	trackerHoldingTheDefault,
 } from "./connectionDefaultEntry";
@@ -56,7 +57,12 @@ const ConnectionDefaultFieldSelect: React.FC<
 		connection,
 		theDefault,
 	);
-	const followsTheConnection = !!trackerName && source === "ConnectionDefault";
+	const follows = followsTheConnection(
+		settings,
+		connection,
+		theDefault,
+		source,
+	);
 
 	const handleChange = (choice: FieldChoice | null) => {
 		if (choice === FollowTheConnection) {
@@ -69,7 +75,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 	return (
 		<FormSelectField<FieldChoice>
 			label={label}
-			value={followsTheConnection ? FollowTheConnection : (ownField ?? "")}
+			value={follows ? FollowTheConnection : (ownField ?? "")}
 			onChange={handleChange}
 			firstOption={
 				trackerName
@@ -79,11 +85,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 						}
 					: undefined
 			}
-			helperText={
-				followsTheConnection
-					? `Set on the ${trackerName} connection.`
-					: undefined
-			}
+			helperText={follows ? `Set on the ${trackerName} connection.` : undefined}
 			options={additionalFieldDefinitions.map((field) => ({
 				id: field.id,
 				label: field.displayName,
