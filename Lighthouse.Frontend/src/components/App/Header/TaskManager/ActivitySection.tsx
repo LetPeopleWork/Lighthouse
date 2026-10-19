@@ -274,7 +274,7 @@ const ActivitySection = ({
 				{canBeStopped(task) && (
 					<Tooltip title={`Stop refreshing ${task.name}`}>
 						{/* A disabled button is not an event target, so the tooltip needs something of its own to
-					    hang on while the row is waiting for the instance to agree it stopped. */}
+						    hang on while the row is waiting for the instance to agree it stopped. */}
 						<span>
 							<IconButton
 								aria-label={`Stop refreshing ${task.name}`}
