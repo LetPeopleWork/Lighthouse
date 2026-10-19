@@ -2735,3 +2735,12 @@ assertions rather than with `ArgumentNullException`.
   at the cost of readable names.
 - **Usage data:** N/A, as DEVOPS decided. No new event; the fields-changed event must not fire for a default-only save.
 - **Peer review** of this DISTILL is for the orchestrator's review gate; not run inside this wave.
+
+## Wave: DELIVER / [REF] Maintainer decision 2026-10-19 — a second E2E scenario
+
+- **Two E2E scenarios, not one.** Beside the Estimation walking skeleton, `ConnectionDefaults.spec.ts` gets a second
+  scenario on the same CSV demo connection: the admin sets the Portfolios' Feature Owner Field default, saves, and a
+  demo Portfolio that follows it shows the connection default in its settings. It puts the Portfolio side of the
+  connection defaults under a browser test as well as the Team side. Lands with step 12-05; the acceptance designer
+  authors it first, the crafter makes both green.
+- **No further E2E.** Coverage of every field stays below E2E, as DISTILL decided; these two are a sanity check.

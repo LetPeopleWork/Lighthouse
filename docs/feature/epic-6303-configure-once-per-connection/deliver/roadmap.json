@@ -1269,10 +1269,11 @@
             "@e2e"
           ],
           "test_file": "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts",
-          "scenario_name": "@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team without one shows it",
+          "scenario_name": "@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team without one shows it; @US-10 an admin sets the Portfolios' Feature Owner Field once on the connection and a Portfolio that follows it shows it",
           "criteria": [
             "On demo scenario 0, 'Demo Data CSV Connector' shows the defaults region; setting Story Points / Points and saving through 'Change the Estimation default?' leads to Team Voyager's settings showing 'Connection default (Story Points, Points)'",
-            "Every existing demo-data spec in reach stays green (FeatureDependencies, MultiTeamForecast, PortfolioEdit, jira, ado)"
+            "Every existing demo-data spec in reach stays green (FeatureDependencies, MultiTeamForecast, PortfolioEdit, jira, ado)",
+            "Maintainer decision 2026-10-19: a second scenario in the same spec on the CSV demo connection — setting the Portfolios' Feature Owner Field default and saving leads to a following demo Portfolio's settings showing the connection default; only these two E2E scenarios exist for the Epic"
           ],
           "files_to_modify": [
             "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts",
