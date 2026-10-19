@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-137 D53/D54. Two storage-level guarantees that EF InMemory
+    /// Two storage-level guarantees of the embed session tokens that EF InMemory
     /// cannot see: it enforces neither check constraints nor foreign keys.
     /// </summary>
     [TestFixture]
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private const string ConstraintMissingMessage =
             "the generated migration must emit " + GrantOrRefusalConstraintName
-            + "; a model-only constraint that does not round-trip is rung 1 of D54's ladder failing";
+            + "; a constraint declared only in the model, which never reaches the database, guards nothing";
 
         private const string IllegalRowMessage =
             "a refused viewer must not hold a redeemable credential — and a constraint that rejected "
@@ -46,9 +46,21 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             + "are asserted alongside it";
 
         private const string CascadeLostMessage =
-            "an ApiKeyId row can no longer be written, but rows written before slice 03 are still in "
+            "an ApiKeyId row can no longer be written, but rows written by earlier versions are still in "
             + "customer databases — and the column outlives them, because migrations here are "
             + "expand-only. Deleting the key must still take them with it";
+
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
 
         [Test]
         public async Task OnSqlite_TheGrantOrRefusalConstraint_DiscriminatesRatherThanRejectsEverything()
@@ -80,10 +92,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// D53. EF's default for an OPTIONAL relationship is ClientSetNull, so a crafter who makes
-        /// ApiKeyId nullable and moves on turns the cascade into an orphan — and nothing else in the
-        /// suite notices. Slice 03 deleted the path that wrote these rows, but not the rows: the
-        /// column is expand-only until the contract-phase drop, so existing databases still hold
+        /// EF's default for an OPTIONAL relationship is ClientSetNull, so making ApiKeyId nullable
+        /// turns the cascade into an orphan — and nothing else in the suite notices. The path that
+        /// wrote these rows is gone, but not the rows: the column stays until a later release drops
+        /// it, because migrations here only ever add, so existing databases still hold
         /// them and deleting the key must still remove them. The shape is hand-inserted here
         /// precisely because production can no longer produce it.
         /// </summary>
@@ -211,12 +223,12 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        private static async Task<T> WithPostgresAsync<T>(Func<LighthouseAppContext, Task<T>> probe)
+        private async Task<T> WithPostgresAsync<T>(Func<LighthouseAppContext, Task<T>> probe)
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
             await using var provider = BuildProvider(options =>
                 options.UseNpgsql(
-                    postgres.GetConnectionString(),
+                    postgres.ConnectionStringToANewDatabase(),
                     npgsql => npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres")));
 
             return await RunAsync(provider, probe);
