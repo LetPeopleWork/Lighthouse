@@ -33,6 +33,23 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             return builder.ConnectionString;
         }
 
+        /// <summary>
+        /// Like <see cref="ConnectionStringToANewDatabase"/>, but the database exists before it is
+        /// returned, for code that opens a connection of its own before anything migrates.
+        /// </summary>
+        public async Task<string> ConnectionStringToANewCreatedDatabaseAsync()
+        {
+            var connectionString = ConnectionStringToANewDatabase();
+            var databaseName = new NpgsqlConnectionStringBuilder(connectionString).Database;
+
+            await using var connection = new NpgsqlConnection(container.GetConnectionString());
+            await connection.OpenAsync();
+            await using var command = new NpgsqlCommand($"CREATE DATABASE \"{databaseName}\"", connection);
+            await command.ExecuteNonQueryAsync();
+
+            return connectionString;
+        }
+
         public ValueTask DisposeAsync() => container.DisposeAsync();
     }
 }

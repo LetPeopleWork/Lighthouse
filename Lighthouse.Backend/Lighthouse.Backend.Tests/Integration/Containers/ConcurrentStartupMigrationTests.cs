@@ -5,7 +5,6 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
@@ -14,11 +13,23 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     {
         private const string MigrationsAssemblyName = "Lighthouse.Migrations.Postgres";
 
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
+
         [Test]
         public async Task Startup_ThreeConcurrentHostsOneRealPostgres_MigrationsAppliedExactlyOnce()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
-            var connectionString = postgres.GetConnectionString();
+            postgres ??= await SharedPostgresContainer.StartAsync();
+            var connectionString = await postgres.ConnectionStringToANewCreatedDatabaseAsync();
 
             var failures = await StartHostsConcurrentlyAsync(connectionString, hostCount: 3);
 
@@ -34,8 +45,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Startup_MigrationLockContended_FollowersWaitThenServe()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
-            var connectionString = postgres.GetConnectionString();
+            postgres ??= await SharedPostgresContainer.StartAsync();
+            var connectionString = await postgres.ConnectionStringToANewCreatedDatabaseAsync();
 
             var failures = await StartHostsConcurrentlyAsync(connectionString, hostCount: 5);
 
@@ -50,8 +61,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Startup_SingleInstance_AutoMigratesOnBootUnchanged()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
-            var connectionString = postgres.GetConnectionString();
+            postgres ??= await SharedPostgresContainer.StartAsync();
+            var connectionString = await postgres.ConnectionStringToANewCreatedDatabaseAsync();
 
             var failures = await StartHostsConcurrentlyAsync(connectionString, hostCount: 1);
 
@@ -67,9 +78,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Startup_PostgresProvider_ClosesTheMigrationConnectionItOpened()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildHostServiceProvider(postgres.GetConnectionString());
+            await using var provider = BuildHostServiceProvider(await postgres.ConnectionStringToANewCreatedDatabaseAsync());
             using var scope = provider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
 
