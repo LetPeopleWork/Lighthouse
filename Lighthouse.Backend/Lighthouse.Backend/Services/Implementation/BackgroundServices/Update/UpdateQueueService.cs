@@ -413,9 +413,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     RefreshRoundSummaryLine.Write(logger, summary);
                 }
             }
-            // Parity with the flush at the end of an update: a write-back that fails is logged, never allowed
-            // to take the queue down with it.
-#pragma warning disable CA1031
+#pragma warning disable CA1031 // as at the end of an update, a write-back that fails is logged, never allowed to take the queue down
             catch (Exception exception)
 #pragma warning restore CA1031
             {
@@ -661,18 +659,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return false;
             }
 
-            // Requeue before writing so the key never leaves the store: callers polling for "no active
-            // work" must not observe idle between the run that just finished and its follow-up, or they
-            // would read exactly the stale state the follow-up is about to correct.
-            // New work, so a new source. The run that just ended may have been cancelled, and the follow-up
-            // carries a newer intent than the one that was stopped - inheriting a cancelled token would
-            // drop that intent silently, which is the opposite of what the coalescing exists to do.
-            lock (admission)
-            {
-                statusStore.Requeue(updateKey);
-                cancellations.Forget(updateKey);
-                cancellations.Admit(updateKey);
-            }
+            RequeueWithAFreshSource(updateKey);
 
             var round = RoundForNewWork();
 
@@ -686,6 +673,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // finishes it normally instead of leaving it admitted and permanently blocking re-admission.
             statusStore.Advance(updateKey, UpdateProgress.Completed);
             return false;
+        }
+
+        /// <summary>
+        /// Requeued before the follow-up is written to the queue, so the key never leaves the store: callers
+        /// polling for "no active work" must not observe idle between the run that just finished and its
+        /// follow-up, or they would read exactly the stale state the follow-up is about to correct.
+        ///
+        /// New work, so a new source. The run that just ended may have been cancelled, and the follow-up
+        /// carries a newer intent than the one that was stopped - inheriting a cancelled token would drop that
+        /// intent silently, which is the opposite of what the coalescing exists to do.
+        /// </summary>
+        private void RequeueWithAFreshSource(UpdateKey updateKey)
+        {
+            lock (admission)
+            {
+                statusStore.Requeue(updateKey);
+                cancellations.Forget(updateKey);
+                cancellations.Admit(updateKey);
+            }
         }
 
         private async Task RunAwaitableUpdateAsync(UpdateKey updateKey, Func<IServiceProvider, Task> updateTask, UpdateStatus updateStatus, TaskCompletionSource<bool> tcs, WriteBackRound round)

@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             if (round == null)
             {
-                WriteSummary(summary);
+                RefreshRoundSummaryLine.Write(Logger, summary);
                 return;
             }
 
@@ -135,13 +135,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             if (round.TakeSummary() is { } summary)
             {
-                WriteSummary(summary);
+                RefreshRoundSummaryLine.Write(Logger, summary);
             }
-        }
-
-        private void WriteSummary(RefreshRoundSummary summary)
-        {
-            RefreshRoundSummaryLine.Write(Logger, summary);
         }
 
         /// <summary>
