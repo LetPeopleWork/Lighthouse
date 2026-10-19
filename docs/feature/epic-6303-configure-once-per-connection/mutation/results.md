@@ -519,3 +519,237 @@ and the re-run after the kill round was a full run: no verdict was carried over.
   that sentence is not one worth keeping.
 
 `git status` showed no change under `Lighthouse.Frontend/src` other than the added specs after both runs.
+
+## Story #6313
+
+Connection defaults for the Portfolios' Parent Override, Dependency, Size Estimate and Feature Owner Fields, and
+the Teams' and Portfolios' Estimation bundle (slices 08 to 12). Run 2026-10-19 against `main` @ `012a10001`,
+production code frozen; only tests were added. Gate is 80 % kill rate, judged on the lines this story changed.
+
+| stack | score | scored | killed + timeout | survived / no cov. | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| Backend (Stryker.NET 5.0.0), whole files, first run | 70.04 % | 711 | 498 | 213 (120 / 93) | 6 m 56 s |
+| Backend, this story's lines, first run | 84.18 % | 196 | 165 | 31 | — |
+| Backend, whole files, after the kill round | 73.28 % | 711 | 521 | 190 | 4 m 37 s |
+| **Backend, this story's lines, after the kill round** | **95.41 %** | 196 | 187 | 9 | — |
+
+| stack | score | scored | killed + timeout | survived / no cov. | wall clock |
+| --- | --- | --- | --- | --- | --- |
+| Frontend (StrykerJS 10.0.0), this story's lines, first run | 73.54 % | 325 | 239 | 86 (65 / 21) | 33 m 47 s |
+| **Frontend, this story's lines, after the kill round** | **95.08 %** | 325 | 309 | 16 | see below |
+
+Configs: `stryker.6313.backend.json` (the full first run), `stryker.6313.backend.kill.json` (the narrowed kill
+round: the nine files with survivors on story lines, and only their unit tests), `stryker.6313.frontend.json` and
+`vitest.stryker.6313.config.ts` (copied into `Lighthouse.Frontend/` for the run).
+
+### How the story's lines were found
+
+Stryker.NET mutates whole files whatever line span `mutate` names, so the backend figure the gate is judged on is
+the story-line one, as for the earlier stories of this epic. A line counts as this story's when it is on the new
+side of a `git diff -U0 f4b8773b2..HEAD` hunk (`f4b8773b2` is where `main` stood before slice 08; every commit
+since is this story's). A mutant is on a story line when any line of its span is one. Scores come from
+`StrykerOutput/<run>/reports/mutation-report.json`: (Killed + Timeout) / (Killed + Timeout + Survived +
+NoCoverage); Ignored and CompileError are left out. After the kill round a first-run survivor takes the kill
+round's status, matched on file, span, mutator and replacement; tests were only added between the runs, so a
+mutant the first run killed stays killed. No mutant timed out in any run, on either stack.
+
+The first run's log read `22294 mutants created` and `618 total mutants will be tested` (plus 93 with no
+coverage); the kill round tested 190 (plus 27). The first run's filter took 531 unit tests: the Team, Teams,
+Portfolio, Portfolios, connection and connections controller tests (with the write-back and licence-gate ones),
+`ConnectionSaveServiceTest`, `WorkTrackingSystemConnectionUsageTest`, the Team and Portfolio extension tests, the
+five settings-sync tests, the DTO tests of the mutated DTOs, the model tests of every mutated model, and
+`DependencySourceSelectorTest`, `ParentSourceSelectorTest` and `EstimateNormalizerEstimateOfTest`. It left out
+the live connector categories, `*IntegrationTest`, `API.Integration` and `Dogfood`, so the slice acceptance
+suites under `API/Integration/ConfigureOncePerConnection/` did not run; the survivors they alone reached are the
+ones closed below.
+
+### Per file (backend)
+
+| file | whole file, first run | whole file, after kill | story-line mutants | story-line survivors, first run | after kill |
+| --- | --- | --- | --- | --- | --- |
+| `API/DTO/ConnectionDefaultsDto.cs` | 66.67 % (4/6) | 100 % | 3 | 2 | 0 |
+| `API/DTO/EstimationDefaultDto.cs` | 0 % (0/10) | 100 % | 10 | 10 | 0 |
+| `API/DTO/PortfolioSettingDto.cs` | 88.89 % (8/9) | 88.89 % | 0 | 0 | 0 |
+| `API/DTO/SettingsOwnerDtoBase.cs` | 50.00 % (2/4) | 100 % | 3 | 1 | 0 |
+| `API/DTO/WorkTrackingSystemConnectionDto.cs` | 50.00 % (4/8) | 50.00 % | 1 | 0 | 0 |
+| `API/Helpers/OwnerSettingRefusals.cs` | 100 % (24/24) | 100 % | 24 | 0 | 0 |
+| `API/Helpers/PortfolioExtensions.cs` | 51.43 % (18/35) | 51.43 % | 5 | 0 | 0 |
+| `API/Helpers/TeamExtensions.cs` | 63.93 % (39/61) | 63.93 % | 1 | 0 | 0 |
+| `API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs` | 60.00 % (3/5) | 60.00 % | 2 | 0 | 0 |
+| `API/PortfolioController.cs` | 48.57 % (17/35) | 48.57 % | 0 | 0 | 0 |
+| `API/PortfoliosController.cs` | 72.73 % (16/22) | 72.73 % | 0 | 0 | 0 |
+| `API/TeamController.cs` | 75.41 % (46/61) | 75.41 % | 0 | 0 | 0 |
+| `API/TeamsController.cs` | 60.47 % (26/43) | 60.47 % | 0 | 0 | 0 |
+| `API/WorkTrackingSystemConnectionController.cs` | 68.13 % (62/91) | 69.23 % | 12 | 1 | 0 |
+| `API/WorkTrackingSystemConnectionsController.cs` | 75.93 % (41/54) | 77.78 % | 2 | 1 | 0 |
+| `Models/ConnectionFieldDefaults.cs` | 85.71 % (6/7) | 100 % | 7 | 1 | 0 |
+| `Models/EstimationBundle.cs` | 80.00 % (16/20) | 100 % | 20 | 4 | 0 |
+| `Models/IncomingSetting.cs` | 100 % (4/4) | 100 % | 4 | 0 | 0 |
+| `Models/OwnerTerms.cs` | 95.45 % (21/22) | 95.45 % | 22 | 1 | 1 |
+| `Models/Portfolio.cs` | 27.27 % (3/11) | 36.36 % | 2 | 1 | 0 |
+| `Models/Team.cs` | 61.54 % (8/13) | 61.54 % | 2 | 0 | 0 |
+| `Models/WorkTrackingSystemConnection.cs` | 77.78 % (14/18) | 77.78 % | 0 | 0 | 0 |
+| `Models/WorkTrackingSystemOptionsOwner.cs` | 45.00 % (18/40) | 45.00 % | 2 | 1 | 1 |
+| `Services/.../Connections/ChangedConnectionDefault.cs` | 100 % (3/3) | 100 % | 3 | 0 | 0 |
+| `Services/.../Connections/ConnectionSaveService.cs` | 93.75 % (75/80) | 93.75 % | 51 | 3 | 3 |
+| `Services/.../WorkTrackingSystemConnectionUsage.cs` | 60.00 % (6/10) | 60.00 % | 8 | 4 | 4 |
+| `Services/Interfaces/IConnectionSaveService.cs` | 92.86 % (13/14) | 100 % | 11 | 1 | 0 |
+| `Services/Interfaces/IWorkTrackingSystemConnectionUsage.cs` | 100 % (1/1) | 100 % | 1 | 0 | 0 |
+
+`API/DTO/ConnectionUsageDto.cs` and `Models/EffectiveSetting.cs` produced no scored mutant (one compile error,
+and none). Most of `Portfolio.cs`, `Team.cs` and the options owner's new members are expression-bodied, which
+Stryker.NET does not mutate, so their story lines carry few mutants; the slice acceptance suites pin them. The
+whole-file figures of the controllers, the extensions and the options owner describe older code this pass did not
+triage.
+
+### Closed by this pass (backend)
+
+- `EstimationDefaultDtoTest` (new): a connection without an Estimation default sends none; one with it sends all
+  four parts; a saved bundle is read with all four parts, without the switch and categories as numeric without
+  categories, and without a field as none whatever else it says (`EstimationDefaultDto.cs:16-29`, all ten).
+- `ConnectionDefaultsDtoTest`: a saved Estimation default arrives as its whole bundle and an explicit null clears
+  the other; a left-out one is not sent (`ConnectionDefaultsDto.cs:85`, `:88`).
+- `EstimationFieldDtoTest.TeamSettingDto_SentWithNullCategories_SendsTheEstimationWithoutCategories`
+  (`SettingsOwnerDtoBase.cs:108`).
+- `EstimationBundleTest`: equal bundles hash alike, and a bundle differing in any one part hashes apart
+  (`EstimationBundle.cs:51-56`); a following Portfolio reads the Portfolios' default, not the Teams'
+  (`Portfolio.cs:100`).
+- `ConnectionSaveServiceTest`: removing the field the Portfolios' Estimation default names is refused in this
+  instance's words (`ConnectionFieldDefaults.cs:46`); a numeric Estimation default is logged by field and unit,
+  without its categories (`IConnectionSaveService.cs:54`).
+- `WorkTrackingSystemConnectionControllerTest.UpdateWorkTrackingSystemConnection_TheTeamsEstimationDefaultSent_StoresTheWholeBundle`
+  (`WorkTrackingSystemConnectionController.cs:229`).
+- `WorkTrackingSystemConnectionsControllerTest.GetWorkTrackingSystemConnections_OwnersFollowingDefaults_ListsWhichDefaultsEachGroupFollows`
+  (`WorkTrackingSystemConnectionsController.cs:74`).
+- `PortfolioTest.NewPortfolio_FollowsNoDefaultHeldForTheTeams` pins `Portfolio.cs:109` (`_ => false`) in the
+  model's own test. The first run had already killed that mutant through the connection-usage tests, so it adds
+  no figure above; it was added after the kill round and has not been through Stryker.
+
+### Accepted survivors (backend, this story's lines)
+
+- `WorkTrackingSystemOptionsOwner.cs:180`, the base `FollowsConnectionDefault => false` to `true` (no coverage).
+  Unreachable: `Team` and `Portfolio`, the only owners, both override it.
+- `OwnerTerms.cs:16` and `WorkTrackingSystemConnectionUsage.cs:31`, `First()` to `FirstOrDefault()`. Equivalent:
+  each runs on a group, which is never empty.
+- `WorkTrackingSystemConnectionUsage.cs:30`, the `","` that joins an owner's followed defaults into a grouping key
+  emptied. Equivalent: the key is never shown, and the defaults are joined in the fixed order of
+  `ConnectionFieldDefaults.All`, whose names (`ParentOverrideFor…`, `DependencyField…`, `SizeEstimateField…`,
+  `FeatureOwnerField…`, `EstimationFor…`) never run together into another list's key.
+- `ConnectionSaveService.cs:216` (two), the error logged when the changed default cannot be logged: removed, or
+  its template emptied. Log-only, on a path reached only when writing the first log entry throws; the save is
+  already stored by then.
+- `ConnectionSaveService.cs:246`, `AsEnumerable()` to `Reverse()`. Equivalent: the followers are ordered by id two
+  lines later, which is the creation order the log names them in; the existing log tests already build the Teams
+  out of id order (Bravo 5 before Alpha 2) and still read "Alpha, Bravo". Against a real database EF refuses an
+  unordered `Reverse()`, so the acceptance suites would fail on it too.
+- `WorkTrackingSystemConnectionUsage.cs:36-37`, `AsEnumerable()` to `Reverse()`. Equivalent in what anyone reads:
+  the only effect is the order of a connection's follower groups, and every reader sums their counts (the
+  connection list's follower counts, and the connection page's update question); no owner names are listed from
+  here. Against a real database EF refuses the unordered `Reverse()`, as above.
+
+### Not mutated (backend)
+
+- `Data/LighthouseAppContext.cs`: six column mappings for the stored sources in a 900-line context file whose
+  model-building mutants would bury them. Pinned by `ConnectionDefaultsUpgradeMigrationTests`, which read and
+  write the columns through the real migrations.
+- `Data/DatabaseConfigurator.cs` and `Data/LighthouseAppContextFactory.cs`: the SQLite options moved into one
+  shared method, with no new logic; `Factories/DemoDataFactory.cs`: one demo Team now owns its estimation through
+  `OwnEstimation`; `Program.cs`: one DI registration. Each is exercised by every acceptance suite's host start.
+- `API/Helpers/TeamParentOverrideRefusals.cs` was deleted (its refusals moved into `OwnerSettingRefusals.cs`).
+- The EF migrations are generated.
+
+### Frontend (Story #6313)
+
+The mutated lines are the new side of the `git diff -U0 f4b8773b2..HEAD` hunks of every changed production file
+under `Lighthouse.Frontend/src` (16 files; `EstimationDefaultEditor.tsx`, `ConnectionDefaultFieldSelect.tsx` and
+`connectionDefaultEntry.ts` whole, being new). Hunks that are only imports, interfaces or types produce no
+mutant, so `BaseSettings.ts` and `PortfolioSettings.ts` score nothing. Specs in the narrowed vitest config are
+listed there; `coverageAnalysis: perTest`, incremental file under `reports/mutation/` (not committed).
+
+The kill round took three runs, each cheaper than the first:
+
+| run | mutants tested | wall clock |
+| --- | --- | --- |
+| first, full | 325 | 33 m 47 s |
+| incremental, after the first tests | 47 (278 reused) | 7 m 18 s |
+| narrowed to the remaining survivor lines, not incremental | 157 | 11 m 22 s |
+| narrowed again, after the second tests | 173 | 13 m 33 s |
+
+The incremental re-run reused the first run's verdict for every *static* mutant, one evaluated when a module
+loads, such as the Zod schema in `WorkTrackingSystemService.ts`, the `NoEstimation` constant and
+`WhereEachDefaultSits`. A new spec that kills one does not get it re-tested, so those still read as survivors
+after the new tests had landed. The two narrowed runs used throwaway configs: the committed one with `mutate` cut
+down to the lines that still had survivors and the vitest `include` to the specs that cover them. The figure
+below takes, for each first-run survivor, its status in the latest run that tested it.
+
+| file | first run | after the kill round |
+| --- | --- | --- |
+| `EstimationDefaultEditor.tsx` | 40.63 % (13/32) | **96.88 % (31/32)** |
+| `ModifyConnectionSettings.tsx` (story lines) | 80.00 % (64/80) | **96.25 % (77/80)** |
+| `UpdateQuestion.tsx` (story lines) | 87.76 % (43/49) | **100 % (49/49)** |
+| `WorkTrackingSystemService.ts` (story lines) | 0 % (0/11) | **100 % (11/11)** |
+| `ConnectionDefaultFieldSelect.tsx` | 100 % (17/17) | **100 % (17/17)** |
+| `connectionDefaultEntry.ts` | 86.76 % (59/68) | **94.12 % (64/68)** |
+| `EstimationFieldComponent.tsx` (story lines) | 71.05 % (27/38) | **78.95 % (30/38)** |
+| `DependenciesComponent.tsx` (story lines) | 100 % (5/5) | **100 % (5/5)** |
+| `FeatureSizeComponent.tsx` (story lines) | 40.00 % (2/5) | **100 % (5/5)** |
+| `OwnershipComponent.tsx` (story lines) | 40.00 % (2/5) | **100 % (5/5)** |
+| `ModifyProjectSettings.tsx` (story lines) | 0 % (0/4) | **100 % (4/4)** |
+| `ModifyTeamSettings.tsx` (story lines) | 0 % (0/4) | **100 % (4/4)** |
+| `AdvancedInputs.tsx` (story lines) | 100 % (6/6) | **100 % (6/6)** |
+| `WorkTrackingSystemConnection.ts` (story lines) | 100 % (1/1) | **100 % (1/1)** |
+
+#### Closed by this pass (frontend)
+
+- `EstimationDefaultEditor.test.tsx` (new): without a default only the field shows; picking a field starts a
+  numeric bundle without unit or categories; None clears the default; switching to non-numeric keeps field and
+  unit; a category is added after the others, removed in place, and reordered by dragging; a default without a
+  unit shows the unit empty (`EstimationDefaultEditor.tsx:6-64`, `EstimationFieldComponent.tsx:105`, `:111`).
+- `WorkTrackingSystemService.test.ts`: each Estimation default is read as its whole bundle, the left-out parts
+  filled (`WorkTrackingSystemService.ts:27-43`).
+- `UpdateQuestion.test.tsx`: one Estimation default ("it", "default") and both ("them", "defaults"); Features
+  renamed to a plural without an s read "Staff's" (`UpdateQuestion.tsx:49`, `:81`, `:90`).
+- `EditConnection.defaults.test.tsx`: each Portfolio default's question now pins its whole body sentence
+  (`ModifyConnectionSettings.tsx:172`, `:184`, `:190`); a changed Portfolios' Estimation default asks about its
+  Portfolios (`:299`); changing only the unit asks (`:236`); an Estimation default nobody follows saves without
+  asking (`:259`); a changed default nobody follows saves without asking though others have followers (`:211`); a
+  followed Estimation default left as it was asks nothing (`:243`, `:247`); Portfolios following a changed and an
+  unchanged default are all counted (`:271`).
+- `ModifyTeamSettings.test.tsx` and `ModifyProjectSettings.test.tsx`: a Team or Portfolio following the
+  Estimation default shows it, and picking a field of its own saves that choice (`ModifyTeamSettings.tsx:333-340`,
+  `ModifyProjectSettings.tsx:343-350`).
+- `FeatureSizeComponent.test.tsx` and `OwnershipComponent.test.tsx`: each renders before the settings arrive
+  (`FeatureSizeComponent.tsx:187-189`, `OwnershipComponent.tsx:58-60`).
+- `connectionDefaultEntry.test.ts`: `nameOfTheDefault` names an Estimation default off the loaded connection by
+  field and unit, whatever the settings carry; names none whose field the connection no longer lists; names it as
+  the settings carry it while the connection cannot be read; and before the settings arrive names a field default
+  off the loaded connection (`connectionDefaultEntry.ts:105`, `:117`, `:122`).
+
+#### Accepted survivors (frontend)
+
+- `EstimationDefaultEditor.tsx:52`, `value.trim()` to `value`. Equivalent: `ItemListManager` trims what it hands
+  over.
+- `ModifyConnectionSettings.tsx:320`, `?? []` to a non-empty list (no coverage). Unreachable: every default read
+  when updating names what it changes, and only those reach this line.
+- `ModifyConnectionSettings.tsx:255`, the filter to Estimation defaults removed. Equivalent: a followed,
+  changed field default is already among the changed defaults, whose update question takes precedence over the
+  Estimation one.
+- `ModifyConnectionSettings.tsx:915`, `fieldId != null` to `true`. Equivalent: a set of field ids never holds
+  `null` or `undefined` (the same mutant was accepted for Story 6304).
+- `connectionDefaultEntry.ts:79`, `holding?.name` to `holding.name`. Unreachable: a connection always has a
+  tracker, and the table has an entry for every tracker.
+- `connectionDefaultEntry.ts:105`, `bundle?.unit` to `bundle.unit`. Equivalent: a field was found, so the bundle
+  is there.
+- `connectionDefaultEntry.ts:126` (two), the Estimation branch for another connection removed. Equivalent: that
+  branch is reached only when the connection carries no defaults, and the field lookup below then also answers
+  undefined.
+- `EstimationFieldComponent.tsx:64`, `:75`, `:76`, `followable.settings?.` to `followable.settings.`. Unreachable
+  in use: both settings pages render the group inside their loading animation, after the settings have arrived.
+- `EstimationFieldComponent.tsx:106`, `onEstimationUnitChange?.(…)` to a plain call. Unreachable: every caller
+  passes the handler.
+- `EstimationFieldComponent.tsx:85`, the empty select value replaced by text, and `:147`, the group starting
+  expanded. Code that moved in this story rather than changed: the select shows nothing for a value it does not
+  list, and the group's starting state is presentation.
+- `EstimationFieldComponent.tsx:98` and `:100`, a `Grid` size emptied. Layout only.
+
+`git status` showed no change under `Lighthouse.Frontend/src` other than the added specs after every run.

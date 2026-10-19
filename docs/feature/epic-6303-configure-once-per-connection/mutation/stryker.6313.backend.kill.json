@@ -1,0 +1,25 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/DTO/ConnectionDefaultsDto.cs",
+      "**/API/DTO/EstimationDefaultDto.cs",
+      "**/API/DTO/SettingsOwnerDtoBase.cs",
+      "**/API/WorkTrackingSystemConnectionController.cs",
+      "**/API/WorkTrackingSystemConnectionsController.cs",
+      "**/Models/ConnectionFieldDefaults.cs",
+      "**/Models/EstimationBundle.cs",
+      "**/Models/Portfolio.cs",
+      "**/Services/Interfaces/IConnectionSaveService.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "FullyQualifiedName~ConnectionDefaultsDtoTest|FullyQualifiedName~EstimationDefaultDtoTest|FullyQualifiedName~EstimationFieldDtoTest|FullyQualifiedName~PortfolioSettingDtoCompatibilityTest|FullyQualifiedName~EstimationBundleTest|FullyQualifiedName~Tests.Models.PortfolioTest|FullyQualifiedName~ConnectionSaveServiceTest|FullyQualifiedName~WorkTrackingSystemConnectionControllerTest|FullyQualifiedName~WorkTrackingSystemConnectionControllerWriteBackTest|FullyQualifiedName~WorkTrackingSystemConnectionsControllerTest|FullyQualifiedName~WriteBackLicenseGateTest|FullyQualifiedName~TeamControllerTest|FullyQualifiedName~TeamsControllerTest|FullyQualifiedName~PortfolioControllerTest|FullyQualifiedName~PortfoliosControllerTest|FullyQualifiedName~EstimationFieldSyncTest|FullyQualifiedName~PortfolioExtensionsTest|FullyQualifiedName~DependencySourceSelectorTest|FullyQualifiedName~ParentSourceSelectorTest",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
