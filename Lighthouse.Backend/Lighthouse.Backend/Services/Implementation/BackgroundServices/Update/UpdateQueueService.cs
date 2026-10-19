@@ -32,6 +32,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// is the key's own: created as the key is admitted, disposed as it leaves the store.
         /// </summary>
         private readonly AdmittedCancellations cancellations = new();
+
+        /// <summary>
+        /// There is one source per key and whoever admits the key runs with it, whichever caller created it.
+        /// Creating or dropping a source and admitting or retiring its key therefore happen as one step, or a
+        /// caller that loses the race to admit can throw away the source the winner is about to run with,
+        /// leaving a refresh that nothing can stop.
+        /// </summary>
+        private readonly Lock admission = new();
         private readonly DatabaseMaintenanceGate maintenanceGate;
         private readonly Task processingTask;
 
@@ -220,15 +228,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            // Before admission, not after: the key reaches the task list the instant TryAdmit succeeds, and
-            // a cancel landing in the gap would find no source and silently do nothing.
-            var sourceCreatedHere = cancellations.Admit(updateKey);
-
             var updateStatus = QueuedStatusFor(updateKey);
-            if (!statusStore.TryAdmit(updateKey, updateStatus))
+            if (!TryAdmitWithASourceToStopIt(updateKey, updateStatus))
             {
-                ForgetASourceNothingWillUse(updateKey, sourceCreatedHere);
-
                 // The in-flight run read its state before this trigger was raised, so it cannot reflect
                 // whatever write caused it (blocked rules saved mid-refresh, for example). Dropping the
                 // trigger loses that intent until the next periodic refresh; instead remember the newest
@@ -263,13 +265,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var updateStatus = QueuedStatusFor(updateKey);
 
-            // Before admission for the same reason as in EnqueueUpdate: Cancel all can land the instant the
-            // key is admitted, and it can only stop work it finds a source for.
-            var sourceCreatedHere = cancellations.Admit(updateKey);
-
-            if (!statusStore.TryAdmit(updateKey, updateStatus))
+            if (!TryAdmitWithASourceToStopIt(updateKey, updateStatus))
             {
-                ForgetASourceNothingWillUse(updateKey, sourceCreatedHere);
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued; awaiting the in-flight completion.", updateType, id);
                 if (awaiters.TryGetValue(updateKey, out var existing))
                 {
@@ -304,15 +301,39 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// The key is already admitted, here or on another instance, so this request will not run. A source
+        /// The source is created before the key is admitted, not after: the key reaches the task list the
+        /// instant it is admitted, and a cancel landing in the gap would find no source and silently do nothing.
+        ///
+        /// When the key is already admitted, here or on another instance, this request will not run. A source
         /// it created is not the running work's, and left behind it would outlive the key: a cancel aimed at
         /// the other instance's run would stop it, and the next refresh admitted here would start already
         /// cancelled. A source that was already there belongs to the running work and is left alone.
         /// </summary>
-        private void ForgetASourceNothingWillUse(UpdateKey updateKey, bool sourceCreatedHere)
+        private bool TryAdmitWithASourceToStopIt(UpdateKey updateKey, UpdateStatus updateStatus)
         {
-            if (sourceCreatedHere)
+            lock (admission)
             {
+                var sourceCreatedHere = cancellations.Admit(updateKey);
+
+                if (statusStore.TryAdmit(updateKey, updateStatus))
+                {
+                    return true;
+                }
+
+                if (sourceCreatedHere)
+                {
+                    cancellations.Forget(updateKey);
+                }
+
+                return false;
+            }
+        }
+
+        private void RetireTheKey(UpdateKey updateKey)
+        {
+            lock (admission)
+            {
+                statusStore.Remove(updateKey);
                 cancellations.Forget(updateKey);
             }
         }
@@ -338,8 +359,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             logger.LogInformation("Update for {UpdateType} with ID {Id} was not queued because the update queue is closing.", updateKey.UpdateType, updateKey.Id);
 
-            statusStore.Remove(updateKey);
-            cancellations.Forget(updateKey);
+            RetireTheKey(updateKey);
             LeaveTheRoundWithoutRunning(round);
         }
 
@@ -598,8 +618,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
 
             var terminalStatus = statusStore.Advance(updateKey, terminalProgress) ?? updateStatus;
-            statusStore.Remove(updateKey);
-            cancellations.Forget(updateKey);
+            RetireTheKey(updateKey);
 
             // A trigger can land in the window between the check above and this removal: it saw the key
             // still admitted, so it parked a rerun instead of admitting its own. Re-check now that the
@@ -645,13 +664,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // Requeue before writing so the key never leaves the store: callers polling for "no active
             // work" must not observe idle between the run that just finished and its follow-up, or they
             // would read exactly the stale state the follow-up is about to correct.
-            statusStore.Requeue(updateKey);
-
             // New work, so a new source. The run that just ended may have been cancelled, and the follow-up
             // carries a newer intent than the one that was stopped - inheriting a cancelled token would
             // drop that intent silently, which is the opposite of what the coalescing exists to do.
-            cancellations.Forget(updateKey);
-            cancellations.Admit(updateKey);
+            lock (admission)
+            {
+                statusStore.Requeue(updateKey);
+                cancellations.Forget(updateKey);
+                cancellations.Admit(updateKey);
+            }
 
             var round = RoundForNewWork();
 
@@ -707,8 +728,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             finally
             {
                 awaiters.TryRemove(updateKey, out _);
-                statusStore.Remove(updateKey);
-                cancellations.Forget(updateKey);
+                RetireTheKey(updateKey);
                 ReleaseClearedHoldsWithoutFailingTheUpdate();
                 await completionNotifier.PublishCompletionAsync(updateKey);
                 await NotifyListeners(updateKey, terminalStatus);
