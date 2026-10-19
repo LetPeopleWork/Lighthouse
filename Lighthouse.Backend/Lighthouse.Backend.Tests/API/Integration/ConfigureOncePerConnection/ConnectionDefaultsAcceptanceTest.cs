@@ -486,6 +486,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
+        /// <summary>A script saves back the settings it read with the estimation categories sent as an explicit null.</summary>
+        protected async Task WhenAScriptSavesBackTheSettingsWithNullEstimationCategories(string owner)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(owner);
+            settings["estimationCategoryValues"] = null;
+            await PutTheOwner(owner, settings);
+        }
+
         /// <summary>A script that does not know Ignore Dependencies saves back the settings it read, without it.</summary>
         protected async Task WhenAScriptSavesBackTheSettingsWithoutIgnoreDependencies(string portfolio)
         {

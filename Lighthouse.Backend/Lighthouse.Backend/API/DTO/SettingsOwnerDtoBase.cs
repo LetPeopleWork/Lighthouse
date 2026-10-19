@@ -95,7 +95,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public bool UseNonNumericEstimation { get; set; } = false;
 
-        public List<string> EstimationCategoryValues { get; set; } = [];
+        // A script may send an explicit null; that means no categories, not a refused save.
+        public List<string>? EstimationCategoryValues { get; set; } = [];
 
         [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
         public SettingSource? EstimationSource { get; set; }
@@ -104,7 +105,7 @@ namespace Lighthouse.Backend.API.DTO
 
         /// <summary>The four Estimation parts this save sends, as the one bundle they are followed or owned as.</summary>
         public EstimationBundle EstimationAsSent()
-            => new(EstimationAdditionalFieldDefinitionId, EstimationUnit, UseNonNumericEstimation, EstimationCategoryValues);
+            => new(EstimationAdditionalFieldDefinitionId, EstimationUnit, UseNonNumericEstimation, EstimationCategoryValues ?? []);
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
 

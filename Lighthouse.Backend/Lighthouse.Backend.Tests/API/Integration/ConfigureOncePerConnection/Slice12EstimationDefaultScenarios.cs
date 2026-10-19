@@ -105,6 +105,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             Assert.That(cardIssuing, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPoints)));
         }
 
+        [TestCase(FraudSignals)]
+        [TestCase(CardIssuing)]
+        [Category("ac-11.1")]
+        [Category("edge")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_script_that_sends_the_estimation_categories_as_null_is_saved_and_the_owner_keeps_following(string owner)
+        {
+            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
+
+            await WhenAScriptSavesBackTheSettingsWithNullEstimationCategories(owner);
+            ThenTheOwnerSaveIsAccepted();
+
+            Assert.That((await WhatTheEstimationReadsFor(owner)).Source, Is.EqualTo("ConnectionDefault"));
+        }
+
         [TestCase(RoundTrip.EchoingEveryProperty)]
         [TestCase(RoundTrip.DroppingWhatItDoesNotKnow)]
         [Category("ac-11.1")]
