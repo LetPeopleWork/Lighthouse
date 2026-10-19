@@ -1980,3 +1980,9 @@ runs, and the two before this one were green on the Docker job.
   Jira-incident entry already recommends — move the live connector categories out of the gating
   `Verify Backend` job, as ADO already is — so no vendor's outage can redden an unrelated change and
   skip `sonar-gates` with it.
+
+### 2026-10-19 — GitHub Actions incident: Detect Changes 502, a re-run that never started, gates that would not approve
+- **Symptom**: run 39277702189 failed in `Detect Changes / changes` with `Unhandled error: HttpError: Server Error` (a 502 from `GET /repos/…/actions/runs/<id>/jobs`, `retries: 0` in its `actions/github-script` step), so nothing downstream ran. Its re-run ended `startup_failure` with no job started; a later full re-run did not take. During the same window `POST …/pending_deployments` on the clients repo answered 422 "There was a problem approving one of the gates" for ~45 minutes although `current_user_can_approve` was true (the web UI's Review deployments worked), and macOS runners came back last.
+- **Root cause**: GitHub's "Degraded availability for GitHub Actions, GitHub Pages and Webhooks" incident (githubstatus.com), not our code.
+- **Fix**: none in code. Pushing the next commits started a fresh run that became the release candidate; the clients gate was approved in the web UI.
+- **Rule going forward**: when a run fails before any build job starts, or a re-run ends `startup_failure`, check `https://www.githubstatus.com/api/v2/incidents/unresolved.json` before diagnosing, retry at most every ~10 minutes, and prefer a fresh push over re-running the broken run; if the gate API returns 422 while you may approve, use the web UI. Suggested hardening for the maintainer to schedule: give the Detect Changes `github-script` step `retries: 3`.
