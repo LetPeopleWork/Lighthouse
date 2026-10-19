@@ -142,6 +142,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        [Category("happy-path")]
+        public async Task Cancel_all_tells_the_operator_how_much_it_stopped_let_go_and_left_to_finish()
+        {
+            var cancellationContext = new UpdateCancellationContext();
+            var log = new Mock<ILogger<UpdateQueueService>>();
+            var queue = AQueueOver(new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc), cancellationContext, log.Object);
+            var removal = new UpdateKey(UpdateType.TeamDelete, 11);
+
+            var running = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            queue.EnqueueUpdate(UpdateType.Team, 10, async _ =>
+            {
+                running.TrySetResult();
+                await Task.Delay(LongerThanAnyTestWaits, cancellationContext.Current);
+            });
+            await running.Task.WaitAsync(TheLongestTheStopMayTake);
+            queue.EnqueueUpdate(removal.UpdateType, removal.Id, _ => Task.CompletedTask);
+            queue.HoldUntilQueuedWorkClears(new UpdateKey(UpdateType.Forecasts, 12), [removal], () => { });
+
+            await queue.CancelAllAsync();
+
+            var toldTheOperator = log.Invocations.Any(call => call.Method.Name == nameof(ILogger.Log)
+                && Equals(call.Arguments[0], LogLevel.Information)
+                && call.Arguments[2]?.ToString() == "Cancel all asked 1 refreshes to stop, let go 1 held updates without running them, and left 1 removals to finish.");
+
+            Assert.That(toldTheOperator, Is.True,
+                "Cancel all must say what it did: one refresh stopped, one held forecast let go, one removal left to finish.");
+        }
+
         private static async Task<bool> TheStatusReaches(InProcessUpdateStatusStore store, UpdateKey key, UpdateProgress reached)
         {
             var deadline = DateTime.UtcNow + TheLongestTheStopMayTake;
@@ -171,6 +200,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         private UpdateQueueService AQueueOver(IUpdateStatusStore store, UpdateCancellationContext cancellationContext)
+            => AQueueOver(store, cancellationContext, Mock.Of<ILogger<UpdateQueueService>>());
+
+        private UpdateQueueService AQueueOver(IUpdateStatusStore store, UpdateCancellationContext cancellationContext, ILogger<UpdateQueueService> logger)
         {
             var hubContext = new Mock<IHubContext<UpdateNotificationHub>>();
             hubContext.Setup(context => context.Clients.Group(It.IsAny<string>())).Returns(new Mock<IClientProxy>().Object);
@@ -181,7 +213,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             serviceScopeFactory.Setup(factory => factory.CreateScope()).Returns(serviceScope.Object);
 
             var queue = new UpdateQueueService(
-                Mock.Of<ILogger<UpdateQueueService>>(),
+                logger,
                 hubContext.Object,
                 new UpdateSubstrate(store, new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier(), new InProcessUpdateCancellationNotifier()),
                 serviceScopeFactory.Object,

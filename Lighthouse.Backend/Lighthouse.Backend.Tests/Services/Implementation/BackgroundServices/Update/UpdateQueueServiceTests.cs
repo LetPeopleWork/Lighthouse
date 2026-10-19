@@ -1027,6 +1027,201 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        public void Dispose_StopsListeningForCancelsAndForCancelAll()
+        {
+            var cancelSubscription = new Mock<IDisposable>();
+            var cancelAllSubscription = new Mock<IDisposable>();
+            var cancellationNotifier = new Mock<IUpdateCancellationNotifier>();
+            cancellationNotifier.Setup(n => n.Subscribe(It.IsAny<Action<UpdateKey>>())).Returns(cancelSubscription.Object);
+            cancellationNotifier.Setup(n => n.SubscribeToCancelAll(It.IsAny<Action>())).Returns(cancelAllSubscription.Object);
+
+            var subject = new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new UpdateSubstrate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), new InProcessUpdateExecutionLock(), new InProcessUpdateCompletionNotifier(), cancellationNotifier.Object), serviceScopeFactoryMock.Object, gate, new WriteBackRoundContext(), new UpdateCancellationContext());
+            subject.Dispose();
+
+            cancelSubscription.Verify(s => s.Dispose(), Times.Once,
+                "A queue that has gone must stop answering cancels, or a cancel meant for live work still reaches a queue nobody runs.");
+            cancelAllSubscription.Verify(s => s.Dispose(), Times.Once,
+                "A queue that has gone must stop answering Cancel all, for the same reason.");
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_TheRunningRefreshIsStoppedWithAFollowUpParked_TheFollowUpStillRunsAndCanItselfBeStopped()
+        {
+            var updateKey = new UpdateKey(UpdateType.Team, 72);
+            var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var followUpStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var followUpStopped = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var cancellationContext = new UpdateCancellationContext();
+            var subject = CreateSubject(new WriteBackRoundContext(), cancellationContext);
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                firstStarted.TrySetResult();
+                await Task.Delay(TimeSpan.FromSeconds(30), cancellationContext.Current);
+            });
+            await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                followUpStarted.TrySetResult();
+                try
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationContext.Current);
+                }
+                catch (OperationCanceledException)
+                {
+                    followUpStopped.TrySetResult();
+                    throw;
+                }
+            });
+
+            await subject.CancelAsync(updateKey);
+            var followUpRan = await Task.WhenAny(followUpStarted.Task, Task.Delay(TimeSpan.FromSeconds(5))) == followUpStarted.Task;
+
+            await subject.CancelAsync(updateKey);
+            var followUpWasStopped = await Task.WhenAny(followUpStopped.Task, Task.Delay(TimeSpan.FromSeconds(5))) == followUpStopped.Task;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(followUpRan, Is.True,
+                    "The follow-up carries a newer ask than the run that was stopped, so it must not inherit that run's cancel.");
+                Assert.That(followUpWasStopped, Is.True,
+                    "The follow-up must get a cancellation of its own, or nothing can stop it once it runs.");
+            }
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_AFollowUpWaitingBehindOtherWork_ReadsAsQueued()
+        {
+            var updateKey = new UpdateKey(UpdateType.Team, 73);
+            var otherKey = new UpdateKey(UpdateType.Team, 74);
+            var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var releaseOther = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var subject = CreateSubject();
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, async _ =>
+            {
+                firstStarted.TrySetResult();
+                await releaseFirst.Task;
+            });
+            await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            subject.EnqueueUpdate(otherKey.UpdateType, otherKey.Id, async _ => await releaseOther.Task);
+            subject.EnqueueUpdate(updateKey.UpdateType, updateKey.Id, _ => Task.CompletedTask);
+            releaseFirst.SetResult();
+
+            var otherRunning = await StatusReaches(otherKey, UpdateProgress.InProgress);
+            var followUpStatus = updateStatuses[updateKey].Status;
+            releaseOther.SetResult();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(otherRunning, Is.True, "The work queued ahead of the follow-up never started.");
+                Assert.That(followUpStatus, Is.EqualTo(UpdateProgress.Queued),
+                    "A follow-up still waiting its turn must read as waiting, or a cancel aimed at it cannot take it off the list at once.");
+            }
+        }
+
+        [Test]
+        public async Task EnqueueAndAwaitAsync_CancelledBeforeItRuns_StillLeavesTheRoundItJoined()
+        {
+            var awaitedKey = new UpdateKey(UpdateType.Team, 75);
+            var rounds = new WriteBackRoundContext();
+            var subject = CreateSubject(rounds);
+
+            WriteBackRound? round = null;
+            Task? awaited = null;
+            var asked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            subject.EnqueueUpdate(UpdateType.Features, 75, async _ =>
+            {
+                round = rounds.Current;
+                awaited = subject.EnqueueAndAwaitAsync(awaitedKey.UpdateType, awaitedKey.Id, _ => Task.CompletedTask);
+                await subject.CancelAsync(awaitedKey);
+                round!.Leave();
+                asked.TrySetResult();
+            });
+            await asked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            var settled = await Task.WhenAny(awaited!, Task.Delay(TimeSpan.FromSeconds(5))) == awaited;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(settled, Is.True, "The awaited work never settled after it was cancelled.");
+                Assert.That(round!.HasFinished, Is.True,
+                    "Awaited work cancelled before it ran must give its round the place back, or what the round resolved is never written.");
+            }
+        }
+
+        [Test]
+        public async Task EnqueueUpdate_WorkStoppedWhileRunning_LeavesItsRoundOnlyThroughItsOwnFlush()
+        {
+            var fireAndForget = new UpdateKey(UpdateType.Team, 76);
+            var awaitable = new UpdateKey(UpdateType.Team, 77);
+            var rounds = new WriteBackRoundContext();
+            var cancellationContext = new UpdateCancellationContext();
+            var subject = CreateSubject(rounds, cancellationContext);
+
+            var fireAndForgetStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var awaitableStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            Func<IServiceProvider, Task> LeavesTheRoundLikeAFlush(TaskCompletionSource started) => async _ =>
+            {
+                try
+                {
+                    started.TrySetResult();
+                    await Task.Delay(TimeSpan.FromSeconds(30), cancellationContext.Current);
+                }
+                finally
+                {
+                    rounds.Current!.Leave();
+                }
+            };
+
+            WriteBackRound? round = null;
+            Task? awaited = null;
+            var asked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            subject.EnqueueUpdate(UpdateType.Features, 76, _ =>
+            {
+                round = rounds.Current;
+                subject.EnqueueUpdate(fireAndForget.UpdateType, fireAndForget.Id, LeavesTheRoundLikeAFlush(fireAndForgetStarted));
+                awaited = subject.EnqueueAndAwaitAsync(awaitable.UpdateType, awaitable.Id, LeavesTheRoundLikeAFlush(awaitableStarted));
+                round!.Leave();
+                asked.TrySetResult();
+                return Task.CompletedTask;
+            });
+            await asked.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+            await fireAndForgetStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await subject.CancelAsync(fireAndForget);
+            await awaitableStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await subject.CancelAsync(awaitable);
+            var settled = await Task.WhenAny(awaited!, Task.Delay(TimeSpan.FromSeconds(5))) == awaited;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(settled, Is.True, "The awaited work never settled after it was stopped.");
+                Assert.That(round!.HasFinished, Is.True,
+                    "Work that had started leaves its round through its own flush. Leaving it again on its behalf counts the round past its end, so it never reads as finished and its write is lost.");
+            }
+        }
+
+        private async Task<bool> StatusReaches(UpdateKey updateKey, UpdateProgress reached)
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < deadline)
+            {
+                if (updateStatuses.TryGetValue(updateKey, out var status) && status.Status == reached)
+                {
+                    return true;
+                }
+
+                await Task.Delay(20);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Parks a hold that the next release sweep will let go: it waits on a key that is queued while the
         /// hold is taken and gone again by the time this returns.
@@ -1079,7 +1274,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier, WriteBackRoundContext roundContext)
         {
-            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new UpdateSubstrate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), new InProcessUpdateExecutionLock(), completionNotifier, new InProcessUpdateCancellationNotifier()), serviceScopeFactoryMock.Object, gate, roundContext, new UpdateCancellationContext());
+            return CreateSubject(completionNotifier, roundContext, new UpdateCancellationContext());
+        }
+
+        private UpdateQueueService CreateSubject(WriteBackRoundContext roundContext, UpdateCancellationContext cancellationContext)
+        {
+            return CreateSubject(new InProcessUpdateCompletionNotifier(), roundContext, cancellationContext);
+        }
+
+        private UpdateQueueService CreateSubject(IUpdateCompletionNotifier completionNotifier, WriteBackRoundContext roundContext, UpdateCancellationContext cancellationContext)
+        {
+            return new UpdateQueueService(Mock.Of<ILogger<UpdateQueueService>>(), hubContextMock.Object, new UpdateSubstrate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc), new InProcessUpdateExecutionLock(), completionNotifier, new InProcessUpdateCancellationNotifier()), serviceScopeFactoryMock.Object, gate, roundContext, cancellationContext);
         }
     }
 }

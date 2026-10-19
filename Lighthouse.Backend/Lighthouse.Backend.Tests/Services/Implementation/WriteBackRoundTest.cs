@@ -111,6 +111,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(round.TakeStaged(), Is.Empty);
         }
 
+        [Test]
+        public void A_round_has_writes_to_send_only_while_something_is_staged_in_it()
+        {
+            var round = new WriteBackRound();
+            var beforeStaging = round.HasStagedWrites;
+
+            round.Stage(Connection(1), [Update("PAY-1")]);
+            var afterStaging = round.HasStagedWrites;
+
+            round.TakeStaged();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeStaging, Is.False, "A round that staged nothing has nothing to send, so nobody should open a conversation with the tracker for it.");
+                Assert.That(afterStaging, Is.True);
+                Assert.That(round.HasStagedWrites, Is.False, "Once handed over, what was staged is no longer the round's to send.");
+            }
+        }
+
         private static WorkTrackingSystemConnection Connection(int id)
             => new() { Id = id, Name = $"Connection {id}", WorkTrackingSystem = WorkTrackingSystems.Jira };
 

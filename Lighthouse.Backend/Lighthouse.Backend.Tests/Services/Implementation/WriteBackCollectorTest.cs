@@ -146,6 +146,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 "Flushing clears the staging area, so a second terminal flush in the same scope is a no-op.");
         }
 
+        [Test]
+        public async Task FlushAsync_AnotherExecutionOfTheRoundIsStillToCome_LeavesTheWriteToIt()
+        {
+            var round = new WriteBackRound();
+            round.Join();
+            var subject = new WriteBackCollector(writeBackServiceMock.Object, new WriteBackRoundContext { Current = round }, loggerMock.Object);
+            subject.Stage(Connection(1), [Update("PROJ-1", FieldReference, "5")]);
+
+            var written = await subject.FlushAsync();
+            await subject.FlushAsync();
+            var theOtherIsLastOut = round.Leave();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(written, Is.Empty,
+                    "Writing before the rest of the round has run reaches the tracker once for this execution and again for the next.");
+                Assert.That(theOtherIsLastOut, Is.True,
+                    "A collector flushed twice must leave its round once, or it takes the other execution's place and the round's write is never sent.");
+                Assert.That(round.HasStagedWrites, Is.True, "What this execution staged waits in the round for the last one out.");
+            }
+
+            writeBackServiceMock.Verify(
+                s => s.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()),
+                Times.Never);
+        }
+
         private WriteBackCollector CreateSubject() => new(writeBackServiceMock.Object, new WriteBackRoundContext(), loggerMock.Object);
 
         private static WorkTrackingSystemConnection Connection(int id)

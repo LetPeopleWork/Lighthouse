@@ -142,6 +142,37 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [TestCase(UpdateType.TeamDelete)]
+        [TestCase(UpdateType.PortfolioDelete)]
+        public async Task CancelTask_ARemoval_IsRefusedAndNeverReachesTheQueue(UpdateType removal)
+        {
+            var queue = new Mock<IUpdateQueueService>();
+            var subject = CreateSubject(queue.Object);
+
+            var result = await subject.CancelTask(removal, 5);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+                Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("A deletion cannot be cancelled once it has been asked for."));
+            }
+
+            queue.Verify(q => q.CancelAsync(It.IsAny<UpdateKey>()), Times.Never,
+                "A removal stopped half-way leaves its rows in the database while the caller is told the entity has gone.");
+        }
+
+        [Test]
+        public async Task CancelTask_ARefresh_IsAcceptedAndHandedToTheQueue()
+        {
+            var queue = new Mock<IUpdateQueueService>();
+            var subject = CreateSubject(queue.Object);
+
+            var result = await subject.CancelTask(UpdateType.Team, 6);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+            queue.Verify(q => q.CancelAsync(new UpdateKey(UpdateType.Team, 6)), Times.Once);
+        }
+
         /// <summary>
         /// The dictionary is still what backs the store these tests seed, but the controller only ever sees
         /// the port (Epic #5511 slice 02, AC-02.2). Reading a dictionary directly is what made the old
@@ -149,11 +180,16 @@ namespace Lighthouse.Backend.Tests.API
         /// </summary>
         private UpdateController CreateSubject()
         {
+            return CreateSubject(Mock.Of<IUpdateQueueService>());
+        }
+
+        private UpdateController CreateSubject(IUpdateQueueService updateQueueService)
+        {
             return new UpdateController(
                 new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc),
                 new UpdateTaskNaming(Mock.Of<IRepository<Team>>(), Mock.Of<IPortfolioRepository>()),
                 Clocks.SystemUtc,
-                Mock.Of<IUpdateQueueService>());
+                updateQueueService);
         }
     }
 }
