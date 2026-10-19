@@ -390,6 +390,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
+            // Dropping is right here: a backup, restore or clear is replacing the very data this would write.
+            if (!maintenanceGate.TryHoldOffForARoundWriteBack())
+            {
+                logger.LogWarning("What a refresh round resolved was not written back, because a database {OperationType} operation is active.", maintenanceGate.ActiveOperationType);
+                SayHowTheRoundWent(round);
+                return;
+            }
+
             // Queued so the write runs in its turn like any other conversation with the tracker. A closing
             // queue accepts nothing more, and the write is still owed.
             if (!queue.Writer.TryWrite(() => SendWhatTheRoundLeftBehind(round)))
@@ -408,16 +416,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     await WriteBackCollector.WriteEverythingStaged(round, scope.ServiceProvider.GetRequiredService<IWriteBackService>(), logger);
                 }
 
-                if (round.TakeSummary() is { } summary)
-                {
-                    RefreshRoundSummaryLine.Write(logger, summary);
-                }
+                SayHowTheRoundWent(round);
             }
 #pragma warning disable CA1031 // as at the end of an update, a write-back that fails is logged, never allowed to take the queue down
             catch (Exception exception)
 #pragma warning restore CA1031
             {
                 logger.LogError(exception, "Writing back what a refresh round had resolved failed after its last execution left without running: {Exception}", exception.Message);
+            }
+            finally
+            {
+                maintenanceGate.RoundWriteBackDone();
+            }
+        }
+
+        private void SayHowTheRoundWent(WriteBackRound round)
+        {
+            if (round.TakeSummary() is { } summary)
+            {
+                RefreshRoundSummaryLine.Write(logger, summary);
             }
         }
 

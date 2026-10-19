@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         private string? activeOperationId;
         private DatabaseOperationType? activeOperationType;
         private DateTimeOffset? turnedAwayByTheFillAt;
+        private int roundWriteBacksOwed;
 
         public DatabaseMaintenanceGate(
             IUpdateStatusStore statusStore, IOverTimeHistoryFillActivity? historyFill = null, TimeProvider? time = null)
@@ -121,6 +122,34 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             }
         }
 
+        /// <summary>
+        /// When the last work out of a refresh round leaves without running, the update queue sends the
+        /// round's write-back after that work has already left the status store, so the store cannot speak
+        /// for it. Counting it here keeps a backup, restore or clear from starting until it has been sent,
+        /// and turns it away when one of those is already replacing the database it would write to.
+        /// </summary>
+        public bool TryHoldOffForARoundWriteBack()
+        {
+            lock (gateLock)
+            {
+                if (activeOperationId != null)
+                {
+                    return false;
+                }
+
+                roundWriteBacksOwed++;
+                return true;
+            }
+        }
+
+        public void RoundWriteBackDone()
+        {
+            lock (gateLock)
+            {
+                roundWriteBacksOwed--;
+            }
+        }
+
         public void Release(string operationId)
         {
             lock (gateLock)
@@ -155,7 +184,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
 
         private string? WhatBackgroundWorkIsWriting()
         {
-            if (statusStore.HasActiveWork())
+            if (statusStore.HasActiveWork() || IsARoundWriteBackOwed())
             {
                 return BackgroundUpdateIsRunning;
             }
@@ -168,6 +197,14 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             }
 
             return null;
+        }
+
+        private bool IsARoundWriteBackOwed()
+        {
+            lock (gateLock)
+            {
+                return roundWriteBacksOwed > 0;
+            }
         }
 
         private string ActiveOperationIsRunning() => $"A database {activeOperationType} operation is currently active.";
