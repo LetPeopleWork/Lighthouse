@@ -508,6 +508,36 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        [Category("story-6313")]
+        public async Task UpdateWorkTrackingSystemConnection_TheTeamsEstimationDefaultSent_StoresTheWholeBundle()
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 6, DisplayName = "Story Points", Reference = "customfield_10016" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var subject = CreateSubject();
+            var connectionDto = new WorkTrackingSystemConnectionDto
+            {
+                Id = 12,
+                Name = "Jira DC",
+                WorkTrackingSystem = WorkTrackingSystems.Jira,
+                Defaults = new ConnectionDefaultsDto
+                {
+                    EstimationForTeams = new EstimationDefaultDto { AdditionalFieldDefinitionId = 6, Unit = "Sizes", UseNonNumericEstimation = true, EstimationCategoryValues = ["S", "M"] },
+                },
+            };
+            connectionDto.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = 6, DisplayName = "Story Points", Reference = "customfield_10016" });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, connectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.Result, Is.InstanceOf<OkObjectResult>());
+                Assert.That(existingConnection.EstimationForTeams, Is.EqualTo(new EstimationBundle(6, "Sizes", true, ["S", "M"])));
+            }
+        }
+
+        [Test]
         public async Task UpdateWorkTrackingSystemConnection_TheTeamsDefaultNamesAFieldAddedInThisSave_StoresTheFieldFirstAndThenPointsTheDefaultAtIt()
         {
             var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };

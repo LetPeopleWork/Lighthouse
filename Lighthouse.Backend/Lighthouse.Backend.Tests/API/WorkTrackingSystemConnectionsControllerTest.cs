@@ -36,6 +36,8 @@ namespace Lighthouse.Backend.Tests.API
 
         private Mock<IRepository<OAuthCredential>> oAuthCredentialRepositoryMock;
 
+        private static readonly string[] DependencyAndPortfolioEstimation = ["dependencyFieldForPortfolios", "estimationForPortfolios"];
+
         [SetUp]
         public void Setup()
         {
@@ -617,6 +619,32 @@ namespace Lighthouse.Backend.Tests.API
             var okResult = result.Result as OkObjectResult;
             var connections = okResult!.Value as IEnumerable<WorkTrackingSystemConnectionDto>;
             Assert.That(connections!.Single().RequiresReconnect, Is.True);
+        }
+
+        [Test]
+        [Category("story-6313")]
+        public void GetWorkTrackingSystemConnections_OwnersFollowingDefaults_ListsWhichDefaultsEachGroupFollows()
+        {
+            repositoryMock.Setup(x => x.GetAll()).Returns([new WorkTrackingSystemConnection { Id = 17 }]);
+            var usage = new Mock<IWorkTrackingSystemConnectionUsage>();
+            usage.Setup(x => x.ByConnection()).Returns(new Dictionary<int, ConnectionUsage> { [17] = new(2, 1) });
+            usage.Setup(x => x.FollowerGroupsByConnection()).Returns(new Dictionary<int, IReadOnlyList<FollowerGroup>>
+            {
+                [17] = [new FollowerGroup([ConnectionDefaultSetting.DependencyFieldForPortfolios, ConnectionDefaultSetting.EstimationForPortfolios], 1)],
+            });
+            var subject = new WorkTrackingSystemConnectionsController(
+                workTrackingSystemsFactoryMock.Object, repositoryMock.Object, workTrackingConnectorFactoryMock.Object, cryptoServiceMock.Object, licenseServiceMock.Object, oAuthCredentialRepositoryMock.Object, usage.Object);
+
+            var result = subject.GetWorkTrackingSystemConnections();
+
+            var usedBy = ((result.Result as OkObjectResult)!.Value as IEnumerable<WorkTrackingSystemConnectionDto>)!.Single().UsedBy;
+            var group = usedBy!.FollowerGroups.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(group.Follows, Is.EqualTo(DependencyAndPortfolioEstimation));
+                Assert.That(group.Count, Is.EqualTo(1));
+                Assert.That(usedBy.Followers.EstimationForPortfolios, Is.EqualTo(1));
+            }
         }
 
         [Test]

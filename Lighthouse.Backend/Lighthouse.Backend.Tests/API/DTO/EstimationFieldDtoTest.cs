@@ -145,5 +145,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
             Assert.That(dto.EstimationCategoryValues, Is.EqualTo(new List<string> { "S", "M", "L" }));
         }
+
+        [Test]
+        [Category("story-6313")]
+        public void TeamSettingDto_SentWithNullCategories_SendsTheEstimationWithoutCategories()
+        {
+            var dto = new TeamSettingDto { EstimationAdditionalFieldDefinitionId = 42, EstimationUnit = "Points", EstimationCategoryValues = null };
+
+            Assert.That(dto.EstimationAsSent(), Is.EqualTo(new EstimationBundle(42, "Points", false, [])));
+        }
     }
 }

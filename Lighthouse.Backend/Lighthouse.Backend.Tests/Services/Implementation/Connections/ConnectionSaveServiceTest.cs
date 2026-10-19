@@ -679,6 +679,36 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 "\"Caused by\" cannot be removed. It is the Programs' Epic Owner Field default. Nothing was saved."));
         }
 
+        [Test]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Commit_RemovingTheFieldThePortfoliosEstimationDefaultNames_IsRefusedInTheWordsThisInstanceUses()
+        {
+            GivenThisInstanceCalls("Squad", "Squads", "Program", "Programs");
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], []);
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.EstimationForPortfolios = new EstimationBundle(CausedById, "Points", false, []);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
+                "\"Caused by\" cannot be removed. It is the Programs' Estimation default. Nothing was saved."));
+        }
+
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.EstimationForTeams = new EstimationBundle(CausedById, "Points", false, ["S", "M"]);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Estimation default from none to Caused by, Points; 3 Teams follow it: Alpha, Bravo, Chose None; no update queued."));
+        }
+
         private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios, string feature = "Feature")
             => terminologyServiceMock.Setup(x => x.GetAll()).Returns(
             [

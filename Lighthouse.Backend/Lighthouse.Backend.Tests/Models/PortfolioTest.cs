@@ -16,6 +16,16 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        [Category("story-6313")]
+        [TestCase(ConnectionDefaultSetting.ParentOverrideForTeams)]
+        [TestCase(ConnectionDefaultSetting.EstimationForTeams)]
+        public void NewPortfolio_FollowsNoDefaultHeldForTheTeams(ConnectionDefaultSetting teamsDefault)
+        {
+            var portfolio = new Portfolio();
+
+            Assert.That(portfolio.FollowsConnectionDefault(teamsDefault), Is.False);
+        }
+
         [Test]
         public void RefreshUpdateTime_RefreshesLastUpdateTime()
         {

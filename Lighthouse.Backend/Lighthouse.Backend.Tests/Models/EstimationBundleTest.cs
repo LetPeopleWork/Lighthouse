@@ -120,6 +120,29 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(team.EstimationDefaultName, Is.EqualTo(named));
         }
 
+        [Test]
+        public void Equal_bundles_hash_alike()
+        {
+            Assert.That(new EstimationBundle(StoryPoints, Points, true, ["S", "M", "L"]).GetHashCode(), Is.EqualTo(TheDefault.GetHashCode()));
+        }
+
+        [TestCaseSource(nameof(OnePartDiffers))]
+        public void A_bundle_differing_in_one_part_hashes_apart(EstimationBundle other)
+        {
+            Assert.That(other.GetHashCode(), Is.Not.EqualTo(TheDefault.GetHashCode()));
+        }
+
+        [Test]
+        public void A_following_Portfolio_reads_the_Portfolios_default_and_not_the_Teams()
+        {
+            var connection = new WorkTrackingSystemConnection { Name = "Jira DC – Payments", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connection.EstimationForTeams = new EstimationBundle(TShirtSize, Sizes, false, []);
+            connection.EstimationForPortfolios = TheDefault;
+            var portfolio = new Portfolio { Name = "Card Issuing", WorkTrackingSystemConnection = connection };
+
+            Assert.That(portfolio.EffectiveEstimation, Is.EqualTo(TheDefault));
+        }
+
         private static Team AFollowingTeam()
         {
             var connection = new WorkTrackingSystemConnection { Name = "Jira DC – Payments", WorkTrackingSystem = WorkTrackingSystems.Jira };
