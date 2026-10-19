@@ -40,6 +40,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
+        [Category("ac-11.4")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Changing_only_the_unit_of_the_Estimation_default_is_logged_with_the_whole_default_before_and_after()
+        {
+            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
+
+            await WhenTheAdminSetsTheEstimationDefault(ConnectionDefault.TeamsEstimation, StoryPoints, "Days");
+            ThenTheSaveIsAccepted();
+
+            Assert.That(
+                TheLogEntriesAboutChangedDefaults(),
+                Has.Some.Contains("Teams' Estimation default from \"Story Points, Points\" to \"Story Points, Days\"; 4 Teams follow it"));
+        }
+
+        [Test]
         [Category("ac-11.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

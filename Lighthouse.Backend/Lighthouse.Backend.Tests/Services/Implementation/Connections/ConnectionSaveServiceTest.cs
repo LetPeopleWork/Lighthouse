@@ -294,6 +294,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         }
 
         [Test]
+        [Category("contract-shape:bounded-change")]
+        public async Task Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            connectionRepositoryMock.Object.GetById(OwnedConnectionId)!.EstimationForTeams = new EstimationBundle(CausedById, "Sizes", true, ["S", "M"]);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.EstimationForTeams = new EstimationBundle(CausedById, "Sizes", true, ["S", "M", "L"]);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Estimation default from Caused by, Sizes, categories [S, M] to Caused by, Sizes, categories [S, M, L]; 3 Teams follow it: Alpha, Bravo, Chose None; no update queued."));
+        }
+
+        [Test]
         [Category("contract-shape:unbounded-preservation")]
         public async Task Commit_TheCopyIsStale_LetsTheConflictThroughAndLogsAndPublishesNothing()
         {

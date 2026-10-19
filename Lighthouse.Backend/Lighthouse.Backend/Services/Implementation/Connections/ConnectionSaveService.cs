@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 : new ConnectionSaveHandle(connection)
                 {
                     DefaultsBeforeSave = ConnectionFieldDefaults.All.ToDictionary(
-                        fieldDefault => fieldDefault.Setting, fieldDefault => DefaultOf(connection, fieldDefault.FieldOn(connection))),
+                        fieldDefault => fieldDefault.Setting, fieldDefault => HeldOn(connection, fieldDefault)),
                     StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
                     TeamFetchesBeforeSave = WhatEachTeamFetchesOn(connectionId),
                     PortfolioFetchesBeforeSave = WhatEachPortfolioFetchesOn(connectionId),
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         private void LogTheChangedDefault(ConnectionSaveHandle handle, ChangedConnectionDefault changed, int updatesQueued)
         {
             var connection = handle.Connection;
-            if (changed.FieldIdAfter == changed.Before.FieldId)
+            if (changed.After.IsTheSameDefaultAs(changed.Before))
             {
                 return;
             }
@@ -204,8 +204,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     "Connection {ConnectionName} changed the {Default:l} default from {PreviousField} to {NewField}; {Followers:l}; {Queued:l}.",
                     connection.Name,
                     changed.Name,
-                    changed.Before.FieldName ?? NoField,
-                    connection.DisplayNameOfField(changed.FieldIdAfter) ?? NoField,
+                    changed.Before.Description ?? NoField,
+                    changed.After.Description ?? NoField,
                     WhoFollows(changed.FollowersOf(connection), changed.Owners),
                     HowManyQueued(updatesQueued));
             }
@@ -217,8 +217,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
         }
 
-        private static NamedField DefaultOf(WorkTrackingSystemConnection connection, int? fieldId)
-            => new(fieldId, connection.DisplayNameOfField(fieldId));
+        private static NamedField HeldOn(WorkTrackingSystemConnection connection, ConnectionFieldDefault fieldDefault)
+        {
+            var fieldId = fieldDefault.FieldOn(connection);
+            return new(fieldId, connection.DisplayNameOfField(fieldId), fieldDefault.BundleOn?.Invoke(connection));
+        }
 
         private static OwnerWords WordsFor(DefaultHeldFor heldFor) => heldFor == DefaultHeldFor.Teams ? TeamWords : PortfolioWords;
 
@@ -230,7 +233,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             return new(
                 $"{owners.Many}' {fieldDefault.FieldName}",
                 handle.DefaultBeforeSave(fieldDefault.Setting),
-                fieldDefault.FieldOn(handle.Connection),
+                HeldOn(handle.Connection, fieldDefault),
                 owners,
                 fieldDefault.HeldFor == DefaultHeldFor.Teams
                     ? FollowersIn(teamRepository, fieldDefault.Setting)

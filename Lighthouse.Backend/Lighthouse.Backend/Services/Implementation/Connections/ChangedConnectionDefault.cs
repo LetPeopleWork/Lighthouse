@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
     internal sealed record ChangedConnectionDefault(
         string Name,
         NamedField Before,
-        int? FieldIdAfter,
+        NamedField After,
         OwnerWords Owners,
         Func<WorkTrackingSystemConnection, List<string>> FollowersOf);
 }

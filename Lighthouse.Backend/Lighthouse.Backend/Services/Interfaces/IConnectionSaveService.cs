@@ -37,9 +37,34 @@ namespace Lighthouse.Backend.Services.Interfaces
             => [.. StoredFieldsBeforeSave.Where(field => Removes(field.Key)).Select(field => new RemovedAdditionalField(field.Key, field.Value))];
     }
 
-    public sealed record NamedField(int? FieldId, string? FieldName)
+    /// <summary>A connection default as it stands: the field it names, and for Estimation the whole bundle.</summary>
+    public sealed record NamedField(int? FieldId, string? FieldName, EstimationBundle? Bundle = null)
     {
         public static readonly NamedField Nothing = new(null, null);
+
+        // A rename keeps the field, so it is not a change of the default; for Estimation the unit, the
+        // non-numeric switch and the categories are part of the default too.
+        public bool IsTheSameDefaultAs(NamedField other)
+            => FieldId == other.FieldId && Equals(Bundle, other.Bundle);
+
+        /// <summary>How the log names the default, or null when it names no field.</summary>
+        public string? Description => Bundle is null || FieldName is null ? FieldName : DescribeTheEstimation(FieldName, Bundle);
+
+        private static string DescribeTheEstimation(string fieldName, EstimationBundle bundle)
+        {
+            List<string> parts = [fieldName];
+            if (!string.IsNullOrEmpty(bundle.Unit))
+            {
+                parts.Add(bundle.Unit);
+            }
+
+            if (bundle.UseNonNumericEstimation)
+            {
+                parts.Add($"categories [{string.Join(", ", bundle.CategoryValues)}]");
+            }
+
+            return string.Join(", ", parts);
+        }
     }
 
     public sealed record ConnectionSaveOutcome(IReadOnlyList<AdditionalFieldInUse> FieldsInUse)

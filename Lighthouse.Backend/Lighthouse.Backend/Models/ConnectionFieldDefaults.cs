@@ -14,7 +14,8 @@ namespace Lighthouse.Backend.Models
         Func<OwnerTerms, string> NameIn,
         Func<WorkTrackingSystemConnection, int?> FieldOn,
         Action<WorkTrackingSystemConnection, int?> PointAt,
-        Action<WorkTrackingSystemConnection, EstimationBundle>? HoldBundle = null)
+        Action<WorkTrackingSystemConnection, EstimationBundle>? HoldBundle = null,
+        Func<WorkTrackingSystemConnection, EstimationBundle>? BundleOn = null)
     {
         /// <summary>The name in the words Lighthouse seeds, for the log an operator reads.</summary>
         public string FieldName => NameIn(OwnerTerms.Seeded);
@@ -40,11 +41,13 @@ namespace Lighthouse.Backend.Models
             new(ConnectionDefaultSetting.EstimationForTeams, DefaultHeldFor.Teams, _ => "Estimation",
                 connection => connection.EstimationForTeams.AdditionalFieldDefinitionId,
                 (connection, field) => connection.EstimationForTeams = connection.EstimationForTeams.PointingAt(field),
-                (connection, bundle) => connection.EstimationForTeams = bundle),
+                (connection, bundle) => connection.EstimationForTeams = bundle,
+                connection => connection.EstimationForTeams),
             new(ConnectionDefaultSetting.EstimationForPortfolios, DefaultHeldFor.Portfolios, _ => "Estimation",
                 connection => connection.EstimationForPortfolios.AdditionalFieldDefinitionId,
                 (connection, field) => connection.EstimationForPortfolios = connection.EstimationForPortfolios.PointingAt(field),
-                (connection, bundle) => connection.EstimationForPortfolios = bundle),
+                (connection, bundle) => connection.EstimationForPortfolios = bundle,
+                connection => connection.EstimationForPortfolios),
         ];
     }
 }
