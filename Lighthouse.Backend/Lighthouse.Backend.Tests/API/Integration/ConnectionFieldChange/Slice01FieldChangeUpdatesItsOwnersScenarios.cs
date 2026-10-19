@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         [Category("driving_port")]
         [Category("kpi")]
         [Category("contract-shape:bounded-change")]
-        public async Task Every_Team_and_Portfolio_on_the_connection_downloads_everything_once_after_a_field_is_added()
+        public async Task After_a_field_is_added_every_Team_and_then_every_Portfolio_on_the_connection_downloads_everything_once()
         {
             await GivenNordwindsConnectionsTeamsAndPortfolios();
             await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
@@ -51,21 +51,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
 
             ThenTheSaveIsAccepted();
             await ThenEachOfThemDownloadsEverythingExactlyOnce(EveryTeamAndPortfolioOnNordwindJiraDc);
-            await ThenTheConnectionReads(NordwindJiraDc, StoryPoints, FixVersions);
-        }
-
-        [Test]
-        [Category("us-01")]
-        [Category("driving_port")]
-        [Category("contract-shape:bounded-change")]
-        public async Task The_Teams_are_updated_before_any_Portfolio()
-        {
-            await GivenNordwindsConnectionsTeamsAndPortfolios();
-            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
-
-            await WhenPriyaAddsFixVersionsAndSaves(NordwindJiraDc);
-
             await ThenTheTeamsWereUpdatedBeforeAnyPortfolio();
+            await ThenTheConnectionReads(NordwindJiraDc, StoryPoints, FixVersions);
         }
 
         // The label is part of what every Team and Portfolio stores against each item, so renaming it
