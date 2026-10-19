@@ -85,6 +85,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const string ConnectionsRoute = "/api/latest/worktrackingsystemconnections";
         private const string TeamsRoute = "/api/latest/teams";
+        private const string PortfoliosRoute = "/api/latest/portfolios";
+        private const string ConnectionIdMember = "workTrackingSystemConnectionId";
         private const string TaskListRoute = "/api/latest/update/tasks";
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
         private const string JsonMediaType = "application/json";
@@ -463,12 +465,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
-        /// <summary>An owner saved with its Parent Override source sent as a number no version of Lighthouse defines.</summary>
-        protected async Task WhenTheOwnersAdminSendsTheSourceAsTheNumber(string owner, int source)
+        /// <summary>
+        /// An owner saved with one setting's source sent as a number no version of Lighthouse defines, and moved to
+        /// another connection in the same save when one is named.
+        /// </summary>
+        protected async Task WhenTheOwnersAdminSendsTheSourceAsTheNumber(string owner, int source, OwnerSetting setting = OwnerSetting.ParentOverrideField, string? movingTo = null)
         {
             await SetTheRestAside();
             var settings = await TheSettingsOf(owner);
-            settings[$"{TheOwnerMember(OwnerSetting.ParentOverrideField)}Source"] = source;
+            settings[$"{TheOwnerMember(setting)}Source"] = source;
+
+            if (movingTo is not null)
+            {
+                settings[ConnectionIdMember] = connectionIds[movingTo];
+            }
+
+            await PutTheOwner(owner, settings);
+        }
+
+        /// <summary>The owner's page moves it to another connection and saves everything else as it read it.</summary>
+        protected async Task WhenTheOwnersAdminMovesItTo(string owner, string connection)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(owner);
+            settings[ConnectionIdMember] = connectionIds[connection];
             await PutTheOwner(owner, settings);
         }
 
@@ -543,9 +563,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             SaveAnswerBody = await response.Content.ReadAsStringAsync();
         }
 
-        private async Task<JsonObject> ANewTeamCopiedFromFraudSignals(string name)
+        /// <summary>
+        /// A new Team or Portfolio, created with a body copied from an existing one of its kind, with one setting's
+        /// source sent as a number no version of Lighthouse defines.
+        /// </summary>
+        protected async Task WhenANewOwnerIsCreatedSendingTheSourceAsTheNumber(string copiedFrom, string name, OwnerSetting setting, int source)
         {
-            var settings = await TheSettingsOf(FraudSignals);
+            var settings = await ANewOwnerCopiedFrom(copiedFrom, name);
+            settings[$"{TheOwnerMember(setting)}Source"] = source;
+
+            using var content = AsJson(settings);
+            using var response = await Client.PostAsync(new Uri(teamIds.ContainsKey(copiedFrom) ? TeamsRoute : PortfoliosRoute, UriKind.Relative), content);
+
+            SaveAnswer = response.StatusCode;
+            SaveAnswerBody = await response.Content.ReadAsStringAsync();
+        }
+
+        private Task<JsonObject> ANewTeamCopiedFromFraudSignals(string name) => ANewOwnerCopiedFrom(FraudSignals, name);
+
+        private async Task<JsonObject> ANewOwnerCopiedFrom(string owner, string name)
+        {
+            var settings = await TheSettingsOf(owner);
             settings["id"] = 0;
             settings["name"] = name;
             settings["dataRetrievalValue"] = $"project = {name.Replace(' ', '_')}";
@@ -705,13 +743,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             return [.. FieldsOf(read).Select(field => field?[DisplayName]?.ToString() ?? string.Empty)];
         }
 
-        protected async Task<IReadOnlyList<string>> TheTeamsOnTheTeamsList()
+        /// <summary>The connection the owner's settings page shows it on.</summary>
+        protected async Task<string> TheConnectionOf(string owner)
         {
-            using var response = await Client.GetAsync(new Uri(TeamsRoute, UriKind.Relative));
+            var connectionId = (await TheSettingsOf(owner))[ConnectionIdMember]?.GetValue<int>();
+            return connectionIds.FirstOrDefault(connection => connection.Value == connectionId).Key ?? $"<connection {connectionId}>";
+        }
+
+        protected Task<IReadOnlyList<string>> TheTeamsOnTheTeamsList() => TheNamesListedAt(TeamsRoute);
+
+        protected Task<IReadOnlyList<string>> ThePortfoliosOnThePortfoliosList() => TheNamesListedAt(PortfoliosRoute);
+
+        private async Task<IReadOnlyList<string>> TheNamesListedAt(string route)
+        {
+            using var response = await Client.GetAsync(new Uri(route, UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-            return [.. JsonNode.Parse(body)!.AsArray().Select(team => team?["name"]?.ToString() ?? string.Empty)];
+            return [.. JsonNode.Parse(body)!.AsArray().Select(owner => owner?["name"]?.ToString() ?? string.Empty)];
         }
 
         /// <summary>Every Information entry about a changed default the saves since the scenario's start wrote.</summary>

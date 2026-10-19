@@ -1,3 +1,5 @@
+using System.Net;
+
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
     /// <summary>
@@ -133,6 +135,65 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheOwnerSaveIsAccepted();
 
             Assert.That((await WhatTheEstimationReadsFor(FraudSignals)).Source, Is.EqualTo("ConnectionDefault"));
+        }
+
+        [TestCase(FraudSignals, "team-setting-source-unknown")]
+        [TestCase(CardIssuing, "portfolio-setting-source-unknown")]
+        [Category("ac-11.1")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task An_owner_saved_with_an_Estimation_source_Lighthouse_does_not_know_is_refused(string owner, string code)
+        {
+            await WhenTheOwnersAdminSendsTheSourceAsTheNumber(owner, 99, OwnerSetting.Estimation);
+            var estimation = await WhatTheEstimationReadsFor(owner);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo(code));
+                Assert.That(TheRefusal().Message, Is.EqualTo("The Estimation Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+                Assert.That(estimation.Source, Is.EqualTo("ConnectionDefault"), "Nothing was saved.");
+            }
+        }
+
+        // Moving a Team to another connection throws its Work Items away, so a save refused only after that
+        // would lose them for nothing.
+        [Test]
+        [Category("ac-11.1")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_Team_moved_to_another_connection_with_an_Estimation_source_Lighthouse_does_not_know_is_refused_and_keeps_its_Work_Items()
+        {
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenTheOwnersAdminSendsTheSourceAsTheNumber(FraudSignals, 99, OwnerSetting.Estimation, movingTo: JiraDcTreasury);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo("team-setting-source-unknown"));
+                Assert.That(await WhereTheItemOfHangs(FraudSignals), Is.EqualTo(TheTrackersOwnParent), "Its Work Items are still there.");
+                Assert.That(await TheConnectionOf(FraudSignals), Is.EqualTo(JiraDcPayments), "Nothing was saved.");
+            }
+        }
+
+        [TestCase(FraudSignals, "Chargebacks", "team-setting-source-unknown")]
+        [TestCase(CardIssuing, "Acquiring", "portfolio-setting-source-unknown")]
+        [Category("ac-11.1")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task A_new_owner_created_with_an_Estimation_source_Lighthouse_does_not_know_is_refused(string copiedFrom, string name, string code)
+        {
+            await WhenANewOwnerIsCreatedSendingTheSourceAsTheNumber(copiedFrom, name, OwnerSetting.Estimation, 99);
+            IReadOnlyList<string> listed = [.. await TheTeamsOnTheTeamsList(), .. await ThePortfoliosOnThePortfoliosList()];
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo(code));
+                Assert.That(TheRefusal().Message, Does.Contain("Estimation Field"));
+                Assert.That(listed, Does.Not.Contain(name), "Nothing was saved.");
+            }
         }
     }
 }
