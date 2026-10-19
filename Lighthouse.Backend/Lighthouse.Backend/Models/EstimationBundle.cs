@@ -67,25 +67,19 @@ namespace Lighthouse.Backend.Models
 
         public bool FollowsTheDefault => Source == SettingSource.ConnectionDefault;
 
-        // Every source is written out with no catch-all arm, so a third source cannot be added without saying here
-        // what an owner reads under it. The compiler also wants an arm for an int cast to SettingSource outside the
-        // enum; writing one would be that catch-all, so only that is silenced.
-#pragma warning disable CS8524
-        public EstimationBundle ReadWith(EstimationBundle connectionDefault) => Source switch
-        {
-            SettingSource.ConnectionDefault => connectionDefault,
-            SettingSource.Own => OwnBundle,
-        };
+        public EstimationBundle ReadWith(EstimationBundle connectionDefault) => EffectiveSetting.Of(Source, OwnBundle, connectionDefault);
 
-        // A client that sends no source may not know sources exist, so the bundle it sends only counts as a choice
-        // when it names a field and differs in any part from what the owner read before; anything else is an echo.
-        public StoredEstimation Taking(SettingSource? sentSource, EstimationBundle sentBundle, EstimationBundle connectionDefault) => sentSource switch
-        {
-            SettingSource.Own => Owning(sentBundle),
-            SettingSource.ConnectionDefault => FollowingTheDefault,
-            null when sentBundle.IsSet && !sentBundle.Equals(ReadWith(connectionDefault)) => Owning(sentBundle),
-            null => this,
-        };
+        // A sent bundle that names a field and differs in any part from what the owner read is a choice. The
+        // compiler also wants an arm for an int cast to SettingSource outside the enum; writing one would be a
+        // catch-all that hides a new source, so only that is silenced.
+#pragma warning disable CS8524
+        public StoredEstimation Taking(SettingSource? sentSource, EstimationBundle sentBundle, EstimationBundle connectionDefault)
+            => IncomingSetting.SourceChosen(sentSource, sentBundle, sentBundle.IsSet, ReadWith(connectionDefault)) switch
+            {
+                SettingSource.Own => Owning(sentBundle),
+                SettingSource.ConnectionDefault => FollowingTheDefault,
+                null => this,
+            };
 #pragma warning restore CS8524
     }
 }
