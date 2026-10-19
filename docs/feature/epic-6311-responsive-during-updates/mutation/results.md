@@ -221,3 +221,68 @@ hundreds of mutants of untouched code, so they are excluded and the changed line
 | Services/.../WriteBackTriggerService.cs | 363 lines | 10 | a percentile with no day writes nothing (plus a comment) | `WriteBackTriggerServiceTest.BeyondTheHorizon` |
 | Services/.../DeliverySources/DeliveryForecastPublishingService.cs | 232 lines | 3 | passes `BeyondHorizon` into the block percentile | `DeliveryForecastBlockRendererBeyondTheHorizonTest` (renderer 96.6 % above), `DeliveryForecastPublishingServiceTest` |
 | Services/Interfaces/Forecast/IForecastService.cs | interface | 1 | adds an optional `CancellationToken` | nothing to mutate |
+
+## Slice 05 — Cancel all (Story #6322), frontend
+
+StrykerJS 10.0.0, run 2026-10-19 from `Lighthouse.Frontend/` against the frontend code at `0fe60583b`,
+over the lines slice 05 and its review fixes changed (`git diff f0ebbe5e6..HEAD`, production files only):
+
+```
+pnpm exec stryker run <abs path>/stryker.6322.frontend.json --incremental
+```
+
+Configs: `stryker.6322.frontend.json` and `vitest.stryker.6322.ts` (copy it into `Lighthouse.Frontend/`
+before a run; it names the 6 spec files that render the Task Manager or call the update service:
+`ActivitySection`, `TaskManagerIcon`, `TaskManagerIcon.cancelAll`, both `Header` specs, and
+`UpdateSubscriptionService`). `coverageAnalysis: perTest`, incremental file
+`reports/mutation/stryker-incremental-6322.json` (gitignored). `mutate` is scoped by line range to the
+`git diff -U0` hunks of the 5 changed files.
+
+| run | score | tested | killed | survived | timeout | no cov | wall clock |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| First (full) | **82.86 %** | 70 | 58 | 11 | 0 | 1 | 3 m 55 s |
+| After kill round (incremental, 17 of 70 reused) | **92.86 %** | 70 | 65 | 5 | 0 | 0 | 2 m 49 s |
+
+Per-file, first run → after kill round:
+
+| file | mutants | survived (first) | survived (after) |
+| --- | --- | --- | --- |
+| ActivitySection.tsx | 31 | 4 | 2 |
+| SectionHeading.tsx | 1 | 1 | 1 |
+| useTaskManagerPopover.ts | 33 | 6 | 2 |
+| TaskManagerIcon.tsx | 4 | 0 | 0 |
+| UpdateSubscriptionService.ts | 1 | 1 (no coverage) | 0 |
+
+### Killed in the kill round
+
+- `UpdateSubscriptionService.ts:276` the request path → `""` (no spec called `cancelAllTasks` at all) —
+  *asks the instance to stop everything in one request*.
+- `useTaskManagerPopover.ts:83` the refusal starts out `true` (the warning would greet the first opening
+  over rows nobody asked to stop) — *says nothing about a refusal before "Cancel all" was pressed*.
+- `useTaskManagerPopover.ts:154` the refusal is set rather than cleared when Cancel all is pressed (a
+  successful second try would leave "Could not cancel" standing) — *drops "Could not cancel. Try again."
+  once a second try is heard*.
+- `useTaskManagerPopover.ts:97` `some(canBeStopped)` → `every` (a removal beside stoppable work would wipe
+  the warning on the next read) — *keeps "Could not cancel. Try again." while a removal is listed beside
+  work that can still be stopped*.
+- `useTaskManagerPopover.ts:148` dropping `.filter((key) => !stopAsked.has(key))` (a refusal would put back
+  a row its own Stop had already marked) — *leaves a row stopped on its own still stopping when "Cancel
+  all" is refused*.
+- `ActivitySection.tsx:275` the Stop button's tooltip → empty — *names what its Stop would stop when the
+  reader points at it*.
+- `ActivitySection.tsx:241` `cancelAllFailed` defaulting to `true` — *warns about no refused Cancel all
+  unless it is told one was refused*.
+
+### Accepted survivors
+
+- `ActivitySection.tsx:288` `closest("[data-task-row]")?.focus()` → `.focus()`. The Stop button is only
+  ever drawn inside a `data-task-row` box, so `closest` never returns null. Unreachable guard.
+- `ActivitySection.tsx:306` the refusal `Alert`'s `sx={{ py: 0, mb: 0.5 }}` → `{}` and
+  `SectionHeading.tsx:36` the heading text's `sx={{ flexGrow: 1 }}` → `{}`. Spacing and the push of the
+  Cancel all button to the far end of the heading. jsdom does no layout, so no unit test can see them;
+  they show only in the rendered page.
+- `useTaskManagerPopover.ts:175` `popoverClosings.current += 1` → `-= 1`. The counter is only ever compared
+  for equality against the value taken when Cancel all was pressed; any change means "the popover closed
+  since". Equivalent.
+- `useTaskManagerPopover.ts:177` `useCallback(..., [])` → `["Stryker was here"]`. A constant dependency
+  never changes, so the callback is memoised exactly as before. Equivalent.
