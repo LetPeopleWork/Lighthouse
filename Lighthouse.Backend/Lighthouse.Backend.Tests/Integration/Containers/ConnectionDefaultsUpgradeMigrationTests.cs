@@ -71,6 +71,18 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private sealed record EstimationDetails(string? Unit, bool UseNonNumeric, List<string> Categories);
 
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
+
         [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Category = "slice-08,ac-7.5")]
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Category = "slice-09,ac-8.5")]
@@ -104,9 +116,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [TestCase(UpgradedSetting.PortfoliosEstimation, Category = "slice-12,ac-11.6")]
         public async Task On_Postgres_owners_that_named_nothing_or_a_missing_field_follow_and_owners_keep_their_field(UpgradedSetting setting)
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await TheUpgradeTurnsTheOwnersIntoFollowersOrOwners(provider, PreviousMigrationIdPostgres, setting);
         }
 
