@@ -198,16 +198,6 @@
         "ceiling_seconds": 61
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ProcessBehaviorSnapshotMigrationTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
-        "ceiling_seconds": 61
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedRuleSetMigrationTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
-        "ceiling_seconds": 61
-      },
-      {
         "unit": "Lighthouse.Backend.Tests.API.Integration.DeliverySources.Slice04ForecastPublishingTest",
         "reason": "boots the app in a test host and creates and seeds a database for every scenario",
         "ceiling_seconds": 60
@@ -243,16 +233,6 @@
         "ceiling_seconds": 55
       },
       {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
-        "ceiling_seconds": 53
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ConcurrentStartupMigrationTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
-        "ceiling_seconds": 53
-      },
-      {
         "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedDurationMigrationTests",
         "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
         "ceiling_seconds": 52
@@ -280,11 +260,6 @@
       {
         "unit": "Lighthouse.Backend.Tests.API.Integration.ManualSorting.Slice02ManualRankTest",
         "reason": "boots the app in a test host and creates and seeds a database for every scenario",
-        "ceiling_seconds": 45
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.ViewerEmbedStorageGuaranteeTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
         "ceiling_seconds": 45
       },
       {
@@ -356,11 +331,6 @@
         "unit": "Lighthouse.Backend.Tests.API.Integration.BehaviourSettings.Slice02OneListOfSwitchesTest",
         "reason": "boots the app in a test host and creates and seeds a database for every scenario",
         "ceiling_seconds": 36
-      },
-      {
-        "unit": "Lighthouse.Backend.Tests.Integration.Containers.PercentilesOverTimeSnapshotMigrationTests",
-        "reason": "starts a fresh Postgres container and applies every migration to prove the schema on a real provider",
-        "ceiling_seconds": 35
       },
       {
         "unit": "Lighthouse.Backend.Tests.Integration.Containers.BlockedStalenessThresholdMigrationTests",
