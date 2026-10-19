@@ -130,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.2")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -151,22 +150,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             {
                 Assert.That(whatTheBrowserWasTold, Has.Member(UpdateProgress.Cancelled),
                     $"The running refresh was not stopped, so there was nothing for a follow-up to come back after. Told: {TheBrowserWasTold.Describe()}");
-                Assert.That(whatTheBrowserWasTold.Count(progress => progress == UpdateProgress.InProgress), Is.EqualTo(1),
+                Assert.That(whatTheBrowserWasTold, Has.No.Member(UpdateProgress.Completed),
                     $"The refresh stopped by Cancel all came straight back as its own follow-up. Told: {TheBrowserWasTold.Describe()}");
                 Assert.That(whatTheBrowserWasTold[^1], Is.EqualTo(UpdateProgress.Cancelled));
             }
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.2")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public async Task A_forecast_held_until_a_Team_finishes_is_let_go_without_running()
         {
+            var running = GivenATeamThatIsRefreshedOnSchedule();
             var team = GivenATeamThatIsRefreshedOnSchedule();
 
-            await WhenARefreshIsUnderWay(UpdateType.Team, team.Id);
+            await WhenARefreshIsUnderWay(UpdateType.Team, running.Id);
+            await WhenARefreshIsAlsoAskedFor(UpdateType.Team, team.Id);
             GivenAForecastIsHeldBehind(team);
 
             var heldBeforeTheClick = Factory.Services.GetRequiredService<IUpdateQueueService>()
