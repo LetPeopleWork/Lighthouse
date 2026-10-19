@@ -13,7 +13,9 @@ import { useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
-import ActivitySection from "./TaskManager/ActivitySection";
+import ActivitySection, {
+	CancelAllButton,
+} from "./TaskManager/ActivitySection";
 import ConnectionsSection from "./TaskManager/ConnectionsSection";
 import {
 	ACTIVITY_LABEL,
@@ -30,8 +32,18 @@ const TaskManagerIcon = () => {
 	const { isSystemAdmin } = useRbac();
 	const { getTerm } = useTerminology();
 
-	const { tasks, connections, problems, stopAsked, refresh, cancel, test } =
-		useTaskManagerPopover(isSystemAdmin);
+	const {
+		tasks,
+		connections,
+		problems,
+		stopAsked,
+		cancellingAll,
+		cancelAllFailed,
+		refresh,
+		cancel,
+		cancelAll,
+		test,
+	} = useTaskManagerPopover(isSystemAdmin);
 
 	const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
@@ -101,6 +113,13 @@ const TaskManagerIcon = () => {
 				<SectionHeading
 					testId="task-manager-section-activity"
 					icon={<AutorenewIcon fontSize="small" color="action" />}
+					action={
+						<CancelAllButton
+							tasks={tasks}
+							cancelling={cancellingAll}
+							onCancelAll={() => void cancelAll()}
+						/>
+					}
 				>
 					{ACTIVITY_LABEL}
 				</SectionHeading>
@@ -109,6 +128,7 @@ const TaskManagerIcon = () => {
 					tasks={tasks}
 					stopAsked={stopAsked}
 					onCancel={(task) => void cancel(task)}
+					cancelAllFailed={cancelAllFailed}
 				/>
 
 				<Divider sx={{ my: 1.5 }} />

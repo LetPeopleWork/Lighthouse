@@ -3,7 +3,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IConnectionHealth } from "../../../../services/Api/ConnectionHealthService";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
 import type { IUpdateTask } from "../../../../services/UpdateSubscriptionService";
-import { taskKey } from "./ActivitySection";
+import { isStoppedByCancelAll, taskKey } from "./ActivitySection";
 
 /**
  * An instance that cannot say what it is doing is not an instance doing nothing. A read that failed
@@ -51,10 +51,12 @@ const alsoRemembering = (
 
 const noLongerRemembering = (
 	asked: ReadonlySet<string>,
-	key: string,
+	...keys: string[]
 ): ReadonlySet<string> => {
 	const remaining = new Set(asked);
-	remaining.delete(key);
+	for (const key of keys) {
+		remaining.delete(key);
+	}
 
 	return remaining;
 };
@@ -77,6 +79,8 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 	const [connections, setConnections] = useState<IConnectionHealth[]>([]);
 	const [problems, setProblems] = useState<IRecentProblem[] | null>(null);
 	const [stopAsked, setStopAsked] = useState<ReadonlySet<string>>(new Set());
+	const [cancellingAll, setCancellingAll] = useState(false);
+	const [cancelAllFailed, setCancelAllFailed] = useState(false);
 
 	const refresh = useCallback(async () => {
 		await readAndKeepWhatWasThereIfItFails(
@@ -129,6 +133,33 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 	);
 
 	/**
+	 * Every row it can stop says so at once, for the same reason a single stop does. Only the rows this
+	 * click marked are put back if the instance refuses: a row somebody stopped on its own a moment
+	 * earlier is still being stopped by that earlier ask.
+	 */
+	const cancelAll = useCallback(async () => {
+		const marked = tasks
+			.filter(isStoppedByCancelAll)
+			.map(taskKey)
+			.filter((key) => !stopAsked.has(key));
+
+		setCancelAllFailed(false);
+		setCancellingAll(true);
+		setStopAsked((asked) => new Set([...asked, ...marked]));
+
+		try {
+			await updateSubscriptionService.cancelAllTasks();
+		} catch {
+			setStopAsked((asked) => noLongerRemembering(asked, ...marked));
+			setCancelAllFailed(true);
+		} finally {
+			setCancellingAll(false);
+		}
+
+		await refresh();
+	}, [refresh, stopAsked, tasks, updateSubscriptionService]);
+
+	/**
 	 * The answer comes back from the instance and replaces the row wholesale. Deciding locally what the
 	 * test must have meant would let the header disagree with the popover it was opened from.
 	 */
@@ -177,5 +208,16 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 		};
 	}, [enabled, refresh, updateSubscriptionService]);
 
-	return { tasks, connections, problems, stopAsked, refresh, cancel, test };
+	return {
+		tasks,
+		connections,
+		problems,
+		stopAsked,
+		cancellingAll,
+		cancelAllFailed,
+		refresh,
+		cancel,
+		cancelAll,
+		test,
+	};
 };

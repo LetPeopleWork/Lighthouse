@@ -266,11 +266,14 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 		await this.apiService.post(`/update/tasks/${updateType}/${id}/cancel`);
 	}
 
-	// SCAFFOLD: Cancel all is not built yet.
+	/**
+	 * Asks the instance to stop everything running or queued in one request. The instance
+	 * leaves removals out and lets them finish.
+	 */
 	public async cancelAllTasks(): Promise<void> {
 		await this.ensureConnected();
 
-		throw new Error("SCAFFOLD: Cancel all is not built yet.");
+		await this.apiService.post("/update/tasks/cancel");
 	}
 
 	public async getGlobalUpdateStatus(): Promise<IGlobalUpdateStatus> {

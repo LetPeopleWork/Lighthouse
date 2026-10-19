@@ -1,6 +1,8 @@
 import CancelIcon from "@mui/icons-material/Cancel";
 import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
+import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import IconButton from "@mui/material/IconButton";
 import Tooltip from "@mui/material/Tooltip";
@@ -26,6 +28,30 @@ const WAITING = "Queued";
  * seconds against a real tracker, and for that whole window an unchanged row reads as a dead control.
  */
 const STOPPING = "Stopping…";
+
+const CANCEL_ALL = "Cancel all";
+
+const CANCELLING_ALL = "Cancelling…";
+
+const CANCEL_ALL_EXPLAINED =
+	"Stops everything running or queued, except removals. Scheduled updates carry on as usual.";
+
+const CANCEL_ALL_REFUSED = "Could not cancel. Try again.";
+
+/**
+ * Which work Cancel all asks to stop. The instance never stops a removal, so a removal row keeps saying
+ * what it is doing rather than promising a stop that will not come.
+ */
+const STOPPED_BY_CANCEL_ALL = {
+	Team: true,
+	Features: true,
+	Forecasts: true,
+	TeamDelete: false,
+	PortfolioDelete: false,
+} as const satisfies Record<UpdateTaskType, boolean>;
+
+export const isStoppedByCancelAll = (task: IUpdateTask): boolean =>
+	STOPPED_BY_CANCEL_ALL[task.updateType];
 
 /** What identifies one piece of work across a re-read, so the browser can remember asking to stop it. */
 export const taskKey = (task: IUpdateTask): string =>
@@ -158,6 +184,43 @@ const RowProgress = ({ activity }: { activity: RowActivity }) => {
 	}
 };
 
+interface CancelAllButtonProps {
+	tasks: IUpdateTask[];
+	cancelling: boolean;
+	onCancelAll: () => void;
+}
+
+/**
+ * One click and no dialog: the operator pressing it is already watching an instance that is too busy, and
+ * a confirmation would be one more thing between them and the relief. Nothing it does is lost for good,
+ * since the next scheduled update brings everything back.
+ */
+export const CancelAllButton = ({
+	tasks,
+	cancelling,
+	onCancelAll,
+}: Readonly<CancelAllButtonProps>) => {
+	if (!cancelling && !tasks.some(isStoppedByCancelAll)) {
+		return null;
+	}
+
+	return (
+		<Tooltip title={CANCEL_ALL_EXPLAINED} describeChild>
+			{/* A disabled button is not an event target, so the tooltip hangs on a wrapper instead. */}
+			<span>
+				<Button
+					size="small"
+					disabled={cancelling}
+					endIcon={cancelling ? <CircularProgress size={14} /> : undefined}
+					onClick={onCancelAll}
+				>
+					{cancelling ? CANCELLING_ALL : CANCEL_ALL}
+				</Button>
+			</span>
+		</Tooltip>
+	);
+};
+
 interface ActivitySectionProps {
 	tasks: IUpdateTask[];
 	/**
@@ -168,13 +231,15 @@ interface ActivitySectionProps {
 	 */
 	stopAsked: ReadonlySet<string>;
 	onCancel: (task: IUpdateTask) => void;
+	cancelAllFailed?: boolean;
 }
 
 const ActivitySection = ({
 	tasks,
 	stopAsked,
 	onCancel,
-}: ActivitySectionProps) => {
+	cancelAllFailed = false,
+}: Readonly<ActivitySectionProps>) => {
 	const kindOf = useKindOf();
 
 	if (tasks.length === 0) {
@@ -185,7 +250,7 @@ const ActivitySection = ({
 		);
 	}
 
-	return tasks.map((task) => {
+	const rows = tasks.map((task) => {
 		const activity = activityOf(task, stopAsked.has(taskKey(task)));
 
 		return (
@@ -232,6 +297,17 @@ const ActivitySection = ({
 			</Box>
 		);
 	});
+
+	return (
+		<>
+			{cancelAllFailed && (
+				<Alert severity="warning" sx={{ py: 0, mb: 0.5 }}>
+					{CANCEL_ALL_REFUSED}
+				</Alert>
+			)}
+			{rows}
+		</>
+	);
 };
 
 export default ActivitySection;

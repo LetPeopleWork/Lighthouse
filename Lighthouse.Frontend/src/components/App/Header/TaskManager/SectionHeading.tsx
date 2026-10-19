@@ -10,6 +10,8 @@ interface SectionHeadingProps {
 	 */
 	icon: ReactNode;
 	children: string;
+	/** Something the reader can do to the whole section, drawn at the far end of the heading. */
+	action?: ReactNode;
 }
 
 /**
@@ -20,13 +22,21 @@ interface SectionHeadingProps {
  * short enough to read, and leaves a preference to remember afterwards. If a section routinely runs past
  * about a dozen rows that trade changes, and until then it is chrome.
  */
-const SectionHeading = ({ testId, icon, children }: SectionHeadingProps) => (
+const SectionHeading = ({
+	testId,
+	icon,
+	children,
+	action,
+}: Readonly<SectionHeadingProps>) => (
 	<Box
 		data-testid={testId}
 		sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}
 	>
 		{icon}
-		<Typography variant="subtitle2">{children}</Typography>
+		<Typography variant="subtitle2" sx={{ flexGrow: 1 }}>
+			{children}
+		</Typography>
+		{action}
 	</Box>
 );
 

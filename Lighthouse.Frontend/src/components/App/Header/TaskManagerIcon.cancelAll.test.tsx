@@ -45,9 +45,6 @@ vi.mock("../../../services/TerminologyContext", async () => {
 	};
 });
 
-const pendingEpic6311 =
-	"Pending: Cancel all in the Activity heading (epic 6311, slice 05)";
-
 const aRunningTeam: IUpdateTask = {
 	updateType: "Team",
 	id: 7,
@@ -131,7 +128,7 @@ describe("Cancel all in the Task Manager", () => {
 		mockIsSystemAdmin.mockReturnValue(true);
 	});
 
-	it.skip(`offers "Cancel all" in the Activity heading when there is something to cancel (${pendingEpic6311})`, async () => {
+	it(`offers "Cancel all" in the Activity heading when there is something to cancel`, async () => {
 		renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 		await openThePopover();
@@ -139,7 +136,7 @@ describe("Cancel all in the Task Manager", () => {
 		expect(await cancelAll()).toBeEnabled();
 	});
 
-	it.skip(`says what it stops and what it leaves (${pendingEpic6311})`, async () => {
+	it(`says what it stops and what it leaves`, async () => {
 		renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 		await openThePopover();
@@ -148,7 +145,7 @@ describe("Cancel all in the Task Manager", () => {
 		expect(await screen.findByText(THE_TOOLTIP)).toBeInTheDocument();
 	});
 
-	it.skip(`asks the instance once and puts no confirmation in the way (${pendingEpic6311})`, async () => {
+	it(`asks the instance once and puts no confirmation in the way`, async () => {
 		const service = renderIcon([aRunningTeam, aQueuedPortfolio]);
 
 		await openThePopover();
@@ -159,7 +156,7 @@ describe("Cancel all in the Task Manager", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	it.skip(`reads "Cancelling…" with a spinner and cannot be pressed again while the instance answers (${pendingEpic6311})`, async () => {
+	it(`reads "Cancelling…" with a spinner and cannot be pressed again while the instance answers`, async () => {
 		const cancel = anUnansweredCancel();
 		renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
 			svc.cancelAllTasks = vi.fn().mockReturnValue(cancel.pending);
@@ -177,7 +174,7 @@ describe("Cancel all in the Task Manager", () => {
 		cancel.answer();
 	});
 
-	it.skip(`has every row it can stop read "Stopping…" and leaves the removal as it was (${pendingEpic6311})`, async () => {
+	it(`has every row it can stop read "Stopping…" and leaves the removal as it was`, async () => {
 		const cancel = anUnansweredCancel();
 		renderIcon([aRunningTeam, aQueuedPortfolio, aQueuedRemoval], (svc) => {
 			svc.cancelAllTasks = vi.fn().mockReturnValue(cancel.pending);
@@ -201,7 +198,7 @@ describe("Cancel all in the Task Manager", () => {
 		cancel.answer();
 	});
 
-	it.skip(`says "Could not cancel. Try again." under the heading and puts the rows back when the instance refuses (${pendingEpic6311})`, async () => {
+	it(`says "Could not cancel. Try again." under the heading and puts the rows back when the instance refuses`, async () => {
 		renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
 			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
 		});
@@ -221,7 +218,7 @@ describe("Cancel all in the Task Manager", () => {
 		expect(await cancelAll()).toBeEnabled();
 	});
 
-	it.skip(`re-reads the list once the instance has answered, so only the removals remain (${pendingEpic6311})`, async () => {
+	it(`re-reads the list once the instance has answered, so only the removals remain`, async () => {
 		const service = renderIcon([
 			aRunningTeam,
 			aQueuedPortfolio,
