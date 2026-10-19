@@ -3,6 +3,7 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
+import { followTheConnectionsEstimation } from "../../helpers/api/teams";
 import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
@@ -598,6 +599,55 @@ testWithDemo(
 		await takeElementScreenshot(
 			blockedEditor.builder,
 			"features/metrics/blockedRuleEditor.png",
+		);
+	},
+);
+
+// The CSV connection is the only connection the demo data seeds, so its defaults section lists the
+// Teams' Estimation and the Portfolios' Feature Owner Field and Estimation.
+const DEMO_CONNECTION = "Demo Data CSV Connector";
+const ESTIMATING_TEAM = "Team Zenith";
+
+testWithDemo(
+	"Take @screenshot of the connection defaults with the Teams' Estimation set",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(ESTIMATING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const connection = await overviewPage.editConnection(DEMO_CONNECTION);
+		await expect(connection.defaultsSection).toBeVisible();
+		await connection.setTheTeamsEstimationDefault("Story Points", "Points");
+
+		await takeElementScreenshot(
+			connection.defaultsSection,
+			"settings/worktrackingsystems/connection-defaults.png",
+		);
+	},
+);
+
+testWithDemo(
+	"Take @screenshot of a Team following the connection's Estimation default",
+	async ({ request, testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(ESTIMATING_TEAM);
+		await followTheConnectionsEstimation(request, ESTIMATING_TEAM);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const connection = await overviewPage.editConnection(DEMO_CONNECTION);
+		await connection.setTheTeamsEstimationDefault("Story Points", "Points");
+		const afterTheSave = await connection.saveAnswering(
+			"Change the Estimation default?",
+		);
+
+		const team = await afterTheSave.goToTeam(ESTIMATING_TEAM);
+		const settings = await team.editTeam();
+		await settings.openEstimationSettings();
+		await expect(settings.estimationFieldCombobox).toHaveText(
+			"Connection default (Story Points, Points)",
+		);
+
+		await takeElementScreenshot(
+			settings.estimationSection,
+			"features/team_estimation_connection_default.png",
 		);
 	},
 );

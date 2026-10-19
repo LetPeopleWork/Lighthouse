@@ -119,6 +119,13 @@ export class TeamEditPage extends BaseEditPage<TeamDetailPage> {
 			.locator('xpath=ancestor::div[contains(@class,"MuiCard-root")][1]');
 	}
 
+	/** The Estimation section: the field, its unit and, for categories, their order. */
+	get estimationSection(): Locator {
+		return this.page
+			.getByRole("heading", { name: "Estimation", exact: true })
+			.locator('xpath=ancestor::div[contains(@class,"MuiCard-root")][1]');
+	}
+
 	/** Has the Team refine on this weekday every week, in the Refinement section's cadence. */
 	async refineEveryWeekOn(weekday: string): Promise<void> {
 		const day = this.page.getByRole("checkbox", { name: weekday, exact: true });
