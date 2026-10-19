@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.API.Helpers
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.TakeSizeEstimateFieldAsSent(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
             project.TakeFeatureOwnerFieldAsSent(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId);
-            project.TakeEstimationAsSent(portfolioSetting.EstimationSource, new EstimationBundle(portfolioSetting.EstimationAdditionalFieldDefinitionId, portfolioSetting.EstimationUnit, portfolioSetting.UseNonNumericEstimation, portfolioSetting.EstimationCategoryValues));
+            project.TakeEstimationAsSent(portfolioSetting.EstimationSource, portfolioSetting.EstimationAsSent());
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? project.IgnoreDependencies;

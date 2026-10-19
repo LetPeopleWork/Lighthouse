@@ -82,6 +82,7 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public List<string> EstimationCategoryValues => [.. EffectiveEstimation.CategoryValues];
 
+        // The columns keep their old names so that renaming what the code reads costs no schema change.
         [Column(nameof(EstimationAdditionalFieldDefinitionId))]
         public int? OwnEstimationAdditionalFieldDefinitionId { get; private set; }
 

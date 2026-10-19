@@ -102,6 +102,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public string? EstimationDefaultName { get; private set; }
 
+        /// <summary>The four Estimation parts this save sends, as the one bundle they are followed or owned as.</summary>
+        public EstimationBundle EstimationAsSent()
+            => new(EstimationAdditionalFieldDefinitionId, EstimationUnit, UseNonNumericEstimation, EstimationCategoryValues);
+
         public List<StateMappingDto> StateMappings { get; set; } = [];
 
         public List<CycleTimeDefinitionDto> CycleTimeDefinitions { get; set; } = [];
