@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.API.Helpers
                 // Taken before the save moves the Team to another connection, so what the Team read before the
                 // request is judged against the connection it was read from.
                 team.TakeParentOverrideAsSent(teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId);
+                team.TakeEstimationAsSent(teamSetting.EstimationSource, new EstimationBundle(teamSetting.EstimationAdditionalFieldDefinitionId, teamSetting.EstimationUnit, teamSetting.UseNonNumericEstimation, teamSetting.EstimationCategoryValues));
 
                 team.FeatureWIP = teamSetting.FeatureWIP;
                 team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;
@@ -48,10 +49,6 @@ namespace Lighthouse.Backend.API.Helpers
                 team.WorkTrackingSystemConnectionId = teamSetting.WorkTrackingSystemConnectionId;
                 team.AutomaticallyAdjustFeatureWIP = teamSetting.AutomaticallyAdjustFeatureWIP;
                 team.DoneItemsCutoffDays = teamSetting.DoneItemsCutoffDays;
-                team.EstimationAdditionalFieldDefinitionId = teamSetting.EstimationAdditionalFieldDefinitionId;
-                team.EstimationUnit = teamSetting.EstimationUnit;
-                team.UseNonNumericEstimation = teamSetting.UseNonNumericEstimation;
-                team.EstimationCategoryValues = teamSetting.EstimationCategoryValues;
                 team.SystemWIPLimit = teamSetting.SystemWIPLimit;
                 team.ProcessBehaviourChartBaselineStartDate = teamSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
                 team.ProcessBehaviourChartBaselineEndDate = teamSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(teamSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;

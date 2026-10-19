@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -1960,7 +1961,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetEstimationVsCycleTimeData_NoEstimationFieldConfigured_ReturnsNotConfigured()
         {
-            testTeam.EstimationAdditionalFieldDefinitionId = null;
+            testTeam.OwningEstimationField(null);
 
             var result = subject.GetEstimationVsCycleTimeData(testTeam, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
@@ -1975,7 +1976,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetEstimationVsCycleTimeData_EstimationConfiguredButNoClosedItems_ReturnsNoData()
         {
-            testTeam.EstimationAdditionalFieldDefinitionId = 42;
+            testTeam.OwningEstimationField(42);
 
             var result = subject.GetEstimationVsCycleTimeData(testTeam, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
@@ -1991,8 +1992,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_NumericEstimates_ReturnsMappedDataPoints()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2024,8 +2025,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_NumericEstimates_DataPointsHaveCorrectValues()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2051,8 +2052,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_DecimalEstimates_PreservesDecimals()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2071,8 +2072,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_SameEstimateAndCycleTime_GroupsIntoSingleDataPoint()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2102,8 +2103,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_InvalidEstimate_ExcludedFromDataPoints()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2133,8 +2134,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_MissingEstimate_ExcludedFromDataPoints()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2163,8 +2164,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_AllInvalid_ReturnsNoData()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = false;
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2189,9 +2190,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_NonNumericMode_MapsCategoriesToOrdinalPositions()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = true;
-            testTeam.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(true);
+            testTeam.OwningEstimationCategories(["XS", "S", "M", "L", "XL"]);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2229,9 +2230,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_NonNumericMode_UnmappedValuesExcludedFromDataPoints()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.UseNonNumericEstimation = true;
-            testTeam.EstimationCategoryValues = ["S", "M", "L"];
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningNonNumericEstimation(true);
+            testTeam.OwningEstimationCategories(["S", "M", "L"]);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2260,8 +2261,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_ReturnsEstimationUnit()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
-            testTeam.EstimationUnit = "Points";
+            testTeam.OwningEstimationField(fieldId);
+            testTeam.OwningEstimationUnit("Points");
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2280,7 +2281,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_OnlyIncludesItemsFromTeam()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.OwningEstimationField(fieldId);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;
@@ -2309,7 +2310,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetEstimationVsCycleTimeData_OnlyIncludesItemsInDateRange()
         {
             const int fieldId = 42;
-            testTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            testTeam.OwningEstimationField(fieldId);
 
             var startDate = DateTime.UtcNow.AddDays(-10).Date;
             var endDate = TestToday.AmbientAsUtcMidnight;

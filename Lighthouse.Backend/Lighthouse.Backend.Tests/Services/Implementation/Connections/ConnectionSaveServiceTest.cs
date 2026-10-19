@@ -533,7 +533,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             var teams = new List<Team>
             {
                 new Team { Id = 8, Name = "Zulu", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentOverride(CausedById),
-                new() { Id = 4, Name = "Yankee", WorkTrackingSystemConnectionId = OwnedConnectionId, EstimationAdditionalFieldDefinitionId = CausedById },
+                new Team { Id = 4, Name = "Yankee", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningEstimationField(CausedById),
                 new() { Id = 6, Name = "Owns nothing", WorkTrackingSystemConnectionId = OwnedConnectionId },
                 new Team { Id = 3, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentOverride(CausedById),
             };
@@ -557,7 +557,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         {
             var portfolios = new List<Portfolio>
             {
-                new() { Id = 15, Name = "Estimation", WorkTrackingSystemConnectionId = OwnedConnectionId, EstimationAdditionalFieldDefinitionId = CausedById },
+                new Portfolio { Id = 15, Name = "Estimation", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningEstimationField(CausedById),
                 new Portfolio { Id = 14, Name = "Feature Owner", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningFeatureOwnerField(CausedById),
                 new Portfolio { Id = 13, Name = "Size", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningSizeEstimateField(CausedById),
                 new Portfolio { Id = 12, Name = "Dependency", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningDependencyField(CausedById),

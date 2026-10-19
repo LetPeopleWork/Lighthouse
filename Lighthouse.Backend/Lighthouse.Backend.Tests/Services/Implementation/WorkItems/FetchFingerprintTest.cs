@@ -295,7 +295,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.BlockedRuleSetJson), p => p.BlockedRuleSetJson = "{\"any\":true}");
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.WaitStates), p => p.WaitStates = ["Review"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.CycleTimeDefinitions), p => p.CycleTimeDefinitions.Add(new CycleTimeDefinition { Name = "Dev", StartState = "Active", EndState = "Done" }));
-            yield return Case(nameof(WorkTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId), p => p.EstimationAdditionalFieldDefinitionId = 3);
+            yield return Case(nameof(WorkTrackingSystemOptionsOwner.EstimationAdditionalFieldDefinitionId), p => p.OwnEstimation(new EstimationBundle(3, null, false, [])));
             yield return Case(nameof(Portfolio.DefaultAmountOfWorkItemsPerFeature), p => p.DefaultAmountOfWorkItemsPerFeature = 99);
             yield return Case(nameof(Portfolio.OwningTeamId), p => p.OwningTeamId = 5);
             yield return Case(nameof(Portfolio.IgnoreDependencies), p => p.IgnoreDependencies = true);

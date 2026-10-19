@@ -91,11 +91,11 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
         private List<OwnerNamingFields> TeamsOwningAnyOf(List<int?> fieldIds, int connectionId)
             => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId
                     && (fieldIds.Contains(team.OwnParentOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(team.EstimationAdditionalFieldDefinitionId)))
+                        || fieldIds.Contains(team.OwnEstimationAdditionalFieldDefinitionId)))
                 .OrderBy(team => team.Id)
-                .Select(team => new { team.Name, team.OwnParentOverrideAdditionalFieldDefinitionId, team.EstimationAdditionalFieldDefinitionId })
+                .Select(team => new { team.Name, team.OwnParentOverrideAdditionalFieldDefinitionId, team.OwnEstimationAdditionalFieldDefinitionId })
                 .AsEnumerable()
-                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId, team.EstimationAdditionalFieldDefinitionId]))];
+                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId, team.OwnEstimationAdditionalFieldDefinitionId]))];
 
         private List<OwnerNamingFields> PortfoliosOwningAnyOf(List<int?> fieldIds, int connectionId)
             => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                         || fieldIds.Contains(portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.OwnSizeEstimateAdditionalFieldDefinitionId)
                         || fieldIds.Contains(portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.EstimationAdditionalFieldDefinitionId)))
+                        || fieldIds.Contains(portfolio.OwnEstimationAdditionalFieldDefinitionId)))
                 .OrderBy(portfolio => portfolio.Id)
                 .Select(portfolio => new
                 {
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
-                    portfolio.EstimationAdditionalFieldDefinitionId,
+                    portfolio.OwnEstimationAdditionalFieldDefinitionId,
                 })
                 .AsEnumerable()
                 .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
-                    portfolio.EstimationAdditionalFieldDefinitionId,
+                    portfolio.OwnEstimationAdditionalFieldDefinitionId,
                 ]))];
 
         private async Task PointTheDefaultsAtTheFieldsAddedInThisSave(ConnectionSaveHandle handle)

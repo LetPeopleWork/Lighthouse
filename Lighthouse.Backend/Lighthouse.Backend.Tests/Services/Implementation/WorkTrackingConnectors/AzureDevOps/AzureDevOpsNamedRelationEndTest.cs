@@ -331,7 +331,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             portfolio.OwnParentOverride(10);
             portfolio.OwnSizeEstimateField(11);
             portfolio.OwnFeatureOwnerField(12);
-            portfolio.EstimationAdditionalFieldDefinitionId = 12;
+            portfolio.OwningEstimationField(12);
 
             var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
 

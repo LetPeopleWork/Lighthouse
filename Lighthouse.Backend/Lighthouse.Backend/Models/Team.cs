@@ -32,8 +32,14 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForTeams;
 
-        public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting)
-            => setting == ConnectionDefaultSetting.ParentOverrideForTeams && FollowsParentOverrideDefault;
+        protected override EstimationBundle EstimationConnectionDefault => WorkTrackingSystemConnection?.EstimationForTeams ?? EstimationBundle.None;
+
+        public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => setting switch
+        {
+            ConnectionDefaultSetting.ParentOverrideForTeams => FollowsParentOverrideDefault,
+            ConnectionDefaultSetting.EstimationForTeams => FollowsEstimationDefault,
+            _ => false,
+        };
 
         /// <summary>Null until a Team admin first saves the refinement section.</summary>
         public RefinementSettings? RefinementSettings { get; set; }

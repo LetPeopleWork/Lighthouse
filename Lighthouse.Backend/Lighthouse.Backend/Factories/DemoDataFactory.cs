@@ -69,8 +69,7 @@ namespace Lighthouse.Backend.Factories
 
             if (name == DemoTeamNames.GoodThroughput)
             {
-                demoTeam.EstimationAdditionalFieldDefinitionId = StoryPointsFieldId;
-                demoTeam.EstimationUnit = StoryPoints;
+                demoTeam.OwnEstimation(new EstimationBundle(StoryPointsFieldId, StoryPoints, false, []));
             }
 
             return demoTeam;

@@ -70,8 +70,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Category = "slice-09,ac-8.5")]
         [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Category = "slice-10,ac-9.5")]
         [TestCase(UpgradedSetting.PortfoliosFeatureOwnerField, Category = "slice-11,ac-10.5")]
-        [TestCase(UpgradedSetting.TeamsEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
-        [TestCase(UpgradedSetting.PortfoliosEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
+        [TestCase(UpgradedSetting.TeamsEstimation, Category = "slice-12,ac-11.6")]
+        [TestCase(UpgradedSetting.PortfoliosEstimation, Category = "slice-12,ac-11.6")]
         public async Task On_SQLite_owners_that_named_nothing_or_a_missing_field_follow_and_owners_keep_their_field(UpgradedSetting setting)
         {
             var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-defaults-6303-{Guid.NewGuid():N}.db");
@@ -94,8 +94,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [TestCase(UpgradedSetting.PortfoliosDependencyField, Category = "slice-09,ac-8.5")]
         [TestCase(UpgradedSetting.PortfoliosSizeEstimateField, Category = "slice-10,ac-9.5")]
         [TestCase(UpgradedSetting.PortfoliosFeatureOwnerField, Category = "slice-11,ac-10.5")]
-        [TestCase(UpgradedSetting.TeamsEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
-        [TestCase(UpgradedSetting.PortfoliosEstimation, Ignore = PendingEpic6303.Slice12, Category = "slice-12,ac-11.6")]
+        [TestCase(UpgradedSetting.TeamsEstimation, Category = "slice-12,ac-11.6")]
+        [TestCase(UpgradedSetting.PortfoliosEstimation, Category = "slice-12,ac-11.6")]
         public async Task On_Postgres_owners_that_named_nothing_or_a_missing_field_follow_and_owners_keep_their_field(UpgradedSetting setting)
         {
             await using var postgres = await PostgresContainerFixture.StartFreshAsync();
@@ -226,8 +226,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     break;
                 case UpgradedSetting.TeamsEstimation:
                 case UpgradedSetting.PortfoliosEstimation:
-                    owner.EstimationAdditionalFieldDefinitionId = value;
-                    owner.EstimationUnit = value is null ? null : "Points";
+                    owner.OwnEstimation(new EstimationBundle(value, value is null ? null : "Points", false, []));
                     break;
             }
         }

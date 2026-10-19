@@ -1077,16 +1077,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<int?>("EstimationAdditionalFieldDefinitionId")
-                        .HasColumnType("integer");
-
-                    b.PrimitiveCollection<List<string>>("EstimationCategoryValues")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("EstimationUnit")
-                        .HasColumnType("text");
-
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("text");
 
@@ -1105,6 +1095,19 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("DependencyOverrideAdditionalFieldDefinitionId");
 
+                    b.Property<int?>("OwnEstimationAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("EstimationAdditionalFieldDefinitionId");
+
+                    b.PrimitiveCollection<List<string>>("OwnEstimationCategoryValues")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("EstimationCategoryValues");
+
+                    b.Property<string>("OwnEstimationUnit")
+                        .HasColumnType("text")
+                        .HasColumnName("EstimationUnit");
+
                     b.Property<int?>("OwnFeatureOwnerAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
                         .HasColumnName("FeatureOwnerAdditionalFieldDefinitionId");
@@ -1116,6 +1119,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("OwnSizeEstimateAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
                         .HasColumnName("SizeEstimateAdditionalFieldDefinitionId");
+
+                    b.Property<bool>("OwnUseNonNumericEstimation")
+                        .HasColumnType("boolean")
+                        .HasColumnName("UseNonNumericEstimation");
 
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("integer");
@@ -1152,9 +1159,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<DateTime>("UpdateTime")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("UseNonNumericEstimation")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("UsePercentileToCalculateDefaultAmountOfWorkItems")
                         .HasColumnType("boolean");
 
@@ -1172,6 +1176,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int>("storedDependencyFieldSource")
                         .HasColumnType("integer")
                         .HasColumnName("DependencyFieldSource");
+
+                    b.Property<int>("storedEstimationSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("EstimationSource");
 
                     b.Property<int>("storedFeatureOwnerFieldSource")
                         .HasColumnType("integer")
@@ -1471,16 +1479,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text[]");
 
-                    b.Property<int?>("EstimationAdditionalFieldDefinitionId")
-                        .HasColumnType("integer");
-
-                    b.PrimitiveCollection<List<string>>("EstimationCategoryValues")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
-                    b.Property<string>("EstimationUnit")
-                        .HasColumnType("text");
-
                     b.Property<int>("FeatureWIP")
                         .HasColumnType("integer");
 
@@ -1494,9 +1492,26 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int?>("OwnEstimationAdditionalFieldDefinitionId")
+                        .HasColumnType("integer")
+                        .HasColumnName("EstimationAdditionalFieldDefinitionId");
+
+                    b.PrimitiveCollection<List<string>>("OwnEstimationCategoryValues")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("EstimationCategoryValues");
+
+                    b.Property<string>("OwnEstimationUnit")
+                        .HasColumnType("text")
+                        .HasColumnName("EstimationUnit");
+
                     b.Property<int?>("OwnParentOverrideAdditionalFieldDefinitionId")
                         .HasColumnType("integer")
                         .HasColumnName("ParentOverrideAdditionalFieldDefinitionId");
+
+                    b.Property<bool>("OwnUseNonNumericEstimation")
+                        .HasColumnType("boolean")
+                        .HasColumnName("UseNonNumericEstimation");
 
                     b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
                         .HasColumnType("timestamp with time zone");
@@ -1542,9 +1557,6 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<bool>("UseFixedDatesForThroughput")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("UseNonNumericEstimation")
-                        .HasColumnType("boolean");
-
                     b.PrimitiveCollection<List<string>>("WaitStates")
                         .IsRequired()
                         .HasColumnType("text[]");
@@ -1555,6 +1567,10 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("WorkTrackingSystemConnectionId")
                         .HasColumnType("integer");
+
+                    b.Property<int>("storedEstimationSource")
+                        .HasColumnType("integer")
+                        .HasColumnName("EstimationSource");
 
                     b.Property<int>("storedParentOverrideSource")
                         .HasColumnType("integer")
@@ -1782,6 +1798,26 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("DependencyFieldForPortfolios")
                         .HasColumnType("integer");
 
+                    b.PrimitiveCollection<List<string>>("EstimationCategoryValuesForPortfolios")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.PrimitiveCollection<List<string>>("EstimationCategoryValuesForTeams")
+                        .IsRequired()
+                        .HasColumnType("text[]");
+
+                    b.Property<int?>("EstimationFieldForPortfolios")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("EstimationFieldForTeams")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EstimationUnitForPortfolios")
+                        .HasColumnType("text");
+
+                    b.Property<string>("EstimationUnitForTeams")
+                        .HasColumnType("text");
+
                     b.Property<int?>("FeatureOwnerFieldForPortfolios")
                         .HasColumnType("integer");
 
@@ -1797,6 +1833,12 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int?>("SizeEstimateFieldForPortfolios")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("UseNonNumericEstimationForPortfolios")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("UseNonNumericEstimationForTeams")
+                        .HasColumnType("boolean");
 
                     b.Property<int>("WorkTrackingSystem")
                         .HasColumnType("integer");

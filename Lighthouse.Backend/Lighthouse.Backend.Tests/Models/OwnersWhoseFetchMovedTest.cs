@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Models
                     connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = StoryPoints, DisplayName = "Story Points", Reference = "customfield_10016" });
                     break;
                 case TheSave.ChangesTheEstimation:
-                    team.EstimationAdditionalFieldDefinitionId = StoryPoints;
+                    team.OwningEstimationField(StoryPoints);
                     break;
                 case TheSave.ChangesNothingFetched:
                     connection.Name = "Jira DC – Payments (renamed)";

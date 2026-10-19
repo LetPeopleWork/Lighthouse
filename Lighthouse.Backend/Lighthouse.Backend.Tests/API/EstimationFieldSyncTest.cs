@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 
@@ -22,8 +23,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void SyncTeamWithTeamSettings_ClearsEstimationFieldWhenNull()
         {
-            var team = new Team { EstimationAdditionalFieldDefinitionId = 42 };
-            var dto = new TeamSettingDto { EstimationAdditionalFieldDefinitionId = null, WorkTrackingSystemConnectionId = 1 };
+            var team = new Team().OwningEstimationField(42);
+            var dto = new TeamSettingDto { EstimationSource = SettingSource.Own, EstimationAdditionalFieldDefinitionId = null, WorkTrackingSystemConnectionId = 1 };
 
             team.SyncTeamWithTeamSettings(dto);
 
@@ -61,9 +62,9 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void SyncWithPortfolioSettings_ClearsEstimationFieldWhenNull()
         {
-            var portfolio = new Portfolio { EstimationAdditionalFieldDefinitionId = 7 };
+            var portfolio = new Portfolio().OwningEstimationField(7);
             var teamRepoMock = new Mock<IRepository<Team>>();
-            var dto = new PortfolioSettingDto { EstimationAdditionalFieldDefinitionId = null, WorkTrackingSystemConnectionId = 1 };
+            var dto = new PortfolioSettingDto { EstimationSource = SettingSource.Own, EstimationAdditionalFieldDefinitionId = null, WorkTrackingSystemConnectionId = 1 };
 
             portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
 
@@ -74,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API
         public void SyncTeamWithTeamSettings_SyncsEstimationUnit()
         {
             var team = new Team();
-            var dto = new TeamSettingDto { EstimationUnit = "Points", WorkTrackingSystemConnectionId = 1 };
+            var dto = new TeamSettingDto { EstimationSource = SettingSource.Own, EstimationUnit = "Points", WorkTrackingSystemConnectionId = 1 };
 
             team.SyncTeamWithTeamSettings(dto);
 
@@ -84,8 +85,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void SyncTeamWithTeamSettings_ClearsEstimationUnitWhenNull()
         {
-            var team = new Team { EstimationUnit = "Points" };
-            var dto = new TeamSettingDto { EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
+            var team = new Team().OwningEstimationUnit("Points");
+            var dto = new TeamSettingDto { EstimationSource = SettingSource.Own, EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
 
             team.SyncTeamWithTeamSettings(dto);
 
@@ -97,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var portfolio = new Portfolio();
             var teamRepoMock = new Mock<IRepository<Team>>();
-            var dto = new PortfolioSettingDto { EstimationUnit = "T-Shirt", WorkTrackingSystemConnectionId = 1 };
+            var dto = new PortfolioSettingDto { EstimationSource = SettingSource.Own, EstimationUnit = "T-Shirt", WorkTrackingSystemConnectionId = 1 };
 
             portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
 
@@ -107,9 +108,9 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void SyncWithPortfolioSettings_ClearsEstimationUnitWhenNull()
         {
-            var portfolio = new Portfolio { EstimationUnit = "T-Shirt" };
+            var portfolio = new Portfolio().OwningEstimationUnit("T-Shirt");
             var teamRepoMock = new Mock<IRepository<Team>>();
-            var dto = new PortfolioSettingDto { EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
+            var dto = new PortfolioSettingDto { EstimationSource = SettingSource.Own, EstimationUnit = null, WorkTrackingSystemConnectionId = 1 };
 
             portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
 
@@ -120,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API
         public void SyncTeamWithTeamSettings_SyncsUseNonNumericEstimation()
         {
             var team = new Team();
-            var dto = new TeamSettingDto { UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
+            var dto = new TeamSettingDto { EstimationSource = SettingSource.Own, UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
 
             team.SyncTeamWithTeamSettings(dto);
 
@@ -131,7 +132,7 @@ namespace Lighthouse.Backend.Tests.API
         public void SyncTeamWithTeamSettings_SyncsEstimationCategoryValues()
         {
             var team = new Team();
-            var dto = new TeamSettingDto { EstimationCategoryValues = ["XS", "S", "M"], WorkTrackingSystemConnectionId = 1 };
+            var dto = new TeamSettingDto { EstimationSource = SettingSource.Own, EstimationCategoryValues = ["XS", "S", "M"], WorkTrackingSystemConnectionId = 1 };
 
             team.SyncTeamWithTeamSettings(dto);
 
@@ -143,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var portfolio = new Portfolio();
             var teamRepoMock = new Mock<IRepository<Team>>();
-            var dto = new PortfolioSettingDto { UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
+            var dto = new PortfolioSettingDto { EstimationSource = SettingSource.Own, UseNonNumericEstimation = true, WorkTrackingSystemConnectionId = 1 };
 
             portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
 
@@ -155,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var portfolio = new Portfolio();
             var teamRepoMock = new Mock<IRepository<Team>>();
-            var dto = new PortfolioSettingDto { EstimationCategoryValues = ["S", "M", "L"], WorkTrackingSystemConnectionId = 1 };
+            var dto = new PortfolioSettingDto { EstimationSource = SettingSource.Own, EstimationCategoryValues = ["S", "M", "L"], WorkTrackingSystemConnectionId = 1 };
 
             portfolio.SyncWithPortfolioSettings(dto, teamRepoMock.Object);
 

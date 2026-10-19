@@ -27,7 +27,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// Suffix of the migration that adds the column. The patch is applied only while that migration
         /// is still pending, so a fixture pinned AFTER it is left alone.
         /// </param>
-        private sealed record LaterColumn(string Table, string Column, string Type, string AddedByMigration);
+        /// <param name="PostgresType">Only for a column whose type no single name covers on both providers, such as a list.</param>
+        private sealed record LaterColumn(string Table, string Column, string Type, string AddedByMigration, string? PostgresType = null);
 
         private static readonly LaterColumn[] ColumnsAddedAfterTheseFixturesPinnedTheirSchema =
         [
@@ -54,11 +55,22 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("WorkTrackingSystemConnections", "SizeEstimateFieldForPortfolios", "INTEGER", "AddPortfoliosSizeEstimateFieldDefault"),
             new("Portfolios", "FeatureOwnerFieldSource", "INTEGER", "AddPortfoliosFeatureOwnerFieldDefault"),
             new("WorkTrackingSystemConnections", "FeatureOwnerFieldForPortfolios", "INTEGER", "AddPortfoliosFeatureOwnerFieldDefault"),
+            new("Teams", "EstimationSource", "INTEGER", "AddEstimationDefaults"),
+            new("Portfolios", "EstimationSource", "INTEGER", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "EstimationFieldForTeams", "INTEGER", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "EstimationUnitForTeams", "TEXT", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "UseNonNumericEstimationForTeams", "boolean", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "EstimationCategoryValuesForTeams", "TEXT", "AddEstimationDefaults", "text[]"),
+            new("WorkTrackingSystemConnections", "EstimationFieldForPortfolios", "INTEGER", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "EstimationUnitForPortfolios", "TEXT", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "UseNonNumericEstimationForPortfolios", "boolean", "AddEstimationDefaults"),
+            new("WorkTrackingSystemConnections", "EstimationCategoryValuesForPortfolios", "TEXT", "AddEstimationDefaults", "text[]"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>
         public static Task AddColumnsTheCurrentModelExpectsAsync(LighthouseAppContext context)
-            => ApplyAsync(context, column => "ALTER TABLE \"" + column.Table + "\" ADD COLUMN \"" + column.Column + "\" " + column.Type + " NULL");
+            => ApplyAsync(context, column => "ALTER TABLE \"" + column.Table + "\" ADD COLUMN \"" + column.Column + "\" "
+                + (context.Database.IsNpgsql() ? column.PostgresType ?? column.Type : column.Type) + " NULL");
 
         /// <summary>Call after seeding, before migrating forward - or the real migration re-adds the column and fails.</summary>
         public static Task RemoveColumnsTheCurrentModelExpectsAsync(LighthouseAppContext context)

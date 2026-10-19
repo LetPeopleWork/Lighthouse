@@ -362,6 +362,14 @@ namespace Lighthouse.Backend.Data
                 .HasColumnName(nameof(Portfolio.FeatureOwnerFieldSource));
 
             modelBuilder.Entity<Team>()
+                .Property<SettingSource>("storedEstimationSource")
+                .HasColumnName(nameof(Team.EstimationSource));
+
+            modelBuilder.Entity<Portfolio>()
+                .Property<SettingSource>("storedEstimationSource")
+                .HasColumnName(nameof(Portfolio.EstimationSource));
+
+            modelBuilder.Entity<Team>()
                 .HasMany(t => t.WorkItems)
                 .WithOne(wi => wi.Team);
 

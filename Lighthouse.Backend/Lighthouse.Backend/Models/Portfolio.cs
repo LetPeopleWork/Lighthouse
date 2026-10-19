@@ -97,12 +97,15 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
 
+        protected override EstimationBundle EstimationConnectionDefault => WorkTrackingSystemConnection?.EstimationForPortfolios ?? EstimationBundle.None;
+
         public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => setting switch
         {
             ConnectionDefaultSetting.ParentOverrideForPortfolios => FollowsParentOverrideDefault,
             ConnectionDefaultSetting.DependencyFieldForPortfolios => FollowsDependencyFieldDefault,
             ConnectionDefaultSetting.SizeEstimateFieldForPortfolios => FollowsSizeEstimateFieldDefault,
             ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios => FollowsFeatureOwnerFieldDefault,
+            ConnectionDefaultSetting.EstimationForPortfolios => FollowsEstimationDefault,
             _ => false,
         };
 

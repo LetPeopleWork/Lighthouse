@@ -27,13 +27,10 @@ namespace Lighthouse.Backend.API.Helpers
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.TakeSizeEstimateFieldAsSent(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
             project.TakeFeatureOwnerFieldAsSent(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId);
+            project.TakeEstimationAsSent(portfolioSetting.EstimationSource, new EstimationBundle(portfolioSetting.EstimationAdditionalFieldDefinitionId, portfolioSetting.EstimationUnit, portfolioSetting.UseNonNumericEstimation, portfolioSetting.EstimationCategoryValues));
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? project.IgnoreDependencies;
-            project.EstimationAdditionalFieldDefinitionId = portfolioSetting.EstimationAdditionalFieldDefinitionId;
-            project.EstimationUnit = portfolioSetting.EstimationUnit;
-            project.UseNonNumericEstimation = portfolioSetting.UseNonNumericEstimation;
-            project.EstimationCategoryValues = portfolioSetting.EstimationCategoryValues;
             project.SystemWIPLimit = portfolioSetting.SystemWIPLimit;
             project.ProcessBehaviourChartBaselineStartDate = portfolioSetting.ProcessBehaviourChartBaselineStartDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineStartDate.Value, DateTimeKind.Utc) : null;
             project.ProcessBehaviourChartBaselineEndDate = portfolioSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;

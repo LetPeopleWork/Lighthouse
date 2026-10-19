@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models.WriteBack;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 
@@ -36,6 +37,40 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>The Feature Owner Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? FeatureOwnerFieldForPortfolios { get; set; }
+
+        /// <summary>The estimation every Team on this connection reads while it follows the default.</summary>
+        [NotMapped]
+        public EstimationBundle EstimationForTeams
+        {
+            get => new(EstimationFieldForTeams, EstimationUnitForTeams, UseNonNumericEstimationForTeams, EstimationCategoryValuesForTeams);
+            set => (EstimationFieldForTeams, EstimationUnitForTeams, UseNonNumericEstimationForTeams, EstimationCategoryValuesForTeams)
+                = (value.AdditionalFieldDefinitionId, value.Unit, value.UseNonNumericEstimation, value.CategoryValues.ToList());
+        }
+
+        /// <summary>The estimation every Portfolio on this connection reads while it follows the default.</summary>
+        [NotMapped]
+        public EstimationBundle EstimationForPortfolios
+        {
+            get => new(EstimationFieldForPortfolios, EstimationUnitForPortfolios, UseNonNumericEstimationForPortfolios, EstimationCategoryValuesForPortfolios);
+            set => (EstimationFieldForPortfolios, EstimationUnitForPortfolios, UseNonNumericEstimationForPortfolios, EstimationCategoryValuesForPortfolios)
+                = (value.AdditionalFieldDefinitionId, value.Unit, value.UseNonNumericEstimation, value.CategoryValues.ToList());
+        }
+
+        public int? EstimationFieldForTeams { get; private set; }
+
+        public string? EstimationUnitForTeams { get; private set; }
+
+        public bool UseNonNumericEstimationForTeams { get; private set; }
+
+        public List<string> EstimationCategoryValuesForTeams { get; private set; } = [];
+
+        public int? EstimationFieldForPortfolios { get; private set; }
+
+        public string? EstimationUnitForPortfolios { get; private set; }
+
+        public bool UseNonNumericEstimationForPortfolios { get; private set; }
+
+        public List<string> EstimationCategoryValuesForPortfolios { get; private set; } = [];
 
         /// <summary>The name an Additional Field of this connection shows; null when the id names none of them.</summary>
         public string? DisplayNameOfField(int? additionalFieldDefinitionId)

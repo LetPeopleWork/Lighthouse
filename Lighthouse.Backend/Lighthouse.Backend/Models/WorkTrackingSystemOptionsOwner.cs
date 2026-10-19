@@ -66,13 +66,65 @@ namespace Lighthouse.Backend.Models
 
         public WorkTrackingSystemConnection WorkTrackingSystemConnection { get; set; }
 
-        public int? EstimationAdditionalFieldDefinitionId { get; set; }
+        /// <summary>The estimation this owner's pages read: its own bundle, or the connection's default while it follows.</summary>
+        [NotMapped]
+        public EstimationBundle EffectiveEstimation => Estimation.ReadWith(EstimationConnectionDefault);
 
-        public string? EstimationUnit { get; set; }
+        [NotMapped]
+        public int? EstimationAdditionalFieldDefinitionId => EffectiveEstimation.AdditionalFieldDefinitionId;
 
-        public bool UseNonNumericEstimation { get; set; }
+        [NotMapped]
+        public string? EstimationUnit => EffectiveEstimation.Unit;
 
-        public List<string> EstimationCategoryValues { get; set; } = [];
+        [NotMapped]
+        public bool UseNonNumericEstimation => EffectiveEstimation.UseNonNumericEstimation;
+
+        [NotMapped]
+        public List<string> EstimationCategoryValues => [.. EffectiveEstimation.CategoryValues];
+
+        [Column(nameof(EstimationAdditionalFieldDefinitionId))]
+        public int? OwnEstimationAdditionalFieldDefinitionId { get; private set; }
+
+        [Column(nameof(EstimationUnit))]
+        public string? OwnEstimationUnit { get; private set; }
+
+        [Column(nameof(UseNonNumericEstimation))]
+        public bool OwnUseNonNumericEstimation { get; private set; }
+
+        [Column(nameof(EstimationCategoryValues))]
+        public List<string> OwnEstimationCategoryValues { get; private set; } = [];
+
+        private SettingSource storedEstimationSource = SettingSource.ConnectionDefault;
+
+        [NotMapped]
+        public SettingSource EstimationSource => storedEstimationSource;
+
+        [NotMapped]
+        public bool FollowsEstimationDefault => Estimation.FollowsTheDefault;
+
+        protected virtual EstimationBundle EstimationConnectionDefault => EstimationBundle.None;
+
+        public void FollowEstimationDefault() => Estimation = StoredEstimation.FollowingTheDefault;
+
+        /// <param name="bundle">A bundle without a field is a deliberate None: no estimation, whatever the default says.</param>
+        public void OwnEstimation(EstimationBundle bundle) => Estimation = StoredEstimation.Owning(bundle);
+
+        public void TakeEstimationAsSent(SettingSource? sentSource, EstimationBundle sentBundle)
+            => Estimation = Estimation.Taking(sentSource, sentBundle, EstimationConnectionDefault);
+
+        [NotMapped]
+        private StoredEstimation Estimation
+        {
+            get => new(storedEstimationSource, new EstimationBundle(OwnEstimationAdditionalFieldDefinitionId, OwnEstimationUnit, OwnUseNonNumericEstimation, OwnEstimationCategoryValues));
+            set
+            {
+                storedEstimationSource = value.Source;
+                OwnEstimationAdditionalFieldDefinitionId = value.OwnBundle.AdditionalFieldDefinitionId;
+                OwnEstimationUnit = value.OwnBundle.Unit;
+                OwnUseNonNumericEstimation = value.OwnBundle.UseNonNumericEstimation;
+                OwnEstimationCategoryValues = [.. value.OwnBundle.CategoryValues];
+            }
+        }
 
         /// <summary>
         /// The Additional Field the connectors read an item's parent from, as this owner answers it: its

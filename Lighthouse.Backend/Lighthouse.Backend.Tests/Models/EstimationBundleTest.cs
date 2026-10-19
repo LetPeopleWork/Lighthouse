@@ -1,0 +1,102 @@
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+
+namespace Lighthouse.Backend.Tests.Models
+{
+    /// <summary>
+    /// A save that sends no source takes the Estimation bundle as one value: it becomes the Team's own only when it
+    /// names a field and differs in any part from what the Team read before; anything else leaves the Team following.
+    /// </summary>
+    [TestFixture]
+    [Category("epic-6303-configure-once-per-connection")]
+    [Category("story-6313")]
+    public class EstimationBundleTest
+    {
+        private const int StoryPoints = 11;
+
+        private const int TShirtSize = 12;
+
+        private const string Points = "Points";
+
+        private const string Sizes = "Sizes";
+
+        private static readonly EstimationBundle TheDefault = new(StoryPoints, Points, true, ["S", "M", "L"]);
+
+        private static IEnumerable<TestCaseData> OnePartDiffers()
+        {
+            yield return new TestCaseData(new EstimationBundle(TShirtSize, Points, true, ["S", "M", "L"])).SetArgDisplayNames("field");
+            yield return new TestCaseData(new EstimationBundle(StoryPoints, Sizes, true, ["S", "M", "L"])).SetArgDisplayNames("unit");
+            yield return new TestCaseData(new EstimationBundle(StoryPoints, "points", true, ["S", "M", "L"])).SetArgDisplayNames("unit in another case");
+            yield return new TestCaseData(new EstimationBundle(StoryPoints, Points, false, ["S", "M", "L"])).SetArgDisplayNames("non-numeric flag");
+            yield return new TestCaseData(new EstimationBundle(StoryPoints, Points, true, ["S", "M", "L", "XL"])).SetArgDisplayNames("categories");
+            yield return new TestCaseData(new EstimationBundle(StoryPoints, Points, true, ["L", "M", "S"])).SetArgDisplayNames("categories reordered");
+        }
+
+        [TestCaseSource(nameof(OnePartDiffers))]
+        public void A_bundle_differing_in_one_part_becomes_the_Teams_own_whole(EstimationBundle sent)
+        {
+            var team = AFollowingTeam();
+
+            team.TakeEstimationAsSent(null, sent);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.EstimationSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(team.EffectiveEstimation, Is.EqualTo(sent));
+            }
+        }
+
+        [Test]
+        public void A_bundle_equal_to_what_the_Team_reads_leaves_it_following()
+        {
+            var team = AFollowingTeam();
+
+            team.TakeEstimationAsSent(null, new EstimationBundle(StoryPoints, Points, true, ["S", "M", "L"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.EstimationSource, Is.EqualTo(SettingSource.ConnectionDefault));
+                Assert.That(team.EffectiveEstimation, Is.EqualTo(TheDefault));
+            }
+        }
+
+        [Test]
+        public void A_bundle_without_a_field_leaves_the_Team_following()
+        {
+            var team = AFollowingTeam();
+
+            team.TakeEstimationAsSent(null, new EstimationBundle(null, Sizes, false, ["XS"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.EstimationSource, Is.EqualTo(SettingSource.ConnectionDefault));
+                Assert.That(team.EffectiveEstimation, Is.EqualTo(TheDefault));
+            }
+        }
+
+        [Test]
+        public void Following_the_default_empties_the_Teams_own_bundle()
+        {
+            var team = AFollowingTeam();
+            team.OwnEstimation(new EstimationBundle(TShirtSize, Sizes, true, ["S", "M"]));
+
+            team.FollowEstimationDefault();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.EffectiveEstimation, Is.EqualTo(TheDefault));
+                Assert.That(team.OwnEstimationAdditionalFieldDefinitionId, Is.Null);
+                Assert.That(team.OwnEstimationUnit, Is.Null);
+                Assert.That(team.OwnUseNonNumericEstimation, Is.False);
+                Assert.That(team.OwnEstimationCategoryValues, Is.Empty);
+            }
+        }
+
+        private static Team AFollowingTeam()
+        {
+            var connection = new WorkTrackingSystemConnection { Name = "Jira DC – Payments", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connection.EstimationForTeams = TheDefault;
+            return new Team { Name = "Fraud Signals", WorkTrackingSystemConnection = connection };
+        }
+    }
+}

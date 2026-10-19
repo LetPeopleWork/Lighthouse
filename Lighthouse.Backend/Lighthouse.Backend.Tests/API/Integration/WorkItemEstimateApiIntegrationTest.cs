@@ -403,8 +403,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 WorkTrackingSystemConnection = connection,
                 DoneItemsCutoffDays = 0,
                 BlockedRuleSetJson = BlockedRuleSetMatching("workitem.tags"),
-                EstimationUnit = StoryPoints,
-            };
+            }.OwningEstimationUnit(StoryPoints);
             var plainTeam = new Team
             {
                 Name = "Team Pulsar",
@@ -418,7 +417,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             teamRepository.Save().GetAwaiter().GetResult();
 
             var fieldId = estimationField.Id;
-            estimatedTeam.EstimationAdditionalFieldDefinitionId = fieldId;
+            estimatedTeam.OwningEstimationField(fieldId);
             teamRepository.Update(estimatedTeam);
             teamRepository.Save().GetAwaiter().GetResult();
 
@@ -439,10 +438,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Name = "Ocean Explorer",
                 WorkTrackingSystemConnection = connection,
                 BlockedRuleSetJson = BlockedRuleSetMatching("feature.tags"),
-                EstimationAdditionalFieldDefinitionId = fieldId,
-                UseNonNumericEstimation = true,
-                EstimationCategoryValues = ["S", "M", "L"],
-            };
+            }.OwningEstimation(new EstimationBundle(fieldId, null, true, ["S", "M", "L"]));
             var plainPortfolio = new Portfolio
             {
                 Name = "Orion",

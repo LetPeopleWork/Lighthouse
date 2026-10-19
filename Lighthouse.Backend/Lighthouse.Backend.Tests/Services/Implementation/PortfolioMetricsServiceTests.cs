@@ -6,6 +6,7 @@ using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -1122,7 +1123,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeEstimationData_NoEstimationFieldConfigured_ReturnsNotConfigured()
         {
-            portfolio.EstimationAdditionalFieldDefinitionId = null;
+            portfolio.OwningEstimationField(null);
 
             var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
 
@@ -1136,7 +1137,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetFeatureSizeEstimationData_EstimationConfiguredButNoFeatures_ReturnsNoData()
         {
-            portfolio.EstimationAdditionalFieldDefinitionId = 42;
+            portfolio.OwningEstimationField(42);
             features.Clear();
 
             var result = subject.GetFeatureSizeEstimationData(portfolio, DateTime.UtcNow.AddDays(-30), DateTime.UtcNow);
@@ -1152,8 +1153,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_NumericEstimates_ReturnsMappedFeatureEstimations()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
-            portfolio.UseNonNumericEstimation = false;
+            portfolio.OwningEstimationField(fieldId);
+            portfolio.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1180,7 +1181,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_IncludesAllStates_NotJustClosedFeatures()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.OwningEstimationField(fieldId);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1220,9 +1221,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_NonNumericMode_ReturnsOrdinalValues()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
-            portfolio.UseNonNumericEstimation = true;
-            portfolio.EstimationCategoryValues = ["XS", "S", "M", "L", "XL"];
+            portfolio.OwningEstimationField(fieldId);
+            portfolio.OwningNonNumericEstimation(true);
+            portfolio.OwningEstimationCategories(["XS", "S", "M", "L", "XL"]);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1254,8 +1255,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_InvalidAndMissingEstimates_ExcludedFromResults()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
-            portfolio.UseNonNumericEstimation = false;
+            portfolio.OwningEstimationField(fieldId);
+            portfolio.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1284,8 +1285,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_PassesEstimationUnit()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
-            portfolio.EstimationUnit = "Story Points";
+            portfolio.OwningEstimationField(fieldId);
+            portfolio.OwningEstimationUnit("Story Points");
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1302,8 +1303,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_AllInvalidEstimates_ReturnsNoData()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
-            portfolio.UseNonNumericEstimation = false;
+            portfolio.OwningEstimationField(fieldId);
+            portfolio.OwningNonNumericEstimation(false);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1326,7 +1327,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_DecimalEstimates_PreservesDecimals()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.OwningEstimationField(fieldId);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;
@@ -1343,7 +1344,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetFeatureSizeEstimationData_PerFeatureMapping_EachFeatureHasOwnEstimation()
         {
             const int fieldId = 42;
-            portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+            portfolio.OwningEstimationField(fieldId);
 
             var startDate = DateTime.UtcNow.AddDays(-30).Date;
             var endDate = DateTime.UtcNow.Date;

@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -8,7 +9,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void TeamSettingDto_FromTeam_MapsEstimationFieldDefinitionId()
         {
-            var team = new Team { EstimationAdditionalFieldDefinitionId = 42 };
+            var team = new Team().OwningEstimationField(42);
 
             var dto = new TeamSettingDto(team, TestToday.Ambient);
 
@@ -28,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void PortfolioSettingDto_FromPortfolio_MapsEstimationFieldDefinitionId()
         {
-            var portfolio = new Portfolio { EstimationAdditionalFieldDefinitionId = 7 };
+            var portfolio = new Portfolio().OwningEstimationField(7);
 
             var dto = new PortfolioSettingDto(portfolio);
 
@@ -48,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void TeamSettingDto_FromTeam_MapsEstimationUnit()
         {
-            var team = new Team { EstimationUnit = "Points" };
+            var team = new Team().OwningEstimationUnit("Points");
 
             var dto = new TeamSettingDto(team, TestToday.Ambient);
 
@@ -68,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void PortfolioSettingDto_FromPortfolio_MapsEstimationUnit()
         {
-            var portfolio = new Portfolio { EstimationUnit = "T-Shirt" };
+            var portfolio = new Portfolio().OwningEstimationUnit("T-Shirt");
 
             var dto = new PortfolioSettingDto(portfolio);
 
@@ -88,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void TeamSettingDto_FromTeam_MapsUseNonNumericEstimation()
         {
-            var team = new Team { UseNonNumericEstimation = true };
+            var team = new Team().OwningNonNumericEstimation(true);
 
             var dto = new TeamSettingDto(team, TestToday.Ambient);
 
@@ -108,7 +109,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void TeamSettingDto_FromTeam_MapsEstimationCategoryValues()
         {
-            var team = new Team { EstimationCategoryValues = ["XS", "S", "M", "L", "XL"] };
+            var team = new Team().OwningEstimationCategories(["XS", "S", "M", "L", "XL"]);
 
             var dto = new TeamSettingDto(team, TestToday.Ambient);
 
@@ -128,7 +129,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void PortfolioSettingDto_FromPortfolio_MapsUseNonNumericEstimation()
         {
-            var portfolio = new Portfolio { UseNonNumericEstimation = true };
+            var portfolio = new Portfolio().OwningNonNumericEstimation(true);
 
             var dto = new PortfolioSettingDto(portfolio);
 
@@ -138,7 +139,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void PortfolioSettingDto_FromPortfolio_MapsEstimationCategoryValues()
         {
-            var portfolio = new Portfolio { EstimationCategoryValues = ["S", "M", "L"] };
+            var portfolio = new Portfolio().OwningEstimationCategories(["S", "M", "L"]);
 
             var dto = new PortfolioSettingDto(portfolio);
 

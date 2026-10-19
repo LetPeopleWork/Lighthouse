@@ -472,7 +472,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                     portfolio.OwnFeatureOwnerField(fieldId);
                     break;
                 case ASettingThatReadsAField.EstimationField:
-                    portfolio.EstimationAdditionalFieldDefinitionId = fieldId;
+                    portfolio.OwningEstimationField(fieldId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(setting), setting, "Not a setting that reads a field.");

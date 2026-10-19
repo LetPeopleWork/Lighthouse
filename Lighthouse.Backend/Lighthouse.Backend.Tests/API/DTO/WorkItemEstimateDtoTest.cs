@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.DTO
 {
@@ -9,20 +10,11 @@ namespace Lighthouse.Backend.Tests.API.DTO
         private const int EstimationFieldId = 42;
         private const string StoryPoints = "Story Points";
 
-        private static Portfolio NumericEstimationPortfolio() => new()
-        {
-            Name = "Ocean Explorer",
-            EstimationAdditionalFieldDefinitionId = EstimationFieldId,
-            EstimationUnit = StoryPoints,
-        };
+        private static Portfolio NumericEstimationPortfolio()
+            => new Portfolio { Name = "Ocean Explorer" }.OwningEstimation(new EstimationBundle(EstimationFieldId, StoryPoints, false, []));
 
-        private static Portfolio TShirtEstimationPortfolio() => new()
-        {
-            Name = "Apollo",
-            EstimationAdditionalFieldDefinitionId = EstimationFieldId,
-            UseNonNumericEstimation = true,
-            EstimationCategoryValues = ["S", "M", "L"],
-        };
+        private static Portfolio TShirtEstimationPortfolio()
+            => new Portfolio { Name = "Apollo" }.OwningEstimation(new EstimationBundle(EstimationFieldId, null, true, ["S", "M", "L"]));
 
         private static Feature FeatureEstimatedAs(string? estimate)
         {

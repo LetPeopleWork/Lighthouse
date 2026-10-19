@@ -961,8 +961,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 portfolio.OwnDependencyField(TheFieldOn(connection, BlockedByKeys));
                 portfolio.OwnSizeEstimateField(TheFieldOn(connection, TShirtSize));
                 portfolio.OwnFeatureOwnerField(TheFieldOn(connection, ProductOwner));
-                portfolio.EstimationAdditionalFieldDefinitionId = TheFieldOn(connection, StoryPoints);
-                portfolio.EstimationUnit = Points;
+                portfolio.OwningEstimationField(TheFieldOn(connection, StoryPoints));
+                portfolio.OwningEstimationUnit(Points);
             }
 
             var repository = services.GetRequiredService<IRepository<Portfolio>>();

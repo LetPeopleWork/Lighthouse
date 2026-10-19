@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -10,20 +11,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private const int EstimationFieldId = 42;
         private const int SomeOtherFieldId = 7;
 
-        private static Team NumericEstimationTeam() => new()
-        {
-            Name = "Team Zenith",
-            EstimationAdditionalFieldDefinitionId = EstimationFieldId,
-            EstimationUnit = "Story Points",
-        };
+        private static Team NumericEstimationTeam()
+            => new Team { Name = "Team Zenith" }.OwningEstimation(new EstimationBundle(EstimationFieldId, "Story Points", false, []));
 
-        private static Team TShirtEstimationTeam() => new()
-        {
-            Name = "Team Voyager",
-            EstimationAdditionalFieldDefinitionId = EstimationFieldId,
-            UseNonNumericEstimation = true,
-            EstimationCategoryValues = ["XS", "S", "M", "L"],
-        };
+        private static Team TShirtEstimationTeam()
+            => new Team { Name = "Team Voyager" }.OwningEstimation(new EstimationBundle(EstimationFieldId, null, true, ["XS", "S", "M", "L"]));
 
         private static WorkItem ItemEstimatedAs(string referenceId, string? estimate)
         {
