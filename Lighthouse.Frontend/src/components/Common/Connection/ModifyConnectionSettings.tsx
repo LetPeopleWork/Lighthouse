@@ -45,11 +45,11 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
-import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import FormSelectField from "../FormSelectField";
 import InputGroup from "../InputGroup/InputGroup";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
+import EstimationDefaultEditor from "./EstimationDefaultEditor";
 import SecretHandlingNotice, {
 	containsSecretField,
 } from "./SecretHandlingNotice";
@@ -335,13 +335,6 @@ interface ConnectionDefaultsSectionProps {
 	) => void;
 }
 
-const NoEstimation: IEstimationDefault = {
-	additionalFieldDefinitionId: null,
-	unit: null,
-	useNonNumericEstimation: false,
-	estimationCategoryValues: [],
-};
-
 const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	supportedDefaults,
 	defaults,
@@ -366,49 +359,9 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 		return fieldId != null && fieldIds.has(fieldId) ? fieldId : "";
 	};
 
-	const estimationEditorFor = (name: EstimationDefaultName) => {
-		const bundle = defaults[name] ?? NoEstimation;
-		const change = (part: Partial<IEstimationDefault>) =>
-			onEstimationChange(name, { ...bundle, ...part });
+	const chosenFieldIdOf = (name: ConnectionDefaultName): number | null => {
 		const chosen = chosenFieldOf(name);
-		return (
-			<EstimationFieldComponent
-				key={name}
-				inline
-				estimationFieldDefinitionId={chosen === "" ? null : chosen}
-				onEstimationFieldChange={(fieldId) =>
-					fieldId === null
-						? onEstimationChange(name, null)
-						: change({ additionalFieldDefinitionId: fieldId })
-				}
-				estimationUnit={bundle.unit}
-				onEstimationUnitChange={(unit) => change({ unit: unit || null })}
-				useNonNumericEstimation={bundle.useNonNumericEstimation}
-				onUseNonNumericEstimationChange={(useNonNumericEstimation) =>
-					change({ useNonNumericEstimation })
-				}
-				estimationCategoryValues={bundle.estimationCategoryValues}
-				onAddCategoryValue={(value) =>
-					change({
-						estimationCategoryValues: [
-							...bundle.estimationCategoryValues,
-							value.trim(),
-						],
-					})
-				}
-				onRemoveCategoryValue={(value) =>
-					change({
-						estimationCategoryValues: bundle.estimationCategoryValues.filter(
-							(kept) => kept !== value,
-						),
-					})
-				}
-				onReorderCategoryValues={(estimationCategoryValues) =>
-					change({ estimationCategoryValues })
-				}
-				additionalFieldDefinitions={additionalFields}
-			/>
-		);
+		return chosen === "" ? null : chosen;
 	};
 
 	const groups: { group: DefaultsGroup; heading: string }[] = [
@@ -445,7 +398,13 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 						</Typography>
 						{rows.map((name) =>
 							isEstimationDefaultName(name) ? (
-								estimationEditorFor(name)
+								<EstimationDefaultEditor
+									key={name}
+									bundle={defaults[name]}
+									chosenField={chosenFieldIdOf(name)}
+									additionalFields={additionalFields}
+									onChange={(bundle) => onEstimationChange(name, bundle)}
+								/>
 							) : (
 								<FormSelectField<number>
 									key={name}

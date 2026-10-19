@@ -70,10 +70,12 @@ export const isConnectionDefaultName = (
 ): name is ConnectionDefaultName =>
 	(ConnectionDefaultNames as readonly string[]).includes(name);
 
-export type EstimationDefaultName = Extract<
-	ConnectionDefaultName,
-	"estimationForTeams" | "estimationForPortfolios"
->;
+const EstimationDefaultNames = [
+	"estimationForTeams",
+	"estimationForPortfolios",
+] as const satisfies readonly ConnectionDefaultName[];
+
+export type EstimationDefaultName = (typeof EstimationDefaultNames)[number];
 
 export type FieldDefaultName = Exclude<
 	ConnectionDefaultName,
@@ -83,7 +85,7 @@ export type FieldDefaultName = Exclude<
 export const isEstimationDefaultName = (
 	name: ConnectionDefaultName,
 ): name is EstimationDefaultName =>
-	name === "estimationForTeams" || name === "estimationForPortfolios";
+	(EstimationDefaultNames as readonly string[]).includes(name);
 
 /** How the owners following an Estimation default estimate their items, as one bundle. */
 export interface IEstimationDefault {
