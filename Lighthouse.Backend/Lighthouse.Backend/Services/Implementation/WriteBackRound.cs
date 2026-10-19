@@ -76,6 +76,8 @@ namespace Lighthouse.Backend.Services.Implementation
             return summary;
         }
 
+        public bool HasStagedWrites => stagedUpdates.Count > 0;
+
         public void Stage(WorkTrackingSystemConnection connection, IReadOnlyList<WriteBackFieldUpdate> updates)
         {
             foreach (var update in updates)

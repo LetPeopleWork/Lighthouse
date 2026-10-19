@@ -1,6 +1,7 @@
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
+    using Lighthouse.Backend.Services.Interfaces;
     using Lighthouse.Backend.Services.Interfaces.Update;
     using Microsoft.AspNetCore.SignalR;
     using System.Collections.Concurrent;
@@ -177,7 +178,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         /// <summary>
         /// A hold keeps a place in its round, so the round would never finish and whatever it already resolved
-        /// would never be written back. Giving the place back lets the round flush with what it has.
+        /// would never be written back. Giving the place back lets the round flush with what it has, and when
+        /// the hold was the last thing the round waited for, the flush happens here.
         /// </summary>
         private int DropEveryHold()
         {
@@ -187,7 +189,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 if (heldUpdates.TryRemove(heldFor, out var held))
                 {
-                    held.Round.Leave();
+                    LeaveTheRoundWithoutRunning(held.Round);
                     dropped++;
                 }
             }
@@ -338,7 +340,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             statusStore.Remove(updateKey);
             cancellations.Forget(updateKey);
-            round.Leave();
+            LeaveTheRoundWithoutRunning(round);
         }
 
         /// <summary>
@@ -347,11 +349,57 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// write-back staged by the OTHER work sharing it is dropped without a word - one entity cancelled
         /// destroying another entity results. AbandonUnqueuedWork leaves it for the same reason.
         /// </summary>
-        private static void LeaveTheRoundNobodyElseWill(WriteBackRound round, bool startedRunning)
+        private void LeaveTheRoundNobodyElseWill(WriteBackRound round, bool startedRunning)
         {
             if (!startedRunning)
             {
-                round.Leave();
+                LeaveTheRoundWithoutRunning(round);
+            }
+        }
+
+        /// <summary>
+        /// The last execution out of a round owes it its write-back and its summary line, and that is normally
+        /// an update finishing, whose own flush sends both. Work that leaves without ever running has no flush
+        /// of its own, so when it turns out to be the last one out the queue sends them in its place - otherwise
+        /// everything the rest of the round resolved would be dropped without a word.
+        /// </summary>
+        private void LeaveTheRoundWithoutRunning(WriteBackRound round)
+        {
+            if (!round.Leave())
+            {
+                return;
+            }
+
+            // Queued so the write runs in its turn like any other conversation with the tracker. A closing
+            // queue accepts nothing more, and the write is still owed.
+            if (!queue.Writer.TryWrite(() => SendWhatTheRoundLeftBehind(round)))
+            {
+                _ = SendWhatTheRoundLeftBehind(round);
+            }
+        }
+
+        private async Task SendWhatTheRoundLeftBehind(WriteBackRound round)
+        {
+            try
+            {
+                if (round.HasStagedWrites)
+                {
+                    using var scope = serviceScopeFactory.CreateScope();
+                    await WriteBackCollector.WriteEverythingStaged(round, scope.ServiceProvider.GetRequiredService<IWriteBackService>(), logger);
+                }
+
+                if (round.TakeSummary() is { } summary)
+                {
+                    RefreshRoundSummaryLine.Write(logger, summary);
+                }
+            }
+            // Parity with the flush at the end of an update: a write-back that fails is logged, never allowed
+            // to take the queue down with it.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                logger.LogError(exception, "Writing back what a refresh round had resolved failed after its last execution left without running: {Exception}", exception.Message);
             }
         }
 
@@ -439,7 +487,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 // and everything it had resolved is silently never written to the work tracking system.
                 if (ReferenceEquals(roundBeingHandedOver.Value, held.Round))
                 {
-                    held.Round.Leave();
+                    LeaveTheRoundWithoutRunning(held.Round);
                 }
 
                 roundBeingHandedOver.Value = null;

@@ -1,6 +1,9 @@
 using System.Net;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.API.Integration.TaskManager;
@@ -185,6 +188,35 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
+        [Category("ac-05.2")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task What_a_round_resolved_before_its_held_forecast_was_let_go_is_still_written_back()
+        {
+            var team = GivenATeamThatIsRefreshedOnSchedule();
+            var portfolio = SeedPortfolio(SeedConnection(), $"Q4 Platform {Guid.NewGuid():N}");
+            var connection = new WorkTrackingSystemConnection { Id = SeedConnection(), Name = $"Write-back {Guid.NewGuid():N}", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            var theTeamIsWaiting = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            GivenAPortfolioRefreshThatStagesAWriteBackAndHoldsAForecastBehind(portfolio, team, connection, theTeamIsWaiting.Task);
+            await WhenARefreshIsAlsoAskedFor(UpdateType.Team, team.Id);
+            theTeamIsWaiting.TrySetResult();
+            await TheStatusReaches(UpdateType.Team, team.Id, UpdateProgress.InProgress);
+
+            var heldBeforeTheClick = Factory.Services.GetRequiredService<IUpdateQueueService>()
+                .IsHeld(new UpdateKey(UpdateType.Forecasts, team.Id));
+
+            await WhenTheOperatorCancelsAll();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(heldBeforeTheClick, Is.True, "The forecast was never held behind the Team, so the round had nothing waiting on it.");
+                Assert.That(await TheWriteBackReaches(connection), Is.True,
+                    "The portfolio refresh had already resolved a write-back for its round, and letting go of the held forecast left that round with nobody to send it.");
+            }
+        }
+
+        [Test]
         [Category("ac-05.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -263,6 +295,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
                 [new UpdateKey(UpdateType.Team, team.Id)],
                 () => whatWasHeldWasLetGo.TrySetResult());
 
+        /// <summary>
+        /// What a portfolio refresh does at its end, done by hand so the round it belongs to is the only
+        /// thing under test: it stages a write-back, the forecast it asks for is held behind a Team still in
+        /// the queue, and it reports itself finished to its round.
+        /// </summary>
+        private void GivenAPortfolioRefreshThatStagesAWriteBackAndHoldsAForecastBehind(int portfolio, SeededTeam team, WorkTrackingSystemConnection connection, Task theTeamIsWaiting)
+            => Factory.Services.GetRequiredService<IUpdateQueueService>().EnqueueUpdate(UpdateType.Features, portfolio, async serviceProvider =>
+            {
+                await theTeamIsWaiting;
+
+                var collector = serviceProvider.GetRequiredService<IWriteBackCollector>();
+                collector.Stage(connection, [new WriteBackFieldUpdate { WorkItemId = "PLAT-1", TargetFieldReference = "customfield_10042", Value = "2026-11-30" }]);
+                GivenAForecastIsHeldBehind(team);
+                await collector.FlushAsync();
+            });
+
         // --- When ---
 
         private async Task WhenARefreshIsUnderWay(UpdateType updateType, int id)
@@ -295,6 +343,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             }
 
             Factory.Services.GetRequiredService<ITeamUpdater>().TriggerUpdate(id);
+        }
+
+        private async Task<bool> TheWriteBackReaches(WorkTrackingSystemConnection connection)
+        {
+            var expected = $"Starting write-back for connection {connection.Id} ";
+            var deadline = DateTime.UtcNow + TheLongestAScenarioWaits;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (TheOperatorVisibleLines.Any(line => line.Contains(expected, StringComparison.Ordinal)))
+                {
+                    return true;
+                }
+
+                await Task.Delay(20);
+            }
+
+            return false;
         }
 
         private async Task TheStatusReaches(UpdateType updateType, int id, UpdateProgress reached)

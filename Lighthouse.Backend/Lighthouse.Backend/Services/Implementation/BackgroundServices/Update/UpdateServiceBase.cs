@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
-using System.Globalization;
 
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
@@ -140,46 +139,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
-        /// <summary>
-        /// The one line an operator reads per refresh round. The reason and the forecast are appended
-        /// whole or left out entirely - a cycle with nothing to explain would otherwise carry an empty
-        /// <c>reason=</c> on every line, and this line exists precisely because the logs were too noisy
-        /// to read.
-        /// </summary>
         private void WriteSummary(RefreshRoundSummary summary)
         {
-            var forecast = DescribeForecast(summary);
-
-            if (summary.Outcome is not { } outcome)
-            {
-                Logger.LogInformation(
-                    "Update completed | {EntityType:l} '{EntityName:l}'{Forecast:l} | duration={DurationMs}ms | success={Success}",
-                    summary.EntityType, summary.EntityName, forecast, summary.DurationMs, summary.Success);
-                return;
-            }
-
-            var reason = outcome.Reason == null ? string.Empty : $" | reason={outcome.Reason}";
-
-            Logger.LogInformation(
-                "Update completed | {EntityType:l} '{EntityName:l}' | mode={Mode} | scanned={RecordsScanned} | fetched={RecordsFetched} | duration={DurationMs}ms | success={Success}{Forecast:l}{Reason:l}",
-                summary.EntityType, summary.EntityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, summary.DurationMs, summary.Success, forecast, reason);
-        }
-
-        private static string DescribeForecast(RefreshRoundSummary summary)
-        {
-            if (summary.ForecastDurationMs is not { } forecastMs)
-            {
-                return string.Empty;
-            }
-
-            if (summary.ForecastSucceeded)
-            {
-                return string.Create(CultureInfo.InvariantCulture, $" | forecast={forecastMs}ms");
-            }
-
-            return summary.ForecastCancelled
-                ? string.Create(CultureInfo.InvariantCulture, $" | forecast=cancelled after {forecastMs}ms")
-                : string.Create(CultureInfo.InvariantCulture, $" | forecast=failed after {forecastMs}ms");
+            RefreshRoundSummaryLine.Write(Logger, summary);
         }
 
         /// <summary>

@@ -37,6 +37,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 return [];
             }
 
+            return await WriteEverythingStaged(round, writeBackService, logger);
+        }
+
+        /// <summary>
+        /// Sends what the round staged, once per connection, and empties it. For the last execution out of
+        /// the round, whoever that turns out to be.
+        /// </summary>
+        public static async Task<IReadOnlyList<WriteBackResult>> WriteEverythingStaged(WriteBackRound round, IWriteBackService writeBackService, ILogger logger)
+        {
             var pending = round.TakeStaged();
 
             if (pending.Count == 0)
