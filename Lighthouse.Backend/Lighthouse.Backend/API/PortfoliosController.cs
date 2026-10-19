@@ -131,6 +131,11 @@ namespace Lighthouse.Backend.API
             }
 
             var portfolio = new Portfolio { WorkTrackingSystemConnection = workTrackingSystem };
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Portfolio, portfolio, portfolioSettingDto) is { } settingRefusal)
+            {
+                return settingRefusal;
+            }
+
             portfolio.SyncWithPortfolioSettings(portfolioSettingDto, teamRepository);
 
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem);

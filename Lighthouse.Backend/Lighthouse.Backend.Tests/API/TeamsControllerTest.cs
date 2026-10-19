@@ -15,6 +15,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
@@ -481,6 +482,26 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(value!.IsValid, Is.False);
                 Assert.That(value.Code, Is.EqualTo("no_work_items_found"));
             }
+        }
+
+        [Test]
+        public async Task ValidateTeamSettings_NamingASourceThisVersionDoesNotKnow_IsRefusedWithoutAskingTheTracker()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var teamSettings = new TeamSettingDto { WorkTrackingSystemConnectionId = 1886, ParentOverrideSource = (SettingSource)99 };
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingSystemConnectionRepositoryMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
+
+            var response = await CreateSubject().AnsweringWithProblemDetails().ValidateTeamSettings(teamSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((response.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(response.Result.TheProblem()?.Extensions["code"], Is.EqualTo("team-setting-source-unknown"));
+            }
+
+            workTrackingConnectorServiceMock.Verify(x => x.ValidateTeamSettings(It.IsAny<Team>()), Times.Never);
         }
 
         [Test]

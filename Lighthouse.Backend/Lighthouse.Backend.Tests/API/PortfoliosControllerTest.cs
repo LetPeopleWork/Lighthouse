@@ -268,6 +268,26 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task ValidatePortfolioSettings_NamingASourceThisVersionDoesNotKnow_IsRefusedWithoutAskingTheTracker()
+        {
+            var workTrackingSystemConnection = new WorkTrackingSystemConnection { Id = 1886, WorkTrackingSystem = WorkTrackingSystems.AzureDevOps };
+            var portfolioSettingDto = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886, SizeEstimateSource = (SettingSource)99 };
+            var workTrackingConnectorServiceMock = new Mock<IWorkTrackingConnector>();
+            workTrackingSystemConnectionRepoMock.Setup(x => x.GetById(1886)).Returns(workTrackingSystemConnection);
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(workTrackingSystemConnection.WorkTrackingSystem)).Returns(workTrackingConnectorServiceMock.Object);
+
+            var response = await CreateSubject().AnsweringWithProblemDetails().ValidatePortfolioSettings(portfolioSettingDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((response.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
+                Assert.That(response.Result.TheProblem()?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
+            }
+
+            workTrackingConnectorServiceMock.Verify(x => x.ValidatePortfolioSettings(It.IsAny<Portfolio>()), Times.Never);
+        }
+
+        [Test]
         public async Task ValidatePortfolioSettings_WorkTrackingSystemNotFound_ReturnsNotFound()
         {
             var portfolioSettingDto = new PortfolioSettingDto { WorkTrackingSystemConnectionId = 1886 };

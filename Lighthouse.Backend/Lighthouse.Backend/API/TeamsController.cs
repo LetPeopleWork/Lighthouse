@@ -196,6 +196,11 @@ namespace Lighthouse.Backend.API
             }
 
             var team = new Team { WorkTrackingSystemConnection = workTrackingSystem };
+            if (ownerSettingRefusals.RefusalOf(this, SettingsOwnerKind.Team, team, teamSettingDto) is { } settingRefusal)
+            {
+                return settingRefusal;
+            }
+
             team.SyncTeamWithTeamSettings(teamSettingDto);
 
             var workItemService = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
