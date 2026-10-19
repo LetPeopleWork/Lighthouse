@@ -81,6 +81,23 @@ describe("OwnershipComponent", () => {
 		vi.clearAllMocks();
 	});
 
+	// The page renders before the settings have arrived. Reaching into them would blank the form with a
+	// crash rather than show it empty.
+	// @story-6313 @contract-shape:pure-function
+	it("renders before there are any settings to show", () => {
+		render(
+			<OwnershipComponent
+				projectSettings={null}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				availableTeams={mockTeams}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(theFeatureOwnerField()).toBeInTheDocument();
+	});
+
 	it("renders correctly with initial settings", () => {
 		renderExpanded();
 

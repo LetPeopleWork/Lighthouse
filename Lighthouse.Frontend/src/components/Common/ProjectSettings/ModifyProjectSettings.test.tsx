@@ -882,6 +882,68 @@ describe("ModifyProjectSettings", () => {
 		});
 	});
 
+	// @story-6313 @contract-shape:bounded-change
+	it("a Portfolio following the Portfolios' Estimation default shows it, and picking a field of its own saves that choice", async () => {
+		mockGetWorkTrackingSystems.mockResolvedValue([
+			{
+				...workTrackingSystems[0],
+				additionalFieldDefinitions: [
+					{ id: 23, displayName: "Story Points", reference: "customfield_3" },
+				],
+				defaults: {
+					estimationForPortfolios: {
+						additionalFieldDefinitionId: 23,
+						unit: "Points",
+						useNonNumericEstimation: false,
+						estimationCategoryValues: [],
+					},
+				},
+			},
+		]);
+		mockGetProjectSettings.mockResolvedValue({
+			...createMockProjectSettings(),
+			workTrackingSystem: "Jira",
+			estimationSource: "ConnectionDefault",
+		});
+		renderWithProvider(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+			/>,
+		);
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByText("Estimation"));
+
+		const estimationField = screen.getByRole("combobox", {
+			name: "Estimation Field",
+		});
+		expect(estimationField).toHaveTextContent(
+			"Connection default (Story Points, Points)",
+		);
+
+		fireEvent.mouseDown(estimationField);
+		fireEvent.click(
+			within(screen.getByRole("listbox")).getByRole("option", {
+				name: "Story Points",
+			}),
+		);
+
+		await waitFor(() =>
+			expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+				expect.objectContaining({
+					estimationSource: "Own",
+					estimationAdditionalFieldDefinitionId: 23,
+				}),
+			),
+		);
+	});
+
 	describe("a Portfolio that follows the connection's Parent Override Field", () => {
 		const givenThePortfolioFollowsTheDefault = async (
 			theOtherConnection: Partial<IWorkTrackingSystemConnection> = {},

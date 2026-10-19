@@ -762,13 +762,21 @@ describe("defaults set once on the connection", () => {
 
 		// @us-05 @ac-5.3 @contract-shape:bounded-change
 		it.each([
-			["parentOverrideForPortfolios", "Parent Override Field"],
-			["dependencyFieldForPortfolios", "Dependency Field"],
-			["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
-			["featureOwnerFieldForPortfolios", "Feature Owner Field"],
+			["parentOverrideForPortfolios", "Parent Override Field", "parents"],
+			["dependencyFieldForPortfolios", "Dependency Field", "dependencies"],
+			[
+				"sizeEstimateFieldForPortfolios",
+				"Size Estimate Field",
+				"Features' sizes",
+			],
+			[
+				"featureOwnerFieldForPortfolios",
+				"Feature Owner Field",
+				"Features' owners",
+			],
 		] as const)(
 			"a changed %s default 2 Portfolios follow asks whether to update them",
-			async (name, setting) => {
+			async (name, setting, whatChanges) => {
 				await givenPriyaOpensJiraDcPayments({
 					connection: jiraDcPayments({ followers: { [name]: 2 } }),
 				});
@@ -778,7 +786,7 @@ describe("defaults set once on the connection", () => {
 
 				const question = await theQuestion("Update 0 Teams and 2 Portfolios?");
 				expect(question).toHaveTextContent(
-					`2 Portfolios follow the ${setting} default.`,
+					`2 Portfolios follow the ${setting} default. Their ${whatChanges} change only once they have been updated.`,
 				);
 			},
 		);
@@ -891,6 +899,67 @@ describe("defaults set once on the connection", () => {
 			await theSaveIsSent(server);
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 			expect(theSave(server).choice).toBeUndefined();
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("a changed default nobody follows saves without asking, though other defaults have followers", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { parentOverrideForPortfolios: 2 },
+				}),
+			});
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
+			whenPriyaPressesSave();
+
+			await theSaveIsSent(server);
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("a followed Estimation default left as it was asks nothing when another default changes", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { estimationForTeams: 4 },
+					defaults: { estimationForTeams: StoryPointsInPoints },
+				}),
+			});
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
+			whenPriyaPressesSave();
+
+			await theSaveIsSent(server);
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("Portfolios following a changed default and another one left as it was are all asked about", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: {
+						parentOverrideForPortfolios: 3,
+						dependencyFieldForPortfolios: 3,
+					},
+					followerGroups: [
+						{
+							follows: [
+								"parentOverrideForPortfolios",
+								"dependencyFieldForPortfolios",
+							],
+							count: 3,
+						},
+					],
+				}),
+			});
+
+			await whenPriyaPicks("Portfolios", "Parent Override Field", ParentLink);
+			whenPriyaPressesSave();
+
+			expect(
+				await theQuestion("Update 0 Teams and 3 Portfolios?"),
+			).toHaveTextContent(
+				"3 Portfolios follow the Parent Override Field default.",
+			);
 		});
 
 		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation
@@ -1028,6 +1097,55 @@ describe("defaults set once on the connection", () => {
 					unit: "Points",
 				},
 			});
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("a changed Estimation default nobody follows saves without asking anything", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({ followers: {} }),
+			});
+
+			await whenPriyaPicks("Teams", "Estimation Field", StoryPoints);
+			whenPriyaPressesSave();
+
+			await theSaveIsSent(server);
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("a changed Portfolios' Estimation default asks about the Portfolios that follow it", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { estimationForPortfolios: 2 },
+				}),
+			});
+
+			await whenPriyaPicks("Portfolios", "Estimation Field", StoryPoints);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion(TheEstimationQuestion);
+			expect(question).toHaveTextContent(
+				"2 Portfolios follow it; they show the new estimation the next time their pages load.",
+			);
+		});
+
+		// @story-6313 @contract-shape:bounded-change
+		it("changing only the unit of a followed Estimation default asks before saving", async () => {
+			await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { estimationForTeams: 4 },
+					defaults: { estimationForTeams: StoryPointsInPoints },
+				}),
+			});
+
+			fireEvent.change(
+				within(theGroup("Teams")).getByLabelText("Estimation Unit"),
+				{ target: { value: "Hours" } },
+			);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion(TheEstimationQuestion);
+			expect(question).toHaveTextContent(TheEstimationQuestionSays);
 		});
 
 		// @edge @us-11 @ac-11.5 @contract-shape:pure-function

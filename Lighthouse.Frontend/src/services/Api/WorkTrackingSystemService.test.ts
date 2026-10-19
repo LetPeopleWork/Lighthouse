@@ -749,6 +749,44 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
+		// @story-6313 @driving_port @contract-shape:pure-function
+		it("reads each Estimation default as its whole bundle, filling the parts the server left out", async () => {
+			mockedAxios.get.mockResolvedValueOnce({
+				data: [
+					{
+						...nordwindJiraDc,
+						defaults: {
+							estimationForTeams: {
+								additionalFieldDefinitionId: 21,
+								unit: "Sizes",
+								useNonNumericEstimation: true,
+								estimationCategoryValues: ["S", "M"],
+							},
+							estimationForPortfolios: { additionalFieldDefinitionId: null },
+						},
+					},
+				],
+			});
+
+			const [connection] =
+				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+			expect(connection.defaults).toEqual({
+				estimationForTeams: {
+					additionalFieldDefinitionId: 21,
+					unit: "Sizes",
+					useNonNumericEstimation: true,
+					estimationCategoryValues: ["S", "M"],
+				},
+				estimationForPortfolios: {
+					additionalFieldDefinitionId: null,
+					unit: null,
+					useNonNumericEstimation: false,
+					estimationCategoryValues: [],
+				},
+			});
+		});
+
 		// @us-03 @driving_port @contract-shape:bounded-change
 		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });

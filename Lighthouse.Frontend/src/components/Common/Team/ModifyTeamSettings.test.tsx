@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -356,6 +362,58 @@ describe("ModifyTeamSettings", () => {
 		expect(
 			await screen.findByText(/^Default parentOverrideForTeams of System 2$/),
 		).toBeInTheDocument();
+	});
+
+	// @story-6313 @contract-shape:bounded-change
+	it("a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice", async () => {
+		const storyPoints = {
+			id: 13,
+			displayName: "Story Points",
+			reference: "customfield_10016",
+		};
+		mockGetWorkTrackingSystems.mockResolvedValueOnce([
+			{
+				...workTrackingSystems[0],
+				additionalFieldDefinitions: [storyPoints],
+				defaults: {
+					estimationForTeams: {
+						additionalFieldDefinitionId: 13,
+						unit: "Points",
+						useNonNumericEstimation: false,
+						estimationCategoryValues: [],
+					},
+				},
+			},
+		]);
+		mockGetTeamSettings.mockResolvedValueOnce({
+			...createMockTeamSettings(),
+			workTrackingSystemConnectionId: 1,
+			estimationSource: "ConnectionDefault",
+		});
+
+		await renderModifyTeamSettings();
+		fireEvent.click(screen.getByText("Estimation"));
+
+		const estimationField = screen.getByRole("combobox", {
+			name: "Estimation Field",
+		});
+		expect(estimationField).toHaveTextContent(
+			"Connection default (Story Points, Points)",
+		);
+
+		fireEvent.mouseDown(estimationField);
+		fireEvent.click(
+			within(screen.getByRole("listbox")).getByText("Story Points"),
+		);
+
+		await waitFor(() =>
+			expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+				expect.objectContaining({
+					estimationSource: "Own",
+					estimationAdditionalFieldDefinitionId: 13,
+				}),
+			),
+		);
 	});
 
 	it("auto-saves a valid change after the debounce window", async () => {

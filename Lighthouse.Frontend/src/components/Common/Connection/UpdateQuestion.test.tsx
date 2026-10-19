@@ -175,7 +175,34 @@ describe("UpdateQuestion", () => {
 				title: "Update 1 Squad and 2 Programs?",
 				says: `1 Squad and 2 Programs follow the Parent Override Field default. ${UntilUpdated}`,
 			},
-		])("$case: asks $title", ({ terms, why, title, says }) => {
+			{
+				case: "the Feature Owner Field default, with Features renamed to a plural without an s",
+				terms: { ...TheDefaultWords, features: "Staff" },
+				why: theDefaultsChanged(0, 1, ["Staff Owner Field"], ["owners"]),
+				title: "Update 0 Teams and 1 Portfolio?",
+				says: `1 Portfolio follows the Staff Owner Field default. Their Staff's owners change only once they have been updated. Save only: they change at their next scheduled update.`,
+			},
+			{
+				case: "one Estimation default",
+				terms: TheDefaultWords,
+				why: { because: "estimation", teams: 2, portfolios: 0, defaults: 1 },
+				title: "Change the Estimation default?",
+				says: "2 Teams follow it; they show the new estimation the next time their pages load.",
+			},
+			{
+				case: "both Estimation defaults",
+				terms: TheDefaultWords,
+				why: { because: "estimation", teams: 1, portfolios: 1, defaults: 2 },
+				title: "Change the Estimation defaults?",
+				says: "1 Team and 1 Portfolio follow them; they show the new estimation the next time their pages load.",
+			},
+		] as {
+			case: string;
+			terms: Record<string, string>;
+			why: WhyUpdate;
+			title: string;
+			says: string;
+		}[])("$case: asks $title", ({ terms, why, title, says }) => {
 			words.current = terms;
 
 			askBecause(why);

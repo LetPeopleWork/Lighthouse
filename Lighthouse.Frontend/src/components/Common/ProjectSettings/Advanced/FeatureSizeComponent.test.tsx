@@ -81,6 +81,24 @@ describe("FeatureSizeComponent", () => {
 		expect(screen.getByRole("combobox")).toBeInTheDocument();
 	});
 
+	// The page renders before the settings have arrived. Reaching into them would blank the form with a
+	// crash rather than show it empty.
+	// @story-6313 @contract-shape:pure-function
+	it("renders before there are any settings to show", () => {
+		render(
+			<FeatureSizeComponent
+				projectSettings={null}
+				onProjectSettingsChange={mockOnProjectSettingsChange}
+				additionalFieldDefinitions={mockAdditionalFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			screen.getByRole("combobox", { name: "Size Estimate Field" }),
+		).toBeInTheDocument();
+	});
+
 	it("calls onProjectSettingsChange with correct arguments when defaultAmountOfWorkItemsPerFeature changes", () => {
 		render(
 			<FeatureSizeComponent
