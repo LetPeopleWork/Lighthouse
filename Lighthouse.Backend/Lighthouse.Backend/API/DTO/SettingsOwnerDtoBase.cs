@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.API.DTO
             EstimationUnit = workTrackingSystemOptionsOwner.EstimationUnit;
             UseNonNumericEstimation = workTrackingSystemOptionsOwner.UseNonNumericEstimation;
             EstimationCategoryValues = workTrackingSystemOptionsOwner.EstimationCategoryValues;
+            EstimationSource = workTrackingSystemOptionsOwner.EstimationSource;
+            EstimationDefaultName = workTrackingSystemOptionsOwner.EstimationDefaultName;
             StalenessThresholdDays = workTrackingSystemOptionsOwner.StalenessThresholdDays;
             BlockedStalenessThresholdDays = workTrackingSystemOptionsOwner.BlockedStalenessThresholdDays;
             StateMappings = workTrackingSystemOptionsOwner.StateMappings.Select(sm => new StateMappingDto(sm)).ToList();
@@ -95,10 +97,10 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<string> EstimationCategoryValues { get; set; } = [];
 
-        // Not filled when the settings are read yet: the settings page sends back what it read, and it cannot yet
-        // say that a changed Estimation is meant as the owner's own, so an echoed "follows" would swallow the change.
         [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
         public SettingSource? EstimationSource { get; set; }
+
+        public string? EstimationDefaultName { get; private set; }
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
 

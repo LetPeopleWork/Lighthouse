@@ -104,6 +104,10 @@ namespace Lighthouse.Backend.Models
 
         protected virtual EstimationBundle EstimationConnectionDefault => EstimationBundle.None;
 
+        /// <summary>The field the connection's Estimation default reads, shown whichever source the owner chose.</summary>
+        [NotMapped]
+        public string? EstimationDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(EstimationConnectionDefault.AdditionalFieldDefinitionId);
+
         public void FollowEstimationDefault() => Estimation = StoredEstimation.FollowingTheDefault;
 
         /// <param name="bundle">A bundle without a field is a deliberate None: no estimation, whatever the default says.</param>

@@ -22,7 +22,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         int ParentOverrideForPortfolios,
         int DependencyFieldForPortfolios,
         int SizeEstimateFieldForPortfolios,
-        int FeatureOwnerFieldForPortfolios)
+        int FeatureOwnerFieldForPortfolios,
+        int EstimationForTeams,
+        int EstimationForPortfolios)
     {
         public static ConnectionFollowers CountedFrom(IReadOnlyList<FollowerGroup> groups)
             => new(
@@ -30,7 +32,9 @@ namespace Lighthouse.Backend.Services.Interfaces
                 Following(groups, ConnectionDefaultSetting.ParentOverrideForPortfolios),
                 Following(groups, ConnectionDefaultSetting.DependencyFieldForPortfolios),
                 Following(groups, ConnectionDefaultSetting.SizeEstimateFieldForPortfolios),
-                Following(groups, ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios));
+                Following(groups, ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios),
+                Following(groups, ConnectionDefaultSetting.EstimationForTeams),
+                Following(groups, ConnectionDefaultSetting.EstimationForPortfolios));
 
         private static int Following(IReadOnlyList<FollowerGroup> groups, ConnectionDefaultSetting setting)
             => groups.Where(group => group.Follows.Contains(setting)).Sum(group => group.Count);

@@ -28,6 +28,10 @@ namespace Lighthouse.Backend.Models
         /// <summary>A bundle without a field estimates nothing, whatever its other parts say.</summary>
         public bool IsSet => AdditionalFieldDefinitionId is not null;
 
+        /// <summary>The same unit and categories, read from another field.</summary>
+        public EstimationBundle PointingAt(int? additionalFieldDefinitionId)
+            => new(additionalFieldDefinitionId, Unit, UseNonNumericEstimation, CategoryValues);
+
         // The category order is their ranking, so the same categories in another order are another estimation.
         public bool Equals(EstimationBundle? other)
             => other is not null

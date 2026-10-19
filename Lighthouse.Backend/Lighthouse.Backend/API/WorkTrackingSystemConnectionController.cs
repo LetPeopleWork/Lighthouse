@@ -225,6 +225,11 @@ namespace Lighthouse.Backend.API
             {
                 var named = defaults.FieldOf(fieldDefault.Setting);
                 var addedInThisSave = newFields.FieldNamedBy(named);
+                if (defaults.BundleOf(fieldDefault.Setting) is { } bundle)
+                {
+                    fieldDefault.HoldBundle?.Invoke(save.Connection, bundle);
+                }
+
                 if (addedInThisSave is not null)
                 {
                     save.DefaultsAddedInThisSave[fieldDefault.Setting] = addedInThisSave;

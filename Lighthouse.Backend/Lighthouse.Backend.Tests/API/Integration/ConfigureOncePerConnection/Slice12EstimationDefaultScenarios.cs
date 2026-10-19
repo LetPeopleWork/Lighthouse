@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     public class Slice12EstimationDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
         [Test]
-        [Ignore(PendingEpic6303.Slice12)]
         [Category("ac-11.1")]
         [Category("ac-11.2")]
         [Category("ac-11.4")]
@@ -41,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice12)]
         [Category("ac-11.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -61,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice12)]
         [Category("ac-11.1")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -80,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Ignore(PendingEpic6303.Slice12)]
         [Category("ac-11.1")]
         [Category("contract-shape:bounded-change")]
         public async Task A_following_Portfolio_shows_the_Portfolios_Estimation_default()

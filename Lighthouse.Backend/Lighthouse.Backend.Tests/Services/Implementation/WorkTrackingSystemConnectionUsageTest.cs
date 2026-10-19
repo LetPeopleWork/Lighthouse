@@ -57,9 +57,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             Assert.That(followers, Is.EquivalentTo(new Dictionary<int, ConnectionFollowers>
             {
-                [1] = new(2, 1, 1, 1, 1),
-                [2] = new(1, 1, 1, 1, 1),
-                [3] = new(0, 1, 1, 1, 1),
+                [1] = new(2, 1, 1, 1, 1, 2, 1),
+                [2] = new(1, 1, 1, 1, 1, 1, 1),
+                [3] = new(0, 1, 1, 1, 1, 0, 1),
             }));
         }
 
@@ -81,11 +81,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(groups.Keys, Is.EquivalentTo(OnlyTheFirstConnection));
                 Assert.That(groups[1].Select(group => (string.Join("+", group.Follows), group.Count)), Is.EquivalentTo(new[]
                 {
-                    ("ParentOverrideForTeams", 2),
-                    ("ParentOverrideForPortfolios+DependencyFieldForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios", 3),
-                    ("ParentOverrideForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios", 1),
+                    ("ParentOverrideForTeams+EstimationForTeams", 2),
+                    ("ParentOverrideForPortfolios+DependencyFieldForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios+EstimationForPortfolios", 3),
+                    ("ParentOverrideForPortfolios+SizeEstimateFieldForPortfolios+FeatureOwnerFieldForPortfolios+EstimationForPortfolios", 1),
                 }));
-                Assert.That(CreateSubject().FollowersByConnection()[1], Is.EqualTo(new ConnectionFollowers(2, 4, 3, 4, 4)));
+                Assert.That(CreateSubject().FollowersByConnection()[1], Is.EqualTo(new ConnectionFollowers(2, 4, 3, 4, 4, 2, 4)));
             }
         }
 
@@ -104,6 +104,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             portfolio.OwnParentOverride(null);
             portfolio.OwnSizeEstimateField(null);
             portfolio.OwnFeatureOwnerField(null);
+            portfolio.OwnEstimation(EstimationBundle.None);
             return portfolio;
         }
 
@@ -134,6 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var team = new Team { WorkTrackingSystemConnectionId = connectionId };
             team.OwnParentOverride(fieldId);
+            team.OwnEstimation(EstimationBundle.None);
             return team;
         }
 

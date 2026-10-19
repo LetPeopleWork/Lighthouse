@@ -13,7 +13,8 @@ namespace Lighthouse.Backend.Models
         DefaultHeldFor HeldFor,
         Func<OwnerTerms, string> NameIn,
         Func<WorkTrackingSystemConnection, int?> FieldOn,
-        Action<WorkTrackingSystemConnection, int?> PointAt)
+        Action<WorkTrackingSystemConnection, int?> PointAt,
+        Action<WorkTrackingSystemConnection, EstimationBundle>? HoldBundle = null)
     {
         /// <summary>The name in the words Lighthouse seeds, for the log an operator reads.</summary>
         public string FieldName => NameIn(OwnerTerms.Seeded);
@@ -36,6 +37,14 @@ namespace Lighthouse.Backend.Models
                 connection => connection.SizeEstimateFieldForPortfolios, (connection, field) => connection.SizeEstimateFieldForPortfolios = field),
             new(ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios, DefaultHeldFor.Portfolios, FeatureOwnerFieldIn,
                 connection => connection.FeatureOwnerFieldForPortfolios, (connection, field) => connection.FeatureOwnerFieldForPortfolios = field),
+            new(ConnectionDefaultSetting.EstimationForTeams, DefaultHeldFor.Teams, _ => "Estimation",
+                connection => connection.EstimationForTeams.AdditionalFieldDefinitionId,
+                (connection, field) => connection.EstimationForTeams = connection.EstimationForTeams.PointingAt(field),
+                (connection, bundle) => connection.EstimationForTeams = bundle),
+            new(ConnectionDefaultSetting.EstimationForPortfolios, DefaultHeldFor.Portfolios, _ => "Estimation",
+                connection => connection.EstimationForPortfolios.AdditionalFieldDefinitionId,
+                (connection, field) => connection.EstimationForPortfolios = connection.EstimationForPortfolios.PointingAt(field),
+                (connection, bundle) => connection.EstimationForPortfolios = bundle),
         ];
     }
 }
