@@ -63,16 +63,29 @@ After the name comes the state:
 A spinner marks the one piece of work that is actually running; anything waiting gets an hourglass instead.
 
 ## Stopping a refresh
-Each row has a ✖️ button that stops that refresh.
+Every refresh and every forecast has a ✖️ button on its row that stops it.
 
 Work that has not started yet leaves the list immediately — there is nothing to wind down.
 
 Work that is already running takes a moment. Lighthouse cannot interrupt a request that is already on its way to your Work Tracking System; it stops at the connector's next checkpoint, which against a real system has been measured at around ten seconds. The row reads `Stopping…` for that window and then disappears.
 
-{: .note}
-A removal cannot be stopped. Asking to stop one is refused and the row carries on — whoever asked for the removal is waiting on an answer, and a half-removed Team or Portfolio is not a state worth leaving behind.
+A running forecast stops between two of its simulated runs, which usually takes a few seconds. The Features keep the forecast they had before it started, and so do any forecast dates Lighthouse has already [written back](worktrackingsystems.html#data-sync-mappings) to your Work Tracking System: a stopped forecast writes nothing, rather than half an answer. The run is recorded as cancelled.
 
-Nothing is lost by stopping a refresh. The data Lighthouse already had stays as it was, and the next periodic refresh picks the Team or Portfolio up again. How often that happens is set under [Periodic Refresh Settings](configuration.html#periodic-refresh-settings).
+{: .note}
+A removal cannot be stopped, so its row has no ✖️ button. Whoever asked for the removal is waiting on an answer, and a half-removed Team or Portfolio is not a state worth leaving behind.
+
+Nothing is lost by stopping a refresh or a forecast. The data and forecasts Lighthouse already had stay as they were, and the next periodic refresh picks the Team or Portfolio up again. How often that happens is set under [Periodic Refresh Settings](configuration.html#periodic-refresh-settings).
+
+## Cancel all
+When the instance is busy with more than you want it to be, **Cancel all**, at the right of the *Activity* heading, stops everything at once: the work that is running and everything queued behind it. Hovering it says what it does: *Stops everything running or queued, except removals. Scheduled updates carry on as usual.*
+
+- There is no confirmation. While Lighthouse is stopping the work the button reads *Cancelling…*, and the rows then leave the list the same way they do after a single ✖️.
+- **Removals carry on.** They cannot be stopped one at a time either, so a removal row stays until it is done.
+- **Scheduled updates carry on as usual.** Cancel all clears what is in the list right now; it does not pause anything. The next periodic refresh, or anything you start afterwards, runs normally.
+- Forecasts and dates already written back stay as they were, exactly as with a single stop. Values that other work had already lined up to write back to your Work Tracking System are still sent.
+- If Lighthouse runs on several replicas, Cancel all reaches the work on each of them.
+
+The button is only there when something in the list can be stopped, so an instance that is idle or only removing something does not show it. If Lighthouse could not take the request, the section says *Could not cancel. Try again.* and the rows stay as they were.
 
 # Work Tracking Systems
 This section lists every connection you have configured, with what Lighthouse currently knows about its health. Its heading follows your own [terminology](configuration.html#terminology-configuration), as do the words for Team and Portfolio in the rows above it.
@@ -118,4 +131,4 @@ If nothing has gone wrong since the instance started, it says so. **Open the ful
 If the section is missing entirely, Lighthouse asked for the problems and got no answer. That is deliberately not shown as "nothing has gone wrong" — an unanswered question is not a clean bill of health.
 
 # While refreshes are running
-The screenshot above was taken on an idle instance, which is what you see most of the time. The Task Manager reads the instance as it changes, so rows appear, change state and leave on their own while the popover is open — you do not need to close and reopen it to see progress. Opening it also re-reads your connections, which is how one you added a minute ago in another tab shows up without a reload.
+The screenshot above was taken while a refresh was under way, which is why *Activity* lists work and offers **Cancel all**. Most of the time the instance is idle and the section says nothing is being refreshed. The Task Manager reads the instance as it changes, so rows appear, change state and leave on their own while the popover is open — you do not need to close and reopen it to see progress. Opening it also re-reads your connections, which is how one you added a minute ago in another tab shows up without a reload.

@@ -150,6 +150,10 @@ These write the day work on a feature is forecast to *begin* — the same date t
 - **A feature that has already started writes the day it actually started**, whichever percentile the mapping names. A date that has happened is not a forecast, so all four say the same thing about it.
 - **A feature nothing can be said about gets no write at all** — the field is left exactly as it was. Writing anything there would fill it with today's date, in the same shape a real answer arrives in.
 
+#### Forecasts more than five years out
+
+A percentile that Lighthouse shows as *More than 5 years* gets **no write at all**, for every forecast source above, completion and start alike: the field keeps whatever it held. A tracker field can only hold a date, and any date written there would be one nobody forecast. See [When a Forecast Reaches Beyond Five Years](../concepts/howlighthouseforecasts.html#when-a-forecast-reaches-beyond-five-years).
+
 #### About `SLE Risk`
 
 It is written only for teams, because a feature can belong to several portfolios, each with its own

@@ -75,6 +75,8 @@ If a team is working solo on a feature, both bars will show the same numbers.
 ### Forecasts
 For each Feature you will see the forecasted completion date. You'll get four different probabilities, from *Certain* to *Risky*. Naturally, the riskier the forecast, the earlier the projected completion.
 
+A probability that too few simulated runs reach within five years reads **More than 5 years** instead of a date. See [When a Forecast Reaches Beyond Five Years](../concepts/howlighthouseforecasts.html#when-a-forecast-reaches-beyond-five-years).
+
 {: .note}
 The completion dates of each feature will take into account **all teams** that are involved. If a single item is planned to be done by one team, but this is far down their priority, this will mean that the feature completion will be moving backwards. Lighthouse cares about delivering complete features. You may be able to use such scenarios to kick off a discussion about how work or teams are sliced (as less dependencies mean more effective delivery).
 
@@ -234,7 +236,7 @@ Target 2026-10-01: 88% likely
 ```
 
 - Anything else in the description is left exactly as it is, and re-writing replaces the block rather than adding a second one.
-- The three percentiles are the same ones Lighthouse shows on its own screen, so the two can never disagree.
+- The three percentiles are the same ones Lighthouse shows on its own screen, so the two can never disagree. One that Lighthouse shows as *More than 5 years* is written the same way, for example `85%: More than 5 years`, never as a date.
 - The **release date in Jira is never touched.** Lighthouse writes its forecast into the description and leaves the target date to you — otherwise the forecast would become the target it is measured against.
 
 {: .note}
@@ -312,7 +314,7 @@ The predictability chart tracks the forecast itself over time and offers two vie
 
 ![Delivery Predictability — How Likely](../assets/features/deliveryPredictabilityLikelihood.png)
 
-**When?** shows the forecasted completion dates (50th, 70th, 85th, and 95th percentiles) over time against the delivery's target date.
+**When?** shows the forecasted completion dates (50th, 70th, 85th, and 95th percentiles) over time against the delivery's target date. A day on which a percentile read *More than 5 years* has no date to plot, so that point is left out.
 
 ![Delivery Predictability — When](../assets/features/deliveryPredictabilityWhen.png)
 
@@ -431,7 +433,7 @@ A feature that has already started begins its bar on the day it actually started
 
 ### Features that cannot be drawn
 
-Some features cannot be placed on a timeline: no team has enough history to forecast them, or the delivery has no forecast for one end of the bar yet. Those are listed **beneath the chart with the reason**, never silently left out.
+Some features cannot be placed on a timeline: no team has enough history to forecast them, the delivery has no forecast for one end of the bar yet, or the chosen confidence level lies more than five years out (*Ends more than 5 years out at 85%*). Those are listed **beneath the chart with the reason**, never silently left out.
 
 This matters more than it sounds. A feature that vanishes from a plan is worse than one shown as unknown — you would be reading a picture with a hole in it and no way to tell.
 

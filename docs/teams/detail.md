@@ -85,7 +85,7 @@ Based on the team's [throughput](#metrics), you can run [Monte Carlo Simulations
 Both questions will be answered with a forecast, which means you'll get multiple results that vary in probability, from certain (95% likelihood) to risky (50% likelihood).
 
 ### When
-The first question is: When will 'x' items be done? If you have a certain number of items (e.g., remaining for a feature, part of the sprint goal, etc.), you might want to know when you can expect them to be completed.
+The first question is: When will 'x' items be done? If you have a certain number of items (e.g., remaining for a feature, part of the sprint goal, etc.), you might want to know when you can expect them to be completed. If too few simulated runs finish within five years for a probability, it reads **More than 5 years** instead of a date (see [When a Forecast Reaches Beyond Five Years](../concepts/howlighthouseforecasts.html#when-a-forecast-reaches-beyond-five-years)).
 
 ### How Many
 The second question is: How many items will you get done by a certain date? You might have an important customer visit coming up, or simply want to know what is a sensible number of items to plan for in your next sprint.

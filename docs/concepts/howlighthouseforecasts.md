@@ -182,6 +182,9 @@ For *Feature 2* we will not start with the 1st day, but the count will resume fr
 
 This is done 10'000 times and the results are stored (how long did it take till the Features were done).
 
+{: .note}
+One simulated run covers at most five years. A run that has not finished the work by then stops there and counts as finishing *beyond the horizon*. See [When a Forecast Reaches Beyond Five Years](#when-a-forecast-reaches-beyond-five-years).
+
 If the Feature WIP is 1, all simulated Throughput goes into the first Feature, until it's done. From then on, all simulated Throughput goes towards the second one.
 
 {: .note}
@@ -278,6 +281,24 @@ The fix is in your data, not in Lighthouse: give that team some closed work item
 {: .note}
 A Feature with no remaining work is not affected. It is done - that is a fact, not a forecast - and it still reads as 100%.
 
+### When a Forecast Reaches Beyond Five Years
+
+Every simulated run covers at most **five years** of days. A Feature that a Team with very little Throughput would take centuries to finish is not simulated for centuries: after five years the run stops and is counted as *not finished within the horizon*. Nothing useful is lost: no plan rests on a date more than five years out, and simulating further would only make the forecast slower.
+
+Those unfinished runs still count. A percentile is read over **all** 10'000 runs, not just the ones that finished. If fewer than 85% of the runs finished within five years, there is no honest 85% date to give, so instead of a date Lighthouse shows **More than 5 years**. Hovering it explains why: *Fewer than 85% of simulated runs finished within 5 years.*
+
+You see this wherever a forecast date would be shown: the forecast on a Feature, the [Forecasted Start](../portfolios/detail.html#forecasted-start) column, a manual *When* forecast, the dates under a [Delivery](../portfolios/detail.html#deliveries) and its export. A chart has no day to put it on, so the [Delivery Timeline](../portfolios/detail.html#delivery-timeline) lists such a Feature beneath the chart with the reason instead of drawing a bar, and the *When?* view of the [Delivery predictability chart](../portfolios/detail.html#predictability) leaves that point out.
+
+The same goes for the likelihood of hitting a date. It is the share of **all** runs that finished by then, so a run that never finished counts as late. Leaving those runs out would make every likelihood look better than it is.
+
+It is also what Lighthouse sends to your Work Tracking System:
+
+- A [Data Sync Mapping](../settings/worktrackingsystems.html#data-sync-mappings) that writes a forecast date writes **nothing** for a percentile beyond five years. The field keeps whatever it held, because a made-up date would say something untrue.
+- A forecast [published to a Jira Release](../portfolios/detail.html#publishing-a-forecast-back-to-jira) says it in words, for example `85%: More than 5 years`.
+
+{: .note}
+Seeing *More than 5 years* is a signal, not a glitch. Usually it means a Feature has a lot of remaining work for a Team that closes very little, or that it sits far down a long backlog. Splitting the Feature, reordering, or checking that the Team's Throughput history is what you expect are the usual ways forward.
+
 ### A Delivery With Several Features
 
 A [Delivery](../portfolios/detail.html#deliveries) groups Features that have to be there together. So the question it answers is not "when is one of these done" but "when are **all** of them done" - the same step up you just saw from one team to two, one level higher.
@@ -353,6 +374,11 @@ Reading dependencies and showing them works on every Lighthouse instance, commun
 We still don't like dependencies. Wherever there are some, you should try to remove them as aggressively as you can — a forecast that accounts for a wait is still the forecast of an organisation that has to wait, and no simulation makes that cheaper. What changed is that Lighthouse no longer leaves the cost quietly out of the number. Making them visible is what changes behaviour; putting them into the dates is what stops the dates flattering you.
 
 Please have a look at the work of [Prateek Singh](https://www.linkedin.com/in/singhpr13/), who wrote among others, this very interesting blog post: [Understanding the Impact of Dependencies](https://singhpr.medium.com/understanding-the-impact-of-dependencies-4cca0d720019)
+
+## How Much of Your Machine a Forecast Uses
+A forecast runs many simulated runs side by side, but never on more than **half** of the cores Lighthouse was given — on a 4-core machine or container that is 2, and on a 1- or 2-core one it is 1. The other half stays free, so the pages keep answering while forecasts run in the background. This holds for every forecast, whether a background update or a manual one you start yourself.
+
+The line Lighthouse prints when it starts tells you what it found, for example *Forecasts use up to 2 of 4 cores*. If that number is not what you expected, check the CPU limit of your container.
 
 # Conclusion
 Congrats, you made it to the end of this page! We understand that this may have been the opposite of *light reading*. As mentioned in the beginning, you don't *need* to know all of this when you start out with Lightouse. But as you go on, you may wonder why certain things they work how they do. And sometimes the answer can be found in the way Lighthouse works.
