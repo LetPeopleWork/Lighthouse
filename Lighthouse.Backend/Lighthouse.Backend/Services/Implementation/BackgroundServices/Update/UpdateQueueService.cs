@@ -314,18 +314,21 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             lock (admission)
             {
                 var sourceCreatedHere = cancellations.Admit(updateKey);
+                var admitted = false;
 
-                if (statusStore.TryAdmit(updateKey, updateStatus))
+                // A store that throws (a Redis timeout, say) has not admitted the key either.
+                try
                 {
-                    return true;
+                    admitted = statusStore.TryAdmit(updateKey, updateStatus);
+                    return admitted;
                 }
-
-                if (sourceCreatedHere)
+                finally
                 {
-                    cancellations.Forget(updateKey);
+                    if (!admitted && sourceCreatedHere)
+                    {
+                        cancellations.Forget(updateKey);
+                    }
                 }
-
-                return false;
             }
         }
 
@@ -333,8 +336,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             lock (admission)
             {
-                statusStore.Remove(updateKey);
-                cancellations.Forget(updateKey);
+                try
+                {
+                    statusStore.Remove(updateKey);
+                }
+                finally
+                {
+                    cancellations.Forget(updateKey);
+                }
             }
         }
 
@@ -398,11 +407,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            // Queued so the write runs in its turn like any other conversation with the tracker. A closing
-            // queue accepts nothing more, and the write is still owed.
+            // Queued so the write runs in its turn like any other conversation with the tracker. The queue only
+            // closes when Lighthouse shuts down, and a write started then would race the services it needs
+            // being torn down, with nothing waiting for it.
             if (!queue.Writer.TryWrite(() => SendWhatTheRoundLeftBehind(round)))
             {
-                _ = SendWhatTheRoundLeftBehind(round);
+                maintenanceGate.RoundWriteBackDone();
+                logger.LogWarning("What a refresh round resolved was not written back, because Lighthouse is shutting down.");
+                SayHowTheRoundWent(round);
             }
         }
 
@@ -415,8 +427,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     using var scope = serviceScopeFactory.CreateScope();
                     await WriteBackCollector.WriteEverythingStaged(round, scope.ServiceProvider.GetRequiredService<IWriteBackService>(), logger);
                 }
-
-                SayHowTheRoundWent(round);
             }
 #pragma warning disable CA1031 // as at the end of an update, a write-back that fails is logged, never allowed to take the queue down
             catch (Exception exception)
@@ -427,6 +437,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             finally
             {
                 maintenanceGate.RoundWriteBackDone();
+                SayHowTheRoundWent(round);
             }
         }
 

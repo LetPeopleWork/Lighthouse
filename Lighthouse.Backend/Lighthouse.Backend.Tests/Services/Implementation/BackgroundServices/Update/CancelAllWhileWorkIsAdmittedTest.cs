@@ -104,6 +104,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [Test]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_status_store_that_fails_while_admitting_does_not_leave_the_next_refresh_of_that_key_stopped_by_Cancel_all()
+        {
+            var cancellationContext = new UpdateCancellationContext();
+            var store = new FailsTheFirstAdmission(new InProcessUpdateStatusStore(new ConcurrentDictionary<UpdateKey, UpdateStatus>(), Clocks.SystemUtc));
+            var queue = AQueueOver(store, cancellationContext);
+
+            var firstAskFailed = false;
+            try
+            {
+                queue.EnqueueUpdate(UpdateType.Team, 9, _ => Task.CompletedTask);
+            }
+            catch (TimeoutException)
+            {
+                firstAskFailed = true;
+            }
+
+            await queue.CancelAllAsync();
+
+            var reachedTheTracker = false;
+            var awaited = queue.EnqueueAndAwaitAsync(UpdateType.Team, 9, _ =>
+            {
+                reachedTheTracker = true;
+                return Task.CompletedTask;
+            });
+            var settled = await Task.WhenAny(awaited, Task.Delay(TheLongestTheStopMayTake)) == awaited;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(firstAskFailed, Is.True, "The status store never failed while admitting, so there was nothing to clean up.");
+                Assert.That(settled, Is.True, "The refresh asked for after Cancel all never finished.");
+                Assert.That(reachedTheTracker, Is.True,
+                    "A refresh asked for after Cancel all started already stopped, by the cancellation left behind when the earlier admission failed.");
+            }
+        }
+
         private static async Task<bool> TheStatusReaches(InProcessUpdateStatusStore store, UpdateKey key, UpdateProgress reached)
         {
             var deadline = DateTime.UtcNow + TheLongestTheStopMayTake;
@@ -176,6 +214,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 {
                     TheOtherCallerAsked = true;
                     _ = Task.Run(TheOtherCaller).Wait(TheMomentItGets);
+                }
+
+                return inner.TryAdmit(key, status);
+            }
+
+            public UpdateStatus? Advance(UpdateKey key, UpdateProgress to) => inner.Advance(key, to);
+
+            public UpdateStatus? CancelIfStillWaiting(UpdateKey key) => inner.CancelIfStillWaiting(key);
+
+            public void Requeue(UpdateKey key) => inner.Requeue(key);
+
+            public bool TryGet(UpdateKey key, out UpdateStatus? status) => inner.TryGet(key, out status);
+
+            public void Remove(UpdateKey key) => inner.Remove(key);
+
+            public IReadOnlyList<UpdateStatus> GetAdmittedWork() => inner.GetAdmittedWork();
+
+            public bool HasActiveWork() => inner.HasActiveWork();
+
+            public bool HasQueuedWork(IReadOnlyCollection<UpdateKey> keys) => inner.HasQueuedWork(keys);
+        }
+
+        /// <summary>The production in-process store, timing out the first time it is asked to admit anything.</summary>
+        private sealed class FailsTheFirstAdmission(IUpdateStatusStore inner) : IUpdateStatusStore
+        {
+            private int calls;
+
+            public bool TryAdmit(UpdateKey key, UpdateStatus status)
+            {
+                if (Interlocked.Increment(ref calls) == 1)
+                {
+                    throw new TimeoutException("The status store did not answer in time.");
                 }
 
                 return inner.TryAdmit(key, status);
