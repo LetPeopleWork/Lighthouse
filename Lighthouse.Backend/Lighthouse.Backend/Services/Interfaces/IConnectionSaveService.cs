@@ -51,20 +51,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         public string? Description => Bundle is null || FieldName is null ? FieldName : DescribeTheEstimation(FieldName, Bundle);
 
         private static string DescribeTheEstimation(string fieldName, EstimationBundle bundle)
-        {
-            List<string> parts = [fieldName];
-            if (!string.IsNullOrEmpty(bundle.Unit))
-            {
-                parts.Add(bundle.Unit);
-            }
-
-            if (bundle.UseNonNumericEstimation)
-            {
-                parts.Add($"categories [{string.Join(", ", bundle.CategoryValues)}]");
-            }
-
-            return string.Join(", ", parts);
-        }
+            => bundle.UseNonNumericEstimation
+                ? $"{bundle.NamedWith(fieldName)}, categories [{string.Join(", ", bundle.CategoryValues)}]"
+                : bundle.NamedWith(fieldName);
     }
 
     public sealed record ConnectionSaveOutcome(IReadOnlyList<AdditionalFieldInUse> FieldsInUse)

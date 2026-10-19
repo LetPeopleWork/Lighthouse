@@ -28,6 +28,9 @@ namespace Lighthouse.Backend.Models
         /// <summary>A bundle without a field estimates nothing, whatever its other parts say.</summary>
         public bool IsSet => AdditionalFieldDefinitionId is not null;
 
+        /// <summary>How a page names this bundle: its field, and its unit beside it, which tells two bundles on the same field apart.</summary>
+        public string NamedWith(string fieldName) => string.IsNullOrEmpty(Unit) ? fieldName : $"{fieldName}, {Unit}";
+
         /// <summary>The same unit and categories, read from another field.</summary>
         public EstimationBundle PointingAt(int? additionalFieldDefinitionId)
             => new(additionalFieldDefinitionId, Unit, UseNonNumericEstimation, CategoryValues);

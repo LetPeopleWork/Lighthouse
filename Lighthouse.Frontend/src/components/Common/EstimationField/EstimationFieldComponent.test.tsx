@@ -239,13 +239,18 @@ describe("an Estimation that can follow the connection's default", () => {
 			supportedDefaults: ["estimationForTeams" as const],
 		},
 	);
+	// As the API sends it: the default's field with its unit beside it.
 	const following = {
 		workTrackingSystemConnectionId: 7,
+		workTrackingSystem: "Jira",
 		estimationSource: "ConnectionDefault",
-		estimationDefaultName: "Story Points",
+		estimationDefaultName: "Story Points, Points",
 	} as IBaseSettings;
 
-	const renderTheEstimation = (change = vi.fn()) => {
+	const renderTheEstimation = (
+		change = vi.fn(),
+		connection: typeof payments | undefined = payments,
+	) => {
 		render(
 			<EstimationFieldComponent
 				estimationFieldDefinitionId={null}
@@ -254,7 +259,7 @@ describe("an Estimation that can follow the connection's default", () => {
 				additionalFieldDefinitions={[storyPoints]}
 				followable={{
 					settings: following,
-					connection: payments,
+					connection,
 					theDefault: "estimationForTeams",
 					...followOrOwn<IBaseSettings>(
 						change,
@@ -278,6 +283,17 @@ describe("an Estimation that can follow the connection's default", () => {
 			screen.getByText(/^Set on the Jira connection\.$/),
 		).toBeInTheDocument();
 		expect(screen.queryByLabelText("Estimation Unit")).not.toBeInTheDocument();
+	});
+
+	it("a Team admin who cannot load the connection sees the default's field and unit as the settings carry them", () => {
+		renderTheEstimation(vi.fn(), undefined);
+
+		expect(
+			screen.getByRole("combobox", { name: "Estimation Field" }),
+		).toHaveTextContent(/^Connection default \(Story Points, Points\)$/);
+		expect(
+			screen.getByText(/^Set on the Jira connection\.$/),
+		).toBeInTheDocument();
 	});
 
 	it("picking None makes the Estimation the Team's own", () => {

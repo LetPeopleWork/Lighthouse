@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     [Category("us-11")]
     public class Slice12EstimationDefaultScenarios : ConnectionDefaultsAcceptanceTest
     {
+        private const string StoryPointsInPoints = "Story Points, Points";
+
         [Test]
         [Category("ac-11.1")]
         [Category("ac-11.2")]
@@ -34,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(ledger, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPoints)));
+                Assert.That(ledger, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPointsInPoints)));
                 Assert.That(ran, Is.Empty, "Estimation is read when the page loads, so nothing needs downloading.");
                 Assert.That(await HowManyFollow(ConnectionDefault.TeamsEstimation), Is.EqualTo(4), "The dialog says 4 Teams follow it.");
                 Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("Teams' Estimation default").And.Some.Contains("4 Teams follow it"));
@@ -104,7 +106,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             var cardIssuing = await WhatTheEstimationReadsFor(CardIssuing);
 
-            Assert.That(cardIssuing, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPoints)));
+            Assert.That(cardIssuing, Is.EqualTo(((string?)StoryPoints, (string?)Points, (string?)"ConnectionDefault", (string?)StoryPointsInPoints)));
+        }
+
+        // Only a System Admin can read the connection, so a Team admin's page names the default from what the
+        // Team's settings carry, and the unit is what tells two defaults on the same field apart.
+        [Test]
+        [Category("ac-11.1")]
+        [Category("contract-shape:pure-function")]
+        public async Task A_Team_admin_without_connection_rights_sees_the_Estimation_default_with_its_unit()
+        {
+            await GivenTheTeamsEstimationDefaultIs(StoryPoints, Points);
+
+            var seen = await WhatTheTeamAdminSees(OpsTooling, OwnerSetting.Estimation);
+
+            Assert.That(seen, Is.EqualTo(((string?)"ConnectionDefault", (string?)StoryPointsInPoints, (string?)"Jira")),
+                "The page shows \"Connection default (Story Points, Points)\" and \"Set on the Jira connection.\"");
         }
 
         [TestCase(FraudSignals)]

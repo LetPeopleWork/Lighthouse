@@ -636,8 +636,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         /// <summary>The same page, as a Team admin without connection rights reads it.</summary>
-        protected async Task<(string? Source, string? DefaultName, string? Tracker)> WhatTheTeamAdminSees(string team)
+        protected async Task<(string? Source, string? DefaultName, string? Tracker)> WhatTheTeamAdminSees(string team, OwnerSetting setting = OwnerSetting.ParentOverrideField)
         {
+            var member = TheOwnerMember(setting);
             using var teamAdmin = Factory.CreateClient().AsTeamAdmin(teamIds[team]);
             using var response = await teamAdmin.GetAsync(new Uri($"{TheOwnersRoute(team)}/settings", UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
@@ -645,7 +646,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
             var settings = JsonNode.Parse(body)!.AsObject();
 
-            return (settings["parentOverrideSource"]?.ToString(), settings["parentOverrideDefaultName"]?.ToString(), settings["workTrackingSystem"]?.ToString());
+            return (settings[$"{member}Source"]?.ToString(), settings[$"{member}DefaultName"]?.ToString(), settings["workTrackingSystem"]?.ToString());
         }
 
         protected async Task<(string? FieldName, string? Unit, string? Source, string? DefaultName)> WhatTheEstimationReadsFor(string owner)

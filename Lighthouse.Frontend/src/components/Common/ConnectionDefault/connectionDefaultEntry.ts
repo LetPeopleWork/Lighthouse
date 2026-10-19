@@ -106,8 +106,8 @@ const describeEstimation = (
 };
 
 // The settings carry the name of their stored connection's default, which an admin who cannot read the
-// connection needs. Once another connection is chosen, that name is read off the chosen one instead. An
-// Estimation default is read off a loaded connection either way, because only that one carries its unit.
+// connection needs; for Estimation it carries the unit too. Once another connection is chosen, that name is read
+// off the chosen one instead. An Estimation default is read off a loaded connection either way, named the same.
 export const nameOfTheDefault = (
 	settings: IBaseSettings | null,
 	nameTheSettingsCarry: string | null | undefined,

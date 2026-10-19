@@ -92,6 +92,18 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        [TestCase(Points, "Story Points, Points")]
+        [TestCase(null, "Story Points")]
+        [TestCase("", "Story Points")]
+        public void The_default_is_named_by_its_field_and_its_unit(string? unit, string named)
+        {
+            var team = AFollowingTeam();
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = StoryPoints, DisplayName = "Story Points", Reference = "customfield_10016" });
+            team.WorkTrackingSystemConnection.EstimationForTeams = new EstimationBundle(StoryPoints, unit, false, []);
+
+            Assert.That(team.EstimationDefaultName, Is.EqualTo(named));
+        }
+
         private static Team AFollowingTeam()
         {
             var connection = new WorkTrackingSystemConnection { Name = "Jira DC – Payments", WorkTrackingSystem = WorkTrackingSystems.Jira };

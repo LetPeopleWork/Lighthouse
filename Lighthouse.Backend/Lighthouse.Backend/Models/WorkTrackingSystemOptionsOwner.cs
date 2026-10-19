@@ -105,9 +105,12 @@ namespace Lighthouse.Backend.Models
 
         protected virtual EstimationBundle EstimationConnectionDefault => EstimationBundle.None;
 
-        /// <summary>The field the connection's Estimation default reads, shown whichever source the owner chose.</summary>
+        /// <summary>The field and unit of the connection's Estimation default, shown whichever source the owner chose.</summary>
         [NotMapped]
-        public string? EstimationDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(EstimationConnectionDefault.AdditionalFieldDefinitionId);
+        public string? EstimationDefaultName
+            => WorkTrackingSystemConnection?.DisplayNameOfField(EstimationConnectionDefault.AdditionalFieldDefinitionId) is { } fieldName
+                ? EstimationConnectionDefault.NamedWith(fieldName)
+                : null;
 
         public void FollowEstimationDefault() => Estimation = StoredEstimation.FollowingTheDefault;
 
