@@ -51,9 +51,9 @@ type: application
 # 0.1.19: track the v26.10.10.1 release — a Refinement tab for every Team that says how much to
 #         refine and lets the Team vote on whether a Work Item is small enough, plus usage data
 #         from the CLI and MCP. No chart values changed.
-version: 0.1.20
+version: 0.1.21
 # appVersion — the default Lighthouse image tag the chart ships (mirrors values.image.tag).
-appVersion: "26.10.16.6"
+appVersion: "26.10.19.10"
 home: https://docs.lighthouse.letpeople.work
 sources:
   - https://github.com/LetPeopleWork/Lighthouse
