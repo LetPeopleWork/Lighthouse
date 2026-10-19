@@ -116,6 +116,8 @@ You can manage additional fields in the connection settings UI. When adding a fi
 - **Display Name**: A user-friendly name for the field.
 - **Field Reference**: The Azure DevOps field reference (e.g., `System.IterationPath`, `Custom.MyField`) or name (e.g. `Iteration Path` or `My Field`).
 
+The Field Reference may also name a relation type. Only a Portfolio's Dependency Field reads one, see [Naming a different relation type](#naming-a-different-relation-type).
+
 For help finding the correct field reference, see the [Azure DevOps field documentation](https://learn.microsoft.com/en-us/azure/devops/boards/work-items/guidance/work-item-field?view=azure-devops). The UI provides direct links and helper text to guide you.
 
 #### Example: Adding a Custom Field
@@ -205,5 +207,18 @@ Lighthouse reads what a Feature is waiting on from the **Predecessor/Successor**
 Azure DevOps writes every such link twice, once at each end — the waiting item gets a *Predecessor*, the item being waited on gets a *Successor*. Only the waiting end is read, so each dependency is recorded once. Lighthouse never creates, changes or removes a link: remove one in Azure DevOps and it disappears here on the next refresh.
 
 If your teams record dependencies in a custom field rather than through this link, a portfolio can name that field instead — see [Dependency Field](../../portfolios/edit.html#dependency-field).
+
+### Naming a different relation type
+
+A Portfolio can read another relation type instead. Add the relation type as an Additional Field of the connection, with its reference name as the Field Reference. Then name that Additional Field as the Portfolio's [Dependency Field](../../portfolios/edit.html#dependency-field). Lighthouse reads the waits from that relation type alone, and the Predecessor links are not read for that Portfolio.
+
+A relation type has two ends, so name the one on which the work waits, with its end: `Contoso.DependsOn-Reverse` for the waiting end, `Contoso.DependsOn-Forward` for the other. The other end reads the links the other way round. The built-in Predecessor link is `System.LinkTypes.Dependency-Reverse`, and it is what Lighthouse reads when no Dependency Field is set.
+
+Two names read nothing and are reported in the refresh history:
+
+- A base name without its end, such as `Contoso.DependsOn`, which covers both ends. Name one end.
+- A relation type without a direction, such as `System.LinkTypes.Related`. It cannot say which end waits, so name a relation type that has two ends.
+
+Only the Dependency Field reads a relation type. Naming one as a Parent Override, Size Estimate, Feature Owner or Estimation field reads nothing there, and Refresh History says so. See [Refresh History](../../settings/systeminfo.html#refresh-history).
 
 What you then see is described on the [Features page](../../features/features.html#dependencies).

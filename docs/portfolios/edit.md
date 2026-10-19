@@ -136,6 +136,8 @@ The Size Estimate Field is configured by selecting an Additional Field that has 
 
 If the field is empty or 0 for a feature, it will fall back to the default/historical feature size.
 
+The Size Estimate Field can also follow the connection's default. Its first entry reads **Connection default (*field*)**, and it is offered on Jira and Azure DevOps connections. Pick another entry, **None** included, to set the Portfolio's own field.
+
 ## State Override
 Sometimes we may have child items already, but we are in the process of still refining. So instead of using the 3 child items that are already there, we may still want to use the estimate (which may say 12 for a feature) for some time.
 In order to achieve this, you can define which states should ignore the real child items. For those states, the estimate or default size will be used **unless the actual child item count exceeds it**.
@@ -178,6 +180,8 @@ If defined, Lighthouse will get the data in this field for every feature. It wil
 This means you may have to specify your teams exactly as you do it in your work tracking system.
 
 Lighthouse will use the **Feature Owner** to assign the work to a specific team. If not defined, it will fall back to the **Owning Team** of this portfolio. If this is neither defined, it will distribute the work across all the teams.
+
+The Feature Owner Field can also follow the connection's default. Its first entry reads **Connection default (*field*)**, and it is offered on Jira, Azure DevOps and CSV connections. Pick another entry, **None** included, to set the Portfolio's own field.
 
 # Flow Metrics Configuration
 Under this section, you'll find all configuration options related to Flow Metrics.
@@ -229,6 +233,12 @@ Chose an additional field that represents the estimation (if you have any). Addi
 
 The assumption is that your estimate is numerical. However, if you have categorical values (like *T-Shirt Sizes*), you can specify the categories and drag them in order from lowest to highest.
 
+### Connection default
+
+On Jira, Azure DevOps and CSV connections the Estimation can follow the connection's Estimation default. The first entry reads **Connection default (*field*, *unit*)**, with the unit only when the default has one, for example `Connection default (Story Points, Points)`. Following takes the whole estimation with it: the field, the unit, and the categories when the values are categories. Pick another entry, **None** included, to set the Portfolio's own.
+
+A change to the connection's Estimation default does not update the Portfolio. Its pages show the new estimation the next time they load.
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a portfolio without bothering.
 
@@ -239,6 +249,12 @@ If you need to override this behavior (for example, to group Features under a cu
 
 {: .note}
 Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
+
+### Connection default
+
+If the connection holds a Parent Override Field for Portfolios, the first entry in the list reads **Connection default (*field*)**, with *Set on the Jira connection* (or the Azure DevOps connection) underneath. Leave it selected and the Portfolio follows the connection, so a change to the connection's default changes this Portfolio too. Pick any other entry, **None** included, to set the Portfolio's own field. The entry is offered on Jira and Azure DevOps connections only.
+
+See [Defaults for Teams and Portfolios](../settings/worktrackingsystems.html#defaults-for-teams-and-portfolios) for what the connection asks when its default changes.
 
 ### Which work tracking systems read this setting
 
@@ -310,6 +326,10 @@ Go to **Settings > Connections** to define Additional Fields, then return here t
 
 {: .important}
 The Dependency Field is read for **Azure DevOps** and **Jira** portfolios. Linear exposes no fields of its own for a portfolio to point at, so a Linear portfolio keeps reading its Project relations whatever is selected here. A CSV upload names its column on the connection instead — see [Depends On Column](../concepts/worktrackingsystems/csv.html#dependencies).
+
+The Dependency Field can also be the connection's default. Its first entry reads **Connection default (*field*)**, and a Portfolio that leaves it selected follows the connection. Pick another entry, **None** included, to set the Portfolio's own.
+
+On a Jira or Azure DevOps connection the Dependency Field can name a link type or a relation type instead of a field. Lighthouse then reads the waits from that link or relation type alone. See [Jira](../concepts/worktrackingsystems/jira.html#naming-a-different-link-type) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#naming-a-different-relation-type) for how to name one.
 
 ### Ignore Dependencies
 Turn this on to have Lighthouse keep reading dependencies but stop acting on them — useful when you want to look at a plan as if those links weren't there, without deleting a single one in your work tracking system.

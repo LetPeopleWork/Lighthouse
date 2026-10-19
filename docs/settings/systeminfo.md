@@ -28,6 +28,15 @@ You can see when you refreshed, how many items (Work Items or Features) were fet
 
 On a Jira connection whose parent setting names an issue link type, two more figures can appear: the most Work Items or Features a single refresh placed although their links named more than one parent, and the most it could not place. Each figure shows only when it is above zero. They are the highest count in any one refresh, not a total, because every refresh reads the same untidy records again. How such a record is placed is described for [Teams](../teams/edit.html#when-a-work-items-links-name-more-than-one-issue) and [Portfolios](../portfolios/edit.html#when-a-features-links-name-more-than-one-issue).
 
+Under a Portfolio's figures, Refresh History also lists what its latest full download could not read as configured in the Dependency Field. Each sentence names the setting and what to change, for example:
+
+- *The Dependency Field names "depends on", and no Feature carries that link. Links seen: is blocked by, relates to.*
+- *The Dependency Field names "Blocks", which points both ways. Name one end: "blocks" or "is blocked by".*
+- *The Dependency Field names "System.LinkTypes.Related", which has no direction. Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".*
+- *The Dependency Field names "Contoso.DependsOn" without its end. Name one end: "Contoso.DependsOn-Forward" or "Contoso.DependsOn-Reverse".*
+
+The line beneath them gives the day of the full download they come from. A Portfolio that ignores dependencies shows none, and nothing is listed when the Dependency Field reads what it should.
+
 While the history is loading, a spinner shows in its place. If it cannot be loaded, the section says *Could not load refresh history.*
 
 
@@ -37,6 +46,15 @@ For this case, you can check the *Logs*.
 
 {: .note}
 If you are here because something looks wrong *right now*, the [Task Manager](taskmanager.html) in the header lists the recent warnings and errors on their own, without the rest of the log around them — and it links back to this page when you need the full picture.
+
+### Connection default changes
+When a save changes a default that Teams or Portfolios follow, the log gets one Information entry for each changed default. It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued:
+
+```
+Connection "Jira Cloud" changed the Teams' Parent Override Field default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued.
+```
+
+An Estimation change queues no update, so its entry says *no update queued*. See [Defaults for Teams and Portfolios](worktrackingsystems.html#defaults-for-teams-and-portfolios).
 
 ## Log Level
 Log levels describe the level of detail that should end up in the log. The more "sensitive", the more messages will be added. Following *Log Levels* can be selected:

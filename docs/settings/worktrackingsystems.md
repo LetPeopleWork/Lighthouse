@@ -48,10 +48,66 @@ Additional Fields let you surface or map custom fields from your work tracking s
 
 See details for [Jira](../concepts/worktrackingsystems/jira.html) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html) in the respective sections.
 
+On a Jira connection the **Field Reference** of an Additional Field may also name an issue link type, and on an Azure DevOps connection a relation type. A Portfolio then names that field as its Dependency Field to read its waits from that link or relation type. See [Jira](../concepts/worktrackingsystems/jira.html#naming-a-different-link-type) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#naming-a-different-relation-type).
+
 Additional Fields are used by the UI and reporting features and can also be targeted by Data Sync Mappings. When changing an existing connection, secret options (such as API tokens) will always need to be re-entered.
 
 A new or changed field only has values once the Teams and Portfolios on the connection have been updated. So when you change the Additional Fields of a connection they use, Lighthouse asks whether to update them now or leave it to their next scheduled update. A change saved through the API, the CLI or the MCP server updates them right away.
 
+
+## Defaults for Teams and Portfolios
+
+Some settings point at an Additional Field of this connection and are the same for every Team and Portfolio that uses it: the Parent Override Field, the Dependency Field, the Size Estimate Field, the Feature Owner Field and the Estimation. Set them once on the connection. Each Team or Portfolio then *follows* the connection's default, unless it *owns* its own choice.
+
+The section sits below Additional Fields on the connection page, under *Defaults for Teams and Portfolios*. Only the settings the connection's tracker reads are listed:
+
+| Connection type | Teams | Portfolios |
+|---|---|---|
+| Jira and Azure DevOps | Parent Override Field, Estimation | Parent Override Field, Dependency Field, Size Estimate Field, Feature Owner Field, Estimation |
+| CSV | Estimation | Feature Owner Field, Estimation |
+| Linear and ServiceNow | None, so the section is hidden | None |
+
+A CSV file has no parent, dependency or size field to point at, so only the Feature Owner Field and the Estimation can come from a column.
+
+![Connection defaults with the Estimation editor open](../../assets/settings/worktrackingsystems/connection-defaults.png)
+
+### Following and owning
+
+On a Team or Portfolio, the first entry of each of these settings reads **Connection default (*field*)**, with *Set on the Jira connection* (or the Azure DevOps or CSV connection) underneath. Leave it selected and the owner follows the connection, so a change to the connection's default changes what every follower reads. Pick any other entry, **None** included, and the owner owns the setting. An owner keeps its own setting when the connection's default changes.
+
+Picking the same field as the default does not make an owner follow again. Choose **Connection default** for that.
+
+An Estimation default is followed as one piece: its field, its unit and, for categories, the categories in their order.
+
+### Saving a changed default
+
+When a save changes a default that Teams or Portfolios follow, Lighthouse asks first, and counts the followers:
+
+- A changed Parent Override Field, Dependency Field, Size Estimate Field or Feature Owner Field asks **Update 3 Teams and 0 Portfolios?**. The question also says what the followers read differently, for example *Their parents change only once they have been updated.* **Save and update** saves and updates the followers now. **Save only** saves and leaves them to their next scheduled update. **Cancel** keeps your edits on the page.
+- A changed Estimation default asks **Change the Estimation default?**, with **Cancel** and **Save** only. Nothing is queued: the followers show the new estimation the next time their pages load.
+- When nobody follows the default you changed, there is no question, and the connection saves as it always does.
+
+### What the log records
+
+Each changed default writes one Information entry to the [Logs](systeminfo.html#connection-default-changes). It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued:
+
+```
+Connection "Jira Cloud" changed the Teams' Parent Override Field default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued.
+```
+
+An Estimation change queues no update, so its entry says *no update queued*.
+
+### Deleting a field in use
+
+You cannot remove an Additional Field that a default or an owner still uses. The save is refused, and nothing is saved:
+
+> "Business Value" cannot be removed. It is the Teams' Parent Override Field default, and Payments uses it as its own. Nothing was saved.
+
+Point the default and the owners at another field before you remove it.
+
+### Moving a Team or Portfolio to another connection
+
+A Team or Portfolio that owns a setting with a field of its current connection cannot move to a connection that lacks that field. The save is refused, with a message such as *The Parent Override Field is not an Additional Field of this Team's connection.* Pick a field of the new connection, or choose **Connection default**, in the same save.
 
 ## Data Sync Mappings
 

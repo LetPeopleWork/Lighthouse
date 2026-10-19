@@ -357,6 +357,14 @@ Chose an additional field that represents the estimation (if you have any). Addi
 
 The assumption is that your estimate is numerical. However, if you have categorical values (like *T-Shirt Sizes*), you can specify the categories and drag them in order from lowest to highest.
 
+### Connection default
+
+On Jira, Azure DevOps and CSV connections the Estimation can follow the connection's Estimation default. The first entry reads **Connection default (*field*, *unit*)**, with the unit only when the default has one, for example `Connection default (Story Points, Points)`. Following takes the whole estimation with it: the field, the unit, and the categories when the values are categories. Pick another entry, **None** included, to set the Team's own.
+
+A change to the connection's Estimation default does not update the Team. Its pages show the new estimation the next time they load.
+
+![Team Estimation following the connection default](../assets/features/team_estimation_connection_default.png)
+
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 
@@ -367,6 +375,12 @@ If you need to override this behavior (for example, to group Work Items under a 
 
 {: .note}
 Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
+
+### Connection default
+
+If the connection holds a Parent Override Field for Teams, the first entry in the list reads **Connection default (*field*)**, with *Set on the Jira connection* (or the Azure DevOps connection) underneath. Leave it selected and the Team follows the connection, so a change to the connection's default changes this Team too. Pick any other entry, **None** included, to set the Team's own field. The entry is offered on Jira and Azure DevOps connections only.
+
+See [Defaults for Teams and Portfolios](../settings/worktrackingsystems.html#defaults-for-teams-and-portfolios) for what the connection asks when its default changes.
 
 ### Which work tracking systems read this setting
 

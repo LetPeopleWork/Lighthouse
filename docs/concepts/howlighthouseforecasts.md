@@ -319,7 +319,7 @@ A Feature with no remaining work drops out of the calculation - it is done, and 
 ## Dependencies
 You cannot *define* a dependency in Lighthouse. There is no screen that says "this Feature has to wait for those two other Features", and there never will be: Lighthouse reads your work tracking system, it does not become a second place to plan in.
 
-What it does do is **read** the dependencies you already recorded there — Predecessor links in Azure DevOps, *is blocked by* issue links in Jira, Project relations in Linear — and show them on every Feature list, together with a warning on the ones nothing could be done about. See [Dependencies](../features/features.html#dependencies) for what that looks like.
+What it does do is **read** the dependencies you already recorded there — Predecessor links in Azure DevOps, *is blocked by* issue links in Jira, Project relations in Linear (or the link or relation type a Portfolio names in its Dependency Field) — and show them on every Feature list, together with a warning on the ones nothing could be done about. See [Dependencies](../features/features.html#dependencies) for what that looks like.
 
 ### Waiting is part of the simulation
 
