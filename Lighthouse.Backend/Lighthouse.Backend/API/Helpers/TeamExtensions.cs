@@ -35,10 +35,7 @@ namespace Lighthouse.Backend.API.Helpers
                 team.Name = teamSetting.Name;
                 team.DataRetrievalValue = teamSetting.DataRetrievalValue;
 
-                // Taken before the save moves the Team to another connection, so what the Team read before the
-                // request is judged against the connection it was read from.
-                team.TakeParentOverrideAsSent(teamSetting.ParentOverrideSource, teamSetting.ParentOverrideAdditionalFieldDefinitionId);
-                team.TakeEstimationAsSent(teamSetting.EstimationSource, teamSetting.EstimationAsSent());
+                team.TakeFollowableSettingsAsSent(teamSetting);
 
                 team.FeatureWIP = teamSetting.FeatureWIP;
                 team.UseFixedDatesForThroughput = teamSetting.UseFixedDatesForThroughput;

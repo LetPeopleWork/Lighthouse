@@ -23,11 +23,10 @@ namespace Lighthouse.Backend.API.Helpers
 
             // Taken before the save moves the Portfolio to another connection, so what the Portfolio read before
             // the request is judged against the connection it was read from.
-            project.TakeParentOverrideAsSent(portfolioSetting.ParentOverrideSource, portfolioSetting.ParentOverrideAdditionalFieldDefinitionId);
+            project.TakeFollowableSettingsAsSent(portfolioSetting);
             project.TakeDependencyFieldAsSent(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId);
             project.TakeSizeEstimateFieldAsSent(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId);
             project.TakeFeatureOwnerFieldAsSent(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId);
-            project.TakeEstimationAsSent(portfolioSetting.EstimationSource, portfolioSetting.EstimationAsSent());
 
             project.WorkTrackingSystemConnectionId = portfolioSetting.WorkTrackingSystemConnectionId;
             project.IgnoreDependencies = portfolioSetting.IgnoreDependencies ?? project.IgnoreDependencies;
