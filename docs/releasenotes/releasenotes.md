@@ -4,7 +4,7 @@ layout: home
 nav_order: 95
 ---
 
-# Lighthouse vNext
+# Lighthouse v26.10.19.10
 
 ## Set a Connection's Defaults Once, Not for Every Team
 
@@ -25,7 +25,7 @@ A long Portfolio forecast could make Lighthouse stop answering: pages hung, refr
 
 Lighthouse now keeps room free to answer your requests while forecasts run. Stopping a forecast in the Task Manager ends it within seconds and keeps the forecast you had before. And when the instance is busy with more than you want, **Cancel all** in the Task Manager stops everything running or queued at once.
 
-A Feature that is too big to finish within five years no longer gets an invented date decades away. Lighthouse simulates up to five years and then says **More than 5 years**, wherever the forecast is shown and in what it writes to your Work Tracking System. The Lighthouse CLI and MCP server say it too, from client version TODO-CLIENT-VERSION.
+A Feature that is too big to finish within five years no longer gets an invented date decades away. Lighthouse simulates up to five years and then says **More than 5 years**, wherever the forecast is shown and in what it writes to your Work Tracking System. The Lighthouse CLI and MCP server say it too.
 
 ![Task Manager with Cancel all](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/taskmanager.png)
 
@@ -39,7 +39,7 @@ Full detail: [Jira link types](https://docs.lighthouse.letpeople.work/concepts/w
 
 ## Bugfixes and Improvements
 
-- **Your AI assistant sees the same stale Work Items you do.** Which Work Items are stale was worked out only in the browser, so the CLI, the MCP server and the agent skills could not tell. Lighthouse now decides it once, with one rule, and every place reads that answer: the Stale Items Overview, the red Time in State badges, the Work Item Aging Chart and the API. The Daily Flow Review skill now names stale Work Items with the reason, from client version TODO-CLIENT-VERSION. Full detail: [What counts as stale](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#what-counts-as-stale).
+- **Your AI assistant sees the same stale Work Items you do.** Which Work Items are stale was worked out only in the browser, so the CLI, the MCP server and the agent skills could not tell. Lighthouse now decides it once, with one rule, and every place reads that answer: the Stale Items Overview, the red Time in State badges, the Work Item Aging Chart and the API. The Daily Flow Review skill now names stale Work Items with the reason. Full detail: [What counts as stale](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#what-counts-as-stale).
 - **Jira Cloud Teams with long project keys refresh again.** Teams whose Jira project keys are long failed on every refresh, and forecast write-backs to that connection failed too, with *Jira answered 414 RequestUriTooLong*. Lighthouse now sends its Jira Cloud searches in a way that has no length limit.
 - **Starting Lighthouse twice no longer duplicates Work Items.** A second Lighthouse started on the same machine and database could not get its port, but stayed alive in the background and ran every update a second time. The two updates could store the same new Work Item twice, and from then on that Team's refresh failed. A Lighthouse that cannot start its web server now exits.
 - Updated various third-party libraries.
@@ -50,7 +50,7 @@ Special thanks to everyone who contributed feedback for this release:
 - [Steve Pereira](https://www.linkedin.com/in/devopsto/)
 - [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
 
-[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.16.6...HEAD)
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.16.6...v26.10.19.10)
 
 # Lighthouse v26.10.16.6
 
