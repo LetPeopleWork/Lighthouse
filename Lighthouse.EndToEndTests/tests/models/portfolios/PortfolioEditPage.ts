@@ -86,6 +86,19 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 			.click();
 	}
 
+	/** Opens Ownership Settings once the page has loaded, leaving it open when it already is. */
+	async openOwnershipSettings(): Promise<void> {
+		await expect(this.page.getByText("Ownership Settings")).toBeVisible();
+		if (!(await this.featureOwnerFieldCombobox.isVisible())) {
+			await this.toggleOwnershipSettings();
+		}
+		await expect(this.featureOwnerFieldCombobox).toBeVisible();
+	}
+
+	get featureOwnerFieldCombobox(): Locator {
+		return this.page.getByRole("combobox", { name: "Feature Owner Field" });
+	}
+
 	async removeSizeOverrideState(overrideState: string): Promise<void> {
 		await this.removeChipItem(overrideState);
 	}

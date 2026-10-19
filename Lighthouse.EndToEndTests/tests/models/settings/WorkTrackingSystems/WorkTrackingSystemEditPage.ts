@@ -51,11 +51,24 @@ export class WorkTrackingSystemEditPage {
 		await teams.getByRole("textbox", { name: "Estimation Unit" }).fill(unit);
 	}
 
-	/** Saves, and answers the question the page asks before saving with "Save". */
-	async saveAnswering(question: string): Promise<OverviewPage> {
+	async setThePortfoliosFeatureOwnerFieldDefault(field: string): Promise<void> {
+		const portfolios = this.defaultsSection.getByRole("group", {
+			name: "Portfolios",
+		});
+		await portfolios
+			.getByRole("combobox", { name: "Feature Owner Field" })
+			.click();
+		await this.page.getByRole("option", { name: field, exact: true }).click();
+	}
+
+	/** Saves, and answers the question the page asks before saving with the button named by the answer. */
+	async saveAnswering(
+		question: string,
+		answer = "Save",
+	): Promise<OverviewPage> {
 		await this.createButton.click();
 		const dialog = this.page.getByRole("dialog", { name: question });
-		await dialog.getByRole("button", { name: "Save", exact: true }).click();
+		await dialog.getByRole("button", { name: answer, exact: true }).click();
 		await dialog.waitFor({ state: "detached" });
 
 		return new OverviewPage(this.page, new LighthousePage(this.page));

@@ -45,3 +45,29 @@ export async function updatePortfolio(
 ) {
 	await api.post(`/api/latest/portfolios/refresh/${portfolioId}`);
 }
+
+/** Has the named Portfolio read its Feature Owner Field from its connection's default. */
+export async function followTheConnectionsFeatureOwnerField(
+	api: APIRequestContext,
+	portfolioName: string,
+): Promise<void> {
+	const portfolios = (await (
+		await api.get("/api/latest/portfolios")
+	).json()) as { id: number; name: string }[];
+	const portfolio = portfolios.find((p) => p.name === portfolioName);
+	if (!portfolio) {
+		throw new Error(`No Portfolio named ${portfolioName}`);
+	}
+
+	const settings = await (
+		await api.get(`/api/latest/portfolios/${portfolio.id}/settings`)
+	).json();
+	const response = await api.put(`/api/latest/portfolios/${portfolio.id}`, {
+		data: { ...settings, featureOwnerSource: "ConnectionDefault" },
+	});
+	if (!response.ok()) {
+		throw new Error(
+			`Could not have ${portfolioName} follow the Feature Owner Field default: ${response.status()} ${await response.text()}`,
+		);
+	}
+}
