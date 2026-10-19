@@ -4,6 +4,63 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse vNext
+
+## Lighthouse Stays Responsive While Forecasts Run
+
+A Portfolio forecast for a slow Team could take minutes, and while it ran Lighthouse stopped answering: pages hung or went blank, every Team refresh sat *Queued behind* the forecast, and pressing Stop left it at *Stopping…* for ten minutes and more. Restarting Lighthouse was the only way out.
+
+A forecast now runs on at most half of the cores Lighthouse was given, so the other half keeps the pages answering while forecasts run in the background. The line Lighthouse prints when it starts says how many it found, for example *Forecasts use up to 2 of 4 cores*. Stopping a forecast in the Task Manager now ends it within a few seconds, and the Features keep the forecast they had before, as do the dates already written back to your Work Tracking System.
+
+When the instance is busy with more than you want, **Cancel all** in the Task Manager's *Activity* section stops everything at once: the work that is running and everything queued behind it. Removals of a Team or Portfolio carry on, and the next scheduled update runs as usual. Cancel all is there for system administrators, like the Task Manager itself.
+
+![Task Manager with Cancel all](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/taskmanager.png)
+
+Full detail: [Stopping a refresh](https://docs.lighthouse.letpeople.work/settings/taskmanager.html#stopping-a-refresh), [Cancel all](https://docs.lighthouse.letpeople.work/settings/taskmanager.html#cancel-all) and [How much of your machine a forecast uses](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#how-much-of-your-machine-a-forecast-uses).
+
+## Forecasts Say "More than 5 years" Instead of Inventing a Date
+
+A Feature with a lot of remaining work for a Team that closes very little used to get a forecast date decades or centuries away. Nobody could plan with that date, yet Lighthouse spent minutes simulating it, and it was written back to your Work Tracking System as if it were an answer.
+
+Each simulated run now covers at most five years. When fewer runs finish within those five years than a percentile needs, Lighthouse shows **More than 5 years** instead of a date, and hovering it says why. You see it wherever a forecast date is shown: on the Feature, in the Forecasted Start column, in a manual *When* forecast and under a Delivery and its export. The Delivery Timeline lists such a Feature below the chart rather than drawing a bar.
+
+The likelihood of hitting a date is now honest about these runs too: a run that did not finish counts as late, so a Feature at risk no longer looks safer than it is. A Data Sync Mapping writes **nothing** for such a percentile and leaves the field as it was, and a forecast published to a Jira Release says `85%: More than 5 years`. The Lighthouse CLI and MCP server show it too, from client version TODO-CLIENT-VERSION.
+
+Full detail: [When a Forecast Reaches Beyond Five Years](https://docs.lighthouse.letpeople.work/concepts/howlighthouseforecasts.html#when-a-forecast-reaches-beyond-five-years).
+
+## Set a Connection's Defaults Once, Not for Every Team
+
+Every Team on a Jira or Azure DevOps connection that reads its parent from the same link needs its own Parent Override Field. Forget one on a new Team, and its Work Items sit unparented with nothing pointing at the cause. A Portfolio repeats the same choices for its Dependency Field, Size Estimate Field, Feature Owner Field and Estimation. Change the field on the connection, and every one of them has to be found and changed by hand.
+
+Those settings now live on the connection, once. Set them under **Defaults for Teams and Portfolios** on the connection page, and every Team and Portfolio that uses that connection follows the default. A Team or Portfolio can still own its own choice, including a deliberate None, and it keeps that choice when the default changes.
+
+- **Jira and Azure DevOps** offer the Parent Override Field and Estimation for Teams, and the Parent Override Field, Dependency Field, Size Estimate Field, Feature Owner Field and Estimation for Portfolios.
+- **CSV** offers Estimation for Teams, and the Feature Owner Field and Estimation for Portfolios.
+
+Changing a default that Teams or Portfolios follow asks first. It counts the followers and offers **Save and update** or **Save only**, so you choose whether they update now or at their next scheduled update. An Estimation change needs no update: the followers show it the next time their pages load. An Additional Field that a default or a Team or Portfolio still uses cannot be removed by accident; the save says who uses it.
+
+![Connection defaults](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/worktrackingsystems/connection-defaults.png)
+
+Full detail: [Defaults for Teams and Portfolios](https://docs.lighthouse.letpeople.work/settings/worktrackingsystems.html#defaults-for-teams-and-portfolios).
+
+## Bugfixes and Improvements
+
+- **A Portfolio's dependencies can come from any Jira link type or Azure DevOps relation type.** Lighthouse only read Jira's *is blocked by* links and Azure DevOps Predecessor links, so a Portfolio whose waits are recorded another way showed nothing under Features → Dependencies. Name that link type, or the end of the relation type on which the work waits, as the Dependency Field, and Lighthouse reads the waits from it. A named link that no Feature carries, or one that points both ways, is reported in Refresh History. Full detail: [Jira link types](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#naming-a-different-link-type) and [Azure DevOps relation types](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/azuredevops.html#naming-a-different-relation-type).
+- **Your AI assistant sees the same stale Work Items you do.** Which Work Items are stale was worked out only in the browser, so the CLI, the MCP server and the agent skills could not tell. Lighthouse now decides it once, with one rule, and every place reads that answer: the Stale Items Overview, the red Time in State badges, the Work Item Aging Chart and the API. The Daily Flow Review skill now names stale Work Items with the reason, from client version TODO-CLIENT-VERSION. Full detail: [What counts as stale](https://docs.lighthouse.letpeople.work/metrics/flow-overview.html#what-counts-as-stale).
+- **Jira Cloud Teams with long project keys refresh again.** Teams whose Jira project keys are long failed on every refresh, and forecast write-backs to that connection failed too, with *Jira answered 414 RequestUriTooLong*. Lighthouse now sends its Jira Cloud searches in a way that has no length limit.
+- **Starting Lighthouse twice no longer duplicates Work Items.** A second Lighthouse started on the same machine and database could not get its port, but stayed alive in the background and ran every update a second time. The two updates could store the same new Work Item twice, and from then on that Team's refresh failed. A Lighthouse that cannot start its web server now exits.
+- **A setting that pointed at a deleted field is repaired on upgrade.** A Team or Portfolio whose Parent Override Field, Dependency Field, Size Estimate Field, Feature Owner Field or Estimation named an Additional Field the connection no longer has now follows the connection's default. No default is set on upgrade, so it reads the tracker's own value again, such as its own parent or dependency link. Each of them downloads everything once at its next scheduled update.
+- **Scripts and API clients: a save that sends no source keeps the owner's choice.** Sending `null` for a Team's or Portfolio's setting no longer clears its own value. To change the value, send the source you read with it, for example `"parentOverrideSource": "Own"`. A script that saves back a value it read before the connection's default changed, without the source, makes that Team or Portfolio own the old value, so always send the source along.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.16.6...HEAD)
+
 # Lighthouse v26.10.16.6
 
 ## Feature Size on the Team
