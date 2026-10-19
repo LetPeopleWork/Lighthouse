@@ -85,10 +85,13 @@ const whatTheQuestionSays = (why: WhyUpdate, words: Words): string => {
 	return `${followersOf(why, words)} ${verb} the ${joined(why.defaults)} ${defaultWord}. ${whenTheyChange(why.changes, words)} Save only: they change at their next scheduled update.`;
 };
 
-const titleOf = (why: WhyUpdate, words: Words): string =>
-	why.because === "estimation"
-		? `Change the Estimation ${why.defaults === 1 ? "default" : "defaults"}?`
-		: `Update ${counted(why.teams, words.team, words.teams)} and ${counted(why.portfolios, words.portfolio, words.portfolios)}?`;
+const titleOf = (why: WhyUpdate, words: Words): string => {
+	if (why.because === "estimation") {
+		const noun = why.defaults === 1 ? "default" : "defaults";
+		return `Change the Estimation ${noun}?`;
+	}
+	return `Update ${counted(why.teams, words.team, words.teams)} and ${counted(why.portfolios, words.portfolio, words.portfolios)}?`;
+};
 
 interface UpdateQuestionProps {
 	open: boolean;
