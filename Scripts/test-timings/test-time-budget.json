@@ -138,6 +138,11 @@
         "ceiling_seconds": 95
       },
       {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates.Slice05CancelAllScenarios",
+        "reason": "boots the app in a test host and creates and seeds a database for every scenario, and holds a refresh open one tracker page at a time until the queue goes idle",
+        "ceiling_seconds": 60
+      },
+      {
         "unit": "Lighthouse.Backend.Tests.API.Integration.FasterUpdates.Slice03JiraCloudPortfolioDeltaTest",
         "reason": "boots the app in a test host and creates and seeds a database for every scenario",
         "ceiling_seconds": 88

@@ -19,5 +19,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Update
         Task PublishCancellationAsync(UpdateKey key);
 
         IDisposable Subscribe(Action<UpdateKey> onCancelled);
+
+        /// <summary>
+        /// Carries "stop everything" to every replica, because each one holds the token sources of the work it
+        /// admitted and no other replica can reach them. Delivered at most once: a replica that misses it keeps
+        /// running, and the operator can ask again.
+        /// </summary>
+        Task PublishCancelAllAsync();
+
+        IDisposable SubscribeToCancelAll(Action onCancelAll);
     }
 }

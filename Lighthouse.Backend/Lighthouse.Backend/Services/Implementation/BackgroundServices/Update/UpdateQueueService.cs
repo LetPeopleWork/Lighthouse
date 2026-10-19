@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private readonly UpdateCancellationContext cancellationContext;
         private readonly IUpdateCancellationNotifier cancellationNotifier;
         private readonly IDisposable cancellationSubscription;
+        private readonly IDisposable cancelAllSubscription;
 
         /// <summary>
         /// One source per admitted key, so cancelling one entity refresh cannot reach another. Its lifetime
@@ -58,6 +59,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             // Subscribed here rather than on demand because the ask arrives from whichever replica took the
             // operator's click, which is usually not this one.
             cancellationSubscription = cancellationNotifier.Subscribe(StopItAndSaySoIfItHasNotStarted);
+            cancelAllSubscription = cancellationNotifier.SubscribeToCancelAll(StopEverythingButRemovals);
             processingTask = StartProcessingQueue();
         }
 
@@ -126,9 +128,35 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return cancellationNotifier.PublishCancellationAsync(key);
         }
 
-        // SCAFFOLD: not implemented yet. The Cancel all acceptance tests drive this through the new route.
         public Task CancelAllAsync()
-            => throw new NotImplementedException($"SCAFFOLD: Cancel all is not built yet ({cancellationNotifier.GetType().Name}).");
+        {
+            // Published for the same reason a single cancel is: most of what the list shows may be running
+            // on another replica, and only the one that admitted it can stop it.
+            return cancellationNotifier.PublishCancelAllAsync();
+        }
+
+        /// <summary>
+        /// Every refresh still waiting or running goes through the same path a single cancel takes, so a
+        /// waiting row leaves the list at once and a running one stops at its next page. A removal is left
+        /// alone: stopped half-way, its rows stay in the database while its caller is told the entity is gone.
+        /// </summary>
+        private void StopEverythingButRemovals()
+        {
+            var active = statusStore.GetAdmittedWork()
+                .Where(work => work.Status is UpdateProgress.Queued or UpdateProgress.InProgress)
+                .ToList();
+
+            var refreshes = active.Where(work => !IsRemoval(work.UpdateType)).ToList();
+
+            foreach (var work in refreshes)
+            {
+                StopItAndSaySoIfItHasNotStarted(new UpdateKey(work.UpdateType, work.Id));
+            }
+
+            logger.LogInformation("Cancel all asked {StoppedCount} refreshes to stop and left {RemovalCount} removals to finish.", refreshes.Count, active.Count - refreshes.Count);
+        }
+
+        private static bool IsRemoval(UpdateType updateType) => updateType is UpdateType.TeamDelete or UpdateType.PortfolioDelete;
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
         {
@@ -646,6 +674,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 completionSubscription.Dispose();
                 cancellationSubscription.Dispose();
+                cancelAllSubscription.Dispose();
                 cancellations.Dispose();
             }
         }

@@ -103,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.4")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -206,7 +205,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.5")]
         [Category("edge")]
         [Category("contract-shape:unbounded-preservation")]
@@ -219,7 +217,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.5")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]

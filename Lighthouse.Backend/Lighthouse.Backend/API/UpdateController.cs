@@ -9,9 +9,10 @@ using Microsoft.AspNetCore.Mvc;
 namespace Lighthouse.Backend.API
 {
     // S6960 counts the injected services and reads three of them as three jobs. They are one: this is the
-    // HTTP surface of the update queue, and the three routes are "is anything running", "what exactly", and
-    // "stop that one" - a question an operator asks in that order, about one subsystem. Splitting them puts
-    // two controllers on one route prefix and gives the System-Administrator guard two places to drift apart.
+    // HTTP surface of the update queue, and the routes are "is anything running", "what exactly", "stop that
+    // one" and "stop all of it" - a question an operator asks in that order, about one subsystem. Splitting
+    // them puts two controllers on one route prefix and gives the System-Administrator guard two places to
+    // drift apart.
 #pragma warning disable S6960
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
@@ -100,6 +101,21 @@ namespace Lighthouse.Backend.API
             }
 
             await updateQueueService.CancelAsync(new UpdateKey(updateType, id));
+            return NoContent();
+        }
+
+        /// <summary>
+        /// Stops every queued and running refresh at once, for an operator facing a queue that a tracker
+        /// outage has backed up. Removals are left to finish, for the reason a single one cannot be
+        /// cancelled. Accepted with nothing to stop, and accepted again, because the list it was clicked
+        /// from may already be empty by the time the click arrives.
+        /// </summary>
+        [HttpPost("tasks/cancel")]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public async Task<ActionResult> CancelAllTasks()
+        {
+            await updateQueueService.CancelAllAsync();
             return NoContent();
         }
 

@@ -7,11 +7,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     /// </summary>
     public sealed class InProcessUpdateCancellationNotifier : IUpdateCancellationNotifier
     {
-        private readonly List<Action<UpdateKey>> subscribers = [];
+        private readonly Subscribers<Action<UpdateKey>> cancelSubscribers = new();
+
+        private readonly Subscribers<Action> cancelAllSubscribers = new();
 
         public Task PublishCancellationAsync(UpdateKey key)
         {
-            foreach (var subscriber in Subscribers())
+            foreach (var subscriber in cancelSubscribers.Snapshot())
             {
                 subscriber(key);
             }
@@ -19,32 +21,53 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return Task.CompletedTask;
         }
 
-        public IDisposable Subscribe(Action<UpdateKey> onCancelled)
+        public IDisposable Subscribe(Action<UpdateKey> onCancelled) => cancelSubscribers.Add(onCancelled);
+
+        public Task PublishCancelAllAsync()
         {
-            lock (subscribers)
+            foreach (var subscriber in cancelAllSubscribers.Snapshot())
             {
-                subscribers.Add(onCancelled);
+                subscriber();
             }
 
-            return new Subscription(this, onCancelled);
+            return Task.CompletedTask;
         }
 
-        private Action<UpdateKey>[] Subscribers()
-        {
-            lock (subscribers)
-            {
-                return [.. subscribers];
-            }
-        }
+        public IDisposable SubscribeToCancelAll(Action onCancelAll) => cancelAllSubscribers.Add(onCancelAll);
 
-        private sealed class Subscription(InProcessUpdateCancellationNotifier notifier, Action<UpdateKey> handler) : IDisposable
+        private sealed class Subscribers<THandler>
         {
-            public void Dispose()
+            private readonly List<THandler> handlers = [];
+
+            public IDisposable Add(THandler handler)
             {
-                lock (notifier.subscribers)
+                lock (handlers)
                 {
-                    notifier.subscribers.Remove(handler);
+                    handlers.Add(handler);
                 }
+
+                return new Subscription(this, handler);
+            }
+
+            public THandler[] Snapshot()
+            {
+                lock (handlers)
+                {
+                    return [.. handlers];
+                }
+            }
+
+            private void Remove(THandler handler)
+            {
+                lock (handlers)
+                {
+                    handlers.Remove(handler);
+                }
+            }
+
+            private sealed class Subscription(Subscribers<THandler> subscribers, THandler handler) : IDisposable
+            {
+                public void Dispose() => subscribers.Remove(handler);
             }
         }
     }

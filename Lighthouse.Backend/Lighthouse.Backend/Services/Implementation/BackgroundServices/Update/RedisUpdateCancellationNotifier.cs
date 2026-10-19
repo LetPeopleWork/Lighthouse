@@ -17,6 +17,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private readonly ISubscriber subscriber;
 
+        // Cancel all reaches only this process's own queue until it has a channel of its own; on a single
+        // replica that is every queue there is.
+        private readonly InProcessUpdateCancellationNotifier thisProcess = new();
+
         public RedisUpdateCancellationNotifier(IConnectionMultiplexer multiplexer)
         {
             subscriber = multiplexer.GetSubscriber();
@@ -40,6 +44,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             subscriber.Subscribe(CancellationChannel, Handler);
             return new ChannelSubscription(subscriber, Handler, CancellationChannel);
         }
+
+        public Task PublishCancelAllAsync() => thisProcess.PublishCancelAllAsync();
+
+        public IDisposable SubscribeToCancelAll(Action onCancelAll) => thisProcess.SubscribeToCancelAll(onCancelAll);
 
         private static RedisValue Encode(UpdateKey key) => $"{(int)key.UpdateType}:{key.Id}";
 
