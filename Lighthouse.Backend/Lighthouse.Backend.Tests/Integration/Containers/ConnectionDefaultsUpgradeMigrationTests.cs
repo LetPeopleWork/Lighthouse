@@ -44,6 +44,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private const int Own = 1;
 
+        private const string SeededUnit = "Points";
+
+        private static readonly string[] SeededCategories = ["S", "M"];
+
         public enum UpgradedSetting
         {
             TeamsParentOverrideField,
@@ -64,6 +68,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         private sealed record Seeded(Before Was, int Id, string FingerprintBefore);
+
+        private sealed record EstimationDetails(string? Unit, bool UseNonNumeric, List<string> Categories);
 
         [TestCase(UpgradedSetting.TeamsParentOverrideField, Category = "slice-05a,ac-4.4")]
         [TestCase(UpgradedSetting.PortfoliosParentOverrideField, Category = "slice-08,ac-7.5")]
@@ -134,6 +140,14 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
 
             var byWas = seeded.ToDictionary(owner => owner.Was);
+            var estimationDetails = new Dictionary<Before, EstimationDetails>();
+            if (IsEstimation(setting))
+            {
+                foreach (var owner in seeded)
+                {
+                    estimationDetails[owner.Was] = await ReadTheEstimationDetails(readContext, setting, owner.Id);
+                }
+            }
 
             using (Assert.EnterMultipleScope())
             {
@@ -151,8 +165,27 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Assert.That(after[repaired].Source, Is.EqualTo(ConnectionDefault), $"{repaired}: a field the connection does not have is treated as no field at all.");
                     Assert.That(after[repaired].Value, Is.Null, $"{repaired}");
                 }
+
+                if (IsEstimation(setting))
+                {
+                    var kept = estimationDetails[Before.NamesAFieldOfItsConnection];
+                    Assert.That(kept.Unit, Is.EqualTo(SeededUnit), "An owner keeps its own unit.");
+                    Assert.That(kept.UseNonNumeric, Is.True, "An owner keeps its own non-numeric switch.");
+                    Assert.That(kept.Categories, Is.EqualTo(SeededCategories), "An owner keeps its own categories.");
+
+                    foreach (var repaired in new[] { Before.NamesADeletedField, Before.NamesAFieldOfAnotherConnection })
+                    {
+                        var emptied = estimationDetails[repaired];
+                        Assert.That(emptied.Unit, Is.Null, $"{repaired}: a unit for a field the connection does not have is dropped with it.");
+                        Assert.That(emptied.UseNonNumeric, Is.False, $"{repaired}: the non-numeric switch is dropped with the field.");
+                        Assert.That(emptied.Categories, Is.Empty, $"{repaired}: the categories are dropped with the field.");
+                    }
+                }
             }
         }
+
+        private static bool IsEstimation(UpgradedSetting setting)
+            => setting is UpgradedSetting.TeamsEstimation or UpgradedSetting.PortfoliosEstimation;
 
         private static async Task<List<Seeded>> SeedTheFourOwners(LighthouseAppContext context, UpgradedSetting setting)
         {
@@ -226,7 +259,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     break;
                 case UpgradedSetting.TeamsEstimation:
                 case UpgradedSetting.PortfoliosEstimation:
-                    owner.OwnEstimation(new EstimationBundle(value, value is null ? null : "Points", false, []));
+                    owner.OwnEstimation(value is null
+                        ? EstimationBundle.None
+                        : new EstimationBundle(value, SeededUnit, true, SeededCategories));
                     break;
             }
         }
@@ -266,6 +301,41 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             {
                 Assert.Fail($"{table} has no {source} column, so the upgrade that adds it has not been written yet. {exception.Message}");
                 return (null, null);
+            }
+            finally
+            {
+                await connection.CloseAsync();
+            }
+        }
+
+        // Read with raw SQL so the assertion sees what each provider stores: SQLite keeps the categories as JSON
+        // text and its switch as an integer, Postgres keeps a text array and a boolean.
+        private static async Task<EstimationDetails> ReadTheEstimationDetails(LighthouseAppContext context, UpgradedSetting setting, int ownerId)
+        {
+            var table = TheColumns(setting).Table;
+            var connection = context.Database.GetDbConnection();
+            await connection.OpenAsync();
+            try
+            {
+                await using var command = connection.CreateCommand();
+                command.CommandText = $"SELECT \"EstimationUnit\", \"UseNonNumericEstimation\", \"EstimationCategoryValues\" FROM \"{table}\" WHERE \"Id\" = @id";
+                var id = command.CreateParameter();
+                id.ParameterName = "@id";
+                id.Value = ownerId;
+                command.Parameters.Add(id);
+
+                await using var reader = await command.ExecuteReaderAsync();
+                Assert.That(await reader.ReadAsync(), Is.True, $"Owner {ownerId} is gone from {table}.");
+
+                var unit = reader.IsDBNull(0) ? null : reader.GetString(0);
+                var useNonNumeric = Convert.ToBoolean(reader.GetValue(1), System.Globalization.CultureInfo.InvariantCulture);
+                List<string> categories = reader.GetValue(2) switch
+                {
+                    string[] array => [.. array],
+                    string json => System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? [],
+                    var other => throw new InvalidOperationException($"Categories stored as {other.GetType()}"),
+                };
+                return new EstimationDetails(unit, useNonNumeric, categories);
             }
             finally
             {
