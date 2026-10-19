@@ -997,6 +997,39 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
+		// @edge @us-11 @ac-11.4 @contract-shape:bounded-change
+		it("a save that also changes a default read when updating asks only the update question, and still sends the Estimation default", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					followers: { parentOverrideForTeams: 3, estimationForTeams: 4 },
+				}),
+			});
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);
+			await whenPriyaPicks("Teams", "Estimation Field", StoryPoints);
+			fireEvent.change(
+				within(theGroup("Teams")).getByLabelText("Estimation Unit"),
+				{ target: { value: "Points" } },
+			);
+			whenPriyaPressesSave();
+
+			const question = await theQuestion(TheUpdateQuestion);
+			expect(question).toHaveTextContent(TheUpdateQuestionSays);
+			expect(
+				screen.queryByRole("dialog", { name: TheEstimationQuestion }),
+			).not.toBeInTheDocument();
+
+			await whenSheAnswers(TheUpdateQuestion, "Save only");
+			await theSaveIsSent(server);
+			expect(theSave(server).defaults).toMatchObject({
+				parentOverrideForTeams: 12,
+				estimationForTeams: {
+					additionalFieldDefinitionId: 13,
+					unit: "Points",
+				},
+			});
+		});
+
 		// @edge @us-11 @ac-11.5 @contract-shape:pure-function
 		it("the Estimation default stays collapsed to its field until a field is chosen", async () => {
 			await givenPriyaOpensJiraDcPayments();
