@@ -10,6 +10,8 @@ import {
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	type IConnectionDefaults,
+	type IEstimationDefault,
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
 	type WorkTrackingSystemType,
@@ -161,6 +163,13 @@ const TheFields = [
 	{ id: 13, displayName: StoryPoints, reference: "customfield_10016" },
 ];
 
+const StoryPointsInPoints: IEstimationDefault = {
+	additionalFieldDefinitionId: 13,
+	unit: "Points",
+	useNonNumericEstimation: false,
+	estimationCategoryValues: [],
+};
+
 const NoAnimations = createTheme({
 	transitions: { duration: { enteringScreen: 0, leavingScreen: 0 } },
 });
@@ -173,7 +182,7 @@ const jiraDcPayments = ({
 	followerGroups = undefined as
 		| { follows: DefaultMember[]; count: number }[]
 		| undefined,
-	defaults = {} as Partial<Record<DefaultMember, unknown>>,
+	defaults = {} as IConnectionDefaults,
 } = {}) =>
 	Object.assign(
 		new WorkTrackingSystemConnection({
@@ -614,7 +623,10 @@ describe("defaults set once on the connection", () => {
 		it("removing the field a default names clears that default in the save, and leaves the others as they were", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
-					defaults: { parentOverrideForTeams: 11, estimationForTeams: 13 },
+					defaults: {
+						parentOverrideForTeams: 11,
+						estimationForTeams: StoryPointsInPoints,
+					},
 				}),
 			});
 
@@ -631,7 +643,37 @@ describe("defaults set once on the connection", () => {
 			await theSaveIsSent(server);
 			expect(theSave(server).defaults).toEqual({
 				parentOverrideForTeams: null,
-				estimationForTeams: 13,
+				estimationForTeams: StoryPointsInPoints,
+			});
+		});
+
+		// @error @us-11 @contract-shape:bounded-change
+		it("removing the field the Teams' Estimation default reads clears that default in the save", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: {
+						parentOverrideForTeams: 11,
+						estimationForTeams: StoryPointsInPoints,
+					},
+				}),
+			});
+
+			const storyPoints = screen
+				.getByText(StoryPoints, { selector: ".MuiListItemText-primary" })
+				.closest("li") as HTMLElement;
+			fireEvent.click(
+				within(storyPoints).getByRole("button", { name: "delete" }),
+			);
+			whenPriyaPressesSave();
+			const question = await screen.findByRole("dialog");
+			fireEvent.click(
+				within(question).getByRole("button", { name: "Save only" }),
+			);
+
+			await theSaveIsSent(server);
+			expect(theSave(server).defaults).toEqual({
+				parentOverrideForTeams: 11,
+				estimationForTeams: null,
 			});
 		});
 
