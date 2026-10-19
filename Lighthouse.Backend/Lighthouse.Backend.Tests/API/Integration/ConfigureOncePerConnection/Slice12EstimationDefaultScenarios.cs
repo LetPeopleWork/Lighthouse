@@ -177,6 +177,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
+        // The settings page keeps an owned Estimation Field when the connection is switched, so the save names
+        // a field of the connection the owner is leaving.
+        [TestCase(FraudSignals, "team-field-not-on-connection", "Team")]
+        [TestCase(CardIssuing, "portfolio-field-not-on-connection", "Portfolio")]
+        [Category("ac-11.1")]
+        [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused(string owner, string code, string noun)
+        {
+            await GivenTheOwnerUsesAsItsOwn(owner, OwnerSetting.Estimation, StoryPoints);
+
+            await WhenTheOwnersAdminMovesItTo(owner, JiraDcTreasury);
+            var estimation = await WhatTheEstimationReadsFor(owner);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenTheSaveIsRefusedWith(HttpStatusCode.BadRequest);
+                Assert.That(TheRefusal().Code, Is.EqualTo(code));
+                Assert.That(TheRefusal().Message, Is.EqualTo($"The Estimation Field is not an Additional Field of this {noun}'s connection. Nothing was saved."));
+                Assert.That(await TheConnectionOf(owner), Is.EqualTo(JiraDcPayments), "Nothing was saved.");
+                Assert.That((estimation.FieldName, estimation.Source), Is.EqualTo(((string?)StoryPoints, (string?)"Own")));
+            }
+        }
+
         [TestCase(FraudSignals, "Chargebacks", "team-setting-source-unknown")]
         [TestCase(CardIssuing, "Acquiring", "portfolio-setting-source-unknown")]
         [Category("ac-11.1")]

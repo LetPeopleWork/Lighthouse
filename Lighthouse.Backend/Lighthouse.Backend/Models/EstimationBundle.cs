@@ -81,5 +81,9 @@ namespace Lighthouse.Backend.Models
                 null => this,
             };
 #pragma warning restore CS8524
+
+        /// <summary>The field the owner would read as its own once the sent bundle is taken; null when it would follow, or own no field.</summary>
+        public int? OwnedOnceTaking(SettingSource? sentSource, EstimationBundle sentBundle, EstimationBundle connectionDefault)
+            => Taking(sentSource, sentBundle, connectionDefault) is { Source: SettingSource.Own } taken ? taken.OwnBundle.AdditionalFieldDefinitionId : null;
     }
 }

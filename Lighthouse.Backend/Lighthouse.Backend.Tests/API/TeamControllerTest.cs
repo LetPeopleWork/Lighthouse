@@ -1153,6 +1153,28 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdateTeam_MovingToAnotherConnectionWhileOwningAnEstimationFieldOfTheOldOne_IsRefused()
+        {
+            var dto = GivenATeamOwningCausedByMovesToAConnectionHolding(new AdditionalFieldDefinition { Id = 7, DisplayName = "Parent Link", Reference = "customfield_10014" });
+            dto.ParentOverrideSource = null;
+            dto.EstimationSource = SettingSource.Own;
+            dto.EstimationAdditionalFieldDefinitionId = 5;
+
+            var result = await CreateSubject().AnsweringWithProblemDetails().UpdateTeam(1, dto);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("team-field-not-on-connection"));
+                Assert.That(problem?.Detail, Is.EqualTo("The Estimation Field is not an Additional Field of this Team's connection. Nothing was saved."));
+            }
+
+            teamRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
         public async Task UpdateTeam_MovingToAnotherConnectionWhileOwningAFieldTheNewOneHas_IsAccepted()
         {
             var dto = GivenATeamOwningCausedByMovesToAConnectionHolding(new AdditionalFieldDefinition { Id = 7, DisplayName = "Parent Link", Reference = "customfield_10014" });

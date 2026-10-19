@@ -59,7 +59,8 @@ namespace Lighthouse.Backend.API.Helpers
             {
                 new("Parent Override Field", setting.ParentOverrideSource,
                     () => owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, setting.ParentOverrideAdditionalFieldDefinitionId)),
-                new("Estimation Field", setting.EstimationSource, () => null),
+                new("Estimation Field", setting.EstimationSource,
+                    () => owner?.EstimationOwnedOnceTaken(setting.EstimationSource, setting.EstimationAsSent())),
             };
 
             if (setting is PortfolioSettingDto portfolioSetting)

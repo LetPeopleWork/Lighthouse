@@ -114,6 +114,10 @@ namespace Lighthouse.Backend.Models
         /// <param name="bundle">A bundle without a field is a deliberate None: no estimation, whatever the default says.</param>
         public void OwnEstimation(EstimationBundle bundle) => Estimation = StoredEstimation.Owning(bundle);
 
+        /// <summary>The Estimation Field this owner would hold as its own once the sent bundle is taken; null when it would follow, or own none.</summary>
+        public int? EstimationOwnedOnceTaken(SettingSource? sentSource, EstimationBundle sentBundle)
+            => Estimation.OwnedOnceTaking(sentSource, sentBundle, EstimationConnectionDefault);
+
         public void TakeEstimationAsSent(SettingSource? sentSource, EstimationBundle sentBundle)
             => Estimation = Estimation.Taking(sentSource, sentBundle, EstimationConnectionDefault);
 
