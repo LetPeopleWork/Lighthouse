@@ -245,3 +245,34 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		expect(rowText("Forecasts", 3)).not.toContain("Some Other Portfolio");
 	});
 });
+
+describe("ActivitySection – what a row offers to stop", () => {
+	// The instance refuses to stop a removal, so a Stop button on that row could only ever fail.
+	it("offers no Stop on a removal, and keeps it on the refreshes beside it", () => {
+		renderRows([
+			aTask({
+				updateType: "Team",
+				id: 1,
+				name: "Payments",
+				status: "InProgress",
+			}),
+			aTask({ updateType: "TeamDelete", id: 2, name: "Old", status: "Queued" }),
+			aTask({
+				updateType: "PortfolioDelete",
+				id: 3,
+				name: "Legacy",
+				status: "Queued",
+			}),
+		]);
+
+		expect(
+			screen.getByRole("button", { name: "Stop refreshing Payments" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Stop refreshing Old" }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Stop refreshing Legacy" }),
+		).not.toBeInTheDocument();
+	});
+});

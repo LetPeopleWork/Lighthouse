@@ -39,10 +39,10 @@ const CANCEL_ALL_EXPLAINED =
 const CANCEL_ALL_REFUSED = "Could not cancel. Try again.";
 
 /**
- * Which work Cancel all asks to stop. The instance never stops a removal, so a removal row keeps saying
- * what it is doing rather than promising a stop that will not come.
+ * Which work can be stopped, by its own Stop or by Cancel all. The instance never stops a removal, so a
+ * removal row offers no Stop and keeps saying what it is doing rather than promising a stop that will not come.
  */
-const STOPPED_BY_CANCEL_ALL = {
+const CAN_BE_STOPPED = {
 	Team: true,
 	Features: true,
 	Forecasts: true,
@@ -50,8 +50,8 @@ const STOPPED_BY_CANCEL_ALL = {
 	PortfolioDelete: false,
 } as const satisfies Record<UpdateTaskType, boolean>;
 
-export const isStoppedByCancelAll = (task: IUpdateTask): boolean =>
-	STOPPED_BY_CANCEL_ALL[task.updateType];
+export const canBeStopped = (task: IUpdateTask): boolean =>
+	CAN_BE_STOPPED[task.updateType];
 
 /** What identifies one piece of work across a re-read, so the browser can remember asking to stop it. */
 export const taskKey = (task: IUpdateTask): string =>
@@ -200,7 +200,7 @@ export const CancelAllButton = ({
 	cancelling,
 	onCancelAll,
 }: Readonly<CancelAllButtonProps>) => {
-	if (!cancelling && !tasks.some(isStoppedByCancelAll)) {
+	if (!cancelling && !tasks.some(canBeStopped)) {
 		return null;
 	}
 
@@ -271,29 +271,31 @@ const ActivitySection = ({
 					— {describeState(task, activity)}
 				</Typography>
 
-				<Tooltip title={`Stop refreshing ${task.name}`}>
-					{/* A disabled button is not an event target, so the tooltip needs something of its own to
+				{canBeStopped(task) && (
+					<Tooltip title={`Stop refreshing ${task.name}`}>
+						{/* A disabled button is not an event target, so the tooltip needs something of its own to
 					    hang on while the row is waiting for the instance to agree it stopped. */}
-					<span>
-						<IconButton
-							aria-label={`Stop refreshing ${task.name}`}
-							size="small"
-							disabled={activity === "stopping"}
-							onClick={(event) => {
-								// This control is about to stop accepting input, and a disabled element receives
-								// no key presses - so leaving focus on it would leave a keyboard reader unable to
-								// close the popover it is standing in. Focus moves onto the row instead, which
-								// also means the next thing a screen reader announces is the row's new state.
-								event.currentTarget
-									.closest<HTMLElement>("[data-task-row]")
-									?.focus();
-								onCancel(task);
-							}}
-						>
-							<CancelIcon fontSize="small" />
-						</IconButton>
-					</span>
-				</Tooltip>
+						<span>
+							<IconButton
+								aria-label={`Stop refreshing ${task.name}`}
+								size="small"
+								disabled={activity === "stopping"}
+								onClick={(event) => {
+									// This control is about to stop accepting input, and a disabled element receives
+									// no key presses - so leaving focus on it would leave a keyboard reader unable to
+									// close the popover it is standing in. Focus moves onto the row instead, which
+									// also means the next thing a screen reader announces is the row's new state.
+									event.currentTarget
+										.closest<HTMLElement>("[data-task-row]")
+										?.focus();
+									onCancel(task);
+								}}
+							>
+								<CancelIcon fontSize="small" />
+							</IconButton>
+						</span>
+					</Tooltip>
+				)}
 			</Box>
 		);
 	});

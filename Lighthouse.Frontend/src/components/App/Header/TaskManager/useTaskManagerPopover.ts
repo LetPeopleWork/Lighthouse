@@ -3,7 +3,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IConnectionHealth } from "../../../../services/Api/ConnectionHealthService";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
 import type { IUpdateTask } from "../../../../services/UpdateSubscriptionService";
-import { isStoppedByCancelAll, taskKey } from "./ActivitySection";
+import { canBeStopped, taskKey } from "./ActivitySection";
 
 /**
  * An instance that cannot say what it is doing is not an instance doing nothing. A read that failed
@@ -93,7 +93,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 
 				// "Try again" with nothing left to try it on would be read as a warning about whatever is
 				// listed next.
-				if (!running.some(isStoppedByCancelAll)) {
+				if (!running.some(canBeStopped)) {
 					setCancelAllFailed(false);
 				}
 			},
@@ -145,7 +145,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 	 */
 	const cancelAll = useCallback(async () => {
 		const marked = tasks
-			.filter(isStoppedByCancelAll)
+			.filter(canBeStopped)
 			.map(taskKey)
 			.filter((key) => !stopAsked.has(key));
 
