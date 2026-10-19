@@ -170,6 +170,15 @@ testWithDemo(
 			},
 		]);
 
+		await lighthousePage.showRecentProblems([
+			{
+				recordedAt: "2026-10-19T06:30:00Z",
+				level: "Warning",
+				source: "TeamUpdater",
+				message: `Could not reach the work tracking system for Team '${team.name}' — retrying at the next refresh`,
+			},
+		]);
+
 		const taskManager = await lighthousePage.openTaskManager();
 		await expect(lighthousePage.cancelAllButton).toBeVisible();
 

@@ -25,6 +25,15 @@ export type ActivityRow = {
 	} | null;
 };
 
+/** One entry of the Task Manager's Recent problems, in the shape the instance reports it. */
+export type RecentProblem = {
+	recordedAt: string;
+	level: "Warning" | "Error" | "Fatal";
+	source: string;
+	message: string;
+	exceptionType?: string | null;
+};
+
 export class LighthousePage {
 	readonly page: Page;
 
@@ -189,6 +198,25 @@ export class LighthousePage {
 				}
 
 				await route.fulfill({ json: rows });
+			},
+		);
+	}
+
+	/**
+	 * Makes the Task Manager list exactly these recent problems, answered by the browser rather than the
+	 * instance. What a freshly started instance has logged depends on how it was started, so the instance's
+	 * own list would make the picture differ from one run to the next.
+	 */
+	async showRecentProblems(problems: readonly RecentProblem[]): Promise<void> {
+		await this.page.route(
+			(url) => url.pathname.endsWith("/logs/problems"),
+			async (route: Route) => {
+				if (route.request().method() !== "GET") {
+					await route.continue();
+					return;
+				}
+
+				await route.fulfill({ json: problems });
 			},
 		);
 	}
