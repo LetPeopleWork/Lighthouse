@@ -10518,7 +10518,8 @@ L1 and L2 are unchanged: the containers and external systems are the same, plus 
 drawn as a date, an empty cell or "Cannot forecast". The Task Manager's Cancel all control:
 - *idle*: shown only when at least one row can be cancelled, hidden otherwise (NMD-11);
 - *in flight*: "Cancelling…" with a spinner, and every cancellable row reads "Stopping…";
-- *failed*: an inline "Could not cancel" line, and the rows revert;
+- *failed*: an inline "Could not cancel. Try again." line, and the rows revert; it is forgotten when the Task Manager
+  closes, so it never greets a later opening;
 - *done*: the list is re-read.
 
 The list keeps what it had on a failed read.
@@ -10531,6 +10532,23 @@ The list keeps what it had on a failed read.
   single-contributor combinator bit-identity; a cancelled forecast leaves its rows unchanged; holds are forecast-only.
 - Frontend: one formatter renders every beyond percentile; the years come from the payload.
 - Clients: a schema test against a recorded payload, with and without the new fields.
+
+### As built (DELIVER, 2026-10-19)
+
+What DELIVER settled beyond the design above:
+- **The bound is visible.** The startup banner prints "Forecasts use up to N of M cores", read from the same
+  `ForecastSimulationLimits.Default` the forecasts are registered with, so it cannot claim a share they do not keep to.
+- **Removals offer no Stop.** One `UpdateCancellationPolicy` decides what may be stopped, for the per-row Stop and
+  Cancel all alike; the Task Manager row mirrors it and draws no Stop on a removal.
+- **A cancelled round still flushes.** When the last work of a refresh round leaves without running (a forecast
+  Cancel all stopped before it started, a dropped hold, a released hold that queued nothing), the queue sends the
+  round's write-back itself, so the writes other work staged still reach the tracker.
+- **The maintenance gate waits for that write.** The queue asks `DatabaseMaintenanceGate` for the owed write under
+  the gate's own lock (`TryHoldOffForARoundWriteBack` / `RoundWriteBackDone`). While it is owed the gate reports
+  background work as writing, so a backup, restore or clear cannot start between the key leaving the status store and
+  the write. If an operation already holds the database, the write is dropped with a warning.
+- No migration, as designed: rows written before the change read "nothing beyond the horizon" until their next
+  forecast.
 
 ### ADR References (this feature)
 
