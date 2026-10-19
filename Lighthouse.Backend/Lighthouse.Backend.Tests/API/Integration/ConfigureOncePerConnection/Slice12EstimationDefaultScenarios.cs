@@ -91,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         [TestCase(RoundTrip.EchoingEveryProperty)]
         [TestCase(RoundTrip.DroppingWhatItDoesNotKnow)]
-        [Ignore(PendingEpic6303.Slice12)]
         [Category("ac-11.1")]
         [Category("edge")]
         [Category("contract-shape:unbounded-preservation")]
