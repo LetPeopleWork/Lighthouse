@@ -15,11 +15,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     {
         private static readonly RedisChannel CancellationChannel = RedisChannel.Literal("lighthouse:update-cancelled");
 
-        private readonly ISubscriber subscriber;
+        // A channel of its own, so a replica still on an older build never mistakes a cancel-all for a
+        // malformed single stop.
+        private static readonly RedisChannel CancelAllChannel = RedisChannel.Literal("lighthouse:update-cancel-all");
 
-        // Cancel all reaches only this process's own queue until it has a channel of its own; on a single
-        // replica that is every queue there is.
-        private readonly InProcessUpdateCancellationNotifier thisProcess = new();
+        private readonly ISubscriber subscriber;
 
         public RedisUpdateCancellationNotifier(IConnectionMultiplexer multiplexer)
         {
@@ -45,9 +45,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             return new ChannelSubscription(subscriber, Handler, CancellationChannel);
         }
 
-        public Task PublishCancelAllAsync() => thisProcess.PublishCancelAllAsync();
+        // Redis hands the message back to the publishing replica's own subscription as well, and that is
+        // what stops the work running here; acting on it directly too would apply it twice.
+        public Task PublishCancelAllAsync()
+        {
+            return subscriber.PublishAsync(CancelAllChannel, RedisValue.EmptyString);
+        }
 
-        public IDisposable SubscribeToCancelAll(Action onCancelAll) => thisProcess.SubscribeToCancelAll(onCancelAll);
+        public IDisposable SubscribeToCancelAll(Action onCancelAll)
+        {
+            void Handler(RedisChannel _, RedisValue __) => onCancelAll();
+
+            subscriber.Subscribe(CancelAllChannel, Handler);
+            return new ChannelSubscription(subscriber, Handler, CancelAllChannel);
+        }
 
         private static RedisValue Encode(UpdateKey key) => $"{(int)key.UpdateType}:{key.Id}";
 

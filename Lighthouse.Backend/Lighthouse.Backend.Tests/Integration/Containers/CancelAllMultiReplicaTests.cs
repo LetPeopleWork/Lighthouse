@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private static readonly TimeSpan TheLongestTheStopMayTake = TimeSpan.FromSeconds(10);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("contract-shape:bounded-change")]
         public async Task Cancel_all_clicked_on_one_replica_stops_the_refresh_running_on_another()
         {
