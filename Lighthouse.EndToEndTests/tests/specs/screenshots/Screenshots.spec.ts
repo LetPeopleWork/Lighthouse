@@ -134,15 +134,48 @@ testWithDemo(
 		// the empty state instead of the feature.
 		expect(testData.teams).not.toHaveLength(0);
 
-		const taskManager = await overviewPage.lightHousePage.openTaskManager();
+		const [portfolio] = testData.portfolios;
+		const [team] = testData.teams;
+		const lighthousePage = overviewPage.lightHousePage;
+
+		// Cancel all only shows while something can be stopped, so the picture needs work in the list.
+		await lighthousePage.showActivity([
+			{
+				updateType: "Team",
+				id: team.id,
+				name: team.name,
+				status: "InProgress",
+			},
+			{
+				updateType: "Features",
+				id: portfolio.id,
+				name: portfolio.name,
+				status: "Queued",
+				waitingBehind: {
+					name: team.name,
+					updateType: "Team",
+					isSameEntity: false,
+				},
+			},
+			{
+				updateType: "Forecasts",
+				id: portfolio.id,
+				name: portfolio.name,
+				status: "Queued",
+				waitingBehind: {
+					name: portfolio.name,
+					updateType: "Features",
+					isSameEntity: true,
+				},
+			},
+		]);
+
+		const taskManager = await lighthousePage.openTaskManager();
+		await expect(lighthousePage.cancelAllButton).toBeVisible();
 
 		await takeElementScreenshot(taskManager, "settings/taskmanager.png");
 	},
 );
-
-// A companion shot of the Activity section with work in it is deliberately absent. Which rows read
-// Running and which read Queued depends on how far the queue has got when the shutter falls, so the
-// image would differ on every regeneration and every docs run would carry a diff nobody asked for.
 
 test("Take @screenshot of the encryption settings page", async ({
 	overviewPage,

@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from "@playwright/test";
+import { expect, type Locator, type Page, type Route } from "@playwright/test";
 import { LoginPage } from "../auth/LoginPage";
 import { SessionExpiredPage } from "../auth/SessionExpiredPage";
 import { FeaturesPage } from "../features/FeaturesPage";
@@ -6,6 +6,24 @@ import { OverviewPage } from "../overview/OverviewPage";
 import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { SettingsPage } from "../settings/SettingsPage";
 import { AddTeamWizard } from "../teams/AddTeamWizard";
+
+/** One row of the Task Manager's Activity list, in the shape the instance reports it. */
+export type ActivityRow = {
+	updateType:
+		| "Team"
+		| "Features"
+		| "Forecasts"
+		| "TeamDelete"
+		| "PortfolioDelete";
+	id: number;
+	name: string;
+	status: "Queued" | "InProgress";
+	waitingBehind?: {
+		name: string;
+		updateType: ActivityRow["updateType"];
+		isSameEntity: boolean;
+	} | null;
+};
 
 export class LighthousePage {
 	readonly page: Page;
@@ -154,6 +172,29 @@ export class LighthousePage {
 		await popover.getByTestId("task-manager-section-activity").waitFor();
 
 		return popover;
+	}
+
+	/**
+	 * Makes the Task Manager list exactly these rows, answered by the browser rather than the instance. Real
+	 * work on a demo instance finishes in moments and moves on while the picture is taken, so a picture of
+	 * the instance's own queue would come out different on every run.
+	 */
+	async showActivity(rows: readonly ActivityRow[]): Promise<void> {
+		await this.page.route(
+			(url) => url.pathname.endsWith("/update/tasks"),
+			async (route: Route) => {
+				if (route.request().method() !== "GET") {
+					await route.continue();
+					return;
+				}
+
+				await route.fulfill({ json: rows });
+			},
+		);
+	}
+
+	get cancelAllButton(): Locator {
+		return this.page.getByRole("button", { name: "Cancel all" });
 	}
 
 	async clearLicense(): Promise<void> {
