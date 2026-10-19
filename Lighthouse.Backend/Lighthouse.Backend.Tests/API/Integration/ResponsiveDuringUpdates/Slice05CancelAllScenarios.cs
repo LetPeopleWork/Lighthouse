@@ -185,7 +185,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.3")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

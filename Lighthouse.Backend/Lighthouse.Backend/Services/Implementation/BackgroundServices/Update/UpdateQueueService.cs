@@ -136,24 +136,63 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
-        /// Every refresh still waiting or running goes through the same path a single cancel takes, so a
-        /// waiting row leaves the list at once and a running one stops at its next page. A removal is left
+        /// Every refresh this instance was asked to run goes through the same path a single cancel takes, so
+        /// a waiting row leaves the list at once and a running one stops at its next page. A removal is left
         /// alone: stopped half-way, its rows stay in the database while its caller is told the entity is gone.
+        ///
+        /// The order matters. A stopped refresh that finds a follow-up parked behind it starts that
+        /// follow-up, and a refresh leaving the queue lets go whatever was held behind it, so both are
+        /// dropped before anything is stopped - otherwise what the operator cancelled comes straight back.
+        ///
+        /// Only what this instance holds is stopped, because only this instance can stop it; every other
+        /// instance hears the same request and stops its own. Work asked for after this has run starts
+        /// with a fresh source and runs as usual.
         /// </summary>
         private void StopEverythingButRemovals()
         {
-            var active = statusStore.GetAdmittedWork()
-                .Where(work => work.Status is UpdateProgress.Queued or UpdateProgress.InProgress)
-                .ToList();
+            DropParkedFollowUpsButRemovals();
+            var droppedHolds = DropEveryHold();
 
-            var refreshes = active.Where(work => !IsRemoval(work.UpdateType)).ToList();
+            var admitted = cancellations.AdmittedKeys.ToList();
+            var refreshes = admitted.Where(key => !IsRemoval(key.UpdateType)).ToList();
 
-            foreach (var work in refreshes)
+            foreach (var key in refreshes)
             {
-                StopItAndSaySoIfItHasNotStarted(new UpdateKey(work.UpdateType, work.Id));
+                StopItAndSaySoIfItHasNotStarted(key);
             }
 
-            logger.LogInformation("Cancel all asked {StoppedCount} refreshes to stop and left {RemovalCount} removals to finish.", refreshes.Count, active.Count - refreshes.Count);
+            logger.LogInformation("Cancel all asked {StoppedCount} refreshes to stop, let go {HeldCount} held updates without running them, and left {RemovalCount} removals to finish.", refreshes.Count, droppedHolds, admitted.Count - refreshes.Count);
+        }
+
+        private void DropParkedFollowUpsButRemovals()
+        {
+            foreach (var key in pendingReruns.Keys.Where(key => !IsRemoval(key.UpdateType)))
+            {
+                if (pendingReruns.TryRemove(key, out _))
+                {
+                    logger.LogDebug("Dropped the follow-up for {UpdateType} with ID {Id}.", key.UpdateType, key.Id);
+                }
+            }
+        }
+
+        /// <summary>
+        /// A hold keeps a place in its round, so the round would never finish and whatever it already resolved
+        /// would never be written back. Giving the place back lets the round flush with what it has.
+        /// </summary>
+        private int DropEveryHold()
+        {
+            var dropped = 0;
+
+            foreach (var heldFor in heldUpdates.Keys)
+            {
+                if (heldUpdates.TryRemove(heldFor, out var held))
+                {
+                    held.Round.Leave();
+                    dropped++;
+                }
+            }
+
+            return dropped;
         }
 
         private static bool IsRemoval(UpdateType updateType) => updateType is UpdateType.TeamDelete or UpdateType.PortfolioDelete;
@@ -183,11 +222,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             // Before admission, not after: the key reaches the task list the instant TryAdmit succeeds, and
             // a cancel landing in the gap would find no source and silently do nothing.
-            cancellations.Admit(updateKey);
+            var sourceCreatedHere = cancellations.Admit(updateKey);
 
             var updateStatus = QueuedStatusFor(updateKey);
             if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
+                ForgetASourceNothingWillUse(updateKey, sourceCreatedHere);
+
                 // The in-flight run read its state before this trigger was raised, so it cannot reflect
                 // whatever write caused it (blocked rules saved mid-refresh, for example). Dropping the
                 // trigger loses that intent until the next periodic refresh; instead remember the newest
@@ -222,8 +263,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             var updateStatus = QueuedStatusFor(updateKey);
 
+            // Before admission for the same reason as in EnqueueUpdate: Cancel all can land the instant the
+            // key is admitted, and it can only stop work it finds a source for.
+            var sourceCreatedHere = cancellations.Admit(updateKey);
+
             if (!statusStore.TryAdmit(updateKey, updateStatus))
             {
+                ForgetASourceNothingWillUse(updateKey, sourceCreatedHere);
                 logger.LogInformation("Update for {UpdateType} with ID {Id} is already queued; awaiting the in-flight completion.", updateType, id);
                 if (awaiters.TryGetValue(updateKey, out var existing))
                 {
@@ -241,8 +287,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             awaiters[updateKey] = tcs;
 
-            cancellations.Admit(updateKey);
-
             logger.LogDebug("Queuing Update for {UpdateType} with ID {Id}.", updateType, id);
 
             _ = NotifyListeners(updateKey, updateStatus);
@@ -257,6 +301,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
 
             return RegisterCancellation(tcs.Task, cancellationToken);
+        }
+
+        /// <summary>
+        /// The key is already admitted, here or on another instance, so this request will not run. A source
+        /// it created is not the running work's, and left behind it would outlive the key: a cancel aimed at
+        /// the other instance's run would stop it, and the next refresh admitted here would start already
+        /// cancelled. A source that was already there belongs to the running work and is left alone.
+        /// </summary>
+        private void ForgetASourceNothingWillUse(UpdateKey updateKey, bool sourceCreatedHere)
+        {
+            if (sourceCreatedHere)
+            {
+                cancellations.Forget(updateKey);
+            }
         }
 
         private bool IsBlockedByDatabaseMaintenance(UpdateKey updateKey)

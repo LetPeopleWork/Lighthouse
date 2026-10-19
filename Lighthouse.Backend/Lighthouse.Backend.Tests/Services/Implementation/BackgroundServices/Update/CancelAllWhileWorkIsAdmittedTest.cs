@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private static readonly TimeSpan LongerThanAnyTestWaits = TimeSpan.FromSeconds(30);
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public async Task Cancel_all_landing_just_as_awaited_work_is_admitted_stops_that_work()

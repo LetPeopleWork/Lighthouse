@@ -21,17 +21,25 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         /// <summary>
         /// Safe to call before the key is admitted, and safe to call twice: the loser of the race disposes
-        /// its own source rather than replacing the one already in use.
+        /// its own source rather than replacing the one already in use. Answers whether this call created
+        /// the source, so a caller that then fails to admit the key knows whether the source is its own to
+        /// take back.
         /// </summary>
-        public void Admit(UpdateKey key)
+        public bool Admit(UpdateKey key)
         {
             var admitted = new CancellationTokenSource();
 
-            if (!cancellations.TryAdd(key, admitted))
+            if (cancellations.TryAdd(key, admitted))
             {
-                admitted.Dispose();
+                return true;
             }
+
+            admitted.Dispose();
+            return false;
         }
+
+        /// <summary>The work this instance could stop right now, which is exactly what it was asked to run.</summary>
+        public IEnumerable<UpdateKey> AdmittedKeys => cancellations.Keys;
 
         public void Forget(UpdateKey key)
         {
