@@ -4,9 +4,9 @@ using StackExchange.Redis;
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     /// <summary>
-    /// Carries "stop this" to whichever replica is running it. The token source lives in the process that
-    /// admitted the work and the task list shows work from every replica, so the pod answering an
-    /// operator's click is usually not the pod that can act on it.
+    /// Carries "stop this" to whichever replica is running it, and "stop everything" to every replica. The
+    /// token source lives in the process that admitted the work and the task list shows work from every
+    /// replica, so the pod answering an operator's click is usually not the pod that can act on it.
     ///
     /// Deliberately the same shape as <see cref="RedisUpdateCompletionNotifier"/>, down to the encoding:
     /// the two channels carry the same thing and there is no reason for a reader to learn it twice.
@@ -41,8 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 }
             }
 
-            subscriber.Subscribe(CancellationChannel, Handler);
-            return new ChannelSubscription(subscriber, Handler, CancellationChannel);
+            return Listen(CancellationChannel, Handler);
         }
 
         // Redis hands the message back to the publishing replica's own subscription as well, and that is
@@ -56,8 +55,13 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         {
             void Handler(RedisChannel _, RedisValue __) => onCancelAll();
 
-            subscriber.Subscribe(CancelAllChannel, Handler);
-            return new ChannelSubscription(subscriber, Handler, CancelAllChannel);
+            return Listen(CancelAllChannel, Handler);
+        }
+
+        private ChannelSubscription Listen(RedisChannel channel, Action<RedisChannel, RedisValue> handler)
+        {
+            subscriber.Subscribe(channel, handler);
+            return new ChannelSubscription(subscriber, handler, channel);
         }
 
         private static RedisValue Encode(UpdateKey key) => $"{(int)key.UpdateType}:{key.Id}";

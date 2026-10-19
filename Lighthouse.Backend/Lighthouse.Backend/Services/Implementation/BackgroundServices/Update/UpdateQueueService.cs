@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// <summary>
         /// Every refresh this instance was asked to run goes through the same path a single cancel takes, so
         /// a waiting row leaves the list at once and a running one stops at its next page. A removal is left
-        /// alone: stopped half-way, its rows stay in the database while its caller is told the entity is gone.
+        /// to finish, for the same reason a single cancel refuses one.
         ///
         /// The order matters. A stopped refresh that finds a follow-up parked behind it starts that
         /// follow-up, and a refresh leaving the queue lets go whatever was held behind it, so both are
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var droppedHolds = DropEveryHold();
 
             var admitted = cancellations.AdmittedKeys.ToList();
-            var refreshes = admitted.Where(key => !IsRemoval(key.UpdateType)).ToList();
+            var refreshes = admitted.Where(key => UpdateCancellationPolicy.CanBeStopped(key.UpdateType)).ToList();
 
             foreach (var key in refreshes)
             {
@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private void DropParkedFollowUpsButRemovals()
         {
-            foreach (var key in pendingReruns.Keys.Where(key => !IsRemoval(key.UpdateType)))
+            foreach (var key in pendingReruns.Keys.Where(key => UpdateCancellationPolicy.CanBeStopped(key.UpdateType)))
             {
                 if (pendingReruns.TryRemove(key, out _))
                 {
@@ -194,8 +194,6 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             return dropped;
         }
-
-        private static bool IsRemoval(UpdateType updateType) => updateType is UpdateType.TeamDelete or UpdateType.PortfolioDelete;
 
         public async Task DrainAsync(CancellationToken cancellationToken = default)
         {
