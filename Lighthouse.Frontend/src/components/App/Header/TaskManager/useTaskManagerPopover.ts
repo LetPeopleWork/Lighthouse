@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IConnectionHealth } from "../../../../services/Api/ConnectionHealthService";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
@@ -81,6 +81,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 	const [stopAsked, setStopAsked] = useState<ReadonlySet<string>>(new Set());
 	const [cancellingAll, setCancellingAll] = useState(false);
 	const [cancelAllFailed, setCancelAllFailed] = useState(false);
+	const popoverClosings = useRef(0);
 
 	const refresh = useCallback(async () => {
 		await readAndKeepWhatWasThereIfItFails(
@@ -149,6 +150,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 			.map(taskKey)
 			.filter((key) => !stopAsked.has(key));
 
+		const closingsWhenAsked = popoverClosings.current;
 		setCancelAllFailed(false);
 		setCancellingAll(true);
 		setStopAsked((asked) => new Set([...asked, ...marked]));
@@ -157,7 +159,7 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 			await updateSubscriptionService.cancelAllTasks();
 		} catch {
 			setStopAsked((asked) => noLongerRemembering(asked, ...marked));
-			setCancelAllFailed(true);
+			setCancelAllFailed(popoverClosings.current === closingsWhenAsked);
 		} finally {
 			setCancellingAll(false);
 		}
@@ -167,9 +169,10 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 
 	/**
 	 * The hook outlives the popover, so a refusal left standing would greet the next opening over rows the
-	 * click never touched.
+	 * click never touched. That includes a refusal still on its way when the popover closed.
 	 */
 	const forgetTheRefusedCancelAll = useCallback(() => {
+		popoverClosings.current += 1;
 		setCancelAllFailed(false);
 	}, []);
 

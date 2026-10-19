@@ -237,6 +237,29 @@ describe("Cancel all in the Task Manager", () => {
 		).not.toBeInTheDocument();
 	});
 
+	it(`does not bring back a refusal that arrives after the popover was closed`, async () => {
+		const cancel = anUnansweredCancel();
+		const service = renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
+			svc.cancelAllTasks = vi.fn().mockReturnValue(cancel.pending);
+		});
+
+		await openThePopover();
+		await userEvent.click(await cancelAll());
+		await userEvent.click(screen.getByRole("button", { name: /^Close$/ }));
+		cancel.refuse();
+		vi.mocked(service.getRunningTasks).mockResolvedValue([aQueuedPortfolio]);
+		await openThePopover();
+
+		await waitFor(() => {
+			expect(
+				screen.getByTestId("task-manager-row-Features-3"),
+			).toHaveTextContent(/— Queued$/);
+		});
+		expect(
+			screen.queryByText(/^Could not cancel\. Try again\.$/),
+		).not.toBeInTheDocument();
+	});
+
 	it(`drops "Could not cancel. Try again." once the list shows nothing left to cancel`, async () => {
 		const service = renderIcon([aRunningTeam, aQueuedPortfolio], (svc) => {
 			svc.cancelAllTasks = vi.fn().mockRejectedValue(new Error("refused"));
