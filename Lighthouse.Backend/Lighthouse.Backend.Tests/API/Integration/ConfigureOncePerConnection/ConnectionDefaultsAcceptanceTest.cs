@@ -94,6 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private const string DisplayName = "displayName";
         private const string DefaultsMember = "defaults";
         private const string IgnoreDependencies = "ignoreDependencies";
+        private const string NonNumericEstimation = "useNonNumericEstimation";
 
         private static readonly DateTime TheItemLastChangedAt = new(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc);
         private static readonly TimeSpan LongEnoughForAnyUpdateToFinish = TimeSpan.FromSeconds(30);
@@ -281,6 +282,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected async Task GivenTheTeamsEstimationDefaultIs(string fieldName, string unit)
         {
             await WhenTheAdminSetsTheEstimationDefault(ConnectionDefault.TeamsEstimation, fieldName, unit);
+            ThenTheSaveIsAccepted();
+        }
+
+        protected async Task GivenTheTeamsEstimationDefaultIsTheCategories(string fieldName, string unit, params string[] categories)
+        {
+            await SaveTheConnection(read => DefaultsOf(read)[TheMember(ConnectionDefault.TeamsEstimation)] = AnEstimationBundle(TheFieldIdIn(read, fieldName), unit, categories), startUpdates: false);
             ThenTheSaveIsAccepted();
         }
 
@@ -515,6 +522,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(owner, settings);
         }
 
+        /// <summary>
+        /// A script that knows no sources, nor the Estimation unit and non-numeric switch, saves back the settings it
+        /// read: the Estimation Field and categories as read, and nothing of the rest.
+        /// </summary>
+        protected async Task WhenAnOlderScriptSavesBackOnlyTheEstimationFieldAndCategories(string owner)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(owner);
+            DropEverySourceAndDefaultName(settings);
+            settings.Remove("estimationUnit");
+            settings.Remove(NonNumericEstimation);
+            await PutTheOwner(owner, settings);
+        }
+
+        /// <summary>A script that knows no sources saves back the settings it read with every part of the Estimation emptied.</summary>
+        protected async Task WhenAScriptSavesBackAnEmptyEstimation(string owner)
+        {
+            await SetTheRestAside();
+            var settings = await TheSettingsOf(owner);
+            DropEverySourceAndDefaultName(settings);
+            settings["estimationAdditionalFieldDefinitionId"] = null;
+            settings["estimationUnit"] = null;
+            settings[NonNumericEstimation] = false;
+            settings["estimationCategoryValues"] = new JsonArray();
+            await PutTheOwner(owner, settings);
+        }
+
         /// <summary>A script that does not know Ignore Dependencies saves back the settings it read, without it.</summary>
         protected async Task WhenAScriptSavesBackTheSettingsWithoutIgnoreDependencies(string portfolio)
         {
@@ -659,6 +693,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 settings["estimationSource"]?.ToString(),
                 settings["estimationDefaultName"]?.ToString());
         }
+
+        protected async Task<bool?> WhetherTheEstimationIsNonNumericFor(string owner)
+            => (await TheSettingsOf(owner))[NonNumericEstimation]?.GetValue<bool?>();
 
         /// <summary>The field the tracker was last asked to read for this setting of this owner; null when none.</summary>
         protected string? WhatTheTrackerWasAskedToReadFor(string owner, OwnerSetting setting)
@@ -1142,12 +1179,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
-        private static JsonObject AnEstimationBundle(int fieldId, string unit) => new()
+        private static JsonObject AnEstimationBundle(int fieldId, string unit, params string[] categories) => new()
         {
             ["additionalFieldDefinitionId"] = fieldId,
             ["unit"] = unit,
-            ["useNonNumericEstimation"] = false,
-            ["estimationCategoryValues"] = new JsonArray(),
+            [NonNumericEstimation] = categories.Length > 0,
+            ["estimationCategoryValues"] = new JsonArray([.. categories.Select(category => (JsonNode)category)]),
         };
 
         private static JsonObject DefaultsOf(JsonObject read)

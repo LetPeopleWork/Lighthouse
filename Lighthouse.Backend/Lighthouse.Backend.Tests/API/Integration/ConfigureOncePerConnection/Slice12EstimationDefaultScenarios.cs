@@ -154,6 +154,44 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             Assert.That((await WhatTheEstimationReadsFor(FraudSignals)).Source, Is.EqualTo("ConnectionDefault"));
         }
 
+        // Only a save that sends sources says for certain what it means. One without them that sends a bundle
+        // differing from what the Team read has chosen that bundle, even when the difference is only that the
+        // script never knew the unit or the non-numeric switch. That consequence is accepted.
+        [Test]
+        [Category("ac-11.1")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_script_that_drops_the_unit_and_switch_of_a_non_numeric_default_makes_the_follower_own_a_numeric_estimation()
+        {
+            await GivenTheTeamsEstimationDefaultIsTheCategories(TShirtSize, "Sizes", "S", "M", "L");
+
+            await WhenAnOlderScriptSavesBackOnlyTheEstimationFieldAndCategories(FraudSignals);
+            ThenTheOwnerSaveIsAccepted();
+            var fraudSignals = await WhatTheEstimationReadsFor(FraudSignals);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That((fraudSignals.Source, fraudSignals.FieldName, fraudSignals.Unit), Is.EqualTo(((string?)"Own", (string?)TShirtSize, (string?)null)));
+                Assert.That(await WhetherTheEstimationIsNonNumericFor(FraudSignals), Is.False);
+            }
+        }
+
+        [TestCase(Ledger)]
+        [TestCase(MerchantOnboarding)]
+        [Category("ac-11.1")]
+        [Category("edge")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task An_owner_sent_back_an_empty_estimation_without_a_source_keeps_its_own(string owner)
+        {
+            await GivenTheOwnerUsesAsItsOwn(owner, OwnerSetting.Estimation, StoryPoints);
+
+            await WhenAScriptSavesBackAnEmptyEstimation(owner);
+            ThenTheOwnerSaveIsAccepted();
+            var estimation = await WhatTheEstimationReadsFor(owner);
+
+            Assert.That((estimation.FieldName, estimation.Source), Is.EqualTo(((string?)StoryPoints, (string?)"Own")));
+        }
+
         [TestCase(FraudSignals, "team-setting-source-unknown")]
         [TestCase(CardIssuing, "portfolio-setting-source-unknown")]
         [Category("ac-11.1")]

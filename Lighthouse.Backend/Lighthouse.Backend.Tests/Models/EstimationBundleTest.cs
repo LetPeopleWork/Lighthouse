@@ -75,6 +75,22 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        public void A_bundle_without_a_field_leaves_an_owning_Team_its_own_bundle()
+        {
+            var team = AFollowingTeam();
+            var owned = new EstimationBundle(TShirtSize, Sizes, true, ["S", "M"]);
+            team.OwnEstimation(owned);
+
+            team.TakeEstimationAsSent(null, EstimationBundle.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.EstimationSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(team.EffectiveEstimation, Is.EqualTo(owned));
+            }
+        }
+
+        [Test]
         public void Following_the_default_empties_the_Teams_own_bundle()
         {
             var team = AFollowingTeam();
