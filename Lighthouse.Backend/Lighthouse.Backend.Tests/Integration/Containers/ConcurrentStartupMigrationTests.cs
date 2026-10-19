@@ -13,6 +13,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     {
         private const string MigrationsAssemblyName = "Lighthouse.Migrations.Postgres";
 
+        // A host that never reaches the starting line would leave the others waiting forever, so every
+        // wait on the hosts is bounded and a hang fails the test instead of stalling the run.
+        private static readonly TimeSpan HostsMustFinishWithin = TimeSpan.FromSeconds(30);
+
         // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
         private SharedPostgresContainer? postgres;
 
@@ -68,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             Assert.That(failures, Is.Empty,
                 "A single instance acquires the advisory lock uncontended and migrates on boot exactly as today " +
-                "(the lock degrades to a no-op at one instance, D1). Failures: " +
+                "(the lock degrades to a no-op at one instance). Failures: " +
                 string.Join(" | ", failures.Select(f => f.Message)));
 
             await AssertSchemaFullyMigratedAsync(connectionString);
@@ -127,24 +131,42 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
+        // Each host blocks until every host is ready and then migrates synchronously. On pool threads
+        // that parks one worker per host and stalls every other test running alongside until the pool
+        // grows, so each host gets a thread of its own.
         private static async Task<IReadOnlyList<Exception>> StartHostsConcurrentlyAsync(string connectionString, int hostCount)
         {
             using var allHostsReady = new Barrier(hostCount);
 
-            var tasks = Enumerable.Range(0, hostCount)
-                .Select(_ => Task.Run(() => ApplyMigrationsOnFreshHost(connectionString, allHostsReady)))
+            var hosts = Enumerable.Range(0, hostCount)
+                .Select(_ => Task.Factory.StartNew(
+                    () => ApplyMigrationsOnFreshHost(connectionString, allHostsReady),
+                    CancellationToken.None,
+                    TaskCreationOptions.LongRunning,
+                    TaskScheduler.Default))
                 .ToList();
 
-            var results = await Task.WhenAll(tasks);
-            return results.Where(result => result is not null).Select(result => result!).ToList();
+            try
+            {
+                var results = await Task.WhenAll(hosts).WaitAsync(HostsMustFinishWithin);
+                return results.OfType<Exception>().ToList();
+            }
+            catch (TimeoutException)
+            {
+                return [new TimeoutException($"The hosts did not all finish starting up within {HostsMustFinishWithin.TotalSeconds} s; one is stuck.")];
+            }
         }
 
         private static Exception? ApplyMigrationsOnFreshHost(string connectionString, Barrier allHostsReady)
         {
-            using var provider = BuildHostServiceProvider(connectionString);
             try
             {
-                allHostsReady.SignalAndWait();
+                using var provider = BuildHostServiceProvider(connectionString);
+                if (!allHostsReady.SignalAndWait(HostsMustFinishWithin))
+                {
+                    return new TimeoutException($"A host waited {HostsMustFinishWithin.TotalSeconds} s for the other hosts to be ready; one never arrived.");
+                }
+
                 using var scope = provider.CreateScope();
                 DatabaseConfigurator.ApplyMigrations(scope.ServiceProvider);
                 return null;
