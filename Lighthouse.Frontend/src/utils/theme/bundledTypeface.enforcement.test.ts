@@ -1,0 +1,102 @@
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { dirname, join, relative, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const frontendRoot = resolve(here, "../../..");
+const sourceRoot = resolve(frontendRoot, "src");
+
+const pendingEpic6298 =
+	"Pending: the Lighthouse typeface ships with the app (epic 6298, slice 02)";
+
+const THE_PACKAGE = "@fontsource-variable/quicksand";
+const ITS_FAMILY = "Quicksand Variable";
+/** The package's own entry or one of its weight files, in either quote style. */
+const ITS_IMPORT =
+	/import\s+["']@fontsource-variable\/quicksand(\/[^"']*)?["']/;
+const SHIPPED_LICENCE = resolve(
+	frontendRoot,
+	"public/licenses/quicksand-OFL.txt",
+);
+const THE_PACKAGES_LICENCE = resolve(
+	frontendRoot,
+	`node_modules/${THE_PACKAGE}/LICENSE`,
+);
+
+const productionSourcesUnder = (directory: string): string[] =>
+	readdirSync(directory).flatMap((entry) => {
+		const path = join(directory, entry);
+		if (statSync(path).isDirectory()) return productionSourcesUnder(path);
+		return /\.(ts|tsx)$/.test(entry) && !/\.test\.tsx?$/.test(entry)
+			? [path]
+			: [];
+	});
+
+/** Every font stack in the app that names the Lighthouse typeface, with the file it is in. */
+const quicksandStacks = (): { file: string; stack: string }[] =>
+	productionSourcesUnder(sourceRoot).flatMap((file) =>
+		Array.from(
+			readFileSync(file, "utf8").matchAll(/fontFamily:\s*(["'`])(.*?)\1/g),
+		)
+			.map(([, , stack]) => stack)
+			.filter((stack) => /quicksand/i.test(stack))
+			.map((stack) => ({
+				file: relative(sourceRoot, file).replaceAll("\\", "/"),
+				stack,
+			})),
+	);
+
+/**
+ * The Lighthouse typeface travels inside the app, so a report printed on a machine with no internet, or in the
+ * Lighthouse app, is set in the same letters as everywhere else. Nothing reaches out to a font host, the font's
+ * licence ships beside it word for word, and every place that names the typeface names the one the app carries.
+ */
+describe("the Lighthouse typeface ships with the app", () => {
+	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
+	it.skip(`loads no font from the internet (${pendingEpic6298})`, () => {
+		const page = readFileSync(resolve(frontendRoot, "index.html"), "utf8");
+
+		expect(page).toContain("<html");
+		expect(page).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com/);
+	});
+
+	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
+	it.skip(`brings the typeface in from the package the app carries (${pendingEpic6298})`, () => {
+		const importers = productionSourcesUnder(sourceRoot).filter((file) =>
+			ITS_IMPORT.test(readFileSync(file, "utf8")),
+		);
+
+		expect(importers).toHaveLength(1);
+	});
+
+	// @us-02 @slice-02 @edge @contract-shape:unbounded-preservation
+	// A stack that names the typeface by any other family falls back to a machine font without a word.
+	it.skip(`names the carried family first wherever the app asks for the typeface (${pendingEpic6298})`, () => {
+		const stacks = quicksandStacks();
+
+		expect(stacks.length).toBeGreaterThan(0);
+		for (const { file, stack } of stacks) {
+			expect(
+				stack.replaceAll(/["']/g, "").split(",")[0].trim(),
+				`${file} asks for "${stack}"`,
+			).toBe(ITS_FAMILY);
+		}
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
+	// The licence asks to travel with the font, unchanged; a package update that changes it must change the copy.
+	it.skip(`ships the typeface's licence word for word as the package carries it (${pendingEpic6298})`, () => {
+		expect(
+			existsSync(THE_PACKAGES_LICENCE),
+			"the package is not installed",
+		).toBe(true);
+		expect(existsSync(SHIPPED_LICENCE), "the licence is not shipped").toBe(
+			true,
+		);
+
+		expect(readFileSync(SHIPPED_LICENCE)).toEqual(
+			readFileSync(THE_PACKAGES_LICENCE),
+		);
+	});
+});

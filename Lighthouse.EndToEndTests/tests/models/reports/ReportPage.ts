@@ -1,4 +1,5 @@
 import type { Locator, Page } from "@playwright/test";
+import { ReportPrintPage } from "./ReportPrintPage";
 import { ReportsListPage } from "./ReportsListPage";
 
 /**
@@ -41,5 +42,14 @@ export class ReportPage {
 
 	panel(title: string): Locator {
 		return this.page.getByRole("region", { name: title });
+	}
+
+	/** Export PDF leads to the report's print page; stand in for the print dialog before calling this. */
+	async exportPdf(): Promise<ReportPrintPage> {
+		await this.page.getByRole("button", { name: "Export PDF" }).click();
+		await this.page.waitForURL(
+			/\/print\/(teams|portfolios)\/\d+\/reports\/\d+$/,
+		);
+		return new ReportPrintPage(this.page).waitUntilReady();
 	}
 }

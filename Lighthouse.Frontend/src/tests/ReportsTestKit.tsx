@@ -258,7 +258,8 @@ export const aRefusal = (
 
 export type Viewer = "admin" | "reader" | "rbacOff";
 
-const summaryFor = (viewer: Viewer, owner: IReportOwner) => ({
+/** What the page reads to decide who may change the reports, for one kind of reader of one owner. */
+export const summaryFor = (viewer: Viewer, owner: IReportOwner) => ({
 	isRbacEnabled: viewer !== "rbacOff",
 	isSystemAdmin: false,
 	canCreateTeam: false,
