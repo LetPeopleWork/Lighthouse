@@ -57,6 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
                         await Task.Delay(20, CancellationToken.None);
                     }
 
+                    stopping.ThrowIfCancellationRequested();
                     return [];
                 });
         }
@@ -70,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Ignore(PendingEpic6311.Slice05)]
         [Category("ac-05.1")]
         [Category("walking_skeleton")]
         [Category("driving_port")]
