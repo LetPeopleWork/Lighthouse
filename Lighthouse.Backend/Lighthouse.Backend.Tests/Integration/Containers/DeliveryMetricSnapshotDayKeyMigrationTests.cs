@@ -15,7 +15,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Bug #5567 step 02-02 - DeliveryMetricSnapshot converges on a DateOnly day key.
+    /// Bug #5567 - DeliveryMetricSnapshot converges on a DateOnly day key.
     ///
     /// The honest claim under test is NOT "a second row per visual day is prevented": the shipped
     /// repository already normalised every write to midnight under a unique (DeliveryId, RecordedAt)
@@ -50,6 +50,18 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             new DateTime(2026, 5, 25, 6, 0, 0, DateTimeKind.Utc),
             new DateTime(2026, 5, 25, 18, 0, 0, DateTimeKind.Utc),
         ];
+
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
 
         /// <summary>
         /// CHARACTERIZATION test. This behaviour already worked at HEAD via the range scan; it is
@@ -393,7 +405,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             return migrations[index - 1];
         }
 
-        private static Task WithProviderAsync(ProviderUnderTest providerUnderTest, Func<ServiceProvider, Task> assertion)
+        private Task WithProviderAsync(ProviderUnderTest providerUnderTest, Func<ServiceProvider, Task> assertion)
         {
             return providerUnderTest == ProviderUnderTest.Sqlite
                 ? WithSqliteAsync(assertion)
@@ -480,10 +492,10 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        private static async Task WithPostgresAsync(Func<ServiceProvider, Task> assertion)
+        private async Task WithPostgresAsync(Func<ServiceProvider, Task> assertion)
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            postgres ??= await SharedPostgresContainer.StartAsync();
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await assertion(provider);
         }
 

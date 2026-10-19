@@ -15,7 +15,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// ADR-067 loss-free-migration probe (slice-01 hard AC) + Phase-B drop-column probe. Proves against
+    /// The blocked rule set upgrade and the later drop of the legacy columns. Proves against
     /// REAL relational providers (SQLite + Postgres — InMemory misses migrations) that (a) the additive
     /// <c>BlockedRuleSetJson</c> column applied by the generated migration persists across a reload, and
     /// (b) the migration-time backfill (raw SQL inside the generated migration, not application code) is
@@ -36,6 +36,18 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         private const string PreviousMigrationIdSqlite = "20260711064246_AddIsPredefinedToAdditionalFieldDefinition";
         private const string PreviousMigrationIdPostgres = "20260711064256_AddIsPredefinedToAdditionalFieldDefinition";
+
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
 
         [Test]
         public async Task Migration_OnSqlite_PersistsBlockedRuleSetJsonColumn()
@@ -59,9 +71,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Migration_OnPostgres_PersistsBlockedRuleSetJsonColumn()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await MigrateAsync(provider);
             await AssertColumnPersistsAsync(provider);
         }
@@ -87,9 +99,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Migration_OnPostgres_BackfillsLegacyBlockedConfiguration_AndIsIdempotent()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await AssertBackfillIsAppliedAndIdempotentAsync(provider, PreviousMigrationIdPostgres);
         }
 

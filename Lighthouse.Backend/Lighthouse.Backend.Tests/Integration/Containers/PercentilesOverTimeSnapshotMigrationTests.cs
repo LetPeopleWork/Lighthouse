@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Epic-5427 percentiles-over-time store probe (milestone-1 Scenario 6). Proves against REAL
+    /// The percentiles-over-time snapshot store. Proves against REAL
     /// relational providers (SQLite + Postgres) that the generated AddPercentilesOverTimeSnapshot
     /// migration additively creates the table, that rows round-trip through the context, and that the
     /// natural-key unique index (OwnerId, OwnerType, MetricType, Horizon, RecordedAt) is enforced.
@@ -18,6 +18,18 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("epic-5427-percentiles-over-time")]
     public class PercentilesOverTimeSnapshotMigrationTests
     {
+        // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
+        private SharedPostgresContainer? postgres;
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
+
         [Test]
         public async Task Migration_OnSqlite_PersistsPercentilesOverTimeSnapshotTable()
         {
@@ -40,9 +52,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Migration_OnPostgres_PersistsPercentilesOverTimeSnapshotTable()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await MigrateAsync(provider);
             await AssertTableRoundTripsAsync(provider);
         }
@@ -50,9 +62,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         [Test]
         public async Task Migration_OnPostgres_PreservesExistingTables()
         {
-            await using var postgres = await PostgresContainerFixture.StartFreshAsync();
+            postgres ??= await SharedPostgresContainer.StartAsync();
 
-            await using var provider = BuildPostgresProvider(postgres.GetConnectionString());
+            await using var provider = BuildPostgresProvider(postgres.ConnectionStringToANewDatabase());
             await MigrateAsync(provider);
 
             using var scope = provider.CreateScope();
