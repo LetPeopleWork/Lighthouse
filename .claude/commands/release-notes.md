@@ -166,6 +166,10 @@ Drafting rules:
 - Compare link target: `v<old>...<new>` if a real version was given, else `v<old>...HEAD`.
 - Don't fabricate image links. Reuse images already in `docs/releasenotes/` only when the ADO description or commit clearly references that asset; otherwise leave images out and let the user add them.
 - Tone matches prior releases: pragmatic, mildly enthusiastic, no marketing fluff.
+- **Release notes are not docs.** Say what changed and why it matters, then link the docs page; never walk through how it works. Readers are smart and figure out the details themselves: no confirmation dialogs and their buttons, no "asks first / offers Save and update", no edge cases, no upgrade-repair mechanics, no API/script contract notes, no internals such as core counts or startup log lines. One short pain paragraph and one short win paragraph per headline is the target.
+- **Order headlines by what the release is about**, biggest new capability first — a feature users asked for beats a fix, however painful the fix was. A notable new capability gets its own `##` headline rather than hiding in the bullet list.
+- **Fold related changes into one headline** when they answer the same pain (e.g. a forecast cap that says "More than 5 years" belongs inside "stays responsive while forecasts run", not beside it).
+- **Leave out bullets nobody notices**: upgrade-time data repairs, API/script semantics, and other changes a user never sees in the product.
 - Use the configurable terminology, not one tracker's word for it. The ADO item will say "Epic" because that is *our* board's vocabulary; the reader's Lighthouse says whatever they configured under Settings → Terminology. Write the seeded default (`Feature`/`Features`, `Work Item`/`Work Items`, …) from `TerminologySeeder.cs`. Naming a work-tracking-system value literally (a filter matching type `Epic`) is the exception.
 
 ## Step 7 — update docs/contributions/contributions.md for first-timers
