@@ -1,13 +1,35 @@
+import CloseIcon from "@mui/icons-material/Close";
 import Alert from "@mui/material/Alert";
+import Button from "@mui/material/Button";
+import IconButton from "@mui/material/IconButton";
 import Snackbar from "@mui/material/Snackbar";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 
 interface SnackbarErrorHandlerProps {
 	children: React.ReactNode;
 }
 
+/** A way to act on a message, offered beside it, such as Retry after an export that made no PDF. */
+export interface SnackbarAction {
+	readonly label: string;
+	readonly onClick: () => void;
+}
+
+export interface ShowErrorOptions {
+	readonly action?: SnackbarAction;
+}
+
+/** Takes the message it was handed back for away, and leaves any newer message standing. */
+export type TakeTheMessageBack = () => void;
+
 export const ErrorSnackbarContext = React.createContext<{
-	showError: (msg: string) => void;
+	showError: (msg: string, options?: ShowErrorOptions) => TakeTheMessageBack;
 } | null>(null);
 
 export const useErrorSnackbar = () => {
@@ -74,16 +96,33 @@ class ErrorBoundary extends React.Component<
 	}
 }
 
+interface ShownMessage {
+	readonly id: number;
+	readonly text: string;
+	readonly action?: SnackbarAction;
+}
+
+const MESSAGE_ALONE_HIDES_AFTER_MS = 6000;
+
 const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 	children,
 }) => {
-	const [open, setOpen] = useState(false);
-	const [message, setMessage] = useState<string | null>(null);
+	const [shown, setShown] = useState<ShownMessage | null>(null);
+	const lastId = useRef(0);
 
-	const showError = useCallback((msg: string) => {
-		setMessage(msg);
-		setOpen(true);
+	const closeIfShowing = useCallback((id: number) => {
+		setShown((current) => (current?.id === id ? null : current));
 	}, []);
+
+	const showError = useCallback(
+		(msg: string, options?: ShowErrorOptions): TakeTheMessageBack => {
+			lastId.current += 1;
+			const id = lastId.current;
+			setShown({ id, text: msg, action: options?.action });
+			return () => closeIfShowing(id);
+		},
+		[closeIfShowing],
+	);
 
 	const contextValue = useMemo(() => ({ showError }), [showError]);
 
@@ -103,7 +142,6 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 				ev?.reason ??
 				(ev as unknown as { detail?: unknown })?.detail ??
 				"Unhandled promise rejection";
-			// Handle ApiError instances specifically
 			let msg: string;
 			if (reason instanceof Error) {
 				msg = reason.message;
@@ -133,9 +171,15 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 		reason?: string,
 	) => {
 		if (reason === "clickaway") return;
-		setOpen(false);
-		setMessage(null);
+		setShown(null);
 	};
+
+	const chooseTheAction = (message: ShownMessage, action: SnackbarAction) => {
+		closeIfShowing(message.id);
+		action.onClick();
+	};
+
+	const action = shown?.action;
 
 	return (
 		<ErrorSnackbarContext.Provider value={contextValue}>
@@ -143,13 +187,41 @@ const SnackbarErrorHandler: React.FC<SnackbarErrorHandlerProps> = ({
 
 			{/* Bug #5732: kept outside the boundary, or the error unmounts its own report. */}
 			<Snackbar
-				open={open}
-				autoHideDuration={6000}
+				open={shown !== null}
+				autoHideDuration={
+					action === undefined ? MESSAGE_ALONE_HIDES_AFTER_MS : null
+				}
 				onClose={handleClose}
 				anchorOrigin={{ vertical: "top", horizontal: "center" }}
 			>
-				<Alert onClose={handleClose} severity="error" sx={{ width: "100%" }}>
-					{message ?? ""}
+				<Alert
+					onClose={handleClose}
+					severity="error"
+					sx={{ width: "100%" }}
+					action={
+						shown === null || action === undefined ? undefined : (
+							<>
+								<Button
+									color="inherit"
+									size="small"
+									onClick={() => chooseTheAction(shown, action)}
+								>
+									{action.label}
+								</Button>
+								<IconButton
+									aria-label="Close"
+									title="Close"
+									color="inherit"
+									size="small"
+									onClick={handleClose}
+								>
+									<CloseIcon fontSize="small" />
+								</IconButton>
+							</>
+						)
+					}
+				>
+					{shown?.text ?? ""}
 				</Alert>
 			</Snackbar>
 		</ErrorSnackbarContext.Provider>

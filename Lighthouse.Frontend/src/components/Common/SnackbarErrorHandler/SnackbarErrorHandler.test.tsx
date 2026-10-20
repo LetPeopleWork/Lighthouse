@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import SnackbarErrorHandler, { useErrorSnackbar } from "./SnackbarErrorHandler";
+import SnackbarErrorHandler, {
+	type SnackbarAction,
+	useErrorSnackbar,
+} from "./SnackbarErrorHandler";
 
 // Mock console.error to avoid noise in test output
 const originalError = console.error;
@@ -474,31 +477,16 @@ describe("SnackbarErrorHandler", () => {
 	});
 });
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const NO_PDF_WAS_MADE =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 const ANOTHER_MESSAGE = "Saving the Team failed.";
 const RETRY = "Retry";
 const SIX_SECONDS = 6000;
 
-/** A way to act on a message, offered beside it, such as Retry after an export that made no PDF. */
-interface SnackbarAction {
-	readonly label: string;
-	readonly onClick: () => void;
-}
-
-// A failed export offers Retry beside its message and takes the message back when its page goes; every other
-// caller still hands over the message alone.
-type ShowError = (
-	message: string,
-	options?: { readonly action?: SnackbarAction },
-) => unknown;
-
-let theSnackbar: { readonly showError: ShowError } | undefined;
+let theSnackbar: ReturnType<typeof useErrorSnackbar> | undefined;
 
 const HoldsTheSnackbar = () => {
-	theSnackbar = useErrorSnackbar() as unknown as { showError: ShowError };
+	theSnackbar = useErrorSnackbar();
 	return null;
 };
 
@@ -558,7 +546,7 @@ describe("a message with a way to act on it", () => {
 	});
 
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
-	it.skip(`shows the action beside the message, and choosing it runs the action once and closes the message (${pendingFramePrint})`, async () => {
+	it(`shows the action beside the message, and choosing it runs the action once and closes the message`, async () => {
 		const user = userEvent.setup();
 		const retry = vi.fn();
 		renderTheSnackbar();
@@ -574,7 +562,7 @@ describe("a message with a way to act on it", () => {
 
 	// @us-01 @rev-3 @contract-shape:bounded-change
 	// A reader needs time to reach Retry; a message that offers it waits for them.
-	it.skip(`keeps a message that offers an action open past six seconds, until the reader closes it (${pendingFramePrint})`, () => {
+	it(`keeps a message that offers an action open past six seconds, until the reader closes it`, () => {
 		vi.useFakeTimers();
 		renderTheSnackbar();
 
@@ -592,7 +580,7 @@ describe("a message with a way to act on it", () => {
 
 	// @us-01 @rev-3 @contract-shape:bounded-change
 	// The export takes its own message back when the reader leaves the page whose Retry it offers.
-	it.skip(`takes a message away when the one who showed it asks (${pendingFramePrint})`, async () => {
+	it(`takes a message away when the one who showed it asks`, async () => {
 		renderTheSnackbar();
 
 		const takeItBack = aWayToTakeItBack(
@@ -606,7 +594,7 @@ describe("a message with a way to act on it", () => {
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// One message at a time: a newer one has replaced the export's, and taking the export's back must not take it.
 	// A message being closed stays on screen while it fades, so the time for that passes before the newer one is read.
-	it.skip(`leaves a newer message standing when an older one is taken back (${pendingFramePrint})`, () => {
+	it(`leaves a newer message standing when an older one is taken back`, () => {
 		vi.useFakeTimers();
 		renderTheSnackbar();
 		const takeTheFirstBack = aWayToTakeItBack(
@@ -625,7 +613,7 @@ describe("a message with a way to act on it", () => {
 	});
 
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
-	it.skip(`offers no action with a message given alone after one that offered Retry (${pendingFramePrint})`, async () => {
+	it(`offers no action with a message given alone after one that offered Retry`, async () => {
 		renderTheSnackbar();
 		show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() });
 
