@@ -18,8 +18,6 @@ import {
  * not, which says so in its own words. An answer the page was already holding when it opened is never enough.
  */
 
-const pendingEpic6298 = "Pending: the print page's state (epic 6298, slice 01)";
-
 const OPENED = 1_000;
 
 const everythingIn: PrintPageInputs = {
@@ -35,7 +33,7 @@ const everythingIn: PrintPageInputs = {
 
 describe("the print page's state", () => {
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip.each<[string, Partial<PrintPageInputs>, PrintPageState]>([
+	it.each<[string, Partial<PrintPageInputs>, PrintPageState]>([
 		["everything is in", {}, "ready"],
 		[
 			"the answer arrived the moment the page opened",
@@ -92,16 +90,13 @@ describe("the print page's state", () => {
 			{ reportError: aRefusal(404, "not-found"), fonts: "failed" },
 			"failedFinal",
 		],
-	])(
-		`decides the state when %s (${pendingEpic6298})`,
-		(_when, change, expected) => {
-			expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
-		},
-	);
+	])("decides the state when %s", (_when, change, expected) => {
+		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
+	});
 
 	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
 	// Every combination of the four inputs without a failure: ready exactly when all four are in, else preparing.
-	it.skip(`is ready exactly when all four inputs are in, and preparing otherwise (${pendingEpic6298})`, () => {
+	it("is ready exactly when all four inputs are in, and preparing otherwise", () => {
 		const answers = [null, OPENED - 1, OPENED, OPENED + 1];
 		const owners = [null, "Lightspeed"];
 		const termsLoading = [true, false];

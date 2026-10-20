@@ -1,3 +1,5 @@
+import { ApiError } from "../../../../services/Api/ApiError";
+
 /**
  * What the print page shows, decided from what it has: still preparing; the report could not be read, with a way to
  * try again; the report was read but part of the page was not, with a way to try again; a failure nothing can mend;
@@ -33,7 +35,26 @@ export const isAFreshAnswer = (
 	mountedAt: number,
 ): boolean => fetchedAt !== null && fetchedAt >= mountedAt;
 
+/** A report that no longer exists, or that a newer version made, stays that way however often it is asked for. */
+const REFUSALS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
+
+const isAnError = (error: unknown): boolean =>
+	error !== null && error !== undefined;
+
+const isFinal = (reportError: unknown): boolean =>
+	reportError instanceof ApiError &&
+	REFUSALS_THAT_DO_NOT_CHANGE.has(reportError.code);
+
 export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
+	if (isFinal(inputs.reportError)) return "failedFinal";
+	if (isAnError(inputs.reportError)) return "failedRetryable";
+	if (
+		isAnError(inputs.ownerError) ||
+		isAnError(inputs.termsError) ||
+		inputs.fonts === "failed"
+	)
+		return "failedPart";
+
 	const everythingIsIn =
 		isAFreshAnswer(inputs.fetchedAt, inputs.mountedAt) &&
 		inputs.ownerName !== null &&
