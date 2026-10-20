@@ -1,4 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler, { useErrorSnackbar } from "./SnackbarErrorHandler";
@@ -464,5 +471,161 @@ describe("SnackbarErrorHandler", () => {
 				).toBeInTheDocument();
 			});
 		});
+	});
+});
+
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
+
+const NO_PDF_WAS_MADE =
+	"Part of the page couldn't be loaded, so no PDF was made.";
+const ANOTHER_MESSAGE = "Saving the Team failed.";
+const RETRY = "Retry";
+const SIX_SECONDS = 6000;
+
+/** A way to act on a message, offered beside it, such as Retry after an export that made no PDF. */
+interface SnackbarAction {
+	readonly label: string;
+	readonly onClick: () => void;
+}
+
+// A failed export offers Retry beside its message and takes the message back when its page goes; every other
+// caller still hands over the message alone.
+type ShowError = (
+	message: string,
+	options?: { readonly action?: SnackbarAction },
+) => unknown;
+
+let theSnackbar: { readonly showError: ShowError } | undefined;
+
+const HoldsTheSnackbar = () => {
+	theSnackbar = useErrorSnackbar() as unknown as { showError: ShowError };
+	return null;
+};
+
+const renderTheSnackbar = () =>
+	render(
+		<SnackbarErrorHandler>
+			<HoldsTheSnackbar />
+		</SnackbarErrorHandler>,
+	);
+
+const show = (message: string, action?: SnackbarAction): unknown => {
+	let handedBack: unknown;
+	act(() => {
+		handedBack = theSnackbar?.showError(
+			message,
+			action === undefined ? undefined : { action },
+		);
+	});
+	return handedBack;
+};
+
+/** What showError hands back for taking its message away again; nothing at all fails the scenario. */
+const aWayToTakeItBack = (handedBack: unknown): (() => void) => {
+	expect(
+		typeof handedBack,
+		"showError hands back no way to take its message away",
+	).toBe("function");
+	return handedBack as () => void;
+};
+
+const theMessage = () => screen.queryByRole("alert");
+
+const timePasses = (milliseconds: number) =>
+	act(() => {
+		vi.advanceTimersByTime(milliseconds);
+	});
+
+describe("a message with a way to act on it", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+		theSnackbar = undefined;
+	});
+
+	// @us-01 @rev-3 @contract-shape:unbounded-preservation
+	// Every caller from before the export hands over a sentence alone, and the snackbar must keep treating it so.
+	it("hides a message given alone after six seconds, as it always has", () => {
+		vi.useFakeTimers();
+		renderTheSnackbar();
+
+		show(ANOTHER_MESSAGE);
+		timePasses(SIX_SECONDS - 100);
+		expect(theMessage()).toHaveTextContent(ANOTHER_MESSAGE);
+		timePasses(200);
+		timePasses(2000);
+
+		expect(theMessage()).toBeNull();
+	});
+
+	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
+	it.skip(`shows the action beside the message, and choosing it runs the action once and closes the message (${pendingFramePrint})`, async () => {
+		const user = userEvent.setup();
+		const retry = vi.fn();
+		renderTheSnackbar();
+
+		show(NO_PDF_WAS_MADE, { label: RETRY, onClick: retry });
+		const message = await screen.findByRole("alert");
+		expect(message).toHaveTextContent(NO_PDF_WAS_MADE);
+		await user.click(within(message).getByRole("button", { name: RETRY }));
+
+		expect(retry).toHaveBeenCalledTimes(1);
+		await waitFor(() => expect(theMessage()).toBeNull());
+	});
+
+	// @us-01 @rev-3 @contract-shape:bounded-change
+	// A reader needs time to reach Retry; a message that offers it waits for them.
+	it.skip(`keeps a message that offers an action open past six seconds, until the reader closes it (${pendingFramePrint})`, () => {
+		vi.useFakeTimers();
+		renderTheSnackbar();
+
+		show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() });
+		timePasses(60_000);
+		expect(theMessage(), "the message hid itself").toHaveTextContent(
+			NO_PDF_WAS_MADE,
+		);
+		fireEvent.click(screen.getByLabelText("Close"));
+		timePasses(200);
+		timePasses(2000);
+
+		expect(theMessage()).toBeNull();
+	});
+
+	// @us-01 @rev-3 @contract-shape:bounded-change
+	// The export takes its own message back when the reader leaves the page whose Retry it offers.
+	it.skip(`takes a message away when the one who showed it asks (${pendingFramePrint})`, async () => {
+		renderTheSnackbar();
+
+		const takeItBack = aWayToTakeItBack(
+			show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() }),
+		);
+		act(takeItBack);
+
+		await waitFor(() => expect(theMessage()).toBeNull());
+	});
+
+	// @us-01 @rev-3 @error @contract-shape:bounded-change
+	// One message at a time: a newer one has replaced the export's, and taking the export's back must not take it.
+	it.skip(`leaves a newer message standing when an older one is taken back (${pendingFramePrint})`, async () => {
+		renderTheSnackbar();
+		const takeTheFirstBack = aWayToTakeItBack(
+			show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() }),
+		);
+		show(ANOTHER_MESSAGE);
+
+		act(takeTheFirstBack);
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(ANOTHER_MESSAGE);
+	});
+
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	it.skip(`offers no action with a message given alone after one that offered Retry (${pendingFramePrint})`, async () => {
+		renderTheSnackbar();
+		show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() });
+
+		show(ANOTHER_MESSAGE);
+
+		const message = await screen.findByRole("alert");
+		expect(message).toHaveTextContent(ANOTHER_MESSAGE);
+		expect(within(message).queryByRole("button", { name: RETRY })).toBeNull();
 	});
 });

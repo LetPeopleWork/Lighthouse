@@ -11,11 +11,42 @@ const LIGHTSPEED = "Team Lightspeed";
 /** The light theme's divider colour, the one the page prints in. */
 const THE_LIGHT_DIVIDER = "rgb(221, 221, 221)";
 
-// The print dialog of a real browser cannot be driven, so it is stood in for: the page asks for it once, and
-// closing it brings the reader back to the report.
-// @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
+
+// The print dialog of a real browser cannot be driven, so it is stood in for on the tab's page and on every frame
+// in it: only the report's own frame may ask for it, and the coach never leaves the report.
+// @walking_skeleton @driving_port @us-01 @rev-3 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+testWithDemo.fixme(
+	`a coach exports a Team's Then & Now report as a PDF from the report: its own print frame asks for the dialog once, and the coach is still on the report with the same history (${pendingFramePrint})`,
+	async ({ testData, overviewPage, page }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
+
+		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
+		const reports = await lightspeed.goToReports();
+		const report = await reports.createTheDefaultReport();
+		const name = await report.readName();
+		const address = report.address();
+		const history = await report.historyLength();
+		await ReportPrintPage.standInForThePrintDialog(page);
+
+		await report.exportPdf();
+
+		await expect
+			.poll(() => report.timesThePrintFrameAskedForTheDialog())
+			.toBe(1);
+		expect(await report.timesThePageAskedForTheDialog()).toBe(0);
+		await report.closeThePrintDialog();
+		expect(report.address()).toBe(address);
+		expect(await report.historyLength()).toBe(history);
+		await expect(report.title).toHaveText(name);
+	},
+);
+
+// The page a pasted link opens is the one a later server renderer will load: it names the report and its owner,
+// fits the paper, and asks for no print dialog of its own.
+// @us-01 @slice-01 @real-io @error @contract-shape:unbounded-preservation
 testWithDemo(
-	"a coach exports a Team's Then & Now report as a PDF: the page names the report and its owner, prints once and returns to the report",
+	"a report's print page opened by its address names the report and its owner, fits A4 and never asks for the print dialog",
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
 
@@ -25,16 +56,15 @@ testWithDemo(
 		const name = await report.readName();
 		await ReportPrintPage.standInForThePrintDialog(page);
 
-		const printed = await report.exportPdf();
+		const printed = await ReportPrintPage.openByItsAddress(
+			page,
+			report.address(),
+		);
 
 		await expect(printed.owner(LIGHTSPEED)).toBeVisible();
 		await expect(printed.title).toHaveText(name);
 		expect(await printed.reachesPastThePageEdgeInPrint()).toBe(false);
-		await expect.poll(() => printed.timesThePrintDialogOpened()).toBe(1);
-
-		await printed.closeThePrintDialog();
-
-		await expect(report.title).toHaveText(name);
+		expect(await printed.timesThePrintDialogOpened()).toBe(0);
 	},
 );
 
@@ -49,8 +79,10 @@ testWithDemo(
 		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
 		const reports = await lightspeed.goToReports();
 		const report = await reports.createTheDefaultReport();
-		await ReportPrintPage.standInForThePrintDialog(page);
-		const printed = await report.exportPdf();
+		const printed = await ReportPrintPage.openByItsAddress(
+			page,
+			report.address(),
+		);
 
 		const fonts = await printed.fontsEmbeddedInThePdf();
 
@@ -96,8 +128,10 @@ testWithDemo(
 		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
 		const reports = await lightspeed.goToReports();
 		const report = await reports.createTheDefaultReport();
-		await ReportPrintPage.standInForThePrintDialog(page);
-		const printed = await report.exportPdf();
+		const printed = await ReportPrintPage.openByItsAddress(
+			page,
+			report.address(),
+		);
 
 		expect(await printed.colourOfTheLineBeforeNowInPrint()).toBe(
 			THE_LIGHT_DIVIDER,

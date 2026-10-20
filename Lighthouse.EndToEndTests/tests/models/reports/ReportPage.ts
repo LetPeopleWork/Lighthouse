@@ -49,12 +49,49 @@ export class ReportPage {
 		return this.page.getByRole("region", { name: title });
 	}
 
-	/** Export PDF leads to the report's print page; stand in for the print dialog before calling this. */
-	async exportPdf(): Promise<ReportPrintPage> {
+	/** How many entries the tab's history holds, which an export must leave as it found them. */
+	async historyLength(): Promise<number> {
+		return this.page.evaluate(() => globalThis.history.length);
+	}
+
+	/**
+	 * Export PDF prints the report from a hidden frame on this page; stand in for the print dialog before calling
+	 * this. Waits until the dialog has been asked for, on whichever window asked.
+	 */
+	async exportPdf(): Promise<void> {
 		await this.page.getByRole("button", { name: "Export PDF" }).click();
-		await this.page.waitForURL(
-			/\/print\/(teams|portfolios)\/\d+\/reports\/\d+$/,
+		await this.page.waitForFunction(
+			async () => {
+				const seen = (
+					globalThis as unknown as Record<
+						string,
+						{ page: number; frame: number } | undefined
+					>
+				).__lighthousePrints;
+				return (seen?.page ?? 0) + (seen?.frame ?? 0) > 0;
+			},
+			undefined,
+			{ timeout: 10_000 },
 		);
-		return new ReportPrintPage(this.page).waitUntilReady();
+	}
+
+	/** How often the report's own print frame, rather than the page around it, asked for the print dialog. */
+	async timesThePrintFrameAskedForTheDialog(): Promise<number> {
+		return (await ReportPrintPage.printsSeen(this.page)).frame;
+	}
+
+	/** How often the page itself, around the report, asked for the print dialog; it never should. */
+	async timesThePageAskedForTheDialog(): Promise<number> {
+		return (await ReportPrintPage.printsSeen(this.page)).page;
+	}
+
+	/** Closes the print dialog the way the browser tells the frame it has closed, and waits for the frame to go. */
+	async closeThePrintDialog(): Promise<void> {
+		const frame = this.page.locator('iframe[title="Report PDF"]');
+		await frame.evaluate((element: HTMLIFrameElement) => {
+			const frameWindow = element.contentWindow;
+			frameWindow?.dispatchEvent(new Event("afterprint"));
+		});
+		await frame.waitFor({ state: "detached" });
 	}
 }

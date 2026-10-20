@@ -3,12 +3,15 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
+
 const here = dirname(fileURLToPath(import.meta.url));
 const sourceRoot = resolve(here, "../../../..");
 /** The kits tests are built from; they name what they check for, and ship nowhere. */
 const testSupport = resolve(sourceRoot, "tests");
 
 const THE_PRINT_PAGES = resolve(here, "reportPrintRoutes.tsx");
+const THE_BINDING = "pages/Common/Reports/print/browserPrintEffects.ts";
 
 /** Static imports and re-exports, and the `import("./…")` a lazily loaded page is reached through. */
 const relativeImportsOf = (file: string): string[] => {
@@ -26,10 +29,10 @@ const fileOf = (from: string, specifier: string): string | undefined =>
 		.map((ending) => resolve(dirname(from), specifier + ending))
 		.find((candidate) => existsSync(candidate) && statSync(candidate).isFile());
 
-/** Every source file the print pages reach through their imports, relative to src. */
-const whatThePrintPagesReach = (): string[] => {
+/** Every source file a module reaches through its imports, the print pages unless told otherwise, relative to src. */
+const whatThePrintPagesReach = (from: string = THE_PRINT_PAGES): string[] => {
 	const reached = new Set<string>();
-	const toVisit = [THE_PRINT_PAGES];
+	const toVisit = [from];
 	while (toVisit.length > 0) {
 		const file = toVisit.pop() as string;
 		if (reached.has(file)) continue;
@@ -97,10 +100,19 @@ const ASKS_FOR_THE_PRINT_DIALOG = [
 	new RegExp(String.raw`\{[^{}]*\bprint\b[^{}]*\}\s*=\s*${THE_BROWSER}\b`),
 ];
 
+/** The production modules whose source matches, relative to src. */
+const productionModulesNaming = (
+	pattern: RegExp,
+	under: string = sourceRoot,
+): string[] =>
+	productionSourcesUnder(under)
+		.filter((file) => pattern.test(readFileSync(file, "utf8")))
+		.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
+
 describe("who asks the browser for its print dialog", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// One caller, so the dialog can open once and only once; a second is a second dialog.
-	it("is the print page's browser binding alone, however the dialog is spelled", () => {
+	it("is the browser binding alone, however the dialog is spelled", () => {
 		const askers = productionSourcesUnder(sourceRoot)
 			.filter((file) =>
 				ASKS_FOR_THE_PRINT_DIALOG.some((spelling) =>
@@ -108,29 +120,96 @@ describe("who asks the browser for its print dialog", () => {
 				),
 			)
 			.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
-		const theWindowsOwn = productionSourcesUnder(sourceRoot).filter((file) =>
-			/\bwindow\s*(?:\??\.\s*print\b|\[\s*["'`]print["'`]\s*\])/.test(
-				readFileSync(file, "utf8"),
-			),
+		const theWindowsOwn = productionModulesNaming(
+			/\bwindow\s*(?:\??\.\s*print\b|\[\s*["'`]print["'`]\s*\])/,
 		);
 
-		expect(askers).toEqual([
-			"pages/Common/Reports/print/browserPrintEffects.ts",
-		]);
+		expect(askers.filter((file) => file !== THE_BINDING)).toEqual([]);
 		expect(theWindowsOwn).toEqual([]);
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
+	// The dialog closing is heard on the window that was asked, so only the module that asks may listen for it.
+	it("is the only one that hears the dialog close", () => {
+		expect(productionModulesNaming(/["'`]afterprint["'`]/)).toEqual([
+			THE_BINDING,
+		]);
 	});
 });
 
-describe("who loads fonts into the document", () => {
+describe("who loads fonts into a document", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	// The print page's fonts go through its effect port, so a test can stand in for them; one binding names the browser's.
-	it("is the print page's browser binding alone", () => {
-		const loaders = productionSourcesUnder(sourceRoot)
-			.filter((file) => /\bdocument\.fonts\b/.test(readFileSync(file, "utf8")))
-			.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
+	// The report's fonts go through its effect port, so a test can stand in for them; one binding names the browser's.
+	it("is the browser binding alone", () => {
+		expect(productionModulesNaming(/\.fonts\s*\.\s*(?:load|ready)\b/)).toEqual([
+			THE_BINDING,
+		]);
+	});
+});
 
-		expect(loaders).toHaveLength(1);
-		expect(loaders[0]).toMatch(/^pages\/Common\/Reports\/print\//);
+describe("who makes a frame", () => {
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	// One way to make the print frame, so a second, unwatched frame fails by name.
+	it("is the browser binding, and nothing else", () => {
+		expect(
+			productionModulesNaming(
+				/\biframe\b|\bsrcdoc\b|\bcontentWindow\b|\bcontentDocument\b/i,
+			).filter((file) => file !== THE_BINDING),
+		).toEqual([]);
+	});
+});
+
+describe("what prints without moving the reader", () => {
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	it.skip(`nothing under print/ navigates (${pendingFramePrint})`, () => {
+		expect(productionModulesNaming(/\buseNavigate\b/, here)).toEqual([]);
+	});
+
+	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
+	// Export PDF prints where the reader is; the starter can never slip back into taking them somewhere.
+	it.skip(`the export starter neither navigates nor holds the router's navigation (${pendingFramePrint})`, () => {
+		const starters = productionModulesNaming(/ReportPdfExportStarted/).filter(
+			(file) => file !== "services/Api/UsageDataService.ts",
+		);
+		expect(starters).toHaveLength(1);
+
+		const starter = readFileSync(resolve(sourceRoot, starters[0]), "utf8");
+		expect(starter).not.toMatch(/\buseNavigate\b/);
+		expect(starter).not.toMatch(/\bnavigate\s*\(/);
+	});
+
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	// In the frame the global document is the app's, so a title written there would name the wrong page.
+	it.skip(`nothing under print/ but the binding writes a document's title (${pendingFramePrint})`, () => {
+		expect(
+			productionModulesNaming(/\bdocument\.title\s*=(?!=)/, here).filter(
+				(file) => file !== THE_BINDING,
+			),
+		).toEqual([]);
+	});
+
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	// The frame host draws the same content as the route, so it must reach none of the app's chrome either.
+	it.skip(`the frame host, alone in giving the frame a style cache of its own, draws the report's summary and panels and reaches none of the app's chrome (${pendingFramePrint})`, () => {
+		const hosts = productionModulesNaming(/from\s+["']@emotion\/cache["']/);
+		expect(hosts).toHaveLength(1);
+		expect(hosts[0]).toMatch(/^pages\/Common\/Reports\/print\//);
+
+		const reached = whatThePrintPagesReach(resolve(sourceRoot, hosts[0]));
+		expect(reached).toContain("pages/Common/Reports/ThenAndNowSummary.tsx");
+		expect(reached).toContain(
+			"pages/Common/Reports/panels/reportPanelRegistry.ts",
+		);
+		for (const chrome of [
+			"components/App/Header/Header.tsx",
+			"components/App/Footer/Footer.tsx",
+			"components/SurveyNudge/SurveyNudge.tsx",
+			"components/UsageData/UsageDataAsk.tsx",
+			"services/UsageData/usageDataReporter.ts",
+			"pages/Common/Reports/useReportOpenedReporter.ts",
+		]) {
+			expect(reached).not.toContain(chrome);
+		}
 	});
 });
 

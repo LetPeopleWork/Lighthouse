@@ -15,21 +15,3 @@ describe("a report's print page is no page anyone opened", () => {
 		},
 	);
 });
-
-/**
- * The way back from a print page started on the Reports list lands on that list again, and that arrival is
- * counted as the Reports tab opening like any other: one extra count per export from the list is accepted, so
- * the return carries nothing that would tell the counting to look away.
- */
-describe("returning to the Reports list after printing", () => {
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.each(["/teams/7/reports", "/portfolios/7/reports"])(
-		"names %s as the Reports tab, as any arrival there does",
-		(address) => {
-			expect(usageDataPageOpeningFor(address)).toBeDefined();
-			expect(usageDataPageOpeningFor(address)).toEqual(
-				usageDataPageOpeningFor(address.replace("/7/", "/8/")),
-			);
-		},
-	);
-});

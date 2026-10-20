@@ -1,34 +1,58 @@
 import type { Locator, Page } from "@playwright/test";
 
 const PRINTS_SEEN = "__lighthousePrints";
+
+/** How often the print dialog was asked for, on the tab's own page and on a frame inside it. */
+interface PrintsSeen {
+	page: number;
+	frame: number;
+}
 const TYPEFACE_AT_READY = "__lighthouseTypefaceAtReady";
 
 /** A4's width less the page's 12 mm margin on each side, in the browser's pixels of 96 to the inch: 186 mm. */
 const A4_PRINTABLE_WIDTH = 703;
 
 /**
- * A report's print page, the page Export PDF leads to. It is ready once the page says everything it prints is
- * in; waiting for mere visibility would accept the "Preparing the PDF…" look. The browser's print dialog is
- * stood in for before the page loads, so a test can count how often the page asked for it and close it the
- * way the browser does.
+ * A report's print page, opened by its address, as a pasted link and a later server renderer open it; Export PDF
+ * prints from a hidden frame on the reader's own page instead and never comes here. It is ready once the page says
+ * everything it prints is in; waiting for mere visibility would accept the "Preparing the PDF…" look. The
+ * browser's print dialog is stood in for before a page loads, on the tab's page and on every frame in it, so a test
+ * can count which of them asked for it.
  */
 export class ReportPrintPage {
 	constructor(private readonly page: Page) {}
 
 	/**
-	 * Replaces the print dialog in the page already open and in every page this tab loads from now on; call
-	 * before Export PDF. Moving between pages of the app loads nothing, so the open page needs it too.
+	 * Replaces the print dialog in the page already open, in every page this tab loads from now on and in every frame
+	 * those pages make; call before Export PDF. Moving between pages of the app loads nothing, so the open page needs
+	 * it too. Each stand-in counts on the tab's own page whether the page itself or a frame inside it asked.
 	 */
 	static async standInForThePrintDialog(page: Page): Promise<void> {
 		const standIn = (seen: string) => {
-			const record = globalThis as unknown as Record<string, number>;
-			record[seen] = 0;
+			const theTabsPage = (globalThis.top ?? globalThis) as unknown as Record<
+				string,
+				{ page: number; frame: number }
+			>;
+			theTabsPage[seen] ??= { page: 0, frame: 0 };
+			const asker = globalThis.self === globalThis.top ? "page" : "frame";
 			globalThis.print = () => {
-				record[seen] += 1;
+				theTabsPage[seen][asker] += 1;
 			};
 		};
 		await page.addInitScript(standIn, PRINTS_SEEN);
 		await page.evaluate(standIn, PRINTS_SEEN);
+	}
+
+	/** How often the tab's page, and a frame inside it, asked for the print dialog since it was stood in for. */
+	static async printsSeen(page: Page): Promise<PrintsSeen> {
+		return page.evaluate(
+			(seen) =>
+				(globalThis as unknown as Record<string, PrintsSeen>)[seen] ?? {
+					page: 0,
+					frame: 0,
+				},
+			PRINTS_SEEN,
+		);
 	}
 
 	/**
@@ -111,22 +135,9 @@ export class ReportPrintPage {
 			.getByText(new RegExp(String.raw`^\S.* ${escaped}$`));
 	}
 
+	/** How often this page itself asked for the print dialog; opened by its address, it never should. */
 	async timesThePrintDialogOpened(): Promise<number> {
-		return this.page.evaluate(
-			(seen) => (globalThis as unknown as Record<string, number>)[seen] ?? 0,
-			PRINTS_SEEN,
-		);
-	}
-
-	/** Closes the print dialog the way the browser tells a page it has closed, and waits to be back on the report. */
-	async closeThePrintDialog(): Promise<void> {
-		await this.page.evaluate(() => {
-			globalThis.dispatchEvent(new Event("afterprint"));
-		});
-		// Matched on the whole path, so the print page's own address, which ends the same way, cannot satisfy it.
-		await this.page.waitForURL((url) =>
-			/^\/(teams|portfolios)\/\d+\/reports\/\d+$/.test(url.pathname),
-		);
+		return (await ReportPrintPage.printsSeen(this.page)).page;
 	}
 
 	/**

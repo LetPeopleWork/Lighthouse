@@ -8,6 +8,7 @@ import {
 } from "../../../services/UsageData/usageDataBuffer";
 import { createMockUsageDataService } from "../../../tests/MockApiServiceProvider";
 import {
+	aMomentLater,
 	aPrintDialog,
 	forgetTheBrowser,
 	PDF_EXPORT_STARTED,
@@ -16,7 +17,6 @@ import {
 	THEN_AND_NOW,
 	theExportButtonOnceItCanBePressed,
 	theFontsHaveLoaded,
-	theStandInForThePrintPage,
 	thisBrowsersUsageDataAnswer,
 } from "../../../tests/ReportPrintTestKit";
 import {
@@ -61,7 +61,7 @@ const exportingWith = async (
 	await waitFor(() => expect(thisBrowsersUsageDataAnswer()).toBe(answerFirst));
 
 	await user.click(await theExportButtonOnceItCanBePressed());
-	await theStandInForThePrintPage();
+	await aMomentLater();
 };
 
 const exportsNoticed = () =>

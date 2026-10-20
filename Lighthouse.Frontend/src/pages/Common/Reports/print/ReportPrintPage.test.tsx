@@ -15,15 +15,11 @@ import {
 	BACK_TO_REPORT,
 	BACK_TO_REPORTS,
 	BRANDING,
-	EXPORT_PDF,
 	EXPORTED_AT,
-	exportAsPdfLabelOf,
 	forgetTheBrowser,
-	isHiddenInPrint,
 	lightspeed,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
-	pressTheBrowsersBack,
 	printPathFor,
 	renderReadiness,
 	renderTheExportScene,
@@ -31,7 +27,6 @@ import {
 	reportsPathFor,
 	THE_REPORT_COULD_NOT_BE_LOADED,
 	theBackControl,
-	theExportButtonOnceItCanBePressed,
 	theFontsAreStillLoading,
 	theFontsCannotLoad,
 	theFontsHaveLoaded,
@@ -57,13 +52,15 @@ import { lightTheme } from "../../../../utils/theme/appThemes";
 import { reportQueryKeyOf } from "../reportOwner";
 
 /**
- * The print page of a report: the page Export PDF leads to, drawn for paper and nothing else. It reads the
- * report afresh, says it is preparing until everything it prints is in - the report, the owner's name, the
- * instance's terms and the fonts - and only then, and only when the reader came by Export PDF, asks the
- * browser once for its print dialog. The wish to print is used up by printing, so nothing prints it twice. When
- * the dialog closes the reader is back where Export started. A report that cannot be read makes no PDF and says
- * so; a link pasted into the address bar shows the page, never prints, and leads back to the Reports list.
+ * The print page of a report, opened from its address: the report drawn for paper and nothing else, as a pasted
+ * link, the end-to-end PDF check and a later server renderer open it. It reads the report afresh, says it is
+ * preparing until everything it prints is in - the report, the owner's name, the instance's terms, the fonts and
+ * the Lighthouse mark - and says when it is ready, but it never asks for the print dialog itself: Export PDF
+ * prints from a hidden frame on the reader's own page. A report that cannot be read makes no PDF and says so, and
+ * the page's one way on is "‹ Back to Reports".
  */
+
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
 
 const { reportUsage } = vi.hoisted(() => ({
 	reportUsage: vi.fn().mockReturnValue(true),
@@ -95,42 +92,6 @@ const openingThePrintPageDirectly = (scene: Partial<Scene> = {}) =>
 		startAt: atThePrintPage,
 		...scene,
 	});
-
-/** The reader on the report view chooses Export PDF and arrives at its print page. */
-const exportingFromTheReport = async (scene: Partial<Scene> = {}) => {
-	const rendered = renderTheExportScene({
-		reportService: aReportService(),
-		startAt: atTheReport,
-		...scene,
-	});
-	await rendered.user.click(await theExportButtonOnceItCanBePressed());
-	return rendered;
-};
-
-/** The reader opens the report from the Reports list, so the list is the entry before the report in their history. */
-const openingTheReportFromTheList = async () => {
-	const rendered = renderTheExportScene({
-		reportService: aReportService(),
-		startAt: atTheList,
-	});
-	await rendered.user.click(
-		await screen.findByRole("link", { name: ENGAGEMENT_START }),
-	);
-	return rendered;
-};
-
-/** The reader on the Reports list chooses the PDF icon of the engagement-start report. */
-const exportingFromTheList = async (scene: Partial<Scene> = {}) => {
-	const rendered = renderTheExportScene({
-		reportService: aReportService(),
-		startAt: atTheList,
-		...scene,
-	});
-	await rendered.user.click(
-		await screen.findByLabelText(exportAsPdfLabelOf(ENGAGEMENT_START)),
-	);
-	return rendered;
-};
 
 const thePrintPage = (): HTMLElement => {
 	const page = document.querySelector<HTMLElement>("[data-render-ready]");
@@ -207,31 +168,6 @@ describe("The print page gets ready", () => {
 		},
 	);
 
-	// @us-01 @walking_skeleton @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	it("opens the print dialog exactly once, when everything it prints is in, after Export PDF", async () => {
-		const dialog = aPrintDialog();
-
-		await exportingFromTheReport();
-		await thePrintPageIsReady();
-		await aMomentLater();
-
-		expect(dialog.timesOpened()).toBe(1);
-		expect(screen.queryByText(PREPARING)).toBeNull();
-		expect(theBackControl()).toBeDefined();
-	});
-
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	// React's strict mode runs every effect twice on mount; the reader still gets one dialog.
-	it("opens the print dialog once even when the page's effects run twice", async () => {
-		const dialog = aPrintDialog();
-
-		await exportingFromTheReport({ strict: true });
-		await thePrintPageIsReady();
-		await aMomentLater();
-
-		expect(dialog.timesOpened()).toBe(1);
-	});
-
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The wish to print travels with Export PDF, never in the address, so a pasted link only shows the page.
 	it("shows a print page opened from its address but never opens the print dialog", async () => {
@@ -248,19 +184,18 @@ describe("The print page gets ready", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it("waits for the fonts before opening the print dialog", async () => {
-		const dialog = aPrintDialog();
+	it("is not ready while the fonts are on their way, and ready once they arrive", async () => {
+		aPrintDialog();
 		const fonts = theFontsAreStillLoading();
 
-		await exportingFromTheReport();
+		openingThePrintPageDirectly();
+		expect(await screen.findByText(PREPARING)).toBeVisible();
 		await aMomentLater();
-		expect(dialog.timesOpened()).toBe(0);
 		expect(renderReadiness()).toBe("false");
 
 		await fonts.arrive();
 
 		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
@@ -290,7 +225,7 @@ describe("The print page gets ready", () => {
 			const dialog = aPrintDialog();
 			theFontsCannotLoad(how);
 
-			await exportingFromTheReport();
+			openingThePrintPageDirectly();
 
 			expect(
 				await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
@@ -304,99 +239,13 @@ describe("The print page gets ready", () => {
 	);
 });
 
-describe("The wish to print is used up by printing", () => {
+describe("The print page never prints by itself", () => {
 	beforeEach(() => {
 		reportUsage.mockClear();
 		theFontsHaveLoaded();
 	});
 
 	afterEach(forgetTheBrowser);
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it("leaves the page's entry without the wish to print once it printed, still knowing where the export started", async () => {
-		const dialog = aPrintDialog();
-
-		await exportingFromTheReport();
-		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
-
-		expect(whatThisEntryCarries()).toEqual({ from: "report" });
-		expect(whereTheReaderIs()).toEqual({ path: atThePrintPage, search: "" });
-	});
-
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	// A reload, or Forward back onto the page, finds the entry as printing left it.
-	it("never prints again when the page comes back after it printed", async () => {
-		const dialog = aPrintDialog();
-
-		openingThePrintPageDirectly({ startState: { from: "report" } });
-		await thePrintPageIsReady();
-		await aMomentLater();
-
-		expect(dialog.timesOpened()).toBe(0);
-		expect(readingOf(theBackControl() as HTMLElement)).toBe(BACK_TO_REPORT);
-	});
-});
-
-describe("The way back from the print page", () => {
-	beforeEach(() => {
-		reportUsage.mockClear();
-		theFontsHaveLoaded();
-	});
-
-	afterEach(forgetTheBrowser);
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it('reads "‹ Back to report" when the reader came from the report, and is not printed', async () => {
-		aPrintDialog();
-		await exportingFromTheReport();
-		await thePrintPageIsReady();
-
-		const back = theBackControl() as HTMLElement;
-		expect(readingOf(back)).toBe(BACK_TO_REPORT);
-		expect(isHiddenInPrint(back)).toBe(true);
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it("takes the reader back to the report once the print dialog closes", async () => {
-		const dialog = aPrintDialog();
-		await exportingFromTheReport();
-		await thePrintPageIsReady();
-
-		dialog.close();
-
-		await waitFor(() =>
-			expect(whereTheReaderIs()).toEqual({ path: atTheReport, search: "" }),
-		);
-		expect(
-			await screen.findByRole("button", { name: EXPORT_PDF }),
-		).toBeEnabled();
-		expect(dialog.timesOpened()).toBe(1);
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it(`reads "‹ Back to Reports" when the reader came from the list, and goes back to it`, async () => {
-		aPrintDialog();
-		const { user } = await exportingFromTheList();
-		await thePrintPageIsReady();
-
-		const back = theBackControl() as HTMLElement;
-		expect(readingOf(back)).toBe(BACK_TO_REPORTS);
-		await user.click(back);
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it(`takes the reader from the list back to the list once the print dialog closes`, async () => {
-		const dialog = aPrintDialog();
-		await exportingFromTheList();
-		await thePrintPageIsReady();
-
-		dialog.close();
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
-	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// A pasted link says nothing about where the reader came from; the owner's Reports list is the one safe place.
@@ -412,59 +261,37 @@ describe("The way back from the print page", () => {
 		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	// The return steps back to the entry the export started from; a copy of the report on top of it would make the
-	// browser's Back show the same report a second time.
-	it(`takes the reader back to the report once the print dialog closes, leaving the report in their history once`, async () => {
+	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
+	// A history entry an older Lighthouse left behind, reached by a reload or Forward, still asks for nothing.
+	it.skip(`never prints, even when its history entry still carries an export's wish to print (${pendingFramePrint})`, async () => {
 		const dialog = aPrintDialog();
-		const { user } = await openingTheReportFromTheList();
-		await user.click(await theExportButtonOnceItCanBePressed());
-		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 
-		dialog.close();
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
-
-		await pressTheBrowsersBack();
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it(`takes the reader back to the report on "‹ Back to report", leaving the report in their history once`, async () => {
-		aPrintDialog();
-		const { user } = await openingTheReportFromTheList();
-		await user.click(await theExportButtonOnceItCanBePressed());
-		await thePrintPageIsReady();
-
-		await user.click(theBackControl() as HTMLElement);
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
-
-		await pressTheBrowsersBack();
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it(`takes the reader from the list back to the list once the print dialog closes, leaving the list in their history once`, async () => {
-		const dialog = aPrintDialog();
-		const { user } = renderTheExportScene({
-			reportService: aReportService(),
-			startAt: atTheReport,
+		openingThePrintPageDirectly({
+			startState: { printWhenReady: true, from: "report" },
 		});
-		await user.click(await screen.findByRole("link", { name: "Reports" }));
-		await user.click(
-			await screen.findByLabelText(exportAsPdfLabelOf(ENGAGEMENT_START)),
-		);
 		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+		await aMomentLater();
 
-		dialog.close();
+		expect(dialog.timesOpened()).toBe(0);
+	});
+
+	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
+	// Nothing sends a reader here any more, so the page knows no report view to return to; the list is its one way on.
+	it.skip(`offers only "‹ Back to Reports", a plain link to the list that carries nothing, whatever its history entry says (${pendingFramePrint})`, async () => {
+		aPrintDialog();
+		const { user } = openingThePrintPageDirectly({
+			startState: { from: "report" },
+		});
+		await thePrintPageIsReady();
+
+		expect(screen.queryByText(BACK_TO_REPORT)).toBeNull();
+		const back = theBackControl() as HTMLElement;
+		expect(readingOf(back)).toBe(BACK_TO_REPORTS);
+		expect(back.tagName).toBe("A");
+		await user.click(back);
+
 		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
-
-		await pressTheBrowsersBack();
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
+		expect(whatThisEntryCarries()).toBeNull();
 	});
 });
 
@@ -476,23 +303,13 @@ describe("A report the print page cannot read", () => {
 
 	afterEach(forgetTheBrowser);
 
-	/** The report view's read succeeds; the print page's fresh read gets what follows. */
-	const theFreshReadGets = (...answers: (() => Promise<unknown>)[]) => {
-		const getReport = vi.fn().mockResolvedValueOnce(theEngagementStartReport());
-		for (const answer of answers) {
-			getReport.mockImplementationOnce(answer);
-		}
-		return getReport;
-	};
-
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("says no PDF was made, offers Retry, and never gets ready or prints, when the report could not be loaded", async () => {
 		const dialog = aPrintDialog();
-		const getReport = theFreshReadGets(() =>
-			Promise.reject(new Error("the network dropped")),
-		);
-		await exportingFromTheReport({
-			reportService: aReportService({ getReport }),
+		openingThePrintPageDirectly({
+			reportService: aReportService({
+				getReport: vi.fn().mockRejectedValue(new Error("the network dropped")),
+			}),
 		});
 
 		expect(
@@ -500,30 +317,9 @@ describe("A report the print page cannot read", () => {
 		).toBeVisible();
 		expect(screen.queryByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED)).toBeNull();
 		expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
-		expect(readingOf(theBackControl() as HTMLElement)).toBe(BACK_TO_REPORT);
 		await aMomentLater();
 		expect(renderReadiness()).not.toBe("true");
 		expect(dialog.timesOpened()).toBe(0);
-	});
-
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	// The reader asked for a PDF; a read that succeeds on Retry finishes what Export started.
-	it("opens the print dialog once when Retry reads the report after the export's read failed", async () => {
-		const dialog = aPrintDialog();
-		const getReport = theFreshReadGets(
-			() => Promise.reject(new Error("the network dropped")),
-			() => Promise.resolve(theEngagementStartReport()),
-		);
-		const { user } = await exportingFromTheReport({
-			reportService: aReportService({ getReport }),
-		});
-		await user.click(await screen.findByRole("button", { name: "Retry" }));
-
-		await thePrintPageIsReady();
-		await aMomentLater();
-
-		expect(dialog.timesOpened()).toBe(1);
-		expect(screen.queryByText(THE_REPORT_COULD_NOT_BE_LOADED)).toBeNull();
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
@@ -577,25 +373,10 @@ describe("A report the print page cannot read", () => {
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it("leads back to Reports from a report that no longer exists, even when the reader came from the report", async () => {
-		const dialog = aPrintDialog();
-		const getReport = theFreshReadGets(() =>
-			Promise.reject(aRefusal(404, "not-found")),
-		);
-		await exportingFromTheReport({
-			reportService: aReportService({ getReport }),
-		});
-
-		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
-		expect(readingOf(theBackControl() as HTMLElement)).toBe(BACK_TO_REPORTS);
-		expect(dialog.timesOpened()).toBe(0);
-	});
-
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("says part of the page could not be loaded, offers Retry, and never prints, when the owner's name cannot be read", async () => {
 		const dialog = aPrintDialog();
 		const teamService = aTeamServiceThatCannotReadTheName();
-		const { user } = await exportingFromTheReport({ teamService });
+		const { user } = openingThePrintPageDirectly({ teamService });
 
 		expect(
 			await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
@@ -618,45 +399,44 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	// The reader asked for a PDF; terms that arrive on Retry finish what Export started.
-	it("says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and prints once", async () => {
+	// @us-01 @slice-01 @error @contract-shape:bounded-change
+	it("says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and gets the page ready", async () => {
 		const dialog = aPrintDialog();
 		const terminologyService = aTerminologyServiceThatCannotReadTheTerms({
 			untilTheRead: 2,
 		});
-		const { user } = await exportingFromTheReport({ terminologyService });
+		const { user } = openingThePrintPageDirectly({ terminologyService });
 
 		expect(
 			await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
 		).toBeVisible();
 		await aMomentLater();
-		expect(dialog.timesOpened()).toBe(0);
+		expect(renderReadiness()).not.toBe("true");
 
 		const readsBeforeRetry = vi.mocked(terminologyService.getAllTerminology)
 			.mock.calls.length;
 		await user.click(screen.getByRole("button", { name: "Retry" }));
 
 		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 		expect(
 			vi.mocked(terminologyService.getAllTerminology).mock.calls.length,
 		).toBeGreaterThan(readsBeforeRetry);
 		expect(screen.queryByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED)).toBeNull();
+		await aMomentLater();
+		expect(dialog.timesOpened()).toBe(0);
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	// The report view's answer stays in hand while Retry asks again, and so does the failure; the page must not go
-	// on saying it failed, nor offer Retry a second time, while the answer to the first Retry is on its way.
+	// The page must not go on saying it failed, nor offer Retry a second time, while the answer to Retry is on its way.
 	it(`shows that it is preparing the PDF, with no Retry, while Retry reads the report again`, async () => {
 		const dialog = aPrintDialog();
 		const theRetriedRead =
 			deferred<ReturnType<typeof theEngagementStartReport>>();
-		const getReport = theFreshReadGets(
-			() => Promise.reject(new Error("the network dropped")),
-			() => theRetriedRead.promise,
-		);
-		const { user } = await exportingFromTheReport({
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockReturnValueOnce(theRetriedRead.promise);
+		const { user } = openingThePrintPageDirectly({
 			reportService: aReportService({ getReport }),
 		});
 		await user.click(await screen.findByRole("button", { name: "Retry" }));
@@ -671,7 +451,8 @@ describe("A report the print page cannot read", () => {
 			theRetriedRead.resolve(theEngagementStartReport());
 		});
 		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+		await aMomentLater();
+		expect(dialog.timesOpened()).toBe(0);
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
@@ -679,8 +460,8 @@ describe("A report the print page cannot read", () => {
 	it.each<[string, () => Promise<unknown>]>([
 		[
 			"Team",
-			() =>
-				exportingFromTheReport({
+			async () =>
+				openingThePrintPageDirectly({
 					teamService: aTeamServiceAnswering(Promise.resolve(null)),
 				}),
 		],
@@ -721,11 +502,10 @@ describe("A report the print page cannot read", () => {
 	// A refusal that asking again will not change, but which has no sentence of its own, still speaks of the report.
 	it(`says the report couldn't be loaded, offers no Retry and leads back to Reports, when the report is refused for a reason with no sentence of its own`, async () => {
 		const dialog = aPrintDialog();
-		const getReport = theFreshReadGets(() =>
-			Promise.reject(aRefusal(422, "then-too-short")),
-		);
-		await exportingFromTheReport({
-			reportService: aReportService({ getReport }),
+		openingThePrintPageDirectly({
+			reportService: aReportService({
+				getReport: vi.fn().mockRejectedValue(aRefusal(422, "then-too-short")),
+			}),
 		});
 
 		expect(
@@ -905,50 +685,6 @@ describe("The print page prints the report as it is now", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it("reads the report again even when the report view has only just read it", async () => {
-		aPrintDialog();
-		const getReport = vi.fn().mockResolvedValue(theEngagementStartReport());
-		const { user } = renderTheExportScene({
-			reportService: aReportService({ getReport }),
-			startAt: atTheReport,
-		});
-		const exportButton = await screen.findByRole("button", {
-			name: EXPORT_PDF,
-		});
-		await waitFor(() => expect(exportButton).toBeEnabled());
-		const readsBeforeExport = getReport.mock.calls.length;
-
-		await user.click(exportButton);
-		await thePrintPageIsReady();
-
-		expect(getReport.mock.calls.length).toBeGreaterThan(readsBeforeExport);
-	});
-
-	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
-	// The screen and the PDF agree: back on the report, the reader sees the values that were just printed.
-	it("shows the report view the values it just printed once the dialog closes", async () => {
-		const dialog = aPrintDialog();
-		const renamed = "Then & Now — engagement start, as read for the PDF";
-		const getReport = vi
-			.fn()
-			.mockResolvedValueOnce(theEngagementStartReport())
-			.mockResolvedValue(theEngagementStartReport({ name: renamed }));
-		await exportingFromTheReport({
-			reportService: aReportService({ getReport }),
-		});
-		await thePrintPageIsReady();
-		expect(
-			screen.getByRole("heading", { level: 1, name: renamed }),
-		).toBeVisible();
-
-		dialog.close();
-
-		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
-		expect(await screen.findByText(renamed)).toBeVisible();
-		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
-	});
-
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
 	it("prints the same summary and panels the reader sees on the report", async () => {
 		aPrintDialog();
@@ -1002,75 +738,5 @@ describe("What the print page reports about its use", () => {
 		});
 
 		expect(reportUsage).not.toHaveBeenCalled();
-	});
-
-	/** Every event is taken, as it is once this browser has said yes to sending usage data. */
-	const timesTheReportWasOpened = () =>
-		reportUsage.mock.calls.filter(([use]) => use.name === "ReportOpened")
-			.length;
-
-	const stayingFor = (milliseconds: number) =>
-		act(async () => {
-			await vi.advanceTimersByTimeAsync(milliseconds);
-		});
-
-	/** The reader opens the report, stays on it for a while, exports, and comes back from the print dialog. */
-	const exportingAfterStayingFor = async (milliseconds: number) => {
-		const dialog = aPrintDialog();
-		const rendered = renderTheExportScene({
-			reportService: aReportService(),
-			startAt: atTheReport,
-			onFakeTimers: true,
-		});
-		const exportButton = await screen.findByRole("button", {
-			name: EXPORT_PDF,
-		});
-		await stayingFor(milliseconds);
-		await rendered.user.click(exportButton);
-		await thePrintPageIsReady();
-		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
-		dialog.close();
-		await screen.findByRole("button", { name: EXPORT_PDF });
-		return rendered;
-	};
-
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	// One opening is one visit to the report; a reader who exported before it counted has not been counted yet, and
-	// coming back starts the wait again rather than carrying on from where it stopped.
-	it(`counts the report as opened once the reader has stayed on it after printing, when they exported before it counted`, async () => {
-		await exportingAfterStayingFor(3_000);
-
-		await stayingFor(4_000);
-		expect(timesTheReportWasOpened()).toBe(0);
-
-		await stayingFor(1_000);
-		expect(timesTheReportWasOpened()).toBe(1);
-	});
-
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
-	// Coming back from the dialog is the same reading of the report, not a second opening of it.
-	it("counts the report as opened once, not again when the reader comes back from printing", async () => {
-		await exportingAfterStayingFor(6_000);
-		expect(timesTheReportWasOpened()).toBe(1);
-
-		await stayingFor(10_000);
-
-		expect(timesTheReportWasOpened()).toBe(1);
-	});
-
-	// @us-01 @slice-01 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	// Opening the report again from the list is a new visit, printed in between or not.
-	it("counts the report as opened again when the reader later opens it anew from the list", async () => {
-		const { user } = await exportingAfterStayingFor(6_000);
-		await stayingFor(10_000);
-
-		await user.click(screen.getByRole("link", { name: "Reports" }));
-		await user.click(
-			await screen.findByRole("link", { name: ENGAGEMENT_START }),
-		);
-		await screen.findByRole("button", { name: EXPORT_PDF });
-		await stayingFor(6_000);
-
-		expect(timesTheReportWasOpened()).toBe(2);
 	});
 });

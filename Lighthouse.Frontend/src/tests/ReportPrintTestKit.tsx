@@ -7,19 +7,20 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
-import { StrictMode } from "react";
+import { StrictMode, useRef } from "react";
 import {
 	MemoryRouter,
 	Route,
 	Routes,
 	useLocation,
-	useNavigate,
 	useParams,
 } from "react-router";
 import { expect, vi } from "vitest";
+import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import {
 	UsageDataConsentProvider,
 	useUsageDataConsentIfKnown,
@@ -60,10 +61,11 @@ import {
 
 /**
  * A report exported as a PDF, from the reader's side: the Export PDF action on the report view and on the
- * Reports list, the print page it leads to, and the browser's print dialog in front of it. The app is the
- * one a reader runs - real routes, real Reports pages, the instance's terms read through the real provider -
- * and only what lies outside it is stood in for: the backend's answers, the print dialog, and the fonts and
- * pictures the browser loads.
+ * Reports list, the hidden frame the report is printed from, the print page a pasted link opens, and the
+ * browser's print dialog. The app is the one a reader runs - real routes, real Reports pages, the instance's
+ * terms read through the real provider, the error snackbar the Team and Portfolio pages hold around their
+ * Reports - and only what lies outside it is stood in for: the backend's answers, the print dialog, and what
+ * jsdom does not do itself, which is loading fonts, pictures and style sheets.
  *
  * Every example is set on the instance's day of the Reports kit, 2 Oct 2026, at 09:15 on the reader's clock.
  */
@@ -102,8 +104,6 @@ export const WINDOWS_LINE = "Then 3 May – 31 Jul 2026 · Now 5 Jul – 2 Oct 2
 
 export const LIGHTSPEEDS_NAME = "Lightspeed";
 export const APOLLOS_NAME = "Apollo";
-
-const STAND_IN_FOR_THE_PRINT_PAGE = "The print page";
 
 export const reportPathFor = (owner: IReportOwner, reportId: number) =>
 	`/${owner.kind}s/${owner.id}/reports/${reportId}`;
@@ -181,15 +181,22 @@ export const aPortfolioServiceAnswering = (
 	getPortfolio: vi.fn().mockReturnValue(answer),
 });
 
-/** Where the reader is: the address bar, which must never carry the wish to print. */
+/**
+ * Where the reader is: the address bar, what the current history entry carries, and how many history entries the
+ * reader has been through in this scene. Every move through the history, a replace included, is an entry of its
+ * own, so an export that moves the reader anywhere at all is seen.
+ */
 const WhereTheReaderIs: React.FC = () => {
 	const location = useLocation();
+	const entries = useRef(new Set<string>());
+	entries.current.add(location.key);
 	return (
 		<output
 			aria-label="where the reader is"
 			data-path={location.pathname}
 			data-search={location.search}
 			data-state={JSON.stringify(location.state ?? null)}
+			data-entries={entries.current.size}
 		/>
 	);
 };
@@ -202,21 +209,16 @@ export const whereTheReaderIs = (): { path: string; search: string } => {
 	};
 };
 
-/** The browser's own Back button, which the app does not draw; the scene being rendered hands it the router. */
-let theBrowsersHistory: ReturnType<typeof useNavigate> | undefined;
-
-const TheBrowsersBackButton: React.FC = () => {
-	theBrowsersHistory = useNavigate();
-	return null;
+/** The reader's address and how many history entries they have been through since the scene began. */
+export const theReadersHistory = (): { path: string; entries: number } => {
+	const shown = screen.getByLabelText("where the reader is");
+	return {
+		path: shown.dataset.path ?? "",
+		entries: Number(shown.dataset.entries ?? "0"),
+	};
 };
 
-/** Presses the browser's Back button: one step back through the tab's history, whatever the page draws. */
-export const pressTheBrowsersBack = () =>
-	act(async () => {
-		await theBrowsersHistory?.(-1);
-	});
-
-/** What the current history entry carries beside its address: the wish to print and where the export started. */
+/** What the current history entry carries beside its address. */
 export const whatThisEntryCarries = (): unknown =>
 	JSON.parse(
 		screen.getByLabelText("where the reader is").dataset.state ?? "null",
@@ -236,21 +238,6 @@ const ThisBrowsersUsageDataAnswer: React.FC = () => {
 export const thisBrowsersUsageDataAnswer = (): string =>
 	screen.getByLabelText("this browser's usage data answer").dataset.state ??
 	"none";
-
-export const LEAVE_THE_PRINT_PAGE = "Leave the print page";
-
-/** Where the print page goes in scenarios about how Export leaves a report; it only knows the way back. */
-const StandInForThePrintPage: React.FC = () => {
-	const navigate = useNavigate();
-	return (
-		<>
-			<p>{STAND_IN_FOR_THE_PRINT_PAGE}</p>
-			<button type="button" onClick={() => navigate(-1)}>
-				{LEAVE_THE_PRINT_PAGE}
-			</button>
-		</>
-	);
-};
 
 const OwnersReports: React.FC<{ readonly kind: IReportOwner["kind"] }> = ({
 	kind,
@@ -282,7 +269,7 @@ export interface ExportScene {
 	readonly terminologyService?: ITerminologyService;
 	/** With a usage data service the real consent is in place; without one the page sees no answer about this browser. */
 	readonly usageDataService?: IUsageDataService;
-	/** False puts a stand-in where the print page goes, for scenarios about how Export leaves the report. */
+	/** False leaves the print pages out, for scenarios about the Reports pages alone. */
 	readonly withPrintPages?: boolean;
 	/** The reader's own theme; the print page must not follow a dark one. */
 	readonly readersTheme?: "light" | "dark";
@@ -353,11 +340,7 @@ export const renderTheExportScene = (
 				path="/portfolios/:id/reports/:reportId"
 				element={<OwnersReport kind="portfolio" />}
 			/>
-			{withPrintPages ? (
-				reportPrintRoutes(theBrowsersStandIns())
-			) : (
-				<Route path="/print/*" element={<StandInForThePrintPage />} />
-			)}
+			{withPrintPages && reportPrintRoutes(theBrowsersStandIns())}
 		</Routes>
 	);
 
@@ -369,9 +352,8 @@ export const renderTheExportScene = (
 					color: "text.primary",
 				}}
 			>
-				{routes}
+				<SnackbarErrorHandler>{routes}</SnackbarErrorHandler>
 				<WhereTheReaderIs />
-				<TheBrowsersBackButton />
 			</Box>
 		</ThemeProvider>
 	);
@@ -409,9 +391,6 @@ export const renderTheExportScene = (
 
 	return { ...rendered, queryClient, user };
 };
-
-export const theStandInForThePrintPage = () =>
-	screen.findByText(STAND_IN_FOR_THE_PRINT_PAGE);
 
 // --- The browser around the page ---
 
@@ -571,7 +550,223 @@ export const forgetTheBrowser = () => {
 	theFonts = undefined;
 	thePictures = recordingPictureLoads(async () => "loaded").load;
 	vi.unstubAllGlobals();
+	forgetThePrintFrames();
 };
+
+// --- The hidden frame an export prints from ---
+
+/** The title the print frame carries, so assistive technology that still meets it can name it. */
+export const REPORT_PDF_FRAME = "Report PDF";
+
+/** How the frame's print dialog behaves: as Firefox's, as Chrome's, or not at all. */
+export type FramePrintDialog =
+	/** Opens, and says it closed only when the test closes it. */
+	| "opens"
+	/** Says it closed before print() even returns, as Chrome does. */
+	| "closes before print returns"
+	/** print() throws. */
+	| "throws"
+	/** The frame's window has no print at all. */
+	| "is missing";
+
+export interface PrintFrameBrowserOptions {
+	readonly dialog?: FramePrintDialog;
+	/** Whether the app's style sheets, copied into the frame, load there. */
+	readonly styleSheets?: "load" | "fail";
+}
+
+interface FramePrint {
+	readonly frame: HTMLIFrameElement;
+	/** Whether the frame was still in the page when its print() returned. */
+	stillThereWhenPrintReturned: boolean | undefined;
+}
+
+let theFrameWatch: MutationObserver | undefined;
+let framePrints: FramePrint[] = [];
+
+type FramesWindow = Window & typeof globalThis;
+
+const A_FACE_FOUND = { family: "Quicksand Variable" } as unknown as FontFace;
+
+/** Answers a load of a style sheet copied into the frame, as a browser would once it has fetched the sheet. */
+const answerTheSheetsCopiedInto = (
+	head: HTMLElement,
+	styleSheets: "load" | "fail",
+) => {
+	const answer = (link: HTMLLinkElement) =>
+		setTimeout(() => {
+			link.dispatchEvent(
+				new (link.ownerDocument.defaultView as FramesWindow).Event(
+					styleSheets === "load" ? "load" : "error",
+				),
+			);
+		});
+	new MutationObserver((changes) => {
+		for (const change of changes) {
+			for (const added of Array.from(change.addedNodes)) {
+				if (added.nodeName === "LINK") answer(added as HTMLLinkElement);
+			}
+		}
+	}).observe(head, { childList: true });
+};
+
+const standInForTheFramesPrint = (
+	frame: HTMLIFrameElement,
+	frameWindow: FramesWindow,
+	dialog: FramePrintDialog,
+) => {
+	if (dialog === "is missing") {
+		Object.defineProperty(frameWindow, "print", {
+			configurable: true,
+			value: undefined,
+		});
+		return;
+	}
+	frameWindow.print = () => {
+		if (dialog === "throws") {
+			throw new Error("the print dialog could not be opened");
+		}
+		const print: FramePrint = { frame, stillThereWhenPrintReturned: undefined };
+		framePrints.push(print);
+		if (dialog === "closes before print returns") {
+			frameWindow.dispatchEvent(new frameWindow.Event("afterprint"));
+		}
+		print.stillThereWhenPrintReturned = frame.isConnected;
+	};
+};
+
+/**
+ * What jsdom's own frame lacks, stood in for on every frame the app makes: the print dialog, the document's fonts
+ * (answered by the same stand-in as the print page's), the decoding of a picture such as the Lighthouse mark, and
+ * the loading of a copied style sheet. jsdom ignores a frame's srcdoc, so the frame holds the blank document it is
+ * born with, which is the one the app draws into.
+ */
+const standInForTheFramesBrowser = (
+	frame: HTMLIFrameElement,
+	{ dialog = "opens", styleSheets = "load" }: PrintFrameBrowserOptions,
+) => {
+	const frameWindow = frame.contentWindow as FramesWindow | null;
+	const frameDocument = frame.contentDocument;
+	if (frameWindow === null || frameDocument === null) return;
+	standInForTheFramesPrint(frame, frameWindow, dialog);
+	Object.defineProperty(frameDocument, "fonts", {
+		configurable: true,
+		value: {
+			load: async (face: string) =>
+				(await theBrowsersStandIns().loadFonts([face])) === "loaded"
+					? [A_FACE_FOUND]
+					: [],
+			ready: Promise.resolve(),
+		},
+	});
+	Object.defineProperty(frameWindow.HTMLImageElement.prototype, "decode", {
+		configurable: true,
+		value: async function (this: HTMLImageElement) {
+			const outcome = await thePictures(this.getAttribute("src") ?? "");
+			if (outcome !== "loaded") {
+				throw new Error("the picture could not be fetched");
+			}
+		},
+	});
+	answerTheSheetsCopiedInto(frameDocument.head, styleSheets);
+};
+
+/**
+ * The browser around every frame an export makes from now on, until forgetTheBrowser: each frame's print dialog
+ * is a recorder, and its fonts, pictures and style sheets answer as the test sets them.
+ */
+export const aPrintFrameBrowser = (options: PrintFrameBrowserOptions = {}) => {
+	theFrameWatch?.disconnect();
+	framePrints = [];
+	theFrameWatch = new MutationObserver((changes) => {
+		for (const change of changes) {
+			for (const added of Array.from(change.addedNodes)) {
+				if (added.nodeName === "IFRAME") {
+					standInForTheFramesBrowser(added as HTMLIFrameElement, options);
+				}
+			}
+		}
+	});
+	theFrameWatch.observe(document.body, { childList: true, subtree: true });
+	return {
+		/** How often a frame's own window was asked for the print dialog. */
+		timesAFramePrinted: () => framePrints.length,
+		/** The frames whose window was asked for the print dialog, in order. */
+		framesThatPrinted: () => framePrints.map(({ frame }) => frame),
+		/** Whether each frame was still in the page when its print() returned, in order. */
+		stillThereWhenPrintReturned: () =>
+			framePrints.map(({ stillThereWhenPrintReturned }) =>
+				Boolean(stillThereWhenPrintReturned),
+			),
+		/** Closes the dialog of the frame that printed last, the way the browser tells that frame's window. */
+		closeTheDialog: () =>
+			act(() => {
+				const last = framePrints[framePrints.length - 1]?.frame;
+				const frameWindow = last?.contentWindow as FramesWindow | undefined;
+				frameWindow?.dispatchEvent(new frameWindow.Event("afterprint"));
+			}),
+	};
+};
+
+const forgetThePrintFrames = () => {
+	theFrameWatch?.disconnect();
+	theFrameWatch = undefined;
+	framePrints = [];
+	for (const frame of thePrintFrames()) frame.remove();
+};
+
+/** Every frame in the app's page; an export makes one, and only while it prints. */
+export const thePrintFrames = (): HTMLIFrameElement[] =>
+	Array.from(document.querySelectorAll("iframe"));
+
+/** The one print frame there is now; there must be exactly one. */
+export const thePrintFrame = (): HTMLIFrameElement => {
+	const frames = thePrintFrames();
+	expect(frames, "there is not exactly one print frame").toHaveLength(1);
+	return frames[0];
+};
+
+/** The page drawn inside the print frame: the body of the frame's own document. */
+export const theFramesPage = (): HTMLElement => {
+	const page = thePrintFrame().contentDocument?.body;
+	expect(page, "the print frame has no document").toBeDefined();
+	return page as HTMLElement;
+};
+
+/** Waits until the export's frame has asked for its print dialog as often as given. */
+export const theFramesHavePrinted = (
+	frames: ReturnType<typeof aPrintFrameBrowser>,
+	times = 1,
+) => waitFor(() => expect(frames.timesAFramePrinted()).toBe(times));
+
+/** Waits until no print frame is left in the page. */
+export const everyPrintFrameIsGone = () =>
+	waitFor(() => expect(thePrintFrames()).toHaveLength(0));
+
+// --- The app's error snackbar ---
+
+// MUI marks its snackbar by class alone; a page's own alerts, such as a section that could not be shown, are not it.
+const theSnackbarsMessage = (): HTMLElement | null =>
+	document.querySelector<HTMLElement>(".MuiSnackbar-root [role='alert']");
+
+/** The error snackbar's message, once it shows one. */
+export const theErrorSnackbar = async (): Promise<HTMLElement> => {
+	await waitFor(() =>
+		expect(
+			theSnackbarsMessage(),
+			"the error snackbar says nothing",
+		).not.toBeNull(),
+	);
+	return theSnackbarsMessage() as HTMLElement;
+};
+
+/** Whether the error snackbar shows a message now. */
+export const theErrorSnackbarIsShown = (): boolean =>
+	theSnackbarsMessage() !== null;
+
+/** The snackbar's Retry, which only a failure that asking again may mend offers. */
+export const theSnackbarsRetry = (snackbar: HTMLElement): HTMLElement | null =>
+	within(snackbar).queryByRole("button", { name: "Retry" });
 
 // --- What the print page says about itself ---
 
@@ -667,26 +862,3 @@ export const thePrintOnlyDeclarations = (): string =>
 	printStyleRules()
 		.map((rule) => rule.style.cssText)
 		.join("\n");
-
-/** Whether the element, or what holds it on the page, is hidden when the page is printed. */
-export const isHiddenInPrint = (element: HTMLElement): boolean => {
-	const printRules = Array.from(document.querySelectorAll("style"))
-		.map((style) => style.textContent ?? "")
-		.join("\n")
-		.match(/@media print\s*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g);
-	const hiddenInPrint = (printRules ?? []).join("\n");
-	for (
-		let current: HTMLElement | null = element;
-		current !== null;
-		current = current.parentElement
-	) {
-		for (const name of Array.from(current.classList)) {
-			// The boundary keeps ".back" from matching a rule written for ".back-link".
-			const rule = new RegExp(
-				`\\.${name}(?![\\w-])[^{]*\\{[^}]*display:\\s*none`,
-			);
-			if (rule.test(hiddenInPrint)) return true;
-		}
-	}
-	return false;
-};

@@ -3,17 +3,25 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	aMomentLater,
 	aPrintDialog,
+	aPrintFrameBrowser,
+	everyPrintFrameIsGone,
 	forgetTheBrowser,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+	PREPARING,
+	printPathFor,
 	renderReadiness,
 	renderTheExportScene,
 	reportPathFor,
+	theErrorSnackbar,
 	theExportButtonOnceItCanBePressed,
 	theFontsHaveLoaded,
 	theFooter,
+	theFramesHavePrinted,
 	theLighthouseMarkCannotLoad,
 	theLighthouseMarkIsStillLoading,
+	thePrintFrames,
 	thePrintPageIsReady,
+	theSnackbarsRetry,
 } from "../../../../tests/ReportPrintTestKit";
 import {
 	aReportService,
@@ -23,19 +31,18 @@ import {
 
 /**
  * The Lighthouse mark in the footer is a picture the browser fetches, and a PDF made before it arrived has an empty
- * corner where the mark belongs. So the print page waits for the mark as it waits for its fonts: not ready and no
- * print dialog until the mark is in, and a mark that cannot be loaded is part of the page that could not be loaded.
+ * corner where the mark belongs. So the report drawn for paper waits for the mark as it waits for its fonts: not
+ * ready until the mark is in, and a mark that cannot be loaded is part of the page that could not be loaded. The
+ * print page opened from its address shows this; Export PDF prints only once the mark is in its frame.
  */
 
-/** The reader on the report view chooses Export PDF and arrives at its print page. */
-const exportingFromTheReport = async () => {
-	const rendered = renderTheExportScene({
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
+
+const openingThePrintPageDirectly = () =>
+	renderTheExportScene({
 		reportService: aReportService(),
-		startAt: reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
+		startAt: printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
 	});
-	await rendered.user.click(await theExportButtonOnceItCanBePressed());
-	return rendered;
-};
 
 /** The address of the mark the footer shows. */
 const theMarksAddress = (): string | null =>
@@ -54,25 +61,24 @@ describe("The Lighthouse mark is in the PDF", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
-	it("waits for the Lighthouse mark before it is ready, then opens the print dialog once", async () => {
+	it("waits for the Lighthouse mark before it is ready", async () => {
 		const mark = theLighthouseMarkIsStillLoading();
-		await exportingFromTheReport();
+		openingThePrintPageDirectly();
 		await screen.findByRole("heading", { level: 1 });
 		await aMomentLater();
 
 		expect(renderReadiness()).toBe("false");
-		expect(printDialog.timesOpened()).toBe(0);
 		expect(mark.pictures()).toEqual([theMarksAddress()]);
 
 		await mark.arrive();
 		await thePrintPageIsReady();
-		expect(printDialog.timesOpened()).toBe(1);
+		expect(printDialog.timesOpened()).toBe(0);
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
-	it("says part of the page couldn't be loaded, offers Retry and never prints, when the Lighthouse mark cannot be loaded", async () => {
+	it("says part of the page couldn't be loaded, offers Retry and never gets ready, when the Lighthouse mark cannot be loaded", async () => {
 		theLighthouseMarkCannotLoad();
-		await exportingFromTheReport();
+		openingThePrintPageDirectly();
 
 		expect(
 			await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
@@ -84,9 +90,9 @@ describe("The Lighthouse mark is in the PDF", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
-	it("asks for the Lighthouse mark again on Retry and prints once it is in", async () => {
+	it("asks for the Lighthouse mark again on Retry and is ready once it is in", async () => {
 		const mark = theLighthouseMarkCannotLoad();
-		const { user } = await exportingFromTheReport();
+		const { user } = openingThePrintPageDirectly();
 		await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED);
 
 		mark.canBeReachedAgain();
@@ -94,6 +100,29 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 		await thePrintPageIsReady();
 		expect(mark.pictures()).toHaveLength(2);
-		expect(printDialog.timesOpened()).toBe(1);
+		expect(screen.queryByText(PREPARING)).toBeNull();
+	});
+
+	// @us-02 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+	// A fresh frame is a fresh document, so the mark is asked for again there.
+	it.skip(`asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in (${pendingFramePrint})`, async () => {
+		const frames = aPrintFrameBrowser();
+		const mark = theLighthouseMarkCannotLoad();
+		const { user } = renderTheExportScene({
+			reportService: aReportService(),
+			startAt: reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
+		});
+		await user.click(await theExportButtonOnceItCanBePressed());
+		const snackbar = await theErrorSnackbar();
+		expect(snackbar).toHaveTextContent(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED);
+		await everyPrintFrameIsGone();
+
+		mark.canBeReachedAgain();
+		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
+
+		await theFramesHavePrinted(frames);
+		expect(mark.pictures()).toHaveLength(2);
+		expect(thePrintFrames()).toEqual(frames.framesThatPrinted());
+		expect(printDialog.timesOpened()).toBe(0);
 	});
 });

@@ -18,6 +18,8 @@ import {
  * not, which says so in its own words. An answer the page was already holding when it opened is never enough.
  */
 
+const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
+
 const OPENED = 1_000;
 
 /** The inputs, and whether the report is being read at this moment, which Retry starts. */
@@ -136,6 +138,58 @@ describe("the print page's state", () => {
 	])(`decides the state when %s`, (_when, change, expected) => {
 		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
 	});
+
+	// @us-01 @rev-3 @error @contract-shape:pure-function
+	// The hidden frame gives up after 30 seconds, so its spinner never turns forever; the sentence follows what was
+	// still missing, and a failure already decided stays as it was.
+	it.skip.each<
+		[
+			string,
+			WithTheReportBeingRead & { readonly timedOut: boolean },
+			PrintPageState,
+		]
+	>([
+		[
+			"time ran out before any fresh answer arrived",
+			{ fetchedAt: null, timedOut: true },
+			"failedRetryable",
+		],
+		[
+			"time ran out holding only an answer from before the page opened",
+			{ fetchedAt: OPENED - 1, timedOut: true },
+			"failedRetryable",
+		],
+		[
+			"time ran out while Retry was reading the report again",
+			{
+				reportError: new Error("the network dropped"),
+				reportFetching: true,
+				timedOut: true,
+			},
+			"failedRetryable",
+		],
+		[
+			"time ran out with the report in and the fonts still being asked for",
+			{ fonts: "pending", timedOut: true },
+			"failedPart",
+		],
+		[
+			"time ran out with the report in and the owner's name on its way",
+			{ ownerName: null, timedOut: true },
+			"failedPart",
+		],
+		[
+			"time ran out after the report was found to be gone",
+			{ reportError: aRefusal(404, "not-found"), timedOut: true },
+			"failedFinal",
+		],
+		["everything was in when time ran out", { timedOut: true }, "ready"],
+	])(
+		`decides the state when %s (${pendingFramePrint})`,
+		(_when, change, expected) => {
+			expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
+		},
+	);
 
 	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
 	// Every combination of the five inputs without a failure: ready exactly when all five are in, else preparing.
