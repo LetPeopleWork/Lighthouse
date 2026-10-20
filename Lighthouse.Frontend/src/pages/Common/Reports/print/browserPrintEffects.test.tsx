@@ -18,9 +18,6 @@ import { RETURNED_FROM_PRINT, usePrintOnce } from "./usePrintOnce";
  * answered as loaded only when every face was found.
  */
 
-const pendingEpic6298 =
-	"Pending: the browser's print effects (epic 6298, slice 01)";
-
 const HERE = "/print/teams/1/reports/42";
 const THE_REPORT = "/teams/1/reports/42";
 const THE_LIST = "/teams/1/reports";
@@ -72,7 +69,7 @@ afterEach(() => {
 
 describe("the browser's print effects", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`asks the browser for its print dialog once per print (${pendingEpic6298})`, () => {
+	it("asks the browser for its print dialog once per print", () => {
 		const print = theBrowsersPrint();
 
 		browserPrintEffects(vi.fn()).print();
@@ -81,7 +78,7 @@ describe("the browser's print effects", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`hears the dialog close until it is told to stop listening (${pendingEpic6298})`, () => {
+	it("hears the dialog close until it is told to stop listening", () => {
 		const listener = vi.fn();
 		const stopListening = browserPrintEffects(vi.fn()).onAfterPrint(listener);
 
@@ -93,7 +90,7 @@ describe("the browser's print effects", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`replaces the print page's entry when it leads the reader back (${pendingEpic6298})`, () => {
+	it("replaces the print page's entry when it leads the reader back", () => {
 		const router = onThePrintPage();
 		const port = browserPrintEffects((to, options) =>
 			router.result.current.navigate(to, options),
@@ -110,7 +107,7 @@ describe("the browser's print effects", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Wired to the print-once rule: the page hears the dialog close while it is open, and not once it is gone.
-	it.skip(`leads back after the dialog closes while the page is open, and hears nothing once it is gone (${pendingEpic6298})`, () => {
+	it("leads back after the dialog closes while the page is open, and hears nothing once it is gone", () => {
 		theBrowsersPrint();
 		const navigate = vi.fn();
 		const { unmount } = renderHook(() =>
@@ -139,7 +136,7 @@ describe("the browser's print effects", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`loads every face it is asked for and answers loaded once the document's fonts are ready (${pendingEpic6298})`, async () => {
+	it("loads every face it is asked for and answers loaded once the document's fonts are ready", async () => {
 		const ready = deferred<void>();
 		const load = vi.fn(async (_face: string) => [A_FACE]);
 		theDocumentsFontsAre(load, ready.promise);
@@ -161,7 +158,7 @@ describe("the browser's print effects", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip.each<[string, (face: string) => Promise<FontFace[]>]>([
+	it.each<[string, (face: string) => Promise<FontFace[]>]>([
 		[
 			"refused",
 			async () => {
@@ -169,14 +166,11 @@ describe("the browser's print effects", () => {
 			},
 		],
 		["finds no face", async () => []],
-	])(
-		`answers failed when a face's load is %s (${pendingEpic6298})`,
-		async (_how, load) => {
-			theDocumentsFontsAre(load);
+	])("answers failed when a face's load is %s", async (_how, load) => {
+		theDocumentsFontsAre(load);
 
-			await expect(browserPrintEffects(vi.fn()).loadFonts(FACES)).resolves.toBe(
-				"failed",
-			);
-		},
-	);
+		await expect(browserPrintEffects(vi.fn()).loadFonts(FACES)).resolves.toBe(
+			"failed",
+		);
+	});
 });

@@ -111,7 +111,7 @@ describe("who asks the browser for its print dialog", () => {
 describe("who loads fonts into the document", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The print page's fonts go through its effect port, so a test can stand in for them; one binding names the browser's.
-	it.skip(`is the print page's browser binding alone (${pendingEpic6298})`, () => {
+	it("is the print page's browser binding alone", () => {
 		const loaders = productionSourcesUnder(sourceRoot)
 			.filter((file) => /\bdocument\.fonts\b/.test(readFileSync(file, "utf8")))
 			.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
