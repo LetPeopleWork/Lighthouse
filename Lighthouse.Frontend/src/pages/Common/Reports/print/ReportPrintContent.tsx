@@ -59,6 +59,8 @@ interface ReportPrintContentProps {
 	readonly reads: PrintReadPort;
 	readonly terms: PrintTerms;
 	readonly effects: PrintContentEffects;
+	/** Whether the time the caller allows for printing has run out; only the hidden frame an export prints from has a limit. */
+	readonly timedOut?: boolean;
 	/** The sheet the report is drawn on, told where the report stands. */
 	readonly renderSheet: (
 		look: PrintPageLook,
@@ -201,6 +203,7 @@ const ReportPrintContent: React.FC<ReportPrintContentProps> = ({
 	reads,
 	terms,
 	effects,
+	timedOut = false,
 	renderSheet,
 }) => {
 	const [mountedAt] = useState(() => Date.now());
@@ -237,6 +240,7 @@ const ReportPrintContent: React.FC<ReportPrintContentProps> = ({
 		termsError: terms.error,
 		fonts: fonts.state,
 		mark: mark.state,
+		timedOut,
 	});
 	const failure = failureLookOf(state, report.error, {
 		forTheReport: () => askAgainFor(report),

@@ -31,6 +31,8 @@ export interface PrintPageInputs {
 	readonly fonts: PrintLoadState;
 	/** The Lighthouse mark in the footer, a picture the browser fetches. */
 	readonly mark: PrintLoadState;
+	/** Whether the time a hidden frame allows has run out; the print page opened by its address has no such limit. */
+	readonly timedOut?: boolean;
 }
 
 /** Whether the report answer in hand arrived after the page opened; only such an answer is ever printed. */
@@ -48,8 +50,16 @@ const reportReadStateOf = (
 ): PrintPageState | undefined => {
 	if (isAFinalReadRefusal(inputs.reportError)) return "failedFinal";
 	if (!isAnError(inputs.reportError)) return undefined;
-	return inputs.reportFetching === true ? "preparing" : "failedRetryable";
+	const stillReadingInTime =
+		inputs.reportFetching === true && inputs.timedOut !== true;
+	return stillReadingInTime ? "preparing" : "failedRetryable";
 };
+
+/** A page still preparing when time runs out failed on the report when no fresh answer came, else on a part of it. */
+const whenTimeRanOut = (inputs: PrintPageInputs): PrintPageState =>
+	isAFreshAnswer(inputs.fetchedAt, inputs.mountedAt)
+		? "failedPart"
+		: "failedRetryable";
 
 export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
 	const decidedByTheReport = reportReadStateOf(inputs);
@@ -68,5 +78,6 @@ export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
 		!inputs.termsLoading &&
 		inputs.fonts === "loaded" &&
 		inputs.mark === "loaded";
-	return everythingIsIn ? "ready" : "preparing";
+	if (everythingIsIn) return "ready";
+	return inputs.timedOut === true ? whenTimeRanOut(inputs) : "preparing";
 };

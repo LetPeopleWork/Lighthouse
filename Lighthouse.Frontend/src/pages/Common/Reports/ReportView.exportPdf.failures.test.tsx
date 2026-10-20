@@ -46,8 +46,6 @@ import {
  * 30 seconds is a failure too, so the spinner never turns forever.
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const { reportUsage, theDocument } = vi.hoisted(() => ({
 	reportUsage: vi.fn().mockReturnValue(true),
 	theDocument: { breaks: false },
@@ -263,7 +261,7 @@ describe("When Export PDF cannot make the PDF", () => {
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The frame cannot be seen, so a read, a font or a picture that never arrives would otherwise leave the spinner
 	// turning with no word; the sentence follows what was still missing.
-	it.skip.each<[string, () => Partial<Scene>, string]>([
+	it.each<[string, () => Partial<Scene>, string]>([
 		[
 			"the report never arrives",
 			() => ({
@@ -282,7 +280,7 @@ describe("When Export PDF cannot make the PDF", () => {
 			PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 		],
 	])(
-		`gives up after 30 seconds when %s, says so with Retry and prints nothing (${pendingFramePrint})`,
+		`gives up after 30 seconds when %s, says so with Retry and prints nothing`,
 		async (_what, holding, sentence) => {
 			vi.useFakeTimers({ shouldAdvanceTime: true });
 			await exportingFromTheReport({ ...holding(), onFakeTimers: true });
@@ -306,7 +304,7 @@ describe("When Export PDF cannot make the PDF", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// A failure inside the printed copy is the export's alone; the report the reader is looking at stays as it was.
-	it.skip(`says part of the page couldn't be loaded, with Retry, when the report breaks while it is drawn for paper, and leaves the report view as it was (${pendingFramePrint})`, async () => {
+	it(`says part of the page couldn't be loaded, with Retry, when the report breaks while it is drawn for paper, and leaves the report view as it was`, async () => {
 		theDocument.breaks = true;
 		await exportingFromTheReport();
 
@@ -322,8 +320,8 @@ describe("When Export PDF cannot make the PDF", () => {
 	});
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
-	it.skip.each<FramePrintDialog>(["throws", "is missing"])(
-		`says part of the page couldn't be loaded, with Retry, when the frame's print dialog %s, and gives Export PDF back (${pendingFramePrint})`,
+	it.each<FramePrintDialog>(["throws", "is missing"])(
+		`says part of the page couldn't be loaded, with Retry, when the frame's print dialog %s, and gives Export PDF back`,
 		async (dialog) => {
 			forgetTheBrowser();
 			theFontsHaveLoaded();

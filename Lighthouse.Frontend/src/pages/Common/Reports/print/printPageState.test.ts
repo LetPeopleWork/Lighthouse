@@ -18,8 +18,6 @@ import {
  * not, which says so in its own words. An answer the page was already holding when it opened is never enough.
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const OPENED = 1_000;
 
 /** The inputs, and whether the report is being read at this moment, which Retry starts. */
@@ -142,7 +140,7 @@ describe("the print page's state", () => {
 	// @us-01 @rev-3 @error @contract-shape:pure-function
 	// The hidden frame gives up after 30 seconds, so its spinner never turns forever; the sentence follows what was
 	// still missing, and a failure already decided stays as it was.
-	it.skip.each<
+	it.each<
 		[
 			string,
 			WithTheReportBeingRead & { readonly timedOut: boolean },
@@ -184,12 +182,9 @@ describe("the print page's state", () => {
 			"failedFinal",
 		],
 		["everything was in when time ran out", { timedOut: true }, "ready"],
-	])(
-		`decides the state when %s (${pendingFramePrint})`,
-		(_when, change, expected) => {
-			expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
-		},
-	);
+	])(`decides the state when %s`, (_when, change, expected) => {
+		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
+	});
 
 	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
 	// Every combination of the five inputs without a failure: ready exactly when all five are in, else preparing.

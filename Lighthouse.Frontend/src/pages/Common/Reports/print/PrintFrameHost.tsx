@@ -1,8 +1,7 @@
 import createCache, { type EmotionCache } from "@emotion/cache";
 import { CacheProvider } from "@emotion/react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { IReportOwner } from "../../../../models/Reports/Report";
 import { lightTheme } from "../../../../utils/theme/appThemes";
@@ -27,6 +26,12 @@ interface PrintFrameHostProps {
 	/** Hears that the dialog is asked for, that it closed, or why no PDF could be made. */
 	readonly tell: (outcome: PrintOutcome) => void;
 }
+
+const A_PART_COULD_NOT_BE_LOADED: PrintOutcome = {
+	kind: "failed",
+	message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+	retry: true,
+};
 
 /** The frame once it has loaded, with the browser of its own window and a style cache that writes into its head. */
 interface DrawnInto {
@@ -67,11 +72,7 @@ const useOpenedFrame = (
 			},
 			() => {
 				if (!gone) {
-					latestTell.current({
-						kind: "failed",
-						message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
-						retry: true,
-					});
+					latestTell.current(A_PART_COULD_NOT_BE_LOADED);
 				}
 			},
 		);
@@ -83,6 +84,75 @@ const useOpenedFrame = (
 
 	return opened;
 };
+
+// The frame cannot be seen, so a read, a font or a picture that never arrives would leave the spinner turning with no
+// word; this leaves room for a slow connection's retried reads while still ending.
+const THE_TIME_A_FRAME_IS_GIVEN_MS = 30_000;
+
+interface Budgeted {
+	readonly timedOut: boolean;
+	/** Tells the host, and stops the clock once the dialog is asked for, since some browsers return only when it closes. */
+	readonly tell: PrintFrameHostProps["tell"];
+}
+
+/** Gives the export a fixed time from the host's mount to asking for the dialog, and says when it has run out. */
+const useTimeToPrint = (tell: PrintFrameHostProps["tell"]): Budgeted => {
+	const [timedOut, setTimedOut] = useState(false);
+	const clock = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+	useEffect(() => {
+		clock.current = setTimeout(
+			() => setTimedOut(true),
+			THE_TIME_A_FRAME_IS_GIVEN_MS,
+		);
+		return () => clearTimeout(clock.current);
+	}, []);
+
+	const tellAndStopTheClock = useCallback(
+		(outcome: PrintOutcome) => {
+			if (outcome.kind === "printing") clearTimeout(clock.current);
+			tell(outcome);
+		},
+		[tell],
+	);
+
+	return { timedOut, tell: tellAndStopTheClock };
+};
+
+interface DrawingGuardProps {
+	readonly onBroken: () => void;
+	readonly children: React.ReactNode;
+}
+
+interface DrawingGuardState {
+	readonly broken: boolean;
+}
+
+/**
+ * Catches a report that breaks while it is drawn for paper, so the failure stays the export's: the surface's own
+ * boundary would otherwise replace what the reader is looking at.
+ */
+class DrawingGuard extends React.Component<
+	DrawingGuardProps,
+	DrawingGuardState
+> {
+	constructor(props: DrawingGuardProps) {
+		super(props);
+		this.state = { broken: false };
+	}
+
+	static getDerivedStateFromError(): DrawingGuardState {
+		return { broken: true };
+	}
+
+	componentDidCatch() {
+		this.props.onBroken();
+	}
+
+	render() {
+		return this.state.broken ? null : this.props.children;
+	}
+}
 
 interface InTheFrameProps {
 	readonly look: PrintPageLook;
@@ -117,30 +187,36 @@ const PrintFrameHost: React.FC<PrintFrameHostProps> = ({
 	tell,
 }) => {
 	const { reads, terms } = usePrintPagePorts();
-	const opened = useOpenedFrame(tell);
+	const { timedOut, tell: tellTheHost } = useTimeToPrint(tell);
+	const opened = useOpenedFrame(tellTheHost);
 
 	if (opened === undefined) return null;
 	const { frame, effects, cache } = opened;
 
-	return createPortal(
-		<CacheProvider value={cache}>
-			<ThemeProvider theme={lightTheme}>
-				<CssBaseline />
-				<ReportPrintContent
-					owner={owner}
-					reportId={reportId}
-					reads={reads}
-					terms={terms}
-					effects={effects}
-					renderSheet={(look, report) => (
-						<InTheFrame look={look} effects={effects} tell={tell}>
-							{report}
-						</InTheFrame>
-					)}
-				/>
-			</ThemeProvider>
-		</CacheProvider>,
-		frame.body,
+	return (
+		<DrawingGuard onBroken={() => tellTheHost(A_PART_COULD_NOT_BE_LOADED)}>
+			{createPortal(
+				<CacheProvider value={cache}>
+					<ThemeProvider theme={lightTheme}>
+						<CssBaseline />
+						<ReportPrintContent
+							owner={owner}
+							reportId={reportId}
+							reads={reads}
+							terms={terms}
+							effects={effects}
+							timedOut={timedOut}
+							renderSheet={(look, report) => (
+								<InTheFrame look={look} effects={effects} tell={tellTheHost}>
+									{report}
+								</InTheFrame>
+							)}
+						/>
+					</ThemeProvider>
+				</CacheProvider>,
+				frame.body,
+			)}
+		</DrawingGuard>
 	);
 };
 
