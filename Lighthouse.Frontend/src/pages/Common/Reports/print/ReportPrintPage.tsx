@@ -24,17 +24,15 @@ import ReportPrintDocument, {
 	printTitleOf,
 } from "./ReportPrintDocument";
 import {
+	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	type PrintEffectPort,
 	type PrintOrigin,
 	stepBackFromThePrintPage,
-	usePrintOnce,
+	THE_REPORT_COULD_NOT_BE_LOADED,
+	usePrintOnceAfterNavigating,
 } from "./usePrintOnce";
 
 const PREPARING = "Preparing the PDF…";
-const THE_REPORT_COULD_NOT_BE_LOADED =
-	"This report couldn't be loaded, so no PDF was made.";
-const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
-	"Part of the page couldn't be loaded, so no PDF was made.";
 const BACK_TO_REPORT = "‹ Back to report";
 const BACK_TO_REPORTS = "‹ Back to Reports";
 
@@ -258,7 +256,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const { printWhenReady, from } = printRequestOf(location.state);
 	const reportsPath = reportsPathOf(owner);
 
-	usePrintOnce({
+	usePrintOnceAfterNavigating({
 		state,
 		printWhenReady,
 		from,
