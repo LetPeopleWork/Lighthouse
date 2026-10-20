@@ -1,7 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import type {
 	IReportListItem,
@@ -10,7 +10,6 @@ import type {
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import { prefetchReportPrintPage } from "./print/reportPrintRoutes";
 import ReportList, { type ReportListActions } from "./ReportList";
 import { ownerTermKeyOf } from "./reportOwner";
 import { useMayEditReports } from "./useMayEditReports";
@@ -48,8 +47,6 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const deletion = useReportDeletion(owner);
 	const editing = useReportEditing(owner);
 	const pdfExport = useReportPdfExport(owner);
-
-	useEffect(prefetchReportPrintPage, []);
 
 	const { data, isFetching, isError, refetch } = useOwnerReports(owner);
 

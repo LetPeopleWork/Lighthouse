@@ -1,6 +1,6 @@
 import { Box, Button, Stack } from "@mui/material";
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -8,7 +8,6 @@ import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
 import ReportPanels from "./panels/ReportPanels";
-import { prefetchReportPrintPage } from "./print/reportPrintRoutes";
 import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
@@ -48,7 +47,6 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	);
 
 	useReportOpenedReporter(isError ? undefined : report);
-	useEffect(prefetchReportPrintPage, []);
 
 	const reportsPath = reportsPathOf(owner);
 	const navigate = useNavigate();

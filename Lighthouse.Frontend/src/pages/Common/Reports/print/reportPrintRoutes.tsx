@@ -10,16 +10,7 @@ import type { PrintReadPort } from "./printReadPort";
 import type { PrintContentEffects, PrintTerms } from "./ReportPrintContent";
 import type { PrintEffectPort } from "./usePrintOnce";
 
-const loadReportPrintPage = () => import("./ReportPrintPage");
-const ReportPrintPage = lazy(loadReportPrintPage);
-
-/**
- * Starts fetching the print page's code before anyone asks for a PDF, so the print dialog is not kept waiting on
- * a download. Nothing waits on this fetch, so a failure is left to the page itself when it is opened.
- */
-export const prefetchReportPrintPage = (): void => {
-	loadReportPrintPage().catch(() => undefined);
-};
+const ReportPrintPage = lazy(() => import("./ReportPrintPage"));
 
 /**
  * What a test may stand in for at the print page's edge. The app passes nothing, and the page loads its fonts and
