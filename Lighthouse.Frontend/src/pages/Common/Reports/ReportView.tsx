@@ -60,7 +60,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const status = queryStatusOf(isFetching, isError);
 	const finalFailure = finalFailureOf(error);
 	const mayChange = isEditor && report !== undefined;
-	const exportPdf = useReportPdfExport();
+	const pdfExport = useReportPdfExport(owner);
 	const exportWaiting = report === undefined && status === "loading";
 	// A report of a type this version cannot show has nothing to print.
 	const mayExport =
@@ -71,7 +71,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const exportThisReport = () => {
 		// The button cannot be pressed until the report has arrived.
 		if (report !== undefined) {
-			exportPdf(owner, report, "report");
+			pdfExport.exportPdf(report);
 		}
 	};
 
@@ -82,6 +82,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				name={report?.name}
 				onExport={mayExport ? exportThisReport : undefined}
 				exportWaiting={exportWaiting}
+				exportPreparing={pdfExport.preparingId !== undefined}
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>
@@ -120,6 +121,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				</Box>
 			)}
 			{deletion.dialog}
+			{pdfExport.frame}
 			{editing !== null && (
 				<ReportWizard
 					owner={owner}

@@ -66,7 +66,8 @@ const BackControl: React.FC<{ readonly back: WayBack }> = ({ back }) =>
 
 interface PrintSheetProps {
 	readonly ready: boolean;
-	readonly back: WayBack;
+	/** The way back, on a page the reader sees; the hidden frame an export prints from holds no control. */
+	readonly back?: WayBack;
 	readonly children: React.ReactNode;
 }
 
@@ -75,7 +76,7 @@ const PrintSheet: React.FC<PrintSheetProps> = ({ ready, back, children }) => (
 	<ThemeProvider theme={lightTheme}>
 		<GlobalStyles styles={WHITE_PAPER} />
 		<Box data-render-ready={ready ? "true" : "false"} sx={LIGHT_GROUND}>
-			<BackControl back={back} />
+			{back !== undefined && <BackControl back={back} />}
 			<Box sx={BODY}>{children}</Box>
 		</Box>
 	</ThemeProvider>

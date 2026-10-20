@@ -7,6 +7,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import { browserPrintEffects } from "./browserPrintEffects";
 import type { PrintReadPort } from "./printReadPort";
+import type { PrintTerms } from "./ReportPrintContent";
 import type { PrintEffectPort } from "./usePrintOnce";
 
 const loadReportPrintPage = () => import("./ReportPrintPage");
@@ -40,14 +41,20 @@ const WhileThePageLoads: React.FC = () => (
 	</Box>
 );
 
-// The page is handed new objects holding only the reads it needs, because a type that hides the writes is erased
-// at runtime and would still hand over every service method.
-const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
+export interface PrintPagePorts {
+	readonly reads: PrintReadPort;
+	readonly terms: PrintTerms;
+}
+
+/**
+ * What the printed report may ask of the app, for the print page and the export's hidden frame alike. They are new
+ * objects holding only the reads needed, because a type that hides the writes is erased at runtime and would still
+ * hand over every service method.
+ */
+export const usePrintPagePorts = (): PrintPagePorts => {
 	const { reportService, teamService, portfolioService } =
 		useContext(ApiServiceContext);
 	const { getTerm, isLoading, error, refetchTerminology } = useTerminology();
-	const navigate = useNavigate();
-	const { loadFonts, loadPicture } = standIns;
 
 	const reads: PrintReadPort = useMemo(
 		() => ({
@@ -61,6 +68,14 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 		() => ({ getTerm, isLoading, error, refetch: refetchTerminology }),
 		[getTerm, isLoading, error, refetchTerminology],
 	);
+	return useMemo(() => ({ reads, terms }), [reads, terms]);
+};
+
+const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
+	const { reads, terms } = usePrintPagePorts();
+	const navigate = useNavigate();
+	const { loadFonts, loadPicture } = standIns;
+
 	const effects: PrintEffectPort = useMemo(() => {
 		const browser = browserPrintEffects(globalThis.window);
 		return {

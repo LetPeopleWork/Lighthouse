@@ -17,7 +17,7 @@ import { useMayEditReports } from "./useMayEditReports";
 import { useOwnerReports } from "./useOwnerReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportEditing } from "./useReportEditing";
-import { useReportPdfExport } from "./useReportPdfExport";
+import { useReportPdfExportByNavigating } from "./useReportPdfExport";
 import ReportWizard from "./wizard/ReportWizard";
 import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
@@ -47,7 +47,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
 	const deletion = useReportDeletion(owner);
 	const editing = useReportEditing(owner);
-	const exportPdf = useReportPdfExport();
+	const exportPdf = useReportPdfExportByNavigating();
 
 	useEffect(prefetchReportPrintPage, []);
 

@@ -231,7 +231,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @walking_skeleton @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
 	// The print dialog of the frame's own window shows only the report; the app's window is never asked.
-	it.skip(`asks the report's own print frame for the dialog once everything is in, counts one export, and leaves the reader on the report with nothing added to their history (${pendingFramePrint})`, async () => {
+	it(`asks the report's own print frame for the dialog once everything is in, counts one export, and leaves the reader on the report with nothing added to their history`, async () => {
 		const theAppsDialog = aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheReport();
@@ -250,7 +250,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// The control keeps the focus the reader gave it, so a keyboard reader is not thrown back to the page's top.
-	it.skip(`shows the waiting spinner on Export PDF while the PDF is prepared, keeps it focused and lets a second choice do nothing, until the dialog is asked for (${pendingFramePrint})`, async () => {
+	it(`shows the waiting spinner on Export PDF while the PDF is prepared, keeps it focused and lets a second choice do nothing, until the dialog is asked for`, async () => {
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const fonts = theFontsAreStillLoading();
@@ -282,7 +282,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Paper is white whatever the reader's screen is, and the frame holds the app's typeface but not its dark ground.
-	it.skip(`draws a Portfolio's report inside the frame, on a light page of its own carrying the app's style sheets, and none of it on the report view (${pendingFramePrint})`, async () => {
+	it(`draws a Portfolio's report inside the frame, on a light page of its own carrying the app's style sheets, and none of it on the report view`, async () => {
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const takeTheSheetsAway = theAppCarriesItsStyleSheets();
@@ -336,7 +336,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @contract-shape:bounded-change
 	// Browsers differ on whose title they offer as the PDF's file name, so the frame's and the tab's both carry it.
-	it.skip(`names the PDF after the report and its owner while the frame is there, and gives the tab its own name back once the frame has gone (${pendingFramePrint})`, async () => {
+	it(`names the PDF after the report and its owner while the frame is there, and gives the tab its own name back once the frame has gone`, async () => {
 		document.title = "Lighthouse";
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
@@ -356,7 +356,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
 	// The screen and the PDF agree: the report behind the dialog shows the answer that was just printed.
-	it.skip(`reads the report afresh for the PDF, and the report view shows the very answer the PDF printed (${pendingFramePrint})`, async () => {
+	it(`reads the report afresh for the PDF, and the report view shows the very answer the PDF printed`, async () => {
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const renamed = "Then & Now — engagement start, as read for the PDF";
@@ -380,7 +380,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// One opening is one stay on the report; an export moves the reader nowhere, so it neither adds one nor loses one.
-	it.skip(`counts the report as opened once, export or not (${pendingFramePrint})`, async () => {
+	it(`counts the report as opened once, export or not`, async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
@@ -410,7 +410,7 @@ describe("Export PDF prints the report without leaving it", () => {
 
 	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// React's strict mode runs every effect twice on mount; the reader still gets one frame and one dialog.
-	it.skip(`asks for one dialog from one frame even when React runs every effect twice (${pendingFramePrint})`, async () => {
+	it(`asks for one dialog from one frame even when React runs every effect twice`, async () => {
 		aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheReport({ strict: true });
