@@ -65,8 +65,8 @@ testWithDemo(
 // A name in Central European letters needs a part of the typeface the page fetches only once it meets them; on a
 // slow connection that part can still be on its way when the page says it is ready to print.
 // @us-02 @slice-02 @real-io @error @contract-shape:bounded-change
-testWithDemo.fixme(
-	`a report named in Central European letters is ready to print only once the Lighthouse typeface can draw them, on a slow connection (${pendingReviewFix})`,
+testWithDemo(
+	`a report named in Central European letters is ready to print only once the Lighthouse typeface can draw them, on a slow connection`,
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
 		const name = "Zespół Łódź Q3";

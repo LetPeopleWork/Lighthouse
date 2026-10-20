@@ -1,11 +1,16 @@
 import type { PrintEffectPort, PrintLoadOutcome } from "./usePrintOnce";
 
+// The typeface ships as one file per part of the alphabet, and the browser fetches only the parts that draw the text
+// it is asked about. A basic Latin, a Central European and a Vietnamese letter ask for every part, so a name in any of
+// them prints in the typeface rather than in a fallback font.
+const A_LETTER_FROM_EVERY_PART = "AĀạ";
+
 const loadTheFaces = async (
 	faces: readonly string[],
 ): Promise<PrintLoadOutcome> => {
 	try {
 		const found = await Promise.all(
-			faces.map((face) => document.fonts.load(face)),
+			faces.map((face) => document.fonts.load(face, A_LETTER_FROM_EVERY_PART)),
 		);
 		await document.fonts.ready;
 		return found.every((matches) => matches.length > 0) ? "loaded" : "failed";

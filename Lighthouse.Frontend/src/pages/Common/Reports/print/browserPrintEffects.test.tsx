@@ -49,8 +49,6 @@ const A_FACE = { family: "Quicksand" } as unknown as FontFace;
 const FACES = ["400 1em Quicksand", "700 1em Quicksand"];
 const A_PICTURE = "/icons/icon-512x512.png";
 
-const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
-
 const THE_TYPEFACES_STYLES = resolve(
 	dirname(fileURLToPath(import.meta.url)),
 	"../../../../../node_modules/@fontsource-variable/quicksand/index.css",
@@ -278,7 +276,7 @@ describe("the browser's print effects", () => {
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// A name such as "Zespół Łódź" needs the typeface's Central European letters; fetched only for a space, they
 	// would still be on their way when the page prints, and the name would come out in a machine's font.
-	it.skip(`loads every part of the typeface before it answers loaded, so a letter beyond basic Latin prints in it too (${pendingReviewFix})`, async () => {
+	it(`loads every part of the typeface before it answers loaded, so a letter beyond basic Latin prints in it too`, async () => {
 		const fetched = theBrowserHoldsTheTypeface();
 		const parts = theTypefacesParts().map(({ name }) => name);
 		expect(parts).toEqual(
@@ -294,7 +292,7 @@ describe("the browser's print effects", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
-	it.skip(`answers failed when the part of the typeface with the Central European letters cannot be fetched (${pendingReviewFix})`, async () => {
+	it(`answers failed when the part of the typeface with the Central European letters cannot be fetched`, async () => {
 		theBrowserHoldsTheTypeface(["latin-ext"]);
 
 		await expect(
