@@ -58,17 +58,23 @@ export const ThenNowColumn: React.FC<ThenNowColumnProps> = ({
 	children,
 	...dataAttributes
 }) => {
-	const setOff = { pl: first ? 0 : 2, borderLeft: first ? 0 : 1 };
+	// Width and style alone, never the border shorthand, which would reset the divider colour to the text's own.
+	const setOff = {
+		pl: first ? 0 : 2,
+		borderLeftWidth: first ? 0 : 1,
+		borderLeftStyle: "solid",
+	} as const;
 	return (
 		<Stack
 			{...dataAttributes}
 			spacing={0.5}
 			sx={{
 				minWidth: 0,
-				pl: { md: setOff.pl },
-				borderLeft: { md: setOff.borderLeft },
-				"@media print": setOff,
 				borderColor: "divider",
+				pl: { md: setOff.pl },
+				borderLeftWidth: { md: setOff.borderLeftWidth },
+				borderLeftStyle: { md: setOff.borderLeftStyle },
+				"@media print": setOff,
 			}}
 		>
 			<Typography

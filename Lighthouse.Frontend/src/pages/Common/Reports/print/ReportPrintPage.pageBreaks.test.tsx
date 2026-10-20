@@ -25,8 +25,6 @@ import { appColors } from "../../../../utils/theme/colors";
  * is what the page asks of the browser when it prints.
  */
 
-const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
-
 /** The values that ask for no height of the element's own, so a short report ends where its content ends. */
 const NO_HEIGHT_OF_ITS_OWN = ["auto", "0", "0px", "none", "initial", "unset"];
 
@@ -136,7 +134,7 @@ describe("The printed report is never cut in two", () => {
 
 	// @us-02 @slice-02 @contract-shape:bounded-change
 	// A line in the text's own colour reads as a heavy black rule between the columns rather than a quiet divider.
-	it.skip(`sets Now and Change off from the column before by a line in the theme's divider colour, on a wide screen and on paper (${pendingReviewFix})`, async () => {
+	it(`sets Now and Change off from the column before by a line in the theme's divider colour, on a wide screen and on paper`, async () => {
 		await thePrintedReport();
 
 		const divider = asTheBrowserReadsIt(appColors.light.divider);

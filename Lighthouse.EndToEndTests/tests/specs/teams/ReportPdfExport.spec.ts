@@ -8,7 +8,6 @@ const testWithDemo = testWithDemoData(TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID);
 
 const LIGHTSPEED = "Team Lightspeed";
 
-const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
 /** The light theme's divider colour, the one the page prints in. */
 const THE_LIGHT_DIVIDER = "rgb(221, 221, 221)";
 
@@ -89,8 +88,8 @@ testWithDemo(
 
 // A line in the text's own colour prints as a heavy black rule between the columns rather than a quiet divider.
 // @us-02 @slice-02 @real-io @contract-shape:bounded-change
-testWithDemo.fixme(
-	`the PDF of a report sets each panel's columns apart with the light divider line (${pendingReviewFix})`,
+testWithDemo(
+	`the PDF of a report sets each panel's columns apart with the light divider line`,
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
 
