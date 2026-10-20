@@ -567,7 +567,7 @@ describe("What the print page prints", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`heads the page with the owner, the report's name, its two windows and when it was produced, in that order (${pendingEpic6298})`, async () => {
+	it("heads the page with the owner, the report's name, its two windows and when it was produced, in that order", async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
 
@@ -598,7 +598,7 @@ describe("What the print page prints", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`ends with the Lighthouse mark and "Made with Lighthouse by LetPeopleWork", after the last panel (${pendingEpic6298})`, async () => {
+	it('ends with the Lighthouse mark and "Made with Lighthouse by LetPeopleWork", after the last panel', async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
 
@@ -617,7 +617,7 @@ describe("What the print page prints", () => {
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
 	// The browser offers the page's title as the PDF's file name.
-	it.skip(`names the page after the report and its owner, so the PDF is saved under that name (${pendingEpic6298})`, async () => {
+	it("names the page after the report and its owner, so the PDF is saved under that name", async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
 
@@ -625,7 +625,7 @@ describe("What the print page prints", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`names a Portfolio as the owner of a Portfolio's report (${pendingEpic6298})`, async () => {
+	it("names a Portfolio as the owner of a Portfolio's report", async () => {
 		openingThePrintPageDirectly({
 			startAt: printPathFor(APOLLO, ENGAGEMENT_START_ID),
 			reportService: aReportService({
@@ -645,7 +645,7 @@ describe("What the print page prints", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// A panel's title is the instance's term alone, as on screen.
-	it.skip(`prints the instance's own words for the owner and the metrics (${pendingEpic6298})`, async () => {
+	it("prints the instance's own words for the owner and the metrics", async () => {
 		openingThePrintPageDirectly({
 			terminologyService: aTerminologyServiceAnswering(
 				Promise.resolve(

@@ -64,7 +64,7 @@ const productionSourcesUnder = (directory: string): string[] =>
  */
 describe("what the print pages are built from", () => {
 	// @us-01 @slice-01 @contract-shape:unbounded-preservation
-	it.skip(`draws the report with the same summary and panels as the report view (${pendingEpic6298})`, () => {
+	it("draws the report with the same summary and panels as the report view", () => {
 		const reached = whatThePrintPagesReach();
 
 		expect(reached).toContain("pages/Common/Reports/ThenAndNowSummary.tsx");
@@ -74,14 +74,14 @@ describe("what the print pages are built from", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip.each([
+	it.each([
 		"components/App/Header/Header.tsx",
 		"components/App/Footer/Footer.tsx",
 		"components/SurveyNudge/SurveyNudge.tsx",
 		"components/UsageData/UsageDataAsk.tsx",
 		"services/UsageData/usageDataReporter.ts",
 		"pages/Common/Reports/useReportOpenedReporter.ts",
-	])(`never reaches %s (${pendingEpic6298})`, (file) => {
+	])("never reaches %s", (file) => {
 		const reached = whatThePrintPagesReach();
 
 		expect(reached).toContain("pages/Common/Reports/print/ReportPrintPage.tsx");

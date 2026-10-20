@@ -1,9 +1,9 @@
-import { Box, Button, Typography } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useParams } from "react-router";
-import type { IReportOwner } from "../../../../models/Reports/Report";
+import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../MetricsView/widgetStatus";
@@ -19,6 +19,10 @@ import {
 	printPageStateOf,
 } from "./printPageState";
 import type { PrintReadPort } from "./printReadPort";
+import ReportPrintDocument, {
+	ownerLineOf,
+	printTitleOf,
+} from "./ReportPrintDocument";
 import {
 	type PrintEffectPort,
 	type PrintOrigin,
@@ -114,6 +118,34 @@ const useFontsOnceDrawn = (
 	return { fonts, askAgain: () => setFonts("pending") };
 };
 
+interface Printable {
+	readonly report: IReport;
+	readonly ownerLine: string;
+}
+
+/** The report can go on paper once it has been read afresh and its owner's name is known. */
+const printableOf = (
+	report: IReport | undefined,
+	owner: IReportOwner,
+	ownerName: string | null | undefined,
+	getTerm: PrintTerms["getTerm"],
+): Printable | undefined => {
+	if (report === undefined || typeof ownerName !== "string") return undefined;
+	return { report, ownerLine: ownerLineOf(owner, ownerName, getTerm) };
+};
+
+/** Names the page while it is open, and gives the tab its old name back when it closes. */
+const useDocumentTitle = (title: string | undefined) => {
+	useEffect(() => {
+		if (title === undefined) return;
+		const previous = document.title;
+		document.title = title;
+		return () => {
+			document.title = previous;
+		};
+	}, [title]);
+};
+
 interface WayBack {
 	readonly to: string;
 	readonly label: string;
@@ -200,9 +232,13 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 
 	const fetchedAt = report.data === undefined ? null : report.dataUpdatedAt;
 	const fresh = isAFreshAnswer(fetchedAt, mountedAt) ? report.data : undefined;
+	const printable = printableOf(fresh, owner, ownerName.data, terms.getTerm);
 	const { fonts, askAgain: askForTheFontsAgain } = useFontsOnceDrawn(
-		fresh !== undefined,
+		printable !== undefined,
 		effects.loadFonts,
+	);
+	useDocumentTitle(
+		printable && printTitleOf(printable.report.name, printable.ownerLine),
 	);
 
 	const state = printPageStateOf({
@@ -263,10 +299,12 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 					failureMessage={failure.message}
 					onRetry={failure.retry}
 				>
-					{fresh !== undefined && (
-						<Typography variant="h4" component="h1">
-							{fresh.name}
-						</Typography>
+					{printable !== undefined && (
+						<ReportPrintDocument
+							report={printable.report}
+							ownerLine={printable.ownerLine}
+							producedAt={report.dataUpdatedAt}
+						/>
 					)}
 				</WidgetBody>
 			</Box>
