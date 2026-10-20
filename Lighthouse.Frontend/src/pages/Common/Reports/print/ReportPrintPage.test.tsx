@@ -876,7 +876,7 @@ describe("What the print page reports about its use", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// Coming back from the dialog is the same reading of the report, not a second opening of it.
-	it.skip(`counts the report as opened once, not again when the reader comes back from printing (${pendingEpic6298})`, async () => {
+	it("counts the report as opened once, not again when the reader comes back from printing", async () => {
 		const dialog = aPrintDialog();
 		const { user } = renderTheExportScene({
 			reportService: aReportService(),
