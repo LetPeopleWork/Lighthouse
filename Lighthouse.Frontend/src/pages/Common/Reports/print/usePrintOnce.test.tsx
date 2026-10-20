@@ -17,8 +17,6 @@ import {
  * without a new history entry, back to where the export started.
  */
 
-const pendingEpic6298 = "Pending: printing once (epic 6298, slice 01)";
-
 const HERE = "/print/teams/1/reports/42";
 const THE_REPORT = "/teams/1/reports/42";
 const THE_LIST = "/teams/1/reports";
@@ -156,12 +154,12 @@ describe("printing once", () => {
 
 describe("returning when the dialog closes", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip.each<[PrintOrigin | undefined, string]>([
+	it.each<[PrintOrigin | undefined, string]>([
 		["report", THE_REPORT],
 		["list", THE_LIST],
 		[undefined, THE_LIST],
 	])(
-		`leads an export started from %s back to %s, replacing the print page's entry (${pendingEpic6298})`,
+		"leads an export started from %s back to %s, replacing the print page's entry",
 		(from, destination) => {
 			const browser = aFakeBrowser();
 			renderHook(() => usePrintOnce(inputs(browser.port, { from })));
@@ -177,7 +175,7 @@ describe("returning when the dialog closes", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// Clearing the wish re-renders the page; the reader is still taken back when the dialog closes after that.
-	it.skip(`still leads back to the report when the dialog closes after the cleared entry reached the page (${pendingEpic6298})`, () => {
+	it("still leads back to the report when the dialog closes after the cleared entry reached the page", () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(printWhenReady: boolean) =>
@@ -196,7 +194,7 @@ describe("returning when the dialog closes", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it.skip(`listens for the dialog once for as long as the page is open, whatever it draws meanwhile (${pendingEpic6298})`, () => {
+	it("listens for the dialog once for as long as the page is open, whatever it draws meanwhile", () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(change: Partial<PrintOnceInputs>) =>
@@ -213,7 +211,7 @@ describe("returning when the dialog closes", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// React's strict mode mounts, unmounts and mounts again; one listener must be left, not two and not none.
-	it.skip(`is left with one listener for the dialog under React's strict mode (${pendingEpic6298})`, () => {
+	it("is left with one listener for the dialog under React's strict mode", () => {
 		const browser = aFakeBrowser();
 
 		renderHook(() => usePrintOnce(inputs(browser.port)), {
@@ -225,7 +223,7 @@ describe("returning when the dialog closes", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A dialog the reader opened with the browser's own menu, on a page that did not print, leads nowhere.
-	it.skip(`stays on the page when a dialog it did not open closes (${pendingEpic6298})`, () => {
+	it("stays on the page when a dialog it did not open closes", () => {
 		const browser = aFakeBrowser();
 		renderHook(() =>
 			usePrintOnce(inputs(browser.port, { printWhenReady: false })),
@@ -237,7 +235,7 @@ describe("returning when the dialog closes", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`stops listening for the dialog once the page is gone (${pendingEpic6298})`, () => {
+	it("stops listening for the dialog once the page is gone", () => {
 		const browser = aFakeBrowser();
 		const { unmount } = renderHook(() => usePrintOnce(inputs(browser.port)));
 

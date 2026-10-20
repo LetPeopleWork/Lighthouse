@@ -40,25 +40,48 @@ export interface PrintOnceInputs {
 
 /**
  * Prints once when the page is ready and was opened by an export. The wish to print is used up only by printing,
- * so a page that is still preparing or failed keeps it, and prints once when it becomes ready after all.
+ * so a page that is still preparing or failed keeps it, and prints once when it becomes ready after all. Once the
+ * dialog it opened closes, it leads the reader back to where the export started, without a new history entry.
  */
 export const usePrintOnce = ({
 	state,
 	printWhenReady,
 	from,
 	here,
+	reportPath,
+	reportsPath,
 	port,
 }: PrintOnceInputs): void => {
-	// React may run the effect again before the cleared entry reaches the page; the dialog must still open once.
-	const printed = useRef(false);
+	// Set only by printing, so React running the effect again before the cleared entry reaches the page cannot open
+	// the dialog twice, and a dialog the reader opened from the browser's own menu leads nowhere.
+	const returnTo = useRef<string | undefined>(undefined);
 
 	useEffect(() => {
-		if (state !== "ready" || !printWhenReady || printed.current) {
+		if (
+			state !== "ready" ||
+			!printWhenReady ||
+			returnTo.current !== undefined
+		) {
 			return;
 		}
-		printed.current = true;
+		returnTo.current = from === "report" ? reportPath : reportsPath;
 		// The wish to print is used up before the dialog opens, so a reload or Forward onto this entry never prints.
 		port.navigate(here, { replace: true, state: { from } });
 		port.print();
-	}, [state, printWhenReady, from, here, port]);
+	}, [state, printWhenReady, from, here, reportPath, reportsPath, port]);
+
+	// Subscribed once for the page's lifetime: clearing the wish re-renders the page before the dialog closes.
+	useEffect(
+		() =>
+			port.onAfterPrint(() => {
+				if (returnTo.current === undefined) {
+					return;
+				}
+				port.navigate(returnTo.current, {
+					replace: true,
+					state: RETURNED_FROM_PRINT,
+				});
+			}),
+		[port],
+	);
 };
