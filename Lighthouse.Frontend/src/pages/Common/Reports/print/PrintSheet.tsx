@@ -25,7 +25,7 @@ const BODY: SxProps<Theme> = {
 const LIGHT_GROUND = {
 	p: 4,
 	minHeight: "100vh",
-	"@media print": { minHeight: "auto" },
+	"@media print": { minHeight: "auto", p: 0 },
 	bgcolor: "background.paper",
 	color: "text.primary",
 	colorScheme: "light",

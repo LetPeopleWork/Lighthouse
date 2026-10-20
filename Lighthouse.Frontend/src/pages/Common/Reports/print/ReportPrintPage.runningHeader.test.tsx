@@ -33,9 +33,6 @@ import {
  * kept for them at the top and bottom of every page so no panel runs underneath.
  */
 
-const pendingEpic6298 =
-	"Pending: every printed page carries the report's line and the credit (epic 6298, slice 02)";
-
 const thePrintedReportOf = async (owner: IReportOwner) => {
 	renderTheExportScene({
 		startAt: printPathFor(owner, ENGAGEMENT_START_ID),
@@ -113,11 +110,11 @@ describe("Every printed page carries the report's line and the credit", () => {
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// The dates read as the report view writes them.
 	// Fails today: the header holds the big title among its lines instead of one line of four parts.
-	it.skip.each<[string, IReportOwner, string]>([
+	it.each<[string, IReportOwner, string]>([
 		["a Team's", LIGHTSPEED, "Team Lightspeed"],
 		["a Portfolio's", APOLLO, "Portfolio Apollo"],
 	])(
-		`heads the page of %s report with one line: owner, report, windows, when it was produced (${pendingEpic6298})`,
+		`heads the page of %s report with one line: owner, report, windows, when it was produced`,
 		async (_, owner, ownerLine) => {
 			await thePrintedReportOf(owner);
 
@@ -135,7 +132,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 
 	// @us-02 @slice-02 @contract-shape:bounded-change
 	// Fails today: the title sits inside the header, among the lines that are to repeat.
-	it.skip(`keeps the report's name as the big title under that line, on the first page only (${pendingEpic6298})`, async () => {
+	it(`keeps the report's name as the big title under that line, on the first page only`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
 		const titles = screen.getAllByRole("heading", { level: 1 });
@@ -157,7 +154,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// A line fixed to the page is printed on every sheet; without room kept for it, page two's panels run under it.
 	// Fails today: the line flows with the report and prints on the first page only.
-	it.skip(`repeats the line at the top of every printed page, with room kept for it above the report (${pendingEpic6298})`, async () => {
+	it(`repeats the line at the top of every printed page, with room kept for it above the report`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
 		const line = theRunningLine();
@@ -182,7 +179,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// Page numbers were offered and declined.
 	// Fails today: the footer flows after the last panel and prints on the last page only.
-	it.skip(`repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers (${pendingEpic6298})`, async () => {
+	it(`repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
 		expect(screen.getAllByText(BRANDING)).toHaveLength(1);
