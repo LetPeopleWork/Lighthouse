@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router";
 import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
@@ -178,7 +178,9 @@ const failureLookOf = (
 				retry: askAgain.forTheFailedPart,
 			};
 		case "failedFinal":
-			return { message: finalFailureOf(reportError) };
+			return {
+				message: finalFailureOf(reportError) ?? THE_REPORT_COULD_NOT_BE_LOADED,
+			};
 		default:
 			return {};
 	}
@@ -194,7 +196,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const location = useLocation();
 	const owner: IReportOwner = { kind, id: Number(params.id) };
 	const reportId = Number(params.reportId);
-	const mountedAt = useMemo(() => Date.now(), []);
+	const [mountedAt] = useState(() => Date.now());
 
 	const report = useReportRead(
 		owner,

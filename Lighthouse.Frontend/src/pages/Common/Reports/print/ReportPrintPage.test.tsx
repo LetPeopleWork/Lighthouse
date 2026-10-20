@@ -729,7 +729,7 @@ describe("A report the print page cannot read", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A refusal that asking again will not change, but which has no sentence of its own, still speaks of the report.
-	it.skip(`says the report couldn't be loaded, offers no Retry and leads back to Reports, when the report is refused for a reason with no sentence of its own (${pendingReviewFix})`, async () => {
+	it(`says the report couldn't be loaded, offers no Retry and leads back to Reports, when the report is refused for a reason with no sentence of its own`, async () => {
 		const dialog = aPrintDialog();
 		const getReport = theFreshReadGets(() =>
 			Promise.reject(aRefusal(422, "then-too-short")),
