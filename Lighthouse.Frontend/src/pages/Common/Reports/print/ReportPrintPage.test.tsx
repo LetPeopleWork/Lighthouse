@@ -808,7 +808,7 @@ describe("What the print page reports about its use", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// The export was counted when it was chosen; the page drawn for paper is not a page anyone opened.
-	it.skip(`reports nothing of its own, however long it stays open (${pendingEpic6298})`, async () => {
+	it("reports nothing of its own, however long it stays open", async () => {
 		aPrintDialog();
 		openingThePrintPageDirectly({ onFakeTimers: true });
 		await thePrintPageIsReady();
