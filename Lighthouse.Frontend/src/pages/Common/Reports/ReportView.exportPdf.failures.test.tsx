@@ -150,7 +150,7 @@ describe("When Export PDF cannot make the PDF", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The report view shares the answer, so it shows its own could-not-load look as well; the snackbar says no PDF.
-	it.skip.each<[string, () => Promise<unknown>, string, boolean]>([
+	it.each<[string, () => Promise<unknown>, string, boolean]>([
 		[
 			"could not be read",
 			() => Promise.reject(new Error("the network dropped")),
@@ -170,7 +170,7 @@ describe("When Export PDF cannot make the PDF", () => {
 			false,
 		],
 	])(
-		`says in the snackbar that no PDF was made when the report %s, offers Retry only where asking again may help, and prints nothing (${pendingFramePrint})`,
+		`says in the snackbar that no PDF was made when the report %s, offers Retry only where asking again may help, and prints nothing`,
 		async (_why, freshRead, sentence, retryOffered) => {
 			await exportingFromTheReport({
 				reportService: aReportService({
@@ -187,7 +187,7 @@ describe("When Export PDF cannot make the PDF", () => {
 	);
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
-	it.skip.each<[string, () => Partial<Scene>]>([
+	it.each<[string, () => Partial<Scene>]>([
 		[
 			"the owner's name",
 			() => ({ teamService: aTeamServiceThatCannotReadTheName() }),
@@ -225,7 +225,7 @@ describe("When Export PDF cannot make the PDF", () => {
 			},
 		],
 	])(
-		`says part of the page couldn't be loaded, with Retry, when %s cannot be loaded, prints nothing and gives Export PDF back (${pendingFramePrint})`,
+		`says part of the page couldn't be loaded, with Retry, when %s cannot be loaded, prints nothing and gives Export PDF back`,
 		async (_part, failing) => {
 			await exportingFromTheReport(failing());
 
@@ -240,7 +240,7 @@ describe("When Export PDF cannot make the PDF", () => {
 
 	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The reader asked for a PDF once; Retry finishes that export, from a fresh frame, and counts nothing more.
-	it.skip(`prints once from a fresh frame when Retry reads the report the export could not read, counting no second export (${pendingFramePrint})`, async () => {
+	it(`prints once from a fresh frame when Retry reads the report the export could not read, counting no second export`, async () => {
 		const { user } = await exportingFromTheReport({
 			reportService: aReportService({
 				getReport: theFreshReadGets(
@@ -340,7 +340,7 @@ describe("When Export PDF cannot make the PDF", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// Retry restarts the export on the report the reader left; the message goes with the page it belongs to.
-	it.skip(`takes its message away when the reader leaves the report it offered Retry on (${pendingFramePrint})`, async () => {
+	it(`takes its message away when the reader leaves the report it offered Retry on`, async () => {
 		const { user } = await exportingFromTheReport({
 			teamService: aTeamServiceThatCannotReadTheName(),
 		});

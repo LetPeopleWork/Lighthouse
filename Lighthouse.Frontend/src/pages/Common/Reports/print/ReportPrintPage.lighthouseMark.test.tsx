@@ -36,8 +36,6 @@ import {
  * print page opened from its address shows this; Export PDF prints only once the mark is in its frame.
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const openingThePrintPageDirectly = () =>
 	renderTheExportScene({
 		reportService: aReportService(),
@@ -105,7 +103,7 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 	// @us-02 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// A fresh frame is a fresh document, so the mark is asked for again there.
-	it.skip(`asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in (${pendingFramePrint})`, async () => {
+	it(`asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in`, async () => {
 		const frames = aPrintFrameBrowser();
 		const mark = theLighthouseMarkCannotLoad();
 		const { user } = renderTheExportScene({

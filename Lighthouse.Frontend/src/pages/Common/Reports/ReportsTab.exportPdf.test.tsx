@@ -45,8 +45,6 @@ import {
  * and every other row's PDF icon waits too, as every Edit does while one report is read for editing.
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const { reportUsage } = vi.hoisted(() => ({ reportUsage: vi.fn() }));
 
 vi.mock(
@@ -298,7 +296,7 @@ describe("When Export PDF from the list cannot make the PDF", () => {
 
 	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The list has no report on screen to fall back on, so the snackbar is the only place the reader learns of it.
-	it.skip(`says in the snackbar that no PDF was made when the row's report could not be read, and Retry prints it from a fresh frame, counting one export and leaving the reader on the list (${pendingFramePrint})`, async () => {
+	it(`says in the snackbar that no PDF was made when the row's report could not be read, and Retry prints it from a fresh frame, counting one export and leaving the reader on the list`, async () => {
 		const frames = aPrintFrameBrowser();
 		const getReport = vi
 			.fn()

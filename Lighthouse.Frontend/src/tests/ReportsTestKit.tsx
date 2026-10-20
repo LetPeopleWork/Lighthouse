@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { MemoryRouter } from "react-router";
 import { vi } from "vitest";
+import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type {
 	IReport,
 	IReportList,
@@ -301,7 +302,7 @@ export const renderWithReports = (
 				<ApiServiceContext.Provider
 					value={createMockApiServiceContext({ reportService, rbacService })}
 				>
-					{element}
+					<SnackbarErrorHandler>{element}</SnackbarErrorHandler>
 				</ApiServiceContext.Provider>
 			</MemoryRouter>
 		</QueryClientProvider>
