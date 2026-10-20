@@ -31,26 +31,27 @@ export const PanelLine: React.FC<{ readonly children: React.ReactNode }> = ({
 	</>
 );
 
-/** Side-by-side columns that stack on a narrow screen. */
+/** Side-by-side columns that stack on a narrow screen, but never on paper, which is narrower than a wide screen. */
 export const ThenNowColumns: React.FC<{
 	readonly count: number;
 	readonly children: React.ReactNode;
-}> = ({ count, children }) => (
-	<Box
-		sx={{
-			display: "grid",
-			gridTemplateColumns: {
-				xs: "1fr",
-				md: `repeat(${count}, minmax(0, 1fr))`,
-			},
-			gap: 2,
-		}}
-	>
-		{children}
-	</Box>
-);
+}> = ({ count, children }) => {
+	const sideBySide = `repeat(${count}, minmax(0, 1fr))`;
+	return (
+		<Box
+			sx={{
+				display: "grid",
+				gridTemplateColumns: { xs: "1fr", md: sideBySide },
+				"@media print": { gridTemplateColumns: sideBySide },
+				gap: 2,
+			}}
+		>
+			{children}
+		</Box>
+	);
+};
 
-/** A small heading over its lines; every column after the first is set off by a divider on a wide screen. */
+/** A small heading over its lines; every column after the first is set off by a divider on a wide screen and on paper. */
 export const ThenNowColumn: React.FC<ThenNowColumnProps> = ({
 	heading,
 	first,
@@ -64,6 +65,7 @@ export const ThenNowColumn: React.FC<ThenNowColumnProps> = ({
 			minWidth: 0,
 			pl: { md: first ? 0 : 2 },
 			borderLeft: { md: first ? 0 : 1 },
+			"@media print": { pl: first ? 0 : 2, borderLeft: first ? 0 : 1 },
 			borderColor: "divider",
 		}}
 	>
@@ -92,7 +94,7 @@ const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
 			component="section"
 			aria-labelledby={titleId}
 			variant="outlined"
-			sx={{ p: 2, width: "100%" }}
+			sx={{ p: 2, width: "100%", breakInside: "avoid" }}
 		>
 			<Typography id={titleId} variant="h6" component="h2" gutterBottom>
 				{title}

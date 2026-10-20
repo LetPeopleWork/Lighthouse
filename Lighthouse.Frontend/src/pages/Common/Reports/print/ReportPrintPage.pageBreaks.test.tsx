@@ -24,9 +24,6 @@ import {
  * is what the page asks of the browser when it prints.
  */
 
-const pendingEpic6298 =
-	"Pending: nothing is cut in two on paper (epic 6298, slice 02)";
-
 /** The values that ask for no height of the element's own, so a short report ends where its content ends. */
 const NO_HEIGHT_OF_ITS_OWN = ["auto", "0", "0px", "none", "initial", "unset"];
 
@@ -71,8 +68,7 @@ describe("The printed report is never cut in two", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @contract-shape:unbounded-preservation
-	// Fails today: nothing on the page asks the browser to keep a panel or the summary together.
-	it.skip(`keeps the summary and every panel whole on one page (${pendingEpic6298})`, async () => {
+	it(`keeps the summary and every panel whole on one page`, async () => {
 		await thePrintedReport();
 
 		const summary = document.querySelector("[data-report-summary]");
@@ -87,8 +83,7 @@ describe("The printed report is never cut in two", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// The screen stacks the three columns below its breakpoint, and A4 portrait is narrower than that breakpoint.
-	// Fails today: the print asks for no columns of its own, so the narrow screen's single column is what prints.
-	it.skip(`keeps Then, Now and Change side by side in every panel, however narrow the paper (${pendingEpic6298})`, async () => {
+	it(`keeps Then, Now and Change side by side in every panel, however narrow the paper`, async () => {
 		await thePrintedReport();
 
 		const panels = screen.getAllByRole("region");
@@ -109,8 +104,7 @@ describe("The printed report is never cut in two", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// A paper size of the page's own would override the reader's A4 or Letter choice in the print dialog.
-	// Fails today: the page asks nothing of the printed page.
-	it.skip(`asks for a 12 mm margin on every printed page and leaves the paper size to the reader (${pendingEpic6298})`, async () => {
+	it(`asks for a 12 mm margin on every printed page and leaves the paper size to the reader`, async () => {
 		await thePrintedReport();
 
 		const pageRule = thePageRule();
@@ -120,8 +114,7 @@ describe("The printed report is never cut in two", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// On screen the page fills the window; on paper that height spills over onto a last page holding nothing.
-	// Fails today: the print keeps the screen's full-window height.
-	it.skip(`prints no empty page after the report (${pendingEpic6298})`, async () => {
+	it(`prints no empty page after the report`, async () => {
 		await thePrintedReport();
 
 		expect(NO_HEIGHT_OF_ITS_OWN).toContain(

@@ -17,6 +17,11 @@ import { windowDaysOf } from "../wizard/thenAndNow/thenAndNowDraft";
 const BRANDING = "Made with Lighthouse by LetPeopleWork · letpeople.work";
 const PRODUCED_AT = "d MMM yyyy, HH:mm";
 
+/** The summary is read as one piece, so a page break never lands inside it. */
+const SUMMARY_KEPT_WHOLE = {
+	"& [data-report-summary]": { breakInside: "avoid" },
+};
+
 /** The owner as the header names it, in the instance's own word for its kind: "Team Lightspeed". */
 export const ownerLineOf = (
 	owner: IReportOwner,
@@ -47,7 +52,7 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 	const { thenWindow, nowWindow } = report.thenAndNow;
 
 	return (
-		<Stack spacing={2}>
+		<Stack spacing={2} sx={SUMMARY_KEPT_WHOLE}>
 			<Box component="header">
 				<Typography>{ownerLine}</Typography>
 				<Typography variant="h4" component="h1">

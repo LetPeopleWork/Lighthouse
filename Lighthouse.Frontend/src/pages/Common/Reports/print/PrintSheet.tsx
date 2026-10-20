@@ -25,12 +25,21 @@ const BODY: SxProps<Theme> = {
 const LIGHT_GROUND = {
 	p: 4,
 	minHeight: "100vh",
+	"@media print": { minHeight: "auto" },
 	bgcolor: "background.paper",
 	color: "text.primary",
 	colorScheme: "light",
 };
+/**
+ * The paper size stays the reader's choice in the print dialog, so A4 and Letter both fit. Colours print as they
+ * show, and nothing is caught halfway through an animation when the page is taken.
+ */
 const WHITE_PAPER = {
-	"@media print": { "html, body": { backgroundColor: "#fff" } },
+	"@page": { margin: "12mm" },
+	"@media print": {
+		"html, body": { backgroundColor: "#fff", printColorAdjust: "exact" },
+		"*, *::before, *::after": { animation: "none", transition: "none" },
+	},
 };
 
 /** The way back: a step back through the history to where the export started, or else to an address in its place. */
