@@ -25,6 +25,7 @@ import {
 	readingOf,
 	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
+import { appColors } from "../../../utils/theme/colors";
 
 /**
  * The marks that say which way a report moved are drawn, not typed, so they look the same on every machine and in
@@ -32,9 +33,6 @@ import {
  * are pictures a screen reader skips, coloured green for better and red for worse as today. The dash of a missing
  * value and the minus of a fall stay text: they are punctuation, not marks.
  */
-
-const pendingEpic6298 =
-	"Pending: the report's marks are drawn (epic 6298, slice 02)";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -45,12 +43,25 @@ const theMetric = (report: IReport, key: ReportMetricKey): IReportMetric => {
 	return metric as IReportMetric;
 };
 
+type Where = "on the report" | "in the print";
+
 const THE_MARK_CHARACTERS = /[✔✘±▲▼]/;
 const NO_CHANGE_CHARACTER = "–";
-const SUCCESS_COLOUR = "rgb(46, 125, 50)";
-const ERROR_COLOUR = "rgb(211, 47, 47)";
+/** The browser's reading of a #rrggbb colour. */
+const rgbOf = (hex: string) =>
+	`rgb(${[1, 3, 5].map((at) => Number.parseInt(hex.slice(at, at + 2), 16)).join(", ")})`;
 
-type Where = "on the report" | "in the print";
+/**
+ * Green and red as each place already drew them: the report takes the theme's defaults here, and the paper takes the
+ * app's light status colours, which the typed marks wore in print before they were drawn.
+ */
+const THE_COLOURS: Record<Where, { better: string; worse: string }> = {
+	"on the report": { better: "rgb(46, 125, 50)", worse: "rgb(211, 47, 47)" },
+	"in the print": {
+		better: rgbOf(appColors.status.success),
+		worse: rgbOf(appColors.status.error),
+	},
+};
 
 const showingTheReport = async (
 	where: Where,
@@ -142,16 +153,16 @@ describe("The marks of a report are drawn", () => {
 	);
 
 	// @us-02 @slice-02 @contract-shape:bounded-change
-	it.skip.each<Where>(["on the report", "in the print"])(
-		`draws better and worse apart, green and red, %s (${pendingEpic6298})`,
+	it.each<Where>(["on the report", "in the print"])(
+		"draws better and worse apart, green and red, %s",
 		async (where) => {
 			await showingTheReport(where);
 
 			const improved = theDrawnMarkOf(theGroup("improved"));
 			const worse = theDrawnMarkOf(theGroup("worse"));
 			expect(improved.innerHTML).not.toBe(worse.innerHTML);
-			expect(getComputedStyle(improved).color).toBe(SUCCESS_COLOUR);
-			expect(getComputedStyle(worse).color).toBe(ERROR_COLOUR);
+			expect(getComputedStyle(improved).color).toBe(THE_COLOURS[where].better);
+			expect(getComputedStyle(worse).color).toBe(THE_COLOURS[where].worse);
 		},
 	);
 
