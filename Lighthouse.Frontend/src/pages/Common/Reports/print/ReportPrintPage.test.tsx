@@ -696,7 +696,7 @@ describe("The print page prints the report as it is now", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:unbounded-preservation
 	// An answer read a minute ago still counts as fresh for the rest of the app, which keeps answers five minutes.
-	it.skip(`never prints an answer it was holding from a minute ago, and reads the report afresh (${pendingEpic6298})`, async () => {
+	it("never prints an answer it was holding from a minute ago, and reads the report afresh", async () => {
 		aPrintDialog();
 		const queryClient = aQueryClient();
 		queryClient.setQueryData(
@@ -722,7 +722,7 @@ describe("The print page prints the report as it is now", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it.skip(`reads the report again even when the report view has only just read it (${pendingEpic6298})`, async () => {
+	it("reads the report again even when the report view has only just read it", async () => {
 		aPrintDialog();
 		const getReport = vi.fn().mockResolvedValue(theEngagementStartReport());
 		const { user } = renderTheExportScene({
@@ -743,7 +743,7 @@ describe("The print page prints the report as it is now", () => {
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
 	// The screen and the PDF agree: back on the report, the reader sees the values that were just printed.
-	it.skip(`shows the report view the values it just printed once the dialog closes (${pendingEpic6298})`, async () => {
+	it("shows the report view the values it just printed once the dialog closes", async () => {
 		const dialog = aPrintDialog();
 		const renamed = "Then & Now — engagement start, as read for the PDF";
 		const getReport = vi
@@ -766,7 +766,7 @@ describe("The print page prints the report as it is now", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
-	it.skip(`prints the same summary and panels the reader sees on the report (${pendingEpic6298})`, async () => {
+	it("prints the same summary and panels the reader sees on the report", async () => {
 		aPrintDialog();
 		const onScreen = renderTheExportScene({
 			reportService: aReportService(),
