@@ -73,6 +73,21 @@ export class ReportPrintPage {
 		);
 	}
 
+	/**
+	 * Whether anything on the page, laid out for paper, reaches past the page's right edge. The browser then shrinks
+	 * the whole report to fit, so its text prints small and the sheet comes out part empty.
+	 */
+	async reachesPastThePageEdgeInPrint(): Promise<boolean> {
+		await this.page.emulateMedia({ media: "print" });
+		const wider = await this.page.evaluate(
+			() =>
+				document.documentElement.scrollWidth >
+				document.documentElement.clientWidth,
+		);
+		await this.page.emulateMedia({ media: null });
+		return wider;
+	}
+
 	/** The fonts the browser embeds when it turns this page into a PDF, read off the PDF itself. */
 	async fontsEmbeddedInThePdf(): Promise<string[]> {
 		const pdf = (await this.page.pdf({ format: "A4" })).toString("latin1");

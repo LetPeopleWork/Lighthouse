@@ -26,6 +26,7 @@ testWithDemo(
 
 		await expect(printed.owner(LIGHTSPEED)).toBeVisible();
 		await expect(printed.title).toHaveText(name);
+		expect(await printed.reachesPastThePageEdgeInPrint()).toBe(false);
 		await expect.poll(() => printed.timesThePrintDialogOpened()).toBe(1);
 
 		await printed.closeThePrintDialog();

@@ -32,11 +32,14 @@ export const verdictColours: Record<ChangeVerdict, string> = {
 	neutral: "text.secondary",
 };
 
-/** Off screen but read aloud. */
+/**
+ * Off screen but read aloud. The sizes are written in pixels because a bare 1 means 100% to MUI: each hidden label then
+ * stood as tall as the whole report, and the printout gained an empty last page.
+ */
 export const visuallyHidden = {
 	position: "absolute",
-	width: 1,
-	height: 1,
+	width: "1px",
+	height: "1px",
 	margin: "-1px",
 	padding: 0,
 	border: 0,
