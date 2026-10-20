@@ -55,7 +55,8 @@ code), **simplicity**.
    test fails if the port gains a member. (rev. 2, 2026-10-19) A `Pick` is erased at runtime, so the route wiring
    builds the port as a new object literal of exactly the three reads (`getReport`, `getTeam`, `getPortfolio`, each
    bound to its service) and a runtime test checks its keys. The instance's terms reach the page the same way, as a
-   narrow read of `getTerm`, `isLoading` and `error` only — never the whole terminology context with its refetch.
+   narrow read of `getTerm`, `isLoading`, `error` and `refetch` only (revised 2026-10-20: Retry must be able to read
+   the terms again) — never the whole terminology context.
    The fresh read does not retry an answer that will not change (404, 422), as the report view does; anything else
    gets the app's default retry. *Fresh, mechanically*: the app's query client keeps answers fresh for five
    minutes and reads again on mount only when stale, so the print page's own observer asks to read on every mount
@@ -97,8 +98,11 @@ code), **simplicity**.
    label and target follow the origin — "‹ Back to report" to the report view, "‹ Back to Reports" to the Reports
    list. A final failure always leads to the Reports list. A page opened directly — by a renderer, a test, or a
    pasted link — carries no flag and no origin, never prints, and its Back leads to the Reports list
-   (**confirmed by the maintainer on 2026-10-20**). Every return replaces the print entry and carries a return-from-print
-   marker.
+   (**confirmed by the maintainer on 2026-10-20**). (Revised 2026-10-20) When the page knows where the
+   export started, the return — on `afterprint` or Back — steps one entry back in the history, once; replacing left
+   the origin in the history twice. A page with no origin and a final failure replace their entry with the Reports
+   list and carry a return-from-print marker. `ReportOpened` is counted once per history entry, so neither a return
+   nor the browser's Back counts an opening twice.
 5. **The page owns its print stylesheet**: `@page { margin: 12mm }` with no fixed size, so A4 and US Letter both work
    from the dialog's paper choice; a fixed content width that fits both; `break-inside: avoid` on the summary and on
    every panel; the header kept with what follows; the branding footer in the flow, kept with the last panel, so no
