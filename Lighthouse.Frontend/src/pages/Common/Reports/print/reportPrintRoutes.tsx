@@ -35,7 +35,7 @@ const WhileThePageLoads: React.FC = () => (
 const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 	const { reportService, teamService, portfolioService } =
 		useContext(ApiServiceContext);
-	const { getTerm, isLoading, error } = useTerminology();
+	const { getTerm, isLoading, error, refetchTerminology } = useTerminology();
 	const navigate = useNavigate();
 	const { loadFonts } = standIns;
 
@@ -48,8 +48,8 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 		[reportService, teamService, portfolioService],
 	);
 	const terms = useMemo(
-		() => ({ getTerm, isLoading, error }),
-		[getTerm, isLoading, error],
+		() => ({ getTerm, isLoading, error, refetch: refetchTerminology }),
+		[getTerm, isLoading, error, refetchTerminology],
 	);
 	const effects: PrintEffectPort = useMemo(() => {
 		const browser = browserPrintEffects((to, options) => {

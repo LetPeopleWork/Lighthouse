@@ -15,9 +15,6 @@ import { reportPrintRoutes } from "./reportPrintRoutes";
  * whether they are still loading or failed, and asking for them again on Retry - and nothing else.
  */
 
-const pendingTermsRetry =
-	"Pending: Retry reads the instance's terms again (epic 6298, slice 01 — terms Retry)";
-
 const { handed } = vi.hoisted(() => ({
 	handed: [] as Record<string, unknown>[],
 }));
@@ -41,7 +38,7 @@ const theInputHolding = (member: string): object | undefined =>
 
 describe("what the print routes hand the print page", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(`is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads (${pendingTermsRetry})`, async () => {
+	it("is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads", async () => {
 		renderWithQueryClient(
 			<MemoryRouter initialEntries={["/print/teams/1/reports/42"]}>
 				<ApiServiceContext.Provider value={createMockApiServiceContext({})}>

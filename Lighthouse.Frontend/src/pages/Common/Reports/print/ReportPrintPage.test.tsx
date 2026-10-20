@@ -80,8 +80,6 @@ vi.mock(
 
 const pendingEpic6298 =
 	"Pending: the report's print page (epic 6298, slice 01)";
-const pendingTermsRetry =
-	"Pending: Retry reads the instance's terms again (epic 6298, slice 01 — terms Retry)";
 
 const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
@@ -565,7 +563,7 @@ describe("A report the print page cannot read", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The reader asked for a PDF; terms that arrive on Retry finish what Export started.
-	it.skip(`says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and prints once (${pendingTermsRetry})`, async () => {
+	it("says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and prints once", async () => {
 		const dialog = aPrintDialog();
 		const terminologyService = aTerminologyServiceThatCannotReadTheTerms({
 			untilTheRead: 2,

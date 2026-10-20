@@ -59,11 +59,11 @@ const WHITE_PAPER = {
 /** The weights the printed report is set in: its text and its headings. */
 const THE_PRINTED_FACES = ["400 1em Quicksand", "700 1em Quicksand"];
 
-/** What the print page needs of the instance's terms, and nothing that changes them. */
+/** What the print page needs of the instance's terms: reading them, and asking for them again, but never changing them. */
 export type PrintTerms = Pick<
 	ReturnType<typeof useTerminology>,
 	"getTerm" | "isLoading" | "error"
->;
+> & { readonly refetch: () => void };
 
 interface ReportPrintPageProps {
 	readonly kind: IReportOwner["kind"];
@@ -271,6 +271,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		forTheReport: () => askAgainFor(report),
 		forTheFailedPart: () => {
 			if (ownerName.isError) askAgainFor(ownerName);
+			if (terms.error !== null) terms.refetch();
 			if (fonts === "failed") askForTheFontsAgain();
 		},
 	});
