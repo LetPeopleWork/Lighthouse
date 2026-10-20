@@ -45,9 +45,6 @@ vi.mock(
 	}),
 );
 
-const pendingEpic6298 =
-	"Pending: Export PDF from the Reports list (epic 6298, slice 01)";
-
 const atTheList = reportsPathFor(LIGHTSPEED);
 
 const aListOf = (...reports: ReturnType<typeof aListedReport>[]) =>
@@ -97,7 +94,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`leads an editor's row actions with the PDF icon, before Edit and Delete (${pendingEpic6298})`, async () => {
+	it(`leads an editor's row actions with the PDF icon, before Edit and Delete`, async () => {
 		onTheList();
 
 		expect(await theActionsOf(ENGAGEMENT_START)).toEqual([
@@ -108,7 +105,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`gives a reader an Actions column holding only the PDF icon (${pendingEpic6298})`, async () => {
+	it(`gives a reader an Actions column holding only the PDF icon`, async () => {
 		onTheList(aReportService(), "reader");
 
 		expect(await theActionsOf(ENGAGEMENT_START)).toEqual([
@@ -118,7 +115,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`names the icon "Export PDF" when the pointer rests on it (${pendingEpic6298})`, async () => {
+	it(`names the icon "Export PDF" when the pointer rests on it`, async () => {
 		const { user } = onTheList();
 
 		await user.hover(
@@ -129,7 +126,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`offers no PDF on a row this version cannot show, and keeps it on the other rows (${pendingEpic6298})`, async () => {
+	it(`offers no PDF on a row this version cannot show, and keeps it on the other rows`, async () => {
 		const later = aListedReportOfALaterType();
 		onTheList(aListOf(aListedReport(), later));
 
@@ -147,7 +144,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
-	it.skip(`counts one export with the report's Type and takes the reader to its print page, saying it came from the list (${pendingEpic6298})`, async () => {
+	it(`counts one export with the report's Type and takes the reader to its print page, saying it came from the list`, async () => {
 		const { user } = onTheList(aReportService(), "reader");
 
 		await user.click(

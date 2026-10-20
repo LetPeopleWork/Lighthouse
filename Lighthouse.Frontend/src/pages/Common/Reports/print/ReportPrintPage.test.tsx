@@ -79,9 +79,6 @@ vi.mock(
 	}),
 );
 
-const pendingEpic6298 =
-	"Pending: the report's print page (epic 6298, slice 01)";
-
 const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atTheList = reportsPathFor(LIGHTSPEED);
@@ -372,7 +369,7 @@ describe("The way back from the print page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`reads "‹ Back to Reports" when the reader came from the list, and goes back to it (${pendingEpic6298})`, async () => {
+	it(`reads "‹ Back to Reports" when the reader came from the list, and goes back to it`, async () => {
 		aPrintDialog();
 		const { user } = await exportingFromTheList();
 		await thePrintPageIsReady();
@@ -385,7 +382,7 @@ describe("The way back from the print page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`takes the reader from the list back to the list once the print dialog closes (${pendingEpic6298})`, async () => {
+	it(`takes the reader from the list back to the list once the print dialog closes`, async () => {
 		const dialog = aPrintDialog();
 		await exportingFromTheList();
 		await thePrintPageIsReady();

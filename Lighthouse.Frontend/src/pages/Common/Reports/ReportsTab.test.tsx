@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
+import { exportAsPdfLabelOf } from "../../../tests/ReportPrintTestKit";
 import {
 	APOLLO,
 	aListedReport,
@@ -678,7 +679,7 @@ describe("Editing a report from the list", () => {
 			name: "Now length in days",
 		});
 
-	it("offers an admin Edit on a Then & Now report, before its Delete", async () => {
+	it("offers an admin Edit on a Then & Now report, after Export PDF and before its Delete", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
 		});
@@ -691,7 +692,11 @@ describe("Editing a report from the list", () => {
 			within(row)
 				.getAllByRole("button")
 				.map((button) => button.getAttribute("aria-label")),
-		).toEqual([`Edit ${ENGAGEMENT_START}`, `Delete ${ENGAGEMENT_START}`]);
+		).toEqual([
+			exportAsPdfLabelOf(ENGAGEMENT_START),
+			`Edit ${ENGAGEMENT_START}`,
+			`Delete ${ENGAGEMENT_START}`,
+		]);
 	});
 
 	it("offers a reader no Edit", async () => {

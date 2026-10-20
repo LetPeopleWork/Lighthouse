@@ -1,5 +1,6 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import { CircularProgress, IconButton, Tooltip } from "@mui/material";
 import type React from "react";
 import { useMemo } from "react";
@@ -14,26 +15,47 @@ import { parseLocalDate } from "../../../utils/date/localDate";
 import { reportPathOf } from "./reportOwner";
 import { reportTypeTitleOf } from "./wizard/reportTypes";
 
-/** What somebody who may change the reports can do from a row; without it the list offers no actions. */
-export interface ReportListActions {
+/** What somebody who may change the reports can do from a row. */
+export interface ReportListEditorActions {
 	onEdit: (report: IReportListItem) => void;
 	onDelete: (report: IReportListItem) => void;
 	/** The report being read before its edit opens, whose Edit waits meanwhile. */
 	readingId: number | undefined;
 }
 
+/** What every reader can do from a row, and, for somebody who may change the reports, what else. */
+export interface ReportListActions {
+	onExportPdf: (report: IReportListItem) => void;
+	editor?: ReportListEditorActions;
+}
+
 interface ReportListProps {
 	owner: IReportOwner;
 	reports: IReportListItem[];
-	actions?: ReportListActions;
+	actions: ReportListActions;
 }
 
 const isShownByThisVersion = (report: IReportListItem): boolean =>
 	reportTypeTitleOf(report.templateKey) !== undefined;
 
+const ExportPdfButton: React.FC<{
+	readonly report: IReportListItem;
+	readonly onExportPdf: (report: IReportListItem) => void;
+}> = ({ report, onExportPdf }) => (
+	<Tooltip title="Export PDF">
+		<IconButton
+			aria-label={`Export ${report.name} as PDF`}
+			color="primary"
+			onClick={() => onExportPdf(report)}
+		>
+			<PictureAsPdfIcon />
+		</IconButton>
+	</Tooltip>
+);
+
 const EditButton: React.FC<{
 	readonly report: IReportListItem;
-	readonly actions: ReportListActions;
+	readonly actions: ReportListEditorActions;
 }> = ({ report, actions }) => {
 	const isReading = actions.readingId === report.id;
 	return (
@@ -52,30 +74,48 @@ const EditButton: React.FC<{
 	);
 };
 
+const DeleteButton: React.FC<{
+	readonly report: IReportListItem;
+	readonly actions: ReportListEditorActions;
+}> = ({ report, actions }) => (
+	<Tooltip title="Delete">
+		<IconButton
+			aria-label={`Delete ${report.name}`}
+			color="primary"
+			onClick={() => actions.onDelete(report)}
+		>
+			<DeleteIcon />
+		</IconButton>
+	</Tooltip>
+);
+
+const RowActions: React.FC<{
+	readonly report: IReportListItem;
+	readonly actions: ReportListActions;
+}> = ({ report, actions: { onExportPdf, editor } }) => {
+	const isShown = isShownByThisVersion(report);
+	return (
+		<>
+			{isShown && <ExportPdfButton report={report} onExportPdf={onExportPdf} />}
+			{isShown && editor !== undefined && (
+				<EditButton report={report} actions={editor} />
+			)}
+			{editor !== undefined && (
+				<DeleteButton report={report} actions={editor} />
+			)}
+		</>
+	);
+};
+
 const actionsColumn = (
 	actions: ReportListActions,
 ): DataGridColumn<IReportListItem> => ({
 	field: "actions",
 	headerName: "Actions",
-	width: 120,
+	width: actions.editor === undefined ? 100 : 150,
 	sortable: false,
 	hideable: false,
-	renderCell: ({ row }) => (
-		<>
-			{isShownByThisVersion(row) && (
-				<EditButton report={row} actions={actions} />
-			)}
-			<Tooltip title="Delete">
-				<IconButton
-					aria-label={`Delete ${row.name}`}
-					color="primary"
-					onClick={() => actions.onDelete(row)}
-				>
-					<DeleteIcon />
-				</IconButton>
-			</Tooltip>
-		</>
-	),
+	renderCell: ({ row }) => <RowActions report={row} actions={actions} />,
 });
 
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
@@ -109,7 +149,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 					parseLocalDate(row.createdOn)?.toLocaleDateString(),
 			},
 		];
-		return actions === undefined ? shown : [...shown, actionsColumn(actions)];
+		return [...shown, actionsColumn(actions)];
 	}, [owner, actions]);
 
 	return (

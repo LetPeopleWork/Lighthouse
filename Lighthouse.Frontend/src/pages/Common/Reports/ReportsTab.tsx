@@ -1,7 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import type {
 	IReportListItem,
@@ -10,12 +10,14 @@ import type {
 import { useTerminology } from "../../../services/TerminologyContext";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
+import { prefetchReportPrintPage } from "./print/reportPrintRoutes";
 import ReportList, { type ReportListActions } from "./ReportList";
 import { ownerTermKeyOf } from "./reportOwner";
 import { useMayEditReports } from "./useMayEditReports";
 import { useOwnerReports } from "./useOwnerReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportEditing } from "./useReportEditing";
+import { useReportPdfExport } from "./useReportPdfExport";
 import ReportWizard from "./wizard/ReportWizard";
 import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
@@ -31,7 +33,7 @@ const ListOrEmpty: React.FC<{
 	readonly owner: IReportOwner;
 	readonly reports: IReportListItem[];
 	readonly emptyMessage: string;
-	readonly actions?: ReportListActions;
+	readonly actions: ReportListActions;
 }> = ({ owner, reports, emptyMessage, actions }) =>
 	reports.length === 0 ? (
 		<Typography color="text.secondary">{emptyMessage}</Typography>
@@ -45,6 +47,9 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
 	const deletion = useReportDeletion(owner);
 	const editing = useReportEditing(owner);
+	const exportPdf = useReportPdfExport();
+
+	useEffect(prefetchReportPrintPage, []);
 
 	const { data, isFetching, isError, refetch } = useOwnerReports(owner);
 
@@ -115,15 +120,16 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 							owner={owner}
 							reports={data.reports}
 							emptyMessage={emptyMessage}
-							actions={
-								isEditor
+							actions={{
+								onExportPdf: (report) => exportPdf(owner, report, "list"),
+								editor: isEditor
 									? {
 											onEdit: editing.ask,
 											onDelete: deletion.ask,
 											readingId: editing.readingId,
 										}
-									: undefined
-							}
+									: undefined,
+							}}
 						/>
 					)}
 				</WidgetBody>
