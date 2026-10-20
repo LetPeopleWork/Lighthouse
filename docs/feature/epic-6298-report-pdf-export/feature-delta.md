@@ -2244,6 +2244,31 @@ Q2 Baseline                                                                     
 
 ---
 
+## Maintainer decisions — 2026-10-20, hands-on review after slices 02 and 03
+
+The maintainer exported reports in Firefox and in Chrome after slice 03 (a screencast in Firefox showed every case).
+
+| # | Decision |
+|---|---|
+| NMD-14 | **2 A4 pages for a four-panel report is fine.** The text prints at full size; the fourth panel moves to page 2 under the repeated line, with the footer repeated. Tightening print to fit one page was offered and declined. |
+| NMD-15 | **The reader never sees a print view.** Export PDF prints from the page the reader is on (the report view or the Reports list); whether the dialog is saved or cancelled, the reader is exactly where they were, and no history entry is added. Found: in Firefox the print dialog does not block the page, the step back after the dialog never took effect, so the reader stayed on `/print/…` and the next Back went two entries back (to the Overview from a report). Supersedes DDD-2's "navigates in the same window", the origin-and-return part of DDD-27 and the return-from-print marker of DDD-14. The `/print/…` address stays as a page for a pasted link and for the E2E PDF checks; nothing sends a reader there. |
+| NMD-16 | **While the PDF is prepared**, Export PDF (or the list row's PDF icon) shows its existing waiting spinner and is disabled. **When it cannot be made**, the app's error snackbar shows today's sentence ("Part of the page couldn't be loaded, so no PDF was made." or "This report couldn't be loaded, so no PDF was made.") with Retry where the print page offered Retry. An inline alert under the header was offered and declined. |
+| NMD-17 | **The "How to read this" block is dropped** — more noise than value. Slice 03 is removed from the roadmap, its code (f7c6679cb) reverted, and ADO Story 6318 set to Removed. |
+
+Sketch the maintainer approved (report view; the Reports list behaves the same on the row's PDF icon):
+
+```
+  Q2 Baseline          [o Export PDF] [Edit report] [Delete]
+                        (disabled, spinner)
+...the browser's print dialog opens over this page.
+Save or Cancel -> still here, nothing changed, no new history entry.
+
+Failure (snackbar):
+  | Part of the page couldn't be loaded, so no PDF was made.   [Retry] |
+```
+
+---
+
 ## Wave: DISTILL / [REF] Scope and reconciliation
 
 Slices 01–05 (US-01..US-05). Read: this delta (DISCUSS, DESIGN with ADR-245..247, DEVOPS, the maintainer decisions

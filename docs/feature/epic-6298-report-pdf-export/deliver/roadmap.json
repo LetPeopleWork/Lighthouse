@@ -692,38 +692,6 @@
       ]
     },
     {
-      "id": "03",
-      "name": "Slice 03 — The report PDF explains itself (Lighthouse)",
-      "description": "US-03. Repository /storage/repos/Lighthouse. Three 'How to read this' lines (NMD-5), in print only, between Produced and the summary, with the report's own window lengths and last days and the two drawn marks. Brief: slices/slice-03-pdf-explains-itself.md.",
-      "default_agent": "nw-software-crafter",
-      "default_deps_strategy": "sequential",
-      "steps": [
-        {
-          "id": "03-01",
-          "name": "The PDF says which side is frozen, what Now covers and what the marks mean, with the report's own numbers, in print only",
-          "agent": "nw-software-crafter",
-          "repository": "Lighthouse",
-          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.howToRead.test.tsx",
-          "scenario_name": "says which side is frozen, what Now covers and what the marks mean, with the report's own numbers; takes each window's length and last day from the report it prints; draws the marks it explains as the report draws them, green and red; sits between when the PDF was produced and the summary; uses none of the seeded words when the instance has its own; active guard: no how-to-read lines on the report view",
-          "criteria": [
-            "Under a 'How to read this' label: 'Then is frozen: the {N} days to {d MMM yyyy}, exactly as captured on that day.' / 'Now is the {N} days up to {d MMM yyyy}, read when this PDF was produced.' / 'Each line compares Now with Then. [drawn improved] Improved and [drawn worse] Got worse say which way it moved (green better, red worse); — means there is no value, and the reason is printed beside it.'",
-            "The lengths and last days come from the printed report (30 days to 15 Jun, 45 days up to 2 Oct in the scenarios)",
-            "The two marks are ChangeMarkIcon drawings in green and red",
-            "The block sits after Produced and before the summary; the report view shows none of it; with renamed terms none of the seeded words appear"
-          ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/HowToReadThis.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.howToRead.test.tsx"
-          ],
-          "dependencies": [
-            "02-04"
-          ],
-          "implementation_notes": "~1.5h. A pure render (R17's frame gains the block). NMD-5 has no singular form; the minimum window is 14 days, so 'day' is unreachable (upstream issue 6), and no plural helper is needed. The lines name no configurable term (upstream issue 3). Dates through the app's date helpers. SLICE-END: no 'slice 03' skip left. With phase 03 green, the Lighthouse side of the Epic is complete on trunk; no release yet (DVO-9)."
-        }
-      ]
-    },
-    {
       "id": "04",
       "name": "Slice 04 — Read reports through the Lighthouse clients (lighthouse-clients)",
       "description": "US-04. Repository /storage/repos/lighthouse-clients. Client methods get{Team,Portfolio}Report{s} gated by FEATURE_REQUIRES_SERVER_NEWER_THAN.reports = v26.10.10.1; lh report list|get (--team-id|--portfolio-id) [--id]; four read-only MCP tools lighthouse_{team,portfolio}_report_{list,get} on stdio and HTTP. The answer is the report's raw values unchanged, plus a summary naming the report, its owner and both windows, or the list count. Refusals are relayed (DDD-19). The web's ReportOpened is reported with source Cli / Mcp after consent. One minor changeset for five packages. Brief: slices/slice-04-read-reports-through-the-clients.md.",
@@ -762,7 +730,7 @@
             ".changeset/epic-6298-read-reports.md"
           ],
           "dependencies": [
-            "03-01"
+            "02-04"
           ],
           "implementation_notes": "~3h. FIRST, the inherited DELIVER work (Known gap 1). The recorded answers DISTILL wrote by hand are replaced by real answers captured from the dev instance (GET /api/latest/teams/{id}/reports, .../reports/{reportId} and the Portfolio twins on :5169; never print or commit a token). Before writing them, replace every owner, report and person name with the kit's names (Team Lightspeed, Portfolio Apollo and the report names the tests use), so no customer identifier enters git; ids may stay. Keep at least one absent metric with its reason in the Portfolio answer, and keep the dates the summary tests match whole: if the capture's windows differ from what reportView.test.ts expects, adjust the date values consistently across both files, never the shape. Commit the capture on its own: test(reports), with no changeset needed, since it is not under packages/*/src. Then the code: client methods getTeamReport / getPortfolioReport (and the list twins) over the /v1 report routes through the existing createLighthouseClient, the reports gate entry, and the lh report group with get (a new reportCommands.ts in the refinementCommands.ts pattern, wired in cli index.ts). The changeset is minor for @letpeoplework/lighthouse-client, -cli, -mcp-core, -mcp-stdio and -mcp-http, worded for a reader: 'read a Team's or Portfolio's reports with lh report and the MCP report tools'. If skills.drift.test.ts also checks the lh command list, name lh report list|get in skills/lighthouse/SKILL.md here. Gate: pnpm run ci."
         },
