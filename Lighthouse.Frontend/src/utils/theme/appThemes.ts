@@ -1,8 +1,35 @@
-import { createTheme } from "@mui/material/styles";
+import { createTheme, type ThemeOptions } from "@mui/material/styles";
 import { appColors } from "./colors";
 import { extendTheme } from "./themeExtensions";
 
-// Light theme base
+const STATUS_PALETTE = {
+	success: {
+		main: appColors.status.success,
+	},
+	warning: {
+		main: appColors.status.warning,
+	},
+	error: {
+		main: appColors.status.error,
+	},
+	info: {
+		main: appColors.status.info,
+	},
+};
+
+const TYPOGRAPHY: ThemeOptions["typography"] = {
+	fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
+	h1: {
+		fontWeight: 600,
+	},
+	h2: {
+		fontWeight: 600,
+	},
+	h3: {
+		fontWeight: 600,
+	},
+};
+
 const lightThemeBase = createTheme({
 	palette: {
 		mode: "light",
@@ -18,18 +45,7 @@ const lightThemeBase = createTheme({
 			dark: appColors.secondary.dark,
 			contrastText: appColors.secondary.contrastText,
 		},
-		success: {
-			main: appColors.status.success,
-		},
-		warning: {
-			main: appColors.status.warning,
-		},
-		error: {
-			main: appColors.status.error,
-		},
-		info: {
-			main: appColors.status.info,
-		},
+		...STATUS_PALETTE,
 		background: {
 			default: appColors.light.background,
 			paper: appColors.light.paper,
@@ -40,18 +56,7 @@ const lightThemeBase = createTheme({
 		},
 		divider: appColors.light.divider,
 	},
-	typography: {
-		fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
-		h1: {
-			fontWeight: 600,
-		},
-		h2: {
-			fontWeight: 600,
-		},
-		h3: {
-			fontWeight: 600,
-		},
-	},
+	typography: TYPOGRAPHY,
 	components: {
 		MuiCard: {
 			styleOverrides: {
@@ -72,37 +77,28 @@ const lightThemeBase = createTheme({
 	},
 });
 
-// Apply extensions to light theme
 export const lightTheme = extendTheme(lightThemeBase);
 
-// Dark theme base with optimized contrast
+/**
+ * On a dark ground the brand's standard shades lose contrast, so the dark theme leads with the lighter ones, and
+ * gives cards, outlined buttons, dividers and row hovers firmer edges than the light theme needs.
+ */
 const darkThemeBase = createTheme({
 	palette: {
 		mode: "dark",
 		primary: {
-			main: appColors.primary.light, // Using enhanced lighter shade for dark mode for better contrast
+			main: appColors.primary.light,
 			light: appColors.primary.light,
-			dark: appColors.primary.main, // Using standard color as dark in dark mode
+			dark: appColors.primary.main,
 			contrastText: appColors.primary.contrastText,
 		},
 		secondary: {
-			main: appColors.secondary.light, // Using enhanced lighter shade for dark mode for better contrast
+			main: appColors.secondary.light,
 			light: appColors.secondary.light,
-			dark: appColors.secondary.main, // Using standard color as dark in dark mode
+			dark: appColors.secondary.main,
 			contrastText: appColors.secondary.contrastText,
 		},
-		success: {
-			main: appColors.status.success,
-		},
-		warning: {
-			main: appColors.status.warning,
-		},
-		error: {
-			main: appColors.status.error,
-		},
-		info: {
-			main: appColors.status.info,
-		},
+		...STATUS_PALETTE,
 		background: {
 			default: appColors.dark.background,
 			paper: appColors.dark.paper,
@@ -113,25 +109,14 @@ const darkThemeBase = createTheme({
 		},
 		divider: appColors.dark.divider,
 	},
-	typography: {
-		fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
-		h1: {
-			fontWeight: 600,
-		},
-		h2: {
-			fontWeight: 600,
-		},
-		h3: {
-			fontWeight: 600,
-		},
-	},
+	typography: TYPOGRAPHY,
 	components: {
 		MuiCard: {
 			styleOverrides: {
 				root: {
 					borderRadius: 12,
 					boxShadow: "0 4px 12px 0 rgba(0,0,0,0.3)",
-					border: "1px solid rgba(255,255,255,0.12)", // Adds subtle border for better card visibility
+					border: "1px solid rgba(255,255,255,0.12)",
 				},
 			},
 		},
@@ -142,14 +127,14 @@ const darkThemeBase = createTheme({
 					textTransform: "none",
 				},
 				outlined: {
-					borderWidth: "2px", // Thicker borders for better visibility in dark mode
+					borderWidth: "2px",
 				},
 			},
 		},
 		MuiDivider: {
 			styleOverrides: {
 				root: {
-					opacity: 0.6, // Make dividers more visible
+					opacity: 0.6,
 				},
 			},
 		},
@@ -157,7 +142,7 @@ const darkThemeBase = createTheme({
 			styleOverrides: {
 				root: {
 					"&:hover": {
-						backgroundColor: "rgba(255,255,255,0.08)", // More visible hover effect
+						backgroundColor: "rgba(255,255,255,0.08)",
 					},
 				},
 			},
@@ -165,5 +150,4 @@ const darkThemeBase = createTheme({
 	},
 });
 
-// Apply extensions to dark theme
 export const darkTheme = extendTheme(darkThemeBase);

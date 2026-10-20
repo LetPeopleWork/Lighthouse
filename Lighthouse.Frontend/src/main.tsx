@@ -7,7 +7,6 @@ import AppErrorBoundary from "./components/Common/ErrorBoundary/AppErrorBoundary
 import { ThemeProvider, useTheme } from "./context/ThemeContext";
 import { darkTheme, lightTheme } from "./utils/theme/appThemes";
 
-// This component will use the ThemeContext and apply the appropriate MUI theme
 const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
@@ -22,7 +21,6 @@ const MuiThemeWrapper: React.FC<{ children: React.ReactNode }> = ({
 	);
 };
 
-// Main app wrapper with theme providers
 const AppWithTheme: React.FC = () => {
 	return (
 		<ThemeProvider>
