@@ -173,5 +173,6 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 	);
 };
 
-// Printing rewrites the page's history entry, which draws the page again; the report on it has not changed.
+// Whatever holds the printed report draws again as the export moves on, such as when the dialog is asked for; the
+// report itself has not changed, so its charts are not drawn again under the print dialog.
 export default memo(ReportPrintDocument);

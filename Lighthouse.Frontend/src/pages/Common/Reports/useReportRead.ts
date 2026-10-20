@@ -8,8 +8,8 @@ import { reportQueryKeyOf } from "./reportOwner";
 import { retriesUnlessFinal } from "./reportReadFailures";
 
 /**
- * Reads a report under the one key the report view and the print page share, so the view a print returns to shows
- * what was printed.
+ * Reads a report under the one key the report view and the printed report share, so the fresh read a PDF is made from
+ * also brings the view the reader is looking at up to date.
  */
 export const useReportRead = (
 	owner: IReportOwner,
