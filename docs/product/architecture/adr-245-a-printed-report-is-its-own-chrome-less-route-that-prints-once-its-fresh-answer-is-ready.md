@@ -5,6 +5,11 @@
   added; see "Revised after review 2026-10-19" at the end; a second revision the same day sharpened decisions 2–4).
   Three of the revised points (Retry continues the export; Back on a directly loaded page; the "Part of the page"
   sentence) applied defaults chosen while the maintainer was away; the maintainer confirmed all three on 2026-10-20.
+  **Superseded in part on 2026-10-20 by ADR-255**: Export PDF no longer navigates to this route; it prints from a
+  hidden frame the app draws the same content into, and the reader never leaves the page they are on. Decision 4's
+  navigation, print flag, origin, return and post-export Back, and decision 6's return clauses, no longer apply. The
+  route, its read-only port, its ready predicate, its stylesheet and its light ground stand; see "Superseded in part
+  2026-10-20" at the end.
 - **Feature**: epic-6298-report-pdf-export (ADO Epic #6298 "Report PDF Export"), slices 01–03
 - **Deciders**: the maintainer (MQ-1); Morgan (Solution Architect)
 - **Relies on**: ADR-219 (a report is an owner-scoped record; its read computes Now), ADR-233 (a widget is loading
@@ -79,7 +84,8 @@ code), **simplicity**.
    report read says "This report couldn't be loaded, so no PDF was made."; when the report was read but the owner's
    name, the terms or the fonts could not be loaded, the page says "Part of the page couldn't be loaded, so no PDF
    was made." (**confirmed by the maintainer on 2026-10-20**). Both offer Retry.
-4. **Printing is a separate, opt-in step.** (rev. 2026-10-19) Export PDF — the report view's button or the Reports
+4. **Printing is a separate, opt-in step.** (**Superseded by ADR-255 on 2026-10-20**, except that a page opened from
+   its address never prints and its Back leads to the Reports list. Kept below for the record.) (rev. 2026-10-19) Export PDF — the report view's button or the Reports
    list's icon (maintainer, 2026-10-19) — navigates in the same window to the print route with a one-shot "print when
    ready" flag **and the origin** (`report` or `list`) in router state, never in the URL. A print-once hook, given
    the page's state, the flag, the origin and an **effect port** (print, a subscription to `afterprint`, and
@@ -108,7 +114,8 @@ code), **simplicity**.
    every panel; the header kept with what follows; the branding footer in the flow, kept with the last panel, so no
    page ever holds only the footer; `print-color-adjust: exact` so the coloured marks keep their colour; animations
    off. The page's `document.title` names the report and its owner, because browsers offer it as the file name.
-6. **The click is what is counted.** The usage-data event for an export is emitted by the surface that starts it,
+6. **The click is what is counted.** (Its return clauses are superseded by ADR-255: nothing returns from print any
+   more; the count of one event per choice stands.) The usage-data event for an export is emitted by the surface that starts it,
    before it navigates — (rev. 2026-10-19) the report view's button and the Reports list's icon, both through one
    export starter: exactly one event per click from either. The print route emits nothing and never reports
    `ReportOpened`, so a server render or a test opening it counts as nothing. A return from print reports no second
@@ -149,9 +156,10 @@ code), **simplicity**.
 - Positive: a stale page cannot print: the print call sits behind a ready predicate that requires an answer fetched
   after the page mounted.
 - Negative: while the dialog is open the reader sees the light print page instead of the report. Accepted by the
-  maintainer (MQ-1 = a).
+  maintainer (MQ-1 = a). (Withdrawn 2026-10-20: after a hands-on review the maintainer ruled it out, NMD-15; ADR-255.)
 - Negative: going back depends on `afterprint`; engines differ on when it fires. The always-present Back control
-  bounds the damage to one extra click.
+  bounds the damage to one extra click. (Proved worse than expected on 2026-10-20: in Firefox the step back never took
+  effect and the next Back went two entries back. Removed by ADR-255, which does not navigate.)
 - Negative: `App.tsx` is restructured into a layout route — a change to the file every page passes through. No
   route path changes; the existing E2E suite is the regression net.
 - Negative: browsers may print their own header and footer (the page's address and the date) unless the reader turns
@@ -223,3 +231,23 @@ after the dialog closes (rejected: a reload while the dialog is open, or a secon
   loaded report, checked by hand on the dev instance.
 - Confirmed by the maintainer on 2026-10-20: a failure of the owner's name, the terms or the fonts, with the report
   read, says "Part of the page couldn't be loaded, so no PDF was made." with Retry.
+
+## Superseded in part 2026-10-20
+
+The maintainer exported reports in Firefox and Chrome after slice 03. Firefox's print dialog does not block the page,
+so the step back after `afterprint` never took effect: the reader stayed on the print page, and the next Back went two
+entries back. The maintainer decided that the reader never sees a print view (NMD-15) and that the export's waiting
+and failure show on the control and in the app's error snackbar (NMD-16). **ADR-255** records the new mechanism: a
+hidden, same-origin frame that the running app draws this page's content into and prints through the frame's own
+window.
+
+- **No longer in force**: decision 4 (navigation, the one-shot flag and its consumption, the origin, the return on
+  `afterprint`, the step back, the return marker, the Back label following the origin) and the return clauses of
+  decision 6; the alternative "a hidden frame loading the print route" stays rejected for the reason given above (a
+  second boot), while a frame the app draws into, which has no boot, is what ADR-255 chooses.
+- **Still in force**: decisions 1 (the route), 2 (the fresh read through a read-only port), 3 (the ready predicate, now
+  with one more input, a 30-second budget that only the frame uses), 5 (the print stylesheet), 6's count of one event
+  per choice, and 7 (the light ground, which the frame also gets). A page opened from its address never prints, and its
+  one control is "‹ Back to Reports".
+- **Effect port**: it loses navigation and gains a title setter, and its binding is made for a given window (the
+  frame's for an export, the app's for the route); see ADR-255.
