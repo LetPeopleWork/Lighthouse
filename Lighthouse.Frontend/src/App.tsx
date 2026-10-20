@@ -7,6 +7,7 @@ import type React from "react";
 import { lazy, Suspense, useEffect, useState } from "react";
 import {
 	Navigate,
+	Outlet,
 	Route,
 	BrowserRouter as Router,
 	Routes,
@@ -102,8 +103,58 @@ const UsageDataEventDetector: React.FC = () => {
 	return null;
 };
 
-const App: React.FC = () => {
+interface AppShellProps {
+	readonly isAuthenticated: boolean;
+	readonly currentUserDisplayName: string | undefined;
+	readonly onLogout: () => void;
+}
+
+/** The frame around every page of the app: its header, footer and the prompts that may appear over any page. */
+const AppShell: React.FC<AppShellProps> = ({
+	isAuthenticated,
+	currentUserDisplayName,
+	onLogout,
+}) => {
 	const theme = useTheme();
+	return (
+		<Box
+			className="container"
+			sx={{
+				bgcolor: theme.palette.background.default,
+				color: theme.palette.text.primary,
+				transition: "background-color 0.3s ease, color 0.3s ease",
+				minHeight: "100vh",
+				display: "flex",
+				flexDirection: "column",
+			}}
+		>
+			<Header
+				isAuthenticated={isAuthenticated}
+				currentUserDisplayName={currentUserDisplayName}
+				onLogout={onLogout}
+			/>
+			<Box
+				component="main"
+				className="main-content"
+				sx={{
+					bgcolor: theme.palette.background.default,
+					pt: 2,
+					pb: 4,
+					flex: 1,
+				}}
+			>
+				<Suspense fallback={<RouteFallback />}>
+					<Outlet />
+				</Suspense>
+			</Box>
+			<Footer />
+			<SurveyNudge />
+			<UsageDataAsk />
+		</Box>
+	);
+};
+
+const App: React.FC = () => {
 	const apiServices: IApiServiceContext = getApiServices();
 
 	const isTauri = isTauriEnv() && !hasTauriBackendUrl();
@@ -187,75 +238,49 @@ const App: React.FC = () => {
 				<ApiServiceContext.Provider value={apiServices}>
 					<TerminologyProvider>
 						<UsageDataConsentProvider>
-							<Box
-								className="container"
-								sx={{
-									bgcolor: theme.palette.background.default,
-									color: theme.palette.text.primary,
-									transition: "background-color 0.3s ease, color 0.3s ease",
-									minHeight: "100vh",
-									display: "flex",
-									flexDirection: "column",
-								}}
-							>
-								<CssBaseline />
-								<Header
-									isAuthenticated={shell === "authenticated"}
-									currentUserDisplayName={currentUser?.displayName}
-									onLogout={logout}
-								/>
-								<Box
-									component="main"
-									className="main-content"
-									sx={{
-										bgcolor: theme.palette.background.default,
-										pt: 2,
-										pb: 4,
-										flex: 1,
-									}}
+							<CssBaseline />
+							<Routes>
+								<Route
+									element={
+										<AppShell
+											isAuthenticated={shell === "authenticated"}
+											currentUserDisplayName={currentUser?.displayName}
+											onLogout={logout}
+										/>
+									}
 								>
-									<Suspense fallback={<RouteFallback />}>
-										<Routes>
-											<Route path="/" element={<OverviewDashboard />} />
-											<Route
-												path="/oauth/popup-complete"
-												element={<OAuthPopupComplete />}
-											/>
-											<Route path="/connections">
-												<Route path="new" element={<EditConnection />} />
-												<Route path=":id/edit" element={<EditConnection />} />
-											</Route>
-											<Route path="/teams">
-												<Route path=":id/:tab?" element={<TeamDetail />} />
-												<Route
-													path=":id/:tab/:reportId"
-													element={<TeamDetail />}
-												/>
-												<Route path="edit/:id" element={<TeamEditRedirect />} />
-												<Route path="new" element={<EditTeam />} />
-											</Route>
-											<Route path="/portfolios">
-												<Route path=":id/:tab?" element={<PortfolioDetail />} />
-												<Route
-													path=":id/:tab/:reportId"
-													element={<PortfolioDetail />}
-												/>
-												<Route
-													path="edit/:id"
-													element={<PortfolioEditRedirect />}
-												/>
-												<Route path="new" element={<EditPortfolio />} />
-											</Route>
-											<Route path="/features" element={<FeaturesView />} />
-											<Route path="/settings" element={<Settings />} />
-										</Routes>
-									</Suspense>
-								</Box>
-								<Footer />
-								<SurveyNudge />
-								<UsageDataEventDetector />
-								<UsageDataAsk />
-							</Box>
+									<Route path="/" element={<OverviewDashboard />} />
+									<Route
+										path="/oauth/popup-complete"
+										element={<OAuthPopupComplete />}
+									/>
+									<Route path="/connections">
+										<Route path="new" element={<EditConnection />} />
+										<Route path=":id/edit" element={<EditConnection />} />
+									</Route>
+									<Route path="/teams">
+										<Route path=":id/:tab?" element={<TeamDetail />} />
+										<Route path=":id/:tab/:reportId" element={<TeamDetail />} />
+										<Route path="edit/:id" element={<TeamEditRedirect />} />
+										<Route path="new" element={<EditTeam />} />
+									</Route>
+									<Route path="/portfolios">
+										<Route path=":id/:tab?" element={<PortfolioDetail />} />
+										<Route
+											path=":id/:tab/:reportId"
+											element={<PortfolioDetail />}
+										/>
+										<Route
+											path="edit/:id"
+											element={<PortfolioEditRedirect />}
+										/>
+										<Route path="new" element={<EditPortfolio />} />
+									</Route>
+									<Route path="/features" element={<FeaturesView />} />
+									<Route path="/settings" element={<Settings />} />
+								</Route>
+							</Routes>
+							<UsageDataEventDetector />
 						</UsageDataConsentProvider>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
