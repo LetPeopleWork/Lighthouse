@@ -53,9 +53,6 @@ vi.mock(
 	}),
 );
 
-const pendingEpic6298 =
-	"Pending: Export PDF on the report view (epic 6298, slice 01)";
-
 const OUTLINED = "MuiButton-outlined";
 
 const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
@@ -207,7 +204,7 @@ describe("What choosing Export PDF reports", () => {
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
 	// It counts the choice, not a saved file: nothing tells Lighthouse whether the dialog saved one.
-	it.skip(`reports one PDF export with the report's Type for every time Export PDF is chosen (${pendingEpic6298})`, async () => {
+	it(`reports one PDF export with the report's Type for every time Export PDF is chosen`, async () => {
 		const { user } = leavingTheReportForItsPrintPage();
 
 		await user.click(await theExportButtonOnceItCanBePressed());

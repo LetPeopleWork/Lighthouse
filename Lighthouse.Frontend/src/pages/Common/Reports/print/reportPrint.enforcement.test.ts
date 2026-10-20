@@ -8,9 +8,6 @@ const sourceRoot = resolve(here, "../../../..");
 /** The kits tests are built from; they name what they check for, and ship nowhere. */
 const testSupport = resolve(sourceRoot, "tests");
 
-const pendingEpic6298 =
-	"Pending: the report's print page (epic 6298, slice 01)";
-
 const THE_PRINT_PAGES = resolve(here, "reportPrintRoutes.tsx");
 
 /** Static imports and re-exports, and the `import("./…")` a lazily loaded page is reached through. */
@@ -145,7 +142,7 @@ describe("what the print page reads through", () => {
 describe("who counts an export", () => {
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// One starter for the report view's button and the list's icon, so a third surface cannot count differently.
-	it.skip(`is the one export starter, whichever surface the reader exports from (${pendingEpic6298})`, () => {
+	it(`is the one export starter, whichever surface the reader exports from`, () => {
 		const theEventList = "services/Api/UsageDataService.ts";
 		const counters = productionSourcesUnder(sourceRoot)
 			.filter((file) =>

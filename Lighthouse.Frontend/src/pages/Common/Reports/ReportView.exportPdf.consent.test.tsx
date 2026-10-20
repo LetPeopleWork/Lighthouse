@@ -31,9 +31,6 @@ import {
  * it noticed.
  */
 
-const pendingEpic6298 =
-	"Pending: Export PDF counts only with consent (epic 6298, slice 01)";
-
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
 
 const theAnswerAboutThisBrowser = (
@@ -87,7 +84,7 @@ describe("Export PDF is counted only where this browser agreed", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	it.skip(`counts the export, with the report's Type, from a browser that agreed (${pendingEpic6298})`, async () => {
+	it(`counts the export, with the report's Type, from a browser that agreed`, async () => {
 		await exportingWith(theAnswerAboutThisBrowser({}), "sending");
 
 		expect(exportsNoticed()).toEqual([
@@ -100,7 +97,7 @@ describe("Export PDF is counted only where this browser agreed", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// A refusal mints a token too, so holding one says nothing about agreeing.
-	it.skip(`counts nothing from a browser that said no, token or not (${pendingEpic6298})`, async () => {
+	it(`counts nothing from a browser that said no, token or not`, async () => {
 		await exportingWith(
 			theAnswerAboutThisBrowser({ sending: false, decision: "Declined" }),
 			"not-sending",

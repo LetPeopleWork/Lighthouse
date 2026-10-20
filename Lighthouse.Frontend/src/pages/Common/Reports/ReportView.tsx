@@ -72,15 +72,19 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 		(report !== undefined &&
 			!isError &&
 			usageDataReportTemplateOf(report.templateKey) !== undefined);
+	const exportThisReport = () => {
+		// The button cannot be pressed until the report has arrived.
+		if (report !== undefined) {
+			exportPdf(owner, report, "report");
+		}
+	};
 
 	return (
 		<Stack spacing={2} data-report-status={status}>
 			<ThenAndNowHeader
 				reportsPath={reportsPath}
 				name={report?.name}
-				onExport={
-					mayExport ? () => exportPdf(owner, reportId, "report") : undefined
-				}
+				onExport={mayExport ? exportThisReport : undefined}
 				exportWaiting={exportWaiting}
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
