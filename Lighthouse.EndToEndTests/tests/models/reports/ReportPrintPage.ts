@@ -88,11 +88,15 @@ export class ReportPrintPage {
 		return wider;
 	}
 
-	/** The fonts the browser embeds when it turns this page into a PDF, read off the PDF itself. */
+	/**
+	 * The fonts the browser embeds when it turns this page into a PDF, read off the PDF itself. Chromium draws a
+	 * variable font as a Type3 font, which has no BaseFont and is named only in its font descriptor, so both
+	 * names are read.
+	 */
 	async fontsEmbeddedInThePdf(): Promise<string[]> {
 		const pdf = (await this.page.pdf({ format: "A4" })).toString("latin1");
 		const named = Array.from(
-			pdf.matchAll(/\/BaseFont\s*\/([^\s/<>[\]()]+)/g),
+			pdf.matchAll(/\/(?:BaseFont|FontName)\s*\/([^\s/<>[\]()]+)/g),
 		).map(([, font]) => font.replace(/^[A-Z]{6}\+/, ""));
 		return [...new Set(named)];
 	}

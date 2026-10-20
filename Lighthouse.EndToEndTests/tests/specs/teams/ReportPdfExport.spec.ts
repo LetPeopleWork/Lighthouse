@@ -38,7 +38,7 @@ testWithDemo(
 // Only the typeface the app carries may reach the PDF: a machine font in it means the PDF looks different on
 // the next machine.
 // @us-02 @slice-02 @real-io @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:unbounded-preservation
-testWithDemo.fixme(
+testWithDemo(
 	"the PDF of a report embeds the Lighthouse typeface and no other",
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
