@@ -124,7 +124,7 @@ describe("who loads fonts into the document", () => {
 describe("what the print page reads through", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Only the routes build the page's ports; the page and what it draws never reach for every service the app has.
-	it.skip(`is the read port it is handed, never the app's services (${pendingEpic6298})`, () => {
+	it("is the read port it is handed, never the app's services", () => {
 		const printFolder = dirname(THE_PRINT_PAGES);
 		const pageModules = productionSourcesUnder(printFolder).filter(
 			(file) => file !== THE_PRINT_PAGES,

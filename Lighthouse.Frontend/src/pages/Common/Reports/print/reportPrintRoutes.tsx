@@ -41,9 +41,9 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 
 	const reads: PrintReadPort = useMemo(
 		() => ({
-			getReport: reportService.getReport.bind(reportService),
-			getTeam: teamService.getTeam.bind(teamService),
-			getPortfolio: portfolioService.getPortfolio.bind(portfolioService),
+			getReport: (owner, reportId) => reportService.getReport(owner, reportId),
+			getTeam: (id) => teamService.getTeam(id),
+			getPortfolio: (id) => portfolioService.getPortfolio(id),
 		}),
 		[reportService, teamService, portfolioService],
 	);

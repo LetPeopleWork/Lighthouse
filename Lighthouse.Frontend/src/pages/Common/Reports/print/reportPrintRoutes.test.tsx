@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { Suspense } from "react";
 import { MemoryRouter, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../../services/TerminologyContext";
 import { createMockApiServiceContext } from "../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../tests/renderWithQueryClient";
 import { reportPrintRoutes } from "./reportPrintRoutes";
 
 /**
@@ -13,9 +14,6 @@ import { reportPrintRoutes } from "./reportPrintRoutes";
  * hand it new objects holding the three reads and the three things it needs about the instance's terms, and
  * nothing else.
  */
-
-const pendingEpic6298 =
-	"Pending: the report print routes (epic 6298, slice 01)";
 
 const { handed } = vi.hoisted(() => ({
 	handed: [] as Record<string, unknown>[],
@@ -40,8 +38,8 @@ const theInputHolding = (member: string): object | undefined =>
 
 describe("what the print routes hand the print page", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(`is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads (${pendingEpic6298})`, async () => {
-		render(
+	it("is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads", async () => {
+		renderWithQueryClient(
 			<MemoryRouter initialEntries={["/print/teams/1/reports/42"]}>
 				<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
 					<TerminologyProvider>
