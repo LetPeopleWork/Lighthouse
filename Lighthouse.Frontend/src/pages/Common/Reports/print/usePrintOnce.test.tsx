@@ -37,6 +37,7 @@ const aFakeBrowser = () => {
 			happened.push(`navigate ${to}`);
 		}),
 		loadFonts: vi.fn(async () => "loaded" as const),
+		loadPicture: vi.fn(async () => "loaded" as const),
 	};
 	return {
 		port,

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { aRefusal } from "../../../../tests/ReportsTestKit";
 import {
-	type PrintFontsState,
+	type PrintLoadState,
 	type PrintPageInputs,
 	type PrintPageState,
 	printPageStateOf,
@@ -12,9 +12,9 @@ import {
 
 /**
  * What the print page shows is decided from what it has, and from nothing else. It is ready only when a report
- * answer that arrived after the page opened, the owner's name, the instance's terms and the fonts are all in. A
+ * answer that arrived after the page opened, the owner's name, the instance's terms, the fonts and the Lighthouse mark are all in. A
  * report that no longer exists or was made by a newer version is a failure nothing can mend; any other failure of the
- * report read can be tried again, and so can a page whose report was read but whose owner's name, terms or fonts were
+ * report read can be tried again, and so can a page whose report was read but whose owner's name, terms, fonts or mark were
  * not, which says so in its own words. An answer the page was already holding when it opened is never enough.
  */
 
@@ -34,6 +34,7 @@ const everythingIn: PrintPageInputs = {
 	termsLoading: false,
 	termsError: null,
 	fonts: "loaded",
+	mark: "loaded",
 };
 
 describe("the print page's state", () => {
@@ -65,6 +66,16 @@ describe("the print page's state", () => {
 		["the terms are still loading", { termsLoading: true }, "preparing"],
 		["the fonts are still being asked for", { fonts: "pending" }, "preparing"],
 		["a font could not be loaded", { fonts: "failed" }, "failedPart"],
+		[
+			"the Lighthouse mark is still on its way",
+			{ mark: "pending" },
+			"preparing",
+		],
+		[
+			"the Lighthouse mark could not be loaded",
+			{ mark: "failed" },
+			"failedPart",
+		],
 		[
 			"the report read failed, though an answer is held",
 			{ reportError: new Error("the network dropped") },
@@ -127,37 +138,40 @@ describe("the print page's state", () => {
 	});
 
 	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
-	// Every combination of the four inputs without a failure: ready exactly when all four are in, else preparing.
-	it("is ready exactly when all four inputs are in, and preparing otherwise", () => {
+	// Every combination of the five inputs without a failure: ready exactly when all five are in, else preparing.
+	it("is ready exactly when all five inputs are in, and preparing otherwise", () => {
 		const answers = [null, OPENED - 1, OPENED, OPENED + 1];
 		const owners = [null, "Lightspeed"];
 		const termsLoading = [true, false];
-		const fonts: PrintFontsState[] = ["pending", "loaded"];
+		const loads: PrintLoadState[] = ["pending", "loaded"];
 		let combinations = 0;
 
 		for (const fetchedAt of answers)
 			for (const ownerName of owners)
 				for (const loading of termsLoading)
-					for (const font of fonts) {
-						combinations++;
-						const allIn =
-							fetchedAt !== null &&
-							fetchedAt >= OPENED &&
-							ownerName !== null &&
-							!loading &&
-							font === "loaded";
-						expect(
-							printPageStateOf({
-								...everythingIn,
-								fetchedAt,
-								ownerName,
-								termsLoading: loading,
-								fonts: font,
-							}),
-						).toBe(allIn ? "ready" : "preparing");
-					}
+					for (const font of loads)
+						for (const mark of loads) {
+							combinations++;
+							const allIn =
+								fetchedAt !== null &&
+								fetchedAt >= OPENED &&
+								ownerName !== null &&
+								!loading &&
+								font === "loaded" &&
+								mark === "loaded";
+							expect(
+								printPageStateOf({
+									...everythingIn,
+									fetchedAt,
+									ownerName,
+									termsLoading: loading,
+									fonts: font,
+									mark,
+								}),
+							).toBe(allIn ? "ready" : "preparing");
+						}
 
-		expect(combinations).toBe(32);
+		expect(combinations).toBe(64);
 	});
 
 	// @us-01 @slice-01 @contract-shape:unbounded-preservation

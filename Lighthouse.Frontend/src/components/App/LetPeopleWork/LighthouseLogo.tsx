@@ -2,6 +2,9 @@ import { Box, Typography, useTheme } from "@mui/material";
 import type React from "react";
 import { Link } from "react-router";
 
+/** Where the Lighthouse mark is served from, so a page that must wait for the picture can ask for the same one. */
+export const LIGHTHOUSE_MARK = "/icons/icon-512x512.png";
+
 interface LighthouseLogoProps {
 	/** Off where a link home leads nowhere, such as on a page made for paper. */
 	readonly linksHome?: boolean;
@@ -15,7 +18,7 @@ const LighthouseLogo: React.FC<LighthouseLogoProps> = ({
 	const mark = (
 		<Box sx={{ display: "flex", alignItems: "center" }}>
 			<img
-				src="/icons/icon-512x512.png"
+				src={LIGHTHOUSE_MARK}
 				alt="Lighthouse logo"
 				style={{
 					width: "48px",

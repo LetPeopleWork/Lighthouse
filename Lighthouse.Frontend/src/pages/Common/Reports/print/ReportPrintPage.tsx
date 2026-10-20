@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router";
+import { LIGHTHOUSE_MARK } from "../../../../components/App/LetPeopleWork/LighthouseLogo";
 import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
@@ -12,7 +13,7 @@ import { finalFailureOf } from "../wizard/reportRefusalCopy";
 import PrintSheet, { type WayBack } from "./PrintSheet";
 import {
 	isAFreshAnswer,
-	type PrintFontsState,
+	type PrintLoadState,
 	type PrintPageState,
 	printPageStateOf,
 } from "./printPageState";
@@ -72,34 +73,40 @@ const useOwnerName = (owner: IReportOwner, reads: PrintReadPort) =>
 		},
 	});
 
-interface PrintFonts {
-	readonly fonts: PrintFontsState;
-	readonly askAgain: () => void;
+interface AskedOfTheBrowser {
+	readonly state: PrintLoadState;
+	readonly askAgainIfFailed: () => void;
 }
 
-/** Asks for the fonts once the report is drawn, so the browser loads the faces the page actually shows. */
-const useFontsOnceDrawn = (
+/** Asks the browser for something the page shows once the report is drawn, so it loads what the page actually shows. */
+const useLoadedOnceDrawn = <T,>(
 	drawn: boolean,
-	loadFonts: PrintEffectPort["loadFonts"],
-): PrintFonts => {
-	const [fonts, setFonts] = useState<PrintFontsState>("pending");
+	load: (what: T) => Promise<PrintLoadState>,
+	what: T,
+): AskedOfTheBrowser => {
+	const [state, setState] = useState<PrintLoadState>("pending");
 
 	useEffect(() => {
-		if (!drawn || fonts !== "pending") {
+		if (!drawn || state !== "pending") {
 			return;
 		}
 		let gone = false;
-		loadFonts(THE_PRINTED_FACES)
-			.catch((): PrintFontsState => "failed")
+		load(what)
+			.catch((): PrintLoadState => "failed")
 			.then((outcome) => {
-				if (!gone) setFonts(outcome);
+				if (!gone) setState(outcome);
 			});
 		return () => {
 			gone = true;
 		};
-	}, [drawn, fonts, loadFonts]);
+	}, [drawn, state, load, what]);
 
-	return { fonts, askAgain: () => setFonts("pending") };
+	return {
+		state,
+		askAgainIfFailed: () => {
+			if (state === "failed") setState("pending");
+		},
+	};
 };
 
 interface Printable {
@@ -218,10 +225,11 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const fetchedAt = report.data === undefined ? null : report.dataUpdatedAt;
 	const fresh = isAFreshAnswer(fetchedAt, mountedAt) ? report.data : undefined;
 	const printable = printableOf(fresh, owner, ownerName.data, terms.getTerm);
-	const { fonts, askAgain: askForTheFontsAgain } = useFontsOnceDrawn(
-		printable !== undefined,
-		effects.loadFonts,
-	);
+	const drawn = printable !== undefined;
+	const fonts = useLoadedOnceDrawn(drawn, effects.loadFonts, THE_PRINTED_FACES);
+	const mark = useLoadedOnceDrawn(drawn, effects.loadPicture, LIGHTHOUSE_MARK);
+	// Kept out of sight until its typeface is in, so the reader never sees the report flash in a stand-in font.
+	const drawnInItsOwnFaces = drawn && fonts.state === "loaded";
 	useDocumentTitle(
 		printable && printTitleOf(printable.report.name, printable.ownerLine),
 	);
@@ -235,14 +243,16 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		ownerError: ownerName.error,
 		termsLoading: terms.isLoading,
 		termsError: terms.error,
-		fonts,
+		fonts: fonts.state,
+		mark: mark.state,
 	});
 	const failure = failureLookOf(state, report.error, {
 		forTheReport: () => askAgainFor(report),
 		forTheFailedPart: () => {
 			if (ownerName.isError) askAgainFor(ownerName);
 			if (terms.error !== null) terms.refetch();
-			if (fonts === "failed") askForTheFontsAgain();
+			fonts.askAgainIfFailed();
+			mark.askAgainIfFailed();
 		},
 	});
 	const { printWhenReady, from } = printRequestOf(location.state);
@@ -267,7 +277,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 			<WidgetBody
 				widgetKey="report-print"
 				status={widgetStatusOf(state)}
-				hasContentToDim={false}
+				hasContentToDim={drawnInItsOwnFaces}
 				loadingMessage={PREPARING}
 				failureMessage={failure.message}
 				onRetry={failure.retry}

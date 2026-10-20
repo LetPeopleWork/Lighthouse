@@ -14,8 +14,8 @@ import { RETURNED_FROM_PRINT, usePrintOnce } from "./usePrintOnce";
 /**
  * The print page's reach into the real browser, with only the browser's own print and fonts stood in for: the
  * dialog is asked for through the browser's print, the dialog closing is heard for as long as the page is open,
- * a return steps back to where the export started (or, with no origin, replaces the print page's entry), and the fonts are loaded into the document and
- * answered as loaded only when every face was found.
+ * a return steps back to where the export started (or, with no origin, replaces the print page's entry), the fonts are loaded into the document and
+ * answered as loaded only when every face was found, and a picture is answered as loaded only once it is decoded.
  */
 
 const HERE = "/print/teams/1/reports/42";
@@ -44,6 +44,16 @@ const theDocumentsFontsAre = (
 
 const A_FACE = { family: "Quicksand" } as unknown as FontFace;
 const FACES = ["400 1em Quicksand", "700 1em Quicksand"];
+const A_PICTURE = "/icons/icon-512x512.png";
+
+// jsdom draws no pictures, so it has no decode of its own to stand in for.
+const thePicturesDecodeBy = (
+	decode: (this: HTMLImageElement) => Promise<void>,
+) =>
+	Object.defineProperty(HTMLImageElement.prototype, "decode", {
+		configurable: true,
+		value: decode,
+	});
 
 /** The router as the print page sits in it: opened from the report, now on the print page. */
 const onThePrintPage = () =>
@@ -64,6 +74,7 @@ const onThePrintPage = () =>
 
 afterEach(() => {
 	vi.unstubAllGlobals();
+	Reflect.deleteProperty(HTMLImageElement.prototype, "decode");
 	Reflect.deleteProperty(document, "fonts");
 });
 
@@ -171,5 +182,29 @@ describe("the browser's print effects", () => {
 		await expect(browserPrintEffects(vi.fn()).loadFonts(FACES)).resolves.toBe(
 			"failed",
 		);
+	});
+
+	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
+	it("asks for the picture at the address and answers loaded once it has been decoded", async () => {
+		const decoded: string[] = [];
+		thePicturesDecodeBy(async function (this: HTMLImageElement) {
+			decoded.push(this.getAttribute("src") ?? "");
+		});
+
+		await expect(
+			browserPrintEffects(vi.fn()).loadPicture(A_PICTURE),
+		).resolves.toBe("loaded");
+		expect(decoded).toEqual([A_PICTURE]);
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:bounded-change
+	it("answers failed when the picture cannot be decoded", async () => {
+		thePicturesDecodeBy(async () => {
+			throw new Error("the picture could not be fetched");
+		});
+
+		await expect(
+			browserPrintEffects(vi.fn()).loadPicture(A_PICTURE),
+		).resolves.toBe("failed");
 	});
 });

@@ -21,11 +21,12 @@ export const prefetchReportPrintPage = (): void => {
 };
 
 /**
- * What a test may stand in for at the print page's edge. The app passes nothing, and the page loads its fonts
- * through the browser; jsdom has no fonts of its own to load.
+ * What a test may stand in for at the print page's edge. The app passes nothing, and the page loads its fonts and
+ * pictures through the browser; jsdom has no fonts of its own to load and never loads a picture.
  */
 export interface PrintPageStandIns {
 	readonly loadFonts?: PrintEffectPort["loadFonts"];
+	readonly loadPicture?: PrintEffectPort["loadPicture"];
 }
 
 interface PrintRouteProps {
@@ -46,7 +47,7 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 		useContext(ApiServiceContext);
 	const { getTerm, isLoading, error, refetchTerminology } = useTerminology();
 	const navigate = useNavigate();
-	const { loadFonts } = standIns;
+	const { loadFonts, loadPicture } = standIns;
 
 	const reads: PrintReadPort = useMemo(
 		() => ({
@@ -65,8 +66,12 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 			if (typeof to === "number") navigate(to);
 			else navigate(to, options);
 		});
-		return loadFonts === undefined ? browser : { ...browser, loadFonts };
-	}, [navigate, loadFonts]);
+		return {
+			...browser,
+			loadFonts: loadFonts ?? browser.loadFonts,
+			loadPicture: loadPicture ?? browser.loadPicture,
+		};
+	}, [navigate, loadFonts, loadPicture]);
 
 	return (
 		<Suspense fallback={<WhileThePageLoads />}>

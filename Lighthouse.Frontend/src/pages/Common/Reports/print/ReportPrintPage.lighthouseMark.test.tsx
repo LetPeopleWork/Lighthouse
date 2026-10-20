@@ -27,8 +27,6 @@ import {
  * print dialog until the mark is in, and a mark that cannot be loaded is part of the page that could not be loaded.
  */
 
-const pendingEpic6298 = "Pending: the mark is in the PDF (epic 6298, slice 02)";
-
 /** The reader on the report view chooses Export PDF and arrives at its print page. */
 const exportingFromTheReport = async () => {
 	const rendered = renderTheExportScene({
@@ -60,7 +58,7 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// Fails today: the page never asks for the mark, so it is ready and prints with the mark still on its way.
-	it.skip(`waits for the Lighthouse mark before it is ready, then opens the print dialog once (${pendingEpic6298})`, async () => {
+	it("waits for the Lighthouse mark before it is ready, then opens the print dialog once", async () => {
 		const mark = theLighthouseMarkIsStillLoading();
 		await exportingFromTheReport();
 		await screen.findByRole("heading", { level: 1 });
@@ -77,7 +75,7 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	// Fails today: the page ignores the mark and prints without it.
-	it.skip(`says part of the page couldn't be loaded, offers Retry and never prints, when the Lighthouse mark cannot be loaded (${pendingEpic6298})`, async () => {
+	it("says part of the page couldn't be loaded, offers Retry and never prints, when the Lighthouse mark cannot be loaded", async () => {
 		theLighthouseMarkCannotLoad();
 		await exportingFromTheReport();
 
@@ -92,7 +90,7 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	// Fails today: the page never asks for the mark, so Retry has nothing to ask again.
-	it.skip(`asks for the Lighthouse mark again on Retry and prints once it is in (${pendingEpic6298})`, async () => {
+	it("asks for the Lighthouse mark again on Retry and prints once it is in", async () => {
 		const mark = theLighthouseMarkCannotLoad();
 		const { user } = await exportingFromTheReport();
 		await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED);

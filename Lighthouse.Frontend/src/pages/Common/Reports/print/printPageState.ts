@@ -12,8 +12,8 @@ export type PrintPageState =
 	| "failedFinal"
 	| "ready";
 
-/** Where the fonts the page shows stand: still being asked for, all found, or one could not be loaded. */
-export type PrintFontsState = "pending" | "loaded" | "failed";
+/** Where something the page asks the browser to load stands: still being asked for, in, or it could not be loaded. */
+export type PrintLoadState = "pending" | "loaded" | "failed";
 
 /** Everything the print page's state depends on, and nothing else. */
 export interface PrintPageInputs {
@@ -28,7 +28,9 @@ export interface PrintPageInputs {
 	readonly ownerError: unknown;
 	readonly termsLoading: boolean;
 	readonly termsError: unknown;
-	readonly fonts: PrintFontsState;
+	readonly fonts: PrintLoadState;
+	/** The Lighthouse mark in the footer, a picture the browser fetches. */
+	readonly mark: PrintLoadState;
 }
 
 /** Whether the report answer in hand arrived after the page opened; only such an answer is ever printed. */
@@ -55,7 +57,8 @@ export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
 	if (
 		isAnError(inputs.ownerError) ||
 		isAnError(inputs.termsError) ||
-		inputs.fonts === "failed"
+		inputs.fonts === "failed" ||
+		inputs.mark === "failed"
 	)
 		return "failedPart";
 
@@ -63,6 +66,7 @@ export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
 		isAFreshAnswer(inputs.fetchedAt, inputs.mountedAt) &&
 		inputs.ownerName !== null &&
 		!inputs.termsLoading &&
-		inputs.fonts === "loaded";
+		inputs.fonts === "loaded" &&
+		inputs.mark === "loaded";
 	return everythingIsIn ? "ready" : "preparing";
 };

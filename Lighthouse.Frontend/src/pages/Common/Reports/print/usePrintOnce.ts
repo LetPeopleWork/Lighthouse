@@ -7,10 +7,10 @@ export type PrintOrigin = "report" | "list";
 /** What a return from the print page to the Reports list carries in the list's history entry. */
 export const RETURNED_FROM_PRINT = { returnedFromPrint: true } as const;
 
-/** Whether every font face the page asked for was found and loaded. */
-export type PrintFontsOutcome = "loaded" | "failed";
+/** Whether everything the browser was asked to load (every font face, or a picture) arrived. */
+export type PrintLoadOutcome = "loaded" | "failed";
 
-/** The print dialog, its closing, the router and the document's fonts: the print page's whole reach into the browser. */
+/** The print dialog, its closing, the router, the document's fonts and its pictures: the print page's whole reach into the browser. */
 export interface PrintEffectPort {
 	readonly print: () => void;
 	/** Calls the listener when the print dialog closes; the returned function stops listening. */
@@ -21,7 +21,9 @@ export interface PrintEffectPort {
 		options: { readonly replace: boolean; readonly state?: unknown },
 	): void;
 	/** Loads the named faces, such as "700 1em Quicksand", into the document; asked by the page once it has drawn the report. */
-	readonly loadFonts: (faces: readonly string[]) => Promise<PrintFontsOutcome>;
+	readonly loadFonts: (faces: readonly string[]) => Promise<PrintLoadOutcome>;
+	/** Loads the picture at an address, such as the Lighthouse mark, so a print made at once shows it. */
+	readonly loadPicture: (source: string) => Promise<PrintLoadOutcome>;
 }
 
 /** Steps back to the history entry before the print page, which is where an export started. */
