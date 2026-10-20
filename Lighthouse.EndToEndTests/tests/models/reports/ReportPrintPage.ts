@@ -41,8 +41,18 @@ export class ReportPrintPage {
 		return this.page.getByRole("heading", { level: 1 });
 	}
 
-	owner(ownerKindAndName: string): Locator {
-		return this.page.getByText(ownerKindAndName, { exact: true });
+	/**
+	 * The header line naming who the report is about: the owner's kind, in the instance's own word for it,
+	 * then the owner's name. A demo Team called "Team Lightspeed" therefore reads "Team Team Lightspeed".
+	 */
+	owner(ownerName: string): Locator {
+		const escaped = ownerName.replaceAll(
+			/[.*+?^${}()|[\]\\]/g,
+			String.raw`\$&`,
+		);
+		return this.page
+			.getByRole("banner")
+			.getByText(new RegExp(String.raw`^\S.* ${escaped}$`));
 	}
 
 	async timesThePrintDialogOpened(): Promise<number> {

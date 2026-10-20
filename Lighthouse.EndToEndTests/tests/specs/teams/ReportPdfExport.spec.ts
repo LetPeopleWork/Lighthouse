@@ -11,7 +11,7 @@ const LIGHTSPEED = "Team Lightspeed";
 // The print dialog of a real browser cannot be driven, so it is stood in for: the page asks for it once, and
 // closing it brings the reader back to the report.
 // @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-testWithDemo.fixme(
+testWithDemo(
 	"a coach exports a Team's Then & Now report as a PDF: the page names the report and its owner, prints once and returns to the report",
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
