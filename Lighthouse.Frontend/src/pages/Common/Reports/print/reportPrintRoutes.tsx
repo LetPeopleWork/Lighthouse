@@ -62,12 +62,13 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 		[getTerm, isLoading, error, refetchTerminology],
 	);
 	const effects: PrintEffectPort = useMemo(() => {
-		const browser = browserPrintEffects((to, options) => {
-			if (typeof to === "number") navigate(to);
-			else navigate(to, options);
-		});
+		const browser = browserPrintEffects(globalThis.window);
 		return {
 			...browser,
+			navigate: (to, options) => {
+				if (typeof to === "number") navigate(to);
+				else navigate(to, options);
+			},
 			loadFonts: loadFonts ?? browser.loadFonts,
 			loadPicture: loadPicture ?? browser.loadPicture,
 		};

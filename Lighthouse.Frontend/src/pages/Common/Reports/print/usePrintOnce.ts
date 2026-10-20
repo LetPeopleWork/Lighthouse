@@ -10,7 +10,7 @@ export const RETURNED_FROM_PRINT = { returnedFromPrint: true } as const;
 /** Whether everything the browser was asked to load (every font face, or a picture) arrived. */
 export type PrintLoadOutcome = "loaded" | "failed";
 
-/** The print dialog, its closing, the router, the document's fonts and its pictures: the print page's whole reach into the browser. */
+/** The print dialog, its closing, the router, the document's fonts, pictures and title: the print page's whole reach into the browser. */
 export interface PrintEffectPort {
 	readonly print: () => void;
 	/** Calls the listener when the print dialog closes; the returned function stops listening. */
@@ -24,6 +24,8 @@ export interface PrintEffectPort {
 	readonly loadFonts: (faces: readonly string[]) => Promise<PrintLoadOutcome>;
 	/** Loads the picture at an address, such as the Lighthouse mark, so a print made at once shows it. */
 	readonly loadPicture: (source: string) => Promise<PrintLoadOutcome>;
+	/** Names the printed document, so the PDF's file name is the report's; the returned function gives the app its own name back. */
+	readonly setTitle: (title: string) => () => void;
 }
 
 /** Steps back to the history entry before the print page, which is where an export started. */
