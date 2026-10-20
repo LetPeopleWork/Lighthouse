@@ -259,6 +259,24 @@ describe("When Export PDF cannot make the PDF", () => {
 	});
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
+	// The app reads its terms once and never again on its own, so only the export can ask for them a second time.
+	it(`prints from a fresh frame when Retry asks again for the instance's terms the export could not read`, async () => {
+		const { user } = await exportingFromTheReport({
+			terminologyService: aTerminologyServiceThatCannotReadTheTerms({
+				untilTheRead: 3,
+			}),
+		});
+		const snackbar = await theErrorSnackbar();
+		expect(snackbar).toHaveTextContent(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED);
+		await everyPrintFrameIsGone();
+
+		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
+
+		await theFramesHavePrinted(frames);
+		expect(exportsReported()).toHaveLength(1);
+	});
+
+	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The frame cannot be seen, so a read, a font or a picture that never arrives would otherwise leave the spinner
 	// turning with no word; the sentence follows what was still missing.
 	it.each<[string, () => Partial<Scene>, string]>([

@@ -11,7 +11,10 @@ import {
 	type PrintFrame,
 } from "./browserPrintEffects";
 import PrintSheet from "./PrintSheet";
-import ReportPrintContent, { type PrintPageLook } from "./ReportPrintContent";
+import ReportPrintContent, {
+	type PrintPageLook,
+	type PrintTerms,
+} from "./ReportPrintContent";
 import { usePrintPagePorts } from "./reportPrintRoutes";
 import {
 	A_PART_COULD_NOT_BE_LOADED,
@@ -89,6 +92,26 @@ const useOpenedFrame = (
 	}, [timedOut, opened]);
 
 	return opened;
+};
+
+/**
+ * The app reads its terms once and never again on its own, so an export that finds them failed asks once more, and
+ * says it is still asking until an answer to that ask has begun, so the report is not drawn against the old failure.
+ * Terms that never change are given up on with everything else when time runs out.
+ */
+const useTermsAskedForAgain = (
+	terms: PrintTerms,
+	timedOut: boolean,
+): boolean => {
+	const termsAtMount = useRef(terms);
+
+	useEffect(() => {
+		const { error, refetch } = termsAtMount.current;
+		if (error !== null) refetch();
+	}, []);
+
+	const failedAtMount = termsAtMount.current.error !== null;
+	return failedAtMount && terms === termsAtMount.current && !timedOut;
 };
 
 // The frame cannot be seen, so a read, a font or a picture that never arrives would leave the spinner turning with no
@@ -194,9 +217,10 @@ const PrintFrameHost: React.FC<PrintFrameHostProps> = ({
 }) => {
 	const { reads, terms } = usePrintPagePorts();
 	const { timedOut, tell: tellTheHost } = useTimeToPrint(tell);
+	const stillAskingForTheTerms = useTermsAskedForAgain(terms, timedOut);
 	const opened = useOpenedFrame(tellTheHost, timedOut);
 
-	if (opened === undefined) return null;
+	if (opened === undefined || stillAskingForTheTerms) return null;
 	const { frame, effects, cache } = opened;
 
 	return (
