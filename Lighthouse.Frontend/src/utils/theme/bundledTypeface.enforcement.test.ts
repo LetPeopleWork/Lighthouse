@@ -7,9 +7,6 @@ const here = dirname(fileURLToPath(import.meta.url));
 const frontendRoot = resolve(here, "../../..");
 const sourceRoot = resolve(frontendRoot, "src");
 
-const pendingEpic6298 =
-	"Pending: the Lighthouse typeface ships with the app (epic 6298, slice 02)";
-
 const THE_PACKAGE = "@fontsource-variable/quicksand";
 const ITS_FAMILY = "Quicksand Variable";
 /** The package's own entry or one of its weight files, in either quote style. */
@@ -54,7 +51,7 @@ const quicksandStacks = (): { file: string; stack: string }[] =>
  */
 describe("the Lighthouse typeface ships with the app", () => {
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
-	it.skip(`loads no font from the internet (${pendingEpic6298})`, () => {
+	it(`loads no font from the internet`, () => {
 		const page = readFileSync(resolve(frontendRoot, "index.html"), "utf8");
 
 		expect(page).toContain("<html");
@@ -62,7 +59,7 @@ describe("the Lighthouse typeface ships with the app", () => {
 	});
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
-	it.skip(`brings the typeface in from the package the app carries (${pendingEpic6298})`, () => {
+	it(`brings the typeface in from the package the app carries`, () => {
 		const importers = productionSourcesUnder(sourceRoot).filter((file) =>
 			ITS_IMPORT.test(readFileSync(file, "utf8")),
 		);
@@ -72,7 +69,7 @@ describe("the Lighthouse typeface ships with the app", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:unbounded-preservation
 	// A stack that names the typeface by any other family falls back to a machine font without a word.
-	it.skip(`names the carried family first wherever the app asks for the typeface (${pendingEpic6298})`, () => {
+	it(`names the carried family first wherever the app asks for the typeface`, () => {
 		const stacks = quicksandStacks();
 
 		expect(stacks.length).toBeGreaterThan(0);
@@ -86,7 +83,7 @@ describe("the Lighthouse typeface ships with the app", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// The licence asks to travel with the font, unchanged; a package update that changes it must change the copy.
-	it.skip(`ships the typeface's licence word for word as the package carries it (${pendingEpic6298})`, () => {
+	it(`ships the typeface's licence word for word as the package carries it`, () => {
 		expect(
 			existsSync(THE_PACKAGES_LICENCE),
 			"the package is not installed",

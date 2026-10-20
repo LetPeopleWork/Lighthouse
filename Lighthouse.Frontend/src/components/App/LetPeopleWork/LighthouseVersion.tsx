@@ -227,7 +227,7 @@ const LighthouseVersion: React.FC = () => {
 					rel="noopener noreferrer"
 					sx={{
 						textDecoration: "none",
-						fontFamily: "Quicksand, sans-serif",
+						fontFamily: "'Quicksand Variable', sans-serif",
 						color: theme.palette.primary.main,
 						fontWeight: "bold",
 					}}

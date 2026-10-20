@@ -27,7 +27,7 @@ const LighthouseLogo: React.FC<LighthouseLogoProps> = ({
 				variant="h6"
 				component="div"
 				sx={{
-					fontFamily: "Quicksand, sans-serif",
+					fontFamily: "'Quicksand Variable', sans-serif",
 					fontWeight: "bold",
 					display: "flex",
 				}}

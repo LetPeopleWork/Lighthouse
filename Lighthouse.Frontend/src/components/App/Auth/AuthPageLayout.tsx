@@ -54,7 +54,7 @@ const AuthPageLayout: React.FC<AuthPageLayoutProps> = ({
 					variant="h4"
 					component="h1"
 					sx={{
-						fontFamily: "Quicksand, sans-serif",
+						fontFamily: "'Quicksand Variable', sans-serif",
 						fontWeight: "bold",
 						display: "flex",
 					}}

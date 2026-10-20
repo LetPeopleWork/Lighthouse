@@ -38,7 +38,10 @@ const BACK_TO_REPORT = "‹ Back to report";
 const BACK_TO_REPORTS = "‹ Back to Reports";
 
 /** The weights the printed report is set in: its text and its headings. */
-const THE_PRINTED_FACES = ["400 1em Quicksand", "700 1em Quicksand"];
+const THE_PRINTED_FACES = [
+	'400 1em "Quicksand Variable"',
+	'700 1em "Quicksand Variable"',
+];
 
 /** What the print page needs of the instance's terms: reading them, and asking for them again, but never changing them. */
 export type PrintTerms = Pick<

@@ -18,15 +18,15 @@ const STATUS_PALETTE = {
 };
 
 const TYPOGRAPHY: ThemeOptions["typography"] = {
-	fontFamily: "'Quicksand', 'Roboto', 'Arial', sans-serif",
+	fontFamily: "'Quicksand Variable', 'Roboto', 'Arial', sans-serif",
 	h1: {
-		fontWeight: 600,
+		fontWeight: 700,
 	},
 	h2: {
-		fontWeight: 600,
+		fontWeight: 700,
 	},
 	h3: {
-		fontWeight: 600,
+		fontWeight: 700,
 	},
 };
 

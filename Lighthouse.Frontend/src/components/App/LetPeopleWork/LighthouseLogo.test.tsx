@@ -48,13 +48,13 @@ describe("LighthouseLogo component", () => {
 		// Test styles for Typography components
 		const lightText = screen.getByText("Light");
 		expect(lightText.parentElement).toHaveStyle(
-			"font-family: Quicksand,sans-serif",
+			"font-family: 'Quicksand Variable',sans-serif",
 		);
 		expect(lightText).toHaveStyle(`color: ${theme.palette.primary.main}`);
 
 		const houseText = screen.getByText("house");
 		expect(houseText.parentElement).toHaveStyle(
-			"font-family: Quicksand,sans-serif",
+			"font-family: 'Quicksand Variable',sans-serif",
 		);
 		expect(houseText).toHaveStyle("color: rgb(0, 0, 0, 0.87)");
 	});
