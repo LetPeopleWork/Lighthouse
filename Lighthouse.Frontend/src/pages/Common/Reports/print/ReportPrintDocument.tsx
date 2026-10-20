@@ -68,7 +68,7 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 				component="footer"
 				sx={{ display: "flex", alignItems: "center", gap: 2 }}
 			>
-				<LighthouseLogo />
+				<LighthouseLogo linksHome={false} />
 				<Typography variant="body2">{BRANDING}</Typography>
 			</Box>
 		</Stack>

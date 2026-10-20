@@ -586,7 +586,7 @@ describe("What the print page prints", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`shows nothing of the app around the report: no Edit report, no Delete, no tabs, no navigation (${pendingEpic6298})`, async () => {
+	it("shows nothing of the app around the report: no Edit report, no Delete, no tabs, no navigation", async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
 

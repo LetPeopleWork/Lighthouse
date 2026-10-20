@@ -1,10 +1,11 @@
-import { Box, Button } from "@mui/material";
+import { Box, Button, GlobalStyles, ThemeProvider } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useParams } from "react-router";
 import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
+import { lightTheme } from "../../../../utils/theme/appThemes";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../MetricsView/widgetStatus";
 import { reportPathOf, reportQueryKeyOf, reportsPathOf } from "../reportOwner";
@@ -39,6 +40,21 @@ const BACK_TO_REPORT = "‹ Back to report";
 const BACK_TO_REPORTS = "‹ Back to Reports";
 const SCREEN_ONLY = { "@media print": { display: "none" } };
 const BODY_MIN_HEIGHT = 240;
+
+/**
+ * Paper is white whatever the reader's screen is. The app's baseline paints the body from the reader's theme, and a
+ * nested light theme does not repaint it, so the page sets its own ground and tells the browser it is a light page.
+ */
+const LIGHT_GROUND = {
+	p: 4,
+	minHeight: "100vh",
+	bgcolor: "background.paper",
+	color: "text.primary",
+	colorScheme: "light",
+};
+const WHITE_PAPER = {
+	"@media print": { "html, body": { backgroundColor: "#fff" } },
+};
 
 /** The weights the printed report is set in: its text and its headings. */
 const THE_PRINTED_FACES = ["400 1em Quicksand", "700 1em Quicksand"];
@@ -274,41 +290,47 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	});
 
 	return (
-		<Box data-render-ready={state === "ready" ? "true" : "false"} sx={{ p: 4 }}>
-			<Button
-				component={RouterLink}
-				to={back.to}
-				replace
-				state={RETURNED_FROM_PRINT}
-				sx={SCREEN_ONLY}
-			>
-				{back.label}
-			</Button>
+		<ThemeProvider theme={lightTheme}>
+			<GlobalStyles styles={WHITE_PAPER} />
 			<Box
-				sx={{
-					display: "flex",
-					flexDirection: "column",
-					minHeight: BODY_MIN_HEIGHT,
-				}}
+				data-render-ready={state === "ready" ? "true" : "false"}
+				sx={LIGHT_GROUND}
 			>
-				<WidgetBody
-					widgetKey="report-print"
-					status={widgetStatusOf(state)}
-					hasContentToDim={false}
-					loadingMessage={PREPARING}
-					failureMessage={failure.message}
-					onRetry={failure.retry}
+				<Button
+					component={RouterLink}
+					to={back.to}
+					replace
+					state={RETURNED_FROM_PRINT}
+					sx={SCREEN_ONLY}
 				>
-					{printable !== undefined && (
-						<ReportPrintDocument
-							report={printable.report}
-							ownerLine={printable.ownerLine}
-							producedAt={report.dataUpdatedAt}
-						/>
-					)}
-				</WidgetBody>
+					{back.label}
+				</Button>
+				<Box
+					sx={{
+						display: "flex",
+						flexDirection: "column",
+						minHeight: BODY_MIN_HEIGHT,
+					}}
+				>
+					<WidgetBody
+						widgetKey="report-print"
+						status={widgetStatusOf(state)}
+						hasContentToDim={false}
+						loadingMessage={PREPARING}
+						failureMessage={failure.message}
+						onRetry={failure.retry}
+					>
+						{printable !== undefined && (
+							<ReportPrintDocument
+								report={printable.report}
+								ownerLine={printable.ownerLine}
+								producedAt={report.dataUpdatedAt}
+							/>
+						)}
+					</WidgetBody>
+				</Box>
 			</Box>
-		</Box>
+		</ThemeProvider>
 	);
 };
 
