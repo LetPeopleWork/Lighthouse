@@ -30,9 +30,6 @@ import {
  * explain itself, does not show it.
  */
 
-const pendingEpic6298 =
-	"Pending: the PDF explains itself (epic 6298, slice 03)";
-
 const HOW_TO_READ_THIS = "How to read this";
 const THE_THIRD_LINE =
 	"Each line compares Now with Then. Improved and Got worse say which way it moved (green better, red worse); — means there is no value, and the reason is printed beside it.";
@@ -86,7 +83,7 @@ describe("The PDF says how to read it", () => {
 	});
 
 	// @us-03 @slice-03 @driving_port @contract-shape:bounded-change
-	it.skip(`says which side is frozen, what Now covers and what the marks mean, with the report's own numbers (${pendingEpic6298})`, async () => {
+	it(`says which side is frozen, what Now covers and what the marks mean, with the report's own numbers`, async () => {
 		await printing();
 
 		expect(theLinesOfHowToRead()).toEqual([
@@ -97,7 +94,7 @@ describe("The PDF says how to read it", () => {
 	});
 
 	// @us-03 @slice-03 @edge @contract-shape:bounded-change
-	it.skip(`takes each window's length and last day from the report it prints (${pendingEpic6298})`, async () => {
+	it(`takes each window's length and last day from the report it prints`, async () => {
 		const report = theEngagementStartReport();
 		await printing({
 			...report,
@@ -115,7 +112,7 @@ describe("The PDF says how to read it", () => {
 	});
 
 	// @us-03 @slice-03 @contract-shape:bounded-change
-	it.skip(`draws the marks it explains as the report draws them, green and red (${pendingEpic6298})`, async () => {
+	it(`draws the marks it explains as the report draws them, green and red`, async () => {
 		await printing();
 
 		const thirdLine = Array.from(
@@ -132,7 +129,7 @@ describe("The PDF says how to read it", () => {
 	});
 
 	// @us-03 @slice-03 @contract-shape:bounded-change
-	it.skip(`sits between when the PDF was produced and the summary (${pendingEpic6298})`, async () => {
+	it(`sits between when the PDF was produced and the summary`, async () => {
 		await printing();
 
 		const produced = screen.getByText(PRODUCED_LINE);
@@ -142,7 +139,7 @@ describe("The PDF says how to read it", () => {
 	});
 
 	// @us-03 @slice-03 @edge @contract-shape:unbounded-preservation
-	it.skip(`uses none of the seeded words when the instance has its own (${pendingEpic6298})`, async () => {
+	it(`uses none of the seeded words when the instance has its own`, async () => {
 		await printing(theEngagementStartReport(), {
 			...defaultTerms,
 			[TERMINOLOGY_KEYS.WORK_ITEM]: "Ticket",
