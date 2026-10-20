@@ -128,7 +128,6 @@ describe("the browser's print effects", () => {
 				printWhenReady: true,
 				from: "report",
 				here: HERE,
-				reportPath: THE_REPORT,
 				reportsPath: THE_LIST,
 				port: browserPrintEffects(navigate),
 			}),

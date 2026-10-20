@@ -18,7 +18,6 @@ import {
  */
 
 const HERE = "/print/teams/1/reports/42";
-const THE_REPORT = "/teams/1/reports/42";
 const THE_LIST = "/teams/1/reports";
 
 /** The browser as the hook sees it: every call in the order it happened, and a dialog that closes on demand. */
@@ -61,7 +60,6 @@ const inputs = (
 	printWhenReady: true,
 	from: "report",
 	here: HERE,
-	reportPath: THE_REPORT,
 	reportsPath: THE_LIST,
 	port,
 	...overrides,

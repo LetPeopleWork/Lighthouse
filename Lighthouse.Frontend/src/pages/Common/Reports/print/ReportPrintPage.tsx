@@ -7,7 +7,7 @@ import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../MetricsView/widgetStatus";
-import { reportPathOf, reportsPathOf } from "../reportOwner";
+import { reportsPathOf } from "../reportOwner";
 import { useReportRead } from "../useReportRead";
 import { finalFailureOf } from "../wizard/reportRefusalCopy";
 import PrintSheet, { type WayBack } from "./PrintSheet";
@@ -256,7 +256,6 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		},
 	});
 	const { printWhenReady, from } = printRequestOf(location.state);
-	const reportPath = reportPathOf(owner, reportId);
 	const reportsPath = reportsPathOf(owner);
 
 	usePrintOnce({
@@ -264,7 +263,6 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		printWhenReady,
 		from,
 		here: location.pathname,
-		reportPath,
 		reportsPath,
 		port: effects,
 	});

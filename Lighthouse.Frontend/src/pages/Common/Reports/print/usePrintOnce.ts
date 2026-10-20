@@ -37,7 +37,6 @@ export interface PrintOnceInputs {
 	readonly from: PrintOrigin | undefined;
 	/** The print page's own address, whose history entry is replaced without the wish to print. */
 	readonly here: string;
-	readonly reportPath: string;
 	readonly reportsPath: string;
 	readonly port: PrintEffectPort;
 }
