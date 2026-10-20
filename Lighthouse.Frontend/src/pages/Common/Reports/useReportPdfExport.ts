@@ -82,6 +82,11 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 	const attempts = useRef(0);
 	const [exporting, setExporting] = useState<Exporting | undefined>();
 	const [preparingId, setPreparingId] = useState<number | undefined>();
+	const frameRemoval = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+
+	useEffect(() => () => clearTimeout(frameRemoval.current), []);
 
 	// Retry finishes the export the reader already asked for, so it starts a fresh frame and counts nothing.
 	const printFromAFreshFrame = (reportId: number) => {
@@ -98,12 +103,13 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 	};
 
 	// Never inside the dialog's own closing: some browsers say it closed before print() has returned.
-	const removeTheFrameOf = (attempt: number) =>
-		setTimeout(() =>
+	const removeTheFrameOf = (attempt: number) => {
+		frameRemoval.current = setTimeout(() =>
 			setExporting((current) =>
 				current?.attempt === attempt ? undefined : current,
 			),
 		);
+	};
 
 	const tellFor =
 		({ reportId, attempt }: Exporting) =>
