@@ -3,24 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
-import type {
-	IReport,
-	IReportMetric,
-	IReportOwner,
-} from "../../../models/Reports/Report";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import { useTerminology } from "../../../services/TerminologyContext";
 import { usageDataReportTemplateOf } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
-import {
-	inCatalogOrder,
-	metricNameTermKeyOf,
-	panelFor,
-} from "./panels/reportPanelRegistry";
-import UnsupportedMetricPanel from "./panels/UnsupportedMetricPanel";
+import ReportPanels from "./panels/ReportPanels";
 import { reportQueryKeyOf, reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
@@ -38,42 +27,10 @@ import {
 const LOADING = "Loading report…";
 const BODY_MIN_HEIGHT = 120;
 
-/** A metric shown on a report made before it was captured reads as not captured on both sides. */
-const NOTHING_CAPTURED: IReportMetric = { atThen: {}, atNow: {} };
-
 interface ReportViewProps {
 	owner: IReportOwner;
 	reportId: number;
 }
-
-const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
-	const { getTerm } = useTerminology();
-	const workItem = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-
-	return inCatalogOrder(report.shownMetricKeys).map((key) => {
-		const panel = panelFor(key);
-		if (panel === undefined)
-			return (
-				<UnsupportedMetricPanel
-					key={key}
-					name={getTerm(metricNameTermKeyOf(key))}
-				/>
-			);
-		const metric = report.thenAndNow.metrics[key] ?? NOTHING_CAPTURED;
-		const Panel = panel.component;
-		return (
-			<Panel
-				key={key}
-				title={panel.titleOf(getTerm)}
-				metric={metric}
-				workItem={workItem}
-				workItems={workItems}
-				directionOfGood={panel.directionOfGood}
-			/>
-		);
-	});
-};
 
 const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	owner,
