@@ -215,6 +215,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		fetchedAt,
 		mountedAt,
 		reportError: report.error,
+		reportFetching: report.isFetching,
 		ownerName: ownerName.data ?? null,
 		ownerError: ownerName.error,
 		termsLoading: terms.isLoading,

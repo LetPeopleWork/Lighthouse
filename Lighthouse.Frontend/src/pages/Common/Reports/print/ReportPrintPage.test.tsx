@@ -658,7 +658,7 @@ describe("A report the print page cannot read", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The report view's answer stays in hand while Retry asks again, and so does the failure; the page must not go
 	// on saying it failed, nor offer Retry a second time, while the answer to the first Retry is on its way.
-	it.skip(`shows that it is preparing the PDF, with no Retry, while Retry reads the report again (${pendingReviewFix})`, async () => {
+	it(`shows that it is preparing the PDF, with no Retry, while Retry reads the report again`, async () => {
 		const dialog = aPrintDialog();
 		const theRetriedRead =
 			deferred<ReturnType<typeof theEngagementStartReport>>();

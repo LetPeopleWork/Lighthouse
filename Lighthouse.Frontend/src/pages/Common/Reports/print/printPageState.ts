@@ -22,6 +22,8 @@ export interface PrintPageInputs {
 	/** When the print page was opened; an answer from before it is held but never printed. */
 	readonly mountedAt: number;
 	readonly reportError: unknown;
+	/** Whether the report is being read at this moment, as Retry does; a failure that read may mend is not shown meanwhile. */
+	readonly reportFetching?: boolean;
 	readonly ownerName: string | null;
 	readonly ownerError: unknown;
 	readonly termsLoading: boolean;
@@ -38,9 +40,18 @@ export const isAFreshAnswer = (
 const isAnError = (error: unknown): boolean =>
 	error !== null && error !== undefined;
 
-export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
+/** What the report read alone decides, or nothing when it has not failed. */
+const reportReadStateOf = (
+	inputs: PrintPageInputs,
+): PrintPageState | undefined => {
 	if (isAFinalReadRefusal(inputs.reportError)) return "failedFinal";
-	if (isAnError(inputs.reportError)) return "failedRetryable";
+	if (!isAnError(inputs.reportError)) return undefined;
+	return inputs.reportFetching === true ? "preparing" : "failedRetryable";
+};
+
+export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
+	const decidedByTheReport = reportReadStateOf(inputs);
+	if (decidedByTheReport !== undefined) return decidedByTheReport;
 	if (
 		isAnError(inputs.ownerError) ||
 		isAnError(inputs.termsError) ||
