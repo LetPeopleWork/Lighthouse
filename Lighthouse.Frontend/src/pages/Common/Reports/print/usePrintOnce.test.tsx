@@ -67,7 +67,7 @@ const inputs = (
 
 describe("printing once", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`clears the wish to print from the page's entry, keeping where it started, then prints once (${pendingEpic6298})`, () => {
+	it("clears the wish to print from the page's entry, keeping where it started, then prints once", () => {
 		const browser = aFakeBrowser();
 
 		renderHook(() => usePrintOnce(inputs(browser.port)));
@@ -85,25 +85,22 @@ describe("printing once", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip.each<PrintPageState>([
+	it.each<PrintPageState>([
 		"preparing",
 		"failedRetryable",
 		"failedPart",
 		"failedFinal",
-	])(
-		`never prints, nor touches the history, while the page is %s (${pendingEpic6298})`,
-		(state) => {
-			const browser = aFakeBrowser();
+	])("never prints, nor touches the history, while the page is %s", (state) => {
+		const browser = aFakeBrowser();
 
-			renderHook(() => usePrintOnce(inputs(browser.port, { state })));
+		renderHook(() => usePrintOnce(inputs(browser.port, { state })));
 
-			expect(browser.happened()).toEqual([]);
-		},
-	);
+		expect(browser.happened()).toEqual([]);
+	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A pasted link, a reload after printing and Forward onto the page all arrive without the wish to print.
-	it.skip(`never prints a page that carries no wish to print (${pendingEpic6298})`, () => {
+	it("never prints a page that carries no wish to print", () => {
 		const browser = aFakeBrowser();
 
 		renderHook(() =>
@@ -115,7 +112,7 @@ describe("printing once", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it.skip(`prints once under React's strict mode, which runs the effect twice (${pendingEpic6298})`, () => {
+	it("prints once under React's strict mode, which runs the effect twice", () => {
 		const browser = aFakeBrowser();
 
 		renderHook(() => usePrintOnce(inputs(browser.port)), {
@@ -126,7 +123,7 @@ describe("printing once", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it.skip(`prints no more when the page draws again before the cleared entry reaches it (${pendingEpic6298})`, () => {
+	it("prints no more when the page draws again before the cleared entry reaches it", () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(state: PrintPageState) => usePrintOnce(inputs(browser.port, { state })),
@@ -141,7 +138,7 @@ describe("printing once", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The wish to print is used up only by printing, so a failure followed by a successful Retry still prints.
-	it.skip(`prints once when a failed page becomes ready after Retry (${pendingEpic6298})`, () => {
+	it("prints once when a failed page becomes ready after Retry", () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(state: PrintPageState) => usePrintOnce(inputs(browser.port, { state })),

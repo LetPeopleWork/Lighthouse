@@ -38,7 +38,10 @@ export interface PrintOnceInputs {
 	readonly port: PrintEffectPort;
 }
 
-/** Prints once when the page is ready and was opened by an export, and leads back to where it started when the dialog closes. */
+/**
+ * Prints once when the page is ready and was opened by an export. The wish to print is used up only by printing,
+ * so a page that is still preparing or failed keeps it, and prints once when it becomes ready after all.
+ */
 export const usePrintOnce = ({
 	state,
 	printWhenReady,
