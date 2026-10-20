@@ -40,9 +40,13 @@ const drawnInto = (frame: PrintFrame): DrawnInto => ({
 	cache: createCache({ key: "report-pdf", container: frame.head }),
 });
 
-/** Opens the frame once per mount, and takes it away again when the host goes. */
+/**
+ * Opens the frame once per mount, and takes it away again when the host goes. A frame still not open when time runs
+ * out, such as one whose copied style sheet the browser never answers, ends the export as a part that could not load.
+ */
 const useOpenedFrame = (
 	tell: PrintFrameHostProps["tell"],
+	timedOut: boolean,
 ): DrawnInto | undefined => {
 	const [opened, setOpened] = useState<DrawnInto | undefined>();
 	// The frame is opened once per mount, so it reaches the host through whatever it was last handed.
@@ -55,7 +59,8 @@ const useOpenedFrame = (
 	useEffect(() => {
 		let gone = false;
 		let made: PrintFrame | undefined;
-		openPrintFrame().then(
+		const givingUp = new AbortController();
+		openPrintFrame(givingUp.signal).then(
 			(frame) => {
 				if (gone) {
 					frame.close();
@@ -72,9 +77,16 @@ const useOpenedFrame = (
 		);
 		return () => {
 			gone = true;
+			givingUp.abort();
 			made?.close();
 		};
 	}, []);
+
+	useEffect(() => {
+		if (timedOut && opened === undefined) {
+			latestTell.current(A_PART_COULD_NOT_BE_LOADED);
+		}
+	}, [timedOut, opened]);
 
 	return opened;
 };
@@ -182,7 +194,7 @@ const PrintFrameHost: React.FC<PrintFrameHostProps> = ({
 }) => {
 	const { reads, terms } = usePrintPagePorts();
 	const { timedOut, tell: tellTheHost } = useTimeToPrint(tell);
-	const opened = useOpenedFrame(tellTheHost);
+	const opened = useOpenedFrame(tellTheHost, timedOut);
 
 	if (opened === undefined) return null;
 	const { frame, effects, cache } = opened;

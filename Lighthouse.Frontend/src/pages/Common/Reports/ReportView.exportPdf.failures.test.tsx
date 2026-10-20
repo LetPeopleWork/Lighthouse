@@ -279,8 +279,19 @@ describe("When Export PDF cannot make the PDF", () => {
 			},
 			PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 		],
+		[
+			"one of the app's style sheets never loads into the frame",
+			() => {
+				forgetTheBrowser();
+				theFontsHaveLoaded();
+				frames = aPrintFrameBrowser({ styleSheets: "never settle" });
+				theAppCarriesAStyleSheet();
+				return {};
+			},
+			PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+		],
 	])(
-		`gives up after 30 seconds when %s, says so with Retry and prints nothing`,
+		`gives up after 30 seconds when %s, says so with Retry, prints nothing and gives Export PDF back`,
 		async (_what, holding, sentence) => {
 			vi.useFakeTimers({ shouldAdvanceTime: true });
 			await exportingFromTheReport({ ...holding(), onFakeTimers: true });
@@ -299,6 +310,7 @@ describe("When Export PDF cannot make the PDF", () => {
 			expect(theSnackbarsRetry(snackbar)).not.toBeNull();
 			await everyPrintFrameIsGone();
 			expect(frames.timesAFramePrinted()).toBe(0);
+			await exportPdfIsIdle();
 		},
 	);
 

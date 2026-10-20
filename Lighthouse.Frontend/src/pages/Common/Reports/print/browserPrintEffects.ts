@@ -125,11 +125,28 @@ const copyTheAppsStyleSheets = (into: Document): Promise<void>[] =>
 		return loading;
 	});
 
+/** Fails once the caller gives up, so a load the browser never answers cannot keep the frame in the page. */
+const whenGivenUp = (signal: AbortSignal | undefined): Promise<never> => {
+	const givenUp = new Promise<never>((_, reject) => {
+		signal?.addEventListener(
+			"abort",
+			() => reject(new Error("The print frame was given up")),
+			{ once: true },
+		);
+	});
+	// Giving up after the frame has opened changes nothing, so that failure is nobody's to hear.
+	givenUp.catch(() => undefined);
+	return givenUp;
+};
+
 /**
  * Makes the hidden frame an export prints from, under the app's page, carrying the app's own style sheets, and answers
- * once the frame and every copied sheet have loaded; a sheet that cannot be loaded takes the frame away again.
+ * once the frame and every copied sheet have loaded; a sheet that cannot be loaded, or a caller who gives up first,
+ * takes the frame away again.
  */
-export const openPrintFrame = async (): Promise<PrintFrame> => {
+export const openPrintFrame = async (
+	signal?: AbortSignal,
+): Promise<PrintFrame> => {
 	const theAppsTitle = document.title;
 	const frame = document.createElement("iframe");
 	frame.title = PRINT_FRAME_TITLE;
@@ -141,17 +158,21 @@ export const openPrintFrame = async (): Promise<PrintFrame> => {
 		frame.remove();
 		document.title = theAppsTitle;
 	};
+	const givenUp = whenGivenUp(signal);
 	try {
 		const loading = hasLoaded(frame, "The print frame");
 		document.body.append(frame);
-		await loading;
+		await Promise.race([loading, givenUp]);
 		// Read only after the load: an engine may swap the frame's first blank document for the one it was given.
 		const frameWindow = frame.contentWindow as PrintWindow | null;
 		const frameDocument = frame.contentDocument;
 		if (frameWindow === null || frameDocument === null) {
 			throw new Error("The print frame has no document");
 		}
-		await Promise.all(copyTheAppsStyleSheets(frameDocument));
+		await Promise.race([
+			Promise.all(copyTheAppsStyleSheets(frameDocument)),
+			givenUp,
+		]);
 		return {
 			window: frameWindow,
 			head: frameDocument.head,

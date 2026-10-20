@@ -583,8 +583,8 @@ export type FramePrintDialog =
 
 export interface PrintFrameBrowserOptions {
 	readonly dialog?: FramePrintDialog;
-	/** Whether the app's style sheets, copied into the frame, load there. */
-	readonly styleSheets?: "load" | "fail";
+	/** Whether the app's style sheets, copied into the frame, load there, fail, or are never answered. */
+	readonly styleSheets?: "load" | "fail" | "never settle";
 }
 
 interface FramePrint {
@@ -603,8 +603,9 @@ const A_FACE_FOUND = { family: "Quicksand Variable" } as unknown as FontFace;
 /** Answers a load of a style sheet copied into the frame, as a browser would once it has fetched the sheet. */
 const answerTheSheetsCopiedInto = (
 	head: HTMLElement,
-	styleSheets: "load" | "fail",
+	styleSheets: NonNullable<PrintFrameBrowserOptions["styleSheets"]>,
 ) => {
+	if (styleSheets === "never settle") return;
 	const answer = (link: HTMLLinkElement) =>
 		setTimeout(() => {
 			link.dispatchEvent(
