@@ -5,6 +5,7 @@ import type {
 	IReportMetric,
 	ReportMetricSide,
 } from "../../../../models/Reports/Report";
+import { ChangeMarkIcon } from "./ChangeMarkIcon";
 import { PanelLine } from "./ThenNowPanelFrame";
 import {
 	type ChangeLine,
@@ -13,7 +14,6 @@ import {
 	DASH,
 	type DirectionOfGood,
 	lineComparisonsOf,
-	NO_CHANGE_MARK,
 	type ReportSide,
 	type ThenNowChange,
 } from "./thenNowComparison";
@@ -53,25 +53,12 @@ const LineName: React.FC<{ readonly label: string }> = ({ label }) => (
 	<Box component="span" sx={visuallyHidden}>{`${label}: `}</Box>
 );
 
-/** A slot of its own for the arrow, or the dash of no change, so the marks line up down the column. */
-const ChangeMark: React.FC<{ readonly mark: ThenNowChange["mark"] }> = ({
-	mark,
-}) => (
-	<Box
-		component="span"
-		aria-hidden={mark === NO_CHANGE_MARK ? true : undefined}
-		sx={{ display: "inline-block", minWidth: "1em", textAlign: "center" }}
-	>
-		{mark}
-	</Box>
-);
-
 /** A value line's icon, in grey: colour is kept for telling better from worse. */
 export const NeutralLineIcon: React.FC<{ readonly Icon: SvgIconComponent }> = ({
 	Icon,
 }) => <Icon fontSize="small" sx={{ color: "text.secondary" }} />;
 
-/** The change on one line, told by sign and arrow as well as colour; a dash when either side is one. */
+/** The change on one line, told by its words and a drawn mark as well as colour; a dash when either side is one. */
 const LineChange: React.FC<{
 	readonly change: ThenNowChange | null;
 	readonly magnitudeText: (magnitude: number) => string;
@@ -85,7 +72,10 @@ const LineChange: React.FC<{
 			data-change={change.verdict}
 			sx={{ color: verdictColours[change.verdict], fontWeight: "bold" }}
 		>
-			<ChangeMark mark={change.mark} />{" "}
+			<ChangeMarkIcon
+				kind={change.mark}
+				colour={verdictColours[change.verdict]}
+			/>{" "}
 			{changeText(change, magnitudeText(Math.abs(change.delta)))}
 		</Typography>
 	);

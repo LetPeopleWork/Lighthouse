@@ -1,4 +1,4 @@
-import { Box, Paper, Typography } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
 import type React from "react";
 import { Fragment } from "react";
 import type {
@@ -10,6 +10,7 @@ import type {
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { ChangeMarkIcon, type ChangeMarkKind } from "./panels/ChangeMarkIcon";
 import {
 	type ChangeKind,
 	type ShownMetricLines,
@@ -18,11 +19,7 @@ import {
 import { inCatalogOrder, panelFor } from "./panels/reportPanelRegistry";
 import { verdictColours, visuallyHidden } from "./panels/ThenNowLineParts";
 import { ThenNowColumn, ThenNowColumns } from "./panels/ThenNowPanelFrame";
-import {
-	DASH,
-	lineComparisonsOf,
-	NO_CHANGE_MARK,
-} from "./panels/thenNowComparison";
+import { DASH, lineComparisonsOf } from "./panels/thenNowComparison";
 import { windowDaysOf } from "./wizard/thenAndNow/thenAndNowDraft";
 
 const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
@@ -30,13 +27,21 @@ const CYCLE_TIME_PERCENTILES = ["p85", "p70", "p50"] as const;
 /** How each kind of change is marked and named. Only the mark is coloured; the word carries the meaning. */
 const CHANGE_KIND_LOOK: Record<
 	ChangeKind,
-	{ readonly mark: string; readonly word: string; readonly colour: string }
+	{
+		readonly mark: ChangeMarkKind;
+		readonly word: string;
+		readonly colour: string;
+	}
 > = {
-	improved: { mark: "✔", word: "Improved", colour: verdictColours.better },
-	worse: { mark: "✘", word: "Got worse", colour: verdictColours.worse },
-	mixed: { mark: "±", word: "Mixed", colour: verdictColours.neutral },
+	improved: {
+		mark: "improved",
+		word: "Improved",
+		colour: verdictColours.better,
+	},
+	worse: { mark: "worse", word: "Got worse", colour: verdictColours.worse },
+	mixed: { mark: "mixed", word: "Mixed", colour: verdictColours.neutral },
 	unchanged: {
-		mark: NO_CHANGE_MARK,
+		mark: "none",
 		word: "Unchanged",
 		colour: verdictColours.neutral,
 	},
@@ -113,9 +118,7 @@ const SummaryChange: React.FC<{
 		return (
 			<Fragment key={kind}>
 				<Typography component="div" data-change-kind={kind}>
-					<Box component="span" aria-hidden sx={{ color: colour }}>
-						{mark}
-					</Box>{" "}
+					<ChangeMarkIcon kind={mark} colour={colour} />{" "}
 					{`${word}: ${keys.map(nameOf).join(", ")}`}
 				</Typography>{" "}
 			</Fragment>

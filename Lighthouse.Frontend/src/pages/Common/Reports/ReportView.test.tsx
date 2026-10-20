@@ -39,7 +39,7 @@ import ReportView from "./ReportView";
  * length and how many Work Items closed in it, and one panel per shown metric in the catalog's order. A panel
  * is three segments, Then | Now | Change, headed by the side alone; every percentile carries the certainty icon the
  * Metrics tab shows for it, and a value that cannot be shown is a dash with its reason. A change is told by
- * its sign and arrow as well as its colour.
+ * its sign, its words and a drawn mark as well as its colour.
  *
  * The report waits for its read before drawing anything that could pass for numbers, says so when the read
  * fails or the report is gone, and never lets a late answer for another report land.
@@ -571,19 +571,17 @@ const kindsAndReadingsOfTheChange = () =>
 		readingOf(group),
 	]);
 
-/** The colour the mark of a group is drawn in: the innermost element whose own text holds the mark. */
-const colourOfTheMark = (group: HTMLElement, mark: string): string => {
-	const holders = [group, ...group.querySelectorAll<HTMLElement>("*")].filter(
-		(element) =>
-			Array.from(element.childNodes).some(
-				(node) =>
-					node.nodeType === Node.TEXT_NODE && node.textContent?.includes(mark),
-			),
-	);
-	expect(holders, `no element draws the mark ${mark}`).not.toHaveLength(0);
-	const [innermost] = holders.slice(-1);
-	return getComputedStyle(innermost).color;
+/** The one mark a group or a line change draws, hidden from a screen reader because its words say the same. */
+const theDrawnMarkOf = (holder: HTMLElement): SVGSVGElement => {
+	const drawn = holder.querySelectorAll("svg");
+	expect(drawn, `"${readingOf(holder)}" draws no single mark`).toHaveLength(1);
+	expect(drawn[0]).toHaveAttribute("aria-hidden", "true");
+	return drawn[0];
 };
+
+/** The colour the mark of a group is drawn in. */
+const colourOfTheMark = (group: HTMLElement): string =>
+	getComputedStyle(theDrawnMarkOf(group)).color;
 
 /** Then's and Now's 95th, 85th, 70th and 50th, in days, over the same number of finished Work Items. */
 const percentiles = (
@@ -659,11 +657,11 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Cycle Time, Throughput, WIP ✘ Got worse: Total Work Item Age$/i,
+			/^CHANGE Improved: Cycle Time, Throughput, WIP Got worse: Total Work Item Age$/i,
 		);
 		expect(kindsAndReadingsOfTheChange()).toEqual([
-			["improved", "✔ Improved: Cycle Time, Throughput, WIP"],
-			["worse", "✘ Got worse: Total Work Item Age"],
+			["improved", "Improved: Cycle Time, Throughput, WIP"],
+			["worse", "Got worse: Total Work Item Age"],
 		]);
 	});
 
@@ -680,7 +678,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Throughput, WIP ✘ Got worse: Total Work Item Age ± Mixed: Cycle Time$/i,
+			/^CHANGE Improved: Throughput, WIP Got worse: Total Work Item Age Mixed: Cycle Time$/i,
 		);
 	});
 
@@ -696,7 +694,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✘ Got worse: Cycle Time – Unchanged: WIP$/i,
+			/^CHANGE Got worse: Cycle Time Unchanged: WIP$/i,
 		);
 	});
 
@@ -707,13 +705,13 @@ describe("The summary's CHANGE side", () => {
 			"a hundredth of a Work Item more per day",
 			0.58,
 			0.59,
-			"✔ Improved: Throughput",
+			"Improved: Throughput",
 		],
 		[
 			"a move too small for the panel to show",
 			0.584,
 			0.576,
-			"– Unchanged: Throughput",
+			"Unchanged: Throughput",
 		],
 	])(
 		"judges %s as the panel shows it",
@@ -754,7 +752,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✘ Got worse: Throughput$/i,
+			/^CHANGE Got worse: Throughput$/i,
 		);
 	});
 
@@ -788,7 +786,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Cycle Time, Throughput$/i,
+			/^CHANGE Improved: Cycle Time, Throughput$/i,
 		);
 	});
 
@@ -803,7 +801,7 @@ describe("The summary's CHANGE side", () => {
 				};
 				return showing(report, ["cycle-time", A_LATER_METRIC]);
 			},
-			"✔ Improved: Cycle Time",
+			"Improved: Cycle Time",
 		],
 		[
 			"a shown metric the report never captured",
@@ -812,7 +810,7 @@ describe("The summary's CHANGE side", () => {
 				report.thenAndNow.metrics["work-item-age"] = null;
 				return report;
 			},
-			"✔ Improved: Cycle Time, Throughput",
+			"Improved: Cycle Time, Throughput",
 		],
 	])("lists %s in no group", async (_, shape, group) => {
 		openTheReport(shape(theEngagementStartReport()));
@@ -847,7 +845,7 @@ describe("The summary's CHANGE side", () => {
 			/^CHANGE 95th: — 85th: /i,
 		);
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE – Unchanged: Cycle Time$/i,
+			/^CHANGE Unchanged: Cycle Time$/i,
 		);
 	});
 
@@ -863,7 +861,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Throughput$/i,
+			/^CHANGE Improved: Throughput$/i,
 		);
 	});
 
@@ -885,7 +883,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Throughput$/i,
+			/^CHANGE Improved: Throughput$/i,
 		);
 	});
 
@@ -903,7 +901,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Lead Time, Delivery Rate, Work in Progress ✘ Got worse: Total Ticket Age$/i,
+			/^CHANGE Improved: Lead Time, Delivery Rate, Work in Progress Got worse: Total Ticket Age$/i,
 		);
 	});
 
@@ -922,16 +920,22 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(kindsAndReadingsOfTheChange()).toEqual([
-			["improved", "✔ Improved: Throughput"],
-			["worse", "✘ Got worse: Total Work Item Age"],
-			["mixed", "± Mixed: Cycle Time"],
-			["unchanged", "– Unchanged: WIP"],
+			["improved", "Improved: Throughput"],
+			["worse", "Got worse: Total Work Item Age"],
+			["mixed", "Mixed: Cycle Time"],
+			["unchanged", "Unchanged: WIP"],
 		]);
 		const [improved, worse, mixed, unchanged] = theChangeGroups();
-		expect(colourOfTheMark(improved, "✔")).toBe(SUCCESS_COLOUR);
-		expect(colourOfTheMark(worse, "✘")).toBe(ERROR_COLOUR);
-		expect(colourOfTheMark(mixed, "±")).toBe(SECONDARY_TEXT_COLOUR);
-		expect(colourOfTheMark(unchanged, "–")).toBe(SECONDARY_TEXT_COLOUR);
+		expect(colourOfTheMark(improved)).toBe(SUCCESS_COLOUR);
+		expect(colourOfTheMark(worse)).toBe(ERROR_COLOUR);
+		expect(colourOfTheMark(mixed)).toBe(SECONDARY_TEXT_COLOUR);
+		expect(colourOfTheMark(unchanged)).toBe(SECONDARY_TEXT_COLOUR);
+		const drawings = new Set(
+			[improved, worse, mixed, unchanged].map(
+				(group) => theDrawnMarkOf(group).innerHTML,
+			),
+		);
+		expect(drawings.size).toBe(4);
 	});
 
 	// @us-05b @slice-05b @error @ac-1.8 @contract-shape:pure-function
@@ -953,7 +957,7 @@ describe("The summary's CHANGE side", () => {
 		await theReportIsReady();
 
 		expect(readingOfSummary("change")).toMatch(
-			/^CHANGE ✔ Improved: Cycle Time, Throughput, WIP ✘ Got worse: Total Work Item Age$/i,
+			/^CHANGE Improved: Cycle Time, Throughput, WIP Got worse: Total Work Item Age$/i,
 		);
 	});
 });
@@ -1005,24 +1009,24 @@ describe("The panels of a report", () => {
 			/^THEN 95th 34 days 85th /i,
 		);
 		expect(readingOfSegment(panel, "now")).toMatch(/^NOW 95th 19 days 85th /i);
-		expect(readingOf(first)).toBe("▼ 15 days (−44 %)");
+		expect(readingOf(first)).toBe("15 days (−44 %)");
 		expect(first.dataset.change).toBe("better");
 		expect(iconsIn(theSegment(panel, "now"))[0]).toBe("CheckCircleIcon");
 	});
 
 	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
-	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it("tells a shorter Cycle Time as better on every percentile by arrow and sign as well as colour", async () => {
+	// Colour alone tells nobody who cannot see it; the sign and the drawn mark say the same.
+	it("tells a shorter Cycle Time as better on every percentile by mark and sign as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 		const changes = changesIn(theSegment(panel, "change"));
 
 		expect(changes.map(readingOf)).toEqual([
-			"▼ 15 days (−44 %)",
-			"▼ 9 days (−43 %)",
-			"▼ 3 days (−30 %)",
-			"▼ 1 day (−20 %)",
+			"15 days (−44 %)",
+			"9 days (−43 %)",
+			"3 days (−30 %)",
+			"1 day (−20 %)",
 		]);
 		expect(changes.map((change) => change.dataset.change)).toEqual([
 			"better",
@@ -1047,14 +1051,15 @@ describe("The panels of a report", () => {
 		);
 
 		expect(readingOfSegment(panel, "change")).toMatch(
-			/ 85th: ▼ 3 days \(−20 %\) 70th: – No change 50th: ▲ 1 day \(\+20 %\)$/,
+			/ 85th: 3 days \(−20 %\) 70th: No change 50th: 1 day \(\+20 %\)$/,
 		);
-		expect(worse.map(readingOf)).toEqual(["▲ 1 day (+20 %)"]);
+		expect(worse.map(readingOf)).toEqual(["1 day (+20 %)"]);
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	// The dash stands where an arrow would, so the column lines up; the words already say it, so it is not read out.
-	it("leads No change with a dash in the arrow's place, hidden from a screen reader", async () => {
+	// No change has a mark of its own where a rise or a fall has one, so the column lines up; the words already say
+	// what every mark says, so none is read out.
+	it("leads No change, a fall and a rise each with a mark of its own, hidden from a screen reader", async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },
@@ -1065,14 +1070,12 @@ describe("The panels of a report", () => {
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 		const [fell, unchanged, rose] = changesIn(theSegment(panel, "change"));
 
-		expect(readingOf(unchanged)).toBe("– No change");
+		expect(readingOf(unchanged)).toBe("No change");
 		expect(unchanged.dataset.change).toBe("neutral");
-		expect(within(unchanged).getByText("–")).toHaveAttribute(
-			"aria-hidden",
-			"true",
+		const drawings = new Set(
+			[fell, unchanged, rose].map((change) => theDrawnMarkOf(change).innerHTML),
 		);
-		expect(within(fell).getByText("▼")).not.toHaveAttribute("aria-hidden");
-		expect(within(rose).getByText("▲")).not.toHaveAttribute("aria-hidden");
+		expect(drawings.size).toBe(3);
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function
@@ -1089,7 +1092,7 @@ describe("The panels of a report", () => {
 		);
 		expect(readingOf(panel)).not.toMatch(/\d+ days|limit|beyond/i);
 		expect(changesIn(panel)).toHaveLength(1);
-		expect(readingOf(changesIn(panel)[0])).toBe("▲ 0.14 per day (+24 %)");
+		expect(readingOf(changesIn(panel)[0])).toBe("0.14 per day (+24 %)");
 		expect(changesIn(panel)[0].dataset.change).toBe("better");
 	});
 
@@ -1108,10 +1111,10 @@ describe("The panels of a report", () => {
 			/^NOW Average 7 Median 7 Min 5 Max 9$/i,
 		);
 		expect(changes.map(readingOf)).toEqual([
-			"▼ 2 (−22 %)",
-			"▼ 2 (−22 %)",
-			"▼ 1 (−17 %)",
-			"▼ 3 (−25 %)",
+			"2 (−22 %)",
+			"2 (−22 %)",
+			"1 (−17 %)",
+			"3 (−25 %)",
 		]);
 		expect(changes.map((change) => change.dataset.change)).toEqual([
 			"better",
@@ -1122,8 +1125,8 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-05 @slice-05 @contract-shape:pure-function
-	// Colour alone tells nobody who cannot see it; the sign and the arrow say the same.
-	it("tells a growing Total Work Item Age as worse on every line by sign and arrow as well as colour", async () => {
+	// Colour alone tells nobody who cannot see it; the sign and the drawn mark say the same.
+	it("tells a growing Total Work Item Age as worse on every line by sign and mark as well as colour", async () => {
 		openTheReport();
 
 		const panel = await thePanel(AGE_PANEL);
@@ -1136,10 +1139,10 @@ describe("The panels of a report", () => {
 			/^NOW Average 880 days Median 870 days Min 640 days Max 990 days$/i,
 		);
 		expect(changes.map(readingOf)).toEqual([
-			"▲ 270 days (+44 %)",
-			"▲ 270 days (+45 %)",
-			"▲ 220 days (+52 %)",
-			"▲ 230 days (+30 %)",
+			"270 days (+44 %)",
+			"270 days (+45 %)",
+			"220 days (+52 %)",
+			"230 days (+30 %)",
 		]);
 		expect(changes.map((change) => change.dataset.change)).toEqual([
 			"worse",
@@ -1181,13 +1184,13 @@ describe("The panels of a report", () => {
 	it.each([
 		[
 			WIP_PANEL,
-			/^CHANGE Average: ▼ 2 \(−22 %\) Median: ▼ 2 \(−22 %\) Min: ▼ 1 \(−17 %\) Max: ▼ 3 \(−25 %\)$/i,
+			/^CHANGE Average: 2 \(−22 %\) Median: 2 \(−22 %\) Min: 1 \(−17 %\) Max: 3 \(−25 %\)$/i,
 		],
 		[
 			AGE_PANEL,
-			/^CHANGE Average: ▲ 270 days \(\+44 %\) Median: ▲ 270 days \(\+45 %\) Min: ▲ 220 days \(\+52 %\) Max: ▲ 230 days \(\+30 %\)$/i,
+			/^CHANGE Average: 270 days \(\+44 %\) Median: 270 days \(\+45 %\) Min: 220 days \(\+52 %\) Max: 230 days \(\+30 %\)$/i,
 		],
-		[THROUGHPUT_PANEL, /^CHANGE per day: ▲ 0\.14 per day \(\+24 %\)$/i],
+		[THROUGHPUT_PANEL, /^CHANGE per day: 0\.14 per day \(\+24 %\)$/i],
 	])(
 		"names the line of every change on the %s panel",
 		async (title, reading) => {
@@ -1206,7 +1209,7 @@ describe("The panels of a report", () => {
 		const panel = await thePanel(CYCLE_TIME_PANEL);
 
 		expect(readingOfSegment(panel, "change")).toMatch(
-			/^CHANGE 95th: ▼ 15 days \(−44 %\) 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/i,
+			/^CHANGE 95th: 15 days \(−44 %\) 85th: 9 days \(−43 %\) 70th: 3 days \(−30 %\) 50th: 1 day \(−20 %\)$/i,
 		);
 	});
 
@@ -1281,7 +1284,7 @@ describe("Values a report cannot show", () => {
 		const panel = readingOf(await thePanel(THROUGHPUT_PANEL));
 
 		expect(panel).toContain("Total 0 Work Items");
-		expect(panel).toContain("▲ 0.27 per day (Then was 0)");
+		expect(panel).toContain("0.27 per day (Then was 0)");
 		expect(panel).not.toMatch(/%|Infinity|NaN|—/);
 	});
 
@@ -1340,7 +1343,7 @@ describe("Values a report cannot show", () => {
 			const changes = changesIn(theSegment(panel, "change")).map(readingOf);
 			expect(changes).toHaveLength(4);
 			for (const change of changes) {
-				expect(change).toMatch(/^▲ .*\(Then was 0\)$/);
+				expect(change).toMatch(/^\d.*\(Then was 0\)$/);
 			}
 			expect(readingOf(panel)).not.toMatch(/%|—|in progress/);
 		}

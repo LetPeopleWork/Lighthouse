@@ -108,8 +108,8 @@ describe("The marks of a report are drawn", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:unbounded-preservation
-	it.skip.each<Where>(["on the report", "in the print"])(
-		`draws every summary and line mark %s, and types none (${pendingEpic6298})`,
+	it.each<Where>(["on the report", "in the print"])(
+		`draws every summary and line mark %s, and types none`,
 		async (where) => {
 			await showingTheReport(where);
 
@@ -123,8 +123,8 @@ describe("The marks of a report are drawn", () => {
 	);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
-	it.skip.each<Where>(["on the report", "in the print"])(
-		`keeps every word beside the marks %s as it was (${pendingEpic6298})`,
+	it.each<Where>(["on the report", "in the print"])(
+		`keeps every word beside the marks %s as it was`,
 		async (where) => {
 			await showingTheReport(where);
 
@@ -156,7 +156,7 @@ describe("The marks of a report are drawn", () => {
 	);
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
-	it.skip(`draws a rise and a fall as different marks (${pendingEpic6298})`, async () => {
+	it(`draws a rise and a fall as different marks`, async () => {
 		await showingTheReport("on the report");
 
 		const drawings = new Set(
@@ -166,7 +166,7 @@ describe("The marks of a report are drawn", () => {
 	});
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
-	it.skip(`draws the mark of a line that did not change, and keeps its words (${pendingEpic6298})`, async () => {
+	it(`draws the mark of a line that did not change, and keeps its words`, async () => {
 		const report = theEngagementStartReport();
 		const cycleTime = theMetric(report, "cycle-time");
 		cycleTime.atNow.p70 = cycleTime.atThen.p70;
@@ -225,7 +225,7 @@ const productionSourcesUnder = (directory: string): string[] =>
 
 describe("No mark is typed anywhere in Reports", () => {
 	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
-	it.skip(`leaves no mark character in the Reports code (${pendingEpic6298})`, () => {
+	it(`leaves no mark character in the Reports code`, () => {
 		const typed = productionSourcesUnder(here)
 			.filter((file) => THE_MARK_CHARACTERS.test(readFileSync(file, "utf8")))
 			.map((file) => relative(here, file).replaceAll("\\", "/"));

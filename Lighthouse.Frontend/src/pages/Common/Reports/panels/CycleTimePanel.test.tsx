@@ -81,7 +81,7 @@ describe("the Cycle Time panel", () => {
 		expect(segment("then")).toHaveTextContent("Not captured for this report");
 		expect(headingOf("then")).toBe("Then");
 		expect(segment("change")).toHaveTextContent(
-			/ 85th: ▼ 9 days \(−43 %\) 70th: — 50th: —$/,
+			/ 85th: 9 days \(−43 %\) 70th: — 50th: —$/,
 		);
 	});
 
@@ -111,7 +111,7 @@ describe("the Cycle Time panel", () => {
 		});
 
 		expect(segment("change")).toHaveTextContent(
-			/ 85th: ▼ 9 days \(−43 %\) 70th: — 50th: ▼ 1 day \(−20 %\)$/,
+			/ 85th: 9 days \(−43 %\) 70th: — 50th: 1 day \(−20 %\)$/,
 		);
 	});
 
@@ -135,7 +135,7 @@ describe("the Cycle Time panel", () => {
 		renderPanel({ atThen: THEN_IN_FULL, atNow: NOW_IN_FULL });
 
 		expect(segment("change")).toHaveTextContent(
-			/^Change 95th: ▼ 15 days \(−44 %\) 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/,
+			/^Change 95th: 15 days \(−44 %\) 85th: 9 days \(−43 %\) 70th: 3 days \(−30 %\) 50th: 1 day \(−20 %\)$/,
 		);
 		expect(theChanges()[0].dataset.change).toBe("better");
 	});
@@ -152,7 +152,7 @@ describe("the Cycle Time panel", () => {
 			/^Now 95th 19 days 85th 12 days 70th 7 days 50th 4 days$/,
 		);
 		expect(segment("change")).toHaveTextContent(
-			/^Change 95th: — 85th: ▼ 9 days \(−43 %\) 70th: ▼ 3 days \(−30 %\) 50th: ▼ 1 day \(−20 %\)$/,
+			/^Change 95th: — 85th: 9 days \(−43 %\) 70th: 3 days \(−30 %\) 50th: 1 day \(−20 %\)$/,
 		);
 		expect(theChanges()).toHaveLength(3);
 	});

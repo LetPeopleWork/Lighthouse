@@ -9,13 +9,13 @@ export type DirectionOfGood = "lower" | "higher";
 
 export type ChangeVerdict = "better" | "worse" | "neutral";
 
-/** Leads "No change" where an arrow leads a change, so the marks line up; the words already say it. */
-export const NO_CHANGE_MARK = "–";
+/** A line rose, fell or did not change; the view decides how that is drawn. */
+export type LineMarkKind = "up" | "down" | "none";
 
 export interface ThenNowChange {
 	delta: number;
 	percent: number | null;
-	mark: "▲" | "▼" | typeof NO_CHANGE_MARK;
+	mark: LineMarkKind;
 	verdict: ChangeVerdict;
 }
 
@@ -81,10 +81,10 @@ const verdictOf = (delta: number, good: DirectionOfGood): ChangeVerdict => {
 	return fell === (good === "lower") ? "better" : "worse";
 };
 
-const markOf = (delta: number): ThenNowChange["mark"] => {
-	if (delta > 0) return "▲";
-	if (delta < 0) return "▼";
-	return NO_CHANGE_MARK;
+const markOf = (delta: number): LineMarkKind => {
+	if (delta > 0) return "up";
+	if (delta < 0) return "down";
+	return "none";
 };
 
 export const compareThenNow = (

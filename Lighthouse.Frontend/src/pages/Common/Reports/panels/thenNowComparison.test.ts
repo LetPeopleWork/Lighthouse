@@ -36,11 +36,21 @@ describe("compareThenNow", () => {
 			string,
 		]
 	>([
-		["a shorter Cycle Time", 21, 12, "lower", 0, -9, -43, "▼", "better"],
-		["a longer Cycle Time", 12, 21, "lower", 0, 9, 75, "▲", "worse"],
-		["a higher Throughput", 0.58, 0.72, "higher", 2, 0.14, 24, "▲", "better"],
-		["a lower Throughput", 0.72, 0.58, "higher", 2, -0.14, -19, "▼", "worse"],
-		["a lower WIP", 9, 7, "lower", 0, -2, -22, "▼", "better"],
+		["a shorter Cycle Time", 21, 12, "lower", 0, -9, -43, "down", "better"],
+		["a longer Cycle Time", 12, 21, "lower", 0, 9, 75, "up", "worse"],
+		["a higher Throughput", 0.58, 0.72, "higher", 2, 0.14, 24, "up", "better"],
+		[
+			"a lower Throughput",
+			0.72,
+			0.58,
+			"higher",
+			2,
+			-0.14,
+			-19,
+			"down",
+			"worse",
+		],
+		["a lower WIP", 9, 7, "lower", 0, -2, -22, "down", "better"],
 		[
 			"an average WIP of 8.62 shown as 9",
 			8.62,
@@ -49,14 +59,24 @@ describe("compareThenNow", () => {
 			0,
 			-2,
 			-22,
-			"▼",
+			"down",
 			"better",
 		],
-		["a growing Work Item Age", 610, 880, "lower", 0, 270, 44, "▲", "worse"],
-		["no change", 12, 12, "lower", 0, 0, 0, "–", "neutral"],
-		["no change where higher is good", 5, 5, "higher", 0, 0, 0, "–", "neutral"],
-		["a rise from a Then of 0", 0, 24, "higher", 0, 24, null, "▲", "better"],
-		["a Then of 0 that stays 0", 0, 0, "higher", 0, 0, null, "–", "neutral"],
+		["a growing Work Item Age", 610, 880, "lower", 0, 270, 44, "up", "worse"],
+		["no change", 12, 12, "lower", 0, 0, 0, "none", "neutral"],
+		[
+			"no change where higher is good",
+			5,
+			5,
+			"higher",
+			0,
+			0,
+			0,
+			"none",
+			"neutral",
+		],
+		["a rise from a Then of 0", 0, 24, "higher", 0, 24, null, "up", "better"],
+		["a Then of 0 that stays 0", 0, 0, "higher", 0, 0, null, "none", "neutral"],
 		[
 			"values compared as displayed, not as sent",
 			20.6,
@@ -65,7 +85,7 @@ describe("compareThenNow", () => {
 			0,
 			-9,
 			-43,
-			"▼",
+			"down",
 			"better",
 		],
 		[
@@ -76,7 +96,7 @@ describe("compareThenNow", () => {
 			2,
 			-0.04,
 			-1,
-			"▼",
+			"down",
 			"better",
 		],
 		[
@@ -87,7 +107,7 @@ describe("compareThenNow", () => {
 			2,
 			0.04,
 			1,
-			"▲",
+			"up",
 			"worse",
 		],
 	])(
@@ -328,7 +348,7 @@ describe("lineComparisonsOf", () => {
 
 		expect(changeOn(metric, "throughput", "perDay")).toEqual({
 			key: "perDay",
-			change: { delta: 0.27, percent: null, mark: "▲", verdict: "better" },
+			change: { delta: 0.27, percent: null, mark: "up", verdict: "better" },
 		});
 	});
 });

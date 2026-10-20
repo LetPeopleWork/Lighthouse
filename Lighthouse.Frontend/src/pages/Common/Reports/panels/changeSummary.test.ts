@@ -19,9 +19,9 @@ import type {
  */
 
 const CHANGES: Record<ChangeVerdict, ThenNowChange> = {
-	better: { delta: -1, percent: -5, mark: "▼", verdict: "better" },
-	worse: { delta: 1, percent: 5, mark: "▲", verdict: "worse" },
-	neutral: { delta: 0, percent: 0, mark: "–", verdict: "neutral" },
+	better: { delta: -1, percent: -5, mark: "down", verdict: "better" },
+	worse: { delta: 1, percent: 5, mark: "up", verdict: "worse" },
+	neutral: { delta: 0, percent: 0, mark: "none", verdict: "neutral" },
 };
 
 const LINE_KEYS: ReportMetricSideKey[] = ["p95", "p85", "p70", "p50"];
