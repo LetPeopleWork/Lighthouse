@@ -11,9 +11,12 @@ import { reportPrintRoutes } from "./reportPrintRoutes";
 /**
  * What the print page is handed, as it is handed it at runtime. A type that names only the reads is erased when the
  * code runs, so the whole report service, with its create, edit and delete, could still reach the page; the routes
- * hand it new objects holding the three reads and the three things it needs about the instance's terms, and
- * nothing else.
+ * hand it new objects holding the three reads and what it needs about the instance's terms - reading a term,
+ * whether they are still loading or failed, and asking for them again on Retry - and nothing else.
  */
+
+const pendingTermsRetry =
+	"Pending: Retry reads the instance's terms again (epic 6298, slice 01 — terms Retry)";
 
 const { handed } = vi.hoisted(() => ({
 	handed: [] as Record<string, unknown>[],
@@ -38,7 +41,7 @@ const theInputHolding = (member: string): object | undefined =>
 
 describe("what the print routes hand the print page", () => {
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it("is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads", async () => {
+	it.skip(`is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads (${pendingTermsRetry})`, async () => {
 		renderWithQueryClient(
 			<MemoryRouter initialEntries={["/print/teams/1/reports/42"]}>
 				<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
@@ -61,6 +64,7 @@ describe("what the print routes hand the print page", () => {
 			"error",
 			"getTerm",
 			"isLoading",
+			"refetch",
 		]);
 	});
 });

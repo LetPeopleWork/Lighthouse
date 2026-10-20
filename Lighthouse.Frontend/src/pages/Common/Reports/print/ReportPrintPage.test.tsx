@@ -1,3 +1,4 @@
+import { hexToRgb } from "@mui/material/styles";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
@@ -7,7 +8,9 @@ import {
 	aPrintDialog,
 	aQueryClient,
 	aTeamServiceAnswering,
+	aTeamServiceThatCannotReadTheName,
 	aTerminologyServiceAnswering,
+	aTerminologyServiceThatCannotReadTheTerms,
 	BACK_TO_REPORT,
 	BACK_TO_REPORTS,
 	BRANDING,
@@ -16,6 +19,7 @@ import {
 	exportAsPdfLabelOf,
 	forgetTheBrowser,
 	isHiddenInPrint,
+	lightspeed,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
 	PRODUCED_LINE,
@@ -48,6 +52,7 @@ import {
 	readingOf,
 	theEngagementStartReport,
 } from "../../../../tests/ReportsTestKit";
+import { lightTheme } from "../../../../utils/theme/appThemes";
 import { reportQueryKeyOf } from "../reportOwner";
 
 /**
@@ -75,12 +80,14 @@ vi.mock(
 
 const pendingEpic6298 =
 	"Pending: the report's print page (epic 6298, slice 01)";
+const pendingTermsRetry =
+	"Pending: Retry reads the instance's terms again (epic 6298, slice 01 — terms Retry)";
 
 const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atTheList = reportsPathFor(LIGHTSPEED);
 
-const LIGHT_INK = "rgba(0, 0, 0, 0.87)";
+const LIGHT_INK = hexToRgb(lightTheme.palette.text.primary);
 const WHITE = "rgb(255, 255, 255)";
 
 type Scene = Parameters<typeof renderTheExportScene>[0];
@@ -307,15 +314,13 @@ describe("The wish to print is used up by printing", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("leaves the page's entry without the wish to print once it printed, still knowing where the export started", async () => {
-		aPrintDialog();
+		const dialog = aPrintDialog();
 
 		await exportingFromTheReport();
 		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 
-		await waitFor(() =>
-			expect(whatThisEntryCarries()).toMatchObject({ from: "report" }),
-		);
-		expect(whatThisEntryCarries()).not.toMatchObject({ printWhenReady: true });
+		expect(whatThisEntryCarries()).toEqual({ from: "report" });
 		expect(whereTheReaderIs()).toEqual({ path: atThePrintPage, search: "" });
 	});
 
@@ -532,13 +537,10 @@ describe("A report the print page cannot read", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`says part of the page could not be loaded, offers Retry, and never prints, when the owner's name cannot be read (${pendingEpic6298})`, async () => {
+	it("says part of the page could not be loaded, offers Retry, and never prints, when the owner's name cannot be read", async () => {
 		const dialog = aPrintDialog();
-		await exportingFromTheReport({
-			teamService: aTeamServiceAnswering(
-				Promise.reject(new Error("the network dropped")),
-			),
-		});
+		const teamService = aTeamServiceThatCannotReadTheName();
+		const { user } = await exportingFromTheReport({ teamService });
 
 		expect(
 			await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
@@ -548,6 +550,44 @@ describe("A report the print page cannot read", () => {
 		await aMomentLater();
 		expect(renderReadiness()).not.toBe("true");
 		expect(dialog.timesOpened()).toBe(0);
+
+		const readsBeforeRetry = vi.mocked(teamService.getTeam).mock.calls.length;
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		await waitFor(() =>
+			expect(vi.mocked(teamService.getTeam).mock.calls.length).toBeGreaterThan(
+				readsBeforeRetry,
+			),
+		);
+		await aMomentLater();
+		expect(dialog.timesOpened()).toBe(0);
+	});
+
+	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+	// The reader asked for a PDF; terms that arrive on Retry finish what Export started.
+	it.skip(`says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and prints once (${pendingTermsRetry})`, async () => {
+		const dialog = aPrintDialog();
+		const terminologyService = aTerminologyServiceThatCannotReadTheTerms({
+			untilTheRead: 2,
+		});
+		const { user } = await exportingFromTheReport({ terminologyService });
+
+		expect(
+			await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
+		).toBeVisible();
+		await aMomentLater();
+		expect(dialog.timesOpened()).toBe(0);
+
+		const readsBeforeRetry = vi.mocked(terminologyService.getAllTerminology)
+			.mock.calls.length;
+		await user.click(screen.getByRole("button", { name: "Retry" }));
+
+		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+		expect(
+			vi.mocked(terminologyService.getAllTerminology).mock.calls.length,
+		).toBeGreaterThan(readsBeforeRetry);
+		expect(screen.queryByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED)).toBeNull();
 	});
 });
 
@@ -669,7 +709,7 @@ describe("What the print page prints", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// Paper is white whatever the reader's screen is, so the page paints its own light ground and ink.
-	it.skip(`prints dark ink on its own white ground, the whole page high, even when the reader's screen is dark (${pendingEpic6298})`, async () => {
+	it("prints dark ink on its own white ground, the whole page high, even when the reader's screen is dark", async () => {
 		openingThePrintPageDirectly({ readersTheme: "dark" });
 		await thePrintPageIsReady();
 
@@ -679,9 +719,10 @@ describe("What the print page prints", () => {
 		expect(
 			getComputedStyle(screen.getByRole("heading", { level: 1 })).color,
 		).toBe(LIGHT_INK);
-		expect(
-			`${getComputedStyle(page).minHeight} ${getComputedStyle(page).height}`,
-		).toMatch(/100(vh|%)/);
+		// jsdom resolves a viewport height to pixels, so the whole window's height is what a full-height page reads.
+		expect(getComputedStyle(page).minHeight).toBe(
+			`${globalThis.innerHeight}px`,
+		);
 		expect(theStylesOfThePage()).toMatch(/color-scheme:\s*light/);
 	});
 });
@@ -704,15 +745,28 @@ describe("The print page prints the report as it is now", () => {
 			theEngagementStartReport({ name: "An older name of the report" }),
 			{ updatedAt: Date.now() - 60 * 1000 },
 		);
-		const getReport = vi.fn().mockResolvedValue(theEngagementStartReport());
+		const theFreshRead =
+			deferred<ReturnType<typeof theEngagementStartReport>>();
+		const getReport = vi.fn().mockReturnValue(theFreshRead.promise);
+		const teamService = aTeamServiceAnswering(Promise.resolve(lightspeed()));
 
 		openingThePrintPageDirectly({
 			queryClient,
 			reportService: aReportService({ getReport }),
+			teamService,
 		});
 		expect(renderReadiness()).not.toBe("true");
 		expect(screen.queryByText("An older name of the report")).toBeNull();
 
+		// Everything but the fresh read is in, so only the held answer could be drawn now.
+		await waitFor(() => expect(teamService.getTeam).toHaveBeenCalled());
+		await act(() => new Promise((settle) => setTimeout(settle, 50)));
+		expect(screen.queryByText("An older name of the report")).toBeNull();
+		expect(renderReadiness()).not.toBe("true");
+
+		await act(async () => {
+			theFreshRead.resolve(theEngagementStartReport());
+		});
 		await thePrintPageIsReady();
 		expect(getReport).toHaveBeenCalledTimes(1);
 		expect(screen.queryByText("An older name of the report")).toBeNull();
@@ -837,6 +891,7 @@ describe("What the print page reports about its use", () => {
 		});
 		await user.click(exportButton);
 		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 		dialog.close();
 		await screen.findByRole("button", { name: EXPORT_PDF });
 

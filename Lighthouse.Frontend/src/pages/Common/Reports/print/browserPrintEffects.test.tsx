@@ -147,8 +147,8 @@ describe("the browser's print effects", () => {
 			.then((outcome) => {
 				answer = outcome;
 			});
-		await Promise.resolve();
-		await Promise.resolve();
+		// A whole turn of the event loop, so an answer that does not wait for the fonts has surely come by now.
+		await new Promise((settle) => setTimeout(settle));
 		expect(answer).toBeUndefined();
 		ready.resolve();
 		await asked;

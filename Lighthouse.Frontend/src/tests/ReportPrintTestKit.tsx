@@ -142,6 +142,30 @@ export const aTeamServiceAnswering = (
 	getTeam: vi.fn().mockReturnValue(answer),
 });
 
+/** The owner's name cannot be read, every time it is asked for; each failure is made only when it is asked for. */
+export const aTeamServiceThatCannotReadTheName = (): ITeamService => ({
+	...createMockTeamService(),
+	getTeam: vi.fn(() => Promise.reject(new Error("the network dropped"))),
+});
+
+/** The instance's terms cannot be read until the given read, which answers them; each failure is made when asked. */
+export const aTerminologyServiceThatCannotReadTheTerms = ({
+	untilTheRead,
+}: {
+	readonly untilTheRead: number;
+}): ITerminologyService => {
+	let reads = 0;
+	return {
+		...createMockTerminologyService(),
+		getAllTerminology: vi.fn(() => {
+			reads += 1;
+			return reads >= untilTheRead
+				? Promise.resolve(theTermsAnswer())
+				: Promise.reject(new Error("the network dropped"));
+		}),
+	};
+};
+
 export const aPortfolioServiceAnswering = (
 	answer: Promise<Portfolio | null>,
 ): IPortfolioService => ({
