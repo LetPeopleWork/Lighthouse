@@ -13,7 +13,6 @@ import { DASH } from "../panels/thenNowComparison";
 import { ownerTermKeyOf } from "../reportOwner";
 import ThenAndNowSummary from "../ThenAndNowSummary";
 import { windowDaysOf } from "../wizard/thenAndNow/thenAndNowDraft";
-import HowToReadThis from "./HowToReadThis";
 
 const BRANDING = "Made with Lighthouse by LetPeopleWork · letpeople.work";
 const PRODUCED_AT = "d MMM yyyy, HH:mm";
@@ -119,8 +118,8 @@ interface ReportPrintDocumentProps {
 
 /**
  * The report as it goes on paper: a line on every page saying whose report it is, which windows it compares and when
- * it was made; the report's name as the first page's title; how to read it; the screen's summary and panels; and on
- * every page the mark of the tool that made it.
+ * it was made; the report's name as the first page's title; the screen's summary and panels; and on every page the
+ * mark of the tool that made it.
  */
 const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 	report,
@@ -156,7 +155,6 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 					<Typography variant="h4" component="h1">
 						{report.name}
 					</Typography>
-					<HowToReadThis thenAndNow={report.thenAndNow} />
 					<ThenAndNowSummary
 						thenAndNow={report.thenAndNow}
 						shownMetricKeys={report.shownMetricKeys}
