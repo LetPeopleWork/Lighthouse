@@ -599,6 +599,13 @@ export const aMomentLater = () =>
 		}
 	});
 
+/** The print page's footer, found by the credit it carries. */
+export const theFooter = (): HTMLElement => {
+	const footer = screen.getByText(BRANDING).closest("footer");
+	expect(footer, "the credit is not in a footer").not.toBeNull();
+	return footer as HTMLElement;
+};
+
 // --- The page on paper ---
 
 /**

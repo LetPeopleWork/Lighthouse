@@ -86,7 +86,7 @@ describe("what the print pages are built from", () => {
 	});
 });
 
-const THE_BROWSER = String.raw`(?:globalThis|window|self)`;
+const THE_BROWSER = "(?:globalThis|window|self)";
 
 /** Every way a module can reach the browser's print dialog: called, called if present, indexed, or taken apart. */
 const ASKS_FOR_THE_PRINT_DIALOG = [

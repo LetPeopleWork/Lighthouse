@@ -11,6 +11,7 @@ import {
 	printPathFor,
 	renderTheExportScene,
 	theFontsHaveLoaded,
+	theFooter,
 	thePrintPageIsReady,
 	WINDOWS_LINE,
 	whatPrintAsksOf,
@@ -53,13 +54,6 @@ const theRunningLine = (): HTMLElement => {
 	const line = screen.getByText(PRODUCED_LINE).closest("header");
 	expect(line, "the produced date is not in a header").not.toBeNull();
 	return line as HTMLElement;
-};
-
-/** The footer, found by the credit it carries. */
-const theFooter = (): HTMLElement => {
-	const footer = screen.getByText(BRANDING).closest("footer");
-	expect(footer, "the credit is not in a footer").not.toBeNull();
-	return footer as HTMLElement;
 };
 
 /** The parts of the line as a reader meets them: the innermost elements holding its words. */
@@ -109,7 +103,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// The dates read as the report view writes them.
-	// Fails today: the header holds the big title among its lines instead of one line of four parts.
 	it.each<[string, IReportOwner, string]>([
 		["a Team's", LIGHTSPEED, "Team Lightspeed"],
 		["a Portfolio's", APOLLO, "Portfolio Apollo"],
@@ -131,7 +124,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 	);
 
 	// @us-02 @slice-02 @contract-shape:bounded-change
-	// Fails today: the title sits inside the header, among the lines that are to repeat.
 	it(`keeps the report's name as the big title under that line, on the first page only`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
@@ -153,7 +145,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// A line fixed to the page is printed on every sheet; without room kept for it, page two's panels run under it.
-	// Fails today: the line flows with the report and prints on the first page only.
 	it(`repeats the line at the top of every printed page, with room kept for it above the report`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
@@ -178,7 +169,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// Page numbers were offered and declined.
-	// Fails today: the footer flows after the last panel and prints on the last page only.
 	it(`repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 

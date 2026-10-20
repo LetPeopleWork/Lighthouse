@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	aMomentLater,
 	aPrintDialog,
-	BRANDING,
 	forgetTheBrowser,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	renderReadiness,
@@ -11,6 +10,7 @@ import {
 	reportPathFor,
 	theExportButtonOnceItCanBePressed,
 	theFontsHaveLoaded,
+	theFooter,
 	theLighthouseMarkCannotLoad,
 	theLighthouseMarkIsStillLoading,
 	thePrintPageIsReady,
@@ -38,13 +38,10 @@ const exportingFromTheReport = async () => {
 };
 
 /** The address of the mark the footer shows. */
-const theMarksAddress = (): string | null => {
-	const footer = screen.getByText(BRANDING).closest("footer");
-	expect(footer, "the credit is not in a footer").not.toBeNull();
-	return within(footer as HTMLElement)
+const theMarksAddress = (): string | null =>
+	within(theFooter())
 		.getByRole("img", { name: /Lighthouse/ })
 		.getAttribute("src");
-};
 
 describe("The Lighthouse mark is in the PDF", () => {
 	let printDialog: ReturnType<typeof aPrintDialog>;
@@ -57,7 +54,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
-	// Fails today: the page never asks for the mark, so it is ready and prints with the mark still on its way.
 	it("waits for the Lighthouse mark before it is ready, then opens the print dialog once", async () => {
 		const mark = theLighthouseMarkIsStillLoading();
 		await exportingFromTheReport();
@@ -74,7 +70,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
-	// Fails today: the page ignores the mark and prints without it.
 	it("says part of the page couldn't be loaded, offers Retry and never prints, when the Lighthouse mark cannot be loaded", async () => {
 		theLighthouseMarkCannotLoad();
 		await exportingFromTheReport();
@@ -89,7 +84,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
-	// Fails today: the page never asks for the mark, so Retry has nothing to ask again.
 	it("asks for the Lighthouse mark again on Retry and prints once it is in", async () => {
 		const mark = theLighthouseMarkCannotLoad();
 		const { user } = await exportingFromTheReport();
