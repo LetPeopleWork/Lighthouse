@@ -32,6 +32,13 @@ export type PrintOutcome =
 			readonly retry: boolean;
 	  };
 
+/** Something the PDF needed could not be had, and a fresh attempt may get it. */
+export const A_PART_COULD_NOT_BE_LOADED: PrintOutcome = {
+	kind: "failed",
+	message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+	retry: true,
+};
+
 /** What a failed page says, and whether Retry is offered. */
 export interface PrintFailureLook {
 	readonly message?: string;
@@ -61,11 +68,7 @@ const askForTheDialog = (
 		port.print();
 		return true;
 	} catch {
-		tell({
-			kind: "failed",
-			message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
-			retry: true,
-		});
+		tell(A_PART_COULD_NOT_BE_LOADED);
 		return false;
 	}
 };

@@ -3,9 +3,6 @@ import type { PrintEffectPort, PrintLoadOutcome } from "./usePrintOnce";
 /** A browser window with its own constructors, such as the app's or the print frame's. */
 export type PrintWindow = Window & typeof globalThis;
 
-/** The browser's print effects for one window. */
-export type WindowPrintEffects = PrintEffectPort;
-
 // The typeface ships as one file per part of the alphabet, and the browser fetches only the parts that draw the text
 // it is asked about. A basic Latin, a Central European and a Vietnamese letter ask for every part, so a name in any of
 // them prints in the typeface rather than in a fallback font.
@@ -60,9 +57,7 @@ const nameAfterTheReport = (target: PrintWindow, title: string) => {
  * pictures and title. The one place that names the browser's own print and fonts, so everything else can be given a
  * stand-in.
  */
-export const browserPrintEffects = (
-	target: PrintWindow,
-): WindowPrintEffects => ({
+export const browserPrintEffects = (target: PrintWindow): PrintEffectPort => ({
 	print: () => target.print(),
 	onAfterPrint: (listener) => {
 		target.addEventListener("afterprint", listener);

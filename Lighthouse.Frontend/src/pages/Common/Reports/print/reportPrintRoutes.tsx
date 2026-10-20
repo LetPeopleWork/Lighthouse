@@ -7,7 +7,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import { browserPrintEffects } from "./browserPrintEffects";
 import type { PrintReadPort } from "./printReadPort";
-import type { PrintTerms } from "./ReportPrintContent";
+import type { PrintContentEffects, PrintTerms } from "./ReportPrintContent";
 import type { PrintEffectPort } from "./usePrintOnce";
 
 const loadReportPrintPage = () => import("./ReportPrintPage");
@@ -75,10 +75,11 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 	const { reads, terms } = usePrintPagePorts();
 	const { loadFonts, loadPicture } = standIns;
 
-	const effects: PrintEffectPort = useMemo(() => {
+	// The page opened by its address never prints, so it is handed nothing that could.
+	const effects: PrintContentEffects = useMemo(() => {
 		const browser = browserPrintEffects(globalThis.window);
 		return {
-			...browser,
+			setTitle: browser.setTitle,
 			loadFonts: loadFonts ?? browser.loadFonts,
 			loadPicture: loadPicture ?? browser.loadPicture,
 		};

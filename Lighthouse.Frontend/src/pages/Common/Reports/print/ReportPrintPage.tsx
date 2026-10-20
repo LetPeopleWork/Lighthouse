@@ -4,14 +4,16 @@ import type { IReportOwner } from "../../../../models/Reports/Report";
 import { reportsPathOf } from "../reportOwner";
 import PrintSheet from "./PrintSheet";
 import type { PrintReadPort } from "./printReadPort";
-import ReportPrintContent, { type PrintTerms } from "./ReportPrintContent";
-import type { PrintEffectPort } from "./usePrintOnce";
+import ReportPrintContent, {
+	type PrintContentEffects,
+	type PrintTerms,
+} from "./ReportPrintContent";
 
 interface ReportPrintPageProps {
 	readonly kind: IReportOwner["kind"];
 	readonly reads: PrintReadPort;
 	readonly terms: PrintTerms;
-	readonly effects: PrintEffectPort;
+	readonly effects: PrintContentEffects;
 }
 
 /**

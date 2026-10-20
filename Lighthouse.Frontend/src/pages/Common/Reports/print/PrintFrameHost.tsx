@@ -9,13 +9,13 @@ import {
 	browserPrintEffects,
 	openPrintFrame,
 	type PrintFrame,
-	type WindowPrintEffects,
 } from "./browserPrintEffects";
 import PrintSheet from "./PrintSheet";
 import ReportPrintContent, { type PrintPageLook } from "./ReportPrintContent";
 import { usePrintPagePorts } from "./reportPrintRoutes";
 import {
-	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+	A_PART_COULD_NOT_BE_LOADED,
+	type PrintEffectPort,
 	type PrintOutcome,
 	usePrintOnce,
 } from "./usePrintOnce";
@@ -27,16 +27,10 @@ interface PrintFrameHostProps {
 	readonly tell: (outcome: PrintOutcome) => void;
 }
 
-const A_PART_COULD_NOT_BE_LOADED: PrintOutcome = {
-	kind: "failed",
-	message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
-	retry: true,
-};
-
 /** The frame once it has loaded, with the browser of its own window and a style cache that writes into its head. */
 interface DrawnInto {
 	readonly frame: PrintFrame;
-	readonly effects: WindowPrintEffects;
+	readonly effects: PrintEffectPort;
 	readonly cache: EmotionCache;
 }
 
@@ -156,7 +150,7 @@ class DrawingGuard extends React.Component<
 
 interface InTheFrameProps {
 	readonly look: PrintPageLook;
-	readonly effects: WindowPrintEffects;
+	readonly effects: PrintEffectPort;
 	readonly tell: PrintFrameHostProps["tell"];
 	readonly children: React.ReactNode;
 }

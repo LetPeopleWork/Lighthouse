@@ -1,8 +1,8 @@
 import { renderHook } from "@testing-library/react";
 import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import type { WindowPrintEffects } from "./browserPrintEffects";
 import type { PrintPageState } from "./printPageState";
+import type { PrintEffectPort } from "./usePrintOnce";
 import {
 	type PrintFailureLook,
 	type PrintOnceInputs,
@@ -28,7 +28,7 @@ const aFakeFrame = (print: () => void = () => undefined) => {
 	const happened: string[] = [];
 	const listeners = new Set<() => void>();
 	const outcomes: PrintOutcome[] = [];
-	const port: WindowPrintEffects = {
+	const port: PrintEffectPort = {
 		print: vi.fn(() => {
 			happened.push("print");
 			print();
