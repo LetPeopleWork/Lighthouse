@@ -60,7 +60,11 @@ const useOwnerName = (owner: IReportOwner, reads: PrintReadPort) =>
 				owner.kind === "team"
 					? await reads.getTeam(owner.id)
 					: await reads.getPortfolio(owner.id);
-			return found?.name ?? null;
+			// An owner deleted since the report was opened answers with no one, and its name would never arrive.
+			if (found === null || found === undefined) {
+				throw new Error(`The ${owner.kind} ${owner.id} was not found`);
+			}
+			return found.name;
 		},
 	});
 

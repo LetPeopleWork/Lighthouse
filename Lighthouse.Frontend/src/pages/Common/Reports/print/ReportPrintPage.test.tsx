@@ -686,7 +686,7 @@ describe("A report the print page cannot read", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A Team or Portfolio deleted since the report was opened answers with no one; waiting for its name would never end.
-	it.skip.each<[string, () => Promise<unknown>]>([
+	it.each<[string, () => Promise<unknown>]>([
 		[
 			"Team",
 			() =>
@@ -711,7 +711,7 @@ describe("A report the print page cannot read", () => {
 				}),
 		],
 	])(
-		`says part of the page could not be loaded, offers Retry and never prints, when the %s the report belongs to is gone (${pendingReviewFix})`,
+		`says part of the page could not be loaded, offers Retry and never prints, when the %s the report belongs to is gone`,
 		async (_owner, opening) => {
 			const dialog = aPrintDialog();
 			await opening();
