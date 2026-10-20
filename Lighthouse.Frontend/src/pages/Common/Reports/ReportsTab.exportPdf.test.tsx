@@ -12,13 +12,16 @@ import {
 	renderTheExportScene,
 	reportPathFor,
 	reportsPathFor,
+	THE_REPORT_COULD_NOT_BE_LOADED,
 	THEN_AND_NOW,
+	theErrorSnackbar,
 	theFontsAreStillLoading,
 	theFontsHaveLoaded,
 	theFramesHavePrinted,
 	thePrintFrame,
 	thePrintFrames,
 	theReadersHistory,
+	theSnackbarsRetry,
 	whereTheReaderIs,
 } from "../../../tests/ReportPrintTestKit";
 import {
@@ -30,6 +33,7 @@ import {
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 	readingOf,
+	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
 
 /**
@@ -276,5 +280,45 @@ describe("The list's print frame goes when it is no longer wanted", () => {
 		await fonts.arrive();
 		await aMomentLater();
 		expect(frames.timesAFramePrinted()).toBe(0);
+	});
+});
+
+describe("When Export PDF from the list cannot make the PDF", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		localStorage.clear();
+		theFontsHaveLoaded();
+		aPrintDialog();
+	});
+
+	afterEach(() => {
+		localStorage.clear();
+		forgetTheBrowser();
+	});
+
+	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+	// The list has no report on screen to fall back on, so the snackbar is the only place the reader learns of it.
+	it.skip(`says in the snackbar that no PDF was made when the row's report could not be read, and Retry prints it from a fresh frame, counting one export and leaving the reader on the list (${pendingFramePrint})`, async () => {
+		const frames = aPrintFrameBrowser();
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockResolvedValue(theEngagementStartReport());
+		const { user } = onTheList(aReportService({ getReport }), "reader");
+
+		await user.click(
+			await screen.findByLabelText(exportAsPdfLabelOf(ENGAGEMENT_START)),
+		);
+		const snackbar = await theErrorSnackbar();
+		expect(snackbar).toHaveTextContent(THE_REPORT_COULD_NOT_BE_LOADED);
+		await everyPrintFrameIsGone();
+		expect(frames.timesAFramePrinted()).toBe(0);
+
+		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
+
+		await theFramesHavePrinted(frames);
+		expect(thePrintFrames()).toEqual(frames.framesThatPrinted());
+		expect(exportsReported()).toHaveLength(1);
+		expect(theReadersHistory()).toEqual({ path: atTheList, entries: 1 });
 	});
 });

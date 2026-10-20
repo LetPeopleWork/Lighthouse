@@ -447,6 +447,18 @@ describe("the browser's print effects, made for the print frame's window", () =>
 	});
 });
 
+/**
+ * An offset that carries a whole A4 sheet past the screen's top or left edge, so the frame is laid out but never
+ * seen; a frame fixed at the page's corner would cover what the reader is looking at.
+ */
+const liesBeyondTheScreen = (offset: string): boolean => {
+	const match = /^(-\d+(?:\.\d+)?)(px|mm|vw|vh|%)$/.exec(offset.trim());
+	if (match === null) return false;
+	const distance = -Number(match[1]);
+	const aWholeSheet = { px: 1123, mm: 297, vw: 100, vh: 100, "%": 100 };
+	return distance >= aWholeSheet[match[2] as keyof typeof aWholeSheet];
+};
+
 describe("the print frame an export draws the report into", () => {
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Never display: none or zero-sized: the frame must lay out at paper size and stay printable in every engine.
@@ -463,6 +475,10 @@ describe("the print frame an export draws the report into", () => {
 		expect(frame).toHaveAttribute("tabindex", "-1");
 		expect(frame).toHaveAttribute("title", REPORT_PDF_FRAME);
 		expect(frame.style.position).toBe("fixed");
+		expect(
+			[frame.style.left, frame.style.top].some(liesBeyondTheScreen),
+			`the frame sits on the page at left ${frame.style.left || "auto"}, top ${frame.style.top || "auto"}`,
+		).toBe(true);
 		expect(frame.style.width).toBe("210mm");
 		expect(frame.style.height).toBe("297mm");
 		expect(frame.style.display).not.toBe("none");

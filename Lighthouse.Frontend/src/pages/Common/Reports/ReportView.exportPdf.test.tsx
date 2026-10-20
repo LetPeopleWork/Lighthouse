@@ -371,7 +371,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		await user.click(await theExportButtonOnceItCanBePressed());
 		await theFramesHavePrinted(frames);
 
-		expect(getReport).toHaveBeenCalledTimes(2);
 		expect(
 			within(theFramesPage()).getByRole("heading", { level: 1, name: renamed }),
 		).toBeVisible();

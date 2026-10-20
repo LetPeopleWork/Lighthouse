@@ -729,7 +729,7 @@ export const thePrintFrame = (): HTMLIFrameElement => {
 /** The page drawn inside the print frame: the body of the frame's own document. */
 export const theFramesPage = (): HTMLElement => {
 	const page = thePrintFrame().contentDocument?.body;
-	expect(page, "the print frame has no document").toBeDefined();
+	expect(page, "the print frame has no document").toBeTruthy();
 	return page as HTMLElement;
 };
 

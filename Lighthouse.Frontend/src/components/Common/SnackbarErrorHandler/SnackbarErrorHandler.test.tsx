@@ -605,7 +605,9 @@ describe("a message with a way to act on it", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// One message at a time: a newer one has replaced the export's, and taking the export's back must not take it.
-	it.skip(`leaves a newer message standing when an older one is taken back (${pendingFramePrint})`, async () => {
+	// A message being closed stays on screen while it fades, so the time for that passes before the newer one is read.
+	it.skip(`leaves a newer message standing when an older one is taken back (${pendingFramePrint})`, () => {
+		vi.useFakeTimers();
 		renderTheSnackbar();
 		const takeTheFirstBack = aWayToTakeItBack(
 			show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() }),
@@ -613,8 +615,13 @@ describe("a message with a way to act on it", () => {
 		show(ANOTHER_MESSAGE);
 
 		act(takeTheFirstBack);
+		timePasses(200);
+		timePasses(2000);
 
-		expect(await screen.findByRole("alert")).toHaveTextContent(ANOTHER_MESSAGE);
+		expect(
+			theMessage(),
+			"taking the older message back closed the newer one",
+		).toHaveTextContent(ANOTHER_MESSAGE);
 	});
 
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
