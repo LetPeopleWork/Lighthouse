@@ -354,12 +354,7 @@ export const renderTheExportScene = (
 				element={<OwnersReport kind="portfolio" />}
 			/>
 			{withPrintPages ? (
-				reportPrintRoutes({
-					loadFonts: (faces) =>
-						theFonts === undefined
-							? Promise.reject(new Error("the test set up no fonts"))
-							: theFonts(faces),
-				})
+				reportPrintRoutes(theBrowsersStandIns())
 			) : (
 				<Route path="/print/*" element={<StandInForThePrintPage />} />
 			)}
@@ -435,6 +430,9 @@ export const aPrintDialog = () => {
 
 type LoadFonts = NonNullable<PrintPageStandIns["loadFonts"]>;
 
+/** The browser fetching and decoding a picture the page shows, as the page asks it to before it prints. */
+type LoadPicture = (source: string) => Promise<"loaded" | "failed">;
+
 /**
  * What the page asked its fonts stand-in for, face by face, and whether the report's title was already on the page
  * when it asked: the fonts are asked for after the document is drawn, for the faces it shows.
@@ -503,8 +501,75 @@ export const theFontsCannotLoad = (
 	return fonts;
 };
 
+/** What the page asked its pictures stand-in for, by address. */
+export interface PicturesAsked {
+	readonly pictures: () => string[];
+}
+
+const recordingPictureLoads = (
+	answer: () => Promise<"loaded" | "failed">,
+): PicturesAsked & { load: LoadPicture } => {
+	const asked: string[] = [];
+	return {
+		load: (source) => {
+			asked.push(source);
+			return answer();
+		},
+		pictures: () => [...asked],
+	};
+};
+
+/**
+ * The stand-in for the browser's pictures that the next scene hands its print page. jsdom never loads a picture,
+ * so unless a test says otherwise every picture the page asks for arrives.
+ */
+let thePictures: LoadPicture = recordingPictureLoads(async () => "loaded").load;
+
+/** The Lighthouse mark still on its way, until the test lets it arrive. */
+export const theLighthouseMarkIsStillLoading = () => {
+	const arrived = deferred<void>();
+	const pictures = recordingPictureLoads(async () => {
+		await arrived.promise;
+		return "loaded";
+	});
+	thePictures = pictures.load;
+	return {
+		...pictures,
+		arrive: () =>
+			act(async () => {
+				arrived.resolve();
+				await arrived.promise;
+			}),
+	};
+};
+
+/** The Lighthouse mark cannot be loaded, until the test says it can be reached again. */
+export const theLighthouseMarkCannotLoad = () => {
+	let reachable = false;
+	const pictures = recordingPictureLoads(async () =>
+		reachable ? "loaded" : "failed",
+	);
+	thePictures = pictures.load;
+	return {
+		...pictures,
+		canBeReachedAgain: () => {
+			reachable = true;
+		},
+	};
+};
+
+/** Everything the print page reaches in the browser that jsdom does not have: its fonts and its pictures. */
+const theBrowsersStandIns = () => ({
+	loadFonts: (faces: readonly string[]) =>
+		theFonts === undefined
+			? Promise.reject(new Error("the test set up no fonts"))
+			: theFonts(faces),
+	loadPicture: (source: string) => thePictures(source),
+});
+
 export const forgetTheBrowser = () => {
 	theFonts = undefined;
+	thePictures = recordingPictureLoads(async () => "loaded").load;
 	vi.unstubAllGlobals();
 };
 
@@ -533,6 +598,68 @@ export const aMomentLater = () =>
 			await Promise.resolve();
 		}
 	});
+
+// --- The page on paper ---
+
+/**
+ * The style rules the browser applies only when it prints. jsdom applies none of them when it computes a style,
+ * so they are read off the page's style sheets.
+ */
+const printStyleRules = (): CSSStyleRule[] =>
+	Array.from(document.styleSheets)
+		.flatMap((sheet) => Array.from(sheet.cssRules))
+		.flatMap((rule) =>
+			rule instanceof CSSMediaRule && /\bprint\b/.test(rule.media.mediaText)
+				? Array.from(rule.cssRules).filter(
+						(inner): inner is CSSStyleRule => inner instanceof CSSStyleRule,
+					)
+				: [],
+		);
+
+/** The last of the print rules for the element that names the property, if any does. */
+const askedInPrint = (
+	rules: readonly CSSStyleRule[],
+	element: Element,
+	property: string,
+): string | undefined => {
+	const asked = rules
+		.filter((rule) => element.matches(rule.selectorText))
+		.map((rule) => rule.style.getPropertyValue(property).trim())
+		.filter((value) => value !== "");
+	return asked.length === 0 ? undefined : asked[asked.length - 1];
+};
+
+/**
+ * What the page asks of one property of the element when it is printed: the last print rule for the element that
+ * names the property, or else what the element asks on the screen.
+ */
+export const whatPrintAsksOf = (element: Element, property: string): string =>
+	askedInPrint(printStyleRules(), element, property) ??
+	getComputedStyle(element).getPropertyValue(property).trim();
+
+/** The groups a table repeats on every printed page by their own kind, unless print asks otherwise. */
+const REPEATED_BY_KIND: Readonly<Record<string, string>> = {
+	THEAD: "table-header-group",
+	TFOOT: "table-footer-group",
+};
+
+/** The elements of the print page laid out on paper as the given display: asked for in print, or by their kind. */
+export const elementsPrintedAs = (display: string): HTMLElement[] => {
+	const rules = printStyleRules();
+	return Array.from(
+		document.querySelectorAll<HTMLElement>("[data-render-ready] *"),
+	).filter(
+		(element) =>
+			(askedInPrint(rules, element, "display") ??
+				REPEATED_BY_KIND[element.tagName]) === display,
+	);
+};
+
+/** Every declaration the page makes for print only, as one text. */
+export const thePrintOnlyDeclarations = (): string =>
+	printStyleRules()
+		.map((rule) => rule.style.cssText)
+		.join("\n");
 
 /** Whether the element, or what holds it on the page, is hidden when the page is printed. */
 export const isHiddenInPrint = (element: HTMLElement): boolean => {

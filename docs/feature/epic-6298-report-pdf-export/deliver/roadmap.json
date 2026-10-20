@@ -502,7 +502,7 @@
     {
       "id": "02",
       "name": "Slice 02 — The report PDF reads the same on every machine (Lighthouse)",
-      "description": "US-02. Repository /storage/repos/Lighthouse. Marks become drawn SVG icons from a mark kind, on screen and in print; Quicksand is bundled for the whole app through @fontsource-variable/quicksand with its OFL licence shipped; summary and panels never break across pages, and the footer stays with the last panel; the Chromium PDF embeds only Quicksand. Brief: slices/slice-02-pdf-reads-the-same-everywhere.md.",
+      "description": "US-02. Repository /storage/repos/Lighthouse. Marks become drawn SVG icons from a mark kind, on screen and in print; Quicksand is bundled for the whole app through @fontsource-variable/quicksand with its OFL licence shipped; on paper (A4 portrait first, Letter following) the summary and panels never break across pages, every panel keeps Then | Now | Change side by side, the margin is 12 mm with no fixed paper size, and no empty page trails the report; every printed page carries a running line (owner, report, windows, Produced) at the top and the Lighthouse mark with its credit at the bottom, with no page numbers; the page is ready only once the mark has loaded; the Chromium PDF embeds only Quicksand. Reconciled 2026-10-20 with the maintainer's slice-01 print review (NMD-8..13) and review finding F11. Brief: slices/slice-02-pdf-reads-the-same-everywhere.md.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "steps": [
@@ -569,25 +569,100 @@
         },
         {
           "id": "02-03",
-          "name": "Nothing is cut in two on paper: summary and every panel stay whole, the footer stays with the last panel, and margins are 12 mm",
+          "name": "Nothing is cut in two or wasted on paper: summary and panels whole, Then | Now | Change kept side by side, a 12 mm margin with no paper size, no empty last page",
+          "description": "NMD-8, NMD-9, NMD-10, NMD-13 (AC-2.3). The print stylesheet keeps the summary and each panel on one page, keeps every panel's three columns on A4 portrait (narrower than the screen's breakpoint), asks @page { margin: 12mm } and no size so the reader's A4 or Letter choice stands, and drops the screen's full-window height in print so nothing spills onto a blank last page.",
           "agent": "nw-software-crafter",
           "repository": "Lighthouse",
+          "tags": [
+            "@us-02",
+            "@slice-02",
+            "@edge",
+            "@error"
+          ],
           "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.pageBreaks.test.tsx",
-          "scenario_name": "keeps the summary and every panel whole on one page; keeps the footer on the page of the last panel; asks for a 12 mm margin on every printed page",
+          "scenario_name": "keeps the summary and every panel whole on one page; keeps Then, Now and Change side by side in every panel, however narrow the paper; asks for a 12 mm margin on every printed page and leaves the paper size to the reader; prints no empty page after the report",
           "criteria": [
-            "The summary and all four panels carry break-inside: avoid in the print stylesheet",
-            "The branding footer is kept with the last panel only",
-            "The page asks @page { margin: 12mm }, with no fixed paper size, print-color-adjust: exact and no animations"
+            "The summary ([data-report-summary]) and all four panels ask break-inside: avoid when printed (a print rule or a plain rule both count)",
+            "Every panel's Then | Now | Change grid asks grid-template-columns: repeat(3, …) under @media print, so A4 portrait does not fall back to the narrow screen's single column; the three segments stay then, now, change in that order and the Change rows stay aligned with the Then and Now rows",
+            "The page asks @page { margin: 12mm } and names no size",
+            "Under @media print the print sheet ([data-render-ready]) asks no min-height of its own (auto, 0, none, initial or unset) and no print rule names a viewport height (vh, dvh, svh, lvh); on screen the sheet still fills the window"
           ],
-          "files_to_modify": [
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
-            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.pageBreaks.test.tsx"
-          ],
+          "implementation_notes": "~1.5h. jsdom applies no @media rule when it computes a style, so the tests read the print rules off the page's style sheets through the kit's whatPrintAsksOf (print rule first, the screen's computed value otherwise). Put the column override on ThenNowColumns in panels/ThenNowPanelFrame.tsx as an \"@media print\" key of its sx (the summary shares the component and keeps its three columns too); give the dividers between columns the same print override so they do not vanish below the md breakpoint. The full-height reset goes in PrintSheet.tsx's LIGHT_GROUND (\"@media print\": { minHeight: \"auto\" }); keep the screen's 100vh, which the active slice-01 guard 'prints dark ink on its own white ground, the whole page high' pins. @page lives in PrintSheet's GlobalStyles beside WHITE_PAPER, with print-color-adjust: exact and no animations. Where pages really break on A4 and Letter, and whether a trailing page appears, is the browser's decision: checked by hand for DoD 7 on the dev instance's busiest Team. Active guards in reach that stay green: ReportPrintPage.test.tsx (all), ReportMarks.drawn.test.tsx.",
           "dependencies": [
             "02-02"
           ],
-          "implementation_notes": "~1h. The Vitest pins what the page asks for. Where pages really break on A4 and US Letter is the browser's decision and is checked by hand for DoD 7 (Known gap 2). A fixed content width fits both papers (DDD-6)."
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintSheet.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowPanelFrame.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.pageBreaks.test.tsx"
+          ]
+        },
+        {
+          "id": "02-05",
+          "name": "Every printed page carries the report's line at the top and the Lighthouse mark with its credit at the bottom; the big title stays on the first page",
+          "description": "NMD-11, NMD-12. One running line on every printed page: owner kind and name, report name, 'Then <range> · Now <range>', 'Produced <date, time>', in the formats the page already uses (windowDaysOf, as the report view's summary; 'd MMM yyyy, HH:mm'), with a rule under it. The page-1 header block shrinks to the big title under that line. The footer (Lighthouse mark and 'Made with Lighthouse by LetPeopleWork · letpeople.work') sits at the bottom of every page; no page numbers. Mechanism: the running line and the footer are position: fixed to the top and bottom edge when printed, so the browser prints them on every sheet, and the report body is laid out as a print-only table whose repeated header and footer groups keep room as tall as the line and the footer on every page, so no panel runs underneath.",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@us-02",
+            "@slice-02",
+            "@driving_port",
+            "@edge"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.runningHeader.test.tsx",
+          "scenario_name": "heads the page of %s report with one line: owner, report, windows, when it was produced (x2: a Team's, a Portfolio's); keeps the report's name as the big title under that line, on the first page only; repeats the line at the top of every printed page, with room kept for it above the report; repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers",
+          "criteria": [
+            "The <header> holding 'Produced 2 Oct 2026, 09:15' reads, part by part, exactly 'Team Lightspeed' | the report name | 'Then 3 May – 31 Jul 2026 · Now 5 Jul – 2 Oct 2026' | 'Produced 2 Oct 2026, 09:15' ('Portfolio Apollo' for a Portfolio's report), holds no heading, and ends in a rule",
+            "The page has exactly one h1, the report name, outside and after that header; it is not fixed in print and not inside a repeated group",
+            "In print the header is position: fixed at top 0 with a declared height; exactly one element is laid out as a table-header-group, it (or something in it) asks that same height, and its parent holds the summary and every panel while it holds none of them",
+            "In print the <footer> with the mark (img named Lighthouse) and the credit is position: fixed at bottom 0 with a declared height; exactly one table-footer-group keeps that height in the same way; the credit appears once in the page",
+            "No page number: no counter(page) / counter(pages) in the styles, no 'Page n' text"
+          ],
+          "implementation_notes": "~2h. jsdom cannot paginate, so the tests pin the structure that makes Chromium and Firefox repeat the line and footer: fixed elements print on every page, and the repeated thead/tfoot groups reserve their height on every page (a fixed element alone would sit over page two's panels). Prefer print-only display values on divs (\"@media print\": { display: \"table\" / \"table-header-group\" / \"table-row-group\" / \"table-footer-group\" }) over a real <table>, which would announce the report as a data table; the spacer's height and the fixed element's height share one const. Keep break-inside: avoid working inside the row group (02-03's scenarios stay green). Keep the windows line on windowDaysOf and the Produced format 'd MMM yyyy, HH:mm' (what the kit's PRODUCED_LINE and WINDOWS_LINE pin); set the line small enough to fit one A4 line for an ordinary name. The active slice-01 guards in ReportPrintPage.test.tsx stay green: 'names a Portfolio as the owner' and 'prints the instance's own words' read the owner as a line of its own through h1, h2, h3, p and [data-print-line], so keep the owner part a <p> (Typography's default) or mark it data-print-line; 'ends with the Lighthouse mark … after the last panel' keeps the footer after the last panel in the document; the document title is unchanged. The slice-01 header-order scenario was removed in DISTILL, superseded by this step's first scenario. E2E: ReportPrintPage.ts's owner() finds the owner part inside getByRole('banner') and title as the h1: keep the line a <header> outside any section, and grep Lighthouse.EndToEndTests/ before renaming anything; run ReportPdfExport.spec.ts's walking skeleton live before committing. The how-to-read lines of slice 03 go between the big title and the summary.",
+          "dependencies": [
+            "02-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintSheet.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.runningHeader.test.tsx"
+          ]
+        },
+        {
+          "id": "02-06",
+          "name": "The print page waits for the Lighthouse mark: never ready nor printing until the mark has loaded, and a mark that cannot load is part of the page that couldn't be loaded",
+          "description": "Review finding F11. The mark in the footer is a raster picture (/icons/icon-512x512.png) the browser fetches; a print made before it arrives has no mark. The print page asks the effect port for the picture once the report is drawn, as it asks for the fonts, is not ready and does not print until it has loaded, shows 'Part of the page couldn't be loaded, so no PDF was made.' with Retry when it cannot be loaded, and asks again on Retry.",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@us-02",
+            "@slice-02",
+            "@driving_port",
+            "@error"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.lighthouseMark.test.tsx",
+          "scenario_name": "waits for the Lighthouse mark before it is ready, then opens the print dialog once; says part of the page couldn't be loaded, offers Retry and never prints, when the Lighthouse mark cannot be loaded; asks for the Lighthouse mark again on Retry and prints once it is in",
+          "criteria": [
+            "While the mark is on its way the page is drawn but data-render-ready stays 'false' and the print dialog is not opened; the page asked for exactly the address the footer's mark shows; once the mark arrives the page is ready and prints once",
+            "A mark that cannot be loaded leaves the page in the part-failed state: 'Part of the page couldn't be loaded, so no PDF was made.', Retry, never ready, never prints",
+            "Retry asks for the mark again; when it loads the page prints once (as after Retry on fonts)"
+          ],
+          "implementation_notes": "~2h. Chosen over an inline SVG mark because the repository has no vector source of the logo, only the PNG icons, and redrawing the brand mark is not this Epic's work. PrintEffectPort gains loadPicture(source: string): Promise<'loaded' | 'failed'>; browserPrintEffects binds it to a new Image whose src is the address, answering 'loaded' once picture.decode() resolves and 'failed' when it rejects (add a unit test beside the binding's others, stubbing HTMLImageElement.prototype.decode). PrintPageStandIns gains loadPicture and PrintRoute merges it as it merges loadFonts; the kit already hands it (theBrowsersStandIns), defaulting to a mark that loads, so the existing scenarios need nothing. Share the address between LighthouseLogo and the page through one exported const. The page folds the mark's state into the fonts input (or printPageStateOf gains one input; then extend printPageState.test.ts's table and its 'ready exactly when all inputs are in' grid). Keep the page's effect and the hook under complexity 15. The effect-isolation scans in reportPrint.enforcement.test.ts stay green. Real coverage of the binding: the E2E walking skeleton, which only gets ready when the real mark has loaded.",
+          "dependencies": [
+            "02-05"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.test.ts",
+            "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseLogo.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.lighthouseMark.test.tsx"
+          ]
         },
         {
           "id": "02-04",
@@ -610,9 +685,9 @@
             "Lighthouse.EndToEndTests/tests/models/reports/ReportPrintPage.ts"
           ],
           "dependencies": [
-            "02-03"
+            "02-06"
           ],
-          "implementation_notes": "~1h. Turn the second testWithDemo.fixme into a test. page.pdf() works only in headless Chromium, the single Playwright project. Read the BaseFont names straight from the PDF bytes, with no new dependency, if Skia leaves them uncompressed. Confirm this on the first run, and add a PDF parser only if the names cannot be read (that dependency is pinned at least 24 h old). The PDF read helper lives in the POM. Run live before committing. SLICE-END: no 'slice 02' skip or fixme left."
+          "implementation_notes": "~1h. Turn the second testWithDemo.fixme into a test. page.pdf() works only in headless Chromium, the single Playwright project. Read the BaseFont names straight from the PDF bytes, with no new dependency, if Skia leaves them uncompressed. Confirm this on the first run, and add a PDF parser only if the names cannot be read (that dependency is pinned at least 24 h old). The PDF read helper lives in the POM. Run live before committing. SLICE-END: no 'slice 02' skip or fixme left. The page layout (the line and footer on every page, no blank trailing page, three columns on A4) is not checked in this spec: per-page text cannot be read from the PDF bytes without a parser, and the demo report's page count is not fixed; it stays the maintainer's hand check for DoD 7."
         }
       ]
     },

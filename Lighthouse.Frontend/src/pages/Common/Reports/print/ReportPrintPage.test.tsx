@@ -23,7 +23,6 @@ import {
 	lightspeed,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
-	PRODUCED_LINE,
 	pressTheBrowsersBack,
 	printPathFor,
 	renderReadiness,
@@ -38,7 +37,6 @@ import {
 	theFontsHaveLoaded,
 	thePrintPageIsReady,
 	theTermsAnswer,
-	WINDOWS_LINE,
 	whatThisEntryCarries,
 	whereTheReaderIs,
 } from "../../../../tests/ReportPrintTestKit";
@@ -149,12 +147,6 @@ const thePrintedLines = (): string[] =>
 	)
 		.map(readingOf)
 		.filter((line) => line.length > 0);
-
-const indexOfLine = (lines: string[], line: string) => {
-	const at = lines.indexOf(line);
-	expect(at, `"${line}" is not printed`).toBeGreaterThanOrEqual(0);
-	return at;
-};
 
 const theStylesOfThePage = () =>
 	Array.from(document.querySelectorAll("style"))
@@ -761,25 +753,6 @@ describe("What the print page prints", () => {
 		vi.useRealTimers();
 		forgetTheBrowser();
 		document.title = "";
-	});
-
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it("heads the page with the owner, the report's name, its two windows and when it was produced, in that order", async () => {
-		openingThePrintPageDirectly();
-		await thePrintPageIsReady();
-
-		const lines = thePrintedLines();
-		const owner = indexOfLine(lines, "Team Lightspeed");
-		const title = indexOfLine(lines, ENGAGEMENT_START);
-		const windows = indexOfLine(lines, WINDOWS_LINE);
-		const produced = indexOfLine(lines, PRODUCED_LINE);
-		expect([owner, title, windows, produced]).toEqual(
-			[owner, title, windows, produced].sort((a, b) => a - b),
-		);
-		expect(
-			screen.getByRole("heading", { level: 1, name: ENGAGEMENT_START }),
-		).toBeVisible();
-		expect(screen.getByRole("separator")).toBeInTheDocument();
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation

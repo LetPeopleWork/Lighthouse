@@ -2,12 +2,13 @@ import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
 	aPrintDialog,
-	BRANDING,
 	forgetTheBrowser,
 	printPathFor,
 	renderTheExportScene,
 	theFontsHaveLoaded,
+	thePrintOnlyDeclarations,
 	thePrintPageIsReady,
+	whatPrintAsksOf,
 } from "../../../../tests/ReportPrintTestKit";
 import {
 	aReportService,
@@ -16,14 +17,18 @@ import {
 } from "../../../../tests/ReportsTestKit";
 
 /**
- * On paper nothing is cut in two: the summary and each panel stay whole on one page, the footer goes with the
- * last panel rather than onto a page of its own, and the page keeps a margin every printer can reach on A4 and
- * US Letter alike. Where the pages actually break is the browser's to decide, so what is pinned here is what
- * the page asks of it.
+ * On paper nothing is cut in two and nothing is wasted. The report is laid out for A4 portrait and still fits US
+ * Letter: the summary and each panel stay whole on one page, every panel keeps Then, Now and Change side by side
+ * however narrow the paper, the page keeps a margin every printer can reach, and no empty page follows the last
+ * one. Where the pages actually break is the browser's to decide and jsdom cannot paginate, so what is pinned here
+ * is what the page asks of the browser when it prints.
  */
 
 const pendingEpic6298 =
 	"Pending: nothing is cut in two on paper (epic 6298, slice 02)";
+
+/** The values that ask for no height of the element's own, so a short report ends where its content ends. */
+const NO_HEIGHT_OF_ITS_OWN = ["auto", "0", "0px", "none", "initial", "unset"];
 
 const thePrintedReport = async () => {
 	renderTheExportScene({
@@ -33,13 +38,29 @@ const thePrintedReport = async () => {
 	await thePrintPageIsReady();
 };
 
-const keptWhole = (element: Element) =>
-	getComputedStyle(element).getPropertyValue("break-inside");
+const thePrintPage = (): HTMLElement => {
+	const page = document.querySelector<HTMLElement>("[data-render-ready]");
+	expect(page, "there is no print page").not.toBeNull();
+	return page as HTMLElement;
+};
+
+/** The grid that sets a panel's Then, Now and Change beside each other. */
+const theSegmentsOf = (panel: HTMLElement): HTMLElement => {
+	const then = panel.querySelector<HTMLElement>('[data-segment="then"]');
+	expect(then, "the panel has no Then").not.toBeNull();
+	return (then as HTMLElement).parentElement as HTMLElement;
+};
 
 const theStylesOfThePage = () =>
 	Array.from(document.querySelectorAll("style"))
 		.map((style) => style.textContent ?? "")
 		.join("\n");
+
+const thePageRule = (): string => {
+	const rule = /@page\s*\{([^}]*)\}/.exec(theStylesOfThePage());
+	expect(rule, "the page asks nothing of the printed page").not.toBeNull();
+	return (rule as RegExpExecArray)[1];
+};
 
 describe("The printed report is never cut in two", () => {
 	beforeEach(() => {
@@ -50,42 +71,62 @@ describe("The printed report is never cut in two", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @contract-shape:unbounded-preservation
+	// Fails today: nothing on the page asks the browser to keep a panel or the summary together.
 	it.skip(`keeps the summary and every panel whole on one page (${pendingEpic6298})`, async () => {
 		await thePrintedReport();
 
 		const summary = document.querySelector("[data-report-summary]");
 		expect(summary).not.toBeNull();
-		expect(keptWhole(summary as Element)).toBe("avoid");
+		expect(whatPrintAsksOf(summary as Element, "break-inside")).toBe("avoid");
 		const panels = screen.getAllByRole("region");
 		expect(panels).toHaveLength(4);
 		for (const panel of panels) {
-			expect(keptWhole(panel)).toBe("avoid");
+			expect(whatPrintAsksOf(panel, "break-inside")).toBe("avoid");
 		}
 	});
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
-	// A footer alone on a last page is a page printed for nothing.
-	it.skip(`keeps the footer on the page of the last panel (${pendingEpic6298})`, async () => {
+	// The screen stacks the three columns below its breakpoint, and A4 portrait is narrower than that breakpoint.
+	// Fails today: the print asks for no columns of its own, so the narrow screen's single column is what prints.
+	it.skip(`keeps Then, Now and Change side by side in every panel, however narrow the paper (${pendingEpic6298})`, async () => {
 		await thePrintedReport();
 
 		const panels = screen.getAllByRole("region");
-		let keptTogether: HTMLElement | null = screen.getByText(BRANDING);
-		while (keptTogether !== null && keptWhole(keptTogether) !== "avoid") {
-			keptTogether = keptTogether.parentElement;
+		expect(panels).toHaveLength(4);
+		for (const panel of panels) {
+			const segments = theSegmentsOf(panel);
+			expect(
+				Array.from(segments.children).map(
+					(segment) => (segment as HTMLElement).dataset.segment,
+				),
+			).toEqual(["then", "now", "change"]);
+			expect(
+				whatPrintAsksOf(segments, "grid-template-columns"),
+				"a panel stacks its columns on paper",
+			).toMatch(/^repeat\(3,/);
 		}
-
-		expect(
-			keptTogether,
-			"nothing keeps the footer with a panel",
-		).not.toBeNull();
-		expect(keptTogether?.contains(panels[panels.length - 1])).toBe(true);
-		expect(keptTogether?.contains(panels[0])).toBe(false);
 	});
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
-	it.skip(`asks for a 12 mm margin on every printed page (${pendingEpic6298})`, async () => {
+	// A paper size of the page's own would override the reader's A4 or Letter choice in the print dialog.
+	// Fails today: the page asks nothing of the printed page.
+	it.skip(`asks for a 12 mm margin on every printed page and leaves the paper size to the reader (${pendingEpic6298})`, async () => {
 		await thePrintedReport();
 
-		expect(theStylesOfThePage()).toMatch(/@page\s*\{[^}]*margin:\s*12mm/);
+		const pageRule = thePageRule();
+		expect(pageRule).toMatch(/margin:\s*12mm/);
+		expect(pageRule).not.toMatch(/size:/);
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
+	// On screen the page fills the window; on paper that height spills over onto a last page holding nothing.
+	// Fails today: the print keeps the screen's full-window height.
+	it.skip(`prints no empty page after the report (${pendingEpic6298})`, async () => {
+		await thePrintedReport();
+
+		expect(NO_HEIGHT_OF_ITS_OWN).toContain(
+			whatPrintAsksOf(thePrintPage(), "min-height"),
+		);
+		expect(thePrintOnlyDeclarations()).not.toMatch(/\d+(\.\d+)?[dls]?vh\b/);
 	});
 });
