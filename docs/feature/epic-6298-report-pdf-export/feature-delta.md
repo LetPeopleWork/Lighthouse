@@ -1159,6 +1159,25 @@ pasted link, the E2E PDF check and the later renderer; it never prints by itself
 | DDD-38 | (rev. 3, NMD-15) **The route stays, quieter, and the engines are probed**: `/print/…` opened from its address shows its preparing / failed / ready looks as today, sets `data-render-ready`, never prints, and offers only "‹ Back to Reports". No screen-only Print button: the browser's own Print works there, nothing sends a reader there, and the Standalone app has no address bar to paste into (YAGNI). **By hand, before the export rework closes**: Chrome, Firefox and the Linux Standalone app, from the report view and the list — the dialog previews only the report (light, no app chrome, the running line and footer on every page), Save and Cancel each leave the reader on the same address with the same `history.length`, and the offered file name is the report's. If an engine prints the app's page instead of the frame, or nothing, DELIVER stops and asks the maintainer — no silent fallback. macOS stays DVO-10. (rev. 3, review) **The probe is a gate, not a closing check** (DDD-39) | Decided | 255 |
 | DDD-39 | (rev. 3, review 2026-10-20) **Gaps the design review closed**: (a) **A spike gates DELIVER**: the rework's first step is a thin frame host and binding (one frame, the real content, a real print) probed by hand in Chrome, Firefox and the Linux Standalone app — subframe `print()` previews only the report, `afterprint` reaches the frame's own window, which title each engine offers — with a go / no-go recorded in this delta before any other rework step. If an engine fails, the maintainer chooses between two pre-decided options: **(i) Export PDF not offered in that engine** (recommended; the DVO-10 pattern) or (ii) print-in-place in that engine only. (b) **A render error in the printed content** is caught by an error boundary of the frame host's own, around the portal, never by the surface's `SnackbarErrorHandler` boundary: it becomes "Part of the page couldn't be loaded, so no PDF was made." with Retry, and the frame is removed. (c) **`print()` throwing or missing** on the frame's window is the same outcome: the part sentence with Retry, the frame removed, the control back to idle. A `print()` that silently does nothing cannot be seen from code; the gate (a) is what catches it. (d) **Waiting ends at the call**: the control leaves its waiting look and the 30-s budget stops just before `print()` is called (in Chrome the call returns only when the dialog closes). (e) **Recovery on the report view**: both Retries ask the same shared key, so either recovers the view — the snackbar's Retry starts a fresh frame whose read is also the view's; when it lands the view leaves its could-not-load look and Export PDF is offered again. (f) **Leaving while a dialog is open** (possible only where the dialog does not block the page) ends the export: the frame goes with the surface and the engine may close or blank its preview; accepted, the reader left. (g) **A frame that never hears `afterprint`** stays hidden until the next export or the surface unmounts; accepted, no timer. (h) **One snackbar slot**: a newer message replaces the export's failure and its Retry; accepted, Export PDF is still there. (i) **Accessibility**: no extra announcement while preparing (the control's `aria-busy`; the dialog is the result); focus stays on the control and does not jump to the snackbar, whose alert is announced. (j) **What jsdom can prove**: jsdom loads no `srcdoc` document or style sheet, has no `document.fonts` and no `print`, so the binding tests use stand-ins for each and prove only wiring (which window, which element, which attributes, which sheets copied); real printing, sheet loading and font loading are proved by the gate (a), the E2E check through the frame's real window and the by-hand probe | Decided | 255 |
 
+### (rev. 3) Spike gate DDD-39 (a) — go / no-go record
+
+**Automated probe (DISTILL, 2026-10-20).** A throwaway static page (Playwright, not in the repository) made an
+off-screen `srcdoc` frame (doctype, `lang`, 210 mm × 297 mm, `aria-hidden`), drew a heading and a title into it from the
+parent once it had loaded, and called `frame.contentWindow.print()`. **Chromium 156 (headless shell):** the frame loads
+in standards mode with its `lang`; the frame's `WindowProxy` is the same object before and after `load` but its document
+is not (the initial blank document is replaced, so draw only after `load`); the real `print()` returned at once and only
+the frame's window then received `beforeprint` and `afterprint` — the app's window received neither — and `afterprint`
+reached the listener the parent had registered on `frame.contentWindow`, both one added before and one added after
+`load`; the frame was still in the page a turn later. With a Playwright init-script stand-in for `print`, the stand-in
+was installed in the `srcdoc` frame and counted the frame (not the app) as the window asked, which is what the E2E
+walking skeleton relies on. **WebKit and Firefox could not be probed here**: the installed WebKit build (2311) does not
+match Playwright 1.64 and the matching one lacks system libraries on this host (libicu74, libxml2, libflite1);
+Firefox is not installed. Headless engines open no dialog, so the probe cannot see what a preview shows.
+**Owed by the maintainer, by hand, before 06-05**: in Chrome, Firefox and the Linux Standalone app, from the report
+view (and from the list before the rework closes), does the real dialog preview only the report (light, no app chrome,
+the running line and footer on every page), do Save and Cancel leave the reader on the same address with the same
+`history.length`, and which title does each engine offer as the file name. **Go / no-go: open.**
+
 ## Wave: DESIGN / [REF] Component decomposition
 
 **Frontend (`Lighthouse.Frontend/src`)** — ports-and-adapters as today: components read through the existing
@@ -2522,6 +2541,20 @@ open), the return's `RETURNED_FROM_PRINT` marker asserted instead of `expect.any
 `document.fonts`, the skill evals' percent strings in the web's form ("−43 %"), an Environments table, and the gaps
 below. `isHiddenInPrint` now matches a class name only whole (`.back` no longer matches `.back-link`).
 
+**Reconciled 2026-10-20 with DESIGN rev. 3** (NMD-14..17, DDD-2..39 as revised, ADR-255, the "tests made obsolete"
+table). Reconciliation **0 contradictions**: NMD-15/16 supersede DDD-2's navigation, DDD-27's origin and return and
+DDD-14's marker, and DESIGN already records each supersession; NMD-17 removed slice 03, whose test file is gone with
+its code. No new sketch is owed (NMD-16's sketch is approved; the list reuses Edit's spinner), and no copy beyond it is
+pinned: the snackbar sentences are the print page's, Retry is the label the app already uses, and the frame's title is
+DDD-34's "Report PDF". Every test that asserted the navigation, the wish to print, the origin or the return is deleted or
+rewritten; the route's own looks stay active, opened from the address. The new behaviour is 66 pending Vitest cases and
+one pending E2E walking skeleton, listed in "Scenarios (rev. 3)" below, with roadmap phase 06 (06-01..06-09).
+**Mechanism**: the surface scenarios run the real frame port on jsdom's own `<iframe>` (jsdom ignores `srcdoc` but
+fires the frame's `load` and gives it a window of its own), and the kit stands in only for what jsdom lacks, on every
+frame the app makes: the frame window's `print`, its document's `fonts`, picture decoding and the loading of copied style
+sheets (`aPrintFrameBrowser`). The kit now wraps the scene in the app's `SnackbarErrorHandler`, as `TeamDetail` and
+`PortfolioDetail` do, and counts history entries by location key, so "nothing added to the history" is observable.
+
 ## Wave: DISTILL / [REF] Scenarios
 
 Pending markers: backend `[Ignore(PendingEpic6298.Slice01)]`, frontend and clients `it.skip` / `it.skip.each` with a
@@ -2565,7 +2598,73 @@ the page-state table (+1 row), the `document.fonts` scan (+1). Error and edge sc
 through a real process or socket are tagged `unbounded-preservation`, not `pure-function`. Walking skeletons: 4 (print page, E2E, `lh report get` by JSON
 pass-through, MCP stdio).
 
+### Scenarios (rev. 3, 2026-10-20) — Export PDF prints from a hidden frame
+
+Pending marker: `it.skip` / `it.skip.each` / `testWithDemo.fixme` whose name ends with the reason
+`pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)"`. Where this table and the rows above differ,
+this table wins; rows above that name the navigation, the wish to print, the origin or the return describe tests that
+no longer exist.
+
+| Step | File (tests) | Scenarios (rev. 3) | Tags | DDD / NMD |
+|---|---|---|---|---|
+| 06-01 | `components/Common/SnackbarErrorHandler/SnackbarErrorHandler.test.tsx` | the action shown beside the message, choosing it runs it once and closes the message · a message with an action stays past 6 s until closed · `showError` hands back a way to take its message away · taking an older message back leaves a newer one · a message alone after one with Retry shows no action (green today) · **active**: a message alone still hides after 6 s | driving_port, error ×2 | DDD-36, DDD-39 h |
+| 06-02 | `…/print/browserPrintEffects.test.tsx` | made for the frame's window: the frame's `print`, never the app's, and that window's `afterprint` · faces into the frame document's fonts, the mark decoded by the frame · `setTitle` names the frame's and the app's document and gives the app its name back · `openPrintFrame`: one off-screen frame, `aria-hidden`, `tabindex=-1`, title "Report PDF", fixed 210 mm × 297 mm, never `display: none`, `srcdoc` with doctype and `lang`, answers after load · copies the app's `link` and non-Emotion `style` sheets, not Emotion's, and answers only once each loaded · rejects when a sheet fails · `close()` removes exactly its frame · **active** ×7: the app's own window's print, `afterprint`, fonts (×4) and picture (×2) scenarios, through `browserPrintEffects(window)` | driving_port, error | DDD-25, DDD-28, DDD-34, DDD-39 j |
+| 06-03 | `…/print/usePrintOnce.test.tsx` (rewritten) | tells the host `printing`, then prints once when ready · never prints while preparing / failed ×3 (×4, green today) · once under StrictMode and on a re-render · tells `failed` with the sentence and Retry or not (×3) · `print()` throwing → the part sentence with Retry · tells `closed` once, only after it printed · one listener per mount, nothing for a dialog it did not open, none once gone (green today) | driving_port, error, edge | DDD-25, DDD-26, DDD-35, DDD-39 c |
+| 06-04 | `pages/Common/Reports/ReportView.exportPdf.test.tsx` | **WS** the report's own frame asks for the dialog once, one event, the reader still on the report with the same history entries, the app's window never asked · the waiting spinner inside Export PDF, `aria-disabled`, `aria-busy`, focus kept, a second choice does nothing, idle once print was asked · a Portfolio's report drawn in the frame's body (heading, "Portfolio Apollo", branding), none on the view, the app's sheets copied, a white sheet under a dark theme · the frame's and the app's titles carry "{report} — Team Lightspeed" while the frame lives, the app's back after · the fresh read is the view's answer too · one `ReportOpened`, export or not · StrictMode: one frame, one dialog · **active** ×7: header order, reader alone, disabled while loading, no Export PDF for three failures, none for an unknown type | walking_skeleton, driving_port, kpi-K1, kpi-K6, kpi-G, edge | DDD-3, DDD-13, DDD-14, DDD-15, DDD-33, DDD-34, DDD-36, NMD-15, NMD-16 |
+| 06-05 | `…/ReportsTab.exportPdf.test.tsx` + `ReportView.exportPdf.test.tsx` | list icon prints from a frame, one event with the Type, the reader still on the list · the row's icon is the spinner, every other row's PDF icon held back, a click there does nothing · a new export replaces a frame that never heard the dialog close · leaving the list while preparing removes the frame, nothing prints · the frame goes a moment after the dialog closes and every choice counts once · `afterprint` inside `print()` (Chrome): the frame is still there when `print()` returns, gone after · **active** ×4: icon order, reader's column, tooltip, no icon on an unknown type | driving_port, kpi-K1, kpi-K6, edge, error | DDD-32, DDD-35, DDD-36, DDD-39 g |
+| 06-06 | `…/ReportView.exportPdf.failures.test.tsx` (new) + `…/print/ReportPrintPage.lighthouseMark.test.tsx` | the snackbar says no PDF was made when the report could not be read (Retry), no longer exists or was made by a newer version (no Retry) (×3) · the part sentence with Retry for the owner's name, the terms, the fonts, the mark, a style sheet (×5), Export PDF idle again · Retry prints once from a fresh frame, no second event · the message goes when the reader leaves the report · Retry after a failed mark asks for it again in a fresh frame and prints once | error, kpi-K1 | DDD-4, DDD-31, DDD-35, DDD-36, NMD-16, PD-1, PD-6 |
+| 06-07 | `…/ReportView.exportPdf.failures.test.tsx` + `…/print/printPageState.test.ts` | the 30-s budget (fake timers): nothing at 29 s, at 30 s the report sentence (no fresh answer) or the part sentence (fonts held), Retry, no print (×2) · a render error in the printed copy: the part sentence with Retry, the view untouched · the frame's `print` throwing or missing: the part sentence with Retry (×2) · `printPageStateOf` with `timedOut`, 7 rows (2 green today: a decided 404 and "everything in" stay) | error | DDD-4, DDD-37, DDD-39 b, DDD-39 c |
+| 06-08 | `…/print/ReportPrintPage.test.tsx` + `…/print/reportPrint.enforcement.test.ts` | the route never prints, even with an older export's wish in its entry · it offers only "‹ Back to Reports", a plain link carrying no state · nothing under `print/` names `useNavigate` · the starter names neither `useNavigate` nor `navigate(` · only the binding writes a document's title under `print/` · one module, under `print/`, imports `@emotion/cache`, and its tree reaches the summary and panels and none of the chrome · **active** (reworded): no module but the binding asks a window for `print`, none names `window.print`; only the binding names `"afterprint"` and `.fonts.load` / `.fonts.ready`; no module but the binding names `iframe`, `srcdoc`, `contentWindow`, `contentDocument` | error | DDD-14, DDD-24, DDD-26, DDD-27, DDD-38, R16 |
+| 06-09 | E2E `specs/teams/ReportPdfExport.spec.ts` + `models/reports/ReportPage.ts`, `ReportPrintPage.ts` | **WS** (fixme) Export PDF on a Team's report: the frame's own window asks for the dialog once, the page's never, the frame goes when the dialog closes, the address and `history.length` unchanged · **active** (new): the print page opened by its address names the report and its owner, fits A4 and never asks for the dialog · **active**: the Chromium PDF embeds only Quicksand, the Central European letters, the divider colour — each now opening `/print/…` by its address | walking_skeleton, driving_port, kpi-K1, real-io | DDD-38, NMD-15, ADR-255 |
+
+Kept active on the route, now opened from its address (the page a pasted link and the E2E PDF check open): the
+preparing look and the four held inputs, fonts asked after drawing, the part sentence for unloadable fonts (×2), the
+report sentence with Retry, Retry on a direct load, 404 / 422 final copy, the owner-name and owner-gone part failures,
+the terms failure whose Retry gets the page ready, the preparing look while Retry reads, the 422 with no sentence of its
+own, everything under "What the print page prints", the stale-answer and same-panels scenarios, "reports nothing of its
+own", the direct load's Back to the list (PD-5), the mark's three route scenarios, and the running-header, page-break
+and drawn-mark files unchanged.
+
+**Retired** (the DESIGN table's "obsolete"): in `ReportView.exportPdf.test.tsx` the two print-path scenarios; in
+`ReportsTab.exportPdf.test.tsx` the print-page scenario; in `ReportPrintPage.test.tsx` the export-driven WS and
+StrictMode scenarios (moved to 06-04), both "wish used up" scenarios, the seven "way back" scenarios but the direct load's
+(the history-once trio included), Retry-prints-once and 404-after-the-report (moved to 06-06 / deleted), "reads again
+right after the report view" and "the report view shows the printed values after the dialog" (moved to 06-04), the
+three `ReportOpened`-after-return scenarios (replaced by "one opening, export or not"); in `usePrintOnce.test.tsx` all
+17 (the kept ones reshaped into the 12 pending of 06-03); in `browserPrintEffects.test.tsx` the replacing return and the
+wiring-to-the-hook scenario; in `usageDataRouteKeys.print.test.ts` the accepted list recount (×2), which no longer guards
+this feature. `ReportView.exportPdf.consent.test.tsx` no longer waits for a print page. Kit: the print-page stand-in,
+"Leave the print page", `pressTheBrowsersBack` and `isHiddenInPrint` are gone; `aPrintFrameBrowser`, `thePrintFrame(s)`,
+`theFramesPage`, `theFramesHavePrinted`, `everyPrintFrameIsGone`, `theReadersHistory`, `theErrorSnackbar` are new.
+
+**RED (rev. 3).** Every pending case was un-marked in a scratch copy and run: 58 failed, 8 passed (the
+never-prints-while ×4 and listener-lifetime guards of the hook, the snackbar's no-action-after-Retry, and two
+`timedOut` rows that a decided state already satisfies; DELIVER proves those by sabotage before un-skipping). All 58
+failures are MISSING_FUNCTIONALITY:
+
+| Group | Failure seen |
+|---|---|
+| Snackbar | `Unable to find … role "button" and name "Retry"`; `the message hid itself`; `showError hands back no way to take its message away: expected 'undefined' to be 'function'` |
+| Binding | the frame's `print` called 0 times (the app's `globalThis.print` was asked); `expected 'failed' to be 'loaded'` (the app's fonts were asked); `the binding sets no title`; `the binding makes no print frame` (×4) |
+| Print-once hook | `expected [] to deeply equal [ 'printing', 'print' ]`; StrictMode `expected +0 to be 1`; `expected [] to deeply equal [ { kind: 'failed', … } ]` (×4); `[ 'printing', 'print', 'closed' ]` |
+| Report view / list | `theFramesHavePrinted`: `expected +0 to be 1` (the export navigated to the print page); the waiting look: `Unable to find role="button" and name "Export PDF"` (the reader left the report); the list's waiting look: no label "Export … as PDF" (left the list); leaving while preparing: `expected [] to have a length of 1` (no frame was made) |
+| Failures | `the error snackbar says nothing` (×12); the 30-s budget: `expected [] to have a length of 1` (no frame); the broken drawing: the snackbar shows the thrown error from the surface's own boundary, not the part sentence |
+| Page state | `timedOut` ignored: `preparing` where `failedRetryable` / `failedPart` is expected (×5) |
+| Route | prints once with the old wish in its entry (`expected 1 to be +0`); shows "‹ Back to report" |
+| Scans | `print/reportPrintRoutes.tsx` names `useNavigate`; the starter matches `useNavigate`; `ReportPrintPage.tsx` writes `document.title`; no module imports `@emotion/cache` |
+| E2E (live, un-marked once) | `expect.poll(timesThePrintFrameAskedForTheDialog)`: expected 1, received 0 (the page itself printed after navigating) |
+
+**Counts (rev. 3).** Pending: 66 Vitest cases (58 red, 8 green guards) across 9 files, and 1 E2E fixme. Active added
+or reworded: the snackbar's 6-s pin, three binding scans (dialog askers, `afterprint`, frames) and the fonts scan, the
+route-by-address E2E test. Error and edge cases among the pending: 41 of 66 (62 %). Walking skeletons: the Vitest WS of
+06-04 and the E2E WS of 06-09. Every scenario carries a `@contract-shape` tag and `@rev-3`.
+
 ## Wave: DISTILL / [REF] Walking-skeleton strategy
+
+(rev. 3) The export's skeleton is now: the reader on the real report view chooses Export PDF and the report's own
+hidden frame asks its window for the dialog once, while the reader stays on the report with the same history (Vitest,
+06-04); and the same through the real browser with the print dialog stood in on every frame (Playwright, 06-09). The
+paragraph below is the slice-01 history.
 
 Slice 01's skeleton is two-layered, both pending at hand-off. In Vitest, the reader on the real report view chooses
 Export PDF and the print page, mounted beside the app's routes, asks for the print dialog exactly once when its four

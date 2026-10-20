@@ -3,7 +3,7 @@
     "project_id": "epic-6298-report-pdf-export",
     "created_at": "2026-10-20T00:00:00Z",
     "goal": "Let anyone who can read a Then & Now report export it as a light, branded, dated PDF, from the report view's Export PDF button or the Reports list's PDF icon, through a chrome-less print page that reads the report afresh and opens the print dialog exactly once; make that PDF read the same on every machine (drawn marks, Quicksand bundled with the app, nothing cut in two on paper) and explain itself to a cold reader; then let assistants and the lh command line read reports through four read-only MCP tools and lh report list|get, and show a Then & Now as a faithful dashboard through the lighthouse-reports skill.",
-    "total_steps": 32,
+    "total_steps": 42,
     "source": "docs/feature/epic-6298-report-pdf-export/feature-delta.md (DISCUSS to DISTILL: DDD-1..32, R1..R35, the DEVOPS usage-event design, the Scenarios table, Scaffolds, RED classification, Existing-test disposition, Known gaps, Handoff to DELIVER, maintainer decisions NMD-1..7 of 2026-10-19 and PD-1..6 / DVO-9 / DVO-10 of 2026-10-20), slices/slice-01..05, distill/wave-decisions.md (DS-1..19), design/wave-decisions.md, devops/wave-decisions.md, environments.yaml, docs/product/architecture/adr-245, adr-246, adr-247. Pending tests: Lighthouse commits d92b105f9 and 48ad19d2d, lighthouse-clients commit 7ab462e.",
     "paradigm": "OOP project. Frontend React 19 + MUI 9 + TypeScript with Vitest + React Testing Library (the scenes run the real Reports pages through src/tests/ReportPrintTestKit.tsx and ReportsTestKit.tsx); backend .NET 10 with NUnit 4.6 over a real SQLite host (UsageDataCollectorObservationTest); E2E Playwright through page objects; lighthouse-clients TypeScript with Vitest against aFakeLighthouse on a real socket. No Hypothesis / property-based-test mandate: it is a Python pilot that this corpus has declined on the record (story 6301, epic 6303). Where DESIGN asks for a property (the page-state rule over every input combination), the DISTILL table (16 rows plus the 32-combination grid in printPageState.test.ts) is that property written as an exhaustive table; no new test dependency.",
     "standing_constraints": [
@@ -688,6 +688,320 @@
             "02-06"
           ],
           "implementation_notes": "~1h. Turn the second testWithDemo.fixme into a test. page.pdf() works only in headless Chromium, the single Playwright project. Read the BaseFont names straight from the PDF bytes, with no new dependency, if Skia leaves them uncompressed. Confirm this on the first run, and add a PDF parser only if the names cannot be read (that dependency is pinned at least 24 h old). The PDF read helper lives in the POM. Run live before committing. SLICE-END: no 'slice 02' skip or fixme left. The page layout (the line and footer on every page, no blank trailing page, three columns on A4) is not checked in this spec: per-page text cannot be read from the PDF bytes without a parser, and the demo report's page count is not fixed; it stays the maintainer's hand check for DoD 7."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Export PDF prints without leaving the page (Lighthouse)",
+      "description": "DESIGN rev. 3 (NMD-15/16, DDD-33..39, ADR-255). Repository /storage/repos/Lighthouse. Export PDF no longer navigates: the one export starter counts the choice and mounts a hidden, off-screen srcdoc frame on the page the reader is on, the app draws the print content into it through a portal (its own Emotion cache, the light theme, copies of the app's style sheets), and the frame's own window is asked to print once everything is in. While it prepares the surface's control shows the waiting spinner; a failure, or 30 s without a print, shows the app's error snackbar with the print page's sentence and Retry (a fresh frame, no second event), or the report view's own sentence without Retry. The /print/… route stays for a pasted link, the E2E PDF checks and the later renderer, and never prints. 06-04 is the spike gate of DDD-39(a): the maintainer's by-hand go / no-go is recorded before 06-05. Pending scenarios carry the reason 'Pending: Export PDF prints from a frame (epic 6298)'. Reconciled by DISTILL 2026-10-20.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "The error snackbar offers an action beside its message and can take its message back",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "The app's error snackbar gains an optional action and a dismiss handle, so a failed export can offer Retry in the place the reader clicked. Additive: every string-only caller behaves as today.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@driving_port"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/SnackbarErrorHandler/SnackbarErrorHandler.test.tsx",
+          "scenario_name": "describe 'a message with a way to act on it': shows the action beside the message, and choosing it runs the action once and closes the message; keeps a message that offers an action open past six seconds, until the reader closes it; takes a message away when the one who showed it asks; leaves a newer message standing when an older one is taken back; offers no action with a message given alone after one that offered Retry (already green: sabotage first). Active guard in reach: hides a message given alone after six seconds, as it always has; every existing scenario of the file.",
+          "criteria": [
+            "showError(message, { action: { label, onClick } }) shows the label as a button inside the snackbar's alert; choosing it calls onClick once and closes the message",
+            "A message carrying an action does not hide itself after 6 s; it stays until closed or its action is chosen",
+            "showError returns a function that takes that message away, and takes nothing else away: a newer message that replaced it stays",
+            "A message given alone (string only) still hides after 6 s and shows no action, also right after one that offered Retry",
+            "No existing caller of showError changes"
+          ],
+          "implementation_notes": "~1h. Keep one message slot; remember which message is showing (a counter or an object identity) so the returned dismiss only closes its own. Alert's action prop holds the Retry button beside the close button. autoHideDuration is null when an action is present. The test file types showError locally through a cast; once the context's type carries the option and the return, drop the local ShowError type and the cast. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "02-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/SnackbarErrorHandler/SnackbarErrorHandler.tsx",
+            "Lighthouse.Frontend/src/components/Common/SnackbarErrorHandler/SnackbarErrorHandler.test.tsx"
+          ]
+        },
+        {
+          "id": "06-02",
+          "name": "The browser binding is made for a window, sets the title, and makes the hidden print frame",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "browserPrintEffects(target) binds print, afterprint, font loading, the mark's picture and a new setTitle(title) → restore to the window it is given; openPrintFrame() makes the off-screen srcdoc frame, copies the app's own style sheets and hands back its window, head, body and close(). Wiring only: jsdom loads no srcdoc document or sheet, so the tests stand in for print, fonts, decode and sheet loads.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@driving_port"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.test.tsx",
+          "scenario_name": "describe 'the browser's print effects, made for the print frame's window': asks the frame's window for the print dialog, never the app's, and hears that window's dialog close; loads the faces into the frame document's fonts and the Lighthouse mark as a picture of the frame, not the app's; names the frame's document and the app's after the report, and gives the app its own name back when asked. describe 'the print frame an export draws the report into': makes one off-screen frame under the app's page, at A4 size, unseen, untabbable and titled, and answers once it has loaded; copies the app's own style sheets into the frame, but none that Emotion wrote, and answers only once each copied sheet has loaded; refuses to answer with a frame when one of the app's style sheets cannot be loaded into it; takes away exactly the frame it made when closed, and leaves the rest of the page as it was. Active guards in reach: every scenario of 'the browser's print effects, made for the app's own window'; reportPrint.enforcement.test.ts 'who asks the browser for its print dialog' (x2), 'who loads fonts into a document', 'who makes a frame'.",
+          "criteria": [
+            "browserPrintEffects(target) calls target.print(), subscribes to target's 'afterprint', loads faces through target.document.fonts.load per face then target.document.fonts.ready, and decodes the mark with the target's own Image",
+            "setTitle(title) sets the target document's title and the app's, and returns a function that gives the app its previous title back",
+            "openPrintFrame() appends one iframe to document.body: srcdoc starting '<!doctype html>' with the app's lang, title 'Report PDF', aria-hidden='true', tabindex='-1', position fixed outside the viewport at 210mm × 297mm, never display:none; it resolves after the frame's load event",
+            "It copies every link[rel=stylesheet] and every style element without data-emotion into the frame's head, awaits each copied link's load, and rejects when one fires error",
+            "close() removes exactly that frame and restores the app's title",
+            "The route keeps working: reportPrintRoutes passes browserPrintEffects(globalThis.window) and adds the router's navigate beside it while PrintEffectPort still names navigate (06-08 removes it)",
+            "Only browserPrintEffects.ts names iframe, srcdoc, contentWindow, contentDocument, 'afterprint' or .fonts.load / .fonts.ready"
+          ],
+          "implementation_notes": "~2h. Add setTitle to PrintEffectPort now; keep navigate on the port until 06-08 so the route and the old print-once rule stay green at every commit. The fonts helper keeps A_LETTER_FROM_EVERY_PART. Register the frame window's listeners only after the frame's load: the engine probe showed Chromium replaces the initial blank document on load (same WindowProxy, new document). The test file reaches the new signature and openPrintFrame through casts (madeFor, theFrameFactory); once the real signature exists, call browserPrintEffects(target) and openPrintFrame directly and drop the local interfaces. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.test.tsx"
+          ]
+        },
+        {
+          "id": "06-03",
+          "name": "Print once in the frame: the print-once rule tells its host instead of navigating",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "The print-once hook is reshaped for the frame: given the content's state, its failure look and the frame's effect port, it prints once per mount when ready and tells its host 'printing' (just before print), 'closed' (the frame window's afterprint, only after it printed) or 'failed' (the sentence and whether Retry is offered; print() throwing is the part sentence with Retry). No history, no origin, no navigation.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@driving_port"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx",
+          "scenario_name": "describe 'printing once in the frame': tells the host it is printing, then asks the frame's window for the dialog once, when the page is ready; never prints while the page is %s (x4, already green: sabotage first); prints once under React's strict mode, and no more when the page draws again; tells the host the page is %s, with its sentence and whether Retry is offered, and prints nothing (x3); tells the host part of the page couldn't be loaded, with Retry, when the frame's print dialog cannot be opened. describe 'hearing the frame's dialog close': tells the host once that the dialog closed, after it printed; listens once for as long as it is mounted, tells nothing of a dialog it did not open, and stops listening once gone (already green: sabotage first).",
+          "criteria": [
+            "usePrintOnce({ state, failure: { message?, retry }, port, tell }) calls tell({ kind: 'printing' }) and then port.print() once per mount, only when state is 'ready'",
+            "React StrictMode's double effect and a re-render through another state print no second time",
+            "In a failed state it calls tell({ kind: 'failed', message, retry }) once and never prints",
+            "When port.print throws, it tells { kind: 'failed', message: 'Part of the page couldn't be loaded, so no PDF was made.', retry: true }",
+            "One afterprint subscription per mount; on the frame window's afterprint after it printed it tells { kind: 'closed' } once; a dialog it did not open tells nothing; unmounting unsubscribes"
+          ],
+          "implementation_notes": "~1.5h. The route must keep printing from Export PDF until 06-04 switches the starter to the frame, so keep today's navigating rule for the route under another name (for instance usePrintOnceAfterNavigating) until 06-08 deletes it, rather than breaking the export between commits. The test casts usePrintOnce to the frame's inputs (printOnceInTheFrame); once the hook's own type matches, drop the local types and the cast. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx"
+          ]
+        },
+        {
+          "id": "06-04",
+          "name": "Walking skeleton: Export PDF on the report view prints from a hidden frame and the reader stays on the report — then the engine probe gate",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "step_type": "walking-skeleton",
+          "description": "The export starter reports ReportPdfExportStarted, then mounts the print frame through the frame host; it never navigates. The frame host makes the frame with openPrintFrame, gives it its own Emotion cache, the light theme and a CssBaseline, and draws the print content (split out of ReportPrintPage) into the frame's body through a portal, with the ports from one builder hook exported by reportPrintRoutes.tsx and the effect binding made for the frame's window. The report view's Export PDF shows the waiting spinner while the PDF is prepared. This is the spike DDD-39(a) names: the go / no-go is recorded before 06-05 starts.",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port",
+            "@us-01",
+            "@rev-3",
+            "@kpi-OUT-6298-K1-pdf-export-used",
+            "@kpi-OUT-6298-K6-exported-report-types"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx",
+          "scenario_name": "describe 'Export PDF prints the report without leaving it': asks the report's own print frame for the dialog once everything is in, counts one export, and leaves the reader on the report with nothing added to their history (walking skeleton); shows the waiting spinner on Export PDF while the PDF is prepared, keeps it focused and lets a second choice do nothing, until the dialog is asked for; draws a Portfolio's report inside the frame, on a light page of its own carrying the app's style sheets, and none of it on the report view; names the PDF after the report and its owner while the frame is there, and gives the tab its own name back once the frame has gone; reads the report afresh for the PDF, and the report view shows the very answer the PDF printed; counts the report as opened once, export or not; asks for one dialog from one frame even when React runs every effect twice. Active guards in reach: the 'Export PDF on the report view' describe (x7), ReportView.exportPdf.consent.test.tsx (x2), reportPrint.enforcement.test.ts 'who counts an export' and 'what the print pages are built from'.",
+          "criteria": [
+            "Choosing Export PDF reports exactly one ReportPdfExportStarted with the report's Type, then mounts one iframe; the reader's location and history entries are unchanged",
+            "The frame's own window is asked for the dialog once, when the fresh report, owner name, terms, fonts and mark are in; the app's window is never asked",
+            "While the PDF is prepared Export PDF keeps its label, shows a CircularProgress size 20 inside it, carries aria-disabled='true' and aria-busy='true', keeps focus and ignores clicks; it is idle again once print() was called",
+            "The report heading, the owner line and the branding footer are inside the frame's body, not the app's; the frame's head holds copies of the app's style sheets; the print sheet in the frame computes a white background under a dark reader theme",
+            "While the frame lives both the frame's document and the app's are titled '{report} — {owner kind} {owner name}'; the app's title comes back when the frame goes",
+            "The content shares the report view's query key, so the view shows the answer the PDF printed; an export adds no history entry and no ReportOpened",
+            "StrictMode: one frame, one dialog",
+            "GATE (DDD-39 a): after this step DELIVER stops and asks the maintainer for the by-hand probe in Chrome, Firefox and the Linux Standalone app from the report view (the preview shows only the report, light, running line and footer on every page; Save and Cancel leave the reader on the same address and history length; which title each engine offers as the file name). The go / no-go is recorded in feature-delta.md under DDD-39 before 06-05; on a no-go the maintainer picks (i) Export PDF not offered in that engine or (ii) print-in-place there"
+          ],
+          "implementation_notes": "~4h. Split ReportPrintPage into the print content (owner and report id as props, reads, printPageStateOf, fonts and mark through the effect port, the title through setTitle, WidgetBody looks, ReportPrintDocument) and the route component (useParams, PrintSheet). The builder hook (reads literal of exactly getReport/getTeam/getPortfolio, terms literal of getTerm/isLoading/error/refetch) stays in reportPrintRoutes.tsx, the only module under print/ naming ApiServiceContext and useTerminology. Add @emotion/cache as a direct dependency at the version @emotion/react already resolves (pnpm 12 minimum release age: an existing resolution passes). Draw only after openPrintFrame resolved. The starter hands the surface { exportPdf, preparingId, frame } in the shape of useReportEditing; ReportView renders the frame element. ReportPrintTestKit already wraps the scene in SnackbarErrorHandler and stands in for the frame's print, fonts, decode and sheet loads (aPrintFrameBrowser); the starter may already call useErrorSnackbar. Keep the route's prefetch. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportPdfExport.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowHeader.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintFrameHost.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintContent.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintSheet.tsx",
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/pnpm-lock.yaml",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx"
+          ]
+        },
+        {
+          "id": "06-05",
+          "name": "The Reports list prints from the frame, one export at a time, and the frame goes on every exit",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "The list row's PDF icon goes through the same starter; ReportListActions gains preparingId, so that row's icon becomes the waiting spinner and every row's PDF icon is held back while one export prepares, as every Edit is while a report is read. The frame host removes the frame a turn after the frame window's afterprint (never inside it, Chrome fires it inside print()), when a new export starts, and when the surface unmounts.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@driving_port",
+            "@kpi-OUT-6298-K1-pdf-export-used",
+            "@kpi-OUT-6298-K6-exported-report-types"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+          "scenario_name": "ReportsTab.exportPdf.test.tsx: prints the row's report from a hidden frame, counting one export with its Type, and leaves the reader on the list with nothing added to their history; turns the row's PDF icon into the waiting spinner and holds every other row's PDF icon back until the dialog is asked for, so one export runs at a time; removes a frame whose dialog never said it closed when the next export starts, so there is only ever one frame; removes the frame and prints nothing when the reader leaves the list while the PDF is prepared. ReportView.exportPdf.test.tsx describe 'The print frame goes once the dialog is done with it': removes the frame a moment after the dialog closes, and counts one export with the report's Type every time Export PDF is chosen; keeps the frame until print() has returned when the browser says the dialog closed before that, then removes it. Active guards in reach: the list's first four scenarios (icon order, reader's column, tooltip, no icon on an unshowable row).",
+          "criteria": [
+            "The list's icon reports one ReportPdfExportStarted with the row's Type and prints from a frame; the reader stays on the list with the same history entries; the app's window is never asked",
+            "While one export prepares, that row's icon shows CircularProgress size 20 and every row's PDF icon is held back (disabled or aria-disabled); a click on another row does nothing; all icons are back once print() was called",
+            "A new export removes a previous frame that never heard afterprint, so at most one frame exists per surface",
+            "Leaving the surface while preparing removes the frame and nothing prints",
+            "The frame is removed after the afterprint handler returns, also when afterprint fires inside print(); Export PDF can be chosen again and every choice counts once"
+          ],
+          "implementation_notes": "~2.5h. Defer the removal (setTimeout 0 or a state change flushed after the event) so the frame is never pulled out under its own dialog. The waiting icon must keep its aria-label so the row stays findable. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportPdfExport.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintFrameHost.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx"
+          ]
+        },
+        {
+          "id": "06-06",
+          "name": "When no PDF can be made: the snackbar's sentence, Retry from a fresh frame, and the message goes with its page",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "A failure removes the frame and shows the app's error snackbar with the print page's sentence and Retry (report or part failure), or the report view's own sentence without Retry (404, 422). Retry mounts a fresh frame for the same report and counts nothing; a successful one prints once. The starter takes its message back when its surface unmounts.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@error",
+            "@kpi-OUT-6298-K1-pdf-export-used"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.failures.test.tsx",
+          "scenario_name": "ReportView.exportPdf.failures.test.tsx: says in the snackbar that no PDF was made when the report %s, offers Retry only where asking again may help, and prints nothing (x3: could not be read / no longer exists / was made by a newer version); says part of the page couldn't be loaded, with Retry, when %s cannot be loaded, prints nothing and gives Export PDF back (x5: owner's name, terms, fonts, Lighthouse mark, one of the app's style sheets); prints once from a fresh frame when Retry reads the report the export could not read, counting no second export; takes its message away when the reader leaves the report it offered Retry on. ReportPrintPage.lighthouseMark.test.tsx: asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in.",
+          "criteria": [
+            "A failed fresh read shows 'This report couldn't be loaded, so no PDF was made.' with Retry; 404 shows 'This report no longer exists.' and 422 template-not-supported the newer-version sentence, both without Retry; the frame is removed and nothing printed",
+            "An owner-name, terms, font, mark or style-sheet failure shows 'Part of the page couldn't be loaded, so no PDF was made.' with Retry; Export PDF is idle again",
+            "Retry from the snackbar mounts a new frame (a different iframe element), reports no second ReportPdfExportStarted, prints once and the snackbar goes",
+            "Leaving the surface takes the export's message away (the dismiss from 06-01)"
+          ],
+          "implementation_notes": "~3h. Once the starter calls useErrorSnackbar, renderWithReports in ReportsTestKit.tsx must wrap its tree in SnackbarErrorHandler as ReportPrintTestKit already does, or ReportView.test.tsx, ReportsTab.test.tsx and the wizard tests fail outside the provider. The snackbar is found by the MUI Snackbar's alert (theErrorSnackbar in the kit). Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-05"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportPdfExport.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintFrameHost.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintContent.tsx",
+            "Lighthouse.Frontend/src/tests/ReportsTestKit.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.failures.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.lighthouseMark.test.tsx"
+          ]
+        },
+        {
+          "id": "06-07",
+          "name": "The frame gives up after 30 seconds, and a broken drawing or a missing print dialog is a part that could not be loaded",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "printPageStateOf gains timedOut; the frame host runs a 30-second budget from mount to print and stops it just before print() is called. An error boundary of the frame host's own, around the portal, turns a render error in the printed content into the part sentence with Retry; print() missing or throwing on the frame's window is the same outcome.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@error"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.failures.test.tsx",
+          "scenario_name": "ReportView.exportPdf.failures.test.tsx: gives up after 30 seconds when %s, says so with Retry and prints nothing (x2: the report never arrives / the fonts never arrive); says part of the page couldn't be loaded, with Retry, when the report breaks while it is drawn for paper, and leaves the report view as it was; says part of the page couldn't be loaded, with Retry, when the frame's print dialog %s, and gives Export PDF back (x2: throws / is missing). printPageState.test.ts: decides the state when %s (x7 timedOut rows; 'time ran out after the report was found to be gone' and 'everything was in when time ran out' are already green: sabotage first).",
+          "criteria": [
+            "printPageStateOf with timedOut: preparing with no fresh answer → failedRetryable; preparing with the fresh answer in → failedPart; a decided failure (failedFinal, failedPart, failedRetryable) and ready are unchanged",
+            "Nothing shows before 30 s; at 30 s the snackbar shows the sentence following what was missing, with Retry, and the frame is removed",
+            "A render error inside the frame is caught by the host's own boundary: the part sentence with Retry, the frame removed, the report view unchanged and no 'This section could not be displayed'",
+            "print() throwing or missing on the frame's window: the part sentence with Retry, the frame removed, Export PDF idle"
+          ],
+          "implementation_notes": "~2h. printPageStateOf stays pure and under complexity 15 (S3776). The timedOut rows in printPageState.test.ts spread an extra timedOut field into PrintPageInputs; once the field exists the spread needs no change. The render-error scenario mocks ReportPrintDocument's default export to throw while theDocument.breaks is set. Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-06"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintFrameHost.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintContent.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.failures.test.tsx"
+          ]
+        },
+        {
+          "id": "06-08",
+          "name": "The print page never prints and offers only '‹ Back to Reports'; the wish to print, the origin and the return are deleted",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "description": "The /print/… route opened from its address shows its preparing, failed and ready looks, sets data-render-ready, never prints, and offers one screen-only plain link '‹ Back to Reports' (push, no state). printRequest.ts, RETURNED_FROM_PRINT, PrintOrigin, stepBackFromThePrintPage, the route's navigating print rule and the port's navigate are deleted; the scans that keep it so are switched on.",
+          "tags": [
+            "@us-01",
+            "@rev-3",
+            "@error"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "ReportPrintPage.test.tsx describe 'The print page never prints by itself': never prints, even when its history entry still carries an export's wish to print; offers only \"‹ Back to Reports\", a plain link to the list that carries nothing, whatever its history entry says. reportPrint.enforcement.test.ts describe 'what prints without moving the reader': nothing under print/ navigates; the export starter neither navigates nor holds the router's navigation; nothing under print/ but the binding writes a document's title; the frame host, alone in giving the frame a style cache of its own, draws the report's summary and panels and reaches none of the app's chrome (likely green after 06-04: sabotage first). Active guards in reach: every active scenario of ReportPrintPage.test.tsx, ReportPrintPage.lighthouseMark.test.tsx, runningHeader, pageBreaks and ReportMarks.drawn.",
+          "criteria": [
+            "A print page whose history entry carries { printWhenReady: true, from: 'report' } never asks for the print dialog",
+            "The route shows no '‹ Back to report'; its one control is a link '‹ Back to Reports' to the owner's Reports list carrying no router state",
+            "No module under print/ names useNavigate; the starter names neither useNavigate nor navigate(; only browserPrintEffects.ts writes a document's title under print/",
+            "Exactly one module imports @emotion/cache, under print/, and its import tree reaches ThenAndNowSummary and the panel registry but none of Header, Footer, SurveyNudge, UsageDataAsk, the usage-data reporter or useReportOpenedReporter",
+            "printRequest.ts is deleted; RETURNED_FROM_PRINT, PrintOrigin, stepBackFromThePrintPage and PrintEffectPort's navigate are gone; grep -rn 'RETURNED_FROM_PRINT\\|printWhenReady\\|stepBackFromThePrintPage' Lighthouse.Frontend/src returns nothing outside the never-prints scenario's start state"
+          ],
+          "implementation_notes": "~1.5h. useReportOpenedReporter keeps its per-history-entry count; drop its comment's 'after printing' clause while touching it. ARCHITECTURE.md §12 is restated for the frame once this lands (the DESIGN handoff asks for it). Remove it.skip / it.skip.each and the '(Pending: Export PDF prints from a frame (epic 6298))' suffix from exactly the scenarios listed, once they pass; a listed scenario that already passes before the production change is proved able to fail by sabotage-by-substitution first.",
+          "dependencies": [
+            "06-07"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/PrintSheet.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printRequest.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportOpenedReporter.ts",
+            "ARCHITECTURE.md",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+          ]
+        },
+        {
+          "id": "06-09",
+          "name": "E2E walking skeleton: Export PDF on a Team's report asks the frame's own window for the dialog once, and the coach stays on the report",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "step_type": "walking-skeleton",
+          "description": "The Playwright walking skeleton through the real browser: the print stand-in is installed in the tab's page and in every frame; only the report's own frame asks for the dialog; after the stand-in dialog closes the frame is gone and the coach is on the report's address with the same history.length.",
+          "tags": [
+            "@e2e",
+            "@walking_skeleton",
+            "@driving_port",
+            "@us-01",
+            "@rev-3",
+            "@kpi-OUT-6298-K1-pdf-export-used"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+          "scenario_name": "a coach exports a Team's Then & Now report as a PDF from the report: its own print frame asks for the dialog once, and the coach is still on the report with the same history (first testWithDemo.fixme). Active guards in the same spec: a report's print page opened by its address names the report and its owner, fits A4 and never asks for the print dialog; the PDF of a report embeds the Lighthouse typeface and no other; a report named in Central European letters …; the PDF of a report sets each panel's columns apart with the light divider line; and Reports.spec.ts.",
+          "criteria": [
+            "ReportPage.exportPdf() returns once a print stand-in was asked; timesThePrintFrameAskedForTheDialog() is 1 and timesThePageAskedForTheDialog() is 0",
+            "closeThePrintDialog() dispatches afterprint on the frame titled 'Report PDF' and the frame is detached",
+            "page.url() equals the report's address and history.length is unchanged",
+            "The four active tests of the spec and Reports.spec.ts stay green"
+          ],
+          "implementation_notes": "~1h. Remove .fixme and the pending suffix. The stand-in is an init script, which Playwright runs in every frame: the automated engine probe confirmed in Chromium 156 that it reaches the srcdoc frame (counted as 'frame'). Run live before committing against an instance started on its own ports (never 5169/7246), with the premium licence imported. SLICE-END: grep -rn 'epic 6298)' Lighthouse.Frontend/src Lighthouse.EndToEndTests/tests finds no 'Pending: Export PDF prints from a frame (epic 6298)' left; no fixme left in ReportPdfExport.spec.ts; then the maintainer's by-hand probe of DDD-38 (Chrome, Firefox, Linux Standalone, from the report view and the list) before the rework closes.",
+          "dependencies": [
+            "06-08"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPrintPage.ts"
+          ]
         }
       ]
     },
