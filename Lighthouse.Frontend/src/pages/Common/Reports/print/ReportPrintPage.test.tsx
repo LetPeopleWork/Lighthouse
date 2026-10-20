@@ -206,7 +206,7 @@ describe("The print page gets ready", () => {
 	);
 
 	// @us-01 @walking_skeleton @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-	it.skip(`opens the print dialog exactly once, when everything it prints is in, after Export PDF (${pendingEpic6298})`, async () => {
+	it("opens the print dialog exactly once, when everything it prints is in, after Export PDF", async () => {
 		const dialog = aPrintDialog();
 
 		await exportingFromTheReport();

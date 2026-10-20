@@ -13,6 +13,8 @@ interface ThenAndNowHeaderProps {
 	reportsPath: string;
 	/** Unknown until the report has been read; the way back is there from the start. */
 	name?: string;
+	/** Given once the report has been read and can be printed. */
+	onExport?: () => void;
 	/** Given only to somebody who may edit the report, once it has been read. */
 	onEdit?: () => void;
 	/** Given only to somebody who may delete the report, once it has been read. */
@@ -22,6 +24,7 @@ interface ThenAndNowHeaderProps {
 const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 	reportsPath,
 	name,
+	onExport,
 	onEdit,
 	onDelete,
 }) => (
@@ -49,6 +52,11 @@ const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 			)}
 		</Breadcrumbs>
 		<Stack direction="row" spacing={1}>
+			{onExport !== undefined && (
+				<Button variant="outlined" onClick={onExport}>
+					Export PDF
+				</Button>
+			)}
 			{onEdit !== undefined && (
 				<Button variant="outlined" onClick={onEdit}>
 					Edit report

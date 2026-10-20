@@ -154,7 +154,7 @@ describe("Export PDF on the report view", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// The wish to print travels with the page change, never in the address: a pasted link never prints.
-	it.skip(`takes the reader to the report's print page, asking it to print and saying it came from the report, with nothing in the address but the page (${pendingEpic6298})`, async () => {
+	it("takes the reader to the report's print page, asking it to print and saying it came from the report, with nothing in the address but the page", async () => {
 		const { user } = leavingTheReportForItsPrintPage();
 
 		await user.click(await theExportButton());

@@ -23,6 +23,7 @@ import SplashScreen from "./components/App/SplashScreen/SplashScreen";
 import { UsageDataAsk } from "./components/UsageData/UsageDataAsk";
 import { useAuthGuard } from "./hooks/useAuthGuard";
 import { UsageDataConsentProvider } from "./hooks/useUsageDataConsent";
+import { reportPrintRoutes } from "./pages/Common/Reports/print/reportPrintRoutes";
 import "./App.css";
 import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
 import {
@@ -279,6 +280,7 @@ const App: React.FC = () => {
 									<Route path="/features" element={<FeaturesView />} />
 									<Route path="/settings" element={<Settings />} />
 								</Route>
+								{reportPrintRoutes()}
 							</Routes>
 							<UsageDataEventDetector />
 						</UsageDataConsentProvider>

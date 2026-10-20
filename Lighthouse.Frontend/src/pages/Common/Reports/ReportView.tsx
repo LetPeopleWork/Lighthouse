@@ -12,6 +12,7 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { usageDataReportTemplateOf } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
@@ -27,6 +28,7 @@ import ThenAndNowSummary from "./ThenAndNowSummary";
 import { useMayEditReports } from "./useMayEditReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
+import { useReportPdfExport } from "./useReportPdfExport";
 import ReportWizard from "./wizard/ReportWizard";
 import {
 	COULD_NOT_LOAD_REPORT,
@@ -130,12 +132,21 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const status = queryStatusOf(isFetching, isError);
 	const finalFailure = finalFailureOf(error);
 	const mayChange = isEditor && report !== undefined;
+	const exportPdf = useReportPdfExport();
+	// A report of a type this version cannot show has nothing to print.
+	const mayExport =
+		report !== undefined &&
+		!isError &&
+		usageDataReportTemplateOf(report.templateKey) !== undefined;
 
 	return (
 		<Stack spacing={2} data-report-status={status}>
 			<ThenAndNowHeader
 				reportsPath={reportsPath}
 				name={report?.name}
+				onExport={
+					mayExport ? () => exportPdf(owner, reportId, "report") : undefined
+				}
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>

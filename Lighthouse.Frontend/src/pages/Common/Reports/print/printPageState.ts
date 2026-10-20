@@ -1,5 +1,3 @@
-export const __SCAFFOLD__ = true;
-
 /**
  * What the print page shows, decided from what it has: still preparing; the report could not be read, with a way to
  * try again; the report was read but part of the page was not, with a way to try again; a failure nothing can mend;
@@ -29,6 +27,17 @@ export interface PrintPageInputs {
 	readonly fonts: PrintFontsState;
 }
 
-export const printPageStateOf = (_inputs: PrintPageInputs): PrintPageState => {
-	throw new Error("SCAFFOLD: the print page's state is not decided yet");
+/** Whether the report answer in hand arrived after the page opened; only such an answer is ever printed. */
+export const isAFreshAnswer = (
+	fetchedAt: number | null,
+	mountedAt: number,
+): boolean => fetchedAt !== null && fetchedAt >= mountedAt;
+
+export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
+	const everythingIsIn =
+		isAFreshAnswer(inputs.fetchedAt, inputs.mountedAt) &&
+		inputs.ownerName !== null &&
+		!inputs.termsLoading &&
+		inputs.fonts === "loaded";
+	return everythingIsIn ? "ready" : "preparing";
 };

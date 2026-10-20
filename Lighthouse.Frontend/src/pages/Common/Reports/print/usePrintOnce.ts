@@ -1,6 +1,5 @@
+import { useEffect, useRef } from "react";
 import type { PrintPageState } from "./printPageState";
-
-export const __SCAFFOLD__ = true;
 
 /** Where an export started, so the way back and the return after printing lead there. */
 export type PrintOrigin = "report" | "list";
@@ -40,6 +39,23 @@ export interface PrintOnceInputs {
 }
 
 /** Prints once when the page is ready and was opened by an export, and leads back to where it started when the dialog closes. */
-export const usePrintOnce = (_inputs: PrintOnceInputs): void => {
-	throw new Error("SCAFFOLD: printing once is not built yet");
+export const usePrintOnce = ({
+	state,
+	printWhenReady,
+	from,
+	here,
+	port,
+}: PrintOnceInputs): void => {
+	// React may run the effect again before the cleared entry reaches the page; the dialog must still open once.
+	const printed = useRef(false);
+
+	useEffect(() => {
+		if (state !== "ready" || !printWhenReady || printed.current) {
+			return;
+		}
+		printed.current = true;
+		// The wish to print is used up before the dialog opens, so a reload or Forward onto this entry never prints.
+		port.navigate(here, { replace: true, state: { from } });
+		port.print();
+	}, [state, printWhenReady, from, here, port]);
 };

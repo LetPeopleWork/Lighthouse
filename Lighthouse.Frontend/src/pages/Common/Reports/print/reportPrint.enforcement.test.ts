@@ -92,7 +92,7 @@ describe("what the print pages are built from", () => {
 describe("who asks the browser for its print dialog", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// One caller, so the dialog can open once and only once; a second is a second dialog.
-	it.skip(`is the print page alone (${pendingEpic6298})`, () => {
+	it("is the print page alone", () => {
 		const askers = productionSourcesUnder(sourceRoot)
 			.filter((file) =>
 				/\bglobalThis\.print\(/.test(readFileSync(file, "utf8")),
