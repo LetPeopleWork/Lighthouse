@@ -76,7 +76,7 @@ jobs:
         if: inputs.backend-ran && github.ref == 'refs/heads/main'
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          dotnet-version: '10.0.401'
+          dotnet-version: '10.0.402'
 
       # dotnet list exits 0 even when it finds vulnerable packages, so the step fails on its output.
       - name: Audit Backend Dependencies
