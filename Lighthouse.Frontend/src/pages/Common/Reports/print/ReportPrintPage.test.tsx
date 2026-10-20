@@ -18,6 +18,7 @@ import {
 	EXPORTED_AT,
 	forgetTheBrowser,
 	lightspeed,
+	openingThePrintPageDirectly,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
 	printPathFor,
@@ -30,7 +31,9 @@ import {
 	theFontsAreStillLoading,
 	theFontsCannotLoad,
 	theFontsHaveLoaded,
+	thePrintPage,
 	thePrintPageIsReady,
+	theStylesOfThePage,
 	theTermsAnswer,
 	whatThisEntryCarries,
 	whereTheReaderIs,
@@ -75,27 +78,12 @@ vi.mock(
 );
 
 const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
-const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atTheList = reportsPathFor(LIGHTSPEED);
 
 const LIGHT_INK = hexToRgb(lightTheme.palette.text.primary);
 const WHITE = "rgb(255, 255, 255)";
 
 type Scene = Parameters<typeof renderTheExportScene>[0];
-
-/** A print page opened straight from its address, the way a pasted link opens it. */
-const openingThePrintPageDirectly = (scene: Partial<Scene> = {}) =>
-	renderTheExportScene({
-		reportService: aReportService(),
-		startAt: atThePrintPage,
-		...scene,
-	});
-
-const thePrintPage = (): HTMLElement => {
-	const page = document.querySelector<HTMLElement>("[data-render-ready]");
-	expect(page, "there is no print page").not.toBeNull();
-	return page as HTMLElement;
-};
 
 /** The page's own words, read in the order a reader meets them. */
 const thePrintedLines = (): string[] =>
@@ -106,11 +94,6 @@ const thePrintedLines = (): string[] =>
 	)
 		.map(readingOf)
 		.filter((line) => line.length > 0);
-
-const theStylesOfThePage = () =>
-	Array.from(document.querySelectorAll("style"))
-		.map((style) => style.textContent ?? "")
-		.join("\n");
 
 /** Each of the four things the page waits for, held back while the other three arrive. */
 type Held = "the report" | "the owner's name" | "the terms" | "the fonts";

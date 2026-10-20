@@ -6,9 +6,9 @@ import {
 	aPrintFrameBrowser,
 	everyPrintFrameIsGone,
 	forgetTheBrowser,
+	openingThePrintPageDirectly,
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
-	printPathFor,
 	renderReadiness,
 	renderTheExportScene,
 	reportPathFor,
@@ -35,12 +35,6 @@ import {
  * ready until the mark is in, and a mark that cannot be loaded is part of the page that could not be loaded. The
  * print page opened from its address shows this; Export PDF prints only once the mark is in its frame.
  */
-
-const openingThePrintPageDirectly = () =>
-	renderTheExportScene({
-		reportService: aReportService(),
-		startAt: printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
-	});
 
 /** The address of the mark the footer shows. */
 const theMarksAddress = (): string | null =>

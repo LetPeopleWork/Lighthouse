@@ -52,7 +52,9 @@ import {
 } from "./MockApiServiceProvider";
 import {
 	APOLLO,
+	aReportService,
 	defaultTerms,
+	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 	readingOf,
 	summaryFor,
@@ -102,8 +104,8 @@ export const PRODUCED_LINE = "Produced 2 Oct 2026, 09:15";
 /** The engagement-start report's two windows, as the header writes them on one line. */
 export const WINDOWS_LINE = "Then 3 May – 31 Jul 2026 · Now 5 Jul – 2 Oct 2026";
 
-export const LIGHTSPEEDS_NAME = "Lightspeed";
-export const APOLLOS_NAME = "Apollo";
+const LIGHTSPEEDS_NAME = "Lightspeed";
+const APOLLOS_NAME = "Apollo";
 
 export const reportPathFor = (owner: IReportOwner, reportId: number) =>
 	`/${owner.kind}s/${owner.id}/reports/${reportId}`;
@@ -280,7 +282,7 @@ export interface ExportScene {
 }
 
 /** A cache set up as the app sets up its own: an answer counts as fresh for five minutes, and nothing retries. */
-export const FIVE_MINUTES = 5 * 60 * 1000;
+const FIVE_MINUTES = 5 * 60 * 1000;
 export const aQueryClient = () =>
 	new QueryClient({
 		defaultOptions: {
@@ -391,6 +393,16 @@ export const renderTheExportScene = (
 
 	return { ...rendered, queryClient, user };
 };
+
+/** The engagement-start report's print page opened straight from its address, the way a pasted link opens it. */
+export const openingThePrintPageDirectly = (
+	scene: Partial<ExportScene> = {},
+): ReturnType<typeof renderTheExportScene> =>
+	renderTheExportScene({
+		reportService: aReportService(),
+		startAt: printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
+		...scene,
+	});
 
 // --- The browser around the page ---
 
@@ -770,12 +782,24 @@ export const theSnackbarsRetry = (snackbar: HTMLElement): HTMLElement | null =>
 
 // --- What the print page says about itself ---
 
-const thePrintPage = (): HTMLElement | null =>
+const thePrintPageIfDrawn = (): HTMLElement | null =>
 	document.querySelector<HTMLElement>("[data-render-ready]");
+
+export const thePrintPage = (): HTMLElement => {
+	const page = thePrintPageIfDrawn();
+	expect(page, "there is no print page").not.toBeNull();
+	return page as HTMLElement;
+};
+
+/** Every style the page has written, as one text. */
+export const theStylesOfThePage = () =>
+	Array.from(document.querySelectorAll("style"))
+		.map((style) => style.textContent ?? "")
+		.join("\n");
 
 /** What the page tells a renderer about itself: "true" only once everything it prints is in. */
 export const renderReadiness = (): string | undefined =>
-	thePrintPage()?.dataset.renderReady;
+	thePrintPageIfDrawn()?.dataset.renderReady;
 
 export const thePrintPageIsReady = () =>
 	waitFor(() => expect(renderReadiness()).toBe("true"));

@@ -7,7 +7,9 @@ import {
 	renderTheExportScene,
 	theFontsHaveLoaded,
 	thePrintOnlyDeclarations,
+	thePrintPage,
 	thePrintPageIsReady,
+	theStylesOfThePage,
 	whatPrintAsksOf,
 } from "../../../../tests/ReportPrintTestKit";
 import {
@@ -34,12 +36,6 @@ const thePrintedReport = async () => {
 		startAt: printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID),
 	});
 	await thePrintPageIsReady();
-};
-
-const thePrintPage = (): HTMLElement => {
-	const page = document.querySelector<HTMLElement>("[data-render-ready]");
-	expect(page, "there is no print page").not.toBeNull();
-	return page as HTMLElement;
 };
 
 /** The grid that sets a panel's Then, Now and Change beside each other. */
@@ -77,11 +73,6 @@ const whatAWideScreenAsksOf = (element: Element, property: string): string => {
 		? getComputedStyle(element).getPropertyValue(property).trim()
 		: asked[asked.length - 1];
 };
-
-const theStylesOfThePage = () =>
-	Array.from(document.querySelectorAll("style"))
-		.map((style) => style.textContent ?? "")
-		.join("\n");
 
 const thePageRule = (): string => {
 	const rule = /@page\s*\{([^}]*)\}/.exec(theStylesOfThePage());
