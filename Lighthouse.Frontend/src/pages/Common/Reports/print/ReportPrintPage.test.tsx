@@ -5,6 +5,7 @@ import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { deferred } from "../../../../tests/HeldMetricsService";
 import {
 	aMomentLater,
+	aPortfolioServiceAnswering,
 	aPrintDialog,
 	aQueryClient,
 	aTeamServiceAnswering,
@@ -23,6 +24,7 @@ import {
 	PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
 	PREPARING,
 	PRODUCED_LINE,
+	pressTheBrowsersBack,
 	printPathFor,
 	renderReadiness,
 	renderTheExportScene,
@@ -83,6 +85,8 @@ const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atTheList = reportsPathFor(LIGHTSPEED);
 
+const pendingReviewFix = "Pending: slice 01 review fix (epic 6298)";
+
 const LIGHT_INK = hexToRgb(lightTheme.palette.text.primary);
 const WHITE = "rgb(255, 255, 255)";
 
@@ -104,6 +108,18 @@ const exportingFromTheReport = async (scene: Partial<Scene> = {}) => {
 		...scene,
 	});
 	await rendered.user.click(await theExportButtonOnceItCanBePressed());
+	return rendered;
+};
+
+/** The reader opens the report from the Reports list, so the list is the entry before the report in their history. */
+const openingTheReportFromTheList = async () => {
+	const rendered = renderTheExportScene({
+		reportService: aReportService(),
+		startAt: atTheList,
+	});
+	await rendered.user.click(
+		await screen.findByRole("link", { name: ENGAGEMENT_START }),
+	);
 	return rendered;
 };
 
@@ -405,6 +421,61 @@ describe("The way back from the print page", () => {
 
 		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
 	});
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	// The return steps back to the entry the export started from; a copy of the report on top of it would make the
+	// browser's Back show the same report a second time.
+	it.skip(`takes the reader back to the report once the print dialog closes, leaving the report in their history once (${pendingReviewFix})`, async () => {
+		const dialog = aPrintDialog();
+		const { user } = await openingTheReportFromTheList();
+		await user.click(await theExportButtonOnceItCanBePressed());
+		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+
+		dialog.close();
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
+
+		await pressTheBrowsersBack();
+
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
+	});
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it.skip(`takes the reader back to the report on "‹ Back to report", leaving the report in their history once (${pendingReviewFix})`, async () => {
+		aPrintDialog();
+		const { user } = await openingTheReportFromTheList();
+		await user.click(await theExportButtonOnceItCanBePressed());
+		await thePrintPageIsReady();
+
+		await user.click(theBackControl() as HTMLElement);
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
+
+		await pressTheBrowsersBack();
+
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
+	});
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it.skip(`takes the reader from the list back to the list once the print dialog closes, leaving the list in their history once (${pendingReviewFix})`, async () => {
+		const dialog = aPrintDialog();
+		const { user } = renderTheExportScene({
+			reportService: aReportService(),
+			startAt: atTheReport,
+		});
+		await user.click(await screen.findByRole("link", { name: "Reports" }));
+		await user.click(
+			await screen.findByLabelText(exportAsPdfLabelOf(ENGAGEMENT_START)),
+		);
+		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+
+		dialog.close();
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
+
+		await pressTheBrowsersBack();
+
+		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheReport));
+	});
 });
 
 describe("A report the print page cannot read", () => {
@@ -582,6 +653,100 @@ describe("A report the print page cannot read", () => {
 			vi.mocked(terminologyService.getAllTerminology).mock.calls.length,
 		).toBeGreaterThan(readsBeforeRetry);
 		expect(screen.queryByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED)).toBeNull();
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:bounded-change
+	// The report view's answer stays in hand while Retry asks again, and so does the failure; the page must not go
+	// on saying it failed, nor offer Retry a second time, while the answer to the first Retry is on its way.
+	it.skip(`shows that it is preparing the PDF, with no Retry, while Retry reads the report again (${pendingReviewFix})`, async () => {
+		const dialog = aPrintDialog();
+		const theRetriedRead =
+			deferred<ReturnType<typeof theEngagementStartReport>>();
+		const getReport = theFreshReadGets(
+			() => Promise.reject(new Error("the network dropped")),
+			() => theRetriedRead.promise,
+		);
+		const { user } = await exportingFromTheReport({
+			reportService: aReportService({ getReport }),
+		});
+		await user.click(await screen.findByRole("button", { name: "Retry" }));
+
+		expect(await screen.findByText(PREPARING)).toBeVisible();
+		expect(screen.getByRole("progressbar")).toBeVisible();
+		expect(screen.queryByText(THE_REPORT_COULD_NOT_BE_LOADED)).toBeNull();
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+		expect(renderReadiness()).toBe("false");
+
+		await act(async () => {
+			theRetriedRead.resolve(theEngagementStartReport());
+		});
+		await thePrintPageIsReady();
+		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
+	// A Team or Portfolio deleted since the report was opened answers with no one; waiting for its name would never end.
+	it.skip.each<[string, () => Promise<unknown>]>([
+		[
+			"Team",
+			() =>
+				exportingFromTheReport({
+					teamService: aTeamServiceAnswering(Promise.resolve(null)),
+				}),
+		],
+		[
+			"Portfolio",
+			async () =>
+				openingThePrintPageDirectly({
+					startAt: printPathFor(APOLLO, ENGAGEMENT_START_ID),
+					reportService: aReportService({
+						getReport: vi.fn().mockResolvedValue(
+							theEngagementStartReport({
+								ownerKind: "portfolio",
+								ownerId: APOLLO.id,
+							}),
+						),
+					}),
+					portfolioService: aPortfolioServiceAnswering(Promise.resolve(null)),
+				}),
+		],
+	])(
+		`says part of the page could not be loaded, offers Retry and never prints, when the %s the report belongs to is gone (${pendingReviewFix})`,
+		async (_owner, opening) => {
+			const dialog = aPrintDialog();
+			await opening();
+
+			expect(
+				await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED),
+			).toBeVisible();
+			expect(screen.queryByText(PREPARING)).toBeNull();
+			expect(screen.getByRole("button", { name: "Retry" })).toBeEnabled();
+			await aMomentLater();
+			expect(renderReadiness()).not.toBe("true");
+			expect(dialog.timesOpened()).toBe(0);
+		},
+	);
+
+	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
+	// A refusal that asking again will not change, but which has no sentence of its own, still speaks of the report.
+	it.skip(`says the report couldn't be loaded, offers no Retry and leads back to Reports, when the report is refused for a reason with no sentence of its own (${pendingReviewFix})`, async () => {
+		const dialog = aPrintDialog();
+		const getReport = theFreshReadGets(() =>
+			Promise.reject(aRefusal(422, "then-too-short")),
+		);
+		await exportingFromTheReport({
+			reportService: aReportService({ getReport }),
+		});
+
+		expect(
+			await screen.findByText(THE_REPORT_COULD_NOT_BE_LOADED),
+		).toBeVisible();
+		expect(screen.queryByText(/This chart couldn't be loaded/)).toBeNull();
+		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+		expect(readingOf(theBackControl() as HTMLElement)).toBe(BACK_TO_REPORTS);
+		await aMomentLater();
+		expect(renderReadiness()).not.toBe("true");
+		expect(dialog.timesOpened()).toBe(0);
 	});
 });
 
@@ -868,11 +1033,20 @@ describe("What the print page reports about its use", () => {
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
-	// Coming back from the dialog is the same reading of the report, not a second opening of it.
-	it("counts the report as opened once, not again when the reader comes back from printing", async () => {
+	/** Every event is taken, as it is once this browser has said yes to sending usage data. */
+	const timesTheReportWasOpened = () =>
+		reportUsage.mock.calls.filter(([use]) => use.name === "ReportOpened")
+			.length;
+
+	const stayingFor = (milliseconds: number) =>
+		act(async () => {
+			await vi.advanceTimersByTimeAsync(milliseconds);
+		});
+
+	/** The reader opens the report, stays on it for a while, exports, and comes back from the print dialog. */
+	const exportingAfterStayingFor = async (milliseconds: number) => {
 		const dialog = aPrintDialog();
-		const { user } = renderTheExportScene({
+		const rendered = renderTheExportScene({
 			reportService: aReportService(),
 			startAt: atTheReport,
 			onFakeTimers: true,
@@ -880,22 +1054,52 @@ describe("What the print page reports about its use", () => {
 		const exportButton = await screen.findByRole("button", {
 			name: EXPORT_PDF,
 		});
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(10_000);
-		});
-		await user.click(exportButton);
+		await stayingFor(milliseconds);
+		await rendered.user.click(exportButton);
 		await thePrintPageIsReady();
 		await waitFor(() => expect(dialog.timesOpened()).toBe(1));
 		dialog.close();
 		await screen.findByRole("button", { name: EXPORT_PDF });
+		return rendered;
+	};
 
-		await act(async () => {
-			await vi.advanceTimersByTimeAsync(10_000);
-		});
+	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+	// One opening is one visit to the report; a reader who exported before it counted has not been counted yet, and
+	// coming back starts the wait again rather than carrying on from where it stopped.
+	it.skip(`counts the report as opened once the reader has stayed on it after printing, when they exported before it counted (${pendingReviewFix})`, async () => {
+		await exportingAfterStayingFor(3_000);
 
-		const opened = reportUsage.mock.calls.filter(
-			([use]) => use.name === "ReportOpened",
+		await stayingFor(4_000);
+		expect(timesTheReportWasOpened()).toBe(0);
+
+		await stayingFor(1_000);
+		expect(timesTheReportWasOpened()).toBe(1);
+	});
+
+	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
+	// Coming back from the dialog is the same reading of the report, not a second opening of it.
+	it("counts the report as opened once, not again when the reader comes back from printing", async () => {
+		await exportingAfterStayingFor(6_000);
+		expect(timesTheReportWasOpened()).toBe(1);
+
+		await stayingFor(10_000);
+
+		expect(timesTheReportWasOpened()).toBe(1);
+	});
+
+	// @us-01 @slice-01 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
+	// Opening the report again from the list is a new visit, printed in between or not.
+	it("counts the report as opened again when the reader later opens it anew from the list", async () => {
+		const { user } = await exportingAfterStayingFor(6_000);
+		await stayingFor(10_000);
+
+		await user.click(screen.getByRole("link", { name: "Reports" }));
+		await user.click(
+			await screen.findByRole("link", { name: ENGAGEMENT_START }),
 		);
-		expect(opened).toHaveLength(1);
+		await screen.findByRole("button", { name: EXPORT_PDF });
+		await stayingFor(6_000);
+
+		expect(timesTheReportWasOpened()).toBe(2);
 	});
 });

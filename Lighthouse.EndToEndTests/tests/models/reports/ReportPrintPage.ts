@@ -67,7 +67,10 @@ export class ReportPrintPage {
 		await this.page.evaluate(() => {
 			globalThis.dispatchEvent(new Event("afterprint"));
 		});
-		await this.page.waitForURL(/\/(teams|portfolios)\/\d+\/reports\/\d+$/);
+		// Matched on the whole path, so the print page's own address, which ends the same way, cannot satisfy it.
+		await this.page.waitForURL((url) =>
+			/^\/(teams|portfolios)\/\d+\/reports\/\d+$/.test(url.pathname),
+		);
 	}
 
 	/** The fonts the browser embeds when it turns this page into a PDF, read off the PDF itself. */

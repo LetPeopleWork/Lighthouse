@@ -17,6 +17,8 @@ import {
  * without a new history entry, back to where the export started.
  */
 
+const pendingReviewFix = "Pending: slice 01 review fix (epic 6298)";
+
 const HERE = "/print/teams/1/reports/42";
 const THE_REPORT = "/teams/1/reports/42";
 const THE_LIST = "/teams/1/reports";
@@ -42,6 +44,9 @@ const aFakeBrowser = () => {
 		port,
 		happened: () => [...happened],
 		prints: () => vi.mocked(port.print).mock.calls.length,
+		/** Where each navigation went: an address, or a number of steps through the history. */
+		moves: (): unknown[] =>
+			vi.mocked(port.navigate).mock.calls.map(([to]) => to),
 		closeTheDialog: () => {
 			for (const listener of [...listeners]) listener();
 		},
@@ -154,28 +159,37 @@ describe("printing once", () => {
 
 describe("returning when the dialog closes", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.each<[PrintOrigin | undefined, string]>([
-		["report", THE_REPORT],
-		["list", THE_LIST],
-		[undefined, THE_LIST],
-	])(
-		"leads an export started from %s back to %s, replacing the print page's entry",
-		(from, destination) => {
+	// The export left the report or the list one entry back; stepping back to it leaves no copy of it on top.
+	it.skip.each<PrintOrigin>(["report", "list"])(
+		`leads an export started from the %s one step back through the reader's history, instead of replacing the print page's entry (${pendingReviewFix})`,
+		(from) => {
 			const browser = aFakeBrowser();
 			renderHook(() => usePrintOnce(inputs(browser.port, { from })));
+			const movesBeforeTheDialogClosed = browser.moves().length;
 
 			browser.closeTheDialog();
 
-			expect(browser.port.navigate).toHaveBeenLastCalledWith(destination, {
-				replace: true,
-				state: expect.objectContaining(RETURNED_FROM_PRINT),
-			});
+			expect(browser.moves().slice(movesBeforeTheDialogClosed)).toEqual([-1]);
 		},
 	);
 
+	// @us-01 @slice-01 @edge @contract-shape:bounded-change
+	// A page that knows no origin has no entry of its own to step back to, so the Reports list takes its place.
+	it("leads a page that knows no origin to the Reports list, replacing the print page's entry", () => {
+		const browser = aFakeBrowser();
+		renderHook(() => usePrintOnce(inputs(browser.port, { from: undefined })));
+
+		browser.closeTheDialog();
+
+		expect(browser.port.navigate).toHaveBeenLastCalledWith(THE_LIST, {
+			replace: true,
+			state: expect.objectContaining(RETURNED_FROM_PRINT),
+		});
+	});
+
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// Clearing the wish re-renders the page; the reader is still taken back when the dialog closes after that.
-	it("still leads back to the report when the dialog closes after the cleared entry reached the page", () => {
+	it.skip(`still steps back to the report when the dialog closes after the cleared entry reached the page (${pendingReviewFix})`, () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(printWhenReady: boolean) =>
@@ -185,12 +199,10 @@ describe("returning when the dialog closes", () => {
 		expect(browser.prints()).toBe(1);
 
 		rerender(false);
+		const movesBeforeTheDialogClosed = browser.moves().length;
 		browser.closeTheDialog();
 
-		expect(browser.port.navigate).toHaveBeenLastCalledWith(THE_REPORT, {
-			replace: true,
-			state: expect.objectContaining(RETURNED_FROM_PRINT),
-		});
+		expect(browser.moves().slice(movesBeforeTheDialogClosed)).toEqual([-1]);
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change

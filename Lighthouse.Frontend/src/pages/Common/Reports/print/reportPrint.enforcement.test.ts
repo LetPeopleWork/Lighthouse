@@ -86,21 +86,37 @@ describe("what the print pages are built from", () => {
 	});
 });
 
+const THE_BROWSER = String.raw`(?:globalThis|window|self)`;
+
+/** Every way a module can reach the browser's print dialog: called, called if present, indexed, or taken apart. */
+const ASKS_FOR_THE_PRINT_DIALOG = [
+	new RegExp(String.raw`\b${THE_BROWSER}\s*\??\.\s*print\b`),
+	new RegExp(
+		String.raw`\b${THE_BROWSER}\s*(?:\?\.)?\s*\[\s*["'\`]print["'\`]\s*\]`,
+	),
+	new RegExp(String.raw`\{[^{}]*\bprint\b[^{}]*\}\s*=\s*${THE_BROWSER}\b`),
+];
+
 describe("who asks the browser for its print dialog", () => {
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// One caller, so the dialog can open once and only once; a second is a second dialog.
-	it("is the print page alone", () => {
+	it("is the print page's browser binding alone, however the dialog is spelled", () => {
 		const askers = productionSourcesUnder(sourceRoot)
 			.filter((file) =>
-				/\bglobalThis\.print\(/.test(readFileSync(file, "utf8")),
+				ASKS_FOR_THE_PRINT_DIALOG.some((spelling) =>
+					spelling.test(readFileSync(file, "utf8")),
+				),
 			)
 			.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
 		const theWindowsOwn = productionSourcesUnder(sourceRoot).filter((file) =>
-			/\bwindow\.print\(/.test(readFileSync(file, "utf8")),
+			/\bwindow\s*(?:\??\.\s*print\b|\[\s*["'`]print["'`]\s*\])/.test(
+				readFileSync(file, "utf8"),
+			),
 		);
 
-		expect(askers).toHaveLength(1);
-		expect(askers[0]).toMatch(/^pages\/Common\/Reports\/print\//);
+		expect(askers).toEqual([
+			"pages/Common/Reports/print/browserPrintEffects.ts",
+		]);
 		expect(theWindowsOwn).toEqual([]);
 	});
 });

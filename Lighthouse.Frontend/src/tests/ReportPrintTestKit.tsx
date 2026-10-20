@@ -202,6 +202,20 @@ export const whereTheReaderIs = (): { path: string; search: string } => {
 	};
 };
 
+/** The browser's own Back button, which the app does not draw; the scene being rendered hands it the router. */
+let theBrowsersHistory: ReturnType<typeof useNavigate> | undefined;
+
+const TheBrowsersBackButton: React.FC = () => {
+	theBrowsersHistory = useNavigate();
+	return null;
+};
+
+/** Presses the browser's Back button: one step back through the tab's history, whatever the page draws. */
+export const pressTheBrowsersBack = () =>
+	act(async () => {
+		await theBrowsersHistory?.(-1);
+	});
+
 /** What the current history entry carries beside its address: the wish to print and where the export started. */
 export const whatThisEntryCarries = (): unknown =>
 	JSON.parse(
@@ -362,6 +376,7 @@ export const renderTheExportScene = (
 			>
 				{routes}
 				<WhereTheReaderIs />
+				<TheBrowsersBackButton />
 			</Box>
 		</ThemeProvider>
 	);

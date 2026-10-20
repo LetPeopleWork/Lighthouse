@@ -18,7 +18,14 @@ import {
  * not, which says so in its own words. An answer the page was already holding when it opened is never enough.
  */
 
+const pendingReviewFix = "Pending: slice 01 review fix (epic 6298)";
+
 const OPENED = 1_000;
+
+/** The inputs, and whether the report is being read at this moment, which Retry starts. */
+type WithTheReportBeingRead = Partial<PrintPageInputs> & {
+	readonly reportFetching?: boolean;
+};
 
 const everythingIn: PrintPageInputs = {
 	fetchedAt: OPENED + 500,
@@ -33,8 +40,18 @@ const everythingIn: PrintPageInputs = {
 
 describe("the print page's state", () => {
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.each<[string, Partial<PrintPageInputs>, PrintPageState]>([
+	it.each<[string, WithTheReportBeingRead, PrintPageState]>([
 		["everything is in", {}, "ready"],
+		[
+			"everything is in and the report is being read again",
+			{ reportFetching: true },
+			"ready",
+		],
+		[
+			"the report read failed and nothing is reading it again",
+			{ reportError: new Error("the network dropped"), reportFetching: false },
+			"failedRetryable",
+		],
 		[
 			"the answer arrived the moment the page opened",
 			{ fetchedAt: OPENED },
@@ -93,6 +110,26 @@ describe("the print page's state", () => {
 	])("decides the state when %s", (_when, change, expected) => {
 		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
 	});
+
+	// @us-01 @slice-01 @error @contract-shape:pure-function
+	// A failed read stays in hand while Retry asks again; what the page has then is an answer on its way, not a failure.
+	it.skip.each<[string, WithTheReportBeingRead, PrintPageState]>([
+		[
+			"Retry is reading the report again after its read failed, though an answer is held",
+			{ reportError: new Error("the network dropped"), reportFetching: true },
+			"preparing",
+		],
+		[
+			"Retry is reading the report again after it was refused for another reason",
+			{ reportError: aRefusal(500, "unexpected"), reportFetching: true },
+			"preparing",
+		],
+	])(
+		`decides the state when %s (${pendingReviewFix})`,
+		(_when, change, expected) => {
+			expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
+		},
+	);
 
 	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
 	// Every combination of the four inputs without a failure: ready exactly when all four are in, else preparing.
