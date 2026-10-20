@@ -11,13 +11,11 @@ const LIGHTSPEED = "Team Lightspeed";
 /** The light theme's divider colour, the one the page prints in. */
 const THE_LIGHT_DIVIDER = "rgb(221, 221, 221)";
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 // The print dialog of a real browser cannot be driven, so it is stood in for on the tab's page and on every frame
 // in it: only the report's own frame may ask for it, and the coach never leaves the report.
 // @walking_skeleton @driving_port @us-01 @rev-3 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
-testWithDemo.fixme(
-	`a coach exports a Team's Then & Now report as a PDF from the report: its own print frame asks for the dialog once, and the coach is still on the report with the same history (${pendingFramePrint})`,
+testWithDemo(
+	"a coach exports a Team's Then & Now report as a PDF from the report: its own print frame asks for the dialog once, and the coach is still on the report with the same history",
 	async ({ testData, overviewPage, page }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
 
