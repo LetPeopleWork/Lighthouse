@@ -2202,6 +2202,42 @@ No scenario changes: DISTILL already pins PD-1..PD-6 as stated.
 
 ---
 
+## Maintainer decisions — 2026-10-20, slice 01 hands-on review of the printed PDF
+
+The maintainer printed real reports (A4 portrait and landscape) after step 01-17 and asked for the following. All of it
+lands in **slice 02** ("the PDF reads the same everywhere"), which already owns page breaks and margins; slice 01 ships
+unchanged. DISTILL's slice-02 scenarios are reconciled first (the acceptance designer), then DELIVER builds them.
+
+| # | Decision |
+|---|---|
+| NMD-8 | **A4 portrait is the target.** Landscape may look better today, but the layout is optimised for A4 portrait (Letter follows). |
+| NMD-9 | **Every panel keeps its three columns in print — Then \| Now \| Change — whatever the paper width.** The screen collapses them below its breakpoint; the print page does not. The Change rows stay aligned with the Then and Now rows, so "– No change" needs no name. Stacked Then/Now with a separate named Change block was offered and declined. |
+| NMD-10 | **A panel is never split across pages** (already slice 02's page-break scenarios). |
+| NMD-11 | **A running header at the top of every page:** one line — owner kind and name, report name, "Then 3 Jun – 31 Aug 2026 · Now 23 Jul – 20 Oct 2026", "Produced 20 Oct 2026, 12:21" — in the app's date format (dd.mm.yyyy offered and declined). Page 1 also keeps the big report title below it. Replaces NMD-3's header block on page 1, apart from the title. |
+| NMD-12 | **The footer sits at the bottom of every page** (the Lighthouse mark and "Made with Lighthouse by LetPeopleWork · letpeople.work"), with no page numbers (Chromium-only "Page n of m" offered and declined). Replaces "the footer kept with the last panel only". |
+| NMD-13 | **No empty trailing page.** The print stylesheet drops the screen's full-height rule so nothing spills onto a blank last page. |
+
+Sketch the maintainer approved (A4 portrait):
+
+```
+Team New Team   Q2 Baseline   Then 3 Jun – 31 Aug 2026 · Now 23 Jul – 20 Oct 2026   Produced 20 Oct 2026, 12:21
+──────────────────────────────────────────────────────────────────────────────  (every page)
+Q2 Baseline                                                                      (page 1 only)
+[summary]
+┌ Cycle Time ─────────────────────────────────────────────┐
+│ THEN            │ NOW             │ CHANGE              │
+│ ● 95th 2 days   │ ● 95th 2 days   │ – No change         │
+│ ◐ 85th 2 days   │ ◐ 85th 2 days   │ – No change         │
+└─────────────────────────────────────────────────────────┘  (never split across pages)
+…
+──────────────────────────────────────────────────────────────────────────────  (every page)
+[Lighthouse]  Made with Lighthouse by LetPeopleWork · letpeople.work
+```
+
+"The rest looks good" (maintainer). The marks and typeface in the screenshots are still slice 01's; slice 02 replaces them.
+
+---
+
 ## Wave: DISTILL / [REF] Scope and reconciliation
 
 Slices 01–05 (US-01..US-05). Read: this delta (DISCUSS, DESIGN with ADR-245..247, DEVOPS, the maintainer decisions
