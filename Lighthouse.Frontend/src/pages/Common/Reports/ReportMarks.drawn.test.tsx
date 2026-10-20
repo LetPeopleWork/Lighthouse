@@ -36,8 +36,6 @@ import { appColors } from "../../../utils/theme/colors";
  * missing value and the minus of a fall stay text: they are punctuation, not marks.
  */
 
-const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
-
 const here = dirname(fileURLToPath(import.meta.url));
 
 /** One metric of a report, which the example changes in place; a report without it is a broken example. */
@@ -130,8 +128,8 @@ describe("The marks of a report are drawn", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:unbounded-preservation
-	it.skip.each<Where>(["on the report", "in the print"])(
-		`draws every summary and line mark %s and types none; a screen reader hears each line's rise or fall and skips the summary's marks (${pendingReviewFix})`,
+	it.each<Where>(["on the report", "in the print"])(
+		`draws every summary and line mark %s and types none; a screen reader hears each line's rise or fall and skips the summary's marks`,
 		async (where) => {
 			await showingTheReport(where);
 
@@ -152,8 +150,8 @@ describe("The marks of a report are drawn", () => {
 
 	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// 4 days out of 880 rounds to 0 %, so the words of a rise and of a fall are the same; only the mark tells them apart.
-	it.skip.each<Where>(["on the report", "in the print"])(
-		`tells a screen reader a line that rose from one that fell by as much, when the percent rounds to nothing, %s (${pendingReviewFix})`,
+	it.each<Where>(["on the report", "in the print"])(
+		`tells a screen reader a line that rose from one that fell by as much, when the percent rounds to nothing, %s`,
 		async (where) => {
 			const report = theEngagementStartReport();
 			const cycleTime = theMetric(report, "cycle-time");

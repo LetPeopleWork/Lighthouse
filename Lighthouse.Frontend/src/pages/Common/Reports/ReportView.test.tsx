@@ -34,8 +34,6 @@ import {
 } from "../../../tests/ReportsTestKit";
 import ReportView from "./ReportView";
 
-const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
-
 /**
  * One report as a reader opens it: one line "Reports / <name>", a summary naming each side's window, its
  * length and how many Work Items closed in it, and one panel per shown metric in the catalog's order. A panel
@@ -1067,7 +1065,7 @@ describe("The panels of a report", () => {
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// No change has a mark of its own where a rise or a fall has one, so the column lines up. Its words already say
 	// it did not change, so that mark is not read out; a rise's and a fall's words do not say which way they went.
-	it.skip(`leads No change, a fall and a rise each with a mark of its own; a screen reader hears the fall and the rise, and skips the No change mark (${pendingReviewFix})`, async () => {
+	it(`leads No change, a fall and a rise each with a mark of its own; a screen reader hears the fall and the rise, and skips the No change mark`, async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },

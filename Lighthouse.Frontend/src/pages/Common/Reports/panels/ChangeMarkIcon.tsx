@@ -25,20 +25,35 @@ const ICON_OF: Record<ChangeMarkKind, SvgIconComponent> = {
 	none: RemoveIcon,
 };
 
+// A line's words read the same for a rise and a fall once its percent rounds to nothing, so only the mark can tell a
+// screen reader which way it went. The other marks only repeat the words beside them.
+const SPOKEN_AS: Partial<Record<ChangeMarkKind, string>> = {
+	up: "rose",
+	down: "fell",
+};
+
 /**
- * Drawn rather than typed, so the mark looks the same on every machine and in every PDF whatever fonts it has. The
- * words beside it carry the meaning, so a screen reader skips it.
+ * Drawn rather than typed, so the mark looks the same on every machine and in every PDF whatever fonts it has. A
+ * screen reader hears a rise or a fall and skips every other mark, whose words beside it already say it.
  */
 export const ChangeMarkIcon: React.FC<{
 	readonly kind: ChangeMarkKind;
 	readonly colour: string;
 }> = ({ kind, colour }) => {
 	const Icon = ICON_OF[kind];
+	const spoken = SPOKEN_AS[kind];
+	const sx = { color: colour, verticalAlign: "-0.125em" };
+	if (spoken === undefined) {
+		return <Icon aria-hidden fontSize="inherit" sx={sx} />;
+	}
+	// The label rather than a title inside the drawing, which would add the word to the line's text.
 	return (
 		<Icon
-			aria-hidden
+			role="img"
+			aria-label={spoken}
+			aria-hidden={undefined}
 			fontSize="inherit"
-			sx={{ color: colour, verticalAlign: "-0.125em" }}
+			sx={sx}
 		/>
 	);
 };
