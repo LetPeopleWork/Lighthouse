@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LIGHTHOUSE_MARK } from "../../../../components/App/LetPeopleWork/LighthouseLogo";
 import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
@@ -206,7 +206,7 @@ const ReportPrintContent: React.FC<ReportPrintContentProps> = ({
 	timedOut = false,
 	renderSheet,
 }) => {
-	const [mountedAt] = useState(() => Date.now());
+	const mountedAt = useRef(Date.now()).current;
 
 	const report = useReportRead(
 		owner,
