@@ -306,7 +306,7 @@ describe("The wish to print is used up by printing", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`leaves the page's entry without the wish to print once it printed, still knowing where the export started (${pendingEpic6298})`, async () => {
+	it("leaves the page's entry without the wish to print once it printed, still knowing where the export started", async () => {
 		aPrintDialog();
 
 		await exportingFromTheReport();
@@ -321,7 +321,7 @@ describe("The wish to print is used up by printing", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A reload, or Forward back onto the page, finds the entry as printing left it.
-	it.skip(`never prints again when the page comes back after it printed (${pendingEpic6298})`, async () => {
+	it("never prints again when the page comes back after it printed", async () => {
 		const dialog = aPrintDialog();
 
 		openingThePrintPageDirectly({ startState: { from: "report" } });
@@ -342,7 +342,7 @@ describe("The way back from the print page", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`reads "‹ Back to report" when the reader came from the report, and is not printed (${pendingEpic6298})`, async () => {
+	it('reads "‹ Back to report" when the reader came from the report, and is not printed', async () => {
 		aPrintDialog();
 		await exportingFromTheReport();
 		await thePrintPageIsReady();
@@ -353,7 +353,7 @@ describe("The way back from the print page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`takes the reader back to the report once the print dialog closes (${pendingEpic6298})`, async () => {
+	it("takes the reader back to the report once the print dialog closes", async () => {
 		const dialog = aPrintDialog();
 		await exportingFromTheReport();
 		await thePrintPageIsReady();
@@ -395,7 +395,7 @@ describe("The way back from the print page", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// A pasted link says nothing about where the reader came from; the owner's Reports list is the one safe place.
-	it.skip(`leads a page opened from its address back to the Reports list (${pendingEpic6298})`, async () => {
+	it("leads a page opened from its address back to the Reports list", async () => {
 		aPrintDialog();
 		const { user } = openingThePrintPageDirectly();
 		await thePrintPageIsReady();

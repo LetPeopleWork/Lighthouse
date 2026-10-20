@@ -18,6 +18,7 @@ import type { PrintReadPort } from "./printReadPort";
 import {
 	type PrintEffectPort,
 	type PrintOrigin,
+	RETURNED_FROM_PRINT,
 	usePrintOnce,
 } from "./usePrintOnce";
 
@@ -25,6 +26,8 @@ const PREPARING = "Preparing the PDF…";
 const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 const BACK_TO_REPORT = "‹ Back to report";
+const BACK_TO_REPORTS = "‹ Back to Reports";
+const SCREEN_ONLY = { "@media print": { display: "none" } };
 const BODY_MIN_HEIGHT = 240;
 
 /** The weights the printed report is set in: its text and its headings. */
@@ -105,6 +108,21 @@ const useFontsOnceDrawn = (
 	return { fonts, askAgain: () => setFonts("pending") };
 };
 
+interface WayBack {
+	readonly to: string;
+	readonly label: string;
+}
+
+/** Only a reader who came from the report goes back to it; from the list or a pasted link, the Reports list is where they belong. */
+const wayBackOf = (
+	from: PrintOrigin | undefined,
+	reportPath: string,
+	reportsPath: string,
+): WayBack =>
+	from === "report"
+		? { to: reportPath, label: BACK_TO_REPORT }
+		: { to: reportsPath, label: BACK_TO_REPORTS };
+
 const widgetStatusOf = (state: PrintPageState): WidgetStatus => {
 	if (state === "ready") return "ready";
 	return state === "preparing" ? "loading" : "error";
@@ -149,6 +167,8 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const partFailed = state === "failedPart";
 	const { printWhenReady, from } = printRequestOf(location.state);
 	const reportPath = reportPathOf(owner, reportId);
+	const reportsPath = reportsPathOf(owner);
+	const back = wayBackOf(from, reportPath, reportsPath);
 
 	usePrintOnce({
 		state,
@@ -156,14 +176,20 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		from,
 		here: location.pathname,
 		reportPath,
-		reportsPath: reportsPathOf(owner),
+		reportsPath,
 		port: effects,
 	});
 
 	return (
 		<Box data-render-ready={state === "ready" ? "true" : "false"} sx={{ p: 4 }}>
-			<Button component={RouterLink} to={reportPath}>
-				{BACK_TO_REPORT}
+			<Button
+				component={RouterLink}
+				to={back.to}
+				replace
+				state={RETURNED_FROM_PRINT}
+				sx={SCREEN_ONLY}
+			>
+				{back.label}
 			</Button>
 			<Box
 				sx={{
