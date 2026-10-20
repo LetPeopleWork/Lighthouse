@@ -25,6 +25,7 @@ import ReportPrintDocument, {
 import {
 	type PrintEffectPort,
 	type PrintOrigin,
+	stepBackFromThePrintPage,
 	usePrintOnce,
 } from "./usePrintOnce";
 
@@ -127,18 +128,23 @@ const useDocumentTitle = (title: string | undefined) => {
 };
 
 /**
- * Only a reader who came from the report goes back to it, and only while it can be shown; from the list, a pasted
- * link, or a report that is gone or made by a newer version, the Reports list is where they belong.
+ * A reader who came by Export steps back to where they started, so it stays in their history once, while the report
+ * can still be shown. A pasted link, or a report that is gone or made by a newer version, leads to the Reports list.
  */
 const wayBackOf = (
 	state: PrintPageState,
 	from: PrintOrigin | undefined,
-	reportPath: string,
 	reportsPath: string,
-): WayBack =>
-	from === "report" && state !== "failedFinal"
-		? { to: reportPath, label: BACK_TO_REPORT }
-		: { to: reportsPath, label: BACK_TO_REPORTS };
+	port: PrintEffectPort,
+): WayBack => {
+	if (from === undefined || state === "failedFinal") {
+		return { to: reportsPath, label: BACK_TO_REPORTS };
+	}
+	return {
+		stepBack: () => stepBackFromThePrintPage(port),
+		label: from === "report" ? BACK_TO_REPORT : BACK_TO_REPORTS,
+	};
+};
 
 const widgetStatusOf = (state: PrintPageState): WidgetStatus => {
 	if (state === "ready") return "ready";
@@ -253,7 +259,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	return (
 		<PrintSheet
 			ready={state === "ready"}
-			back={wayBackOf(state, from, reportPath, reportsPath)}
+			back={wayBackOf(state, from, reportsPath, effects)}
 		>
 			<WidgetBody
 				widgetKey="report-print"

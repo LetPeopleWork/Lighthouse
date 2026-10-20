@@ -85,8 +85,6 @@ const atTheReport = reportPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atThePrintPage = printPathFor(LIGHTSPEED, ENGAGEMENT_START_ID);
 const atTheList = reportsPathFor(LIGHTSPEED);
 
-const pendingReviewFix = "Pending: slice 01 review fix (epic 6298)";
-
 const LIGHT_INK = hexToRgb(lightTheme.palette.text.primary);
 const WHITE = "rgb(255, 255, 255)";
 
@@ -425,7 +423,7 @@ describe("The way back from the print page", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// The return steps back to the entry the export started from; a copy of the report on top of it would make the
 	// browser's Back show the same report a second time.
-	it.skip(`takes the reader back to the report once the print dialog closes, leaving the report in their history once (${pendingReviewFix})`, async () => {
+	it(`takes the reader back to the report once the print dialog closes, leaving the report in their history once`, async () => {
 		const dialog = aPrintDialog();
 		const { user } = await openingTheReportFromTheList();
 		await user.click(await theExportButtonOnceItCanBePressed());
@@ -441,7 +439,7 @@ describe("The way back from the print page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`takes the reader back to the report on "‹ Back to report", leaving the report in their history once (${pendingReviewFix})`, async () => {
+	it(`takes the reader back to the report on "‹ Back to report", leaving the report in their history once`, async () => {
 		aPrintDialog();
 		const { user } = await openingTheReportFromTheList();
 		await user.click(await theExportButtonOnceItCanBePressed());
@@ -456,7 +454,7 @@ describe("The way back from the print page", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`takes the reader from the list back to the list once the print dialog closes, leaving the list in their history once (${pendingReviewFix})`, async () => {
+	it(`takes the reader from the list back to the list once the print dialog closes, leaving the list in their history once`, async () => {
 		const dialog = aPrintDialog();
 		const { user } = renderTheExportScene({
 			reportService: aReportService(),
@@ -1066,7 +1064,7 @@ describe("What the print page reports about its use", () => {
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// One opening is one visit to the report; a reader who exported before it counted has not been counted yet, and
 	// coming back starts the wait again rather than carrying on from where it stopped.
-	it.skip(`counts the report as opened once the reader has stayed on it after printing, when they exported before it counted (${pendingReviewFix})`, async () => {
+	it(`counts the report as opened once the reader has stayed on it after printing, when they exported before it counted`, async () => {
 		await exportingAfterStayingFor(3_000);
 
 		await stayingFor(4_000);

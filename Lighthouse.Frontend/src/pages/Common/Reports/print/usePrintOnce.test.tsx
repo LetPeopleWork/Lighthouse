@@ -17,8 +17,6 @@ import {
  * without a new history entry, back to where the export started.
  */
 
-const pendingReviewFix = "Pending: slice 01 review fix (epic 6298)";
-
 const HERE = "/print/teams/1/reports/42";
 const THE_REPORT = "/teams/1/reports/42";
 const THE_LIST = "/teams/1/reports";
@@ -160,8 +158,8 @@ describe("printing once", () => {
 describe("returning when the dialog closes", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// The export left the report or the list one entry back; stepping back to it leaves no copy of it on top.
-	it.skip.each<PrintOrigin>(["report", "list"])(
-		`leads an export started from the %s one step back through the reader's history, instead of replacing the print page's entry (${pendingReviewFix})`,
+	it.each<PrintOrigin>(["report", "list"])(
+		`leads an export started from the %s one step back through the reader's history, instead of replacing the print page's entry`,
 		(from) => {
 			const browser = aFakeBrowser();
 			renderHook(() => usePrintOnce(inputs(browser.port, { from })));
@@ -189,7 +187,7 @@ describe("returning when the dialog closes", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// Clearing the wish re-renders the page; the reader is still taken back when the dialog closes after that.
-	it.skip(`still steps back to the report when the dialog closes after the cleared entry reached the page (${pendingReviewFix})`, () => {
+	it(`still steps back to the report when the dialog closes after the cleared entry reached the page`, () => {
 		const browser = aFakeBrowser();
 		const { rerender } = renderHook(
 			(printWhenReady: boolean) =>

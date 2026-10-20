@@ -14,7 +14,7 @@ import { RETURNED_FROM_PRINT, usePrintOnce } from "./usePrintOnce";
 /**
  * The print page's reach into the real browser, with only the browser's own print and fonts stood in for: the
  * dialog is asked for through the browser's print, the dialog closing is heard for as long as the page is open,
- * a return replaces the print page's entry in the history, and the fonts are loaded into the document and
+ * a return steps back to where the export started (or, with no origin, replaces the print page's entry), and the fonts are loaded into the document and
  * answered as loaded only when every face was found.
  */
 
@@ -92,9 +92,10 @@ describe("the browser's print effects", () => {
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("replaces the print page's entry when it leads the reader back", () => {
 		const router = onThePrintPage();
-		const port = browserPrintEffects((to, options) =>
-			router.result.current.navigate(to, options),
-		);
+		const port = browserPrintEffects((to, options) => {
+			if (typeof to === "number") router.result.current.navigate(to);
+			else router.result.current.navigate(to, options);
+		});
 
 		act(() => {
 			port.navigate(THE_LIST, { replace: true, state: RETURNED_FROM_PRINT });
@@ -124,15 +125,13 @@ describe("the browser's print effects", () => {
 
 		theDialogCloses();
 		const returnsWhileOpen = navigate.mock.calls.filter(
-			([to]) => to === THE_REPORT,
+			([to]) => to === -1,
 		).length;
 		unmount();
 		theDialogCloses();
 
 		expect(returnsWhileOpen).toBe(1);
-		expect(
-			navigate.mock.calls.filter(([to]) => to === THE_REPORT),
-		).toHaveLength(1);
+		expect(navigate.mock.calls.filter(([to]) => to === -1)).toHaveLength(1);
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change

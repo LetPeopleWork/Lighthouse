@@ -62,7 +62,8 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 	);
 	const effects: PrintEffectPort = useMemo(() => {
 		const browser = browserPrintEffects((to, options) => {
-			navigate(to, options);
+			if (typeof to === "number") navigate(to);
+			else navigate(to, options);
 		});
 		return loadFonts === undefined ? browser : { ...browser, loadFonts };
 	}, [navigate, loadFonts]);

@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { type QueryClient, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useLocation } from "react-router";
 import type { IReport } from "../../../models/Reports/Report";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
@@ -7,41 +8,51 @@ import {
 	usageDataReportTemplateOf,
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
-import { RETURNED_FROM_PRINT } from "./print/usePrintOnce";
-
-const isReturnFromPrint = (state: unknown): boolean =>
-	typeof state === "object" &&
-	state !== null &&
-	"returnedFromPrint" in state &&
-	state.returnedFromPrint === RETURNED_FROM_PRINT.returnedFromPrint;
 
 /**
- * Reports that a report was opened, with its Type, once it has been on screen as long as a tab must be
- * to count as opened. Reported at most once while the view stays open: reading the report again after
- * an edit is the same opening. A report that never loaded was not read, so it reports nothing. Coming back from
- * printing is the same reading as well, so the view a print returns to reports nothing.
+ * The history entries whose opening was already counted. Kept with the app's query cache, which lives as long as the
+ * app does, rather than in this module: a newly made router's first entry always carries the same key, so a record
+ * shared by every router would take one router's count for another's.
+ */
+const countedOpenings = new WeakMap<QueryClient, Set<string>>();
+
+const openingsCountedIn = (app: QueryClient): Set<string> => {
+	const known = countedOpenings.get(app);
+	if (known !== undefined) return known;
+	const counted = new Set<string>();
+	countedOpenings.set(app, counted);
+	return counted;
+};
+
+/**
+ * Reports that a report was opened, with its Type, once it has been on screen as long as a tab must be to count as
+ * opened. One opening is one entry in the reader's history: reading the report again after an edit, or coming back
+ * to the same entry after printing, is the same opening, and counts only if it had not counted before. A report that
+ * never loaded was not read, so it reports nothing.
  */
 export const useReportOpenedReporter = (report: IReport | undefined): void => {
 	const reportUsage = useUsageDataReporter();
-	const hasReported = useRef(isReturnFromPrint(useLocation().state));
+	const opening = useLocation().key;
+	const counted = openingsCountedIn(useQueryClient());
 	const template =
 		report === undefined
 			? undefined
 			: usageDataReportTemplateOf(report.templateKey);
 
 	useEffect(() => {
-		if (hasReported.current || template === undefined) {
+		if (counted.has(opening) || template === undefined) {
 			return;
 		}
 
-		const counted = setTimeout(() => {
+		const dwelt = setTimeout(() => {
 			// Consent can arrive after the report is shown; until the event could go, the opening is not used up.
-			hasReported.current = reportUsage({
+			const sent = reportUsage({
 				name: UsageDataEventName.ReportOpened,
 				reportTemplate: template,
 			});
+			if (sent) counted.add(opening);
 		}, DWELL_BEFORE_A_PAGE_COUNTS_MS);
 
-		return () => clearTimeout(counted);
-	}, [template, reportUsage]);
+		return () => clearTimeout(dwelt);
+	}, [counted, opening, template, reportUsage]);
 };
