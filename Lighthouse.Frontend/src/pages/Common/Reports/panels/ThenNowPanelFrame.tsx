@@ -57,29 +57,32 @@ export const ThenNowColumn: React.FC<ThenNowColumnProps> = ({
 	first,
 	children,
 	...dataAttributes
-}) => (
-	<Stack
-		{...dataAttributes}
-		spacing={0.5}
-		sx={{
-			minWidth: 0,
-			pl: { md: first ? 0 : 2 },
-			borderLeft: { md: first ? 0 : 1 },
-			"@media print": { pl: first ? 0 : 2, borderLeft: first ? 0 : 1 },
-			borderColor: "divider",
-		}}
-	>
-		<Typography
-			variant="overline"
-			color="text.secondary"
-			component="div"
-			sx={{ lineHeight: 1.5 }}
+}) => {
+	const setOff = { pl: first ? 0 : 2, borderLeft: first ? 0 : 1 };
+	return (
+		<Stack
+			{...dataAttributes}
+			spacing={0.5}
+			sx={{
+				minWidth: 0,
+				pl: { md: setOff.pl },
+				borderLeft: { md: setOff.borderLeft },
+				"@media print": setOff,
+				borderColor: "divider",
+			}}
 		>
-			{heading}
-		</Typography>{" "}
-		{children}
-	</Stack>
-);
+			<Typography
+				variant="overline"
+				color="text.secondary"
+				component="div"
+				sx={{ lineHeight: 1.5 }}
+			>
+				{heading}
+			</Typography>{" "}
+			{children}
+		</Stack>
+	);
+};
 
 /** The shared look of every Then & Now panel: the metric's name over three segments, Then, Now and Change. */
 const ThenNowPanelFrame: React.FC<Readonly<ThenNowPanelFrameProps>> = ({
