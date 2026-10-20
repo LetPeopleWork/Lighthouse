@@ -62,8 +62,8 @@ import {
  * A report exported as a PDF, from the reader's side: the Export PDF action on the report view and on the
  * Reports list, the print page it leads to, and the browser's print dialog in front of it. The app is the
  * one a reader runs - real routes, real Reports pages, the instance's terms read through the real provider -
- * and only what lies outside it is stood in for: the backend's answers, the print dialog and the fonts the
- * browser loads.
+ * and only what lies outside it is stood in for: the backend's answers, the print dialog, and the fonts and
+ * pictures the browser loads.
  *
  * Every example is set on the instance's day of the Reports kit, 2 Oct 2026, at 09:15 on the reader's clock.
  */
@@ -83,7 +83,7 @@ export const PREPARING = "Preparing the PDF…";
 /** The report itself could not be read. */
 export const THE_REPORT_COULD_NOT_BE_LOADED =
 	"This report couldn't be loaded, so no PDF was made.";
-/** The report was read, but its owner's name, the instance's terms or the fonts were not. */
+/** The report was read, but its owner's name, the instance's terms, the fonts or the Lighthouse mark were not. */
 export const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 export const BACK_TO_REPORT = "‹ Back to report";
@@ -431,7 +431,7 @@ export const aPrintDialog = () => {
 type LoadFonts = NonNullable<PrintPageStandIns["loadFonts"]>;
 
 /** The browser fetching and decoding a picture the page shows, as the page asks it to before it prints. */
-type LoadPicture = (source: string) => Promise<"loaded" | "failed">;
+type LoadPicture = NonNullable<PrintPageStandIns["loadPicture"]>;
 
 /**
  * What the page asked its fonts stand-in for, face by face, and whether the report's title was already on the page

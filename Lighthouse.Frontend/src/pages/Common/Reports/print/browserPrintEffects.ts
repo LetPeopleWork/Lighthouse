@@ -1,6 +1,6 @@
 import type { PrintEffectPort, PrintLoadOutcome } from "./usePrintOnce";
 
-const loadIntoTheDocument = async (
+const loadTheFaces = async (
 	faces: readonly string[],
 ): Promise<PrintLoadOutcome> => {
 	try {
@@ -40,6 +40,6 @@ export const browserPrintEffects = (
 		return () => globalThis.removeEventListener("afterprint", listener);
 	},
 	navigate,
-	loadFonts: loadIntoTheDocument,
+	loadFonts: loadTheFaces,
 	loadPicture: loadThePicture,
 });

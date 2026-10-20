@@ -20,7 +20,7 @@ export interface PrintEffectPort {
 		to: string | number,
 		options: { readonly replace: boolean; readonly state?: unknown },
 	): void;
-	/** Loads the named faces, such as "700 1em Quicksand", into the document; asked by the page once it has drawn the report. */
+	/** Loads the named faces, such as '700 1em "Quicksand Variable"', into the document; asked by the page once it has drawn the report. */
 	readonly loadFonts: (faces: readonly string[]) => Promise<PrintLoadOutcome>;
 	/** Loads the picture at an address, such as the Lighthouse mark, so a print made at once shows it. */
 	readonly loadPicture: (source: string) => Promise<PrintLoadOutcome>;
