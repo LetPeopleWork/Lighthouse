@@ -79,7 +79,12 @@ const roomFor = (
 	height: string,
 	gap: { readonly marginTop: string } | { readonly marginBottom: string },
 ) => ({
-	group: { display: "none", "@media print": { display: group } },
+	// Chrome repeats a header or footer group on every sheet only when the group may not break; without that it
+	// keeps the room on the first sheet alone and the next sheet's panel prints under the line.
+	group: {
+		display: "none",
+		"@media print": { display: group, breakInside: "avoid" },
+	},
 	spacer: { "@media print": { height, ...gap } },
 });
 
