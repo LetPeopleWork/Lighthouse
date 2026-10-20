@@ -177,7 +177,7 @@ describe("The print page gets ready", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`says it is preparing the PDF, under a spinner, and is not ready, while the report is on its way (${pendingEpic6298})`, async () => {
+	it("says it is preparing the PDF, under a spinner, and is not ready, while the report is on its way", async () => {
 		aPrintDialog();
 		openingThePrintPageDirectly(withHeld("the report"));
 
@@ -187,13 +187,8 @@ describe("The print page gets ready", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
-	it.skip.each<Held>([
-		"the report",
-		"the owner's name",
-		"the terms",
-		"the fonts",
-	])(
-		`is still preparing, and not ready, while %s has not arrived (${pendingEpic6298})`,
+	it.each<Held>(["the report", "the owner's name", "the terms", "the fonts"])(
+		"is still preparing, and not ready, while %s has not arrived",
 		async (held) => {
 			aPrintDialog();
 			openingThePrintPageDirectly(withHeld(held));
@@ -220,7 +215,7 @@ describe("The print page gets ready", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// React's strict mode runs every effect twice on mount; the reader still gets one dialog.
-	it.skip(`opens the print dialog once even when the page's effects run twice (${pendingEpic6298})`, async () => {
+	it("opens the print dialog once even when the page's effects run twice", async () => {
 		const dialog = aPrintDialog();
 
 		await exportingFromTheReport({ strict: true });
@@ -232,7 +227,7 @@ describe("The print page gets ready", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The wish to print travels with Export PDF, never in the address, so a pasted link only shows the page.
-	it.skip(`shows a print page opened from its address but never opens the print dialog (${pendingEpic6298})`, async () => {
+	it("shows a print page opened from its address but never opens the print dialog", async () => {
 		const dialog = aPrintDialog();
 
 		openingThePrintPageDirectly();
@@ -246,7 +241,7 @@ describe("The print page gets ready", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
-	it.skip(`waits for the fonts before opening the print dialog (${pendingEpic6298})`, async () => {
+	it("waits for the fonts before opening the print dialog", async () => {
 		const dialog = aPrintDialog();
 		const fonts = theFontsAreStillLoading();
 
@@ -263,7 +258,7 @@ describe("The print page gets ready", () => {
 
 	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// Asked before the document is drawn, the browser would only fetch the faces it already needs for the spinner.
-	it.skip(`asks for the Lighthouse typeface, its headings' weight included, only once the report is drawn (${pendingEpic6298})`, async () => {
+	it("asks for the Lighthouse typeface, its headings' weight included, only once the report is drawn", async () => {
 		aPrintDialog();
 		const fonts = theFontsHaveLoaded();
 
@@ -279,11 +274,11 @@ describe("The print page gets ready", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip.each<"are not found" | "fail outright">([
+	it.each<"are not found" | "fail outright">([
 		"are not found",
 		"fail outright",
 	])(
-		`says part of the page could not be loaded, offers Retry and never prints, when the fonts %s (${pendingEpic6298})`,
+		"says part of the page could not be loaded, offers Retry and never prints, when the fonts %s",
 		async (how) => {
 			const dialog = aPrintDialog();
 			theFontsCannotLoad(how);

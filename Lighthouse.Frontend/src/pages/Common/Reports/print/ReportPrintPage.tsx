@@ -1,14 +1,17 @@
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useParams } from "react-router";
 import type { IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
+import { WidgetBody } from "../../MetricsView/WidgetShell";
+import type { WidgetStatus } from "../../MetricsView/widgetStatus";
 import { reportPathOf, reportQueryKeyOf, reportsPathOf } from "../reportOwner";
 import {
 	isAFreshAnswer,
 	type PrintFontsState,
+	type PrintPageState,
 	printPageStateOf,
 } from "./printPageState";
 import type { PrintReadPort } from "./printReadPort";
@@ -19,7 +22,10 @@ import {
 } from "./usePrintOnce";
 
 const PREPARING = "Preparing the PDF…";
+const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
+	"Part of the page couldn't be loaded, so no PDF was made.";
 const BACK_TO_REPORT = "‹ Back to report";
+const BODY_MIN_HEIGHT = 240;
 
 /** The weights the printed report is set in: its text and its headings. */
 const THE_PRINTED_FACES = ["400 1em Quicksand", "700 1em Quicksand"];
@@ -69,15 +75,20 @@ const useOwnerName = (owner: IReportOwner, reads: PrintReadPort) =>
 		},
 	});
 
+interface PrintFonts {
+	readonly fonts: PrintFontsState;
+	readonly askAgain: () => void;
+}
+
 /** Asks for the fonts once the report is drawn, so the browser loads the faces the page actually shows. */
 const useFontsOnceDrawn = (
 	drawn: boolean,
 	loadFonts: PrintEffectPort["loadFonts"],
-): PrintFontsState => {
+): PrintFonts => {
 	const [fonts, setFonts] = useState<PrintFontsState>("pending");
 
 	useEffect(() => {
-		if (!drawn) {
+		if (!drawn || fonts !== "pending") {
 			return;
 		}
 		let gone = false;
@@ -89,9 +100,14 @@ const useFontsOnceDrawn = (
 		return () => {
 			gone = true;
 		};
-	}, [drawn, loadFonts]);
+	}, [drawn, fonts, loadFonts]);
 
-	return fonts;
+	return { fonts, askAgain: () => setFonts("pending") };
+};
+
+const widgetStatusOf = (state: PrintPageState): WidgetStatus => {
+	if (state === "ready") return "ready";
+	return state === "preparing" ? "loading" : "error";
 };
 
 const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
@@ -115,7 +131,10 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 
 	const fetchedAt = report.data === undefined ? null : report.dataUpdatedAt;
 	const fresh = isAFreshAnswer(fetchedAt, mountedAt) ? report.data : undefined;
-	const fonts = useFontsOnceDrawn(fresh !== undefined, effects.loadFonts);
+	const { fonts, askAgain } = useFontsOnceDrawn(
+		fresh !== undefined,
+		effects.loadFonts,
+	);
 
 	const state = printPageStateOf({
 		fetchedAt,
@@ -127,6 +146,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		termsError: terms.error,
 		fonts,
 	});
+	const partFailed = state === "failedPart";
 	const { printWhenReady, from } = printRequestOf(location.state);
 	const reportPath = reportPathOf(owner, reportId);
 
@@ -145,17 +165,30 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 			<Button component={RouterLink} to={reportPath}>
 				{BACK_TO_REPORT}
 			</Button>
-			{state === "preparing" && (
-				<Box sx={{ display: "flex", alignItems: "center", gap: 2, py: 4 }}>
-					<CircularProgress size={24} />
-					<Typography>{PREPARING}</Typography>
-				</Box>
-			)}
-			{fresh !== undefined && (
-				<Typography variant="h4" component="h1">
-					{fresh.name}
-				</Typography>
-			)}
+			<Box
+				sx={{
+					display: "flex",
+					flexDirection: "column",
+					minHeight: BODY_MIN_HEIGHT,
+				}}
+			>
+				<WidgetBody
+					widgetKey="report-print"
+					status={widgetStatusOf(state)}
+					hasContentToDim={false}
+					loadingMessage={PREPARING}
+					failureMessage={
+						partFailed ? PART_OF_THE_PAGE_COULD_NOT_BE_LOADED : undefined
+					}
+					onRetry={partFailed ? askAgain : undefined}
+				>
+					{fresh !== undefined && (
+						<Typography variant="h4" component="h1">
+							{fresh.name}
+						</Typography>
+					)}
+				</WidgetBody>
+			</Box>
 		</Box>
 	);
 };
