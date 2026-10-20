@@ -11,6 +11,7 @@ import {
 	renderTheExportScene,
 	reportPathFor,
 	THEN_AND_NOW,
+	theExportButtonOnceItCanBePressed,
 	theFontsHaveLoaded,
 	theStandInForThePrintPage,
 	whatThisEntryCarries,
@@ -95,7 +96,7 @@ describe("Export PDF on the report view", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`offers an editor Export PDF as the first outlined button, before Edit report and Delete (${pendingEpic6298})`, async () => {
+	it(`offers an editor Export PDF as the first outlined button, before Edit report and Delete`, async () => {
 		leavingTheReportForItsPrintPage();
 
 		expect(await theHeaderActions()).toEqual([
@@ -109,7 +110,7 @@ describe("Export PDF on the report view", () => {
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// Exporting is reading what is already on screen, so anyone who can read the report may do it.
-	it.skip(`offers a reader who may not change the report Export PDF alone (${pendingEpic6298})`, async () => {
+	it(`offers a reader who may not change the report Export PDF alone`, async () => {
 		leavingTheReportForItsPrintPage(aReportService(), "reader");
 
 		expect(await theHeaderActions()).toEqual([EXPORT_PDF]);
@@ -118,7 +119,7 @@ describe("Export PDF on the report view", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// A PDF of a report still on its way would be a PDF of nothing; the button shows where it will be.
-	it.skip(`shows Export PDF but lets nobody press it while the report is on its way (${pendingEpic6298})`, async () => {
+	it(`shows Export PDF but lets nobody press it while the report is on its way`, async () => {
 		const held = deferred<never>();
 		leavingTheReportForItsPrintPage(
 			aReportService({ getReport: vi.fn().mockReturnValue(held.promise) }),
@@ -157,7 +158,7 @@ describe("Export PDF on the report view", () => {
 	it("takes the reader to the report's print page, asking it to print and saying it came from the report, with nothing in the address but the page", async () => {
 		const { user } = leavingTheReportForItsPrintPage();
 
-		await user.click(await theExportButton());
+		await user.click(await theExportButtonOnceItCanBePressed());
 
 		await theStandInForThePrintPage();
 		expect(whereTheReaderIs()).toEqual({
@@ -171,7 +172,7 @@ describe("Export PDF on the report view", () => {
 	});
 
 	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
-	it.skip(`takes the reader of a Portfolio's report to that Portfolio's print page (${pendingEpic6298})`, async () => {
+	it(`takes the reader of a Portfolio's report to that Portfolio's print page`, async () => {
 		const { user } = leavingTheReportForItsPrintPage(
 			aReportService({
 				getReport: vi.fn().mockResolvedValue(
@@ -185,7 +186,7 @@ describe("Export PDF on the report view", () => {
 			reportPathFor(APOLLO, ENGAGEMENT_START_ID),
 		);
 
-		await user.click(await theExportButton());
+		await user.click(await theExportButtonOnceItCanBePressed());
 
 		await theStandInForThePrintPage();
 		expect(whereTheReaderIs()).toEqual({
@@ -209,7 +210,7 @@ describe("What choosing Export PDF reports", () => {
 	it.skip(`reports one PDF export with the report's Type for every time Export PDF is chosen (${pendingEpic6298})`, async () => {
 		const { user } = leavingTheReportForItsPrintPage();
 
-		await user.click(await theExportButton());
+		await user.click(await theExportButtonOnceItCanBePressed());
 		await theStandInForThePrintPage();
 		expect(exportsReported()).toEqual([
 			[{ name: PDF_EXPORT_STARTED, reportTemplate: THEN_AND_NOW }],
@@ -218,7 +219,7 @@ describe("What choosing Export PDF reports", () => {
 		await user.click(
 			await screen.findByRole("button", { name: LEAVE_THE_PRINT_PAGE }),
 		);
-		await user.click(await theExportButton());
+		await user.click(await theExportButtonOnceItCanBePressed());
 		await theStandInForThePrintPage();
 
 		expect(exportsReported()).toEqual([

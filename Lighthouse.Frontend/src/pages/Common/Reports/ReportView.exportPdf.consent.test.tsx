@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IUsageDataState } from "../../../models/UsageData/UsageData";
 import type { IUsageDataService } from "../../../services/Api/UsageDataService";
@@ -9,12 +9,12 @@ import {
 import { createMockUsageDataService } from "../../../tests/MockApiServiceProvider";
 import {
 	aPrintDialog,
-	EXPORT_PDF,
 	forgetTheBrowser,
 	PDF_EXPORT_STARTED,
 	renderTheExportScene,
 	reportPathFor,
 	THEN_AND_NOW,
+	theExportButtonOnceItCanBePressed,
 	theFontsHaveLoaded,
 	theStandInForThePrintPage,
 	thisBrowsersUsageDataAnswer,
@@ -63,7 +63,7 @@ const exportingWith = async (
 	// The click must come after this browser's answer arrived, or a yes would read as "not yet".
 	await waitFor(() => expect(thisBrowsersUsageDataAnswer()).toBe(answerFirst));
 
-	await user.click(await screen.findByRole("button", { name: EXPORT_PDF }));
+	await user.click(await theExportButtonOnceItCanBePressed());
 	await theStandInForThePrintPage();
 };
 

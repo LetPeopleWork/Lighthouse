@@ -69,6 +69,14 @@ import {
  */
 
 export const EXPORT_PDF = "Export PDF";
+
+/** The report view shows Export PDF while the report is on its way, but it can be pressed only once the report is in. */
+export const theExportButtonOnceItCanBePressed =
+	async (): Promise<HTMLElement> => {
+		const button = await screen.findByRole("button", { name: EXPORT_PDF });
+		await waitFor(() => expect(button).toBeEnabled());
+		return button;
+	};
 export const exportAsPdfLabelOf = (reportName: string) =>
 	`Export ${reportName} as PDF`;
 export const PREPARING = "Preparing the PDF…";

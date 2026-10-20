@@ -1,7 +1,7 @@
 import { Box, Button, Stack } from "@mui/material";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -10,6 +10,7 @@ import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
 import ReportPanels from "./panels/ReportPanels";
+import { prefetchReportPrintPage } from "./print/reportPrintRoutes";
 import { reportQueryKeyOf, reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
@@ -51,6 +52,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	});
 
 	useReportOpenedReporter(isError ? undefined : report);
+	useEffect(prefetchReportPrintPage, []);
 
 	const reportsPath = reportsPathOf(owner);
 	const navigate = useNavigate();
@@ -63,11 +65,13 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const finalFailure = finalFailureOf(error);
 	const mayChange = isEditor && report !== undefined;
 	const exportPdf = useReportPdfExport();
+	const exportWaiting = report === undefined && status === "loading";
 	// A report of a type this version cannot show has nothing to print.
 	const mayExport =
-		report !== undefined &&
-		!isError &&
-		usageDataReportTemplateOf(report.templateKey) !== undefined;
+		exportWaiting ||
+		(report !== undefined &&
+			!isError &&
+			usageDataReportTemplateOf(report.templateKey) !== undefined);
 
 	return (
 		<Stack spacing={2} data-report-status={status}>
@@ -77,6 +81,7 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 				onExport={
 					mayExport ? () => exportPdf(owner, reportId, "report") : undefined
 				}
+				exportWaiting={exportWaiting}
 				onEdit={mayChange ? () => setEditing(report) : undefined}
 				onDelete={mayChange ? () => deletion.ask(report) : undefined}
 			/>

@@ -30,6 +30,7 @@ import {
 	reportsPathFor,
 	THE_REPORT_COULD_NOT_BE_LOADED,
 	theBackControl,
+	theExportButtonOnceItCanBePressed,
 	theFontsAreStillLoading,
 	theFontsCannotLoad,
 	theFontsHaveLoaded,
@@ -105,9 +106,7 @@ const exportingFromTheReport = async (scene: Partial<Scene> = {}) => {
 		startAt: atTheReport,
 		...scene,
 	});
-	await rendered.user.click(
-		await screen.findByRole("button", { name: EXPORT_PDF }),
-	);
+	await rendered.user.click(await theExportButtonOnceItCanBePressed());
 	return rendered;
 };
 
