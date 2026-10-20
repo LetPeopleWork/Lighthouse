@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type {
 	IReport,
@@ -23,16 +23,20 @@ import {
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 	readingOf,
+	shown,
 	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
 import { appColors } from "../../../utils/theme/colors";
 
 /**
  * The marks that say which way a report moved are drawn, not typed, so they look the same on every machine and in
- * every PDF, whatever fonts the machine has. The words beside them carry the meaning and stay as they are; the marks
- * are pictures a screen reader skips, coloured green for better and red for worse as today. The dash of a missing
- * value and the minus of a fall stay text: they are punctuation, not marks.
+ * every PDF, whatever fonts the machine has. The words beside them stay as they are, coloured green for better and
+ * red for worse as today. A screen reader skips the marks whose words already say it, the summary's and No change,
+ * and hears a line's rise or fall, which its words do not say once the percent rounds to nothing. The dash of a
+ * missing value and the minus of a fall stay text: they are punctuation, not marks.
  */
+
+const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -105,6 +109,13 @@ const theDrawnMarkOf = (holder: HTMLElement): SVGSVGElement => {
 	return drawn[0];
 };
 
+/** How a screen reader names the mark of a line that moved, told by the sign of its percent. */
+const theWayItMoved = (change: HTMLElement): "rose" | "fell" => {
+	const sign = /\((?<sign>[+−])\d/.exec(readingOf(change))?.groups?.sign;
+	expect(sign, `"${readingOf(change)}" shows no rise or fall`).toBeDefined();
+	return sign === "−" ? "fell" : "rose";
+};
+
 const theGroup = (kind: string) =>
 	document.querySelector<HTMLElement>(
 		`[data-change-kind="${kind}"]`,
@@ -119,17 +130,48 @@ describe("The marks of a report are drawn", () => {
 	afterEach(forgetTheBrowser);
 
 	// @us-02 @slice-02 @driving_port @contract-shape:unbounded-preservation
-	it.each<Where>(["on the report", "in the print"])(
-		`draws every summary and line mark %s, and types none`,
+	it.skip.each<Where>(["on the report", "in the print"])(
+		`draws every summary and line mark %s and types none; a screen reader hears each line's rise or fall and skips the summary's marks (${pendingReviewFix})`,
 		async (where) => {
 			await showingTheReport(where);
 
-			const holders = [...theSummaryGroups(), ...theLineChanges()];
-			expect(holders.length).toBeGreaterThan(0);
-			for (const holder of holders) {
-				expect(theDrawnMarkOf(holder)).toHaveAttribute("aria-hidden", "true");
-				expect(readingOf(holder)).not.toMatch(THE_MARK_CHARACTERS);
+			expect(theSummaryGroups().length).toBeGreaterThan(0);
+			for (const group of theSummaryGroups()) {
+				expect(theDrawnMarkOf(group)).toHaveAttribute("aria-hidden", "true");
+				expect(readingOf(group)).not.toMatch(THE_MARK_CHARACTERS);
 			}
+			expect(theLineChanges().length).toBeGreaterThan(0);
+			for (const change of theLineChanges()) {
+				expect(
+					within(change).getByRole("img", { name: theWayItMoved(change) }),
+				).toBe(theDrawnMarkOf(change));
+				expect(readingOf(change)).not.toMatch(THE_MARK_CHARACTERS);
+			}
+		},
+	);
+
+	// @us-02 @slice-02 @edge @contract-shape:bounded-change
+	// 4 days out of 880 rounds to 0 %, so the words of a rise and of a fall are the same; only the mark tells them apart.
+	it.skip.each<Where>(["on the report", "in the print"])(
+		`tells a screen reader a line that rose from one that fell by as much, when the percent rounds to nothing, %s (${pendingReviewFix})`,
+		async (where) => {
+			const report = theEngagementStartReport();
+			const cycleTime = theMetric(report, "cycle-time");
+			cycleTime.atThen.p85 = shown(880, 38);
+			cycleTime.atNow.p85 = shown(884, 41);
+			cycleTime.atThen.p70 = shown(884, 38);
+			cycleTime.atNow.p70 = shown(880, 41);
+			await showingTheReport(where, report);
+
+			const [, rose, fell] = theLineChanges();
+
+			expect(readingOf(rose)).toBe(readingOf(fell));
+			expect(within(rose).getByRole("img", { name: "rose" })).toBe(
+				theDrawnMarkOf(rose),
+			);
+			expect(within(fell).getByRole("img", { name: "fell" })).toBe(
+				theDrawnMarkOf(fell),
+			);
 		},
 	);
 

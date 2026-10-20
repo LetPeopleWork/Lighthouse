@@ -34,6 +34,8 @@ import {
 } from "../../../tests/ReportsTestKit";
 import ReportView from "./ReportView";
 
+const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
+
 /**
  * One report as a reader opens it: one line "Reports / <name>", a summary naming each side's window, its
  * length and how many Work Items closed in it, and one panel per shown metric in the catalog's order. A panel
@@ -571,12 +573,18 @@ const kindsAndReadingsOfTheChange = () =>
 		readingOf(group),
 	]);
 
-/** The one mark a group or a line change draws, hidden from a screen reader because its words say the same. */
-const theDrawnMarkOf = (holder: HTMLElement): SVGSVGElement => {
+/** The one mark a group or a line change draws. */
+const theOneMarkOf = (holder: HTMLElement): SVGSVGElement => {
 	const drawn = holder.querySelectorAll("svg");
 	expect(drawn, `"${readingOf(holder)}" draws no single mark`).toHaveLength(1);
-	expect(drawn[0]).toHaveAttribute("aria-hidden", "true");
 	return drawn[0];
+};
+
+/** The one mark a group draws, hidden from a screen reader because its words say the same. */
+const theDrawnMarkOf = (holder: HTMLElement): SVGSVGElement => {
+	const drawn = theOneMarkOf(holder);
+	expect(drawn).toHaveAttribute("aria-hidden", "true");
+	return drawn;
 };
 
 /** The colour the mark of a group is drawn in. */
@@ -1057,9 +1065,9 @@ describe("The panels of a report", () => {
 	});
 
 	// @us-01 @slice-01 @boundary @contract-shape:pure-function
-	// No change has a mark of its own where a rise or a fall has one, so the column lines up; the words already say
-	// what every mark says, so none is read out.
-	it("leads No change, a fall and a rise each with a mark of its own, hidden from a screen reader", async () => {
+	// No change has a mark of its own where a rise or a fall has one, so the column lines up. Its words already say
+	// it did not change, so that mark is not read out; a rise's and a fall's words do not say which way they went.
+	it.skip(`leads No change, a fall and a rise each with a mark of its own; a screen reader hears the fall and the rise, and skips the No change mark (${pendingReviewFix})`, async () => {
 		openTheReport(
 			withCycleTime({
 				atThen: { p85: shown(15, 181), p70: shown(9, 181), p50: shown(5, 181) },
@@ -1073,9 +1081,16 @@ describe("The panels of a report", () => {
 		expect(readingOf(unchanged)).toBe("No change");
 		expect(unchanged.dataset.change).toBe("neutral");
 		const drawings = new Set(
-			[fell, unchanged, rose].map((change) => theDrawnMarkOf(change).innerHTML),
+			[fell, unchanged, rose].map((change) => theOneMarkOf(change).innerHTML),
 		);
 		expect(drawings.size).toBe(3);
+		expect(within(fell).getByRole("img", { name: "fell" })).toBe(
+			theOneMarkOf(fell),
+		);
+		expect(within(rose).getByRole("img", { name: "rose" })).toBe(
+			theOneMarkOf(rose),
+		);
+		expect(theOneMarkOf(unchanged)).toHaveAttribute("aria-hidden", "true");
 	});
 
 	// @us-04 @slice-04 @contract-shape:pure-function

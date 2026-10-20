@@ -8,6 +8,10 @@ const testWithDemo = testWithDemoData(TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID);
 
 const LIGHTSPEED = "Team Lightspeed";
 
+const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
+/** The light theme's divider colour, the one the page prints in. */
+const THE_LIGHT_DIVIDER = "rgb(221, 221, 221)";
+
 // The print dialog of a real browser cannot be driven, so it is stood in for: the page asks for it once, and
 // closing it brings the reader back to the report.
 // @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
@@ -55,5 +59,49 @@ testWithDemo(
 		for (const font of fonts) {
 			expect(font).toMatch(/^Quicksand/);
 		}
+	},
+);
+
+// A name in Central European letters needs a part of the typeface the page fetches only once it meets them; on a
+// slow connection that part can still be on its way when the page says it is ready to print.
+// @us-02 @slice-02 @real-io @error @contract-shape:bounded-change
+testWithDemo.fixme(
+	`a report named in Central European letters is ready to print only once the Lighthouse typeface can draw them, on a slow connection (${pendingReviewFix})`,
+	async ({ testData, overviewPage, page }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
+		const name = "Zespół Łódź Q3";
+
+		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
+		const reports = await lightspeed.goToReports();
+		const report = await reports.createReport({ name });
+		await ReportPrintPage.holdBackTheTypefacesCentralEuropeanLetters(page);
+		await ReportPrintPage.watchTheTypefaceWhenThePageSaysReady(page);
+
+		const printed = await ReportPrintPage.openByItsAddress(
+			page,
+			report.address(),
+		);
+
+		await expect(printed.title).toHaveText(name);
+		expect(await printed.couldTheTypefaceDrawEveryLetterWhenReady()).toBe(true);
+	},
+);
+
+// A line in the text's own colour prints as a heavy black rule between the columns rather than a quiet divider.
+// @us-02 @slice-02 @real-io @contract-shape:bounded-change
+testWithDemo.fixme(
+	`the PDF of a report sets each panel's columns apart with the light divider line (${pendingReviewFix})`,
+	async ({ testData, overviewPage, page }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(LIGHTSPEED);
+
+		const lightspeed = await overviewPage.goToTeam(LIGHTSPEED);
+		const reports = await lightspeed.goToReports();
+		const report = await reports.createTheDefaultReport();
+		await ReportPrintPage.standInForThePrintDialog(page);
+		const printed = await report.exportPdf();
+
+		expect(await printed.colourOfTheLineBeforeNowInPrint()).toBe(
+			THE_LIGHT_DIVIDER,
+		);
 	},
 );

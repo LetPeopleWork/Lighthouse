@@ -26,6 +26,11 @@ export class ReportPage {
 			.last();
 	}
 
+	/** The report's own address, as the browser shows it. */
+	address(): string {
+		return this.page.url();
+	}
+
 	async readName(): Promise<string> {
 		return ((await this.title.textContent()) ?? "").trim();
 	}

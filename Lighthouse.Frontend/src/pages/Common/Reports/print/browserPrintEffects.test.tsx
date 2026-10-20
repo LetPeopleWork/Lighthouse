@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { act, renderHook } from "@testing-library/react";
 import type React from "react";
 import {
@@ -45,6 +48,95 @@ const theDocumentsFontsAre = (
 const A_FACE = { family: "Quicksand" } as unknown as FontFace;
 const FACES = ["400 1em Quicksand", "700 1em Quicksand"];
 const A_PICTURE = "/icons/icon-512x512.png";
+
+const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
+
+const THE_TYPEFACES_STYLES = resolve(
+	dirname(fileURLToPath(import.meta.url)),
+	"../../../../../node_modules/@fontsource-variable/quicksand/index.css",
+);
+const THE_PRINTED_FACES = [
+	'400 1em "Quicksand Variable"',
+	'700 1em "Quicksand Variable"',
+];
+
+interface TypefacePart {
+	readonly name: string;
+	readonly ranges: readonly (readonly [number, number])[];
+}
+
+/** The code points one face of the typeface draws, as its unicode-range declares them. */
+const rangesOf = (declarations: string): [number, number][] =>
+	(/unicode-range:\s*([^;]+);/.exec(declarations)?.[1] ?? "")
+		.split(",")
+		.map((range) => {
+			const [from, to = from] = range.trim().replace("U+", "").split("-");
+			return [Number.parseInt(from, 16), Number.parseInt(to, 16)];
+		});
+
+/** The typeface as the app ships it: one file per part of the alphabet, read off the package's own style sheet. */
+const theTypefacesParts = (): TypefacePart[] =>
+	Array.from(
+		readFileSync(THE_TYPEFACES_STYLES, "utf8").matchAll(
+			/\/\* quicksand-([\w-]+)-wght-normal \*\/\s*@font-face\s*\{([^}]*)\}/g,
+		),
+	).map(([, name, declarations]) => ({ name, ranges: rangesOf(declarations) }));
+
+const draws = (part: TypefacePart, text: string) =>
+	Array.from(text).some((letter) => {
+		const at = letter.codePointAt(0) ?? 0;
+		return part.ranges.some(([from, to]) => at >= from && at <= to);
+	});
+
+/**
+ * The document's fonts as a browser holds the typeface: one face per part, each fetched only when it is asked for.
+ * Asked by a face's description, the browser fetches only the parts that draw the sample text, which is a lone
+ * space when none is given; asked directly, a face fetches itself. A refused part fails whichever way it is asked.
+ */
+const theBrowserHoldsTheTypeface = (refused: readonly string[] = []) => {
+	const fetched = new Set<string>();
+	const faces = theTypefacesParts().map((part) => {
+		const face = {
+			family: "Quicksand Variable",
+			style: "normal",
+			weight: "300 700",
+			status: "unloaded",
+			load: async () => {
+				if (refused.includes(part.name)) {
+					face.status = "error";
+					throw new Error(`the ${part.name} part could not be fetched`);
+				}
+				fetched.add(part.name);
+				face.status = "loaded";
+				return face;
+			},
+		};
+		return { part, face };
+	});
+	const load = async (font: string, text = " ") =>
+		font.includes("Quicksand Variable")
+			? Promise.all(
+					faces
+						.filter(({ part }) => draws(part, text))
+						.map(({ face }) => face.load()),
+				)
+			: [];
+	const held = faces.map(({ face }) => face);
+	Object.defineProperty(document, "fonts", {
+		configurable: true,
+		value: {
+			load,
+			ready: Promise.resolve(),
+			size: held.length,
+			values: () => held.values(),
+			forEach: (each: (face: unknown) => void) => {
+				held.forEach(each);
+			},
+			[Symbol.iterator]: () => held.values(),
+		},
+	});
+	return fetched;
+};
 
 // jsdom draws no pictures, so it has no decode of its own to stand in for.
 const thePicturesDecodeBy = (
@@ -181,6 +273,33 @@ describe("the browser's print effects", () => {
 		await expect(browserPrintEffects(vi.fn()).loadFonts(FACES)).resolves.toBe(
 			"failed",
 		);
+	});
+
+	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
+	// A name such as "Zespół Łódź" needs the typeface's Central European letters; fetched only for a space, they
+	// would still be on their way when the page prints, and the name would come out in a machine's font.
+	it.skip(`loads every part of the typeface before it answers loaded, so a letter beyond basic Latin prints in it too (${pendingReviewFix})`, async () => {
+		const fetched = theBrowserHoldsTheTypeface();
+		const parts = theTypefacesParts().map(({ name }) => name);
+		expect(parts).toEqual(
+			expect.arrayContaining(["latin", "latin-ext", "vietnamese"]),
+		);
+
+		const answer = await browserPrintEffects(vi.fn()).loadFonts(
+			THE_PRINTED_FACES,
+		);
+
+		expect(answer).toBe("loaded");
+		expect([...fetched].sort()).toEqual([...parts].sort());
+	});
+
+	// @us-02 @slice-02 @error @contract-shape:bounded-change
+	it.skip(`answers failed when the part of the typeface with the Central European letters cannot be fetched (${pendingReviewFix})`, async () => {
+		theBrowserHoldsTheTypeface(["latin-ext"]);
+
+		await expect(
+			browserPrintEffects(vi.fn()).loadFonts(THE_PRINTED_FACES),
+		).resolves.toBe("failed");
 	});
 
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change

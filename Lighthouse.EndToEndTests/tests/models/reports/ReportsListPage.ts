@@ -6,6 +6,7 @@ import { ReportPage } from "./ReportPage";
 export interface ThenAndNowChoices {
 	thenEndsOn?: Date;
 	thenDays?: number;
+	name?: string;
 }
 
 /**
@@ -79,6 +80,9 @@ export class ReportsListPage {
 		await this.nextStep();
 		await this.wizard.getByText(/always ending today/).waitFor();
 		await this.nextStep();
+		if (choices.name !== undefined) {
+			await this.wizard.getByLabel("Name", { exact: true }).fill(choices.name);
+		}
 
 		await this.wizard
 			.getByRole("button", { name: "Create", exact: true })

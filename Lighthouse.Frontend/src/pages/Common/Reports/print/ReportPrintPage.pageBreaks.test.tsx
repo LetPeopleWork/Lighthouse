@@ -15,6 +15,7 @@ import {
 	ENGAGEMENT_START_ID,
 	LIGHTSPEED,
 } from "../../../../tests/ReportsTestKit";
+import { appColors } from "../../../../utils/theme/colors";
 
 /**
  * On paper nothing is cut in two and nothing is wasted. The report is laid out for A4 portrait and still fits US
@@ -23,6 +24,8 @@ import {
  * one. Where the pages actually break is the browser's to decide and jsdom cannot paginate, so what is pinned here
  * is what the page asks of the browser when it prints.
  */
+
+const pendingReviewFix = "Pending: slice 02 review fix (epic 6298)";
 
 /** The values that ask for no height of the element's own, so a short report ends where its content ends. */
 const NO_HEIGHT_OF_ITS_OWN = ["auto", "0", "0px", "none", "initial", "unset"];
@@ -46,6 +49,35 @@ const theSegmentsOf = (panel: HTMLElement): HTMLElement => {
 	const then = panel.querySelector<HTMLElement>('[data-segment="then"]');
 	expect(then, "the panel has no Then").not.toBeNull();
 	return (then as HTMLElement).parentElement as HTMLElement;
+};
+
+/** A colour as the browser writes it back, so a colour asked for as #rrggbb compares with one read off a rule. */
+const asTheBrowserReadsIt = (colour: string): string => {
+	const sample = document.createElement("span");
+	sample.style.color = colour;
+	return sample.style.color;
+};
+
+/**
+ * What a wide screen asks of one property of the element: the last rule for the element under a minimum width that
+ * names the property, or else what the element asks on any screen. jsdom applies no such rule when it computes a style.
+ */
+const whatAWideScreenAsksOf = (element: Element, property: string): string => {
+	const asked = Array.from(document.styleSheets)
+		.flatMap((sheet) => Array.from(sheet.cssRules))
+		.flatMap((rule) =>
+			rule instanceof CSSMediaRule && /min-width/.test(rule.media.mediaText)
+				? Array.from(rule.cssRules).filter(
+						(inner): inner is CSSStyleRule => inner instanceof CSSStyleRule,
+					)
+				: [],
+		)
+		.filter((rule) => element.matches(rule.selectorText))
+		.map((rule) => rule.style.getPropertyValue(property).trim())
+		.filter((value) => value !== "");
+	return asked.length === 0
+		? getComputedStyle(element).getPropertyValue(property).trim()
+		: asked[asked.length - 1];
 };
 
 const theStylesOfThePage = () =>
@@ -99,6 +131,24 @@ describe("The printed report is never cut in two", () => {
 				whatPrintAsksOf(segments, "grid-template-columns"),
 				"a panel stacks its columns on paper",
 			).toMatch(/^repeat\(3,/);
+		}
+	});
+
+	// @us-02 @slice-02 @contract-shape:bounded-change
+	// A line in the text's own colour reads as a heavy black rule between the columns rather than a quiet divider.
+	it.skip(`sets Now and Change off from the column before by a line in the theme's divider colour, on a wide screen and on paper (${pendingReviewFix})`, async () => {
+		await thePrintedReport();
+
+		const divider = asTheBrowserReadsIt(appColors.light.divider);
+		const setOff = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				'[data-segment="now"], [data-segment="change"]',
+			),
+		);
+		expect(setOff.length).toBeGreaterThan(0);
+		for (const column of setOff) {
+			expect(whatPrintAsksOf(column, "border-left-color")).toBe(divider);
+			expect(whatAWideScreenAsksOf(column, "border-left-color")).toBe(divider);
 		}
 	});
 
