@@ -72,7 +72,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         private static readonly string[] EverythingThePageSaysTravelsWithATemplate = [.. EverythingThePageSaysTravels, TemplateOnTheWire];
 
         [Test]
-        [Ignore(PendingEpic6298.Slice01)]
         [Category("us-01")]
         [Category("driving_port")]
         [Category("real-io")]
@@ -109,7 +108,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(",\"reportTemplate\":\"ThenAndNow\",\"route\":\"TeamDetail_Reports\"")]
         [TestCase(",\"reportTemplate\":\"ThenAndNow\",\"refinementVerdict\":\"In\"")]
         [TestCase(",\"reportTemplate\":\"ThenAndNow\",\"updates\":\"Now\"")]
-        [Ignore(PendingEpic6298.Slice01)]
         [Category("us-01")]
         [Category("driving_port")]
         [Category("real-io")]
@@ -150,7 +148,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// order the name was appended in rather than its number.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6298.Slice01)]
         [Category("us-01")]
         [Category("contract-shape:bounded-change")]
         public void The_export_is_appended_to_the_list_of_names_never_inserted()
@@ -181,7 +178,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // Data leaving that the page does not describe is data nobody was told about.
         [Test]
-        [Ignore(PendingEpic6298.Slice01)]
         [Category("us-01")]
         [Category("contract-shape:bounded-change")]
         public void The_usage_data_page_has_a_row_for_a_report_exported_as_a_PDF_naming_its_type()
@@ -196,7 +192,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         [Test]
-        [Ignore(PendingEpic6298.Slice01)]
         [Category("us-01")]
         [Category("contract-shape:bounded-change")]
         public void The_usage_data_page_says_an_export_also_names_which_type_of_report()

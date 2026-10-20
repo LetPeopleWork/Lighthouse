@@ -48,5 +48,11 @@ namespace Lighthouse.Backend.Models.UsageData
         ReportDeleted = 18,
 
         WorkTrackingSystemFieldsChanged = 19,
+
+        /// <summary>
+        /// Somebody chose to export a report as a PDF. It counts the choice, so a print dialog that was
+        /// then cancelled counts too: nothing tells Lighthouse whether a file was saved.
+        /// </summary>
+        ReportPdfExportStarted = 20,
     }
 }

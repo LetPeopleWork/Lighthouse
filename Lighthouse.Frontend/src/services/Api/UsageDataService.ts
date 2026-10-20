@@ -41,6 +41,7 @@ export const UsageDataEventName = {
 	ReportOpened: "ReportOpened",
 	ReportDeleted: "ReportDeleted",
 	WorkTrackingSystemFieldsChanged: "WorkTrackingSystemFieldsChanged",
+	ReportPdfExportStarted: "ReportPdfExportStarted",
 } as const;
 
 export type UsageDataEventName =

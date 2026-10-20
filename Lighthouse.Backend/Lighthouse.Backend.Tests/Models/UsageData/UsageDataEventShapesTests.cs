@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Models.UsageData
                 UsageDataEventName.WorkTrackingSystemConnected => nameOnly with { WorkTrackingSystem = UsageDataWorkTrackingSystem.Jira },
                 UsageDataEventName.OptionalFeatureToggled => nameOnly with { OptionalFeature = UsageDataOptionalFeature.FeatureOrder, Enabled = true },
                 UsageDataEventName.TeamRefinementDayVerdictShown => nameOnly with { RefinementVerdict = UsageDataRefinementVerdict.None },
-                UsageDataEventName.ReportCreated or UsageDataEventName.ReportOpened => nameOnly with { ReportTemplate = UsageDataReportTemplate.ThenAndNow },
+                UsageDataEventName.ReportCreated or UsageDataEventName.ReportOpened or UsageDataEventName.ReportPdfExportStarted => nameOnly with { ReportTemplate = UsageDataReportTemplate.ThenAndNow },
                 UsageDataEventName.WorkTrackingSystemFieldsChanged => nameOnly with { Updates = UsageDataUpdates.Now },
                 _ => nameOnly,
             };
