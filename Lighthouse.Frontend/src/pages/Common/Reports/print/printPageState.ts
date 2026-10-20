@@ -1,4 +1,4 @@
-import { ApiError } from "../../../../services/Api/ApiError";
+import { isAFinalReadRefusal } from "../reportReadFailures";
 
 /**
  * What the print page shows, decided from what it has: still preparing; the report could not be read, with a way to
@@ -35,18 +35,11 @@ export const isAFreshAnswer = (
 	mountedAt: number,
 ): boolean => fetchedAt !== null && fetchedAt >= mountedAt;
 
-/** A report that no longer exists, or that a newer version made, stays that way however often it is asked for. */
-const REFUSALS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
-
 const isAnError = (error: unknown): boolean =>
 	error !== null && error !== undefined;
 
-const isFinal = (reportError: unknown): boolean =>
-	reportError instanceof ApiError &&
-	REFUSALS_THAT_DO_NOT_CHANGE.has(reportError.code);
-
 export const printPageStateOf = (inputs: PrintPageInputs): PrintPageState => {
-	if (isFinal(inputs.reportError)) return "failedFinal";
+	if (isAFinalReadRefusal(inputs.reportError)) return "failedFinal";
 	if (isAnError(inputs.reportError)) return "failedRetryable";
 	if (
 		isAnError(inputs.ownerError) ||

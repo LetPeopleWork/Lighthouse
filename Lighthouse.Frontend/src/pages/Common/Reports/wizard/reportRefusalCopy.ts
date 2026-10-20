@@ -62,19 +62,6 @@ export const finalFailureOf = (error: unknown): string | undefined => {
 	return undefined;
 };
 
-const ANSWERS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
-
-/** Retries a report read as the app usually does, except when the report is gone or made by a newer version: those stay that way, and asking again only delays saying so. */
-export const retriesUnlessFinal =
-	(usualRetry: unknown) =>
-	(failureCount: number, error: Error): boolean => {
-		if (error instanceof ApiError && ANSWERS_THAT_DO_NOT_CHANGE.has(error.code))
-			return false;
-		return typeof usualRetry === "number"
-			? failureCount < usualRetry
-			: usualRetry === true;
-	};
-
 /** Why a Community instance creates no further report for this Team or Portfolio. */
 export const capSentenceFor = (ownerTerm: string): string =>
 	`Community includes 1 Then & Now report per ${ownerTerm}. Delete it, or use Premium for unlimited reports.`;

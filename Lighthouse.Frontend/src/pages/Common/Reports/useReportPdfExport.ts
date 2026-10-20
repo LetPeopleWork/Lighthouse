@@ -6,6 +6,7 @@ import {
 	usageDataReportTemplateOf,
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
+import { printRequestFor } from "./print/printRequest";
 import type { PrintOrigin } from "./print/usePrintOnce";
 import { reportPathOf } from "./reportOwner";
 
@@ -33,7 +34,7 @@ export const useReportPdfExport = () => {
 			}
 
 			navigate(`/print${reportPathOf(owner, report.id)}`, {
-				state: { printWhenReady: true, from },
+				state: printRequestFor(from),
 			});
 		},
 		[navigate, reportUsage],

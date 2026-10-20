@@ -1,18 +1,15 @@
-import { Box, Button, GlobalStyles, ThemeProvider } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
-import { Link as RouterLink, useLocation, useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import type { IReport, IReportOwner } from "../../../../models/Reports/Report";
 import type { useTerminology } from "../../../../services/TerminologyContext";
-import { lightTheme } from "../../../../utils/theme/appThemes";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../MetricsView/widgetStatus";
-import { reportPathOf, reportQueryKeyOf, reportsPathOf } from "../reportOwner";
-import {
-	finalFailureOf,
-	retriesUnlessFinal,
-} from "../wizard/reportRefusalCopy";
+import { reportPathOf, reportsPathOf } from "../reportOwner";
+import { useReportRead } from "../useReportRead";
+import { finalFailureOf } from "../wizard/reportRefusalCopy";
+import PrintSheet, { type WayBack } from "./PrintSheet";
 import {
 	isAFreshAnswer,
 	type PrintFontsState,
@@ -20,6 +17,7 @@ import {
 	printPageStateOf,
 } from "./printPageState";
 import type { PrintReadPort } from "./printReadPort";
+import { printRequestOf } from "./printRequest";
 import ReportPrintDocument, {
 	ownerLineOf,
 	printTitleOf,
@@ -27,7 +25,6 @@ import ReportPrintDocument, {
 import {
 	type PrintEffectPort,
 	type PrintOrigin,
-	RETURNED_FROM_PRINT,
 	usePrintOnce,
 } from "./usePrintOnce";
 
@@ -38,23 +35,6 @@ const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 const BACK_TO_REPORT = "‹ Back to report";
 const BACK_TO_REPORTS = "‹ Back to Reports";
-const SCREEN_ONLY = { "@media print": { display: "none" } };
-const BODY_MIN_HEIGHT = 240;
-
-/**
- * Paper is white whatever the reader's screen is. The app's baseline paints the body from the reader's theme, and a
- * nested light theme does not repaint it, so the page sets its own ground and tells the browser it is a light page.
- */
-const LIGHT_GROUND = {
-	p: 4,
-	minHeight: "100vh",
-	bgcolor: "background.paper",
-	color: "text.primary",
-	colorScheme: "light",
-};
-const WHITE_PAPER = {
-	"@media print": { "html, body": { backgroundColor: "#fff" } },
-};
 
 /** The weights the printed report is set in: its text and its headings. */
 const THE_PRINTED_FACES = ["400 1em Quicksand", "700 1em Quicksand"];
@@ -71,26 +51,6 @@ interface ReportPrintPageProps {
 	readonly terms: PrintTerms;
 	readonly effects: PrintEffectPort;
 }
-
-interface PrintRequest {
-	readonly printWhenReady: boolean;
-	readonly from: PrintOrigin | undefined;
-}
-
-const isAnOrigin = (from: unknown): from is PrintOrigin =>
-	from === "report" || from === "list";
-
-/** What the export left in the history entry; a page opened from its address finds nothing there. */
-const printRequestOf = (state: unknown): PrintRequest => {
-	const carried = (state ?? {}) as {
-		printWhenReady?: unknown;
-		from?: unknown;
-	};
-	return {
-		printWhenReady: carried.printWhenReady === true,
-		from: isAnOrigin(carried.from) ? carried.from : undefined,
-	};
-};
 
 const useOwnerName = (owner: IReportOwner, reads: PrintReadPort) =>
 	useQuery({
@@ -162,11 +122,6 @@ const useDocumentTitle = (title: string | undefined) => {
 	}, [title]);
 };
 
-interface WayBack {
-	readonly to: string;
-	readonly label: string;
-}
-
 /**
  * Only a reader who came from the report goes back to it, and only while it can be shown; from the list, a pasted
  * link, or a report that is gone or made by a newer version, the Reports list is where they belong.
@@ -237,13 +192,12 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const reportId = Number(params.reportId);
 	const mountedAt = useMemo(() => Date.now(), []);
 
-	const usualRetry = useQueryClient().getDefaultOptions().queries?.retry;
-	const report = useQuery({
-		queryKey: reportQueryKeyOf(owner, reportId),
-		queryFn: () => reads.getReport(owner, reportId),
-		refetchOnMount: "always",
-		retry: retriesUnlessFinal(usualRetry),
-	});
+	const report = useReportRead(
+		owner,
+		reportId,
+		() => reads.getReport(owner, reportId),
+		{ refetchOnMount: "always" },
+	);
 	const ownerName = useOwnerName(owner, reads);
 
 	const fetchedAt = report.data === undefined ? null : report.dataUpdatedAt;
@@ -278,7 +232,6 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const { printWhenReady, from } = printRequestOf(location.state);
 	const reportPath = reportPathOf(owner, reportId);
 	const reportsPath = reportsPathOf(owner);
-	const back = wayBackOf(state, from, reportPath, reportsPath);
 
 	usePrintOnce({
 		state,
@@ -291,47 +244,27 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	});
 
 	return (
-		<ThemeProvider theme={lightTheme}>
-			<GlobalStyles styles={WHITE_PAPER} />
-			<Box
-				data-render-ready={state === "ready" ? "true" : "false"}
-				sx={LIGHT_GROUND}
+		<PrintSheet
+			ready={state === "ready"}
+			back={wayBackOf(state, from, reportPath, reportsPath)}
+		>
+			<WidgetBody
+				widgetKey="report-print"
+				status={widgetStatusOf(state)}
+				hasContentToDim={false}
+				loadingMessage={PREPARING}
+				failureMessage={failure.message}
+				onRetry={failure.retry}
 			>
-				<Button
-					component={RouterLink}
-					to={back.to}
-					replace
-					state={RETURNED_FROM_PRINT}
-					sx={SCREEN_ONLY}
-				>
-					{back.label}
-				</Button>
-				<Box
-					sx={{
-						display: "flex",
-						flexDirection: "column",
-						minHeight: BODY_MIN_HEIGHT,
-					}}
-				>
-					<WidgetBody
-						widgetKey="report-print"
-						status={widgetStatusOf(state)}
-						hasContentToDim={false}
-						loadingMessage={PREPARING}
-						failureMessage={failure.message}
-						onRetry={failure.retry}
-					>
-						{printable !== undefined && (
-							<ReportPrintDocument
-								report={printable.report}
-								ownerLine={printable.ownerLine}
-								producedAt={report.dataUpdatedAt}
-							/>
-						)}
-					</WidgetBody>
-				</Box>
-			</Box>
-		</ThemeProvider>
+				{printable !== undefined && (
+					<ReportPrintDocument
+						report={printable.report}
+						ownerLine={printable.ownerLine}
+						producedAt={report.dataUpdatedAt}
+					/>
+				)}
+			</WidgetBody>
+		</PrintSheet>
 	);
 };
 

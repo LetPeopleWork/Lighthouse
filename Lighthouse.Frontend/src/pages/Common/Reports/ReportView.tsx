@@ -1,5 +1,4 @@
 import { Box, Button, Stack } from "@mui/material";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useContext, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
@@ -11,18 +10,18 @@ import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
 import ReportPanels from "./panels/ReportPanels";
 import { prefetchReportPrintPage } from "./print/reportPrintRoutes";
-import { reportQueryKeyOf, reportsPathOf } from "./reportOwner";
+import { reportsPathOf } from "./reportOwner";
 import ThenAndNowHeader from "./ThenAndNowHeader";
 import ThenAndNowSummary from "./ThenAndNowSummary";
 import { useMayEditReports } from "./useMayEditReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportOpenedReporter } from "./useReportOpenedReporter";
 import { useReportPdfExport } from "./useReportPdfExport";
+import { useReportRead } from "./useReportRead";
 import ReportWizard from "./wizard/ReportWizard";
 import {
 	COULD_NOT_LOAD_REPORT,
 	finalFailureOf,
-	retriesUnlessFinal,
 } from "./wizard/reportRefusalCopy";
 
 const LOADING = "Loading report…";
@@ -38,18 +37,15 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	reportId,
 }) => {
 	const { reportService } = useContext(ApiServiceContext);
-	const usualRetry = useQueryClient().getDefaultOptions().queries?.retry;
 	const {
 		data: report,
 		isFetching,
 		isError,
 		error,
 		refetch,
-	} = useQuery({
-		queryKey: reportQueryKeyOf(owner, reportId),
-		queryFn: () => reportService.getReport(owner, reportId),
-		retry: retriesUnlessFinal(usualRetry),
-	});
+	} = useReportRead(owner, reportId, () =>
+		reportService.getReport(owner, reportId),
+	);
 
 	useReportOpenedReporter(isError ? undefined : report);
 	useEffect(prefetchReportPrintPage, []);
