@@ -47,6 +47,33 @@ export const COULD_NOT_SAVE = "The report couldn't be saved. Try again.";
 export const NO_LONGER_EXISTS = "This report no longer exists.";
 export const COULD_NOT_LOAD_REPORT =
 	"This report couldn't be loaded. Reload to try again.";
+const MADE_BY_A_NEWER_VERSION =
+	"This report was made by a newer version of Lighthouse and can't be shown here.";
+
+const isMadeByANewerVersion = (error: unknown): boolean =>
+	error instanceof ApiError &&
+	error.code === 422 &&
+	error.problemCode === "template-not-supported";
+
+/** What to say about a report read that asking again will not change; nothing for one that might. */
+export const finalFailureOf = (error: unknown): string | undefined => {
+	if (isMadeByANewerVersion(error)) return MADE_BY_A_NEWER_VERSION;
+	if (error instanceof ApiError && error.code === 404) return NO_LONGER_EXISTS;
+	return undefined;
+};
+
+const ANSWERS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
+
+/** Retries a report read as the app usually does, except when the report is gone or made by a newer version: those stay that way, and asking again only delays saying so. */
+export const retriesUnlessFinal =
+	(usualRetry: unknown) =>
+	(failureCount: number, error: Error): boolean => {
+		if (error instanceof ApiError && ANSWERS_THAT_DO_NOT_CHANGE.has(error.code))
+			return false;
+		return typeof usualRetry === "number"
+			? failureCount < usualRetry
+			: usualRetry === true;
+	};
 
 /** Why a Community instance creates no further report for this Team or Portfolio. */
 export const capSentenceFor = (ownerTerm: string): string =>

@@ -9,7 +9,6 @@ import type {
 	IReportOwner,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { usageDataReportTemplateOf } from "../../../services/UsageData/usageDataReporter";
@@ -32,12 +31,11 @@ import { useReportPdfExport } from "./useReportPdfExport";
 import ReportWizard from "./wizard/ReportWizard";
 import {
 	COULD_NOT_LOAD_REPORT,
-	NO_LONGER_EXISTS,
+	finalFailureOf,
+	retriesUnlessFinal,
 } from "./wizard/reportRefusalCopy";
 
 const LOADING = "Loading report…";
-const MADE_BY_A_NEWER_VERSION =
-	"This report was made by a newer version of Lighthouse and can't be shown here.";
 const BODY_MIN_HEIGHT = 120;
 
 /** A metric shown on a report made before it was captured reads as not captured on both sides. */
@@ -47,31 +45,6 @@ interface ReportViewProps {
 	owner: IReportOwner;
 	reportId: number;
 }
-
-const isMadeByANewerVersion = (error: Error | null): boolean =>
-	error instanceof ApiError &&
-	error.code === 422 &&
-	error.problemCode === "template-not-supported";
-
-/** What to say about an answer that asking again will not change; nothing for one that might. */
-const finalFailureOf = (error: Error | null): string | undefined => {
-	if (isMadeByANewerVersion(error)) return MADE_BY_A_NEWER_VERSION;
-	if (error instanceof ApiError && error.code === 404) return NO_LONGER_EXISTS;
-	return undefined;
-};
-
-const ANSWERS_THAT_DO_NOT_CHANGE = new Set<string | number>([404, 422]);
-
-// A report that is gone, or made by a newer version, stays that way; asking again only delays saying so.
-const retriesUnlessFinal =
-	(usualRetry: unknown) =>
-	(failureCount: number, error: Error): boolean => {
-		if (error instanceof ApiError && ANSWERS_THAT_DO_NOT_CHANGE.has(error.code))
-			return false;
-		return typeof usualRetry === "number"
-			? failureCount < usualRetry
-			: usualRetry === true;
-	};
 
 const ReportPanels: React.FC<{ readonly report: IReport }> = ({ report }) => {
 	const { getTerm } = useTerminology();
