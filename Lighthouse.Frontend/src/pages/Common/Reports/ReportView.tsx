@@ -4,7 +4,6 @@ import { useContext, useEffect, useState } from "react";
 import { Link as RouterLink, useNavigate } from "react-router";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import { usageDataReportTemplateOf } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import { WidgetBody } from "../MetricsView/WidgetShell";
 import { queryStatusOf } from "../MetricsView/widgetStatus";
@@ -23,6 +22,7 @@ import {
 	COULD_NOT_LOAD_REPORT,
 	finalFailureOf,
 } from "./wizard/reportRefusalCopy";
+import { isShownByThisVersion } from "./wizard/reportTypes";
 
 const LOADING = "Loading report…";
 const BODY_MIN_HEIGHT = 120;
@@ -62,12 +62,11 @@ const ReportView: React.FC<Readonly<ReportViewProps>> = ({
 	const mayChange = isEditor && report !== undefined;
 	const pdfExport = useReportPdfExport(owner);
 	const exportWaiting = report === undefined && status === "loading";
-	// A report of a type this version cannot show has nothing to print.
 	const mayExport =
 		exportWaiting ||
 		(report !== undefined &&
 			!isError &&
-			usageDataReportTemplateOf(report.templateKey) !== undefined);
+			isShownByThisVersion(report.templateKey));
 	const exportThisReport = () => {
 		// The button cannot be pressed until the report has arrived.
 		if (report !== undefined) {

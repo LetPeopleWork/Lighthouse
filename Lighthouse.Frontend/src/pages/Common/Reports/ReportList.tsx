@@ -13,7 +13,7 @@ import type {
 } from "../../../models/Reports/Report";
 import { parseLocalDate } from "../../../utils/date/localDate";
 import { reportPathOf } from "./reportOwner";
-import { reportTypeTitleOf } from "./wizard/reportTypes";
+import { isShownByThisVersion, reportTypeTitleOf } from "./wizard/reportTypes";
 
 /** What somebody who may change the reports can do from a row. */
 export interface ReportListEditorActions {
@@ -36,9 +36,6 @@ interface ReportListProps {
 	reports: IReportListItem[];
 	actions: ReportListActions;
 }
-
-const isShownByThisVersion = (report: IReportListItem): boolean =>
-	reportTypeTitleOf(report.templateKey) !== undefined;
 
 // Held back only in look while one PDF is prepared: a truly disabled icon would throw a keyboard reader's focus to
 // the page.
@@ -109,7 +106,7 @@ const RowActions: React.FC<{
 	readonly actions: ReportListActions;
 }> = ({ report, actions }) => {
 	const { editor } = actions;
-	const isShown = isShownByThisVersion(report);
+	const isShown = isShownByThisVersion(report.templateKey);
 	return (
 		<>
 			{isShown && <ExportPdfButton report={report} actions={actions} />}

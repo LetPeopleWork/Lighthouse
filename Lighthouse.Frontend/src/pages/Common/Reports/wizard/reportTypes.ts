@@ -101,3 +101,7 @@ export const reportTypeTitleOf = (templateKey: string): string | undefined =>
 	Object.keys(reportTypes).includes(templateKey)
 		? reportTypes[templateKey as ReportTemplateKey].title
 		: undefined;
+
+/** Whether this version can show a report of the Type, and so edit or print it. */
+export const isShownByThisVersion = (templateKey: string): boolean =>
+	reportTypeTitleOf(templateKey) !== undefined;
