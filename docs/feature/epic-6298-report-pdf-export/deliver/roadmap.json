@@ -1,0 +1,935 @@
+{
+  "roadmap": {
+    "project_id": "epic-6298-report-pdf-export",
+    "created_at": "2026-10-20T00:00:00Z",
+    "goal": "Let anyone who can read a Then & Now report export it as a light, branded, dated PDF, from the report view's Export PDF button or the Reports list's PDF icon, through a chrome-less print page that reads the report afresh and opens the print dialog exactly once; make that PDF read the same on every machine (drawn marks, Quicksand bundled with the app, nothing cut in two on paper) and explain itself to a cold reader; then let assistants and the lh command line read reports through four read-only MCP tools and lh report list|get, and show a Then & Now as a faithful dashboard through the lighthouse-reports skill.",
+    "total_steps": 32,
+    "source": "docs/feature/epic-6298-report-pdf-export/feature-delta.md (DISCUSS to DISTILL: DDD-1..32, R1..R35, the DEVOPS usage-event design, the Scenarios table, Scaffolds, RED classification, Existing-test disposition, Known gaps, Handoff to DELIVER, maintainer decisions NMD-1..7 of 2026-10-19 and PD-1..6 / DVO-9 / DVO-10 of 2026-10-20), slices/slice-01..05, distill/wave-decisions.md (DS-1..19), design/wave-decisions.md, devops/wave-decisions.md, environments.yaml, docs/product/architecture/adr-245, adr-246, adr-247. Pending tests: Lighthouse commits d92b105f9 and 48ad19d2d, lighthouse-clients commit 7ab462e.",
+    "paradigm": "OOP project. Frontend React 19 + MUI 9 + TypeScript with Vitest + React Testing Library (the scenes run the real Reports pages through src/tests/ReportPrintTestKit.tsx and ReportsTestKit.tsx); backend .NET 10 with NUnit 4.6 over a real SQLite host (UsageDataCollectorObservationTest); E2E Playwright through page objects; lighthouse-clients TypeScript with Vitest against aFakeLighthouse on a real socket. No Hypothesis / property-based-test mandate: it is a Python pilot that this corpus has declined on the record (story 6301, epic 6303). Where DESIGN asks for a property (the page-state rule over every input combination), the DISTILL table (16 rows plus the 32-combination grid in printPageState.test.ts) is that property written as an exhaustive table; no new test dependency.",
+    "standing_constraints": [
+      "Before every step, read /storage/repos/Lighthouse/docs/ci-learnings.md and pre-apply every rule it lists (CLAUDE.md requires it). The preflights below are this Epic's extract; the ledger wins where they differ.",
+      "Repositories. Phases 01-03 touch /storage/repos/Lighthouse only; phases 04-05 touch /storage/repos/lighthouse-clients only. Every step carries a 'repository' field, and its files_to_modify are relative to that repository's root. Work in the main checkouts with absolute paths; prefix git with LEAN_CTX_DISABLED=1. Order: slice 01 then 02 then 03 in Lighthouse, then 04 then 05 in the clients. 04 and 05 do not depend on 01-03 technically; the order is the maintainer's sequence, so 04-01 waits on 03-01.",
+      "Un-skip discipline. A step removes the pending marker only from the scenarios it lists, and only once they pass: frontend it.skip / it.skip.each carrying the pendingEpic6298 reason; backend [Ignore(PendingEpic6298.Slice01)]; Playwright testWithDemo.fixme; clients it.skip / it.skip.each carrying the 'Pending: ... (epic 6298, slice 0N)' reason. If a listed scenario already passes before the step's production change (likely for a scan or a scenario an earlier step's code already satisfies), prove it can fail by sabotage-by-substitution: keep every parameter read, assign the dependency to a discard, never comment a call out, never if(false), never a bare block. Then restore it and un-skip. The scenarios marked 'active' in DISTILL are guards that are green today: each step lists the ones in its reach, and they must stay green.",
+      "Slice-end greps. End of slice 01: grep -rn 'PendingEpic6298' Lighthouse.Backend returns nothing and PendingEpic6298.cs is deleted (01-01 does it, since the backend has only Slice01); grep -rn \"epic 6298, slice 01\" Lighthouse.Frontend/src returns nothing; grep -rn SCAFFOLD Lighthouse.Frontend/src/pages/Common/Reports/print returns nothing; the first fixme of ReportPdfExport.spec.ts is a test. End of slice 02 and 03: no it.skip naming 'slice 02' / 'slice 03' left, and no fixme left in ReportPdfExport.spec.ts. End of slice 04: grep -rn \"epic 6298, slice 04\" in lighthouse-clients/packages returns nothing. End of slice 05: test-support/pending-skill-evals/lighthouse-reports/ is gone and lighthouseReports.skill.test.ts has no it.skip.",
+      "SCAFFOLD inventory at hand-off: print/reportPrintRoutes.tsx, print/printPageState.ts, print/usePrintOnce.ts and print/browserPrintEffects.ts each throw 'SCAFFOLD: ...'. print/printReadPort.ts is a type only. The scaffolded types (PrintPageState with failedPart, PrintPageInputs, PrintOrigin, PrintEffectPort with loadFonts, PrintFontsOutcome, PrintOnceInputs, RETURNED_FROM_PRINT = { returnedFromPrint: true }) may be reshaped only consistently with the tests that name them. 01-02 removes the four throws as it makes the skeleton pass; the later slice-01 steps complete each module.",
+      "Copy is pinned by the maintainer (NMD-1..6, PD-1..6) and by the tests. Use it verbatim and re-sketch nothing. Report view: outlined 'Export PDF', first in the action row before 'Edit report' and 'Delete'. List: icon first in Actions, tooltip 'Export PDF', aria-label 'Export {report name} as PDF'. Print page: 'Preparing the PDF…'; 'This report couldn't be loaded, so no PDF was made.' with Retry; 'Part of the page couldn't be loaded, so no PDF was made.' with Retry; the report view's own final sentences ('This report no longer exists.' / 'This report was made by a newer version of Lighthouse and can't be shown here.') with no Retry; '‹ Back to report' / '‹ Back to Reports'. Header: owner kind and name ('Team Lightspeed'), the report name as h1, 'Then 3 May – 31 Jul 2026 · Now 5 Jul – 2 Oct 2026' (the kit's windows), 'Produced 2 Oct 2026, 09:15', then a rule. Footer: the Lighthouse logo and 'Made with Lighthouse by LetPeopleWork · letpeople.work'. document.title: '{report} — {owner kind} {owner name}'. 'How to read this' lines per NMD-5. Configurable words (Team, Portfolio, the metric names) come through Terminology; a renamed panel reads the term alone ('Lead Time', PD-2). A phrase used three times in one file lives in one const (S1192).",
+      "Frontend local gates before every frontend commit, each read in full (never piped through tail or head): pnpm test (the script sets TZ=Europe/Zurich, which the Produced line relies on), then pnpm build with zero errors and zero warnings. prebuild runs biome check --write: remove any */docs symlinks first, and re-stage what Biome rewrote. Keep each new test file under the 63 s frontend budget (Scripts/test-timings/test-time-budget.json). Speed it up before allowlisting.",
+      "Frontend preflight, pre-applied: S6754 useState as [thing, setThing]; S7761 data-* only through dataset (data-render-ready is dataset.renderReady); S7764 globalThis over window (globalThis.print, never window.print, and the scan forbids window.print); S7770 pass single-arg pure functions directly; S7735 no negated condition in a ternary; S3358 no nested ternary in a template literal; S3776 keep printPageStateOf, the page's effect and the hook under complexity 15 (a lambda counts toward its method); readonly props on every component; a catch parameter is named error_. Before changing a visible label, accessible name, mark character or data-testid, grep -rn the old text in Lighthouse.EndToEndTests/ in the same edit: the POMs live outside tsc -b and pnpm test.",
+      "Effect isolation (DDD-24/25/28, R16/R18b/R33-R35). Only print/browserPrintEffects.ts names globalThis.print and document.fonts. Only print/reportPrintRoutes.tsx under print/ names ApiServiceContext. It builds the read port as a new object literal of exactly getReport, getTeam and getPortfolio, each bound, and the terms read as exactly getTerm, isLoading and error. printPageStateOf imports nothing from React, the router or TanStack Query. usePrintOnce reads only its parameters and the port it is handed. Exactly one export starter under pages/Common/Reports/ names ReportPdfExportStarted. The scans in print/reportPrint.enforcement.test.ts read relative imports only, so no step introduces an alias import for the frontend's own modules.",
+      "Backend (01-01 only; DESIGN has no other backend change). The gates: dotnet build in Lighthouse.Backend with zero warnings, then dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". Never --no-build while another build writes bin/. Program.cs is NOT touched, so no live-connector suite wakes up. Preflight: NUnit2045 independent asserts in using (Assert.EnterMultipleScope()), helpers included; NUnit2056 never Assert.Multiple; CA1861 hoisted constant arrays; CA1859 concrete types on non-public members; NUnit1028 private static TestCaseSource providers; a discard-free switch over UsageDataEventName carries a narrow #pragma warning disable CS8524 with its reason inline.",
+      "E2E (01-18, 02-04). Page objects only, never page.locator() in a spec. Wait for data-render-ready=\"true\", never mere visibility. The print stub (window.print replaced through page.addInitScript by a recorder that dispatches afterprint) lives in the print POM's stubPrint(). Use page.emulateMedia({ media: 'print' }) before asserting print-only rules. Assert Produced by its format and presence, never a wall-clock value. Demo scenario 11 with Team Lightspeed and a premium licence, as Reports.spec.ts. Run the spec locally against a live instance before committing: start your own instance with the Kestrel keys overridden, never on 5169. Never commit an unrun spec or POM locator.",
+      "lighthouse-clients gates before every clients commit: pnpm run ci (lint, test, typecheck, build, typecheck:tests). Never pnpm ci, which in pnpm 12 runs an install. Tests that read reports name a server newer than v26.10.10.1, because aFakeLighthouse defaults to v26.10.8.1, which the reports gate refuses. Biome excludes test-support/reportAnswers/*.json so the captures stay byte-identical.",
+      "Clients changesets. scripts/check-changeset.mjs blocks a commit that stages packages/<name>/src/** or packages/<name>/package.json without a staged .changeset/*.md. 04-01 writes the one minor changeset for @letpeoplework/lighthouse-client, -cli, -mcp-core, -mcp-stdio and -mcp-http (the story-6247 precedent: the stdio and HTTP servers expose the new tools). Later code commits in phase 04 re-stage that same changeset with its summary extended, which satisfies the gate and keeps one CHANGELOG entry. A commit that stages only tests under packages/*/src stages a new EMPTY changeset (pnpm changeset --empty). Phase 05 touches no packages/*/src or package.json and so needs no changeset (DEVOPS: skill-only). The empty .changeset/epic-6298-acceptance-scenarios.md from DISTILL stays as it is.",
+      "Comments are rare and why-only, written for a stranger. No code comment cites an internal reference (DDD-n, NMD-n, PD-n, R-n, AC-n.n, slice or step ids, ADR-245..247). Write the reason in plain language, or nothing. Fix offending comments in any file you touch.",
+      "Commits: one focused conventional commit per step through des-commit with the step id; scope 'reports' in both repositories (feat(reports), test(reports), refactor(reports)). A refactor (the theme move, the shell layout route) goes in its own commit before the behaviour commit, under the same step id. No step pushes and no step cuts a release. The maintainer decided (DVO-9) that no release carrying the PDF is cut until slices 01-05 have all landed. In the clients, pnpm release:version and the release belong to the maintainer after slice 05 (one clients release carries 04 and 05).",
+      "Not roadmap steps; they belong to finalize or to the maintainer. Mutation testing runs once after DELIVER, on frozen code: StrykerJS on the slice 01-03 frontend files, a scoped Stryker.NET on UsageDataEventShapes and the enum, and StrykerJS in the clients for slice 04. Also out: docs prose (the Reports docs pages, docs/aiintegration.md, the 'A report was opened' row of docs/settings/usagedata.md gaining the clients' reads), @screenshots, release notes, website follow-ups and ADO tags. Equally out: the by-hand evidence, namely G2 (the dialog within 2 s on the dev instance's busiest Team, from both surfaces), DoD 7 PDFs on A4 and Letter from Chrome, Firefox and Linux Standalone, G4 (the build-output size before and after 02-02), K3 cold readers, K5 eval runs, and the macOS check after the release (DVO-10). Exceptions kept in their steps because a test or a house rule ties them to the change: the docs/settings/usagedata.md rows (01-01), the ARCHITECTURE.md §12 and §16 entries (01-07, 02-02), and skills/README.md (05-03).",
+      "Usage data: exactly one new event, ReportPdfExportStarted, appended as 20 after WorkTrackingSystemFieldsChanged = 19, re-checked on main in 01-01. It carries report_template (the closed UsageDataReportTemplate, ThenAndNow) and nothing else. It is emitted once per click by the one export starter, before navigating, and only when usageDataReportTemplateOf maps the type. The print page reports nothing. The clients report the existing ReportOpened with source Cli / Mcp after consent (04-06). Never a name, an id, a date or a value.",
+      "Skill drift (DDD-23). The lighthouse-reports skill (phase 05) restates the web's presentation rules as they stand after slice 02 (the mark kinds, changeText's percent form '−43 %'). Any later change to a named web source updates references/then-and-now.md and re-runs the evals."
+    ],
+    "deviations": [
+      "Phase 01 does not open with its walking skeleton. CLAUDE.md and DEVOPS put the usage-data event in the slice that first makes the feature usable, and the orchestrator asked for it first, so 01-01 is the backend event. 01-02 is the Vitest walking skeleton (Export PDF on the report view, then the print page prints exactly once). The Playwright walking skeleton is 01-18, the first step at which the owner, the title, the single print and the return all exist on the real app.",
+      "Several steps un-pend scenarios from more than one file. The source scans in print/reportPrint.enforcement.test.ts pin the structure that a behaviour step builds, so each scan is un-pended by the step that builds what it scans (95 in 01-02, 114 in 01-06, 127 in 01-07, 67 and 77 in 01-11, 148 in 01-16) rather than in a separate scan step. test_file names the primary file; scenario_name prefixes the others with their file.",
+      "Phases 02 and 03 have no skeleton of their own (DISTILL: they change what the same page draws). Phase 03 is a single step. Phase 05 is skill text and evals and has no skeleton.",
+      "The usePrintOnce file (12 scenarios, 17 cases) is split across 01-04 (the wish consumed, one print) and 01-05 (the return and the listener's lifetime). The ReportPrintPage.test.tsx file (39 cases) is split by its describe blocks across 01-02 and 01-08..01-14."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01 — Export a Then & Now report as a PDF (Lighthouse)",
+      "description": "US-01. Repository /storage/repos/Lighthouse. Export PDF on the report view and a PDF icon on every Reports-list row for every reader; one export starter counts ReportPdfExportStarted and navigates in the same window with { printWhenReady: true, from } to /print/{teams|portfolios}/:id/reports/:reportId, outside the app shell. The print page reads the report afresh through a read-only port, derives its state with the pure printPageStateOf, asks for its fonts after it has drawn, prints once through the print-once hook and its injected effect port, and returns to where the export started. Brief: slices/slice-01-export-then-and-now-as-pdf.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The server accepts ReportPdfExportStarted with its report type, appended after every existing event, and the usage-data page lists it",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@kpi-OUT-6298-K1-pdf-export-used",
+            "@kpi-OUT-6298-K6-exported-report-types"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/ReportPdfExportUsageEventTests.cs",
+          "scenario_name": "A_PDF_export_travels_with_its_report_type_and_nothing_else; A_PDF_export_without_a_type_from_the_list_or_carrying_anything_more_is_refused (x6: no type, an unknown type 'Signal', the template key 'then-and-now' instead of the closed value, a route, a refinement verdict, an updates); The_export_is_appended_to_the_list_of_names_never_inserted; The_usage_data_page_has_a_row_for_a_report_exported_as_a_PDF_naming_its_type; The_usage_data_page_says_an_export_also_names_which_type_of_report; active guards Any_other_event_that_names_no_type_still_refuses_one (ReportDeleted, TeamCreated, WorkTrackingSystemFieldsChanged), every earlier name keeps its number 0-19, the page publishes no /print/ address",
+          "criteria": [
+            "UsageDataEventName gains ReportPdfExportStarted with the next free integer, re-read on the current checkout (20 on 2026-10-20, after WorkTrackingSystemFieldsChanged = 19), and every member 0..19 keeps its number",
+            "POST /api/latest/usagedata/events accepts ReportPdfExportStarted with report_template ThenAndNow (204) and forwards exactly the name and the type",
+            "The same event is refused (400) without a type, with an unknown type, or with a route, a verdict or an updates value beside it; ReportDeleted, TeamCreated and WorkTrackingSystemFieldsChanged still refuse a type",
+            "docs/settings/usagedata.md has the row 'A report was exported as a PDF' after 'A report was deleted', worded as DEVOPS wrote it; the 'Which type of report' row reads 'Only on a report being created, opened or exported as a PDF'; every other row's 'On the other N events' count rises by one; the sentence under the table reads 'Ten of the twenty-one'",
+            "The frontend mirror UsageDataEventName in services/Api/UsageDataService.ts gains ReportPdfExportStarted: \"ReportPdfExportStarted\"; nothing in the frontend sends it yet"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/UsageData/UsageDataEventShapesTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/ReportPdfExportUsageEventTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/PendingEpic6298.cs",
+            "docs/settings/usagedata.md",
+            "Lighthouse.Frontend/src/services/Api/UsageDataService.ts"
+          ],
+          "dependencies": [],
+          "implementation_notes": "~1.5h. FIRST, with fresh=true: re-read Models/UsageData/UsageDataEventName.cs on main. If a member above 19 has landed since 2026-10-20, take the next integer and say so in the commit body; the tests pin the name and its append order, never the integer. Append ReportPdfExportStarted = <next> with a doc line saying what is counted (the choice, cancelled dialogs included). Add it to UsageDataEventShapes.EventsThatSayWhichTypeOfReport beside ReportCreated and ReportOpened. PostHogUsageDataPublisher already writes report_template, so no change there. UsageDataEventShapesTests.InItsOwnShape switches over every event name: give the new member its arm (nameOnly with ReportTemplate = ThenAndNow); the switch is total, so keep or add the narrow CS8524 pragma with its reason inline. This is the one frontend file touched here, because the mirror is a hand-kept list and no test compares it with the enum. Write the usagedata.md row and the field-table counts in the same commit; the backend page-row tests read the real file. Remove [Ignore(PendingEpic6298.Slice01)] from the five methods, then delete PendingEpic6298.cs (Slice01 is its only constant and no other backend test uses it). No Program.cs change, so no live-connector suite runs. Backend gates in standing_constraints, plus pnpm test and pnpm build for the mirror. Commit feat(reports)."
+        },
+        {
+          "id": "01-02",
+          "name": "Walking skeleton: Export PDF on a Team's report opens the print page, which prints exactly once when everything it prints is in",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port",
+            "@kpi-OUT-6298-K1-pdf-export-used"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "opens the print dialog exactly once, when everything it prints is in, after Export PDF; ReportView.exportPdf.test.tsx: takes the reader to the report's print page, asking it to print and saying it came from the report, with nothing in the address but the page; reportPrint.enforcement.test.ts: who asks the browser for its print dialog — is the print page alone; active guards usageDataRouteKeys.print.test.ts (x4: the print addresses name no page, a return to /teams/7/reports or /portfolios/7/reports counts as a Reports-tab opening)",
+          "criteria": [
+            "Choosing Export PDF on a loaded Team report navigates to /print/teams/1/reports/42 with an empty search, and the history entry carries { printWhenReady: true, from: \"report\" }",
+            "The print page, mounted beside the app's routes and outside the app shell, opens the print dialog (globalThis.print) exactly once when the fresh report, the owner's name, the terms and the fonts are all in",
+            "Exactly one production module, under pages/Common/Reports/print/, calls globalThis.print, and none calls window.print",
+            "Every existing route renders the same element in the same shell (header, footer, survey nudge, usage-data ask), and no /print/ address maps to a usage-data route key",
+            "The print page shows a minimal '‹ Back to report' control (the walking skeleton asserts theBackControl(), which matches /Back to (report|Reports)$/); 01-09 completes Back's origin rules",
+            "The print page draws the report name as an h1 inside the data-render-ready element, directly in the page (ReportPrintTestKit decides 'the report is drawn' by '[data-render-ready] h1'); 01-11 later moves the document into ReportPrintDocument.tsx"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/App.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportPdfExport.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowHeader.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "implementation_notes": "~3h. The thinnest line through every layer; later steps widen each piece. App.tsx: a refactor commit first moves the shell (the container Box with the user's background, Header, Footer, SurveyNudge, UsageDataAsk) into a layout route, with no behaviour change; the existing E2E and Vitest stay green. Then the two lazy /print/... routes go beside the shell route, inside the auth guard and the providers. The page-opening detector stays above both and names no /print/ page. reportPrintRoutes() returns the two routes and takes optional PrintPageStandIns ({ loadFonts }); the app passes nothing. The export starter (useReportPdfExport, a hook, since it needs the router; the crafter may name it otherwise, but it must live under pages/Common/Reports/) navigates with push and the router state. The usage event is 01-16, so the skeleton does not count yet. ThenAndNowHeader gets the Export PDF button only as far as the skeleton needs; order, readers, disabled and not-offered come in 01-15. printPageStateOf, usePrintOnce and browserPrintEffects lose their SCAFFOLD throws here: implement only the ready branch, consume-then-print-once, and print. The tables in 01-03..01-06 then drive the rest. Fonts: the page asks loadFonts(['400 1em Quicksand', '700 1em Quicksand']) after it has drawn (family 'Quicksand' until 02-02). Prefetching the print chunk when ReportView mounts (DDD-16) has no test; add it in 01-15. Run the Reports suite with pnpm vitest run src/pages/Common/Reports src/services/UsageData/usageDataRouteKeys.print.test.ts, then the full pnpm test and pnpm build."
+        },
+        {
+          "id": "01-03",
+          "name": "The print page's state is a pure function of its four inputs: preparing, ready, failed and retryable, failed for a part, or failed for good",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.test.ts",
+          "scenario_name": "decides the state when %s (16-row table: ready; an answer as old as the mount; none; only an older one; owner, terms, fonts pending; a font failed -> failedPart; a refused or failed read with an answer held -> failedRetryable; owner or terms unreadable -> failedPart; a failed read and a failed font -> failedRetryable; 404 / 422 win; 404 with a font failure); is ready exactly when all four inputs are in, and preparing otherwise (32-combination grid); active guard: the module imports nothing from React, the router or the query library",
+          "criteria": [
+            "A report error whose ApiError code is 404 or 422 gives failedFinal, whatever else is pending or failed",
+            "Any other report error, or a non-ApiError, gives failedRetryable, even when a font failed too",
+            "With no report error, an owner-read error, a terms error or fonts = failed gives failedPart",
+            "Otherwise the state is ready exactly when fetchedAt >= mountedAt, the owner's name is present, the terms have answered and fonts = loaded, and preparing in every other combination of the 32"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/printPageState.test.ts"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "implementation_notes": "~1h. A pure function, so the exhaustive table is the property. Read the error through services/Api/ApiError.ts's code, as ReportView does. Keep it under S3776 15: an ordered list of guard clauses, not nested ternaries. The import guard is active: import types only, nothing from react, react-router or @tanstack/*."
+        },
+        {
+          "id": "01-04",
+          "name": "The print-once hook uses up the wish to print before printing, and prints once only when the page is ready and the wish is there",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx",
+          "scenario_name": "clears the wish to print from the page's entry, keeping where it started, then prints once; never prints, nor touches the history, while the page is %s (x4: preparing, failedRetryable, failedPart, failedFinal); never prints a page that carries no wish to print; prints once under React's strict mode, which runs the effect twice; prints no more when the page draws again before the cleared entry reaches it; prints once when a failed page becomes ready after Retry",
+          "criteria": [
+            "When the state is ready and the wish is present, the hook first replaces the current entry with the same path and { from } without the wish, and then calls the port's print exactly once, in that order",
+            "In any state other than ready, or without the wish, it neither prints nor touches history",
+            "A per-mount record keeps StrictMode's second effect run and a redraw before the cleared entry arrives from printing again",
+            "A page that failed and becomes ready after Retry prints once (PD-1)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "implementation_notes": "~1.5h. The hook takes the page state, the wish, the origin and the PrintEffectPort as parameters and reads nothing else (no useLocation inside). The wish is used up only by an actual print, so a reload while still preparing, or a failure before Retry, still prints once when the page becomes ready (DDD-26). aMomentLater lets five microtask turns pass; add no timer here, or the negatives must move to fake timers (Known gap 13)."
+        },
+        {
+          "id": "01-05",
+          "name": "After the dialog closes, the hook returns to where the export started, listening once per mount and never for a dialog it did not open",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx",
+          "scenario_name": "leads an export started from %s back to %s, replacing the print page's entry (x3: report -> report view, list -> Reports list, unknown -> Reports list); still leads back to the report when the dialog closes after the cleared entry reached the page; listens for the dialog once for as long as the page is open, whatever it draws meanwhile; is left with one listener for the dialog under React's strict mode; stays on the page when a dialog it did not open closes; stops listening once the page is gone",
+          "criteria": [
+            "On afterprint after this mount printed, the hook navigates with replace to the report view (from report) or the Reports list (from list, or no origin), carrying RETURNED_FROM_PRINT in router state",
+            "The subscription is made once on mount through onAfterPrint and released on unmount, independent of the wish and the state; clearing the wish re-renders the hook without dropping or re-creating it; StrictMode leaves exactly one live listener",
+            "An afterprint for a dialog this mount did not open leads nowhere"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/usePrintOnce.test.tsx"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "implementation_notes": "~1.5h. Keep the origin and the 'did I print' record in refs, so the listener effect's dependency list holds only the port. That is what keeps one subscription across the cleared-wish re-render. The scenarios assert the RETURNED_FROM_PRINT value, not expect.anything()."
+        },
+        {
+          "id": "01-06",
+          "name": "The browser binding is the page's one reach into the browser: print, the dialog closing, a replacing return, and the fonts",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.test.tsx",
+          "scenario_name": "asks the browser for its print dialog once per print; hears the dialog close until it is told to stop listening; replaces the print page's entry when it leads the reader back; leads back after the dialog closes while the page is open, and hears nothing once it is gone; loads every face it is asked for and answers loaded once the document's fonts are ready; answers failed when a face's load is %s (x2: refused, finds no face); reportPrint.enforcement.test.ts: who loads fonts into the document — is the print page's browser binding alone",
+          "criteria": [
+            "browserPrintEffects(navigate) calls globalThis.print once per print, subscribes to afterprint until the returned unsubscribe is called, and navigates with replace and the marker",
+            "Wired to usePrintOnce in a real router, it returns while mounted and hears nothing once unmounted",
+            "loadFonts(faces) calls document.fonts.load per face, then awaits document.fonts.ready; it answers 'loaded' when every load resolved with a face, and 'failed' on a rejection or a load that resolved with no face",
+            "Exactly one production module, under print/, names document.fonts"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/browserPrintEffects.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "implementation_notes": "~1h. The tests stub only globalThis.print and document.fonts. Use globalThis.addEventListener('afterprint', ...) (S7764). loadFonts' contract is a bounded change: the named faces move to loaded, and nothing else in the document changes."
+        },
+        {
+          "id": "01-07",
+          "name": "The print routes hand the page a read port of exactly three reads and a terms read of exactly three members, and nothing else of the app's services",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.test.tsx",
+          "scenario_name": "is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads; reportPrint.enforcement.test.ts: what the print page reads through — is the read port it is handed, never the app's services; active guard printReadPort.test.ts: PrintReadPort holds exactly getReport, getTeam, getPortfolio (expectTypeOf)",
+          "criteria": [
+            "At runtime the read port's own keys are exactly getReport, getTeam and getPortfolio, each bound to its service, and the terms read's own keys are exactly getTerm, isLoading and error",
+            "ReportPrintPage.tsx names PrintReadPort, and no module under print/ other than reportPrintRoutes.tsx names ApiServiceContext",
+            "ARCHITECTURE.md §12 describes the chrome-less print route, its read-only port and its effect port, and §16 indexes ADR-245 and ADR-247"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrintRoutes.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "implementation_notes": "~1h. A Pick<> is erased at runtime, so build new object literals, never pass the service objects or the TerminologyContext (no refetchTerminology). The routes call no read themselves; they write nothing. ARCHITECTURE.md is in this step under the keep-it-current house rule: one paragraph in §12 and the §16 index rows for ADR-245 (the print route) and ADR-247 (reports through the clients, already accepted at DESIGN; its code lands in phase 04 in the other repository). ADR-246's row comes with 02-02."
+        },
+        {
+          "id": "01-08",
+          "name": "The print page gets ready only when the fresh report, owner, terms and fonts are in, asks for the fonts after drawing, and never prints a page opened from its address",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'The print page gets ready': says it is preparing the PDF, under a spinner, and is not ready, while the report is on its way; is still preparing, and not ready, while %s has not arrived (x4: report, owner name, terms, fonts); opens the print dialog once even when the page's effects run twice; shows a print page opened from its address but never opens the print dialog; waits for the fonts before opening the print dialog; asks for the Lighthouse typeface, its headings' weight included, only once the report is drawn; says part of the page could not be loaded, offers Retry and never prints, when the fonts %s (x2: are not found, fail outright)",
+          "criteria": [
+            "'Preparing the PDF…' shows under a progressbar with data-render-ready=\"false\" until all four inputs are in; then data-render-ready=\"true\"",
+            "The fonts stand-in is asked for the Quicksand faces, 700 included, only after the report is drawn, and the page prints only after it answers 'loaded'",
+            "Fonts 'failed' shows 'Part of the page couldn't be loaded, so no PDF was made.' with Retry, never the report sentence, and never prints",
+            "A page loaded from its address is shown and never prints; StrictMode prints once"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "implementation_notes": "~2h. Reuse WidgetBody's status looks: a lone spinner, and the could-not-load message with Retry (R4). Retry asks the port's loadFonts again. The page records mountedAt once and passes fetchedAt = the query's dataUpdatedAt to printPageStateOf. Set data-render-ready through dataset (S7761)."
+        },
+        {
+          "id": "01-09",
+          "name": "The wish to print is used up by printing, and Back and the return after the dialog lead to where the export started",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'The wish to print is used up by printing': leaves the page's entry without the wish to print once it printed, still knowing where the export started; never prints again when the page comes back after it printed; describe 'The way back from the print page': reads \"‹ Back to report\" when the reader came from the report, and is not printed; takes the reader back to the report once the print dialog closes; reads \"‹ Back to Reports\" when the reader came from the list, and goes back to it; takes the reader from the list back to the list once the print dialog closes; leads a page opened from its address back to the Reports list",
+          "criteria": [
+            "Once printed, the entry holds { from } without the wish; a reload or Forward onto it never prints and still reads '‹ Back to report'",
+            "Back reads '‹ Back to report' from the report and '‹ Back to Reports' from the list or a direct load (PD-5); it is hidden in print through the page's @media print rule",
+            "The return after the dialog lands on the report view or the Reports list, following the origin"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-08"
+          ],
+          "implementation_notes": "~1.5h. Back navigates with replace and the RETURNED_FROM_PRINT marker, like the after-print return. The hidden-in-print rule is pinned in jsdom through the page's @media print rules (isHiddenInPrint matches a class name only whole); that the browser honours it is checked by hand (Known gap 5)."
+        },
+        {
+          "id": "01-10",
+          "name": "A report the print page cannot read says so: Retry for a passing failure, which continues the export, and the report view's own words with no Retry for a final one",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'A report the print page cannot read': says no PDF was made, offers Retry, and never gets ready or prints, when the report could not be loaded; opens the print dialog once when Retry reads the report after the export's read failed; reads the report again on Retry on a page opened from its address, shows it, and still never prints; says so, offers no Retry and leads back to Reports, for a report that %s (x2: no longer exists 404, was made by a newer version 422); leads back to Reports from a report that no longer exists, even when the reader came from the report; says part of the page could not be loaded, offers Retry, and never prints, when the owner's name cannot be read",
+          "criteria": [
+            "A retryable read failure shows 'This report couldn't be loaded, so no PDF was made.' with Retry and '‹ Back to report', never ready and never printing",
+            "A successful Retry after Export prints once (PD-1); a Retry on a page opened from its address reads again, shows the report and never prints",
+            "404 and 422 show the report view's own sentences with no Retry and '‹ Back to Reports', even when the reader came from the report",
+            "An unreadable owner name shows the part sentence with Retry and never prints (PD-6)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-09"
+          ],
+          "implementation_notes": "~1.5h. Reuse ReportView's final sentences (NO_LONGER_EXISTS and the newer-version sentence) from where ReportView takes them; do not copy them. The print observer retries as the report view does (retriesUnlessFinal over the app default). Retry refetches only what failed: the report, the owner read, the terms or the fonts."
+        },
+        {
+          "id": "01-11",
+          "name": "The print document heads the report with its owner, name, windows and Produced time, ends with the Lighthouse mark, and draws the screen's own summary and panels",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'What the print page prints': heads the page with the owner, the report's name, its two windows and when it was produced, in that order; ends with the Lighthouse mark and \"Made with Lighthouse by LetPeopleWork\", after the last panel; names the page after the report and its owner, so the PDF is saved under that name; names a Portfolio as the owner of a Portfolio's report; prints the instance's own words for the owner and the metrics; reportPrint.enforcement.test.ts: draws the report with the same summary and panels as the report view; never reaches %s (x6: Header, Footer, SurveyNudge, UsageDataAsk, the usage-data reporter, useReportOpenedReporter)",
+          "criteria": [
+            "The header reads, in order: 'Team Lightspeed', the report name as h1, the windows line, 'Produced 2 Oct 2026, 09:15' (dataUpdatedAt in local time, d MMM yyyy, HH:mm), then a rule",
+            "The Lighthouse logo and 'Made with Lighthouse by LetPeopleWork · letpeople.work' follow the last panel",
+            "document.title is '{report} — Team Lightspeed' while mounted ('Portfolio Apollo' for a Portfolio) and is restored on unmount",
+            "Renamed terms show ('Squad Lightspeed', the panel titled 'Lead Time' alone, PD-2)",
+            "The print pages' import tree reaches ThenAndNowSummary and reportPanelRegistry and none of the six shell or usage-data modules"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "implementation_notes": "~2h. ReportPrintDocument is a pure render from a ready answer, the owner name and the terms (R17). It reuses ThenAndNowSummary and the panel registry's panels (R5) and the existing logo component. It leaves room for slice 03's 'How to read this' between Produced and the summary. Dates through the app's d MMM yyyy helpers (src/utils/date), never toISOString. The never-reach scan first requires ReportPrintPage.tsx to be reached, following import('./...') too."
+        },
+        {
+          "id": "01-12",
+          "name": "The print page is chrome-less and light: dark ink on its own full-height white ground under any theme",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "shows nothing of the app around the report: no Edit report, no Delete, no tabs, no navigation; prints dark ink on its own white ground, the whole page high, even when the reader's screen is dark",
+          "criteria": [
+            "The print page shows no Edit report, Delete, tabs or navigation",
+            "Under a dark reader's theme the page's root is full height with the light theme's background and text colour and color-scheme: light, and its print stylesheet paints html and body white",
+            "Theme switching on every other screen is unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/utils/theme/appThemes.ts",
+            "Lighthouse.Frontend/src/main.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-11"
+          ],
+          "implementation_notes": "~1.5h. A refactor commit first: move lightTheme and darkTheme out of main.tsx into an importable module (appThemes.ts or the crafter's name; the objects must stay identical), and main.tsx keeps choosing by mode. Then wrap the print page in the light theme. CssBaseline stays in main.tsx (DDD-30's rejected option). Known gap 11: after un-skipping, verify the light-ground assertion fails against a page that paints the dark ground. If jsdom cannot tell the two apart, move the scenario to ReportPdfExport.spec.ts and delete the Vitest one rather than weaken it, and say so in the commit body."
+        },
+        {
+          "id": "01-13",
+          "name": "The print page always reads the report afresh, and the report view shows the values that were printed",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@kpi-OUT-6298-G-pdf-matches-screen"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'The print page prints the report as it is now': never prints an answer it was holding from a minute ago, and reads the report afresh; reads the report again even when the report view has only just read it; shows the report view the values it just printed once the dialog closes; prints the same summary and panels the reader sees on the report",
+          "criteria": [
+            "With a cached answer one minute old (younger than the app's 5-minute staleTime), the page reads again and never prints the held answer",
+            "Right after the report view read, the page reads once more",
+            "After the dialog closes, the report view shows the fresh values under the same query key",
+            "The printed summary and panels are those the screen shows for the same answer"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-12"
+          ],
+          "implementation_notes": "~1h. The page's own useQuery observer uses reportQueryKeyOf with refetchOnMount: \"always\"; ReportView's options stay untouched (R3). The read counts are the requirement itself, the always-fresh read, and not an implementation detail (Known gap 10)."
+        },
+        {
+          "id": "01-14",
+          "name": "The print page reports nothing of its own, and a return from print does not count the report as opened again",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@kpi-OUT-6298-K1-pdf-export-used"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx",
+          "scenario_name": "describe 'What the print page reports about its use': reports nothing of its own, however long it stays open; counts the report as opened once, not again when the reader comes back from printing",
+          "criteria": [
+            "With consent, a print page left open for 10 s (fake timers) reports no usage event",
+            "Export, print and return leave exactly one ReportOpened, because useReportOpenedReporter skips a mount whose router state carries RETURNED_FROM_PRINT",
+            "Opening a report the ordinary way still reports ReportOpened once per mount"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportOpenedReporter.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.test.tsx"
+          ],
+          "dependencies": [
+            "01-13"
+          ],
+          "implementation_notes": "~45m. The 'nothing of its own' scenario may already pass, since the print tree never reaches the reporter (01-11's scan). Prove it can fail by substitution before un-skipping. A return to the Reports list still counts one Reports-tab opening; that is accepted, and an active guard in usageDataRouteKeys.print.test.ts pins it."
+        },
+        {
+          "id": "01-15",
+          "name": "Export PDF on the report view: first outlined button for every reader, disabled while loading, for Teams and Portfolios",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@driving_port"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx",
+          "scenario_name": "offers an editor Export PDF as the first outlined button, before Edit report and Delete; offers a reader who may not change the report Export PDF alone; shows Export PDF but lets nobody press it while the report is on its way; takes the reader of a Portfolio's report to that Portfolio's print page; active guards x4: no Export PDF for a report that could not be loaded, no longer exists or was made by a newer version, and none (and nothing reported) for a report of a Type this version cannot show (PD-3)",
+          "criteria": [
+            "An editor sees [Export PDF, Edit report, Delete], all outlined and enabled; a Viewer sees Export PDF alone",
+            "While the report loads, Export PDF is shown and disabled",
+            "A Portfolio's report goes to /print/portfolios/:id/reports/:reportId",
+            "No Export PDF for a report that failed, no longer exists, was made by a newer version, or has a type this version cannot show"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowHeader.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx"
+          ],
+          "dependencies": [
+            "01-14"
+          ],
+          "implementation_notes": "~1h. Availability follows ReportView's existing status (DDD-15); useRbac() is not consulted, because anyone who reads the report reads the print page. Add the print chunk prefetch when ReportView mounts (DDD-16). It has no test (Known gap 9); G2 is checked by hand. The existing ReportView.test.tsx and ReportView.editWizard.test.tsx stay green; their action-row expectations may need Export PDF added first."
+        },
+        {
+          "id": "01-16",
+          "name": "Each Export PDF choice counts one ReportPdfExportStarted with the report's type, only with consent, through the one export starter",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@kpi-OUT-6298-K1-pdf-export-used",
+            "@kpi-OUT-6298-K6-exported-report-types"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx",
+          "scenario_name": "reports one PDF export with the report's Type for every time Export PDF is chosen; ReportView.exportPdf.consent.test.tsx: counts the export, with the report's Type, from a browser that agreed; counts nothing from a browser that said no, token or not; reportPrint.enforcement.test.ts: who counts an export — is the one export starter, whichever surface the reader exports from",
+          "criteria": [
+            "Two Export PDF clicks report two { name: ReportPdfExportStarted, reportTemplate: ThenAndNow }, each before navigating",
+            "With the real reporter and consent, after the browser's answer settles, a browser that agreed counts the export and one that said no counts nothing, with or without a token",
+            "A type usageDataReportTemplateOf cannot map reports nothing",
+            "Exactly one production module under pages/Common/Reports/ names ReportPdfExportStarted (the event list aside)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/useReportPdfExport.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.consent.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts"
+          ],
+          "dependencies": [
+            "01-15"
+          ],
+          "implementation_notes": "~1h. The starter reports through useUsageDataReporter with usageDataReportTemplateOf(report.templateKey), as useReportOpenedReporter does, and then pushes the navigation. It sends nothing when the map answers undefined. The event's backend half and the usagedata.md row landed in 01-01. This is the step where the feature becomes usable with its event, which is why that DEVOPS step is placed in this slice."
+        },
+        {
+          "id": "01-17",
+          "name": "The Reports list offers a PDF icon first in Actions for every reader, on rows this version can show, starting the same export from the list",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@driving_port",
+            "@kpi-OUT-6298-K1-pdf-export-used",
+            "@kpi-OUT-6298-K6-exported-report-types"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+          "scenario_name": "leads an editor's row actions with the PDF icon, before Edit and Delete; gives a reader an Actions column holding only the PDF icon; names the icon \"Export PDF\" when the pointer rests on it; offers no PDF on a row this version cannot show, and keeps it on the other rows; counts one export with the report's Type and takes the reader to its print page, saying it came from the list",
+          "criteria": [
+            "An editor's row actions read [Export {name} as PDF, Edit, Delete]; a Viewer gets an Actions column holding only the icon",
+            "The icon's tooltip reads exactly 'Export PDF'",
+            "A row of a type this version cannot show has no icon, and the other rows keep theirs (PD-4)",
+            "A click reports one ReportPdfExportStarted with ThenAndNow and navigates with { printWhenReady: true, from: \"list\" }",
+            "The editor's Edit and Delete behave as before"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx"
+          ],
+          "dependencies": [
+            "01-16"
+          ],
+          "implementation_notes": "~1.5h. ReportListActions changes from editor-only (onEdit and onDelete required) to an export action every reader gets plus an optional editor group (onEdit, onDelete, readingId). That is a shared-contract change: grep its users first. ReportsTab passes the export action to Viewers too, through the same starter. Prefetch the print chunk on list mount. ReportsTab.test.tsx: the reader's layout assertion that counts columns is updated, because a Viewer now has an Actions column (DISTILL disposition); 'a reader has nothing to create or delete' stays valid. Grep Lighthouse.EndToEndTests/ (ReportsListPage.ts) for any Actions-column locator. G2 is checked by hand from both surfaces before the slice closes."
+        },
+        {
+          "id": "01-18",
+          "name": "E2E walking skeleton: Export PDF from a Team's report shows the owner and title, prints once, and returns to the report",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@e2e",
+            "@kpi-OUT-6298-K1-pdf-export-used"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+          "scenario_name": "a coach exports a Team's Then & Now report as a PDF: the page names the report and its owner, prints once and returns to the report (ReportPdfExport.spec.ts, first testWithDemo.fixme; the spec already calls ReportPrintPage.standInForThePrintDialog(page), printed.timesThePrintDialogOpened(), printed.closeThePrintDialog())",
+          "criteria": [
+            "On demo scenario 11, the spec creates a report on Team Lightspeed, chooses Export PDF through ReportPage.exportPdf(), and lands on the ReportPrintPage POM, which waits for data-render-ready=\"true\"",
+            "The print page names the owner and the report's title and shows no app chrome; the stubbed print is called exactly once; the dispatched afterprint leads back to the report view",
+            "Reports.spec.ts and every other spec that reads the report view stay green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPrintPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPage.ts"
+          ],
+          "dependencies": [
+            "01-17"
+          ],
+          "implementation_notes": "~1.5h. Turn the first testWithDemo.fixme into a test; the font check stays fixme until 02-04. stubPrint() lives in the print POM (addInitScript replacing window.print with a recorder that dispatches afterprint; the page itself calls globalThis.print, which is the same function in a browser). Use emulateMedia({ media: 'print' }) only where a print-only rule is asserted. Run the spec live against your own instance, with a premium licence, before committing. E2E runs in CI through ci_verifysqlite and ci_verifypostgres, twice. SLICE-END GATES (standing_constraints): no 'epic 6298, slice 01' skip left in Lighthouse.Frontend/src, no SCAFFOLD under print/, PendingEpic6298.cs gone. Slice 01 lands green on trunk; no push and no release without the maintainer."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02 — The report PDF reads the same on every machine (Lighthouse)",
+      "description": "US-02. Repository /storage/repos/Lighthouse. Marks become drawn SVG icons from a mark kind, on screen and in print; Quicksand is bundled for the whole app through @fontsource-variable/quicksand with its OFL licence shipped; summary and panels never break across pages, and the footer stays with the last panel; the Chromium PDF embeds only Quicksand. Brief: slices/slice-02-pdf-reads-the-same-everywhere.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The report's marks are drawn icons from a mark kind, on the report and in the print, with their words, colours and meaning unchanged",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportMarks.drawn.test.tsx",
+          "scenario_name": "draws every summary and line mark %s, and types none (x2: on the report, in the print); keeps every word beside the marks %s as it was (x2); draws better and worse apart, green and red, %s (x2); draws a rise and a fall as different marks; draws the mark of a line that did not change, and keeps its words; leaves no mark character in the Reports code; active guard: the minus and the dash of a missing value stay text",
+          "criteria": [
+            "Every summary and line mark on the report and in the print is one aria-hidden SVG drawn by ChangeMarkIcon from a kind (improved, worse, mixed, up, down, none); no mark character is typed",
+            "The words beside them read as before without the character ('Improved: Cycle Time, Throughput, WIP', '15 days (−44 %)', 'No change')",
+            "Better and worse are drawn apart in green and red; a rise and a fall are different shapes; the no-change mark is drawn",
+            "No ✔ ✘ ± ▲ ▼ is left in Reports' production code; the minus and the missing-value dash stay text"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/ChangeMarkIcon.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/ThenNowLineParts.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowSummary.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/panels/thenNowComparison.test.ts",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportMarks.drawn.test.tsx"
+          ],
+          "dependencies": [
+            "01-18"
+          ],
+          "implementation_notes": "~2.5h. Comparison code returns the kind and the view draws it; CHANGE_KIND_LOOK keeps its colours (R6, R19). ReportView.test.tsx breaks on purpose (DISTILL disposition, about lines 662-1112): rewrite the CHANGE readings, the line readings, colourOfTheMark(group, '✔') and the assertion that ▲ and ▼ are not aria-hidden to the drawn marks (svg inside [data-change-kind] / [data-change], words without marks), in this step, not before. panels/changeSummary.enforcement.test.ts stays valid. Grep Lighthouse.EndToEndTests/ for each replaced character (Reports.spec.ts, ReportPage.ts) and update any locator in the same commit (live run before committing if a POM changes). ± has no MUI icon; draw it. The skill in phase 05 copies these forms."
+        },
+        {
+          "id": "02-02",
+          "name": "Quicksand ships with the app: no font host, the bundled family named first everywhere, and its licence shipped word for word",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/utils/theme/bundledTypeface.enforcement.test.ts",
+          "scenario_name": "loads no font from the internet; brings the typeface in from the package the app carries; names the carried family first wherever the app asks for the typeface; ships the typeface's licence word for word as the package carries it",
+          "criteria": [
+            "index.html names no font host: the Google Fonts link and the preconnect are gone",
+            "Exactly one module imports @fontsource-variable/quicksand or one of its files",
+            "Every font stack naming Quicksand names 'Quicksand Variable' first: both themes, AuthPageLayout, LighthouseLogo and LighthouseVersion; headings declare 700 to keep today's weight",
+            "public/licenses/quicksand-OFL.txt is byte-equal to the package's LICENSE",
+            "The print page asks loadFonts for the 'Quicksand Variable' faces, 400 and 700"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/pnpm-lock.yaml",
+            "Lighthouse.Frontend/index.html",
+            "Lighthouse.Frontend/src/main.tsx",
+            "Lighthouse.Frontend/src/utils/theme/appThemes.ts",
+            "Lighthouse.Frontend/src/components/App/Auth/AuthPageLayout.tsx",
+            "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseLogo.tsx",
+            "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseVersion.tsx",
+            "Lighthouse.Frontend/src/components/App/LetPeopleWork/LighthouseLogo.test.tsx",
+            "Lighthouse.Frontend/public/licenses/quicksand-OFL.txt",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/utils/theme/bundledTypeface.enforcement.test.ts",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "implementation_notes": "~2h. Pin @fontsource-variable/quicksand 5.3.0 (OFL-1.1, published 2026-07-19, well past pnpm 12's 24-hour minimum release age) in package.json dependencies, never in the pnpm-workspace.yaml overrides. Commit the lockfile, and check no lockfile entry is younger than 24 h, or CI goes red. The import goes in main.tsx. Three components outside DESIGN's file list ask for 'Quicksand, sans-serif' today (AuthPageLayout, LighthouseLogo, LighthouseVersion; upstream issue 5): they move to 'Quicksand Variable', … and LighthouseLogo.test.tsx's two 'font-family: Quicksand,sans-serif' expectations follow. Copy the licence from node_modules/@fontsource-variable/quicksand/LICENSE byte for byte, with no reformatting. No build or packaging config change: Vite copies public/** to wwwroot, dist and the Tauri bundle. The SBOM picks up the package automatically. ARCHITECTURE.md §16 gains ADR-246, and §12 notes that the app ships its typeface. G4 evidence for the slice brief: du -sb of the built wwwroot before and after (≤ 1 MB; about 68 KB expected)."
+        },
+        {
+          "id": "02-03",
+          "name": "Nothing is cut in two on paper: summary and every panel stay whole, the footer stays with the last panel, and margins are 12 mm",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.pageBreaks.test.tsx",
+          "scenario_name": "keeps the summary and every panel whole on one page; keeps the footer on the page of the last panel; asks for a 12 mm margin on every printed page",
+          "criteria": [
+            "The summary and all four panels carry break-inside: avoid in the print stylesheet",
+            "The branding footer is kept with the last panel only",
+            "The page asks @page { margin: 12mm }, with no fixed paper size, print-color-adjust: exact and no animations"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.pageBreaks.test.tsx"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "implementation_notes": "~1h. The Vitest pins what the page asks for. Where pages really break on A4 and US Letter is the browser's decision and is checked by hand for DoD 7 (Known gap 2). A fixed content width fits both papers (DDD-6)."
+        },
+        {
+          "id": "02-04",
+          "name": "E2E: the Chromium PDF of the print page embeds no font but Quicksand",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "tags": [
+            "@e2e",
+            "@real-io",
+            "@kpi-OUT-6298-G-pdf-matches-screen"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+          "scenario_name": "the PDF of a report embeds the Lighthouse typeface and no other (ReportPdfExport.spec.ts, second testWithDemo.fixme; uses printed.fontsEmbeddedInThePdf())",
+          "criteria": [
+            "The print page's page.pdf() output lists only Quicksand faces among its embedded fonts (/BaseFont /XXXXXX+Name)",
+            "The slice-01 walking skeleton in the same spec stays green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/teams/ReportPdfExport.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/reports/ReportPrintPage.ts"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "implementation_notes": "~1h. Turn the second testWithDemo.fixme into a test. page.pdf() works only in headless Chromium, the single Playwright project. Read the BaseFont names straight from the PDF bytes, with no new dependency, if Skia leaves them uncompressed. Confirm this on the first run, and add a PDF parser only if the names cannot be read (that dependency is pinned at least 24 h old). The PDF read helper lives in the POM. Run live before committing. SLICE-END: no 'slice 02' skip or fixme left."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 03 — The report PDF explains itself (Lighthouse)",
+      "description": "US-03. Repository /storage/repos/Lighthouse. Three 'How to read this' lines (NMD-5), in print only, between Produced and the summary, with the report's own window lengths and last days and the two drawn marks. Brief: slices/slice-03-pdf-explains-itself.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The PDF says which side is frozen, what Now covers and what the marks mean, with the report's own numbers, in print only",
+          "agent": "nw-software-crafter",
+          "repository": "Lighthouse",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.howToRead.test.tsx",
+          "scenario_name": "says which side is frozen, what Now covers and what the marks mean, with the report's own numbers; takes each window's length and last day from the report it prints; draws the marks it explains as the report draws them, green and red; sits between when the PDF was produced and the summary; uses none of the seeded words when the instance has its own; active guard: no how-to-read lines on the report view",
+          "criteria": [
+            "Under a 'How to read this' label: 'Then is frozen: the {N} days to {d MMM yyyy}, exactly as captured on that day.' / 'Now is the {N} days up to {d MMM yyyy}, read when this PDF was produced.' / 'Each line compares Now with Then. [drawn improved] Improved and [drawn worse] Got worse say which way it moved (green better, red worse); — means there is no value, and the reason is printed beside it.'",
+            "The lengths and last days come from the printed report (30 days to 15 Jun, 45 days up to 2 Oct in the scenarios)",
+            "The two marks are ChangeMarkIcon drawings in green and red",
+            "The block sits after Produced and before the summary; the report view shows none of it; with renamed terms none of the seeded words appear"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/HowToReadThis.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintDocument.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/print/ReportPrintPage.howToRead.test.tsx"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "implementation_notes": "~1.5h. A pure render (R17's frame gains the block). NMD-5 has no singular form; the minimum window is 14 days, so 'day' is unreachable (upstream issue 6), and no plural helper is needed. The lines name no configurable term (upstream issue 3). Dates through the app's date helpers. SLICE-END: no 'slice 03' skip left. With phase 03 green, the Lighthouse side of the Epic is complete on trunk; no release yet (DVO-9)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 04 — Read reports through the Lighthouse clients (lighthouse-clients)",
+      "description": "US-04. Repository /storage/repos/lighthouse-clients. Client methods get{Team,Portfolio}Report{s} gated by FEATURE_REQUIRES_SERVER_NEWER_THAN.reports = v26.10.10.1; lh report list|get (--team-id|--portfolio-id) [--id]; four read-only MCP tools lighthouse_{team,portfolio}_report_{list,get} on stdio and HTTP. The answer is the report's raw values unchanged, plus a summary naming the report, its owner and both windows, or the list count. Refusals are relayed (DDD-19). The web's ReportOpened is reported with source Cli / Mcp after consent. One minor changeset for five packages. Brief: slices/slice-04-read-reports-through-the-clients.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Walking skeleton: lh report get --json for a Team passes Lighthouse's answer on unchanged, against recorded answers captured from the dev instance",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port",
+            "@real-io"
+          ],
+          "test_file": "packages/cli/src/reportView.test.ts",
+          "scenario_name": "passes on a Team's report exactly as Lighthouse sent it; needs a Lighthouse newer than the last release without report reads; active guards x3: no owner, both owners, no --id refused with nothing asked",
+          "criteria": [
+            "lh report get --team-id 1 --id 42 --json prints the server's report answer unchanged (deep equality with the recorded answer)",
+            "FEATURE_REQUIRES_SERVER_NEWER_THAN.reports is 'v26.10.10.1'; before release, every field the client reads is confirmed to exist in v26.10.16.6",
+            "test-support/reportAnswers/*.json are captures from the dev instance with owner and report names replaced by the kit's demo names, the wire shape and values otherwise untouched",
+            ".changeset/ holds one minor changeset for the five packages"
+          ],
+          "files_to_modify": [
+            "test-support/reportAnswers/lightspeeds-engagement-start.json",
+            "test-support/reportAnswers/lightspeeds-reports.json",
+            "test-support/reportAnswers/apollos-quarter-review.json",
+            "test-support/reportAnswers/apollos-reports.json",
+            "test-support/reportAnswers.ts",
+            "packages/client/src/index.ts",
+            "packages/cli/src/index.ts",
+            "packages/cli/src/reportCommands.ts",
+            "packages/cli/src/reportView.test.ts",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "implementation_notes": "~3h. FIRST, the inherited DELIVER work (Known gap 1). The recorded answers DISTILL wrote by hand are replaced by real answers captured from the dev instance (GET /api/latest/teams/{id}/reports, .../reports/{reportId} and the Portfolio twins on :5169; never print or commit a token). Before writing them, replace every owner, report and person name with the kit's names (Team Lightspeed, Portfolio Apollo and the report names the tests use), so no customer identifier enters git; ids may stay. Keep at least one absent metric with its reason in the Portfolio answer, and keep the dates the summary tests match whole: if the capture's windows differ from what reportView.test.ts expects, adjust the date values consistently across both files, never the shape. Commit the capture on its own: test(reports), with no changeset needed, since it is not under packages/*/src. Then the code: client methods getTeamReport / getPortfolioReport (and the list twins) over the /v1 report routes through the existing createLighthouseClient, the reports gate entry, and the lh report group with get (a new reportCommands.ts in the refinementCommands.ts pattern, wired in cli index.ts). The changeset is minor for @letpeoplework/lighthouse-client, -cli, -mcp-core, -mcp-stdio and -mcp-http, worded for a reader: 'read a Team's or Portfolio's reports with lh report and the MCP report tools'. If skills.drift.test.ts also checks the lh command list, name lh report list|get in skills/lighthouse/SKILL.md here. Gate: pnpm run ci."
+        },
+        {
+          "id": "04-02",
+          "name": "lh report reads a Portfolio's report and both lists, sums each up by name, owner and windows or by count, and only ever reads",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "tags": [
+            "@driving_port",
+            "@real-io"
+          ],
+          "test_file": "packages/cli/src/reportView.test.ts",
+          "scenario_name": "passes on a Portfolio's report with its missing values and their reason; lh report list for both owners (x2); sums a report up by its name, its owner and its two windows; sums a list up by how many reports the owner has; only ever reads",
+          "criteria": [
+            "A Portfolio's report passes through with its dashes and absence reasons",
+            "lh report list --team-id / --portfolio-id pass the list through",
+            "The pretty summary names the report, 'Team Lightspeed' and both windows, each date matched whole ('3 May' never inside '13 May'); a list's summary reads '2 reports'; no metric line is phrased",
+            "Every request is a GET"
+          ],
+          "files_to_modify": [
+            "packages/client/src/reportWording.ts",
+            "packages/client/src/index.ts",
+            "packages/cli/src/reportCommands.ts",
+            "packages/cli/src/reportOutput.ts",
+            "packages/cli/src/reportView.test.ts",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "implementation_notes": "~2h. The header summary is a pure function in the client (R26: report, owner and windows, or the list count; never rounded, signed, compared or judged, DDD-18), so lh and MCP share it. A narrow reader of the report answer (ADR-223 style). --toon / --json give the facts and pretty gives the summary, through the existing output formats. Re-stage the changeset with its summary extended."
+        },
+        {
+          "id": "04-03",
+          "name": "lh report relays a refusal in the reader's words: no access, made by a newer version, no such report, upgrade Lighthouse",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "tags": [
+            "@driving_port",
+            "@error"
+          ],
+          "test_file": "packages/cli/src/reportView.test.ts",
+          "scenario_name": "says the reader has no access to that Team; says a report made by a newer version of Lighthouse can't be shown here; says there is no such report; upgrade, nothing asked, for list and get (x2)",
+          "criteria": [
+            "403 names no access and the owner term (Team)",
+            "422 template-not-supported says made by a newer version and can't be shown here",
+            "404 says there is no such report",
+            "A server at or below v26.10.10.1 gets 'Upgrade Lighthouse' for list and get, and nothing is asked of it"
+          ],
+          "files_to_modify": [
+            "packages/client/src/reportWording.ts",
+            "packages/client/src/index.ts",
+            "packages/cli/src/reportCommands.ts",
+            "packages/cli/src/reportView.test.ts",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "implementation_notes": "~1h. The wording is pinned by fragment only (DS-9: 'no access' plus the owner term, 'newer version' and 'can't be shown here', 'no such report', 'Upgrade Lighthouse'). The relay map lives in the client so the MCP tools in 04-05 reuse it. Through the instance's terminology wherever the clients already resolve the owner term."
+        },
+        {
+          "id": "04-04",
+          "name": "Walking skeleton over MCP stdio: four read-only report tools, and lighthouse_team_report_get hands a Team's report over as sent, with its summary",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "step_type": "walking-skeleton",
+          "tags": [
+            "@walking_skeleton",
+            "@driving_port",
+            "@real-io"
+          ],
+          "test_file": "packages/mcp-stdio/src/reports.test.ts",
+          "scenario_name": "offers the four report tools, each marked as only reading; hands the assistant a Team's report exactly as Lighthouse sent it, and a summary naming it, its owner and its windows",
+          "criteria": [
+            "lighthouse_team_report_list, lighthouse_team_report_get, lighthouse_portfolio_report_list and lighthouse_portfolio_report_get are listed, each with readOnlyHint: true, inputs { id } / { id, reportId }, and a description pointing to the lighthouse-reports skill for how Lighthouse shows the values",
+            "lighthouse_team_report_get answers an object holding the server's report unchanged and a summary naming it, its owner and both windows (dates matched whole)",
+            "skills/lighthouse/SKILL.md names the four tools, so skills.drift.test.ts stays green"
+          ],
+          "files_to_modify": [
+            "packages/mcp-core/src/reportTools.ts",
+            "packages/mcp-core/src/index.ts",
+            "packages/mcp-stdio/src/reports.test.ts",
+            "skills/lighthouse/SKILL.md",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "implementation_notes": "~2h. Object answers with a summary field (ADR-224 rule 1), reusing the client's summary from 04-02. skills.drift.test.ts turns red the moment the tools exist, until the general skill names them, so both land in this commit (DISTILL disposition). The pointer from the general skill to the lighthouse-reports skill is phase 05 (05-01), since that skill does not exist yet."
+        },
+        {
+          "id": "04-05",
+          "name": "The MCP report tools read a Portfolio's report and both lists, relay refusals as errors, and work on the shared HTTP server too",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "tags": [
+            "@driving_port",
+            "@real-io",
+            "@error"
+          ],
+          "test_file": "packages/mcp-stdio/src/reports.test.ts",
+          "scenario_name": "hands over a Portfolio's report with its missing values and their reason; both lists with counts (x2); refusals as errors (x3: no access, newer version, no such report); tells the assistant to upgrade a Lighthouse without reports, and does not ask it; packages/mcp-http/src/reports.e2e.test.ts: hands over a Team's report exactly as Lighthouse sent it, with its summary",
+          "criteria": [
+            "The Portfolio's report passes through with dashes and reasons; both lists answer with a count summary",
+            "403, 422 and 404 come back as tool errors with the same fragments as lh",
+            "A Lighthouse at or below v26.10.10.1 gets an upgrade error with no request made",
+            "The shared HTTP server hands a Team's report over unchanged with its summary"
+          ],
+          "files_to_modify": [
+            "packages/mcp-core/src/reportTools.ts",
+            "packages/mcp-stdio/src/reports.test.ts",
+            "packages/mcp-http/src/reports.e2e.test.ts",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "04-04"
+          ],
+          "implementation_notes": "~1.5h. Reuse the relay map from 04-03. The HTTP server registers mcp-core's tools, so expect no mcp-http source change; if one is needed, the changeset already names the package."
+        },
+        {
+          "id": "04-06",
+          "name": "A successful report read through lh or MCP reports the web's ReportOpened with its type and source, only after consent, and nothing else",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "tags": [
+            "@driving_port",
+            "@real-io",
+            "@kpi-OUT-6298-K4-reports-read-by-clients"
+          ],
+          "test_file": "packages/cli/src/reportUsageData.test.ts",
+          "scenario_name": "ReportOpened + ThenAndNow, source Cli, for a Team's and a Portfolio's read (x2); reports the same opening for a read as JSON, and prints the same as with usage data off; packages/mcp-stdio/src/reports.test.ts: reports ReportOpened with the report's type and source Mcp, once per read (still exactly one after the send budget has passed); active guards x8 (cli: nothing for a list, an unknown type, 403, 404, a too-old Lighthouse, a reader who said no, one never asked, one who said yes and set DO_NOT_TRACK) and the MCP guard: nothing for a list or an unknown type",
+          "criteria": [
+            "After consent, lh report get and lighthouse_{team,portfolio}_report_get report one ReportOpened carrying reportTemplate ThenAndNow, with source Cli or Mcp, once per run or tool call and with no dwell",
+            "A list, a refusal, an older Lighthouse, an unknown template key, no consent, a refusal of consent or DO_NOT_TRACK report nothing",
+            "--json prints the same with usage data on or off",
+            "Never a name, an id or a value"
+          ],
+          "files_to_modify": [
+            "packages/client/src/usageData.ts",
+            "packages/client/src/usageData.enforcement.test.ts",
+            "packages/cli/src/commandResult.ts",
+            "packages/cli/src/reportCommands.ts",
+            "packages/mcp-core/src/reportTools.ts",
+            "packages/mcp-core/src/usageDataPort.ts",
+            "packages/cli/src/reportUsageData.test.ts",
+            "packages/mcp-stdio/src/reports.test.ts",
+            ".changeset/epic-6298-read-reports.md"
+          ],
+          "dependencies": [
+            "04-05"
+          ],
+          "implementation_notes": "~2h. The story-6193 pattern: the clients' usage-data name union gains a ReportOpened occurrence carrying reportTemplate, a closed 'ThenAndNow', mapped through an exhaustive record from templateKey ('then-and-now' -> ThenAndNow), like the web's reportTemplateWeDisclose. lh reports through its command-result occurrences; MCP reports through the usage-data port. usageData.enforcement.test.ts and the source-mapping tests follow the widened union (DISTILL disposition). No backend change: ReportOpened with report_template exists since v26.10.16.6, and the reports gate keeps the read (and the event) from older servers. SLICE-END: no 'epic 6298, slice 04' skip left under packages/. The Lighthouse docs row 'A report was opened' gaining the clients' reads is finalize work in the Lighthouse repository (DEVOPS), not this step."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 05 — The lighthouse-reports skill shows a Then & Now as a faithful dashboard (lighthouse-clients)",
+      "description": "US-05. Repository /storage/repos/lighthouse-clients, skills/. A new skill folder lighthouse-reports: SKILL.md (when to use, reading procedure, guardrails, fallback), references/then-and-now.md (NMD-6's layout and the web's presentation rules, each naming its frontend source), and evals/ with fixtures captured from the dev instance, each paired with the lines the Reports tab shows. It is packed by the existing pack-skills.sh, listed in CI's dry run and in the skills README, and reached from the general lighthouse skill. No package code, so no changeset. Brief: slices/slice-05-lighthouse-reports-skill.md.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "The lighthouse-reports skill and its Then & Now reference: NMD-6's layout, the web's rules each with its source, the guardrails, and a pointer from the general skill",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "test_file": "skills/lighthouseReports.skill.test.ts",
+          "scenario_name": "has a SKILL.md named lighthouse-reports and the Then & Now reference file; names every web source its presentation rules are copied from; lays a report out in the printed one's order, ending with where the data came from; is reached from the general skill, which names the four report tools and both lh commands",
+          "criteria": [
+            "skills/lighthouse-reports/SKILL.md has frontmatter name lighthouse-reports and a description of when to use it, pointing to the lighthouse skill for connecting",
+            "references/then-and-now.md names every web source of its rules (metric order, which way is better, lines and decimals, units, rounding, change and percent change including 'No change' and 'Then was 0', dashes with reasons, summary groups), copied from the frontend after slice 02",
+            "The layout order is 'Read from Lighthouse on' < 'Then | Now | Change | %' < 'Assistant's view' < 'Data from Lighthouse by LetPeopleWork', with the credit as the last line; changes read like the web ('▼ 9 days', '−43 %')",
+            "skills/lighthouse/SKILL.md names the four report tools and lh report list|get and points to lighthouse-reports"
+          ],
+          "files_to_modify": [
+            "skills/lighthouse-reports/SKILL.md",
+            "skills/lighthouse-reports/references/then-and-now.md",
+            "skills/lighthouse/SKILL.md",
+            "skills/lighthouseReports.skill.test.ts"
+          ],
+          "dependencies": [
+            "04-06"
+          ],
+          "implementation_notes": "~3h. STRUCTURAL VERIFICATION (skill text): the skill test asserts the files, the source list and the order; the evals in 05-02 hold the rules to the web. Guardrails (D25): quote values exactly, never rebuild Then from metric tools, dashes stay dashes, the instance's terms, the attribution line, the assistant's own comments only under their own heading and only when asked. Fallback: a report PDF or values the user pastes, saying where the numbers came from. Write it so a later report type adds a section or reference file, not a skill; AC-5.5 is judged by review, and the commit body says how. Copy the rules from the named web sources as they stand after 02-01 (thenNowComparison, ThenNowLineParts, changeSummary and changeText in Lighthouse.Frontend/src/pages/Common/Reports/), and cite paths a reader can open. No changeset, since no packages/*/src is touched."
+        },
+        {
+          "id": "05-02",
+          "name": "The skill's twelve eval cases run from its own folder against fixtures captured from the dev instance, each paired with the Reports tab's lines",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "test_file": "skills/lighthouseReports.skill.test.ts",
+          "scenario_name": "runs its eval cases from its own folder, each with its fixture; plus the 12 eval cases waiting in test-support/pending-skill-evals/lighthouse-reports/cases.awaiting-fixtures.json (dashboard as the web shows it via mcp and lh; No change and Then was 0; Mixed; a dash with its reason; the assistant's view apart / absent unless asked; no metric tool to rebuild Then; renamed terms; an older Lighthouse; no access; a Cycle Time question is not a report)",
+          "criteria": [
+            "The twelve cases live in skills/lighthouse-reports/evals/cases.json with story '6298', and each names a fixture that exists",
+            "Each fixture is a real report answer captured from the dev instance, with names replaced by demo names, and is paired with the lines the Reports tab showed for it at the same moment",
+            "Percent strings follow the web's form ('−43 %'; must-not '+0 %')",
+            "skills.evals.test.ts accepts story 6298 and counts four skills; the pending file and its folder are gone"
+          ],
+          "files_to_modify": [
+            "skills/lighthouse-reports/evals/cases.json",
+            "skills/lighthouse-reports/evals/fixtures/",
+            "test-support/pending-skill-evals/lighthouse-reports/cases.awaiting-fixtures.json",
+            "skills/skills.evals.test.ts",
+            "skills/lighthouseReports.skill.test.ts"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "implementation_notes": "~2.5h. The inherited DELIVER work (DS-10, Known gap 1, DDD-23). For each fixture, capture the report answer from the dev instance (:5169) and, at the same moment, the lines the Reports tab shows for it. Pick reports that exercise No change, Then was 0, Mixed, a dash with a reason, and renamed terms where the instance has them. Replace every owner, report and person name with demo names before writing (no customer identifiers in git), and keep values and dates as captured. The fixtures are served by scripts/eval-fixture.mjs: follow the other skills' fixture layout and naming. In skills.evals.test.ts, add 6298 to STORIES and lighthouse-reports to the list of skills (three becomes four). Running the evals 3 times per case and recording the result under docs/feature/story-6217-lighthouse-skills/evals/ is the maintainer's K5 gate, not this step. No changeset."
+        },
+        {
+          "id": "05-03",
+          "name": "CI's skill-packing dry run expects lighthouse-reports-skill.zip, and the skills README lists the skill",
+          "agent": "nw-software-crafter",
+          "repository": "lighthouse-clients",
+          "test_file": "skills/lighthouseReports.skill.test.ts",
+          "scenario_name": "is packed by CI's dry run and listed in the skills README",
+          "criteria": [
+            "The 'Pack skills (dry run)' step's expected list in .github/workflows/ci.yml reads (lighthouse lighthouse-refinement lighthouse-daily-flow-review lighthouse-reports)",
+            "skills/README.md lists lighthouse-reports with one line on when to use it",
+            "pack-skills.sh produces lighthouse-reports-skill.zip unchanged; the release job's glob picks it up"
+          ],
+          "files_to_modify": [
+            ".github/workflows/ci.yml",
+            "skills/README.md",
+            "skills/lighthouseReports.skill.test.ts"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "implementation_notes": "~30m. Extend the existing workflow line; add no new job (CI minimalism). Run scripts/pack-skills.sh locally once to see the zip. SLICE-END: lighthouseReports.skill.test.ts has no it.skip and test-support/pending-skill-evals/lighthouse-reports/ is gone. The Epic's five slices are now on trunk in both repositories. The maintainer decides the push, pnpm release:version for the clients, the Lighthouse release and the macOS check after the release (DVO-9, DVO-10). docs/aiintegration.md and the other docs are finalize work."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-10-20",
+    "notes": "APPROVED, no blockers; advisories A1 (01-02 Back control and h1), A2 (real E2E test names), A3 (scan line refs) applied by the orchestrator."
+  }
+}
