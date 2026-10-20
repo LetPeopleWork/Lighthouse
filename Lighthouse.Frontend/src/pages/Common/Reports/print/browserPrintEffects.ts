@@ -3,8 +3,8 @@ import type { PrintEffectPort, PrintLoadOutcome } from "./usePrintOnce";
 /** A browser window with its own constructors, such as the app's or the print frame's. */
 export type PrintWindow = Window & typeof globalThis;
 
-/** The browser's print effects for one window; the router's navigation is not the browser's to give. */
-export type WindowPrintEffects = Omit<PrintEffectPort, "navigate">;
+/** The browser's print effects for one window. */
+export type WindowPrintEffects = PrintEffectPort;
 
 // The typeface ships as one file per part of the alphabet, and the browser fetches only the parts that draw the text
 // it is asked about. A basic Latin, a Central European and a Vietnamese letter ask for every part, so a name in any of

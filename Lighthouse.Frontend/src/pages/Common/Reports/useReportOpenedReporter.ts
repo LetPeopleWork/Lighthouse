@@ -26,9 +26,9 @@ const openingsCountedIn = (app: QueryClient): Set<string> => {
 
 /**
  * Reports that a report was opened, with its Type, once it has been on screen as long as a tab must be to count as
- * opened. One opening is one entry in the reader's history: reading the report again after an edit, or coming back
- * to the same entry after printing, is the same opening, and counts only if it had not counted before. A report that
- * never loaded was not read, so it reports nothing.
+ * opened. One opening is one entry in the reader's history: reading the report again after an edit is the same
+ * opening, and counts only if it had not counted before. A report that never loaded was not read, so it reports
+ * nothing.
  */
 export const useReportOpenedReporter = (report: IReport | undefined): void => {
 	const reportUsage = useUsageDataReporter();

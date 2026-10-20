@@ -1,7 +1,7 @@
 import { Box, CircularProgress } from "@mui/material";
 import type React from "react";
 import { lazy, Suspense, useContext, useMemo } from "react";
-import { Route, useNavigate } from "react-router";
+import { Route } from "react-router";
 import type { IReportOwner } from "../../../../models/Reports/Report";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../services/TerminologyContext";
@@ -73,21 +73,16 @@ export const usePrintPagePorts = (): PrintPagePorts => {
 
 const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 	const { reads, terms } = usePrintPagePorts();
-	const navigate = useNavigate();
 	const { loadFonts, loadPicture } = standIns;
 
 	const effects: PrintEffectPort = useMemo(() => {
 		const browser = browserPrintEffects(globalThis.window);
 		return {
 			...browser,
-			navigate: (to, options) => {
-				if (typeof to === "number") navigate(to);
-				else navigate(to, options);
-			},
 			loadFonts: loadFonts ?? browser.loadFonts,
 			loadPicture: loadPicture ?? browser.loadPicture,
 		};
-	}, [navigate, loadFonts, loadPicture]);
+	}, [loadFonts, loadPicture]);
 
 	return (
 		<Suspense fallback={<WhileThePageLoads />}>

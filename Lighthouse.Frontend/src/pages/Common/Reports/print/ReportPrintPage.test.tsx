@@ -60,8 +60,6 @@ import { reportQueryKeyOf } from "../reportOwner";
  * the page's one way on is "‹ Back to Reports".
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const { reportUsage } = vi.hoisted(() => ({
 	reportUsage: vi.fn().mockReturnValue(true),
 }));
@@ -263,7 +261,7 @@ describe("The print page never prints by itself", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// A history entry an older Lighthouse left behind, reached by a reload or Forward, still asks for nothing.
-	it.skip(`never prints, even when its history entry still carries an export's wish to print (${pendingFramePrint})`, async () => {
+	it(`never prints, even when its history entry still carries an export's wish to print`, async () => {
 		const dialog = aPrintDialog();
 
 		openingThePrintPageDirectly({
@@ -277,7 +275,7 @@ describe("The print page never prints by itself", () => {
 
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Nothing sends a reader here any more, so the page knows no report view to return to; the list is its one way on.
-	it.skip(`offers only "‹ Back to Reports", a plain link to the list that carries nothing, whatever its history entry says (${pendingFramePrint})`, async () => {
+	it(`offers only "‹ Back to Reports", a plain link to the list that carries nothing, whatever its history entry says`, async () => {
 		aPrintDialog();
 		const { user } = openingThePrintPageDirectly({
 			startState: { from: "report" },

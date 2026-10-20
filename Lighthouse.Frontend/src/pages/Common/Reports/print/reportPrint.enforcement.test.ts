@@ -3,8 +3,6 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const here = dirname(fileURLToPath(import.meta.url));
 const sourceRoot = resolve(here, "../../../..");
 /** The kits tests are built from; they name what they check for, and ship nowhere. */
@@ -161,13 +159,13 @@ describe("who makes a frame", () => {
 
 describe("what prints without moving the reader", () => {
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
-	it.skip(`nothing under print/ navigates (${pendingFramePrint})`, () => {
+	it(`nothing under print/ navigates`, () => {
 		expect(productionModulesNaming(/\buseNavigate\b/, here)).toEqual([]);
 	});
 
 	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// Export PDF prints where the reader is; the starter can never slip back into taking them somewhere.
-	it.skip(`the export starter neither navigates nor holds the router's navigation (${pendingFramePrint})`, () => {
+	it(`the export starter neither navigates nor holds the router's navigation`, () => {
 		const starters = productionModulesNaming(/ReportPdfExportStarted/).filter(
 			(file) => file !== "services/Api/UsageDataService.ts",
 		);
@@ -180,7 +178,7 @@ describe("what prints without moving the reader", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// In the frame the global document is the app's, so a title written there would name the wrong page.
-	it.skip(`nothing under print/ but the binding writes a document's title (${pendingFramePrint})`, () => {
+	it(`nothing under print/ but the binding writes a document's title`, () => {
 		expect(
 			productionModulesNaming(/\bdocument\.title\s*=(?!=)/, here).filter(
 				(file) => file !== THE_BINDING,
@@ -190,7 +188,7 @@ describe("what prints without moving the reader", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// The frame host draws the same content as the route, so it must reach none of the app's chrome either.
-	it.skip(`the frame host, alone in giving the frame a style cache of its own, draws the report's summary and panels and reaches none of the app's chrome (${pendingFramePrint})`, () => {
+	it(`the frame host, alone in giving the frame a style cache of its own, draws the report's summary and panels and reaches none of the app's chrome`, () => {
 		const hosts = productionModulesNaming(/from\s+["']@emotion\/cache["']/);
 		expect(hosts).toHaveLength(1);
 		expect(hosts[0]).toMatch(/^pages\/Common\/Reports\/print\//);

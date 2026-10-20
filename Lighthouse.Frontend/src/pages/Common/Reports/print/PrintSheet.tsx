@@ -9,7 +9,6 @@ import {
 import type React from "react";
 import { Link as RouterLink } from "react-router";
 import { lightTheme } from "../../../../utils/theme/appThemes";
-import { RETURNED_FROM_PRINT } from "./usePrintOnce";
 
 const SCREEN_ONLY = { "@media print": { display: "none" } };
 const BODY: SxProps<Theme> = {
@@ -42,41 +41,29 @@ const WHITE_PAPER = {
 	},
 };
 
-/** The way back: a step back through the history to where the export started, or else to an address in its place. */
-export type WayBack =
-	| { readonly label: string; readonly stepBack: () => void }
-	| { readonly label: string; readonly to: string };
-
-const BackControl: React.FC<{ readonly back: WayBack }> = ({ back }) =>
-	"stepBack" in back ? (
-		<Button onClick={back.stepBack} sx={SCREEN_ONLY}>
-			{back.label}
-		</Button>
-	) : (
-		<Button
-			component={RouterLink}
-			to={back.to}
-			replace
-			state={RETURNED_FROM_PRINT}
-			sx={SCREEN_ONLY}
-		>
-			{back.label}
-		</Button>
-	);
+const BACK_TO_REPORTS = "‹ Back to Reports";
 
 interface PrintSheetProps {
 	readonly ready: boolean;
-	/** The way back, on a page the reader sees; the hidden frame an export prints from holds no control. */
-	readonly back?: WayBack;
+	/** The owner's Reports list, on a page the reader sees; the hidden frame an export prints from holds no way back. */
+	readonly reportsPath?: string;
 	readonly children: React.ReactNode;
 }
 
 /** The sheet the report is printed on: white in any theme, with a way back that stays on the screen and off the paper. */
-const PrintSheet: React.FC<PrintSheetProps> = ({ ready, back, children }) => (
+const PrintSheet: React.FC<PrintSheetProps> = ({
+	ready,
+	reportsPath,
+	children,
+}) => (
 	<ThemeProvider theme={lightTheme}>
 		<GlobalStyles styles={WHITE_PAPER} />
 		<Box data-render-ready={ready ? "true" : "false"} sx={LIGHT_GROUND}>
-			{back !== undefined && <BackControl back={back} />}
+			{reportsPath === undefined ? null : (
+				<Button component={RouterLink} to={reportsPath} sx={SCREEN_ONLY}>
+					{BACK_TO_REPORTS}
+				</Button>
+			)}
 			<Box sx={BODY}>{children}</Box>
 		</Box>
 	</ThemeProvider>
