@@ -1,5 +1,5 @@
 import { Box, Button, Typography } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Link as RouterLink, useLocation, useParams } from "react-router";
@@ -8,6 +8,10 @@ import type { useTerminology } from "../../../../services/TerminologyContext";
 import { WidgetBody } from "../../MetricsView/WidgetShell";
 import type { WidgetStatus } from "../../MetricsView/widgetStatus";
 import { reportPathOf, reportQueryKeyOf, reportsPathOf } from "../reportOwner";
+import {
+	finalFailureOf,
+	retriesUnlessFinal,
+} from "../wizard/reportRefusalCopy";
 import {
 	isAFreshAnswer,
 	type PrintFontsState,
@@ -23,6 +27,8 @@ import {
 } from "./usePrintOnce";
 
 const PREPARING = "Preparing the PDF…";
+const THE_REPORT_COULD_NOT_BE_LOADED =
+	"This report couldn't be loaded, so no PDF was made.";
 const PART_OF_THE_PAGE_COULD_NOT_BE_LOADED =
 	"Part of the page couldn't be loaded, so no PDF was made.";
 const BACK_TO_REPORT = "‹ Back to report";
@@ -113,19 +119,62 @@ interface WayBack {
 	readonly label: string;
 }
 
-/** Only a reader who came from the report goes back to it; from the list or a pasted link, the Reports list is where they belong. */
+/**
+ * Only a reader who came from the report goes back to it, and only while it can be shown; from the list, a pasted
+ * link, or a report that is gone or made by a newer version, the Reports list is where they belong.
+ */
 const wayBackOf = (
+	state: PrintPageState,
 	from: PrintOrigin | undefined,
 	reportPath: string,
 	reportsPath: string,
 ): WayBack =>
-	from === "report"
+	from === "report" && state !== "failedFinal"
 		? { to: reportPath, label: BACK_TO_REPORT }
 		: { to: reportsPath, label: BACK_TO_REPORTS };
 
 const widgetStatusOf = (state: PrintPageState): WidgetStatus => {
 	if (state === "ready") return "ready";
 	return state === "preparing" ? "loading" : "error";
+};
+
+/** Reads again what could not be read; a failed read shows on the page through the query, not the returned promise. */
+const askAgainFor = (query: { readonly refetch: () => Promise<unknown> }) => {
+	query.refetch().catch(() => undefined);
+};
+
+interface FailureLook {
+	readonly message?: string;
+	readonly retry?: () => void;
+}
+
+interface AsksAgain {
+	readonly forTheReport: () => void;
+	readonly forTheFailedPart: () => void;
+}
+
+/** What a failed page says, and whether Retry is offered: never for a report that asking again will not change. */
+const failureLookOf = (
+	state: PrintPageState,
+	reportError: unknown,
+	askAgain: AsksAgain,
+): FailureLook => {
+	switch (state) {
+		case "failedRetryable":
+			return {
+				message: THE_REPORT_COULD_NOT_BE_LOADED,
+				retry: askAgain.forTheReport,
+			};
+		case "failedPart":
+			return {
+				message: PART_OF_THE_PAGE_COULD_NOT_BE_LOADED,
+				retry: askAgain.forTheFailedPart,
+			};
+		case "failedFinal":
+			return { message: finalFailureOf(reportError) };
+		default:
+			return {};
+	}
 };
 
 const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
@@ -140,16 +189,18 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 	const reportId = Number(params.reportId);
 	const mountedAt = useMemo(() => Date.now(), []);
 
+	const usualRetry = useQueryClient().getDefaultOptions().queries?.retry;
 	const report = useQuery({
 		queryKey: reportQueryKeyOf(owner, reportId),
 		queryFn: () => reads.getReport(owner, reportId),
 		refetchOnMount: "always",
+		retry: retriesUnlessFinal(usualRetry),
 	});
 	const ownerName = useOwnerName(owner, reads);
 
 	const fetchedAt = report.data === undefined ? null : report.dataUpdatedAt;
 	const fresh = isAFreshAnswer(fetchedAt, mountedAt) ? report.data : undefined;
-	const { fonts, askAgain } = useFontsOnceDrawn(
+	const { fonts, askAgain: askForTheFontsAgain } = useFontsOnceDrawn(
 		fresh !== undefined,
 		effects.loadFonts,
 	);
@@ -164,11 +215,17 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 		termsError: terms.error,
 		fonts,
 	});
-	const partFailed = state === "failedPart";
+	const failure = failureLookOf(state, report.error, {
+		forTheReport: () => askAgainFor(report),
+		forTheFailedPart: () => {
+			if (ownerName.isError) askAgainFor(ownerName);
+			if (fonts === "failed") askForTheFontsAgain();
+		},
+	});
 	const { printWhenReady, from } = printRequestOf(location.state);
 	const reportPath = reportPathOf(owner, reportId);
 	const reportsPath = reportsPathOf(owner);
-	const back = wayBackOf(from, reportPath, reportsPath);
+	const back = wayBackOf(state, from, reportPath, reportsPath);
 
 	usePrintOnce({
 		state,
@@ -203,10 +260,8 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 					status={widgetStatusOf(state)}
 					hasContentToDim={false}
 					loadingMessage={PREPARING}
-					failureMessage={
-						partFailed ? PART_OF_THE_PAGE_COULD_NOT_BE_LOADED : undefined
-					}
-					onRetry={partFailed ? askAgain : undefined}
+					failureMessage={failure.message}
+					onRetry={failure.retry}
 				>
 					{fresh !== undefined && (
 						<Typography variant="h4" component="h1">

@@ -426,7 +426,7 @@ describe("A report the print page cannot read", () => {
 	};
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`says no PDF was made, offers Retry, and never gets ready or prints, when the report could not be loaded (${pendingEpic6298})`, async () => {
+	it("says no PDF was made, offers Retry, and never gets ready or prints, when the report could not be loaded", async () => {
 		const dialog = aPrintDialog();
 		const getReport = theFreshReadGets(() =>
 			Promise.reject(new Error("the network dropped")),
@@ -448,7 +448,7 @@ describe("A report the print page cannot read", () => {
 
 	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The reader asked for a PDF; a read that succeeds on Retry finishes what Export started.
-	it.skip(`opens the print dialog once when Retry reads the report after the export's read failed (${pendingEpic6298})`, async () => {
+	it("opens the print dialog once when Retry reads the report after the export's read failed", async () => {
 		const dialog = aPrintDialog();
 		const getReport = theFreshReadGets(
 			() => Promise.reject(new Error("the network dropped")),
@@ -467,7 +467,7 @@ describe("A report the print page cannot read", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:bounded-change
-	it.skip(`reads the report again on Retry on a page opened from its address, shows it, and still never prints (${pendingEpic6298})`, async () => {
+	it("reads the report again on Retry on a page opened from its address, shows it, and still never prints", async () => {
 		const dialog = aPrintDialog();
 		const getReport = vi
 			.fn()
@@ -487,7 +487,7 @@ describe("A report the print page cannot read", () => {
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Nothing comes of trying again, so there is no Retry, and the only way on is the list.
-	it.skip.each([
+	it.each([
 		["no longer exists", aRefusal(404, "not-found"), NO_LONGER_EXISTS],
 		[
 			"was made by a newer version",
@@ -495,7 +495,7 @@ describe("A report the print page cannot read", () => {
 			MADE_BY_A_NEWER_VERSION,
 		],
 	])(
-		`says so, offers no Retry and leads back to Reports, for a report that %s (${pendingEpic6298})`,
+		"says so, offers no Retry and leads back to Reports, for a report that %s",
 		async (_why, refusal, sentence) => {
 			const dialog = aPrintDialog();
 			const { user } = openingThePrintPageDirectly({
@@ -517,7 +517,7 @@ describe("A report the print page cannot read", () => {
 	);
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`leads back to Reports from a report that no longer exists, even when the reader came from the report (${pendingEpic6298})`, async () => {
+	it("leads back to Reports from a report that no longer exists, even when the reader came from the report", async () => {
 		const dialog = aPrintDialog();
 		const getReport = theFreshReadGets(() =>
 			Promise.reject(aRefusal(404, "not-found")),
