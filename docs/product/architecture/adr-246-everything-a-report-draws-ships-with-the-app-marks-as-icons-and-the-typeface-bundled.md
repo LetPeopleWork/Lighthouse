@@ -140,5 +140,4 @@ licence against the actual font files.
 Second revision 2026-10-19: the print page asks for the bundled faces through its injected effect port (ADR-245
 decisions 3 and 4), whose browser binding is the one module naming `document.fonts`; loading a face changes the
 document's font set, so it is treated as an effect rather than a read. A face that cannot be loaded leaves the page
-unprinted with "Part of the page couldn't be loaded, so no PDF was made." and Retry (**PROVISIONAL — maintainer
-confirms**). The typeface decisions above are unchanged.
+unprinted with "Part of the page couldn't be loaded, so no PDF was made." and Retry (**confirmed by the maintainer on 2026-10-20**). The typeface decisions above are unchanged.

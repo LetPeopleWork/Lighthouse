@@ -4,7 +4,7 @@
   dialog (MQ-1 = a, 2026-10-17). Revised after review 2026-10-19 (decisions 2, 3, 4 and 6 sharpened, decision 7
   added; see "Revised after review 2026-10-19" at the end; a second revision the same day sharpened decisions 2–4).
   Three of the revised points (Retry continues the export; Back on a directly loaded page; the "Part of the page"
-  sentence) apply defaults the maintainer has not yet confirmed; each is marked **PROVISIONAL — maintainer confirms**.
+  sentence) applied defaults chosen while the maintainer was away; the maintainer confirmed all three on 2026-10-20.
 - **Feature**: epic-6298-report-pdf-export (ADO Epic #6298 "Report PDF Export"), slices 01–03
 - **Deciders**: the maintainer (MQ-1); Morgan (Solution Architect)
 - **Relies on**: ADR-219 (a report is an owner-scoped record; its read computes Now), ADR-233 (a widget is loading
@@ -77,7 +77,7 @@ code), **simplicity**.
    through its HTTP status; 404 and 422 are final. Two retryable failures differ only in their sentence: a failed
    report read says "This report couldn't be loaded, so no PDF was made."; when the report was read but the owner's
    name, the terms or the fonts could not be loaded, the page says "Part of the page couldn't be loaded, so no PDF
-   was made." (**PROVISIONAL — maintainer confirms**). Both offer Retry.
+   was made." (**confirmed by the maintainer on 2026-10-20**). Both offer Retry.
 4. **Printing is a separate, opt-in step.** (rev. 2026-10-19) Export PDF — the report view's button or the Reports
    list's icon (maintainer, 2026-10-19) — navigates in the same window to the print route with a one-shot "print when
    ready" flag **and the origin** (`report` or `list`) in router state, never in the URL. A print-once hook, given
@@ -87,7 +87,7 @@ code), **simplicity**.
    to the origin. Router state survives a reload and comes back with Forward, and React's development mode runs
    effects twice, so consuming the flag before printing (and a per-mount record that the print happened) is what
    keeps it to one print. The flag is consumed only by an actual print: after a retryable failure, a successful Retry
-   makes the page ready and it prints once (**PROVISIONAL — maintainer confirms**). The production binding of the
+   makes the page ready and it prints once (**confirmed by the maintainer on 2026-10-20**). The production binding of the
    effect port is the one module naming `globalThis.print()` (rev. 2: and `document.fonts`; the port also carries
    the font loading of decision 3, which the page, not the hook, calls). (rev. 2, 2026-10-19) The hook subscribes to
    `afterprint` once per mount and unsubscribes on unmount, independent of the flag and the state: clearing the flag
@@ -97,7 +97,7 @@ code), **simplicity**.
    label and target follow the origin — "‹ Back to report" to the report view, "‹ Back to Reports" to the Reports
    list. A final failure always leads to the Reports list. A page opened directly — by a renderer, a test, or a
    pasted link — carries no flag and no origin, never prints, and its Back leads to the Reports list
-   (**PROVISIONAL — maintainer confirms**). Every return replaces the print entry and carries a return-from-print
+   (**confirmed by the maintainer on 2026-10-20**). Every return replaces the print entry and carries a return-from-print
    marker.
 5. **The page owns its print stylesheet**: `@page { margin: 12mm }` with no fixed size, so A4 and US Letter both work
    from the dialog's paper choice; a fixed content width that fits both; `break-inside: avoid` on the summary and on
@@ -197,7 +197,7 @@ changing its direction:
 - The flag is consumed before printing, and the origin travels with it (decision 4); two surfaces start an export
   and count it the same way (decision 6); the page paints its own light ground (decision 7).
 - Earned trust: the end-to-end check runs on every CI run *once slice 01 has shipped*, not before.
-- Provisional, for the maintainer to confirm: a successful Retry prints; Back on a directly loaded page leads to the
+- Confirmed by the maintainer on 2026-10-20: a successful Retry prints; Back on a directly loaded page leads to the
   Reports list.
 
 Alternatives weighed in the revision: suppressing the tab opening counted on a return to the Reports list (rejected:
@@ -217,5 +217,5 @@ after the dialog closes (rejected: a reload while the dialog is open, or a secon
   type-level `Pick` vanishes when the code runs (decision 2).
 - The fresh read does not retry a final answer (404, 422); the dialog opens within two seconds of the click on a
   loaded report, checked by hand on the dev instance.
-- Provisional, for the maintainer to confirm: a failure of the owner's name, the terms or the fonts, with the report
+- Confirmed by the maintainer on 2026-10-20: a failure of the owner's name, the terms or the fonts, with the report
   read, says "Part of the page couldn't be loaded, so no PDF was made." with Retry.

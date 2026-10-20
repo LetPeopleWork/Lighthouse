@@ -212,7 +212,7 @@ Full text: `recommendation.md` · artifacts: `diverge/` · decisions DV-1..DV-9:
 > - DoD 1 names the manual evidence and its automated proxies; the KPI table records per-browser and per-client
 >   measurement and K6; the DoR tally is restated.
 >
-> Defaults chosen while the maintainer was away stay marked **PROVISIONAL — maintainer confirms** (PD-1..PD-6).
+> Defaults chosen while the maintainer was away (PD-1..PD-6) were confirmed by the maintainer on 2026-10-20.
 
 **Agent**: Luna (`nw-product-owner`) · **Date**: 2026-10-17 · **Mode**: autonomous subagent; the maintainer was not
 reachable from the session, so decisions that are the maintainer's carry a proposed default marked **PROPOSED —
@@ -469,7 +469,7 @@ on 29 Oct and left the tab open; she exports on 30 Oct; the PDF shows Now ending
 exports from the Lighthouse app on her Linux laptop; the system print dialog opens. (5) The report cannot be loaded
 for Martin on 2 Nov; no Export PDF is offered. (6) Elena chooses Export PDF on 30 Oct and the export's own read
 fails on a dropped connection; the page says "This report couldn't be loaded, so no PDF was made." with Retry; she
-chooses Retry, the read succeeds and the print dialog opens once (PD-1, **PROVISIONAL — maintainer confirms**).
+chooses Retry, the read succeeds and the print dialog opens once (PD-1, **confirmed by the maintainer on 2026-10-20**).
 
 ```gherkin
 Scenario: A coach hands a sponsor a dated Then & Now report as a PDF
@@ -506,13 +506,13 @@ Scenario: The Lighthouse app on Linux opens the print dialog
   Then the system print dialog opens on the print-designed report
   And Priya is back on the report when the dialog closes
 
-# PD-2 — PROVISIONAL, maintainer confirms: the panel title is the term alone, as on screen
+# PD-2 — confirmed by the maintainer on 2026-10-20: the panel title is the term alone, as on screen
 Scenario: Configured terms head the PDF
   Given the instance calls a Team a "Squad" and Cycle Time "Lead Time"
   When Elena exports Team Lightspeed's report
   Then the PDF is headed "Squad Lightspeed" and its panel reads "Lead Time"
 
-# PD-1 — PROVISIONAL, maintainer confirms: a successful Retry continues the export
+# PD-1 — confirmed by the maintainer on 2026-10-20: a successful Retry continues the export
 Scenario: A failed export makes no PDF, and a successful Retry prints once
   Given Elena chose Export PDF on Team Lightspeed's report on 30 Oct 2026
   When the export cannot read the report
@@ -532,9 +532,9 @@ report name as the title; then one line with both windows; then "Produced {date}
 panel with exactly the values on screen. AC-1.6 Footer, in flow and kept with the last panel: the Lighthouse logo and
 "Made with Lighthouse by LetPeopleWork · letpeople.work" (D10, NMD-3); the default file name is "{report name} —
 {owner kind} {owner name}". AC-1.7 While the report loads, Export PDF is shown disabled (NMD-1); when it could not be
-loaded, no longer exists, was made by a newer version, or has a type this version cannot show (**PROVISIONAL —
-maintainer confirms**, PD-3), Export PDF is not offered and no PDF is produced. In the Reports list the icon depends
-on the row's type only (**PROVISIONAL — maintainer confirms**, PD-4); loading and failure are shown by the print
+loaded, no longer exists, was made by a newer version, or has a type this version cannot show (**confirmed by the maintainer on
+2026-10-20**, PD-3), Export PDF is not offered and no PDF is produced. In the Reports list the icon depends
+on the row's type only (**confirmed by the maintainer on 2026-10-20**, PD-4); loading and failure are shown by the print
 page. AC-1.8 Cancelling the dialog returns the reader to where the export started (AC-1.12); a report view returned
 to shows the values that were about to be printed; nothing is stored (D15, U-1). AC-1.9 The usage event of D27 fires when Export PDF is
 chosen, from the report view or the Reports list, exactly once per choice; the print page itself reports nothing; the
@@ -542,14 +542,13 @@ event is listed in `docs/settings/usagedata.md`. AC-1.10 The maintainer checks E
 once slice 01 is released (Q2 answer); slice 01 has no disabled state for it, and if print does nothing there, a
 follow-up sketches and builds the fallback (NMD-7). AC-1.11 When the export's fresh read fails, no PDF is made and no
 dialog opens: the print page says "This report couldn't be loaded, so no PDF was made." with Retry (NMD-4). A
-successful Retry continues the export and the print dialog opens once (**PROVISIONAL — maintainer confirms**, PD-1).
+successful Retry continues the export and the print dialog opens once (**confirmed by the maintainer on 2026-10-20**, PD-1).
 When the report itself was read but the owner's name, the terms or the fonts could not be loaded, the page reads "Part of
-the page couldn't be loaded, so no PDF was made." with Retry, which behaves the same (**PROVISIONAL — maintainer
-confirms**, PD-6, U-16).
+the page couldn't be loaded, so no PDF was made." with Retry, which behaves the same (**confirmed by the maintainer on 2026-10-20**, PD-6, U-16).
 A report that no longer exists or was made by a newer version shows the report view's own sentence, offers no Retry
 and leads back to the Reports list. AC-1.12 The print page's screen-only Back, and the return when the dialog closes,
 lead to where the export started: the report ("‹ Back to report") or the Reports list ("‹ Back to Reports"). After a
-final failure, and on a print page opened from its address (**PROVISIONAL — maintainer confirms**, PD-5), Back leads
+final failure, and on a print page opened from its address (**confirmed by the maintainer on 2026-10-20**, PD-5), Back leads
 to the Reports list.
 **KPI**: K1, K2, K6. **Tech**: reuse `ReportView`'s query and `WidgetBody` states; no new endpoint; the print view is
 loadable on its own (D16); its preparing ("Preparing the PDF…") and failed looks are NMD-4's.
@@ -932,7 +931,7 @@ No silent N/A — every item answered.
 | 5 | AC from UAT | PASS | AC-n.m per story trace to scenarios and D-decisions. |
 | 6 | Right-sized | PASS, one at the edge | (re-run 2026-10-19) US-01: ~1.5d, 7 scenarios (the cap), 6 thin parts — the Reports list icon (NMD-2, the maintainer's explicit choice for slice 01) adds one icon on the existing Actions column that reuses the same print page and event, plus the print page's failed look with Retry and the Back destinations; within 1–3 days and demonstrable in one session. US-02 1d, US-03 ½d, US-04 ~1d (6 scenarios), US-05 ~1d. |
 | 7 | Technical notes | PASS | Inventory S1–S10; NFRs; DESIGN questions (export loading/failure look, own view, marks, fonts, macOS). |
-| 8 | Dependencies tracked | PASS | 02, 03 on 01; 05 on 04; 04 independent of 01–03. Q1–Q6 answered 2026-10-17; UI sketched 2026-10-19 (NMD-1..7); PD-1..PD-5 applied as PROVISIONAL defaults, none blocking. |
+| 8 | Dependencies tracked | PASS | 02, 03 on 01; 05 on 04; 04 independent of 01–03. Q1–Q6 answered 2026-10-17; UI sketched 2026-10-19 (NMD-1..7); PD-1..PD-6 confirmed by the maintainer 2026-10-20. |
 | 9 | Outcome KPIs | PASS | K1–K6 with targets (K6 descriptive), baselines, measurement as per-browser / per-client proxies; guardrails G1–G4; measurement caveat stated. |
 
 Elevator Pitch check: all five stories carry Before / After (a UI action, an MCP question or an `lh` command, with the
@@ -940,8 +939,7 @@ observed output) / Decision enabled; no `@infrastructure` story. Every story has
 
 **DoR status (rev. 2026-10-19): 8 of 8 PASS on the eight-item gate, item 1 by the maintainer's explicit override** (D2: the maintainer chose on 2026-10-17 to proceed on one informant and no customer interviews, so item 1
 is "clear, not validated" by their decision); the project's ninth item, outcome KPIs, also passes. The 2026-10-17 PROPOSED decisions were settled by the
-maintainer's answers (D20 and D28 superseded by NMD-2 and NMD-7); PD-1..PD-6 stay **PROVISIONAL — maintainer
-confirms**.
+maintainer's answers (D20 and D28 superseded by NMD-2 and NMD-7); PD-1..PD-6 stay **confirmed by the maintainer on 2026-10-20**.
 
 ---
 
@@ -1007,7 +1005,7 @@ on 2026-10-17 ("Questions for the maintainer", now answered). Per-wave peer revi
 **Revised after review 2026-10-19** (Morgan, autonomous; the maintainer was away and was not asked). The consolidated
 review gate (findings F-01..F-14) and the DISTILL UI walk-through (NMD-1..7, locked) changed this design. Changed
 or added decisions, rows and paragraphs are marked "(rev. 2026-10-19)"; the five defaults applied without the maintainer are marked
-**PROVISIONAL — maintainer confirms** and listed under "Questions for the maintainer" (PD-1..PD-5). Additionally read
+**confirmed by the maintainer on 2026-10-20** and listed under "Questions for the maintainer" (PD-1..PD-5). Additionally read
 for the revision: NMD-1..7 and the DISTILL sections of this file; `App.tsx` (query-client defaults, shell), `main.tsx`
 (`StrictMode`, `CssBaseline`), `services/Api/ReportService.ts`, `TeamService.ts`, `PortfolioService.ts`,
 `ReportView.tsx`, `ReportList.tsx`, `ReportsTab.tsx`, `useReportOpenedReporter.ts`, `usageDataEvents.ts`,
@@ -1110,18 +1108,18 @@ the web. The backend does not change.
 | DDD-1 | **The print-designed report is its own route** per owner kind, `/print/teams/:id/reports/:reportId` and `/print/portfolios/:id/reports/:reportId`, outside a new app-shell layout route, inside the auth guard and providers | Decided | 245 |
 | DDD-2 | **Export navigates in the same window** with a one-shot "print when ready" flag in router state (never in the URL); the page prints once, then returns on `afterprint`; a screen-only Back control is always shown. (rev. 2026-10-19) The flag travels with the origin (DDD-27), is consumed before print (DDD-26), and print / `afterprint` / navigation are an injected effect port (DDD-25) | **Decided by the maintainer 2026-10-17 (MQ-1 = a)** | 245 |
 | DDD-3 | **Fresh read** (D19): the print page reads with the report view's query key; the report view shows the same answer on return. "Produced" = the moment that answer arrived (`dataUpdatedAt`), in the viewer's local date and time. (rev. 2026-10-19, review F-03) **Mechanism**: the app's `QueryClient` has `staleTime` 5 min and `refetchOnMount: true`, which reads again only when the cached answer is stale — so the print page's own `useQuery` observer sets `refetchOnMount: "always"` (the report view's options are not changed). The page records `mountedAt` and treats an answer as fresh only when `dataUpdatedAt ≥ mountedAt`; a cached answer from before mount is held but never rendered as the print. A read the report view started just before the click and that lands after mount is shared (TanStack dedupes it) and counts as fresh — it was asked for at the click and arrived after it. (rev. 2, 2026-10-19, N7) **Retry**: the print observer retries as the report view does (`retriesUnlessFinal` over the app default): never for a 404 or 422 answer, which will not change; otherwise the app's default `retry: 2`. The owner read and the terms keep their existing retry. **Timing budget**: the fresh read, the owner read, the terms and the fonts together stay inside G2 — the dialog opens within 2 s of the click on a loaded report on the dev instance's busiest Team, from both surfaces, checked by hand (Quality attributes); a retried read may exceed it and that is accepted | Decided | 245 |
-| DDD-4 | **Ready** written as `data-render-ready`. (rev. 2026-10-19, review F-07) The page's state is a **pure function** `printPageStateOf({ fetchedAt, mountedAt, reportError, ownerName, ownerError, termsLoading, termsError, fonts })` → `preparing` \| `failedRetryable` \| `failedPart` \| `failedFinal` \| `ready`. (rev. 2, 2026-10-19, N6, PD-6) The report error is an `ApiError` (`services/Api/ApiError.ts`) read through its HTTP status (`code`), as `ReportView` reads it; anything that is not an `ApiError` counts as a retryable report failure. In order: a report error with status 404 or 422 → `failedFinal` ("‹ Back to Reports", no Retry; NMD-4); any other report error → `failedRetryable`, copy "This report couldn't be loaded, so no PDF was made." with Retry (NMD-4); no report error but an owner-read error, a terms error or `fonts = failed` → `failedPart`, copy "Part of the page couldn't be loaded, so no PDF was made." with Retry (**PD-6 — PROVISIONAL, maintainer confirms**); else `ready` only when `fetchedAt ≥ mountedAt` ∧ owner name present ∧ terms answered ∧ `fonts = loaded`; otherwise `preparing`. Both retryable states behave alike apart from the sentence: Retry asks again for what failed, and a successful Retry continues the export (DDD-31). `data-render-ready="true"` iff `ready`. Never prints outside `ready` | Decided (PD-6 provisional) | 245 |
+| DDD-4 | **Ready** written as `data-render-ready`. (rev. 2026-10-19, review F-07) The page's state is a **pure function** `printPageStateOf({ fetchedAt, mountedAt, reportError, ownerName, ownerError, termsLoading, termsError, fonts })` → `preparing` \| `failedRetryable` \| `failedPart` \| `failedFinal` \| `ready`. (rev. 2, 2026-10-19, N6, PD-6) The report error is an `ApiError` (`services/Api/ApiError.ts`) read through its HTTP status (`code`), as `ReportView` reads it; anything that is not an `ApiError` counts as a retryable report failure. In order: a report error with status 404 or 422 → `failedFinal` ("‹ Back to Reports", no Retry; NMD-4); any other report error → `failedRetryable`, copy "This report couldn't be loaded, so no PDF was made." with Retry (NMD-4); no report error but an owner-read error, a terms error or `fonts = failed` → `failedPart`, copy "Part of the page couldn't be loaded, so no PDF was made." with Retry (**PD-6 — confirmed by the maintainer on 2026-10-20**); else `ready` only when `fetchedAt ≥ mountedAt` ∧ owner name present ∧ terms answered ∧ `fonts = loaded`; otherwise `preparing`. Both retryable states behave alike apart from the sentence: Retry asks again for what failed, and a successful Retry continues the export (DDD-31). `data-render-ready="true"` iff `ready`. Never prints outside `ready` | Decided (PD-6 confirmed 2026-10-20) | 245 |
 | DDD-5 | **Light theme forced** by wrapping the print page in the light MUI theme, moved from `main.tsx` into an importable module; the page also paints its own light ground (DDD-30) | Decided | 245 |
 | DDD-6 | **Print stylesheet**: `@page { margin: 12mm }`, no fixed paper size; fixed content width fitting A4 and Letter; `break-inside: avoid` on summary and panels; header kept with what follows; branding footer in flow, kept with the last panel (never alone on a page); `print-color-adjust: exact`; no animations | Decided | 245 |
 | DDD-7 | **Document title** = report name and owner name (default file name in the dialog); exact form pinned at DISTILL (NMD-3: "{report name} — {owner kind} {owner name}") | Decided | 245 |
-| DDD-8 | **Body reuse**: the print document renders the existing `ThenAndNowSummary` and the panel registry's panels — the same components as the screen — inside a new print frame (header, then "how to read this" from slice 03, body, footer). (rev. 2026-10-19) So a panel's title is the screen's `titleOf` — the term alone ("Lead Time" when renamed), **PD-2 — PROVISIONAL, maintainer confirms** | Decided | — |
+| DDD-8 | **Body reuse**: the print document renders the existing `ThenAndNowSummary` and the panel registry's panels — the same components as the screen — inside a new print frame (header, then "how to read this" from slice 03, body, footer). (rev. 2026-10-19) So a panel's title is the screen's `titleOf` — the term alone ("Lead Time" when renamed), **PD-2 — confirmed by the maintainer on 2026-10-20** | Decided | — |
 | DDD-9 | **Marks are drawn SVG icons** from a mark kind (improved, worse, mixed, up, down, none); comparison code returns the kind, the view draws it; icons `aria-hidden`, the words carry meaning | Decided | 246 |
 | DDD-10 | **Same icons on screen and in print**: the drawn marks replace the characters everywhere (slice 02 scope: summary and panels on screen and in print). (rev. 2026-10-19) This changes the screen's marks' shapes, which AC-2.4 ("the screen keeps looking as it does today") did not foresee; meaning, colours and words stay — Changed Assumptions, U-13 | **Decided by the maintainer 2026-10-17 (MQ-2 = a)** | 246 |
 | DDD-11 | **Quicksand bundled for the whole app** via `@fontsource-variable/quicksand` 5.3.0 (OFL-1.1, published 2026-07-19 — past pnpm 12's 24-hour minimum release age); Google Fonts lines removed from `index.html`; headings declare 700 to keep today's rendered weight | Decided (scope locked by maintainer, Q4) | 246 |
 | DDD-12 | **`OFL.txt` ships** as `Lighthouse.Frontend/public/licenses/quicksand-OFL.txt` (reaches `wwwroot` → server zips, Docker `dist`, Standalone bundle), guarded byte-equal to the package's `LICENSE` | Decided | 246 |
 | DDD-13 | **Usage event emitted on the click, by the surface that starts the export, before navigating** — (rev. 2026-10-19, NMD-2) the report view's button and the Reports list's icon, both through one export starter (DDD-32). Exactly one `ReportPdfExportStarted` per Export click from either surface; the print route emits none (DEVOPS designs the event — name, integer after the last on `main`, closed `report_template`) | Decided (placement); event = DEVOPS | 245 |
 | DDD-14 | **A return from print is not a new opening**: the navigation back (Back or `afterprint`) carries a marker in router state and `useReportOpenedReporter` reports nothing for that mount. (rev. 2026-10-19) Tab openings on a return to the list: DDD-29 | Decided | — |
-| DDD-15 | **Export PDF availability** follows the report view's existing status: loading → shown, not operable; could not load / no longer exists / newer version → not offered; loaded → operable (AC-1.7). (rev. 2026-10-19) Also not offered for a loaded report whose type this version cannot show (**PD-3 — PROVISIONAL, maintainer confirms**). On the Reports list the icon follows the row's type only (**PD-4 — PROVISIONAL, maintainer confirms**); the print page owns loading and failure. Gated by nothing else: anyone who can read the report reads the print page through the same Read guard (D14). `useRbac()` is not consulted; there is nothing new to gate | Decided | — |
+| DDD-15 | **Export PDF availability** follows the report view's existing status: loading → shown, not operable; could not load / no longer exists / newer version → not offered; loaded → operable (AC-1.7). (rev. 2026-10-19) Also not offered for a loaded report whose type this version cannot show (**PD-3 — confirmed by the maintainer on 2026-10-20**). On the Reports list the icon follows the row's type only (**PD-4 — confirmed by the maintainer on 2026-10-20**); the print page owns loading and failure. Gated by nothing else: anyone who can read the report reads the print page through the same Read guard (D14). `useRbac()` is not consulted; there is nothing new to gate | Decided | — |
 | DDD-16 | **The print route's chunk is prefetched** when the report view mounts — (rev. 2026-10-19) and when the Reports list mounts — so the dialog opens within 2 s of the click on a loaded report (G2) | Decided | — |
 | DDD-17 | **Clients: four read-only MCP tools** `lighthouse_{team,portfolio}_report_{list,get}` (inputs `{id}` / `{id, reportId}`), **`lh report list|get (--team-id|--portfolio-id) [--id]`**, client methods `get{Team,Portfolio}Report{s}`, gated by a `reports` entry in `FEATURE_REQUIRES_SERVER_NEWER_THAN` | Decided | 247 |
 | DDD-18 | **The client read returns the report's raw values**: the facts are the server's answer unchanged (header, and per shown metric each member's Then and Now value or its absence reason); nothing is rounded, signed, compared or judged in the clients. The `summary` (MCP field, `lh` pretty) names the report, owner and both windows, or for a list counts the reports; it phrases no metric line. No shared phrasing fixture. Tool descriptions point to the `lighthouse-reports` skill for how Lighthouse shows the values | **Decided by the maintainer 2026-10-17 (MQ-3 = b)** | 247 |
@@ -1133,12 +1131,12 @@ the web. The backend does not change.
 | DDD-24 | (rev. 2026-10-19, review F-01) **The print page reads through a read-only port**: a narrow interface holding only `getReport` (`Pick<IReportService, "getReport">`) and the owner-name read (`Pick<ITeamService, "getTeam">` / `Pick<IPortfolioService, "getPortfolio">`), built by `reportPrintRoutes` from `ApiServiceContext` and passed to the page as a prop. The read surface has no write method; an `expectTypeOf` test pins its members, and a source scan keeps `ApiServiceContext` out of the page's own modules. (rev. 2, 2026-10-19, N3) `Pick<>` is erased at runtime, so the type alone would still let the whole service object through: `reportPrintRoutes` builds the port as a **new object literal of exactly the three reads** — `getReport`, `getTeam`, `getPortfolio` — each bound to its service, never the service objects themselves; a runtime test asserts the port's own keys are exactly those three. (rev. 2, N8) **Terms through a narrow read** too: the page gets `{ getTerm, isLoading, error }` as a prop, an object literal built by `reportPrintRoutes` from `useTerminology()`; it never sees the whole `TerminologyContext` or `refetchTerminology`, and the same runtime key test covers it | Decided | 245 |
 | DDD-25 | (rev. 2026-10-19, review F-01, F-07) **Print, after-print and navigation are an injected effect port** of the print-once hook (`print`, `onAfterPrint(subscribe → unsubscribe)`, `navigate` with replace). The production binding is the only module naming `globalThis.print`; tests pass a fake. The hook takes the page state, the flag, the origin and the port as parameters and reads nothing else. (rev. 2, 2026-10-19, N2) **The after-print listener lives as long as the mount**: the hook subscribes through `onAfterPrint` once when it mounts and calls the returned unsubscribe when it unmounts — independent of the flag and the page state. Clearing the flag re-renders the hook with `printWhenReady: false`; that re-render must not drop or re-create the subscription (StrictMode's mount–unmount–mount leaves exactly one live subscription). On `afterprint` the listener navigates back only when this mount actually printed (the per-mount record of DDD-26), so a dialog opened some other way leads nowhere. (rev. 2, N1) **Font loading is on the same port**: `loadFonts(faces) → Promise<"loaded" \| "failed">`, called by the page (not the print-once hook) after the document rendered (DDD-28). The production binding is the only module naming `document.fonts`; tests pass a fake that resolves when the test says. So the port is the page's whole reach into the browser: `print`, `onAfterPrint`, `navigate`, `loadFonts` | Decided | 245, 246 |
 | DDD-26 | (rev. 2026-10-19, review F-06) **The print flag is consumed**: when the page is ready and flagged, the hook first replaces the current history entry with the same path and the flag cleared (origin kept), then calls `print` once. A per-mount record that the print happened guards React StrictMode's second effect run. A reload, a Forward to the entry, or a remount therefore finds no flag and never prints a second time. A flag not yet consumed (a reload while still preparing, or a failure before Retry) still prints once when the page becomes ready — the flag is consumed only by an actual print (PD-1) | Decided | 245 |
-| DDD-27 | (rev. 2026-10-19, review F-05; NMD-4) **The origin travels with the flag**: router state `{ printWhenReady: true, from: "report" \| "list" }`. Back's label and target and the `afterprint` return follow it: `report` → the report view, "‹ Back to report"; `list` → the Reports list, "‹ Back to Reports". A final failure always goes to the Reports list (NMD-4). No origin (a direct load) → the Reports list, **PD-5 — PROVISIONAL, maintainer confirms**. Returns use replace and carry the return-from-print marker | Decided (PD-5 provisional) | 245 |
+| DDD-27 | (rev. 2026-10-19, review F-05; NMD-4) **The origin travels with the flag**: router state `{ printWhenReady: true, from: "report" \| "list" }`. Back's label and target and the `afterprint` return follow it: `report` → the report view, "‹ Back to report"; `list` → the Reports list, "‹ Back to Reports". A final failure always goes to the Reports list (NMD-4). No origin (a direct load) → the Reports list, **PD-5 — confirmed by the maintainer on 2026-10-20**. Returns use replace and carry the return-from-print marker | Decided (PD-5 confirmed 2026-10-20) | 245 |
 | DDD-28 | (rev. 2026-10-19, review F-08) **Fonts are asked for after the content renders**: once the fresh answer, owner name and terms are in, the page renders the document, then asks the effect port's `loadFonts` for each Quicksand face and weight shown (regular text and the 700 headings; the family the theme names first — "Quicksand" in slice 01, "Quicksand Variable" from slice 02). (rev. 2, 2026-10-19, N1) Loading a face is an effect on the document's font set, not a read, so it goes through the port (DDD-25): the production binding calls `document.fonts.load` per face and then awaits `document.fonts.ready`, resolving `loaded` when every load resolved with a face and `failed` on a rejection or a load that resolved with no face. Contract shape of `loadFonts`: bounded change · universe = the document's `FontFaceSet` · delta = the named faces move to loaded, nothing else in the document changes. The fonts input is `pending` until the port answers; `failed` is the `failedPart` state (DDD-4, PD-6), and Retry asks the port again | Decided | 245, 246 |
 | DDD-29 | (rev. 2026-10-19, review F-10) **A return to the Reports list may count one tab opening — accepted, not suppressed.** The page-opening detector counts a Reports tab path after a 5-second dwell every time it is entered (Back from another route included) and never matches the report view's path, so only the list origin is affected. Suppressing it would make the detector read router state beside the path, which its design keeps to the path alone; `TeamTabOpened` / `PortfolioTabOpened` count arrivals on a tab the reader stays on, and a return from print is such an arrival. `ReportOpened`, which promises one per opening, keeps its marker (DDD-14) | Decided (accepted recount) | — |
 | DDD-30 | (rev. 2026-10-19, review F-11) **The print page paints its own light ground**: its root sets full height, the light theme's background and text colour and `color-scheme: light`, and its print stylesheet paints `html` and `body` white, because `main.tsx`'s `CssBaseline` paints `body` from the user's theme and a nested light theme does not repaint it. The container `Box` with the user's background moves into the shell layout route with the rest of the shell. Rejected: moving `CssBaseline` into the shell layout route (it would leave the login, splash and blocked pages, rendered outside the router, without a baseline) | Decided | 245 |
-| DDD-31 | (rev. 2026-10-19, review F-09) **Retry continues the export**: after a retryable failure, a successful Retry makes the page ready, and a page opened by Export prints once (DDD-26). **PD-1 — PROVISIONAL, maintainer confirms** | Decided (provisional) | 245 |
-| DDD-32 | (rev. 2026-10-19, review F-04; NMD-2) **Two export surfaces, one starter**: the report view's button and the Reports list's icon both call one export starter (report the event, then navigate with flag and origin). `ReportListActions` changes from editor-only (`onEdit`, `onDelete` required) to an export action every reader gets plus an optional editor group; `ReportsTab` passes the export action to viewers, who see an Actions column with the icon alone. The list prefetches the print chunk on mount too. A list row shows the icon whenever its type is one this version can show (**PD-4 — PROVISIONAL, maintainer confirms**) | Decided (NMD-2; PD-4 provisional) | 245 |
+| DDD-31 | (rev. 2026-10-19, review F-09) **Retry continues the export**: after a retryable failure, a successful Retry makes the page ready, and a page opened by Export prints once (DDD-26). **PD-1 — confirmed by the maintainer on 2026-10-20** | Decided | 245 |
+| DDD-32 | (rev. 2026-10-19, review F-04; NMD-2) **Two export surfaces, one starter**: the report view's button and the Reports list's icon both call one export starter (report the event, then navigate with flag and origin). `ReportListActions` changes from editor-only (`onEdit`, `onDelete` required) to an export action every reader gets plus an optional editor group; `ReportsTab` passes the export action to viewers, who see an Actions column with the icon alone. The list prefetches the print chunk on mount too. A list row shows the icon whenever its type is one this version can show (**PD-4 — confirmed by the maintainer on 2026-10-20**) | Decided (NMD-2; PD-4 confirmed 2026-10-20) | 245 |
 
 ## Wave: DESIGN / [REF] Component decomposition
 
@@ -1257,20 +1255,20 @@ nothing to dim), an empty page that reads as "no data", or a print of anything b
 - **Back label and target follow the origin** carried in router state (NMD-4, DDD-27): "‹ Back to report" when Export
   started on the report view, "‹ Back to Reports" when it started in the list; a final failure always shows "‹ Back
   to Reports"; a directly loaded page (no origin) shows "‹ Back to Reports" and goes to the list (PD-5
-  **PROVISIONAL — maintainer confirms**).
+  **confirmed by the maintainer on 2026-10-20**).
 - **The Reports list** (NMD-2): a PDF icon first in the Actions column for every reader whose row this version can
-  show (PD-4 **PROVISIONAL — maintainer confirms**); the list has no loading or failure look of its own for the
+  show (PD-4 **confirmed by the maintainer on 2026-10-20**); the list has no loading or failure look of its own for the
   export — the print page's Preparing and Failed looks above are the export's looks from either surface.
-- **Retry** (PD-1 **PROVISIONAL — maintainer confirms**): a successful Retry after a retryable failure goes to READY
+- **Retry** (PD-1 **confirmed by the maintainer on 2026-10-20**): a successful Retry after a retryable failure goes to READY
   and the dialog opens once, when the page was opened by Export.
-- **Panel titles** read the term alone ("Cycle Time", "Lead Time" when renamed), as on screen (PD-2 **PROVISIONAL —
-  maintainer confirms**).
+- **Panel titles** read the term alone ("Cycle Time", "Lead Time" when renamed), as on screen (PD-2 **confirmed by the maintainer on
+   2026-10-20**).
 - **Ready** includes the fonts asked for after the document rendered (DDD-28), so the document may be visible a moment
   before `data-render-ready` turns `"true"`; it is the fresh answer, never an older one.
 - (rev. 2, 2026-10-19) **Two retryable failure sentences** (DDD-4): when the report read failed, the FAILED look above
   ("This report couldn't be loaded, so no PDF was made." with Retry, NMD-4); when the report read did not fail but the
   owner's name, the terms or the fonts could not be loaded, the same look reads "Part of the page couldn't be loaded,
-  so no PDF was made." with Retry (PD-6 **PROVISIONAL — maintainer confirms**). A 404 or 422 is final: no Retry,
+  so no PDF was made." with Retry (PD-6 **confirmed by the maintainer on 2026-10-20**). A 404 or 422 is final: no Retry,
   "‹ Back to Reports".
 
 ## Wave: DESIGN / [REF] Technology choices
@@ -1548,10 +1546,10 @@ usual 5-second dwell — accepted, DDD-29. Client reads (K4): DEVOPS decides whe
 | "Forced fresh on mount" (DDD-3) read as the app's `refetchOnMount: true` | (rev. 2026-10-19) The print observer asks `refetchOnMount: "always"`; readiness requires `dataUpdatedAt ≥ mountedAt` | The app's `staleTime` is 5 min, so `true` would serve a cached answer under 5 min old without reading (review F-03) |
 | The print-once hook calls `globalThis.print` and listens to `afterprint` itself | (rev. 2026-10-19) Print, after-print and navigation are an injected effect port of the hook; the page state is a pure function of explicit inputs | Effect isolation: the effects sit behind one port a test fakes, the decision is a plain function (review F-01, F-07) |
 | The one-shot flag "is read once" | (rev. 2026-10-19) The flag is consumed: the entry is replaced with the flag cleared before print is called | Router state survives a reload and returns with Forward; React StrictMode runs effects twice (review F-06) |
-| Back "to the report" | (rev. 2026-10-19) Back and the after-print return go to the origin carried in router state (`report` or `list`); a direct load and a final failure go to the Reports list | NMD-4; PD-5 **PROVISIONAL — maintainer confirms** |
-| After a retryable failure the reader chooses Export PDF again (DISTILL upstream issue 2, recommended) | (rev. 2026-10-19) A successful Retry prints once | PD-1 **PROVISIONAL — maintainer confirms** |
-| A renamed panel reads "Lead Time: Then & Now" (US-01) | (rev. 2026-10-19) "Lead Time", the term alone, as on screen | PD-2 **PROVISIONAL — maintainer confirms** |
-| Every retryable failure reads "This report couldn't be loaded, so no PDF was made." (AC-1.11, NMD-4) | (rev. 2, 2026-10-19) Only a failed report read does. When the report read did not fail but the owner's name, the terms or the fonts could not be loaded: "Part of the page couldn't be loaded, so no PDF was made." with Retry | PD-6 **PROVISIONAL — maintainer confirms**; the first sentence would blame a report that loaded (U-16) |
+| Back "to the report" | (rev. 2026-10-19) Back and the after-print return go to the origin carried in router state (`report` or `list`); a direct load and a final failure go to the Reports list | NMD-4; PD-5 **confirmed by the maintainer on 2026-10-20** |
+| After a retryable failure the reader chooses Export PDF again (DISTILL upstream issue 2, recommended) | (rev. 2026-10-19) A successful Retry prints once | PD-1 **confirmed by the maintainer on 2026-10-20** |
+| A renamed panel reads "Lead Time: Then & Now" (US-01) | (rev. 2026-10-19) "Lead Time", the term alone, as on screen | PD-2 **confirmed by the maintainer on 2026-10-20** |
+| Every retryable failure reads "This report couldn't be loaded, so no PDF was made." (AC-1.11, NMD-4) | (rev. 2, 2026-10-19) Only a failed report read does. When the report read did not fail but the owner's name, the terms or the fonts could not be loaded: "Part of the page couldn't be loaded, so no PDF was made." with Retry | PD-6 **confirmed by the maintainer on 2026-10-20**; the first sentence would blame a report that loaded (U-16) |
 | Fonts are a read, one input of the page's state | (rev. 2, 2026-10-19) Font loading is an effect on the document's font set, through the effect port's `loadFonts` | N1: the page's only effects outside its declared set go through one fakeable port |
 | Example Now window "1 Aug – 30 Oct 2026" | "2 Aug – 30 Oct 2026" | 1 Aug – 30 Oct is 91 days counted inclusively; a 90-day Now ending 30 Oct starts 2 Aug (fixed here and in the ADRs; U-12 for the other sections) |
 
@@ -1605,17 +1603,16 @@ Story and AC wording changes are listed in `design/upstream-changes.md` for the 
 
 **Provisional defaults (revision 2026-10-19).** The review gate raised five questions while the maintainer was away;
 (rev. 2) the DISTILL review raised a sixth (PD-6).
-Each is applied in this design as the default below and marked **PROVISIONAL — maintainer confirms**. Overturning one
-changes one scenario and the named decision, nothing structural.
+Each is applied in this design as the default below; the maintainer confirmed all six on 2026-10-20.
 
 | PD | Default applied | Why | Where |
 |---|---|---|---|
-| PD-1 | **PROVISIONAL — maintainer confirms.** Retry after a failed fresh read continues the export: a successful Retry makes the page ready and it prints once. The print flag is consumed only by an actual print. | The reader asked for a PDF, and the Standalone app has no print shortcut of its own to fall back on. | DDD-31, ADR-245 |
-| PD-2 | **PROVISIONAL — maintainer confirms.** A renamed panel's title is the term alone ("Lead Time"), as on screen (`reportPanelRegistry` `titleOf`). US-01's "Lead Time: Then & Now" is corrected. | The print body is the screen's panels (DDD-8); a different title would be a second rendering of one panel. | DDD-8, U-10 |
-| PD-3 | **PROVISIONAL — maintainer confirms.** The report view offers no Export PDF for a report this version cannot show (unknown type or 422 `template-not-supported`). | Consistent with the list, where such a row gets no icon (NMD-2); the print page could not draw it either. | DDD-15 |
-| PD-4 | **PROVISIONAL — maintainer confirms.** The list's icon is offered for every row whose type this version can show, with no per-row read first; the print page owns the loading and failure looks. | The list holds no report answer; reading every row to gate an icon would cost a read per row for a choice the print page already handles. | DDD-15, DDD-32 |
-| PD-5 | **PROVISIONAL — maintainer confirms.** Back on a directly loaded print page (no origin in router state) returns to the Reports list. | The list exists for every report; a report view may not (the report may be gone), and NMD-4 already sends a final failure there. | DDD-27, ADR-245 |
-| PD-6 | **PROVISIONAL — maintainer confirms.** (rev. 2, 2026-10-19) When the report read did not fail but the owner's name, the terms or the fonts could not be loaded, the retryable failure reads "Part of the page couldn't be loaded, so no PDF was made." with Retry. A failed report read keeps NMD-4's "This report couldn't be loaded, so no PDF was made." | NMD-4's sentence blames the report, which in this case loaded; the reader's action (Retry) is the same, so only the sentence differs. | DDD-4, DDD-28, ADR-245, U-16 |
+| PD-1 | **confirmed by the maintainer on 2026-10-20.** Retry after a failed fresh read continues the export: a successful Retry makes the page ready and it prints once. The print flag is consumed only by an actual print. | The reader asked for a PDF, and the Standalone app has no print shortcut of its own to fall back on. | DDD-31, ADR-245 |
+| PD-2 | **confirmed by the maintainer on 2026-10-20.** A renamed panel's title is the term alone ("Lead Time"), as on screen (`reportPanelRegistry` `titleOf`). US-01's "Lead Time: Then & Now" is corrected. | The print body is the screen's panels (DDD-8); a different title would be a second rendering of one panel. | DDD-8, U-10 |
+| PD-3 | **confirmed by the maintainer on 2026-10-20.** The report view offers no Export PDF for a report this version cannot show (unknown type or 422 `template-not-supported`). | Consistent with the list, where such a row gets no icon (NMD-2); the print page could not draw it either. | DDD-15 |
+| PD-4 | **confirmed by the maintainer on 2026-10-20.** The list's icon is offered for every row whose type this version can show, with no per-row read first; the print page owns the loading and failure looks. | The list holds no report answer; reading every row to gate an icon would cost a read per row for a choice the print page already handles. | DDD-15, DDD-32 |
+| PD-5 | **confirmed by the maintainer on 2026-10-20.** Back on a directly loaded print page (no origin in router state) returns to the Reports list. | The list exists for every report; a report view may not (the report may be gone), and NMD-4 already sends a final failure there. | DDD-27, ADR-245 |
+| PD-6 | **confirmed by the maintainer on 2026-10-20.** (rev. 2, 2026-10-19) When the report read did not fail but the owner's name, the terms or the fonts could not be loaded, the retryable failure reads "Part of the page couldn't be loaded, so no PDF was made." with Retry. A failed report read keeps NMD-4's "This report couldn't be loaded, so no PDF was made." | NMD-4's sentence blames the report, which in this case loaded; the reader's action (Retry) is the same, so only the sentence differs. | DDD-4, DDD-28, ADR-245, U-16 |
 
 ## Wave: DESIGN / [REF] Handoff
 
@@ -1930,13 +1927,10 @@ server is untouched.
 **Lighthouse** (slices 01–03): each slice lands green on trunk; the release cut is the maintainer's choice; G3 is
 evaluated on the cut release. The maintainer cuts it with `/release` (calver).
 
-- **OPEN — maintainer decides: the release cut (F5).** Recommended default **(a)**: cut the first Lighthouse release
-  that carries the PDF only after slice 02 lands, so the typeface gate (G3: bundled Quicksand, the `page.pdf` font
-  check, the drawn marks) holds on the first PDF anybody receives. Alternative (b): cut whenever, accepting that a
-  release with slice 01 alone prints with the runtime-loaded typeface (a fallback face on an offline instance) and the
-  character marks. Until the maintainer answers, DELIVER plans for (a) and does not ask for a release between 01 and
-  02.
-- **OPEN — maintainer decides: the macOS post-release check (F6, Q2, D28).** Recommended default: within the first
+- **The release cut (F5), decided by the maintainer 2026-10-20: once the whole Epic is done.** No release carrying
+  the PDF is cut until slices 01–05 have all landed; DELIVER asks for no release in between. The typeface gate (G3:
+  bundled Quicksand, the `page.pdf` font check, the drawn marks) therefore holds on the first PDF anybody receives.
+- **The macOS post-release check (F6, Q2, D28), confirmed by the maintainer 2026-10-20:** within the first
   week after the release that carries the PDF, the maintainer exports once in the released macOS Standalone app. If
   no print dialog opens, or there is no way back to Lighthouse, a follow-up disables Export PDF there (a hotfix if a
   user reports it first). The release note does not claim macOS until the check passes.
@@ -2057,7 +2051,7 @@ To `nw-acceptance-designer`: `environments.yaml` (`scenario_axes` per slice) and
 | (rev. 2026-10-19) Export only from the report view (D20) | Also from the Reports list icon, for every reader; same event, one per click | NMD-2 |
 | (rev. 2026-10-19) K1 numerator: every exporting browser | Only exporting browsers that also report `ReportOpened` (source `Browser`) in the window; the same for K2 and K6 | Otherwise the numerator is not a subset of the denominator (F1) |
 | (rev. 2026-10-19) Stryker.NET N/A | Scoped Stryker.NET on `UsageDataEventShapes` and the enum | The project rule is per-feature on both stacks (F4) |
-| (rev. 2026-10-19) Each slice "can be released alone" | Lands green on trunk; the cut is the maintainer's (OPEN, default: after slice 02) | So the typeface gate holds on the first shipped PDF (F5) |
+| (rev. 2026-10-19) Each slice "can be released alone" | Lands green on trunk; the cut waits for the whole Epic (maintainer, 2026-10-20) | So the typeface gate holds on the first shipped PDF (F5) |
 
 ## Carried in from Epic #6311 (2026-10-19) — input for DISTILL
 
@@ -2187,6 +2181,27 @@ Data from Lighthouse by LetPeopleWork
 
 ---
 
+## Maintainer decisions — 2026-10-20, open defaults settled
+
+The maintainer answered every question DISTILL left open. Each PD default was taken as proposed; the release cut
+was not.
+
+| # | Decision |
+|---|---|
+| PD-1 | A successful Retry after a failed fresh read continues the export: the print dialog opens once. |
+| PD-2 | A renamed panel's title in the PDF is the term alone ("Lead Time"), as on screen. |
+| PD-3 | No Export PDF on the report view for a loaded report whose type this version cannot show. |
+| PD-4 | The Reports list shows the Export PDF icon on every row whose type this version can show; loading and failure belong to the print page. |
+| PD-5 | Back on a print page opened from its address goes to the Reports list ("‹ Back to Reports"). |
+| PD-6 | Owner name, terms or fonts not loaded, report read fine: "Part of the page couldn't be loaded, so no PDF was made." with Retry. |
+| Skill copy | The skill writes a change as the web does: "▼ 9 days", "−43 %" (true minus, space before the percent sign). |
+| DVO-9 | **Release once the whole Epic is done**, not after slice 02 as recommended. Slices land green on trunk as they go; no release carrying the PDF is cut until slices 01–05 have all landed. G3 is evaluated on that release. |
+| DVO-10 | Within the first week after that release, the maintainer exports once in the released macOS app. If no dialog opens or there is no way back, a follow-up disables Export PDF there; the release note does not claim macOS until the check passes. |
+
+No scenario changes: DISTILL already pins PD-1..PD-6 as stated.
+
+---
+
 ## Wave: DISTILL / [REF] Scope and reconciliation
 
 Slices 01–05 (US-01..US-05). Read: this delta (DISCUSS, DESIGN with ADR-245..247, DEVOPS, the maintainer decisions
@@ -2202,14 +2217,14 @@ and forecasts beyond the horizon are N/A for v1, so no scenario pins them. Decis
 revised ACs) and DEVOPS; reconciliation still **0 contradictions**. Added scenarios for the read-only port, the
 always-fresh read, the pure page-state table, the print-once hook, the used-up print wish, the carried origin, fonts
 loaded after drawing, the light ground, the one export starter and the accepted list recount; fixed every reviewer
-finding (H1–H4, M5–M9, L10–L17). **PD-1..PD-6 are provisional** (the maintainer confirms them): the scenarios pin
-them as DESIGN states them, and a different answer changes those scenarios only. The clients changeset written in the
+finding (H1–H4, M5–M9, L10–L17). **PD-1..PD-6 were confirmed by the maintainer on 2026-10-20**: the scenarios pin
+them as DESIGN states them. The clients changeset written in the
 first pass was removed: a changeset belongs to DELIVER with the code.
 
 **Second revision 2026-10-19.** Re-read DESIGN's second revision (N1–N8, PD-6: DDD-4, DDD-24, DDD-25, DDD-28, R33–R35)
 and DISCUSS U-16 (AC-1.11's second sentence); reconciliation still **0 contradictions**. Folded in: the fifth page
 state `failedPart` and its sentence, "Part of the page couldn't be loaded, so no PDF was made.", with Retry, for a
-report that was read when the owner's name, the terms or the fonts were not (PD-6, **provisional**); a failed report
+report that was read when the owner's name, the terms or the fonts were not (PD-6, **confirmed 2026-10-20**); a failed report
 read keeps "This report couldn't be loaded, so no PDF was made.". Fonts go through the effect port's `loadFonts`, so
 the page scenarios drive a stand-in handed to `reportPrintRoutes` instead of a faked `document.fonts`; the browser
 binding gets its own pending unit tests, stubbing only the browser's print and fonts. Added: a runtime key test on what
@@ -2450,9 +2465,9 @@ Every environment in `environments.yaml`, and what covers it. None is left witho
 
 ## Wave: DISTILL / [REF] Upstream issues
 
-1. ~~US-01's "Lead Time: Then & Now"~~: resolved by PD-2 (**provisional**): a renamed panel reads the term alone,
+1. ~~US-01's "Lead Time: Then & Now"~~: resolved by PD-2 (**confirmed 2026-10-20**): a renamed panel reads the term alone,
    "Lead Time".
-2. ~~Should a successful Retry print?~~: resolved by PD-1 (**provisional**, AC-1.11): it prints once; pinned in the
+2. ~~Should a successful Retry print?~~: resolved by PD-1 (**confirmed 2026-10-20**, AC-1.11): it prints once; pinned in the
    print page and the print-once hook.
 3. NMD-5 says "the words in braces are the instance's terms", but its braces hold numbers and dates; the three lines
    contain no configurable term. The scenarios pin that none of the seeded words appear.
@@ -2472,7 +2487,7 @@ Every environment in `environments.yaml`, and what covers it. None is left witho
 - Order: slice 01 → 02 → 03 in Lighthouse, then 04 → 05 in `lighthouse-clients` (04 and 05 are independent of
   01–03). Un-mark one scenario at a time, starting with each slice's walking skeleton, then its focused scenarios.
 - Before slice 01's UI: none of NMD-1..6 needs a re-sketch.
-- PD-1..PD-6 are provisional; if the maintainer answers differently, only the scenarios naming that PD change.
+- PD-1..PD-6 were confirmed by the maintainer on 2026-10-20; the scenarios stand as written.
 - Gates at hand-off (2026-10-19, nothing committed in either repository):
   - Frontend `pnpm test` (second revision): 514 files (505 passed, 9 skipped), 8,164 tests, 8,038 passed, 126
     skipped, 0 failed. `pnpm build` clean (Biome "No fixes applied", `tsc -b`, Vite), no warnings. No `*/docs`

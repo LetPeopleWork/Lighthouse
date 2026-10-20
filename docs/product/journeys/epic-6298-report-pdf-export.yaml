@@ -61,14 +61,14 @@ journeys:
         failure_modes:
           - The report was opened on an earlier day and left open - the PDF must not carry yesterday's Now under today's date
           - The report is still loading - Export PDF is shown disabled; never a PDF of stale or partial numbers
-          - The export's own fresh read fails - "This report couldn't be loaded, so no PDF was made." with Retry; no dialog opens; a successful Retry prints once (PD-1, PROVISIONAL - maintainer confirms). A report gone or made by a newer version shows its own sentence, no Retry, and Back leads to the Reports list
+          - The export's own fresh read fails - "This report couldn't be loaded, so no PDF was made." with Retry; no dialog opens; a successful Retry prints once (PD-1, confirmed by the maintainer on 2026-10-20). A report gone or made by a newer version shows its own sentence, no Retry, and Back leads to the Reports list
           - The dark theme is on - the printed page is still light
           - App chrome (navigation, tabs, Edit, Delete, footer) leaks into the print or spills onto a near-empty last page
           - The change marks fall back to whatever system font the machine has, so they differ per OS or are missing
           - The instance cannot reach the internet, so the Lighthouse typeface is missing from the PDF
           - Standalone on macOS - printing from the app's webview is unprobed; assumed to work and checked by the maintainer after slice 01 is released (Q2 answer). Slice 01 has no disabled state; if the check fails, a follow-up sketches and builds the fallback (NMD-7)
           - The user cancels the print dialog - the reader returns to where Export started (the report, now showing the values that were about to be printed, or the Reports list); nothing is stored
-          - The print page was opened from its address - Back leads to the Reports list (PD-5, PROVISIONAL - maintainer confirms)
+          - The print page was opened from its address - Back leads to the Reports list (PD-5, confirmed by the maintainer on 2026-10-20)
         integration_checkpoint: >
           The PDF shows the same values as the screen at the moment of export. Its Now window ends on the day those
           values were read, in the instance's time zone; Produced is shown in the viewer's local date and time, so a

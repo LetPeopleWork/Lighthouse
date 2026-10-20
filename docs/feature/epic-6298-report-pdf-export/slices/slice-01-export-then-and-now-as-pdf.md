@@ -16,16 +16,16 @@ and nothing of the app around them.
 
 - **Export PDF** on the report view for every reader, an outlined button first in the action row (D14, NMD-1); shown
   disabled while the report loads; not offered when it could not be loaded, no longer exists, was made by a newer
-  version, or has a type this version cannot show (PD-3, **PROVISIONAL — maintainer confirms**).
+  version, or has a type this version cannot show (PD-3, **confirmed by the maintainer on 2026-10-20**).
 - **PDF icon in the Reports list** (NMD-2, the maintainer's explicit choice for this slice): first in the Actions
   column, tooltip "Export PDF", aria-label "Export {report name} as PDF", for every reader; Viewers get an Actions
   column holding only this icon; a row whose type this version cannot show gets no icon. It depends on the row's type
-  only (PD-4, **PROVISIONAL — maintainer confirms**) and goes to the same print page.
+  only (PD-4, **confirmed by the maintainer on 2026-10-20**) and goes to the same print page.
 - The print page's own states (NMD-4): "Preparing the PDF…"; a retryable failure "This report couldn't be loaded, so
-  no PDF was made." with Retry, where a successful Retry prints once (PD-1, **PROVISIONAL — maintainer confirms**); a
+  no PDF was made." with Retry, where a successful Retry prints once (PD-1, **confirmed by the maintainer on 2026-10-20**); a
   final failure with the report view's own sentence and no Retry.
 - Back and the return after the dialog lead to where Export started: "‹ Back to report" or "‹ Back to Reports"; a
-  final failure, and a print page opened from its address (PD-5, **PROVISIONAL — maintainer confirms**), lead to the
+  final failure, and a print page opened from its address (PD-5, **confirmed by the maintainer on 2026-10-20**), lead to the
   Reports list.
 - Export reads the report afresh, then calls print itself (release Standalone builds wire no print shortcut, D17).
   The screen shows the same fresh values (D19).
@@ -33,7 +33,7 @@ and nothing of the app around them.
 - Header in two lines (NMD-3): owner kind and name in the instance's terms above the report name; then "Then 5 Jul –
   2 Oct 2026 · Now 2 Aug – 30 Oct 2026"; then "Produced 30 Oct 2026, 09:15" in the viewer's local time (D13, D19).
 - Body: the summary and every shown panel as on screen (a renamed panel reads the term alone, e.g. "Lead Time";
-  PD-2, **PROVISIONAL — maintainer confirms**).
+  PD-2, **confirmed by the maintainer on 2026-10-20**).
 - Footer: the Lighthouse logo and "Made with Lighthouse by LetPeopleWork · letpeople.work" (D10, NMD-3); default file
   name "{report name} — {owner kind} {owner name}".
 - Usage data: `ReportPdfExportStarted` with the report's type (DEVOPS), fired once per choice from **both entry

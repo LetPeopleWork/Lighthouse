@@ -217,7 +217,7 @@ platform_coverage:
 deployment_assumptions:
   - "Ships in the existing artifacts: server zips, Docker image + Helm chart, Standalone Tauri app. No chart change."
   - "No migration, no endpoint, no stored data; rollback = previous release, nothing to undo."
-  - "Each slice lands green on trunk; the release cut is the maintainer's choice (OPEN; recommended: the first release carrying the PDF only after slice 02); G3 is evaluated on the cut release."
+  - "Each slice lands green on trunk; no release carrying the PDF is cut until the whole Epic (slices 01–05) is done (maintainer, 2026-10-20); G3 is evaluated on the cut release."
   - "public/licenses/quicksand-OFL.txt and the woff2 files reach wwwroot, the Docker image and the Tauri bundle with no config change."
   - "One usage-data enum member (ReportPdfExportStarted, provisional 20, carrying report_template like ReportOpened); SPA and backend ship together."
   - "Clients release independent of a Lighthouse release (reports endpoints shipped in v26.10.16.6); manual pnpm release:version + commit before it; one clients release carries slices 04 and 05 (maintainer, 2026-10-17, locked)."

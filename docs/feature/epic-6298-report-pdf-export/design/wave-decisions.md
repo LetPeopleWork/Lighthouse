@@ -135,7 +135,7 @@ folds in the DISTILL walk-through (NMD-1..7, locked). Full text in the feature d
   slice 02.
 - Example window corrected: the 90-day Now ending 30 Oct 2026 is 2 Aug – 30 Oct 2026.
 
-**Provisional defaults — PROVISIONAL, maintainer confirms**: PD-1 Retry continues the export; PD-2 a renamed panel
+**Defaults confirmed by the maintainer on 2026-10-20**: PD-1 Retry continues the export; PD-2 a renamed panel
 reads the term alone ("Lead Time"); PD-3 no Export PDF on the view for a report this version cannot show; PD-4 the
 list icon for every row whose type this version can show; PD-5 Back on a directly loaded print page goes to the
 Reports list. Story wording changes for the product owner: `upstream-changes.md` U-8..U-15.
@@ -164,7 +164,7 @@ the feature delta (marked "rev. 2, 2026-10-19") and in each ADR's "Revised after
   default otherwise; budget: dialog within 2 s of the click on the dev instance, checked by hand.
 - **DDD-4 (PD-6)** A fifth state, `failedPart`: the report read did not fail but the owner's name, the terms or the
   fonts could not be loaded → "Part of the page couldn't be loaded, so no PDF was made." with Retry. **PD-6 —
-  PROVISIONAL, maintainer confirms.** U-16 for AC-1.11.
+  confirmed by the maintainer on 2026-10-20.** U-16 for AC-1.11.
 - The skill's presentation rules write a percent change as the web does, with a space before the percent sign
   ("−43 %").
 

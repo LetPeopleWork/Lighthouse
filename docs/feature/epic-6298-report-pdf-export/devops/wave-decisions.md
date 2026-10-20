@@ -3,7 +3,7 @@
 > **Revised after review 2026-10-19** (final review gate; documents only). Folds in DESIGN's 2026-10-19 revision
 > (DDD-13, DDD-16, DDD-24..32, PD-1..PD-5) and the DISTILL walk-through (NMD-1..7; NMD-2 = the Export PDF icon in the
 > Reports list for every reader). Changed: DVO-1 (both entry points, pins, docs wording), DVO-3 (K1/K2/K6 numerator),
-> DVO-7 (list icon in StrykerJS, scoped Stryker.NET), DVO-9 and DVO-10 (OPEN maintainer calls), DVO-11 (Epic 6311).
+> DVO-7 (list icon in StrykerJS, scoped Stryker.NET), DVO-9 and DVO-10 (decided by the maintainer 2026-10-20), DVO-11 (Epic 6311).
 
 **Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-17, revised 2026-10-19 · **Mode**: autonomous subagent, documents only, light.
 Per-wave review skipped by instruction. Full reasoning: `../feature-delta.md` → `## Wave: DEVOPS / …`. Machine
@@ -71,11 +71,11 @@ artifact: `../environments.yaml`. Design notes: `upstream-changes.md`.
   after slice 04; skill N/A (evals are its gate).
 - **DVO-8** Rollback = previous release; nothing stored, no migration, no endpoint. The SPA ships with its backend, so
   event 20 never reaches a server that lacks it.
-- **DVO-9** (rev. 2026-10-19) **OPEN — maintainer decides: the release cut.** Each slice lands green on trunk; the
-  release cut is the maintainer's choice; G3 is evaluated on the cut release. Recommended default (a): cut the first
-  Lighthouse release carrying the PDF only after slice 02 lands, so the typeface gate holds on the first shipped PDF.
-- **DVO-10** (rev. 2026-10-19) **OPEN — maintainer decides: the macOS post-release trigger.** Recommended default:
-  within the first week after the release, the maintainer exports once in the macOS app; if no dialog opens or there
+- **DVO-9** (rev. 2026-10-20) **Decided by the maintainer: release once the whole Epic is done.** Each slice lands
+  green on trunk; no release carrying the PDF is cut until slices 01–05 have all landed; G3 is evaluated on that
+  release.
+- **DVO-10** (rev. 2026-10-20) **Confirmed by the maintainer: the macOS post-release trigger.**
+  Within the first week after the release, the maintainer exports once in the macOS app; if no dialog opens or there
   is no way back, a follow-up disables Export PDF there (a hotfix if a user reports it); the release note does not
   claim macOS until the check passes.
 - **DVO-11** Epic 6311 beyondHorizon: N/A for Then & Now (no forecast surface); the first forecast report type pins
@@ -88,7 +88,7 @@ artifact: `../environments.yaml`. Design notes: `upstream-changes.md`.
    printed (I'd be curious about this)".
 2. **Clients release timing** (DVO-5): **answered, locked.** One clients release carries slices 04 and 05.
 
-## For the maintainer: OPEN (2026-10-19, AFK; DELIVER proceeds on the recommended defaults)
+## For the maintainer: answered 2026-10-20
 
-3. **Release cut** (DVO-9): recommended (a), release only after slice 02.
-4. **macOS check** (DVO-10): recommended, one export in the macOS app within the first week; disable there if it fails.
+3. **Release cut** (DVO-9): once the whole Epic (slices 01–05) is done.
+4. **macOS check** (DVO-10): one export in the macOS app within the first week; disable there if it fails.

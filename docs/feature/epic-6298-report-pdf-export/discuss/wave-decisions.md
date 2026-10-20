@@ -12,7 +12,7 @@ Per-wave peer review skipped by instruction; the consolidated review runs at the
 > slice 01); export-time failure with Retry (PD-1) and Back destinations added to US-01; two-line header and footer
 > copy (NMD-3); three "How to read this" lines (NMD-5); raw client values plus consent-gated `ReportOpened` from the
 > clients (slice 04, ~1d holds); the skill carries the web's presentation rules (slice 05, ~1d, risk HIGH); KPIs
-> measured as per-browser / per-client proxies, K6 added. PD-1..PD-5 stay **PROVISIONAL — maintainer confirms**.
+> measured as per-browser / per-client proxies, K6 added. PD-1..PD-5 stay **confirmed by the maintainer on 2026-10-20**.
 
 Full text: `../feature-delta.md` → "Wave: DISCUSS" sections. Slice briefs: `../slices/`. Journey SSOT:
 `docs/product/journeys/epic-6298-report-pdf-export.yaml`.
