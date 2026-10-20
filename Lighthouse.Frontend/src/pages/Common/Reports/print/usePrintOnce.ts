@@ -113,7 +113,9 @@ export const usePrintOnce = ({
 		}
 		settled.current = true;
 		if (state === "ready") {
-			dialogOpen.current = askForTheDialog(port, tell);
+			// Open before asking, since some browsers say the dialog closed before print() has returned.
+			dialogOpen.current = true;
+			if (!askForTheDialog(port, tell)) dialogOpen.current = false;
 			return;
 		}
 		tell({

@@ -17,7 +17,7 @@ import { useMayEditReports } from "./useMayEditReports";
 import { useOwnerReports } from "./useOwnerReports";
 import { useReportDeletion } from "./useReportDeletion";
 import { useReportEditing } from "./useReportEditing";
-import { useReportPdfExportByNavigating } from "./useReportPdfExport";
+import { useReportPdfExport } from "./useReportPdfExport";
 import ReportWizard from "./wizard/ReportWizard";
 import { capSentenceFor } from "./wizard/reportRefusalCopy";
 
@@ -47,7 +47,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 	const { isEditor, isLoading: rolesAreLoading } = useMayEditReports(owner);
 	const deletion = useReportDeletion(owner);
 	const editing = useReportEditing(owner);
-	const exportPdf = useReportPdfExportByNavigating();
+	const pdfExport = useReportPdfExport(owner);
 
 	useEffect(prefetchReportPrintPage, []);
 
@@ -121,7 +121,8 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 							reports={data.reports}
 							emptyMessage={emptyMessage}
 							actions={{
-								onExportPdf: (report) => exportPdf(owner, report, "list"),
+								onExportPdf: pdfExport.exportPdf,
+								preparingId: pdfExport.preparingId,
 								editor: isEditor
 									? {
 											onEdit: editing.ask,
@@ -135,6 +136,7 @@ const ReportsTab: React.FC<Readonly<ReportsTabProps>> = ({ owner }) => {
 				</WidgetBody>
 			</Box>
 			{deletion.dialog}
+			{pdfExport.frame}
 		</Stack>
 	);
 };

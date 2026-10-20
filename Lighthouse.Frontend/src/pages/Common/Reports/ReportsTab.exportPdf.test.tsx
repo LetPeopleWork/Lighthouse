@@ -173,7 +173,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
-	it.skip(`prints the row's report from a hidden frame, counting one export with its Type, and leaves the reader on the list with nothing added to their history (${pendingFramePrint})`, async () => {
+	it(`prints the row's report from a hidden frame, counting one export with its Type, and leaves the reader on the list with nothing added to their history`, async () => {
 		const theAppsDialog = aPrintDialog();
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheList(aReportService(), "reader");
@@ -192,7 +192,7 @@ describe("Export PDF in the Reports list", () => {
 	});
 
 	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
-	it.skip(`turns the row's PDF icon into the waiting spinner and holds every other row's PDF icon back until the dialog is asked for, so one export runs at a time (${pendingFramePrint})`, async () => {
+	it(`turns the row's PDF icon into the waiting spinner and holds every other row's PDF icon back until the dialog is asked for, so one export runs at a time`, async () => {
 		const frames = aPrintFrameBrowser();
 		const fonts = theFontsAreStillLoading();
 		const { user } = onTheList(twoReports(), "reader");
@@ -239,7 +239,7 @@ describe("The list's print frame goes when it is no longer wanted", () => {
 
 	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// A browser may never say its dialog closed; the next export takes that frame's place rather than adding one.
-	it.skip(`removes a frame whose dialog never said it closed when the next export starts, so there is only ever one frame (${pendingFramePrint})`, async () => {
+	it(`removes a frame whose dialog never said it closed when the next export starts, so there is only ever one frame`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheList(twoReports(), "reader");
 
@@ -260,7 +260,7 @@ describe("The list's print frame goes when it is no longer wanted", () => {
 
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The reader went elsewhere; a dialog over the page they moved to would be a surprise.
-	it.skip(`removes the frame and prints nothing when the reader leaves the list while the PDF is prepared (${pendingFramePrint})`, async () => {
+	it(`removes the frame and prints nothing when the reader leaves the list while the PDF is prepared`, async () => {
 		const frames = aPrintFrameBrowser();
 		const fonts = theFontsAreStillLoading();
 		const { user } = onTheList(aReportService(), "reader");

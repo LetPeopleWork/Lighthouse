@@ -49,8 +49,6 @@ import {
  * spinner; once the print dialog has been asked for, it is Export PDF again.
  */
 
-const pendingFramePrint = "Pending: Export PDF prints from a frame (epic 6298)";
-
 const { reportUsage } = vi.hoisted(() => ({
 	reportUsage: vi.fn().mockReturnValue(true),
 }));
@@ -435,7 +433,7 @@ describe("The print frame goes once the dialog is done with it", () => {
 
 	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// It counts the choice, not a saved file: nothing tells Lighthouse whether the dialog saved one.
-	it.skip(`removes the frame a moment after the dialog closes, and counts one export with the report's Type every time Export PDF is chosen (${pendingFramePrint})`, async () => {
+	it(`removes the frame a moment after the dialog closes, and counts one export with the report's Type every time Export PDF is chosen`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheReport();
 
@@ -453,7 +451,7 @@ describe("The print frame goes once the dialog is done with it", () => {
 	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// Chrome says the dialog closed before print() returns; taking the frame away then would pull the page from
 	// under its own dialog.
-	it.skip(`keeps the frame until print() has returned when the browser says the dialog closed before that, then removes it (${pendingFramePrint})`, async () => {
+	it(`keeps the frame until print() has returned when the browser says the dialog closed before that, then removes it`, async () => {
 		const frames = aPrintFrameBrowser({
 			dialog: "closes before print returns",
 		});

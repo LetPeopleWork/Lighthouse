@@ -1,6 +1,5 @@
 import type React from "react";
 import { createElement, useCallback, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import {
@@ -8,9 +7,7 @@ import {
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
 import PrintFrameHost from "./print/PrintFrameHost";
-import { printRequestFor } from "./print/printRequest";
-import type { PrintOrigin, PrintOutcome } from "./print/usePrintOnce";
-import { reportPathOf } from "./reportOwner";
+import type { PrintOutcome } from "./print/usePrintOnce";
 
 type Exported = Pick<IReport, "id" | "templateKey">;
 
@@ -90,24 +87,4 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 				});
 
 	return { exportPdf, preparingId, frame };
-};
-
-/**
- * Starts a report's PDF export from the Reports list: the export is counted with the report's Type, then the reader
- * goes to the report's print page in the same window. The wish to print travels in the history entry, never in the
- * address, so a pasted link never prints.
- */
-export const useReportPdfExportByNavigating = () => {
-	const navigate = useNavigate();
-	const countTheExport = useExportCounter();
-
-	return useCallback(
-		(owner: IReportOwner, report: Exported, from: PrintOrigin) => {
-			countTheExport(report);
-			navigate(`/print${reportPathOf(owner, report.id)}`, {
-				state: printRequestFor(from),
-			});
-		},
-		[navigate, countTheExport],
-	);
 };

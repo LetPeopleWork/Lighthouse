@@ -26,6 +26,8 @@ export interface ReportListEditorActions {
 /** What every reader can do from a row, and, for somebody who may change the reports, what else. */
 export interface ReportListActions {
 	onExportPdf: (report: IReportListItem) => void;
+	/** The report whose PDF is being prepared, whose icon waits while every other PDF icon is held back. */
+	preparingId: number | undefined;
 	editor?: ReportListEditorActions;
 }
 
@@ -38,20 +40,33 @@ interface ReportListProps {
 const isShownByThisVersion = (report: IReportListItem): boolean =>
 	reportTypeTitleOf(report.templateKey) !== undefined;
 
+// Held back only in look while one PDF is prepared: a truly disabled icon would throw a keyboard reader's focus to
+// the page.
+const HELD_BACK_LOOK = { color: "action.disabled", cursor: "default" };
+
 const ExportPdfButton: React.FC<{
 	readonly report: IReportListItem;
-	readonly onExportPdf: (report: IReportListItem) => void;
-}> = ({ report, onExportPdf }) => (
-	<Tooltip title="Export PDF">
-		<IconButton
-			aria-label={`Export ${report.name} as PDF`}
-			color="primary"
-			onClick={() => onExportPdf(report)}
-		>
-			<PictureAsPdfIcon />
-		</IconButton>
-	</Tooltip>
-);
+	readonly actions: ReportListActions;
+}> = ({ report, actions }) => {
+	const isHeldBack = actions.preparingId !== undefined;
+	return (
+		<Tooltip title="Export PDF">
+			<IconButton
+				aria-label={`Export ${report.name} as PDF`}
+				aria-disabled={isHeldBack ? "true" : undefined}
+				color="primary"
+				onClick={isHeldBack ? undefined : () => actions.onExportPdf(report)}
+				sx={isHeldBack ? HELD_BACK_LOOK : undefined}
+			>
+				{actions.preparingId === report.id ? (
+					<CircularProgress size={20} />
+				) : (
+					<PictureAsPdfIcon />
+				)}
+			</IconButton>
+		</Tooltip>
+	);
+};
 
 const EditButton: React.FC<{
 	readonly report: IReportListItem;
@@ -92,11 +107,12 @@ const DeleteButton: React.FC<{
 const RowActions: React.FC<{
 	readonly report: IReportListItem;
 	readonly actions: ReportListActions;
-}> = ({ report, actions: { onExportPdf, editor } }) => {
+}> = ({ report, actions }) => {
+	const { editor } = actions;
 	const isShown = isShownByThisVersion(report);
 	return (
 		<>
-			{isShown && <ExportPdfButton report={report} onExportPdf={onExportPdf} />}
+			{isShown && <ExportPdfButton report={report} actions={actions} />}
 			{isShown && editor !== undefined && (
 				<EditButton report={report} actions={editor} />
 			)}
