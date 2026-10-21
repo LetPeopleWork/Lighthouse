@@ -977,6 +977,169 @@ get re-applied.
 
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
+### 2026-10-21 — Biome mirrors the Sonar TS profile
+- **Why**: the 2026-10-21 gate failed on `S9383`, `S7503` and `S9382`, which Biome implements but ran at
+  `info` or not at all, because `Lighthouse.Frontend/` had no `biome.json`. Now it has one: `recommended`
+  plus, at `error`, every Biome rule that matches a rule of the frontend Sonar profile
+  (`Lighthouse - Typescript`). `pnpm build`'s Biome step fails on them, test files included (Sonar skips
+  `*.test.ts(x)` but analyses `src/tests/`).
+- **How the mapping was built**: Sonar rule → ESLint rule from the `eslint-plugin-sonarjs` README tables
+  and its per-rule `meta.js`; ESLint rule → Biome rule with `biome migrate eslint`, one rule at a time;
+  a few matches by meaning where Biome names a different source rule (`S3358`, `S6478`, `S8754`, …).
+  Each candidate was then run over `src/` and compared with Sonar's open issues on `main`.
+- **Mapping** (Sonar `typescript:` key → Biome rule):
+
+| Sonar | Biome |
+|---|---|
+| S107 | `complexity/useMaxParams` |
+| S128 | `suspicious/noFallthroughSwitchClause` |
+| S878 | `complexity/noCommaOperator` |
+| S905 | `suspicious/noUnusedExpressions` |
+| S1068 | `correctness/noUnusedPrivateClassMembers` |
+| S1077 | `a11y/useAltText` |
+| S1082 | `a11y/useKeyWithMouseEvents`, `a11y/useKeyWithClickEvents` |
+| S1090 | `a11y/useIframeTitle` |
+| S1128 | `correctness/noUnusedImports` |
+| S1143 | `correctness/noUnsafeFinally` |
+| S1199 | `complexity/noUselessLoneBlockStatements` |
+| S1264 | `complexity/useWhile` |
+| S1516 | `style/noMultilineString` |
+| S1523 | `security/noGlobalEval` |
+| S1534 | `suspicious/noDuplicateObjectKeys`, `suspicious/noDuplicateClassMembers`, `suspicious/noDuplicateJsxProps`, `correctness/noDuplicateAttributes` |
+| S1656 | `correctness/noSelfAssign` |
+| S1763 | `correctness/noUnreachable` |
+| S1788 | `style/useDefaultParameterLast` |
+| S1862 | `suspicious/noDuplicateElseIf` |
+| S2094 | `complexity/noStaticOnlyClass` |
+| S2688 | `correctness/useIsNan` |
+| S2871 | `suspicious/useArraySortCompare` |
+| S2933 | `style/useReadonlyClassProperties` |
+| S3358 | `style/noNestedTernary` |
+| S3504 | `suspicious/noVar` |
+| S3696 | `style/useThrowOnlyError` |
+| S3799 | `correctness/noEmptyPattern` |
+| S3812 | `suspicious/noUnsafeNegation` |
+| S3854 | `correctness/noInvalidConstructorSuper`, `correctness/noUnreachableSuper` |
+| S4084 | `a11y/useMediaCaption` |
+| S4124 | `suspicious/noMisleadingInstantiator` |
+| S4138 | `style/useForOf` |
+| S4140 | `suspicious/noSparseArray` |
+| S4156 | `suspicious/useNamespaceKeyword` |
+| S4275 | `suspicious/useGetterReturn` |
+| S5254 | `a11y/useValidLang`, `a11y/useHtmlLang` |
+| S6325 | `complexity/useRegexLiterals` |
+| S6438 | `suspicious/noCommentText` |
+| S6477 | `correctness/useJsxKeyInIterable` |
+| S6478 | `correctness/noNestedComponentDefinitions` |
+| S6479 | `suspicious/noArrayIndexKey` |
+| S6509 | `complexity/noExtraBooleanCast` |
+| S6522 | `suspicious/noImportAssign` |
+| S6523 | `correctness/noUnsafeOptionalChaining` |
+| S6534 | `correctness/noPrecisionLoss` |
+| S6535 | `complexity/noUselessEscapeInRegex`, `correctness/noNonoctalDecimalEscape` |
+| S6544 | `nursery/noMisusedPromises`, `suspicious/noAsyncPromiseExecutor` |
+| S6550 | `style/useLiteralEnumMembers` |
+| S6551 | `nursery/noBaseToString` |
+| S6557 | `nursery/useStringStartsEndsWith` |
+| S6569 | `complexity/noUselessTypeConstraint` |
+| S6578 | `suspicious/noDuplicateEnumValues` |
+| S6582 | `complexity/useOptionalChain` |
+| S6583 | `style/useConsistentEnumValueType` |
+| S6590 | `style/useAsConstAssertion` |
+| S6594 | `nursery/useRegexpExec` |
+| S6598 | `style/useShorthandFunctionType` |
+| S6635 | `correctness/noConstructorReturn` |
+| S6638 | `suspicious/noConstantBinaryExpressions` |
+| S6643 | `nursery/noExtendNative` |
+| S6644 | `complexity/noUselessTernary` |
+| S6647 | `complexity/noUselessConstructor` |
+| S6650 | `complexity/noUselessRename` |
+| S6653 | `suspicious/noPrototypeBuiltins` |
+| S6654 | `suspicious/noProto` |
+| S6657 | `suspicious/noOctalEscape` |
+| S6660 | `style/useCollapsedElseIf` |
+| S6661 | `style/useObjectSpread` |
+| S6666 | `style/useSpreadOverApply` |
+| S6671 | `nursery/usePromiseRejectErrors` |
+| S6679 | `suspicious/noSelfCompare` |
+| S6747 | `suspicious/noUnknownAttribute`, `a11y/useValidAriaProps` |
+| S6748 | `correctness/noChildrenProp` |
+| S6749 | `complexity/noUselessFragments` |
+| S6761 | `security/noDangerouslySetInnerHtmlWithChildren` |
+| S6790 | `nursery/noReactStringRefs` |
+| S6793 | `a11y/useValidAriaValues` |
+| S6807 | `a11y/useAriaPropsForRole` |
+| S6811 | `a11y/useAriaPropsSupportedByRole` |
+| S6819 | `a11y/useSemanticElements` |
+| S6821 | `a11y/useValidAriaRole` |
+| S6822 | `a11y/noRedundantRoles` |
+| S6823 | `a11y/useAriaActivedescendantWithTabindex` |
+| S6824 | `a11y/noAriaUnsupportedElements` |
+| S6825 | `a11y/noAriaHiddenOnFocusable` |
+| S6827 | `a11y/useAnchorContent` |
+| S6836 | `correctness/noSwitchDeclarations` |
+| S6840 | `a11y/useValidAutocomplete` |
+| S6841 | `a11y/noPositiveTabindex` |
+| S6842 | `a11y/noNoninteractiveElementToInteractiveRole` |
+| S6843 | `a11y/noInteractiveElementToNoninteractiveRole` |
+| S6844 | `a11y/useValidAnchor` |
+| S6845 | `a11y/noNoninteractiveTabindex` |
+| S6846 | `a11y/noAccessKey` |
+| S6847 | `a11y/noNoninteractiveElementInteractions` |
+| S6848 | `a11y/noStaticElementInteractions` |
+| S6850 | `a11y/useHeadingContent` |
+| S6851 | `a11y/noRedundantAlt` |
+| S6852 | `a11y/useFocusableInteractive` |
+| S6853 | `a11y/noLabelWithoutControl` |
+| S7060 | `nursery/noSelfImport` |
+| S7503 | `suspicious/useAwait` |
+| S7722 | `suspicious/useErrorMessage` |
+| S7723 | `correctness/noInvalidBuiltinInstantiation` |
+| S7736 | `nursery/noNegationInEqualityCheck` |
+| S7739 | `suspicious/noThenProperty` |
+| S7740 | `complexity/noUselessThisAlias` |
+| S7750 | `complexity/useArrayFind` |
+| S7752 | `complexity/useFlatMap` |
+| S7753 | `complexity/useIndexOf` |
+| S7754 | `nursery/useArraySome` |
+| S7759 | `complexity/useDateNow` |
+| S7765 | `nursery/useIncludes` |
+| S7766 | `nursery/useMathMinMax` |
+| S7769 | `nursery/useModernMathApis` |
+| S7772 | `style/useNodejsImportProtocol` |
+| S7773 | `style/useNumberNamespace` |
+| S7783 | `style/useTrimStartEnd` |
+| S8754 | `nursery/noIdenticalTestTitle` |
+| S9011 | `a11y/useButtonType` |
+| S9379 | `a11y/noAutofocus` |
+| S9380 | `a11y/noHeaderScope` |
+| S9381 | `suspicious/noNestedPromises` |
+| S9382 | `performance/noAwaitInLoops` |
+| S9383 | `nursery/noFloatingPromises` |
+
+- **Biome has a rule, but it disagrees with Sonar, so it stays off** (counts are hits on `src/` when
+  measured): `S3776` `noExcessiveCognitiveComplexity` counts nested callbacks into the component, flagging
+  37 production functions Sonar passes, yet reads lower than Sonar elsewhere — measure by hand (see the
+  S3776 entries); `S108`/`S1186` `noEmptyBlockStatements` flags `() => {}` no-ops Sonar accepts (163);
+  `S3735` `noVoid` flags `void` before a promise, which Sonar allows (36) — the project still bans `void`
+  by habit, see the S6544 entry; `S1529` `noBitwiseOperators` flags every bitwise operator, Sonar only
+  those in a boolean context; `S1226` `noParameterAssign` flags a parameter updated after it was read,
+  which Sonar allows; `S6572` `useEnumInitializers` demands every member initialised, Sonar accepts none;
+  `S7749` `useNumericSeparators` (46) and `S7755` `useAtIndex` (63), `S6606` `useNullishCoalescing`
+  (13), `S6439` `noLeakedRender` (228), `S4123` `useAwaitThenable` (463) flag far more than Sonar does;
+  `S1607` `noSkippedTests` would block the skipped acceptance scenarios DISTILL leaves for DELIVER.
+  `S7764` (`globalThis`) is no longer in the profile, so `useGlobalThis` stays off too.
+- **Partly covered, so the manual rule still applies**: `S3358` — `noNestedTernary` sees a ternary
+  nested directly, not one inside a `${…}` slot (the S3358 pattern in the pre-commit ledger checks covers that); `S6544` —
+  `noMisusedPromises` misses a promise-returning function assigned to a `void`-typed slot; `S9383` —
+  `noFloatingPromises` does not see `navigate(...)` from react-router, and Biome's type inference is
+  shallower than Sonar's, so some floating promises still reach CI.
+- **No Biome equivalent, manual rules** (the ones that have bitten this repo): `S1125`, `S2004`,
+  `S3923`, `S3981`, `S4144`, `S4323`, `S4624`, `S4782`, `S6754`, `S6759`, `S6767`, `S7059`, `S7718`,
+  `S7727`, `S7761`, `S7770`, `S8786`. The other ~350 rules of the profile (security hotspots, regex,
+  React class components, unicorn style rules, test-framework rules) have none either. To re-check after
+  a Biome upgrade, rerun `biome migrate eslint` over the profile's ESLint ids.
+
 ### 2026-09-26 — typescript:S4624: a template literal nested inside another fails the gate
 - **Symptom**: frontend gate `new_violations` = 2, both `typescript:S4624` ("Refactor this code to not use
   nested template literals") in `realityCheckCopy.ts` — a ternary `` `${n === 1 ? "1 check" : `${n} checks`}` ``
@@ -1002,11 +1165,9 @@ get re-applied.
 - **Rule going forward**: When a type/interface MEMBER is optional (`name?:`), never also write `| undefined` in its type — use `name?: T | null` (or just `name?: T`), not `name?: T | undefined | null`. If you genuinely want to require the caller to pass `undefined` explicitly (no `?`), keep the union and drop the `?`. Pre-flight before push: grep new `.ts/.tsx` for `\?\s*:\s*[^;]*\|\s*undefined` to catch the redundant pairing.
 
 ### 2026-05-17 — typescript:S6582 collapse `x !== null && x.startsWith(...)` to an optional chain
-
-- **Symptom**: Frontend Sonar gate ERROR on `new_violations = 1` after the slice-03 ADO OAuth UI landed. The single violation: `typescript:S6582 — Prefer using an optional chain expression instead, as it's more concise and easier to read.` at `Lighthouse.Frontend/src/components/Common/Connections/OAuthAuthForm.tsx:34-35`.
-- **Root cause**: The `isAdoOauthOverHttp` predicate wrote `baseUrl !== null && baseUrl.startsWith("http://")`. Sonar's S6582 wants the null-guard collapsed into an optional chain when the next call is a method on the same value — both for readability and because the longer form encourages reaching for narrowed-type Else branches that aren't needed.
-- **Fix**: `baseUrl?.startsWith("http://") ?? false` — `?.` short-circuits on `null`/`undefined`, `?? false` keeps the predicate's `boolean` return type (the bare optional chain returns `boolean | undefined`, which violates the function signature). `OAuthAuthForm.tsx:33-34`.
-- **Rule going forward**: In TypeScript predicates that read like `x !== null && x.method(...)` or `x !== undefined && x.prop`, collapse to `x?.method(...)` or `x?.prop`. If the surrounding context expects a strict `boolean` (e.g. a `() => boolean` predicate or a JSX `&&` short-circuit where `undefined` would render `undefined` text), append `?? false`. Sonar runs S6582 at MAJOR severity and the project's gate is `new_violations = 0` on new code — any new violation fails the build immediately, even a single one.
+- **Symptom**: frontend gate `new_violations = 1`, `typescript:S6582` on `OAuthAuthForm.tsx:34`, `baseUrl !== null && baseUrl.startsWith("http://")`.
+- **Fix**: `baseUrl?.startsWith("http://") ?? false` (`?? false` keeps the `boolean` return type).
+- **Rule going forward**: Enforced by Biome `complexity/useOptionalChain` in Lighthouse.Frontend/biome.json.
 
 ## SonarCloud — Backend (LetPeopleWork_Lighthouse)
 
@@ -1236,10 +1397,9 @@ get re-applied.
 - **Rule going forward**: After every extract-method or rename refactor, do a final pass with these two grep checks: (a) `grep -nE "^\s*private [A-Za-z<>]+\s+[A-Z][a-zA-Z0-9]+\(" <file>` to enumerate instance helpers — for each, ask "does the body touch `this`/instance fields?" If no → add `static`. (b) for any constant or readonly field added during the slice, `grep -c "<FieldName>" <repo>` should return at least 2 (declaration + ≥1 reference). One = orphan; either wire it up or delete it. Both rules fail the SonarCloud gate at MINOR/MAJOR severity respectively, which is well within the `new_violations = 0` gate.
 
 ### 2026-05-23 — typescript:S107 (frontend) hits the moment a 6-or-7-param TS class constructor gains a chip-data field
-- **Symptom**: Sonar gate `new_violations = 1` on `LetPeopleWork_Lighthouse_Frontend` after slice-04 added `filterApplied` + `excludedSummary` to `BacktestResult`. `typescript:S107` MAJOR at the class constructor declaration: `Constructor has too many parameters (8). Maximum allowed is 7.` The existing 6-param positional shape was at the edge of the limit; one extra optional bumped it past.
-- **Root cause**: When a positional-param constructor sits at 6-7 params, the next feature-add that needs to thread one new field through almost always trips S107. Two paths: (a) refactor to options-object NOW, before the next field lands; (b) keep the positional shape and absorb the breakage when it happens. The Lighthouse codebase has been bitten by (b) on multiple slices — each time the breakage means touching every constructor call site AND every test fixture that constructs the type.
-- **Fix**: `BacktestResult.ts` — added `export type BacktestResultOptions = { ... 8 named fields ... }`, constructor accepts `options: BacktestResultOptions`, body assigns `this.x = options.x`. Single call site in `ForecastService.deserializeBacktestResult` rewritten to the named-key spread. Both the class and the options type are exported so consumers (tests, mocks) have a typed shape to construct.
-- **Rule going forward**: TypeScript class constructors must use the **options-object pattern** (`constructor(options: FooOptions) { ... }` with a sibling `export type FooOptions = { ... }`) when ANY of: (a) the constructor takes more than 3 positional params; (b) the constructor takes any optional param; (c) two or more params share a primitive type (e.g. two `Date`s — easy to swap accidentally at the call site). The threshold is the same as CLAUDE.md's options-object rule for C#. Don't wait for S107 to fire at 8 params; refactor to options-object the moment the constructor crosses 3 params or gains its first optional. Migrating later (when the violation lands) costs more — every call site changes.
+- **Symptom**: frontend gate `new_violations = 1`, `typescript:S107` on the `BacktestResult` constructor (8 parameters, 7 allowed) after slice-04 added two fields.
+- **Fix**: the constructor takes one `BacktestResultOptions` object.
+- **Rule going forward**: Enforced by Biome `complexity/useMaxParams` (max 7) in Lighthouse.Frontend/biome.json.
 
 ### 2026-05-16 — csharpsquid:S107: `#pragma warning disable S107` only works when wrapping the declaration that triggers it
 - **Symptom**: Sonar gate failed with `csharpsquid:S107` ("Constructor has 10 parameters, which is greater than the 7 authorized.") on `OAuthService.cs:56-66`. A `#pragma warning disable S107` already existed around the class declaration with a clear justification — but Sonar still flagged the constructor.
@@ -1263,10 +1423,9 @@ get re-applied.
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
 ### 2026-10-09 — typescript:S1788: a defaulted parameter before a required one
-- **Symptom**: Frontend gate `new_violations = 1`: `typescript:S1788` ("Default parameters should be last") on `src/tests/HeldMetricsService.ts:398`, `answer(filter = {}, value)`.
-- **Root cause**: a test helper gave its first parameter a default while the second had none; neither `tsc` nor Biome objects, and test helpers under `src/` are analysed like production code.
+- **Symptom**: frontend gate `new_violations = 1`, `typescript:S1788` on `src/tests/HeldMetricsService.ts:398`, `answer(filter = {}, value)`.
 - **Fix**: `33f1f5ba3`.
-- **Rule going forward**: never give a parameter a default unless every parameter after it is defaulted or optional — mark the trailing one `?` or reorder. Test helpers under `src/` count as new code for the Sonar gate.
+- **Rule going forward**: Enforced by Biome `style/useDefaultParameterLast` in Lighthouse.Frontend/biome.json.
 
 ### 2026-05-30 — S6544 vs S3735: SonarCloud bans the `void` operator on new code while requiring promises be handled
 - **Symptom**: a #5100 fix-commit (FE concurrency token chaining) tripped, in sequence across two CI cycles: first `typescript:S6544` ("Promise-returning function provided to variable where a void return was expected") on a `useRef<(p) => void>` assigned a Promise-returning `dispatchSave`; after fixing that with the `void` operator, `typescript:S3735` ("Remove this use of the void operator") ×2 on the `void dispatchSave(...)` call sites. The two rules appear to contradict: S6544 wants floating promises handled, S3735 forbids the canonical `void` handler.
@@ -1345,17 +1504,17 @@ get re-applied.
 - **Fix**: `RealityCheckFixture.tsx:453` → `/forecast runs? (?:were|was) checked/i`. The count carried no meaning in a "has the answer arrived" wait, so dropping it lost nothing.
 - **Rule going forward**: In a regex that only proves a line is present, don't open with `\d+` (or any unanchored quantified class) followed by optional parts or an alternation — start at the first literal word, or anchor with `^` when the number must be pinned. Use `(?:…)` rather than a capturing group when nothing reads the capture.
 ### 2026-10-14 (first seen 2026-10-01) — SonarCloud rolled out new TypeScript promise rules and the gate went red with no code change (Bug #6129) (Recurrence: 3)
-- **Symptom**: `sonar-gates` red on every main push from 2026-09-30 00:33 on. The frontend gate reported `new_violations=108` and `new_reliability_rating=C`. Rules: `typescript:S9383` (promise not awaited / `.catch`ed, 91 issues), `S7503` (async without await, 12), `S9382` (await in a loop, 6), `S9381` (nested promises, 1). The issues sat in about 60 files that no recent commit had touched.
-- **Root cause**: SonarCloud added the four rules on 2026-09-29 16:09 (`/api/rules/show` `createdAt`). Their findings on existing code counted as new violations, so the first analysis after the rollout failed whatever the pushed commit was.
-- **Fix**: 9fd727959 / bef11c52e / 15a1f7fb5 / 9bf953e0d. Floating promises end in `.catch` that logs (navigation goes through `src/utils/navigation.ts` `reportFailedNavigation`, because `navigate()` returns `void | Promise<void>`); `async` dropped where no caller needs the promise, else `return Promise.resolve()`; independent awaits in loops became `Promise.all`. The only suppression is the Tab-until-focused loop in `src/tests/RealityCheckFixture.tsx`, which must run in order.
-- **Rule going forward**: When `sonar-gates` turns red on a push that touched no flagged file, check the gate history per analysis (`/api/project_analyses/search` plus `/api/qualitygates/project_status?analysisId=`) and the flagged rules' `createdAt` before suspecting the push. In new TS, never leave a promise floating: `await` it or end the chain in `.catch(...)` that reaches the existing error handling (not `void`, which `S3735` flags). Never `await` inside a loop unless the order matters, and never add `async` to a function that does not await. A `// NOSONAR` must state a reason that is true of the code, not one invented to keep the old shape. `nursery/noFloatingPromises` in Biome 2.5 catches about half of `S9383` locally, but it is not enabled.
-- **Recurrence 2026-10-14** (runs 38465699915, 38488256461, 38492104157 — three main pushes red, only `sonar-gates`): frontend `new_violations=1`, `new_reliability_rating=3`, one `typescript:S9383` on `src/pages/Common/Reports/wizard/ReportWizard.tsx:98`, a bare `navigate(reportPathOf(owner, reportId));` at the end of the wizard's async `create`. Written that way in story 6159 after the rollout, so this time the push really was the cause. Being inside an `async` function does not make a non-awaited call handled. Fix: `reportFailedNavigation(navigate(...))`. **Extend the rule**: every `navigate(...)` in new code goes through `reportFailedNavigation` (or is awaited) — grep the diff for a bare `navigate(` statement before pushing.
-- **Recurrence 2026-10-14 evening** (run 38626029274, `06e30341c`, only `sonar-gates` red): frontend `new_violations=1`, one `typescript:S9382` on `src/tests/WorkItemsDialogTestKit.tsx:270`, the `await user.click(box)` inside `turnColumns`, written in `e29917dc7` (story 6302) when the kit moved to one Manage columns visit per change set. The order does matter there, since each click re-renders the panel and user-event clicks must not overlap, so the fix was a `// NOSONAR` naming that reason, the same shape as the Tab loop in `RealityCheckFixture.tsx`. **Extend the rule**: a test-kit helper that loops over user-event actions (`click`, `type`, `tab`, `keyboard`) is always order-dependent; write the `// NOSONAR <why the actions cannot overlap>` on the awaited line in the same commit, rather than converting it to `Promise.all`, which would fire overlapping clicks.
+- **Symptom**: `sonar-gates` red on every main push from 2026-09-30: `typescript:S9383` (floating promise, 91), `S7503` (async without await, 12), `S9382` (await in a loop, 6), `S9381` (nested promises, 1), in about 60 files no recent commit had touched.
+- **Root cause**: SonarCloud added the four rules on 2026-09-29; their findings on old code counted as new violations. Check a rule's `createdAt` (`/api/rules/show`) before suspecting the push.
+- **Fix**: 9fd727959 / bef11c52e / 15a1f7fb5 / 9bf953e0d.
+- **Rule going forward**: Enforced by Biome `nursery/noFloatingPromises`, `suspicious/useAwait`, `performance/noAwaitInLoops` and `suspicious/noNestedPromises` in Lighthouse.Frontend/biome.json. Biome does not see react-router's `navigate(...)` as a promise, so every `navigate(...)` still goes through `reportFailedNavigation` (or is awaited).
+- **Recurrences 2026-10-14**: a bare `navigate(...)` in `ReportWizard.tsx` (S9383, the case Biome misses), and an awaited click in a loop in `WorkItemsDialogTestKit.tsx` (S9382). Ordered test actions now go through `inSequence` in `src/tests/inSequence.ts`.
+
 ### 2026-10-03 — a DISTILL RED scaffold written as `async` methods that only `throw` trips S7503
-- **Symptom**: `sonar-gates` red on run 37152469326 (`3868ebee7`), every other job green. Frontend `new_violations=4`: `typescript:S7503` MINOR "Async method 'castVote' has no 'await' expression" on `src/services/Api/SizingLogService.ts:46/57/68/78` — the not-yet-implemented service the acceptance tests import.
-- **Root cause**: The scaffold's methods were `public async x(): Promise<T> { throw new Error(...) }`, which awaits nothing; Sonar counts the scaffold as new code even though every test using it is skipped.
-- **Fix**: each method dropped `async` and returns `Promise.reject(new Error(...))`, which keeps the rejected-promise behaviour the pending tests expect.
-- **Rule going forward**: A scaffold or stub that stands in for a promise-returning method must be a plain method returning `Promise.reject(new Error(...))` (or `Promise.resolve(...)`), never `async` with only a `throw` — that applies to DISTILL scaffolds too, since Sonar judges them as new code.
+- **Symptom**: frontend gate `new_violations = 4`, `typescript:S7503` on the not-yet-implemented `SizingLogService.ts` scaffold, whose methods were `async` and only threw.
+- **Fix**: each method dropped `async` and returns `Promise.reject(new Error(...))`.
+- **Rule going forward**: Enforced by Biome `suspicious/useAwait` in Lighthouse.Frontend/biome.json.
+
 ### 2026-10-05 — typescript:S7727: a named function passed straight to `.reduce(…)`
 - **Symptom**: `sonar-gates` red on run 37301728078 (`be3f48b3f`, Story #6143), every other job green. Frontend `new_violations=1`, `new_reliability_rating=C`: `typescript:S7727` MAJOR (type BUG) "Do not pass function `withAnsweredRow` directly to `.reduce(…)`" on `src/pages/Teams/Detail/Refinement/useRefinement.ts:104`. Tests, build and Biome were clean locally.
 - **Root cause**: An array method calls its callback with extra arguments (`reduce` passes index and array too); Sonar flags handing it a named function by reference because a later optional parameter on that function would silently receive them.
