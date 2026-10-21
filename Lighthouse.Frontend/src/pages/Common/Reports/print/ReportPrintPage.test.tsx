@@ -144,7 +144,8 @@ describe("The print page gets ready", () => {
 
 			await aMomentLater();
 
-			expect(screen.getByText(PREPARING)).toBeVisible();
+			// Once the report is drawn in its own faces it waits dimmed under the spinner, without the words.
+			expect(screen.getByRole("progressbar")).toBeVisible();
 			expect(renderReadiness()).toBe("false");
 		},
 	);
