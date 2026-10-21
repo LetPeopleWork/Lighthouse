@@ -80,6 +80,9 @@ const keepsRoomFor = (group: HTMLElement, height: string): boolean =>
 	);
 
 const isAtTheEdge = (value: string) => /^0(px|mm)?$/.test(value);
+/** A length the paper keeps, measured as paper is: some millimetres, never none. */
+
+const A_LENGTH_ON_PAPER = /^[1-9]\d*(\.\d+)?mm$/;
 
 const thePanelsAndSummary = (): Element[] => {
 	const summary = document.querySelector("[data-report-summary]");
@@ -200,5 +203,66 @@ describe("Every printed page carries the report's line and the credit", () => {
 			.join("\n");
 		expect(styles).not.toMatch(/counter\(\s*pages?\s*\)/);
 		expect(readingOf(document.body)).not.toMatch(/\bPage \d/);
+	});
+	// A long owner or report name is cut short with an ellipsis rather than wrapping the line onto a second row,
+	// while the windows and the date keep their full width.
+	it(`keeps the line to one row, cutting a long name short but never the windows or the date`, async () => {
+		await thePrintedReportOf(LIGHTSPEED);
+
+		const line = theRunningLine();
+		const parts = [
+			within(line).getByText("Team Lightspeed"),
+			within(line).getByText(ENGAGEMENT_START),
+			within(line).getByText(WINDOWS_LINE),
+			within(line).getByText(PRODUCED_LINE),
+		];
+		for (const part of parts) {
+			expect(part).toHaveStyle({
+				whiteSpace: "nowrap",
+				overflow: "hidden",
+				textOverflow: "ellipsis",
+			});
+		}
+		const [owner, name, windows, produced] = parts;
+		expect(getComputedStyle(owner).flexShrink).not.toBe("0");
+		expect(getComputedStyle(name).flexShrink).not.toBe("0");
+		expect(getComputedStyle(windows).flexShrink).toBe("0");
+		expect(getComputedStyle(produced).flexShrink).toBe("0");
+		expect(getComputedStyle(owner.parentElement as HTMLElement).display).toBe(
+			"flex",
+		);
+	});
+
+	// The browser repeats a table's header and footer groups on every sheet, and Chrome only does so for a group
+	// that may not break; on the screen those groups take no room at all.
+	it(`prints the report as a full-width table whose repeated groups keep a gap to the report and never break`, async () => {
+		await thePrintedReportOf(LIGHTSPEED);
+
+		const [roomAbove] = theGroupsPrintedAs("table-header-group");
+		const [roomBelow] = theGroupsPrintedAs("table-footer-group");
+		const report = roomAbove.parentElement as HTMLElement;
+		expect(whatPrintAsksOf(report, "display")).toBe("table");
+		expect(whatPrintAsksOf(report, "width")).toBe("100%");
+		const title = screen.getByRole("heading", { level: 1 });
+		expect(whatPrintAsksOf(title.parentElement as HTMLElement, "display")).toBe(
+			"table-row-group",
+		);
+
+		for (const room of [roomAbove, roomBelow]) {
+			expect(getComputedStyle(room).display).toBe("none");
+			expect(whatPrintAsksOf(room, "break-inside")).toBe("avoid");
+		}
+		const spacerAbove = roomAbove.firstElementChild as HTMLElement;
+		const spacerBelow = roomBelow.firstElementChild as HTMLElement;
+		expect(whatPrintAsksOf(spacerAbove, "margin-bottom")).toMatch(
+			A_LENGTH_ON_PAPER,
+		);
+		expect(whatPrintAsksOf(spacerBelow, "margin-top")).toMatch(
+			A_LENGTH_ON_PAPER,
+		);
+		expect(whatPrintAsksOf(theRunningLine(), "height")).toMatch(
+			A_LENGTH_ON_PAPER,
+		);
+		expect(whatPrintAsksOf(theFooter(), "height")).toMatch(A_LENGTH_ON_PAPER);
 	});
 });

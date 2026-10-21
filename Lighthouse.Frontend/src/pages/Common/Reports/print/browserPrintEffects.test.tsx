@@ -19,6 +19,12 @@ import { browserPrintEffects, openPrintFrame } from "./browserPrintEffects";
 const REPORT_PDF_FRAME = "Report PDF";
 const A_TITLE = "Then & Now — engagement start — Team Lightspeed";
 
+const theOnlyFrame = (): HTMLIFrameElement => {
+	const frames = Array.from(document.querySelectorAll("iframe"));
+	expect(frames).toHaveLength(1);
+	return frames[0];
+};
+
 const forTheAppsWindow = () => browserPrintEffects(globalThis.window);
 
 type FramesWindow = Window & typeof globalThis;
@@ -289,6 +295,12 @@ describe("the browser's print effects, made for the app's own window", () => {
 		await expect(forTheAppsWindow().loadFonts(FACES)).resolves.toBe("failed");
 	});
 
+	it("answers failed when one face is found and another is not", async () => {
+		theDocumentsFontsAre(async (face) => (face === FACES[0] ? [A_FACE] : []));
+
+		await expect(forTheAppsWindow().loadFonts(FACES)).resolves.toBe("failed");
+	});
+
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// A name such as "Zespół Łódź" needs the typeface's Central European letters; fetched only for a space, they
 	// would still be on their way when the page prints, and the name would come out in a machine's font.
@@ -509,6 +521,65 @@ describe("the print frame an export draws the report into", () => {
 			sheets.stop();
 			head.takeAway();
 		}
+	});
+
+	it(`carries the page's language into the frame's document intact, even one holding characters markup treats specially`, async () => {
+		const anOddLanguage = 'x-"a&b<c"';
+		document.documentElement.lang = anOddLanguage;
+		try {
+			await openPrintFrame();
+
+			const framesMarkup = new DOMParser().parseFromString(
+				theOnlyFrame().srcdoc,
+				"text/html",
+			);
+			expect(framesMarkup.documentElement.lang).toBe(anOddLanguage);
+		} finally {
+			document.documentElement.lang = "";
+		}
+	});
+
+	it(`says which of the app's style sheets could not be loaded into the frame`, async () => {
+		const head = theAppsHead();
+		const sheets = theFramesSheets("error");
+		try {
+			await expect(openPrintFrame()).rejects.toThrow(
+				/^The style sheet \S*\/assets\/index-3f9a1c\.css could not be loaded$/,
+			);
+		} finally {
+			sheets.stop();
+			head.takeAway();
+		}
+	});
+
+	it(`says the frame itself could not be loaded, and takes it away, when the browser cannot load it`, async () => {
+		const failing = new MutationObserver((changes) => {
+			for (const change of changes) {
+				for (const node of Array.from(change.addedNodes)) {
+					if (node.nodeName === "IFRAME")
+						node.dispatchEvent(new Event("error"));
+				}
+			}
+		});
+		failing.observe(document.body, { childList: true });
+		try {
+			await expect(openPrintFrame()).rejects.toThrow(
+				/^The print frame could not be loaded$/,
+			);
+			expect(document.querySelectorAll("iframe")).toHaveLength(0);
+		} finally {
+			failing.disconnect();
+		}
+	});
+
+	it(`stops waiting, and takes the frame away, once the caller gives up before it has loaded`, async () => {
+		const givingUp = new AbortController();
+
+		const opening = openPrintFrame(givingUp.signal);
+		givingUp.abort();
+
+		await expect(opening).rejects.toThrow(/^The print frame was given up$/);
+		expect(document.querySelectorAll("iframe")).toHaveLength(0);
 	});
 
 	// @us-01 @rev-3 @contract-shape:bounded-change

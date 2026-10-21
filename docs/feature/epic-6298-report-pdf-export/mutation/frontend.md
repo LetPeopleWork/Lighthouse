@@ -1,7 +1,7 @@
 # Mutation testing — Epic 6298 "Report PDF Export", Lighthouse frontend
 
-> **First run only — kill round not yet done (session ended).** The score below is the untouched first run.
-> No killing tests have been written yet; the survivor list at the end is the work list for the next session.
+> **Gate met after one kill round: 83.87 %** (759 killed / 140 survived / 6 no coverage / 0 timeout of 905), up from
+> 79.01 % on the first run. The kill round added tests only; production code is unchanged since `f7b67946b`.
 
 - Production code frozen at `f7b67946b` (`origin/main` at `12d51d141` is its ancestor; 85 Epic commits between).
 - Tool: StrykerJS `@stryker-mutator/core@10` with `@stryker-mutator/vitest-runner`, from `Lighthouse.Frontend/`,
@@ -10,8 +10,12 @@
   specs: all 30 under `pages/Common/Reports/`, plus AuthPageLayout, Header, Footer, LighthouseLogo, LighthouseVersion,
   SnackbarErrorHandler, UsageDataService, usageDataEvents, usageDataRouteKeys.print/.reports, the Team and Portfolio
   `reportsTab` specs and `bundledTypeface.enforcement`.
-- **Gate ≥ 80 %: first run 79.01 % (715 killed / 184 survived / 6 no coverage / 0 timeout of 905). Not yet met.**
-- Wall clock: 54 min 55 s (dry run 1 min 56 s, 597 tests; 54 tests per mutant on average).
+- First run (at `bb0404856`): **79.01 %** (715 killed / 184 survived / 6 no coverage / 0 timeout of 905), 54 min 55 s
+  (dry run 1 min 56 s, 597 tests; 54 tests per mutant on average).
+- Kill round (2026-10-21, at `9110003c2`, production code identical to `f7b67946b`): **83.87 %** (759 killed /
+  140 survived / 6 no coverage / 0 timeout of 905). **Gate ≥ 80 % met.** Measured by two incremental runs on the
+  first run's incremental file: 24 min 45 s re-testing the 534 mutants the changed specs cover, then 16 min 26 s
+  re-testing the 56 static survivors (see the trap under "Kill round").
 
 ## Scope
 
@@ -30,65 +34,155 @@ Left out, on purpose:
   Only the shared `TYPOGRAPHY` (lines 20-31, the font family and heading weights that changed) is in scope.
 - Test files, `src/tests/*` kits.
 
-## Scores per file (first run)
+## Scores per file (after the kill round)
 
-| file | mutants | killed | survived | no coverage | timeout | score |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| `components/App/Auth/AuthPageLayout.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % |
-| `components/App/LetPeopleWork/LighthouseLogo.tsx` | 14 | 8 | 6 | 0 | 0 | 57.14 % |
-| `components/App/LetPeopleWork/LighthouseVersion.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % |
-| `components/Common/SnackbarErrorHandler/SnackbarErrorHandler.tsx` | 35 | 29 | 6 | 0 | 0 | 82.86 % |
-| `pages/Common/Reports/ReportList.tsx` | 37 | 31 | 6 | 0 | 0 | 83.78 % |
-| `pages/Common/Reports/ReportView.tsx` | 28 | 24 | 4 | 0 | 0 | 85.71 % |
-| `pages/Common/Reports/ThenAndNowHeader.tsx` | 14 | 8 | 4 | 2 | 0 | 57.14 % |
-| `pages/Common/Reports/ThenAndNowSummary.tsx` | 11 | 10 | 1 | 0 | 0 | 90.91 % |
-| `pages/Common/Reports/panels/ChangeMarkIcon.tsx` | 12 | 10 | 2 | 0 | 0 | 83.33 % |
-| `pages/Common/Reports/panels/ReportPanels.tsx` | 7 | 7 | 0 | 0 | 0 | 100.00 % |
-| `pages/Common/Reports/panels/ThenNowLineParts.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % |
-| `pages/Common/Reports/panels/ThenNowPanelFrame.tsx` | 17 | 9 | 8 | 0 | 0 | 52.94 % |
-| `pages/Common/Reports/panels/thenNowComparison.ts` | 11 | 11 | 0 | 0 | 0 | 100.00 % |
-| `pages/Common/Reports/print/PrintFrameHost.tsx` | 93 | 69 | 22 | 2 | 0 | 74.19 % |
-| `pages/Common/Reports/print/PrintSheet.tsx` | 30 | 16 | 14 | 0 | 0 | 53.33 % |
-| `pages/Common/Reports/print/ReportPrintContent.tsx` | 139 | 120 | 19 | 0 | 0 | 86.33 % |
-| `pages/Common/Reports/print/ReportPrintDocument.tsx` | 58 | 27 | 31 | 0 | 0 | 46.55 % |
-| `pages/Common/Reports/print/ReportPrintPage.tsx` | 7 | 7 | 0 | 0 | 0 | 100.00 % |
-| `pages/Common/Reports/print/browserPrintEffects.ts` | 101 | 77 | 22 | 2 | 0 | 76.24 % |
-| `pages/Common/Reports/print/printPageState.ts` | 82 | 81 | 1 | 0 | 0 | 98.78 % |
-| `pages/Common/Reports/print/reportPrintRoutes.tsx` | 25 | 19 | 6 | 0 | 0 | 76.00 % |
-| `pages/Common/Reports/print/usePrintOnce.ts` | 51 | 46 | 5 | 0 | 0 | 90.20 % |
-| `pages/Common/Reports/reportReadFailures.ts` | 22 | 20 | 2 | 0 | 0 | 90.91 % |
-| `pages/Common/Reports/useReportOpenedReporter.ts` | 15 | 12 | 3 | 0 | 0 | 80.00 % |
-| `pages/Common/Reports/useReportPdfExport.ts` | 61 | 48 | 13 | 0 | 0 | 78.69 % |
-| `pages/Common/Reports/useReportRead.ts` | 3 | 2 | 1 | 0 | 0 | 66.67 % |
-| `pages/Common/Reports/wizard/reportRefusalCopy.ts` | 20 | 20 | 0 | 0 | 0 | 100.00 % |
-| `pages/Common/Reports/wizard/reportTypes.ts` | 4 | 4 | 0 | 0 | 0 | 100.00 % |
-| `utils/theme/appThemes.ts` | 5 | 0 | 5 | 0 | 0 | 0.00 % |
-| **all** | **905** | **715** | **184** | **6** | **0** | **79.01 %** |
+| file | mutants | killed | survived | no coverage | timeout | score | first run |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `components/App/Auth/AuthPageLayout.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % | 0.00 % |
+| `components/App/LetPeopleWork/LighthouseLogo.tsx` | 14 | 8 | 6 | 0 | 0 | 57.14 % | 57.14 % |
+| `components/App/LetPeopleWork/LighthouseVersion.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % | 0.00 % |
+| `components/Common/SnackbarErrorHandler/SnackbarErrorHandler.tsx` | 35 | 29 | 6 | 0 | 0 | 82.86 % | 82.86 % |
+| `pages/Common/Reports/panels/ChangeMarkIcon.tsx` | 12 | 10 | 2 | 0 | 0 | 83.33 % | 83.33 % |
+| `pages/Common/Reports/panels/ReportPanels.tsx` | 7 | 7 | 0 | 0 | 0 | 100.00 % | 100.00 % |
+| `pages/Common/Reports/panels/thenNowComparison.ts` | 11 | 11 | 0 | 0 | 0 | 100.00 % | 100.00 % |
+| `pages/Common/Reports/panels/ThenNowLineParts.tsx` | 1 | 0 | 1 | 0 | 0 | 0.00 % | 0.00 % |
+| `pages/Common/Reports/panels/ThenNowPanelFrame.tsx` | 17 | 9 | 8 | 0 | 0 | 52.94 % | 52.94 % |
+| `pages/Common/Reports/print/browserPrintEffects.ts` | 101 | 85 | 14 | 2 | 0 | 84.16 % | 76.24 % |
+| `pages/Common/Reports/print/PrintFrameHost.tsx` | 93 | 74 | 17 | 2 | 0 | 79.57 % | 74.19 % |
+| `pages/Common/Reports/print/printPageState.ts` | 82 | 81 | 1 | 0 | 0 | 98.78 % | 98.78 % |
+| `pages/Common/Reports/print/PrintSheet.tsx` | 30 | 19 | 11 | 0 | 0 | 63.33 % | 53.33 % |
+| `pages/Common/Reports/print/ReportPrintContent.tsx` | 139 | 123 | 16 | 0 | 0 | 88.49 % | 86.33 % |
+| `pages/Common/Reports/print/ReportPrintDocument.tsx` | 58 | 49 | 9 | 0 | 0 | 84.48 % | 46.55 % |
+| `pages/Common/Reports/print/ReportPrintPage.tsx` | 7 | 7 | 0 | 0 | 0 | 100.00 % | 100.00 % |
+| `pages/Common/Reports/print/reportPrintRoutes.tsx` | 25 | 19 | 6 | 0 | 0 | 76.00 % | 76.00 % |
+| `pages/Common/Reports/print/usePrintOnce.ts` | 51 | 46 | 5 | 0 | 0 | 90.20 % | 90.20 % |
+| `pages/Common/Reports/ReportList.tsx` | 37 | 32 | 5 | 0 | 0 | 86.49 % | 83.78 % |
+| `pages/Common/Reports/reportReadFailures.ts` | 22 | 20 | 2 | 0 | 0 | 90.91 % | 90.91 % |
+| `pages/Common/Reports/ReportView.tsx` | 28 | 24 | 4 | 0 | 0 | 85.71 % | 85.71 % |
+| `pages/Common/Reports/ThenAndNowHeader.tsx` | 14 | 8 | 4 | 2 | 0 | 57.14 % | 57.14 % |
+| `pages/Common/Reports/ThenAndNowSummary.tsx` | 11 | 10 | 1 | 0 | 0 | 90.91 % | 90.91 % |
+| `pages/Common/Reports/useReportOpenedReporter.ts` | 15 | 12 | 3 | 0 | 0 | 80.00 % | 80.00 % |
+| `pages/Common/Reports/useReportPdfExport.ts` | 61 | 50 | 11 | 0 | 0 | 81.97 % | 78.69 % |
+| `pages/Common/Reports/useReportRead.ts` | 3 | 2 | 1 | 0 | 0 | 66.67 % | 66.67 % |
+| `pages/Common/Reports/wizard/reportRefusalCopy.ts` | 20 | 20 | 0 | 0 | 0 | 100.00 % | 100.00 % |
+| `pages/Common/Reports/wizard/reportTypes.ts` | 4 | 4 | 0 | 0 | 0 | 100.00 % | 100.00 % |
+| `utils/theme/appThemes.ts` | 5 | 0 | 5 | 0 | 0 | 0.00 % | 0.00 % |
+| **all** | **905** | **759** | **140** | **6** | **0** | **83.87 %** | **79.01 %** |
 
-## Resuming the kill round
+## Kill round (2026-10-21)
 
-The incremental file and the reports were written to the session scratch directory, which is on tmpfs and is gone after
-a shutdown, so copies were kept outside the repository:
+Tests only, in four existing specs (so the narrowed vitest config's `include` list did not change). Every new
+assertion was first checked by hand: the matching change made to the production line, the spec run red, the line
+restored.
 
-- `/home/benjamin/.cache/lighthouse-mutation/epic-6298/stryker-incremental-6298.json` (incremental file)
-- `/home/benjamin/.cache/lighthouse-mutation/epic-6298/stryker-6298-frontend.json` and `.html` (mutation report)
-- `/home/benjamin/.cache/lighthouse-mutation/epic-6298/vitest.stryker.6298.config.ts` (copy into `Lighthouse.Frontend/`)
-- `/home/benjamin/.cache/lighthouse-mutation/epic-6298/stryker.config.json` and `run.log` (this run's exact config and log)
+- `print/browserPrintEffects.test.tsx`
+  - fonts answer failed when one face is found and another is not (`every` → `some`);
+  - the frame's document keeps a page language holding `"`, `&` and `<` intact (the three escapes);
+  - a style sheet that cannot be loaded is named in the refusal, `The style sheet …/index-3f9a1c.css could not be
+    loaded` (both message templates);
+  - a frame the browser cannot load is refused as `The print frame could not be loaded` and taken away;
+  - a caller who gives up before the frame loads gets `The print frame was given up`, and the frame goes.
+- `print/ReportPrintPage.runningHeader.test.tsx`
+  - the running line stays one row: owner and report name cut with an ellipsis (`nowrap`, `hidden`, `ellipsis`),
+    the windows and date never shrink, the parts sit in a flex row;
+  - on paper the report is a full-width table with its body as a row group; the repeated room groups are hidden
+    on screen, may not break, keep a gap (in mm) to the report; line and footer heights are real lengths in mm
+    (blanking one turned it into `0%`, which the old `/\d/` check let through).
+- `ReportView.exportPdf.test.tsx`
+  - the frame's paper says `data-render-ready="false"` while preparing and `"true"` once printed;
+  - the frame holds no link at all: no "Back to Reports", and the footer's Lighthouse mark is not a link home;
+  - an export with the terms already in hand does not read them from the server again.
+- `ReportView.exportPdf.failures.test.tsx`
+  - choosing Export PDF again after a failure takes the old snackbar message away once the new export prints.
 
-Original scratch paths: `/tmp/claude-1000/-storage-repos-Lighthouse/8cfcd098-4af0-43c3-b7ab-877262c28913/scratchpad/fe6298/stryker-incremental-6298.json`, `/tmp/claude-1000/-storage-repos-Lighthouse/8cfcd098-4af0-43c3-b7ab-877262c28913/scratchpad/fe6298/reports/stryker-6298-frontend.json`.
+**Trap found: incremental mode never re-tests a static survivor when only tests changed.** A mutant in a
+module-level constant (the `sx` objects in `ReportPrintDocument.tsx`, `PrintSheet.tsx`) is "static": Stryker runs
+every test against it and records no covering tests. The incremental differ reuses a result unless a *covering*
+test changed, so the first incremental run reused all 56 static survivors untouched, and the 16 that the new
+running-line tests kill by hand still read "Survived". Fix used: drop the static survivors from the incremental
+file (`jq '.files |= with_entries(.value.mutants |= map(select((.static==true and .status=="Survived")|not)))'`)
+and run `--incremental` again; only those 56 are re-tested (16 min). 24 of them were then killed.
 
-To resume: copy the vitest config into `Lighthouse.Frontend/`, set `<scratch>` in `stryker.6298.frontend.json` to a
-directory holding the incremental file, write the killing tests, then
-`pnpm exec stryker run <config> --incremental` from `Lighthouse.Frontend/`. Only mutants whose code or covering
-tests changed are re-tested.
+## Surviving mutants after the kill round (146 = 140 survived + 6 no coverage)
 
-**Trap found in this run — fix before the next one.** With `inPlace: true`, Stryker backs the originals up under
-`tempDirName` and restores them with a `rename`. A `tempDirName` on `/tmp` (tmpfs) sits on a different filesystem
-from `/storage`, so the restore failed with `EXDEV: cross-device link not permitted`, the run exited 1 after writing
-its reports, and all 32 files were left instrumented in `src/`. They were restored with
-`git checkout -- Lighthouse.Frontend/src` (the code is frozen at HEAD, so nothing else was in them). Next run: point
-`tempDirName` at `.stryker-tmp-6298` inside `Lighthouse.Frontend/` (gitignored, same filesystem), and keep only
-the incremental and report files in the scratch directory.
+Grouped by reason. The first three groups are accepted; the last is left open with a note on each.
+
+**Styling that only a real browser or real paper shows (accepted).** jsdom applies no `@media print` to a computed
+style, lays nothing out, and MUI's `sx` turns some blanked values into other valid CSS; the print layout itself is
+pinned by the hand probe and the end-to-end check.
+
+- `ReportPrintDocument.tsx` L47-49 (running line's print-only `flex` / `column` / `flex-end`), L53 `baseline`, L61
+  print font size `8pt` (object and string), L66-67 and L70 (footer `flex` / `center` / `divider` colour), L148
+  divider `mt`.
+- `PrintSheet.tsx` L13-16 (Back to Reports hidden on paper; body `flex` / `column`), L38-40 (`@media print`
+  white ground, `printColorAdjust`, no animation or transition).
+- `ThenNowPanelFrame.tsx` L43-44, L74-76, L84, L106 (grid columns and set-off per breakpoint, line height, width).
+- `ThenAndNowHeader.tsx` L30-33 (disabled button colours and cursor), `ReportList.tsx` L42 (disabled icon colour
+  and cursor), `LighthouseLogo.tsx` L19, L34-35 (flex alignment, bold), `ChangeMarkIcon.tsx` L45 (baseline nudge),
+  `SnackbarErrorHandler.tsx` L200 (width).
+- The typeface family strings: `appThemes.ts` L20-28, `AuthPageLayout.tsx` L57, `LighthouseVersion.tsx` L230.
+  jsdom loads no font; `bundledTypeface.enforcement` pins that the family is bundled, not how a theme spells it.
+
+**Text spacing and labels with no reader-facing effect (accepted).** `ThenAndNowSummary.tsx` L121 and
+`ThenNowLineParts.tsx` L81 (a `" "` between inline elements whose readings the tests join by element), and
+`ChangeMarkIcon.tsx` L16 (`PlusMinus` icon name passed to an aria-hidden icon).
+
+**Equivalent mutants (accepted).**
+
+- Effect dependency lists that hold constants or a value that never changes per mount (`PrintFrameHost.tsx` L60,
+  L86, L111, L138, L145; `useReportPdfExport.ts` L58, L89; `usePrintOnce.ts` L96, L123; `reportPrintRoutes.tsx`
+  L56, L77; `SnackbarErrorHandler.tsx` L124), and the "latest tell" ref updates (`PrintFrameHost.tsx` L58,
+  `usePrintOnce.ts` L94): every `tell` handed in calls the same host for the same attempt.
+- `PrintFrameHost.tsx` L142 (5 mutants: the clock is not stopped once the dialog is asked for). Once the page is
+  ready, `printPageStateOf` stays `ready` when the time runs out, the frame is already open and the print-once
+  rule has settled, so the late time-out changes nothing.
+- Cleanups that only cancel a timer or a message on unmount (`PrintFrameHost.tsx` L137; `useReportPdfExport.ts`
+  L89; `useReportPdfExport.ts` L68, since the snackbar shows one message at a time and the next `showError`
+  replaces it anyway).
+- `useReportPdfExport.ts` L93 (`attempts -= 1` still gives each frame a distinct key), L99 (a second choice while
+  preparing: the button is `aria-disabled` and swallows the click before the hook sees it), L108-109 (a removal
+  timer of 0 ms that always fires before the reader can start another attempt), L25 (a Type without a usage-data
+  word never offers Export PDF, so the guard cannot be reached from the page).
+- `browserPrintEffects.ts` L104, L108, L134 (`{ once: true }`: a promise settles once however often its event
+  fires), L138 (`givenUp.catch`: the frame's own `Promise.race` already handles that rejection), L94 / L97 / L98
+  (`left: 0`, `border: 0`, `pointer-events: none` on a frame that sits a whole sheet above the screen).
+- `reportPrintRoutes.tsx` L29-30 (the route's lazy-loading fallback spinner, never shown because the tests render
+  after the chunk is in).
+
+**Not killed in this round, and not proven equivalent (open).** Judged low-value or reachable only through timing
+or a browser jsdom does not imitate; each is a candidate for a later round rather than an accepted gap.
+
+- `PrintFrameHost.tsx` L68-69 (no coverage: a frame that finishes opening after its host unmounted; in practice
+  the unmount aborts the open first), L170 / L173-174 (the drawing guard's state shape: a report that breaks is
+  caught, told, and the frame removed in the same turn either way).
+- `browserPrintEffects.ts` L169-170 (no coverage for the throw: jsdom always gives a loaded frame a window and a
+  document).
+- `ReportPrintContent.tsx` L73, L80-81 (owner deleted between opening the report and printing it), L108-111 (a
+  load answered after unmount), L118, L135, L219, L226 (guards whose other branch is overruled by
+  `printPageStateOf` before anything prints), L248-250 (Retry on the print page re-asks every failed part at
+  once; the tests cover each part failing alone).
+- `ReportView.tsx` L62-70, `ReportList.tsx` L128, `useReportOpenedReporter.ts` L53, `ThenAndNowHeader.tsx` L58-59
+  (no coverage): loading-versus-loaded guards and the once-per-opening counter, whose other branch renders the
+  same thing for the one frame jsdom draws, and a header prop no current caller passes.
+- `usePrintOnce.ts` L72, L106 (the "dialog opened" answer and its reset after a throw): the existing close-the-dialog
+  scenarios did not see them flipped; worth a scenario where the dialog opens, closes, and the frame must go.
+- `printPageState.ts` L45, `reportReadFailures.ts` L15 / L17, `useReportRead.ts` L20 (`?.` on an object the
+  query client always has; retry-option guards whose other branch gives the same retry count with the app's
+  `retry: false` client).
+- `SnackbarErrorHandler.tsx` L114, L119, L202, L224 (`?.` on a value checked just before, ids that only need to
+  differ, an initial `null` branch MUI renders the same, an empty key fallback).
+
+## Re-running
+
+The incremental file and reports live outside the repository (the scratch directory is tmpfs):
+`/home/benjamin/.cache/lighthouse-mutation/epic-6298/stryker-incremental-6298.json`, `stryker-6298-frontend.json`
+and `.html`, `vitest.stryker.6298.config.ts`, `stryker.config.json`, `run-killround*.log`; the first run's files are kept in
+`first-run/` beside them. To run again: copy the vitest
+config into `Lighthouse.Frontend/`, fill `<scratch>` in `stryker.6298.frontend.json` with a directory holding the
+incremental file (`tempDirName` is now `.stryker-tmp-6298`, **inside `Lighthouse.Frontend/`**), and run
+`pnpm exec stryker run <config> --incremental` from `Lighthouse.Frontend/`. A `tempDirName` on `/tmp` puts the
+backup on another filesystem; the restore `rename` then fails with `EXDEV` and leaves `src/` instrumented. After
+any run, `git status` must show no production file changed.
 
 ## Backend
 
@@ -105,268 +199,3 @@ or with any extra property (shape allowlist); still refuses a type on `ReportDel
 `ReportOpened` as a template-carrying shape. Removing the member, renumbering, or dropping it from the template set each
 reds at least one of these.
 
-## Surviving mutants (first run, 190 = 184 survived + 6 no coverage)
-
-Not yet triaged. Grouped by file; `file:line mutator: original → replacement` (long fragments cut with …).
-
-### `components/App/Auth/AuthPageLayout.tsx`
-
-- L57 StringLiteral: `"'Quicksand Variable', sans-serif"` → `""`
-
-### `components/App/LetPeopleWork/LighthouseLogo.tsx`
-
-- L14 BooleanLiteral: `true` → `false`
-- L19 StringLiteral: `"center"` → `""`
-- L19 StringLiteral: `"flex"` → `""`
-- L19 ObjectLiteral: `{ display: "flex", alignItems: "center" }` → `{}`
-- L34 StringLiteral: `"bold"` → `""`
-- L35 StringLiteral: `"flex"` → `""`
-
-### `components/App/LetPeopleWork/LighthouseVersion.tsx`
-
-- L230 StringLiteral: `"'Quicksand Variable', sans-serif"` → `""`
-
-### `components/Common/SnackbarErrorHandler/SnackbarErrorHandler.tsx`
-
-- L114 OptionalChaining: `current?.id` → `current.id`
-- L119 AssignmentOperator: `lastId.current += 1` → `lastId.current -= 1`
-- L124 ArrayDeclaration: `[closeIfShowing]` → `[]`
-- L200 StringLiteral: `"100%"` → `""`
-- L202 ConditionalExpression: `shown === null` → `false`
-- L224 StringLiteral: `""` → `"Stryker was here!"`
-
-### `pages/Common/Reports/ReportList.tsx`
-
-- L128 EqualityOperator: `actions.editor === undefined` → `actions.editor !== undefined`
-- L128 ConditionalExpression: `actions.editor === undefined` → `true`
-- L128 ConditionalExpression: `actions.editor === undefined` → `false`
-- L42 ObjectLiteral: `{ color: "action.disabled", cursor: "default" }` → `{}`
-- L42 StringLiteral: `"default"` → `""`
-- L42 StringLiteral: `"action.disabled"` → `""`
-
-### `pages/Common/Reports/ReportView.tsx`
-
-- L62 ConditionalExpression: `report === undefined` → `true`
-- L70 ConditionalExpression: `report !== undefined` → `true`
-- L65 LogicalOperator: `report !== undefined && …` → `report !== undefined \|\| !isError`
-- L65 ConditionalExpression: `report !== undefined` → `true`
-
-### `pages/Common/Reports/ThenAndNowHeader.tsx`
-
-- L58 BooleanLiteral (no coverage): `false` → `true`
-- L59 BooleanLiteral (no coverage): `false` → `true`
-- L30 ObjectLiteral: `{ …` → `{}`
-- L31 StringLiteral: `"action.disabled"` → `""`
-- L32 StringLiteral: `"action.disabledBackground"` → `""`
-- L33 StringLiteral: `"default"` → `""`
-
-### `pages/Common/Reports/ThenAndNowSummary.tsx`
-
-- L121 StringLiteral: `" "` → `""`
-
-### `pages/Common/Reports/panels/ChangeMarkIcon.tsx`
-
-- L45 StringLiteral: `"-0.125em"` → `""`
-- L16 StringLiteral: `"PlusMinus"` → `""`
-
-### `pages/Common/Reports/panels/ThenNowLineParts.tsx`
-
-- L81 StringLiteral: `" "` → `""`
-
-### `pages/Common/Reports/panels/ThenNowPanelFrame.tsx`
-
-- L43 StringLiteral: `"grid"` → `""`
-- L44 ObjectLiteral: `{ xs: "1fr", md: sideBySide }` → `{}`
-- L44 StringLiteral: `"1fr"` → `""`
-- L74 ObjectLiteral: `{ md: setOff.pl }` → `{}`
-- L75 ObjectLiteral: `{ md: setOff.borderLeftWidth }` → `{}`
-- L76 ObjectLiteral: `{ md: setOff.borderLeftStyle }` → `{}`
-- L84 ObjectLiteral: `{ lineHeight: 1.5 }` → `{}`
-- L106 StringLiteral: `"100%"` → `""`
-
-### `pages/Common/Reports/print/PrintFrameHost.tsx`
-
-- L68 BlockStatement (no coverage): `{ …` → `{}`
-- L69 CallExpression (no coverage): `frame.close();` → `;`
-- L58 BlockStatement: `{ …` → `{}`
-- L60 ArrayDeclaration: `[tell]` → `[]`
-- L68 ConditionalExpression: `gone` → `false`
-- L86 ArrayDeclaration: `[]` → `["Stryker was here"]`
-- L110 ConditionalExpression: `error !== null` → `true`
-- L111 ArrayDeclaration: `[]` → `["Stryker was here"]`
-- L137 ArrowFunction: `() => clearTimeout(clock.current)` → `() => undefined`
-- L142 ConditionalExpression: `outcome.kind === "printing"` → `true`
-- L138 ArrayDeclaration: `[]` → `["Stryker was here"]`
-- L142 ConditionalExpression: `outcome.kind === "printing"` → `false`
-- L142 EqualityOperator: `outcome.kind === "printing"` → `outcome.kind !== "printing"`
-- L142 CallExpression: `clearTimeout(clock.current);` → `;`
-- L142 StringLiteral: `"printing"` → `""`
-- L173 BlockStatement: `{ …` → `{}`
-- L174 ObjectLiteral: `{ broken: true }` → `{}`
-- L174 BooleanLiteral: `true` → `false`
-- L145 ArrayDeclaration: `[tell]` → `[]`
-- L170 ObjectLiteral: `{ broken: false }` → `{}`
-- L205 ConditionalExpression: `look.state === "ready"` → `true`
-- L205 EqualityOperator: `look.state === "ready"` → `look.state !== "ready"`
-- L205 ConditionalExpression: `look.state === "ready"` → `false`
-- L205 StringLiteral: `"ready"` → `""`
-
-### `pages/Common/Reports/print/PrintSheet.tsx`
-
-- L62 ConditionalExpression: `reportsPath === undefined` → `false`
-- L13 ObjectLiteral: `{ "@media print": { display: "none" } }` → `{}`
-- L13 ObjectLiteral: `{ display: "none" }` → `{}`
-- L13 StringLiteral: `"none"` → `""`
-- L15 StringLiteral: `"flex"` → `""`
-- L14 ObjectLiteral: `{ …` → `{}`
-- L16 StringLiteral: `"column"` → `""`
-- L39 StringLiteral: `"#fff"` → `""`
-- L39 StringLiteral: `"exact"` → `""`
-- L40 ObjectLiteral: `{ animation: "none", transition: "none" }` → `{}`
-- L40 StringLiteral: `"none"` → `""`
-- L40 StringLiteral: `"none"` → `""`
-- L39 ObjectLiteral: `{ backgroundColor: "#fff", printColorAdjust: "exact" }` → `{}`
-- L38 ObjectLiteral: `{ …` → `{}`
-
-### `pages/Common/Reports/print/ReportPrintContent.tsx`
-
-- L80 BlockStatement: `{ …` → `{}`
-- L81 StringLiteral: `'The ${owner.kind} ${owner.id} was not found'` → `''`
-- L73 ArrayDeclaration: `["reportPrintOwner", owner.kind, owner.id]` → `[]`
-- L73 StringLiteral: `"reportPrintOwner"` → `""`
-- L80 ConditionalExpression: `found === null \|\| found === undefined` → `false`
-- L80 LogicalOperator: `found === null \|\| found === undefined` → `found === null && found === undefined`
-- L80 ConditionalExpression: `found === null` → `false`
-- L118 ConditionalExpression: `state === "failed"` → `true`
-- L108 ConditionalExpression: `!gone` → `true`
-- L110 BlockStatement: `{ …` → `{}`
-- L111 BooleanLiteral: `true` → `false`
-- L135 ConditionalExpression: `typeof ownerName !== "string"` → `false`
-- L145 ConditionalExpression: `title === undefined` → `false`
-- L248 ConditionalExpression: `ownerName.isError` → `true`
-- L249 ConditionalExpression: `terms.error !== null` → `true`
-- L226 ConditionalExpression: `fonts.state === "loaded"` → `true`
-- L219 ConditionalExpression: `report.data === undefined` → `false`
-- L250 CallExpression: `fonts.askAgainIfFailed();` → `;`
-- L226 LogicalOperator: `drawn && fonts.state === "loaded"` → `drawn \|\| fonts.state === "loaded"`
-
-### `pages/Common/Reports/print/ReportPrintDocument.tsx`
-
-- L148 ObjectLiteral: `{ mt: 0.5 }` → `{}`
-- L169 BooleanLiteral: `false` → `true`
-- L25 StringLiteral: `"10mm"` → `""`
-- L26 StringLiteral: `"16mm"` → `""`
-- L27 StringLiteral: `"4mm"` → `""`
-- L47 StringLiteral: `"flex"` → `""`
-- L48 StringLiteral: `"column"` → `""`
-- L49 StringLiteral: `"flex-end"` → `""`
-- L53 ObjectLiteral: `{ display: "flex", alignItems: "baseline", gap: 3 }` → `{}`
-- L53 StringLiteral: `"baseline"` → `""`
-- L56 ObjectLiteral: `{ …` → `{}`
-- L57 StringLiteral: `"nowrap"` → `""`
-- L58 StringLiteral: `"hidden"` → `""`
-- L59 StringLiteral: `"ellipsis"` → `""`
-- L61 ObjectLiteral: `{ fontSize: "8pt" }` → `{}`
-- L61 StringLiteral: `"8pt"` → `""`
-- L63 ObjectLiteral: `{ ...NAME_PART, flexShrink: 0 }` → `{}`
-- L66 StringLiteral: `"flex"` → `""`
-- L67 StringLiteral: `"center"` → `""`
-- L70 StringLiteral: `"divider"` → `""`
-- L74 ObjectLiteral: `{ "@media print": { display: "table", width: "100%" } }` → `{}`
-- L74 ObjectLiteral: `{ display: "table", width: "100%" }` → `{}`
-- L74 StringLiteral: `"table"` → `""`
-- L74 StringLiteral: `"100%"` → `""`
-- L75 ObjectLiteral: `{ "@media print": { display: "table-row-group" } }` → `{}`
-- L75 ObjectLiteral: `{ display: "table-row-group" }` → `{}`
-- L75 StringLiteral: `"table-row-group"` → `""`
-- L85 StringLiteral: `"none"` → `""`
-- L86 StringLiteral: `"avoid"` → `""`
-- L91 ObjectLiteral: `{ …` → `{}`
-- L94 ObjectLiteral: `{ …` → `{}`
-
-### `pages/Common/Reports/print/browserPrintEffects.ts`
-
-- L169 BlockStatement (no coverage): `{ …` → `{}`
-- L170 StringLiteral (no coverage): `"The print frame has no document"` → `""`
-- L24 MethodExpression: `found.every((matches) => matches.length > 0)` → `found.some(matches => matches.length > 0)`
-- L81 StringLiteral: `"&amp;"` → `""`
-- L82 StringLiteral: `"&quot;"` → `""`
-- L83 StringLiteral: `"&lt;"` → `""`
-- L107 StringLiteral: `'${what} could not be loaded'` → `''`
-- L94 StringLiteral: `"0"` → `""`
-- L97 StringLiteral: `"0"` → `""`
-- L98 StringLiteral: `"none"` → `""`
-- L104 ObjectLiteral: `{ once: true }` → `{}`
-- L104 BooleanLiteral: `true` → `false`
-- L122 StringLiteral: `'The style sheet ${sheet.href}'` → `''`
-- L108 ObjectLiteral: `{ once: true }` → `{}`
-- L108 BooleanLiteral: `true` → `false`
-- L133 StringLiteral: `"The print frame was given up"` → `""`
-- L134 BooleanLiteral: `true` → `false`
-- L134 ObjectLiteral: `{ once: true }` → `{}`
-- L138 CallExpression: `givenUp.catch(() => undefined);` → `;`
-- L163 StringLiteral: `"The print frame"` → `""`
-- L169 ConditionalExpression: `frameWindow === null \|\| frameDocument === null` → `false`
-- L169 LogicalOperator: `frameWindow === null \|\| frameDocument === null` → `frameWindow === null && frameDocument === null`
-- L169 ConditionalExpression: `frameWindow === null` → `false`
-- L169 ConditionalExpression: `frameDocument === null` → `false`
-
-### `pages/Common/Reports/print/printPageState.ts`
-
-- L45 ConditionalExpression: `error !== undefined` → `true`
-
-### `pages/Common/Reports/print/reportPrintRoutes.tsx`
-
-- L30 ObjectLiteral: `{ display: "flex", justifyContent: "center", py: 8 }` → `{}`
-- L30 StringLiteral: `"flex"` → `""`
-- L30 StringLiteral: `"center"` → `""`
-- L77 ArrayDeclaration: `[loadFonts, loadPicture]` → `[]`
-- L56 ArrayDeclaration: `[reportService, teamService, portfolioService]` → `[]`
-- L29 ArrowFunction: `() => ( …` → `() => undefined`
-
-### `pages/Common/Reports/print/usePrintOnce.ts`
-
-- L72 BooleanLiteral: `false` → `true`
-- L94 BlockStatement: `{ …` → `{}`
-- L106 BooleanLiteral: `false` → `true`
-- L96 ArrayDeclaration: `[tell]` → `[]`
-- L123 ArrayDeclaration: `[port]` → `[]`
-
-### `pages/Common/Reports/reportReadFailures.ts`
-
-- L15 ConditionalExpression: `typeof usualRetry === "number"` → `true`
-- L17 ConditionalExpression: `usualRetry === true` → `false`
-
-### `pages/Common/Reports/useReportOpenedReporter.ts`
-
-- L53 CallExpression: `counted.add(opening);` → `;`
-- L53 ConditionalExpression: `sent` → `true`
-- L53 ConditionalExpression: `sent` → `false`
-
-### `pages/Common/Reports/useReportPdfExport.ts`
-
-- L25 ConditionalExpression: `template !== undefined` → `true`
-- L60 BlockStatement: `{ …` → `{}`
-- L68 CallExpression: `takeBack();` → `;`
-- L93 AssignmentOperator: `attempts.current += 1` → `attempts.current -= 1`
-- L58 ArrayDeclaration: `[]` → `["Stryker was here"]`
-- L99 ConditionalExpression: `preparingId !== undefined` → `false`
-- L100 CallExpression: `message.takeBack();` → `;`
-- L108 ArrowFunction: `(current) => …` → `() => undefined`
-- L109 ConditionalExpression: `current?.attempt === attempt` → `true`
-- L89 ArrowFunction: `() => () => clearTimeout(frameRemoval.current)` → `() => undefined`
-- L109 OptionalChaining: `current?.attempt` → `current.attempt`
-- L89 ArrowFunction: `() => clearTimeout(frameRemoval.current)` → `() => undefined`
-- L89 ArrayDeclaration: `[]` → `["Stryker was here"]`
-
-### `pages/Common/Reports/useReportRead.ts`
-
-- L20 OptionalChaining: `useQueryClient().getDefaultOptions().queries?.retry` → `useQueryClient().getDefaultOptions().queries.retry`
-
-### `utils/theme/appThemes.ts`
-
-- L20 ObjectLiteral: `{ …` → `{}`
-- L21 StringLiteral: `"'Quicksand Variable', 'Roboto', 'Arial', sans-serif"` → `""`
-- L22 ObjectLiteral: `{ …` → `{}`
-- L25 ObjectLiteral: `{ …` → `{}`
-- L28 ObjectLiteral: `{ …` → `{}`

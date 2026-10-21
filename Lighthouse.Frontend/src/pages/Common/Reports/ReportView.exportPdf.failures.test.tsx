@@ -258,6 +258,22 @@ describe("When Export PDF cannot make the PDF", () => {
 		await waitFor(() => expect(theErrorSnackbarIsShown()).toBe(false));
 	});
 
+	it(`takes the last failure's message away when the reader chooses Export PDF again`, async () => {
+		const { user } = await exportingFromTheReport({
+			terminologyService: aTerminologyServiceThatCannotReadTheTerms({
+				untilTheRead: 3,
+			}),
+		});
+		await theErrorSnackbar();
+		await everyPrintFrameIsGone();
+		await exportPdfIsIdle();
+
+		await user.click(screen.getByRole("button", { name: EXPORT_PDF }));
+
+		await theFramesHavePrinted(frames);
+		await waitFor(() => expect(theErrorSnackbarIsShown()).toBe(false));
+	});
+
 	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The app reads its terms once and never again on its own, so only the export can ask for them a second time.
 	it(`prints from a fresh frame when Retry asks again for the instance's terms the export could not read`, async () => {

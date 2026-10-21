@@ -5,6 +5,7 @@ import {
 	aMomentLater,
 	aPrintDialog,
 	aPrintFrameBrowser,
+	aTerminologyServiceAnswering,
 	BRANDING,
 	EXPORT_PDF,
 	everyPrintFrameIsGone,
@@ -22,6 +23,7 @@ import {
 	thePrintFrame,
 	thePrintFrames,
 	theReadersHistory,
+	theTermsAnswer,
 	whereTheReaderIs,
 } from "../../../tests/ReportPrintTestKit";
 import {
@@ -100,6 +102,11 @@ const theHeaderActions = async (): Promise<string[]> => {
 		(row as HTMLElement).querySelectorAll<HTMLElement>("button"),
 	).map(readingOf);
 };
+
+/** Whether the page in the print frame says it is ready to print, as automation reads it. */
+const theFramesPaperIsReady = () =>
+	theFramesPage().querySelector<HTMLElement>("[data-render-ready]")?.dataset
+		.renderReady;
 
 const exportsReported = () =>
 	reportUsage.mock.calls.filter(([use]) => use.name === PDF_EXPORT_STARTED);
@@ -267,10 +274,12 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(thePrintFrames()).toHaveLength(1);
 		expect(exportsReported()).toHaveLength(1);
 		expect(frames.timesAFramePrinted()).toBe(0);
+		expect(theFramesPaperIsReady()).toBe("false");
 
 		await fonts.arrive();
 
 		await theFramesHavePrinted(frames);
+		expect(theFramesPaperIsReady()).toBe("true");
 		await waitFor(() =>
 			expect(within(exportPdfNow()).queryByRole("progressbar")).toBeNull(),
 		);
@@ -308,6 +317,8 @@ describe("Export PDF prints the report without leaving it", () => {
 			expect(within(page).getByText("Portfolio Apollo")).toBeVisible();
 			expect(within(page).getByText(BRANDING)).toBeVisible();
 			expect(screen.queryByText(BRANDING)).toBeNull();
+			expect(within(page).queryByRole("link")).toBeNull();
+			expect(within(page).queryByText(/back to/i)).toBeNull();
 
 			const frame = thePrintFrame();
 			const head = frame.contentDocument?.head as HTMLElement;
@@ -330,6 +341,25 @@ describe("Export PDF prints the report without leaving it", () => {
 		} finally {
 			takeTheSheetsAway();
 		}
+	});
+
+	it(`prints with the instance's terms the app already holds, without asking the server for them again`, async () => {
+		aPrintDialog();
+		const frames = aPrintFrameBrowser();
+		const terminologyService = aTerminologyServiceAnswering(
+			Promise.resolve(theTermsAnswer()),
+		);
+		const { user } = onTheReport({ terminologyService });
+		const exportPdf = await theExportButtonOnceItCanBePressed();
+		const readsBefore = vi.mocked(terminologyService.getAllTerminology).mock
+			.calls.length;
+
+		await user.click(exportPdf);
+		await theFramesHavePrinted(frames);
+
+		expect(
+			vi.mocked(terminologyService.getAllTerminology).mock.calls.length,
+		).toBe(readsBefore);
 	});
 
 	// @us-01 @rev-3 @contract-shape:bounded-change

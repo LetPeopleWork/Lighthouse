@@ -115,5 +115,5 @@
 	"thresholds": { "high": 90, "low": 80, "break": null },
 	"jsonReporter": { "fileName": "<scratch>/reports/stryker-6298-frontend.json" },
 	"htmlReporter": { "fileName": "<scratch>/reports/stryker-6298-frontend.html" },
-	"tempDirName": "<scratch>/.stryker-tmp-6298"
+	"tempDirName": ".stryker-tmp-6298"
 }
