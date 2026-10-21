@@ -88,6 +88,9 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 
 	useEffect(() => () => clearTimeout(frameRemoval.current), []);
 
+	// Retry lives in the snackbar, which goes as soon as it is chosen; without this a keyboard reader lands on the page.
+	const exportStarter = useRef<HTMLElement | null>(null);
+
 	// Retry finishes the export the reader already asked for, so it starts a fresh frame and counts nothing.
 	const printFromAFreshFrame = (reportId: number) => {
 		attempts.current += 1;
@@ -98,6 +101,10 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 	const exportPdf = (report: Exported) => {
 		if (preparingId !== undefined) return;
 		message.takeBack();
+		exportStarter.current =
+			document.activeElement instanceof HTMLElement
+				? document.activeElement
+				: null;
 		countTheExport(report);
 		printFromAFreshFrame(report.id);
 	};
@@ -120,7 +127,13 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 			message.say(
 				outcome.message,
 				outcome.retry
-					? { label: RETRY, onClick: () => printFromAFreshFrame(reportId) }
+					? {
+							label: RETRY,
+							onClick: () => {
+								exportStarter.current?.focus();
+								printFromAFreshFrame(reportId);
+							},
+						}
 					: undefined,
 			);
 		};

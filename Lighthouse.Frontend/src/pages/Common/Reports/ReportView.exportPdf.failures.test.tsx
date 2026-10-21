@@ -258,6 +258,21 @@ describe("When Export PDF cannot make the PDF", () => {
 		await waitFor(() => expect(theErrorSnackbarIsShown()).toBe(false));
 	});
 
+	// The snackbar goes when Retry is chosen, and a keyboard reader would otherwise be left at the top of the page.
+	it(`gives the keyboard focus back to Export PDF when the reader chooses Retry`, async () => {
+		const { user } = await exportingFromTheReport({
+			terminologyService: aTerminologyServiceThatCannotReadTheTerms({
+				untilTheRead: 3,
+			}),
+		});
+		const snackbar = await theErrorSnackbar();
+		await everyPrintFrameIsGone();
+
+		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
+
+		expect(screen.getByRole("button", { name: EXPORT_PDF })).toHaveFocus();
+	});
+
 	it(`takes the last failure's message away when the reader chooses Export PDF again`, async () => {
 		const { user } = await exportingFromTheReport({
 			terminologyService: aTerminologyServiceThatCannotReadTheTerms({

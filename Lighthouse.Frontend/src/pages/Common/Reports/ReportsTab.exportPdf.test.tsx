@@ -319,4 +319,24 @@ describe("When Export PDF from the list cannot make the PDF", () => {
 		expect(exportsReported()).toHaveLength(1);
 		expect(theReadersHistory()).toEqual({ path: atTheList, entries: 1 });
 	});
+
+	// The snackbar goes when Retry is chosen, and a keyboard reader would otherwise be left at the top of the page.
+	it(`gives the keyboard focus back to the row's PDF icon when the reader chooses Retry`, async () => {
+		aPrintFrameBrowser();
+		const getReport = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockResolvedValue(theEngagementStartReport());
+		const { user } = onTheList(aReportService({ getReport }), "reader");
+
+		await user.click(
+			await screen.findByLabelText(exportAsPdfLabelOf(ENGAGEMENT_START)),
+		);
+		const snackbar = await theErrorSnackbar();
+		await everyPrintFrameIsGone();
+
+		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
+
+		expect(thePdfIconOf(ENGAGEMENT_START)).toHaveFocus();
+	});
 });
