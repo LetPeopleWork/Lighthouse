@@ -452,7 +452,7 @@ const recordingFontLoads = (
 let theFonts: LoadFonts | undefined;
 
 export const theFontsHaveLoaded = (): FontsAsked => {
-	const fonts = recordingFontLoads(async () => "loaded");
+	const fonts = recordingFontLoads(() => Promise.resolve("loaded"));
 	theFonts = fonts.load;
 	return fonts;
 };
@@ -482,12 +482,11 @@ export const theFontsAreStillLoading = () => {
 export const theFontsCannotLoad = (
 	how: "are not found" | "fail outright",
 ): FontsAsked => {
-	const fonts = recordingFontLoads(async () => {
-		if (how === "fail outright") {
-			throw new Error("the fonts could not be asked for");
-		}
-		return "failed";
-	});
+	const fonts = recordingFontLoads(() =>
+		how === "fail outright"
+			? Promise.reject(new Error("the fonts could not be asked for"))
+			: Promise.resolve("failed"),
+	);
 	theFonts = fonts.load;
 	return fonts;
 };
@@ -514,7 +513,9 @@ const recordingPictureLoads = (
  * The stand-in for the browser's pictures that the next scene hands its print page. jsdom never loads a picture,
  * so unless a test says otherwise every picture the page asks for arrives.
  */
-let thePictures: LoadPicture = recordingPictureLoads(async () => "loaded").load;
+let thePictures: LoadPicture = recordingPictureLoads(() =>
+	Promise.resolve("loaded"),
+).load;
 
 /** The Lighthouse mark still on its way, until the test lets it arrive. */
 export const theLighthouseMarkIsStillLoading = () => {
@@ -537,8 +538,8 @@ export const theLighthouseMarkIsStillLoading = () => {
 /** The Lighthouse mark cannot be loaded, until the test says it can be reached again. */
 export const theLighthouseMarkCannotLoad = () => {
 	let reachable = false;
-	const pictures = recordingPictureLoads(async () =>
-		reachable ? "loaded" : "failed",
+	const pictures = recordingPictureLoads(() =>
+		Promise.resolve(reachable ? "loaded" : "failed"),
 	);
 	thePictures = pictures.load;
 	return {
@@ -560,7 +561,7 @@ const theBrowsersStandIns = () => ({
 
 export const forgetTheBrowser = () => {
 	theFonts = undefined;
-	thePictures = recordingPictureLoads(async () => "loaded").load;
+	thePictures = recordingPictureLoads(() => Promise.resolve("loaded")).load;
 	vi.unstubAllGlobals();
 	forgetThePrintFrames();
 };
@@ -815,7 +816,7 @@ export const theBackControl = (): HTMLElement | undefined =>
 export const aMomentLater = () =>
 	act(async () => {
 		for (let turn = 0; turn < 5; turn++) {
-			await Promise.resolve();
+			await Promise.resolve(); // NOSONAR each turn must end before the next starts, or the event loop gets one turn, not five
 		}
 	});
 

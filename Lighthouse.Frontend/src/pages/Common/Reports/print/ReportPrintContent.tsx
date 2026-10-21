@@ -102,11 +102,14 @@ const useLoadedOnceDrawn = <T,>(
 			return;
 		}
 		let gone = false;
-		load(what)
-			.catch((): PrintLoadState => "failed")
-			.then((outcome) => {
+		load(what).then(
+			(outcome) => {
 				if (!gone) setState(outcome);
-			});
+			},
+			() => {
+				if (!gone) setState("failed");
+			},
+		);
 		return () => {
 			gone = true;
 		};
