@@ -9,7 +9,7 @@ import {
 	within,
 } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	type IWorkTrackingSystemConnection,
 	WorkTrackingSystemConnection,
@@ -435,6 +435,18 @@ describe("changing a connection's Additional Fields asks whether to update its T
 	beforeEach(() => {
 		vi.clearAllMocks();
 		route.id = "7";
+	});
+
+	// Save stays busy for a moment after a press. A test that ends inside that moment leaves the
+	// button to settle after the page is gone, and on the file's last test that is after the test
+	// environment itself is gone, which fails the whole run.
+	afterEach(async () => {
+		const save = screen.queryByRole("button", { name: /^Save$/ });
+		if (save) {
+			await waitFor(() =>
+				expect(save).not.toHaveAttribute("aria-busy", "true"),
+			);
+		}
 	});
 
 	describe("the question before the save", () => {

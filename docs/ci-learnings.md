@@ -426,6 +426,12 @@ get re-applied.
 
 ## Tests
 
+### 2026-10-21 — every test passed and the run still failed: a Save press outlived the file's last test
+- **Symptom**: `Verify Frontend / frontend` red on run 39608625778 with `Test Files 499 passed`, `Tests 8026 passed`, `Errors 1 error`: an `Unhandled Rejection` `ReferenceError: window is not defined` from `dispatchSetState` at `ActionButton.tsx:48` (`setInternalIsWaiting(false)` in its `finally`), "originated in `EditConnection.fieldChange.test.tsx`". The same file passed on the two runs before.
+- **Root cause**: `ActionButton` holds its busy state for at least 300 ms after every press. The file's last test pressed the page's Save, saw the refusal and ended in about 370 ms of its own, with the 300 ms floor still running; vitest then tore down that file's jsdom environment, and the pending state update reached for a `window` that no longer existed. It only bites on a file's **last** test, and only when it ends inside the floor, so it comes and goes with machine speed.
+- **Fix**: an `afterEach` in that file waits until the page's Save no longer carries `aria-busy="true"` before the test is over.
+- **Rule going forward**: a test that presses an `ActionButton` must not end while that button is still busy: wait for its `aria-busy` to clear (or for it to be enabled again) before the test returns, in an `afterEach` when several tests in the file press it. `Errors 1 error` under an all-green test count, with `window is not defined` in a React stack, is this race; find the file it names and look at its last test.
+
 ### 2026-10-19 — a migration test class started a Postgres container per case and spent most of its time waiting for them
 - **Symptom**: `ConnectionDefaultsUpgradeMigrationTests` took 55 s in CI run 39242773897, against the 34 s backend class budget.
 - **Root cause**: each Postgres case started its own `postgres:18-alpine` container through `PostgresContainerFixture.StartFreshAsync()` and threw it away at the end. A start costs 5–8 s; the migrations the case is about take under a second. Seven Postgres cases paid for seven starts. Most other container test classes were written the same way.
@@ -1401,6 +1407,7 @@ get re-applied.
   ```
   The range-scoped override (`pkg@range`) is preferable over a bare `"qs": "^6.15.2"` because the bare form pins the dep across ALL future trees, including ones that legitimately want a newer-than-6.15.1 resolution.
 - **Rule going forward**: Before pushing any Frontend dep change to main, run `pnpm audit --audit-level=low` in `Lighthouse.Frontend/` locally — the gate is per-push on main, and the audit catches transitive vulnerabilities that direct-dep updates wouldn't surface. For any moderate-or-higher vulnerability flagged, the fix shape is: (a) if a direct upgrade of the consumer dep (e.g. `@stryker-mutator/core`) is available with a patched transitive — prefer that; (b) otherwise add a scoped `pnpm.overrides` entry pinning the vulnerable subgraph to its first-patched version using the `pkg@vulnerable-range` form. Avoid bare `"qs": "version"` overrides — they're too broad. The job step is in `ci_sonar_gates.yml:70-73`; do NOT relax `--audit-level=low` to `--audit-level=high` to avoid the gate. The whole point is catching moderate-and-above attack surface before it lands on main.
+- **Recurrence 2026-10-21**: runs 39553270024 and 39591708125 red on GHSA-q3jh-wrc6-jgq8 and GHSA-8r9p-f939-6h3c in `follow-redirects` 1.16.0 (via `axios`). `axios` asks for `^1.16.0`, so the patched 1.16.1 was already inside its range: `pnpm update follow-redirects` moved the lockfile alone, no override needed. Check the parent's range before reaching for an override, and check the patched version is older than pnpm's minimum release age.
 
 ### 2026-08-09 — NUnit2045 on `Slice04QuietWriteBackSpecifications` — the assert-pair rule reaches the *Then* helpers (Recurrence: 8+)
 
