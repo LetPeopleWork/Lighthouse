@@ -72,7 +72,11 @@ export function TerminologyProvider({
 	});
 
 	const refetchTerminology = useCallback(() => {
-		queryClient.invalidateQueries({ queryKey: ["terminology-database"] });
+		queryClient
+			.invalidateQueries({ queryKey: ["terminology-database"] })
+			.catch((error_) => {
+				console.error("Error refreshing the terminology:", error_);
+			});
 		refetch();
 	}, [queryClient, refetch]);
 

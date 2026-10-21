@@ -84,10 +84,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(
@@ -109,10 +106,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(
@@ -134,10 +128,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(
@@ -163,10 +154,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(
@@ -192,10 +180,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(
@@ -217,10 +202,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.click(button);
-		});
+		await userEvent.click(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(screen.getByTestId("license-status-popover")).toBeInTheDocument();
@@ -244,10 +226,7 @@ describe("LicenseStatusIcon", () => {
 
 		renderComponent();
 
-		await waitFor(() => {
-			const button = screen.getByTestId("license-status-button");
-			userEvent.hover(button);
-		});
+		await userEvent.hover(await screen.findByTestId("license-status-button"));
 
 		await waitFor(() => {
 			expect(

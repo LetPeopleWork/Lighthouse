@@ -1111,9 +1111,7 @@ describe("useDeliveryManagement", () => {
 				expect(result.current.isLoading).toBe(false);
 			});
 
-			act(() => {
-				result.current.handleArchiveDelivery(delivery);
-			});
+			await act(() => result.current.handleArchiveDelivery(delivery));
 
 			expect(result.current.archiveDialogOpen).toBe(true);
 			expect(result.current.deliveryToArchive).toEqual(delivery);
@@ -1139,9 +1137,7 @@ describe("useDeliveryManagement", () => {
 				expect(result.current.isLoading).toBe(false);
 			});
 
-			act(() => {
-				result.current.handleArchiveDelivery(delivery);
-			});
+			await act(() => result.current.handleArchiveDelivery(delivery));
 
 			await act(async () => {
 				await result.current.handleArchiveConfirmation(true);
@@ -1174,9 +1170,7 @@ describe("useDeliveryManagement", () => {
 				expect(result.current.isLoading).toBe(false);
 			});
 
-			act(() => {
-				result.current.handleArchiveDelivery(delivery);
-			});
+			await act(() => result.current.handleArchiveDelivery(delivery));
 
 			await act(async () => {
 				await result.current.handleArchiveConfirmation(false);
@@ -1204,9 +1198,7 @@ describe("useDeliveryManagement", () => {
 				expect(result.current.isLoading).toBe(false);
 			});
 
-			act(() => {
-				result.current.handleArchiveDelivery(delivery);
-			});
+			await act(() => result.current.handleArchiveDelivery(delivery));
 
 			await act(async () => {
 				await result.current.handleArchiveConfirmation(true);

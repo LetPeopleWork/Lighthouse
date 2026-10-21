@@ -182,11 +182,11 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 	}
 
 	private async ensureConnected(): Promise<void> {
-		if (!this.connectionPromise && !this.isConnected) {
+		if (this.connectionPromise === null && !this.isConnected) {
 			this.connectionPromise = this.connect();
 		}
 
-		if (this.connectionPromise) {
+		if (this.connectionPromise !== null) {
 			await this.connectionPromise;
 		}
 	}

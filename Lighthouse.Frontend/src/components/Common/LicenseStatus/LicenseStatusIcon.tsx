@@ -41,7 +41,11 @@ const LicenseStatusIcon: React.FC = () => {
 
 	const handleLicenseImported = (newLicenseStatus: ILicenseStatus) => {
 		// Invalidate the license status query to refetch
-		queryClient.invalidateQueries({ queryKey: ["licenseStatus"] });
+		queryClient
+			.invalidateQueries({ queryKey: ["licenseStatus"] })
+			.catch((error_) => {
+				console.error("Error refreshing the license status:", error_);
+			});
 		// Update the cache immediately with the new data
 		queryClient.setQueryData(["licenseStatus"], newLicenseStatus);
 		// Close the popover
