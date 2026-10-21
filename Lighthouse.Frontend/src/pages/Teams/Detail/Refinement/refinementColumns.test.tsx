@@ -122,6 +122,7 @@ describe("the vote column's header", () => {
 		render(
 			// biome-ignore lint/a11y/noStaticElementInteractions: stands in for the grid's clickable column header
 			// biome-ignore lint/a11y/useKeyWithClickEvents: only the click is under test
+			// biome-ignore lint/a11y/noNoninteractiveElementInteractions: stands in for the grid's clickable column header
 			<div onClick={headerClicked}>
 				{column?.renderHeader?.(
 					{} as GridColumnHeaderParams<RefinementGridRow>,
