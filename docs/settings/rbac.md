@@ -64,6 +64,7 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | Read assigned team / portfolio (metrics, features, etc.) | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Create, edit and delete [reports](../reports/reports.html) on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
 | Read [reports](../reports/reports.html) on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
+| [Export a report as a PDF](../reports/reports.html#export-pdf): anyone who can read the report | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
 | Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
 | List work tracking system connections | ✅ | ✅ | ✅ | ✅ |

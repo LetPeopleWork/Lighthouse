@@ -37,6 +37,7 @@ Lighthouse also ships ready-to-download assets from the latest `lighthouse-clien
 - [lighthouse-mcp-stdio.mcpb](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-mcp-stdio.mcpb) for one-click MCP bundle installation in clients that support the [MCPB format](https://github.com/modelcontextprotocol/mcpb)
 - [lighthouse-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-skill.zip) for installing the Lighthouse agent skill directly as a reusable Lighthouse-specific guidance pack
 - [lighthouse-refinement-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-refinement-skill.zip) and [lighthouse-daily-flow-review-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-daily-flow-review-skill.zip), two skills for recurring Team routines, see [Skills for Team Routines](#skills-for-team-routines)
+- [lighthouse-reports-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-reports-skill.zip), a skill that shows a saved report the way Lighthouse shows it, see [Skill for Reports](#skill-for-reports)
 
 Think of these as two different deliverables:
 
@@ -126,6 +127,23 @@ Another common automation pattern is to list teams, pick an ID, and run a foreca
 LIGHTHOUSE_API_KEY=<key> lh team list --json
 LIGHTHOUSE_API_KEY=<key> lh forecast manual --team-id 1 --remaining 12 --json
 ```
+
+### Read a Report
+
+The [reports](./reports/reports.html) of a Team or Portfolio can be read too. List them to find a report's ID, then read it:
+
+```bash
+LIGHTHOUSE_API_KEY=<key> lh report list --team-id 1 --json
+LIGHTHOUSE_API_KEY=<key> lh report get --team-id 1 --id 3 --json
+```
+
+Use `--portfolio-id` instead of `--team-id` for a Portfolio's reports. The same reads are available over MCP as `lighthouse_team_report_list`, `lighthouse_team_report_get`, `lighthouse_portfolio_report_list` and `lighthouse_portfolio_report_get`.
+
+- **Read-only.** The CLI and the MCP tools never create, change or delete a report.
+- **Raw values.** With `--json` (or over MCP), you get the report as Lighthouse sends it: both windows and every value, unrounded, with no change or percentage worked out. For a Then & Now report, Then is the value frozen when the report was created, never rebuilt from today's metrics. Without `--json`, `lh` prints a short summary: the report's name, its Team or Portfolio and its windows.
+- **Your own permissions.** A reader without access to the Team or Portfolio is told so. A Lighthouse older than Reports is named as the reason, with a hint to upgrade.
+
+To lay a report out as a dashboard or a document, with the change and the percentage exactly as the Reports tab shows them, use the [Skill for Reports](#skill-for-reports).
 
 ## MCP for AI Clients
 
@@ -321,6 +339,20 @@ Downloads:
 
 - [lighthouse-refinement-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-refinement-skill.zip)
 - [lighthouse-daily-flow-review-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-daily-flow-review-skill.zip)
+
+### Skill for Reports
+
+The **Reports** skill shows a report saved in Lighthouse to someone outside Lighthouse: as a one-page dashboard, a slide, a table or a document. It reads the report through the [report tools](#read-a-report) and lays it out the way the Reports tab does, so every number, date and word is the one Lighthouse shows:
+
+- A header with the Team or Portfolio, the report, both windows and the day it was read.
+- The summary, then one block per metric with Then, Now, the change and the percentage, rounded as in Lighthouse.
+- A "—" stays a "—", with its reason. Then is never rebuilt from today's metrics.
+- The terms your Lighthouse uses, such as your own word for Work Items.
+- "Data from Lighthouse by LetPeopleWork" at the end.
+
+If you ask for the assistant's own take, it goes under its own heading, apart from the report's numbers. Without a connection to Lighthouse, the skill works from an [exported PDF](./reports/reports.html#export-pdf) or values you paste, and says so in the header. Today the skill knows the Then & Now report. Import it the same way as the Lighthouse skill, which it builds on. Try: "Make a one-page dashboard of Team Lightspeed's Then & Now report for our sponsor."
+
+Download: [lighthouse-reports-skill.zip](https://github.com/LetPeopleWork/lighthouse-clients/releases/latest/download/lighthouse-reports-skill.zip)
 
 ## Example Prompts and Workflows
 

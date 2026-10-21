@@ -71,6 +71,18 @@ Some lines cannot be compared:
 - A **—** means there was nothing to measure, for example no Work Item was closed in the window.
 - **Not captured for this report** means the value did not exist when the report was created, because it was added to Lighthouse later.
 
+# In the PDF
+
+You can [export a Then & Now report as a PDF](./reports.html#export-pdf) to share it. On paper, it reads like this:
+
+- **Every page starts with one line**: the Team or Portfolio, the report's name, both windows, for example "Then 3 Jun – 31 Aug 2026 · Now 23 Jul – 20 Oct 2026", and when the PDF was produced. So a page that gets separated from the rest still says what it shows.
+- **The first page** carries the report's name as its title, then the summary and the panels, as on screen.
+- **Every panel keeps THEN, NOW and CHANGE side by side**, even on paper narrower than your screen, so each CHANGE stays on the same line as the values it compares.
+- **The summary and each panel stay whole.** A panel that does not fit at the bottom of a page moves to the next one. A report with all four panels usually takes two A4 pages.
+- **Every page ends with the Lighthouse mark** and "Made with Lighthouse by LetPeopleWork · letpeople.work". There are no page numbers.
+
+The PDF is laid out for A4 portrait, and it is always light, even if you use Lighthouse in the dark theme. The green and red of the CHANGE column print as on screen. The arrows and signs carry the same meaning, so a black-and-white printout still reads correctly.
+
 # Editing a Then & Now Report
 
 In edit mode, the wizard shows **Type** and **Then** locked: Then is frozen and cannot be changed. You can change Now's length, which metrics are shown, and the name. A metric that was not captured when the report was created cannot be selected.
