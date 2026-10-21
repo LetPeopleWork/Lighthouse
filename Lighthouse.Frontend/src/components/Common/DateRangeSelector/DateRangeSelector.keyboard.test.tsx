@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { inSequence } from "../../../tests/inSequence";
 import DateRangeSelector from "./DateRangeSelector";
 
 /**
@@ -254,10 +255,10 @@ describe("DateRangeSelector when the range moves underneath it", () => {
 
 		// An emptied field holds no date at all rather than an unusable one, which
 		// is the case a comparison against the draft has to survive.
-		for (const section of ["Day", "Month", "Year"]) {
+		await inSequence(["Day", "Month", "Year"], async (section) => {
 			await user.click(startSection(section));
 			await user.keyboard("{Delete}");
-		}
+		});
 		moveRangeStartTo(MOVED_START_DATE);
 
 		expectStartFieldToRead("09", "03", "2026");

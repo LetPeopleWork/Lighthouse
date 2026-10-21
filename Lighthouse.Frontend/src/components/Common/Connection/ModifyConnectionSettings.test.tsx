@@ -17,6 +17,7 @@ import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
 import { EXPECTED_TEST_FAILURE } from "../../../tests/ExpectedTestFailure";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	createMockApiServiceContext,
 	createMockSystemInfoService,
@@ -1072,22 +1073,22 @@ describe("ModifyConnectionSettings", () => {
 		it("shows the same notice word for word for every work tracking system", async () => {
 			const wording: string[] = [];
 
-			for (const system of [
-				mockSystem,
-				mockJiraSystem,
-				systemWithTwoCredentials,
-			]) {
-				const { unmount } = renderFormFor(system);
-				await waitFor(() => {
-					expect(
-						screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
-					).toBeInTheDocument();
-				});
-				wording.push(
-					screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ?? "",
-				);
-				unmount();
-			}
+			await inSequence(
+				[mockSystem, mockJiraSystem, systemWithTwoCredentials],
+				async (system) => {
+					const { unmount } = renderFormFor(system);
+					await waitFor(() => {
+						expect(
+							screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID),
+						).toBeInTheDocument();
+					});
+					wording.push(
+						screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ??
+							"",
+					);
+					unmount();
+				},
+			);
 
 			expect(wording).toHaveLength(3);
 			expect(new Set(wording).size).toBe(1);

@@ -19,6 +19,8 @@ import type {
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
+import { actAndSettle } from "../../../tests/actAndSettle";
+import { inSequence } from "../../../tests/inSequence";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
@@ -210,13 +212,13 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
 		expect(await screen.findByText("Stages (optional)")).toBeVisible();
-		for (const stage of [READY_WHEN, BEING_REFINED_WHEN]) {
+		await inSequence([READY_WHEN, BEING_REFINED_WHEN], async (stage) => {
 			const group = await theStageGroup(stage);
 			expect(
 				within(group).getByRole("button", { name: /^Add Rule$/i }),
 			).toBeEnabled();
 			expect(within(group).queryByLabelText("Value")).not.toBeInTheDocument();
-		}
+		});
 
 		await pastTheAutosaveDelay();
 		expect(saveTeamSettings).not.toHaveBeenCalled();
@@ -772,13 +774,13 @@ describe("The band in the Refinement section of a Team's settings", () => {
 	it("marks neither end while the band is valid, and shows each end in percent", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
-		for (const label of [LOW_END, HIGH_END]) {
+		await inSequence([LOW_END, HIGH_END], async (label) => {
 			const field = await screen.findByRole("spinbutton", { name: label });
 			expect(field).not.toHaveAttribute("aria-invalid", "true");
 			expect(
 				within(field.parentElement as HTMLElement).getByText("%"),
 			).toBeVisible();
-		}
+		});
 	});
 
 	// @us-07 @slice-07 @error @a11y @contract-shape:unbounded-preservation
@@ -982,7 +984,7 @@ describe("The stage rules of a single Team", () => {
 		);
 		await screen.findByText(READY_EMPTY);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheFirstTeam({ ...workItemRuleSchema, fields: [] });
 		});
 

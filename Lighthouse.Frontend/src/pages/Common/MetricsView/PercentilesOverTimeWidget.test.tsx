@@ -12,6 +12,7 @@ import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/Percen
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { OptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
+import { inSequence } from "../../../tests/inSequence";
 import { certainColor, riskyColor } from "../../../utils/theme/colors";
 import PercentilesOverTimeWidget, {
 	PERCENTILES_OVER_TIME_EMPTY_COPY,
@@ -777,19 +778,22 @@ describe("PercentilesOverTimeWidget", () => {
 		);
 
 		// Age → 60 → 90: one fetch each, cached per SELECTION not per horizon.
-		for (const testId of [
-			"percentiles-selection-age",
-			"percentiles-horizon-60",
-			"percentiles-horizon-90",
-		]) {
-			fireEvent.click(screen.getByTestId(testId));
-			await waitFor(() =>
-				expect(screen.getByTestId(testId)).toHaveAttribute(
-					"aria-pressed",
-					"true",
-				),
-			);
-		}
+		await inSequence(
+			[
+				"percentiles-selection-age",
+				"percentiles-horizon-60",
+				"percentiles-horizon-90",
+			],
+			async (testId) => {
+				fireEvent.click(screen.getByTestId(testId));
+				await waitFor(() =>
+					expect(screen.getByTestId(testId)).toHaveAttribute(
+						"aria-pressed",
+						"true",
+					),
+				);
+			},
+		);
 		expect(getPercentilesOverTime).toHaveBeenCalledTimes(4);
 
 		// Back to Age and back to 30: both already cached, so no further fetches.

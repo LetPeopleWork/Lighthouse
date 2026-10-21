@@ -25,6 +25,7 @@ import {
 	type HeldMetricsService,
 	type MetricsMethod,
 } from "../../../tests/HeldMetricsService";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
@@ -227,9 +228,11 @@ async function openTheFlowMetrics(owner: Owner): Promise<void> {
 
 	// The page asks in waves (the window settles, then each category's requests go out), so it is
 	// answered until the bars are on screen rather than a fixed number of times.
-	for (let wave = 0; wave < 10 && !theBars(); wave++) {
-		await act(async () => held.answer({ except: itemsMethodFor(owner) }));
-	}
+	await inSequence(Array.from({ length: 10 }), async () => {
+		if (!theBars()) {
+			await act(async () => held.answer({ except: itemsMethodFor(owner) }));
+		}
+	});
 }
 
 const theBars = () =>

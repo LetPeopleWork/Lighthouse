@@ -6,6 +6,7 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { inSequence } from "../../../tests/inSequence";
 import type { DashboardItem } from "./Dashboard";
 
 // Helper to simulate different viewport widths by controlling matchMedia
@@ -130,13 +131,13 @@ describe("Dashboard component", () => {
 			xs: 300,
 		} as const;
 
-		for (const s of sizes) {
+		await inSequence(sizes, async (s) => {
 			expect(await getColSpanFor(s.size, breakpoints.xl)).toBe(s.expected.xl);
 			expect(await getColSpanFor(s.size, breakpoints.lg)).toBe(s.expected.lg);
 			expect(await getColSpanFor(s.size, breakpoints.md)).toBe(s.expected.md);
 			expect(await getColSpanFor(s.size, breakpoints.sm)).toBe(s.expected.sm);
 			expect(await getColSpanFor(s.size, breakpoints.xs)).toBe(s.expected.xs);
-		}
+		});
 	});
 
 	it("does not expose edit, hide, reorder, or resize controls", async () => {

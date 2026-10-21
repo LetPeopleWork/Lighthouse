@@ -8,6 +8,7 @@ import type { IFeature } from "../models/Feature";
 import type { IWorkItem, IWorkItemEstimate } from "../models/WorkItem";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../services/Api/FeatureService";
+import { inSequence } from "./inSequence";
 import {
 	createMockApiServiceContext,
 	createMockFeatureService,
@@ -259,7 +260,7 @@ export async function turnColumns(
 	scope: GridScope = theDialog,
 ): Promise<void> {
 	await openManageColumns(user, scope);
-	for (const [field, shown] of changes) {
+	await inSequence(changes, async ([field, shown]) => {
 		const box = checkboxesOffered().find(
 			(candidate) => candidate.getAttribute("name") === field,
 		);
@@ -269,7 +270,7 @@ export async function turnColumns(
 		if (box.checked !== shown) {
 			await user.click(box); // NOSONAR each click re-renders the Manage columns panel, so clicks must not overlap and run in the order given
 		}
-	}
+	});
 	await user.keyboard("{Escape}");
 }
 

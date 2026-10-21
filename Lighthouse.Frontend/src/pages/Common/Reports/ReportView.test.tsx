@@ -9,6 +9,7 @@ import type {
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { deferred } from "../../../tests/HeldMetricsService";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	A_LATER_METRIC,
 	aDash,
@@ -1370,11 +1371,11 @@ describe("Values a report cannot show", () => {
 		report.thenAndNow.metrics["work-item-age"] = undefined;
 		openTheReport(report);
 
-		for (const title of [WIP_PANEL, AGE_PANEL]) {
+		await inSequence([WIP_PANEL, AGE_PANEL], async (title) => {
 			const panel = await thePanel(title);
 			expect(readingOf(panel)).toContain(NOT_CAPTURED);
 			expect(readingOf(panel)).not.toMatch(/Average \d/);
-		}
+		});
 		expect(readingOfSegment(await thePanel(CYCLE_TIME_PANEL), "then")).toMatch(
 			/ 85th 21 days /,
 		);

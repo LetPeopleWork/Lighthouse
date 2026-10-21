@@ -43,6 +43,7 @@ import type { ITerminologyService } from "../services/Api/TerminologyService";
 import type { IUsageDataService } from "../services/Api/UsageDataService";
 import { TerminologyProvider } from "../services/TerminologyContext";
 import { deferred } from "./HeldMetricsService";
+import { inSequence } from "./inSequence";
 import {
 	createMockApiServiceContext,
 	createMockPortfolioService,
@@ -814,11 +815,7 @@ export const theBackControl = (): HTMLElement | undefined =>
 
 /** Lets a few turns of the event loop pass, so "nothing happened" is not merely "not yet". */
 export const aMomentLater = () =>
-	act(async () => {
-		for (let turn = 0; turn < 5; turn++) {
-			await Promise.resolve(); // NOSONAR each turn must end before the next starts, or the event loop gets one turn, not five
-		}
-	});
+	act(() => inSequence(Array.from({ length: 5 }), () => Promise.resolve()));
 
 /** The print page's footer, found by the credit it carries. */
 export const theFooter = (): HTMLElement => {

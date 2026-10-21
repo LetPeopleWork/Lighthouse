@@ -1,6 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import { inSequence } from "../../../../tests/inSequence";
 import {
 	aBrowserThatVotedBefore,
 	aNeedOfFiveToEight,
@@ -298,13 +299,11 @@ describe("The Refinement tab names the next Refinement", () => {
 		await screen.findByText(NO_CADENCE);
 		const icon = screen.getByRole("button", { name: READER_HINT });
 
-		for (
-			let presses = 0;
-			presses < 20 && icon !== document.activeElement;
-			presses++
-		) {
-			await user.tab();
-		}
+		await inSequence(Array.from({ length: 20 }), async () => {
+			if (icon !== document.activeElement) {
+				await user.tab();
+			}
+		});
 
 		expect(icon).toHaveFocus();
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(READER_HINT);

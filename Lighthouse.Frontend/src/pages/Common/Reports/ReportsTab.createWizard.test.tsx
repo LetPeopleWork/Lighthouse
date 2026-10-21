@@ -7,7 +7,9 @@ import type {
 	ReportMetricKey,
 } from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import { deferred } from "../../../tests/HeldMetricsService";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	A_LATER_METRIC,
 	APOLLO,
@@ -511,11 +513,11 @@ describe("Step three: Now", () => {
 		expect(await theWizard()).toHaveTextContent(
 			"Sliding window, always ending today",
 		);
-		for (const preset of ["30 days", "90 days"]) {
+		await inSequence(["30 days", "90 days"], async (preset) => {
 			expect(
 				within(await theWizard()).getByRole("button", { name: preset }),
 			).toHaveAttribute("aria-pressed", "false");
-		}
+		});
 		expect(
 			within(await theWizard()).getByRole("button", { name: "Next" }),
 		).toBeEnabled();
@@ -656,9 +658,12 @@ describe("Step four: metrics and name", () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
-		for (const name of ["Lead Time", "Throughput", "WIP", "Work Item Age"]) {
-			expect(await theMetricBox(name)).toBeChecked();
-		}
+		await inSequence(
+			["Lead Time", "Throughput", "WIP", "Work Item Age"],
+			async (name) => {
+				expect(await theMetricBox(name)).toBeChecked();
+			},
+		);
 		expect(await theWizard()).not.toHaveTextContent("Cycle Time");
 	});
 
@@ -667,9 +672,12 @@ describe("Step four: metrics and name", () => {
 		await openTheWizard();
 		await onToTheLastStep();
 
-		for (const name of ["Cycle Time", "Throughput", "WIP", "Work Item Age"]) {
-			await userEvent.click(await theMetricBox(name));
-		}
+		await inSequence(
+			["Cycle Time", "Throughput", "WIP", "Work Item Age"],
+			async (name) => {
+				await userEvent.click(await theMetricBox(name));
+			},
+		);
 
 		expect(await theCreateButton()).toBeDisabled();
 		expect(await theWizard()).toHaveTextContent(NO_METRIC);
@@ -701,9 +709,12 @@ describe("Step four: metrics and name", () => {
 		);
 		await onToTheLastStep();
 
-		for (const name of ["Cycle Time", "Throughput", "WIP", "Work Item Age"]) {
-			expect(await theMetricBox(name)).toBeChecked();
-		}
+		await inSequence(
+			["Cycle Time", "Throughput", "WIP", "Work Item Age"],
+			async (name) => {
+				expect(await theMetricBox(name)).toBeChecked();
+			},
+		);
 		expect(within(await theWizard()).getAllByRole("checkbox")).toHaveLength(4);
 		expect(
 			within(await theWizard()).queryByRole("checkbox", {
@@ -1017,9 +1028,12 @@ describe("The wizard's steps", () => {
 	it("names its steps Type, Then, Now and Metrics & name", async () => {
 		await openTheWizard();
 
-		for (const step of ["Type", "Then", "Now", "Metrics & name"]) {
-			expect(within(await theWizard()).getByText(step)).toBeVisible();
-		}
+		await inSequence(
+			["Type", "Then", "Now", "Metrics & name"],
+			async (step) => {
+				expect(within(await theWizard()).getByText(step)).toBeVisible();
+			},
+		);
 	});
 
 	it("offers no way back from the first step", async () => {
@@ -1088,7 +1102,7 @@ describe("The wizard while its bounds are read", () => {
 		await next();
 		await theThenLengthField();
 
-		await act(async () => {
+		await actAndSettle(() => {
 			focusManager.setFocused(false);
 			focusManager.setFocused(true);
 		});

@@ -7,6 +7,7 @@ import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBeh
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { OptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
+import { inSequence } from "../../../tests/inSequence";
 import PbcOverTimeWidget, {
 	PBC_OVER_TIME_EMPTY_COPY,
 } from "./PbcOverTimeWidget";
@@ -511,23 +512,26 @@ describe("PbcOverTimeWidget", () => {
 		);
 		await screen.findByTestId("mock-line-chart");
 
-		for (const [testId, wireValue] of [
-			["pbc-metric-workitemage", "WorkItemAge"],
-			["pbc-metric-wip", "Wip"],
-			["pbc-metric-cycletime", "CycleTime"],
-			["pbc-metric-arrivals", "Arrivals"],
-			["pbc-metric-featuresize", "FeatureSize"],
-		]) {
-			fireEvent.click(screen.getByTestId(testId));
-			await waitFor(() =>
-				expect(getProcessBehaviorOverTime).toHaveBeenLastCalledWith(
-					OWNER_ID,
-					wireValue,
-					RANGE_START,
-					RANGE_END,
-				),
-			);
-		}
+		await inSequence(
+			[
+				["pbc-metric-workitemage", "WorkItemAge"],
+				["pbc-metric-wip", "Wip"],
+				["pbc-metric-cycletime", "CycleTime"],
+				["pbc-metric-arrivals", "Arrivals"],
+				["pbc-metric-featuresize", "FeatureSize"],
+			],
+			async ([testId, wireValue]) => {
+				fireEvent.click(screen.getByTestId(testId));
+				await waitFor(() =>
+					expect(getProcessBehaviorOverTime).toHaveBeenLastCalledWith(
+						OWNER_ID,
+						wireValue,
+						RANGE_START,
+						RANGE_END,
+					),
+				);
+			},
+		);
 	});
 
 	it("re-plots a previously visited family from the cache without a second request", async () => {

@@ -6,6 +6,7 @@ import type { Team } from "../models/Team/Team";
 import TeamForecastView from "../pages/Teams/Detail/TeamForecastView";
 import type { IApiServiceContext } from "../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { inSequence } from "./inSequence";
 import { createMockApiServiceContext } from "./MockApiServiceProvider";
 
 /**
@@ -468,13 +469,11 @@ export const tabUntilFocused = async (
 	target: HTMLElement,
 	mostPresses = 200,
 ): Promise<void> => {
-	for (
-		let press = 0;
-		press < mostPresses && document.activeElement !== target;
-		press++
-	) {
-		await userEvent.tab(); // NOSONAR each press moves focus and the loop stops once it lands, so presses cannot overlap
-	}
+	await inSequence(Array.from({ length: mostPresses }), async () => {
+		if (document.activeElement !== target) {
+			await userEvent.tab();
+		}
+	});
 	expect(document.activeElement, "the keyboard never reached it").toBe(target);
 };
 

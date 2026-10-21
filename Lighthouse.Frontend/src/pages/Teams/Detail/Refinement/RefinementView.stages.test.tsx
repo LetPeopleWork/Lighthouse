@@ -1,6 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
+import { inSequence } from "../../../../tests/inSequence";
 import {
 	aRow,
 	defaultRefinementTerms,
@@ -213,11 +214,11 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		expect(
 			within(await theRowOf("GR-059")).getByLabelText(SIGNALS_DISAGREE),
 		).toBeInTheDocument();
-		for (const agreeing of ["GR-058", "GR-051", "GR-073"]) {
+		await inSequence(["GR-058", "GR-051", "GR-073"], async (agreeing) => {
 			expect(
 				within(await theRowOf(agreeing)).queryByLabelText(SIGNALS_DISAGREE),
 			).not.toBeInTheDocument();
-		}
+		});
 	});
 
 	// @us-03 @slice-03 @boundary @contract-shape:pure-function

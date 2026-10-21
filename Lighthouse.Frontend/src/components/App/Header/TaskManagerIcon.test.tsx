@@ -21,6 +21,7 @@ import type {
 	IUpdateSubscriptionService,
 	IUpdateTask,
 } from "../../../services/UpdateSubscriptionService";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	createMockApiServiceContext,
 	createMockConnectionHealthService,
@@ -383,8 +384,9 @@ describe("TaskManagerIcon", () => {
 		const service = renderIcon([aRunningTeam], (s) => {
 			s.subscribeToAllUpdates = vi
 				.fn()
-				.mockImplementation(async (callback: () => void) => {
+				.mockImplementation((callback: () => void) => {
 					announcers.push(callback);
+					return Promise.resolve();
 				});
 		});
 
@@ -622,12 +624,12 @@ describe("TaskManagerIcon", () => {
 
 			await openThePopover();
 
-			for (const section of THE_THREE_SECTIONS) {
+			await inSequence(THE_THREE_SECTIONS, async (section) => {
 				const heading = await screen.findByTestId(section);
 
 				expect(heading.querySelector("svg")).not.toBeNull();
 				expect(heading.closest("button")).toBeNull();
-			}
+			});
 		});
 
 		// AC-07A.8 — a regression guard rather than a repair. The heading already resolves the tenant's

@@ -14,6 +14,7 @@ import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import type { IWorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	createMockApiServiceContext,
 	createMockOAuthService,
@@ -1384,18 +1385,22 @@ describe("CreateConnectionWizard", () => {
 		it("shows the same notice word for word for every work tracking system", async () => {
 			const wording: string[] = [];
 
-			for (const [system, firstFieldLabel] of [
-				[mockAdoSystem, "Access Token"],
-				[mockJiraSystem, "API Token"],
-				[mockLinearSystem, "API Key"],
-				[systemWithTwoCredentials, "API Token"],
-			] as const) {
-				await openConfigurationStepFor(system, firstFieldLabel);
-				wording.push(
-					screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ?? "",
-				);
-				cleanup();
-			}
+			await inSequence(
+				[
+					[mockAdoSystem, "Access Token"],
+					[mockJiraSystem, "API Token"],
+					[mockLinearSystem, "API Key"],
+					[systemWithTwoCredentials, "API Token"],
+				] as const,
+				async ([system, firstFieldLabel]) => {
+					await openConfigurationStepFor(system, firstFieldLabel);
+					wording.push(
+						screen.getByTestId(SECRET_HANDLING_NOTICE_TEST_ID).textContent ??
+							"",
+					);
+					cleanup();
+				},
+			);
 
 			expect(wording).toHaveLength(4);
 			expect(new Set(wording).size).toBe(1);

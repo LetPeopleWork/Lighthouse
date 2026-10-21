@@ -2,6 +2,7 @@ import { act, cleanup, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IYardstick } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { inSequence } from "../../../../tests/inSequence";
 import {
 	defaultRefinementTerms,
 	gravitysRefinement,
@@ -247,13 +248,11 @@ describe("The Refinement tab asks one question against one number", () => {
 			screen.getByRole("columnheader", { name: "Work Item Name" }).focus(),
 		);
 
-		for (
-			let presses = 0;
-			presses < 20 && icon !== document.activeElement;
-			presses++
-		) {
-			await user.tab();
-		}
+		await inSequence(Array.from({ length: 20 }), async () => {
+			if (icon !== document.activeElement) {
+				await user.tab();
+			}
+		});
 
 		expect(icon).toHaveFocus();
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(tooltip);

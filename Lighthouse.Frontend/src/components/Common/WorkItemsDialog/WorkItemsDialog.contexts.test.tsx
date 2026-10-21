@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import { WhenForecast } from "../../../models/Forecasts/WhenForecast";
 import type { IWorkItem } from "../../../models/WorkItem";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	aFeature,
 	aWorkItem,
@@ -1319,12 +1320,12 @@ describe("what each catalogue column says, and how it sorts", () => {
 				);
 			}
 
-			for (const field of fields) {
+			await inSequence(fields, async (field) => {
 				const before = columnHeader(field).getAttribute("aria-sort");
 				await user.click(columnHeader(field));
 
 				expect(columnHeader(field).getAttribute("aria-sort")).not.toBe(before);
-			}
+			});
 		},
 		RENDER_HEAVY,
 	);

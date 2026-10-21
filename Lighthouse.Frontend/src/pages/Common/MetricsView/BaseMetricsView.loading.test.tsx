@@ -23,12 +23,14 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import {
 	createHeldMetricsService,
 	type HeldMetricsService,
 	usualAnswer,
 	windowOf,
 } from "../../../tests/HeldMetricsService";
+import { inSequence } from "../../../tests/inSequence";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
@@ -695,9 +697,9 @@ describe("a team's chart when windows are picked in quick succession", () => {
 		for (const window of arrivalOrder) {
 			expect(held.pending({ method: "getThroughput", window })).toHaveLength(1);
 		}
-		for (const window of arrivalOrder) {
+		await inSequence(arrivalOrder, async (window) => {
 			await throughputAnswersFor(window);
-		}
+		});
 
 		expectThroughputToRead(7);
 	}
@@ -1687,7 +1689,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	it("says there is no data, not zeros, when the Team finished no Feature in the window", async () => {
 		openTheDashboard("team", "flow-overview");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			held.answer({ method: "getSizePercentiles" }, []);
 			held.answer(
 				{ method: "getFeatureSizePercentilesInfo" },
@@ -1741,7 +1743,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		async (status, workItems) => {
 			openTheDashboard("team", "flow-overview");
 
-			await act(async () => {
+			await actAndSettle(() => {
 				held.answer({ method: "getSizePercentiles" }, teamPercentiles);
 				held.answer({ method: "getAllFeaturesForSizeChart" }, [
 					anOpenFeatureOfWhichTheTeamHas(workItems),
@@ -1775,7 +1777,7 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	])("reads Sustain when the Team has %s", async (_situation, features) => {
 		openTheDashboard("team", "flow-overview");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			held.answer({ method: "getSizePercentiles" }, teamPercentiles);
 			held.answer({ method: "getAllFeaturesForSizeChart" }, features);
 		});

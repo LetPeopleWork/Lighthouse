@@ -151,24 +151,26 @@ const LighthouseVersion: React.FC = () => {
 		}
 	};
 
-	const waitForBackendRestart = async () => {
-		// Wait for the backend to restart by polling the version endpoint
-		const maxAttempts = 60; // 2 minutes
-		const delay = 2000; // 2 seconds
-
-		for (let i = 0; i < maxAttempts; i++) {
-			try {
-				await new Promise((resolve) => setTimeout(resolve, delay));
-				await versionService.getCurrentVersion();
-				// If we get here, the backend is back online
-				setShowRestartDialog(true);
-				return;
-			} catch {
-				// Backend is still restarting, continue polling
-			}
+	const backendAnswers = async () => {
+		try {
+			await versionService.getCurrentVersion();
+			return true;
+		} catch {
+			return false;
 		}
+	};
 
-		// If we get here, the backend didn't come back online
+	// Polls the version endpoint every 2 seconds, for up to 2 minutes, until the restarted backend answers.
+	const waitForBackendRestart = async (attemptsLeft = 60): Promise<void> => {
+		await new Promise((resolve) => setTimeout(resolve, 2000));
+		if (await backendAnswers()) {
+			setShowRestartDialog(true);
+			return;
+		}
+		if (attemptsLeft > 1) {
+			await waitForBackendRestart(attemptsLeft - 1);
+			return;
+		}
 		setInstallError(
 			"Update may have succeeded, but the application didn't restart properly. Please refresh the page.",
 		);

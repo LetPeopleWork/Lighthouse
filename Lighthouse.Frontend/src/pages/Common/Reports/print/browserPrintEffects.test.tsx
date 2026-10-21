@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { deferred } from "../../../../tests/HeldMetricsService";
+import { inSequence } from "../../../../tests/inSequence";
 import { browserPrintEffects, openPrintFrame } from "./browserPrintEffects";
 
 /**
@@ -180,14 +181,16 @@ const theBrowserHoldsTheTypeface = (refused: readonly string[] = []) => {
 			style: "normal",
 			weight: "300 700",
 			status: "unloaded",
-			load: async () => {
+			load: () => {
 				if (refused.includes(part.name)) {
 					face.status = "error";
-					throw new Error(`the ${part.name} part could not be fetched`);
+					return Promise.reject(
+						new Error(`the ${part.name} part could not be fetched`),
+					);
 				}
 				fetched.add(part.name);
 				face.status = "loaded";
-				return face;
+				return Promise.resolve(face);
 			},
 		};
 		return { part, face };
@@ -284,9 +287,7 @@ describe("the browser's print effects, made for the app's own window", () => {
 	it.each<[string, (face: string) => Promise<FontFace[]>]>([
 		[
 			"refused",
-			async () => {
-				throw new Error("the font could not be fetched");
-			},
+			() => Promise.reject(new Error("the font could not be fetched")),
 		],
 		["finds no face", async () => []],
 	])("answers failed when a face's load is %s", async (_how, load) => {
@@ -329,8 +330,9 @@ describe("the browser's print effects, made for the app's own window", () => {
 	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it("asks for the picture at the address and answers loaded once it has been decoded", async () => {
 		const decoded: string[] = [];
-		thePicturesDecodeBy(async function (this: HTMLImageElement) {
+		thePicturesDecodeBy(function (this: HTMLImageElement) {
 			decoded.push(this.getAttribute("src") ?? "");
+			return Promise.resolve();
 		});
 
 		await expect(forTheAppsWindow().loadPicture(A_PICTURE)).resolves.toBe(
@@ -341,9 +343,9 @@ describe("the browser's print effects, made for the app's own window", () => {
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	it("answers failed when the picture cannot be decoded", async () => {
-		thePicturesDecodeBy(async () => {
-			throw new Error("the picture could not be fetched");
-		});
+		thePicturesDecodeBy(() =>
+			Promise.reject(new Error("the picture could not be fetched")),
+		);
 
 		await expect(forTheAppsWindow().loadPicture(A_PICTURE)).resolves.toBe(
 			"failed",
@@ -377,17 +379,17 @@ describe("the browser's print effects, made for the print frame's window", () =>
 	// @us-01 @rev-3 @contract-shape:bounded-change
 	// A face or a picture loaded into the app's page would leave the frame's printout in a fallback font, unmarked.
 	it(`loads the faces into the frame document's fonts and the Lighthouse mark as a picture of the frame, not the app's`, async () => {
-		theDocumentsFontsAre(async () => {
-			throw new Error("the app's own fonts were asked");
-		});
+		theDocumentsFontsAre(() =>
+			Promise.reject(new Error("the app's own fonts were asked")),
+		);
 		const { frameWindow, frameDocument } = aFrameInThePage();
 		const framesFaces: string[] = [];
 		Object.defineProperty(frameDocument, "fonts", {
 			configurable: true,
 			value: {
-				load: async (face: string) => {
+				load: (face: string) => {
 					framesFaces.push(face);
-					return [A_FACE];
+					return Promise.resolve([A_FACE]);
 				},
 				ready: Promise.resolve(),
 			},
@@ -395,8 +397,9 @@ describe("the browser's print effects, made for the print frame's window", () =>
 		const decodedInTheFrame: string[] = [];
 		Object.defineProperty(frameWindow.HTMLImageElement.prototype, "decode", {
 			configurable: true,
-			value: async function (this: HTMLImageElement) {
+			value: function (this: HTMLImageElement) {
 				decodedInTheFrame.push(this.getAttribute("src") ?? "");
+				return Promise.resolve();
 			},
 		});
 		const effects = browserPrintEffects(frameWindow);
@@ -480,9 +483,10 @@ describe("the print frame an export draws the report into", () => {
 				return frame;
 			});
 			// A few turns of the event loop: the frame loads and its sheets are copied, but none has loaded yet.
-			for (let turn = 0; turn < 5; turn++) {
-				await new Promise((settle) => setTimeout(settle));
-			}
+			await inSequence(
+				Array.from({ length: 5 }),
+				() => new Promise((settle) => setTimeout(settle)),
+			);
 			expect(
 				answered,
 				"it answered before the sheets had loaded",

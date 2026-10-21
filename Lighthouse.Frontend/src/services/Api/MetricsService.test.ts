@@ -7,6 +7,7 @@ import type { IFlowEfficiencyInfo } from "../../models/Metrics/FlowEfficiencyInf
 import type { PercentilesSelection } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import { PERCENTILES_AGE_SELECTION } from "../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IPerStatePercentileValues } from "../../models/PerStatePercentileValues";
+import { inSequence } from "../../tests/inSequence";
 import { ProjectMetricsService } from "./ProjectMetricsService";
 import { TeamMetricsService } from "./TeamMetricsService";
 
@@ -615,7 +616,7 @@ describe("MetricsService getPercentilesOverTime", () => {
 			[90, "horizon=90"],
 		];
 
-		for (const [selection, expectedQuery] of queryPerSelection) {
+		await inSequence(queryPerSelection, async ([selection, expectedQuery]) => {
 			mockedAxios.get.mockResolvedValueOnce({ data: [] });
 
 			await metricsService.getPercentilesOverTime(
@@ -628,7 +629,7 @@ describe("MetricsService getPercentilesOverTime", () => {
 			expect(mockedAxios.get).toHaveBeenLastCalledWith(
 				`/teams/7/metrics/percentiles-over-time?${expectedQuery}&${OVER_TIME_RANGE_QUERY}`,
 			);
-		}
+		});
 	});
 
 	it("propagates errors when fetching the percentiles series fails", async () => {

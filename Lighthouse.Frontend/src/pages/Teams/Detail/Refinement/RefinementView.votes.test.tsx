@@ -6,6 +6,7 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
+import { inSequence } from "../../../../tests/inSequence";
 import {
 	aBrowserThatVotedBefore,
 	aNeedOfFiveToEight,
@@ -125,17 +126,16 @@ describe("A voter casts a sizing vote from the list", () => {
 	it("offers Yes, Yes, if… and No on every Work Item in refinement, beside how many have voted", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
-		for (const referenceId of [
-			"GR-058",
-			ADVANCED_REPORTING,
-			CONFIGURATION_MANAGEMENT,
-		]) {
-			const row = await theRowOf(referenceId);
-			expect(theButton(row, "Yes")).toBeEnabled();
-			expect(theButton(row, YES_IF)).toBeEnabled();
-			expect(theButton(row, "No")).toBeEnabled();
-			expect(row).toHaveTextContent("No votes");
-		}
+		await inSequence(
+			["GR-058", ADVANCED_REPORTING, CONFIGURATION_MANAGEMENT],
+			async (referenceId) => {
+				const row = await theRowOf(referenceId);
+				expect(theButton(row, "Yes")).toBeEnabled();
+				expect(theButton(row, YES_IF)).toBeEnabled();
+				expect(theButton(row, "No")).toBeEnabled();
+				expect(row).toHaveTextContent("No votes");
+			},
+		);
 		expect(
 			screen.getByRole("columnheader", { name: /^Doable within 7 days\?/ }),
 		).toBeInTheDocument();
