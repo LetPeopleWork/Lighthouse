@@ -52,16 +52,15 @@ describe("what the print routes hand the print page", () => {
 		);
 		await screen.findByText("the print page");
 
-		expect(Object.keys(theInputHolding("getReport") ?? {}).sort()).toEqual([
-			"getPortfolio",
-			"getReport",
-			"getTeam",
-		]);
-		expect(Object.keys(theInputHolding("getTerm") ?? {}).sort()).toEqual([
-			"error",
-			"getTerm",
-			"isLoading",
-			"refetch",
-		]);
+		expect(
+			Object.keys(theInputHolding("getReport") ?? {}).sort((a, b) =>
+				a.localeCompare(b),
+			),
+		).toEqual(["getPortfolio", "getReport", "getTeam"]);
+		expect(
+			Object.keys(theInputHolding("getTerm") ?? {}).sort((a, b) =>
+				a.localeCompare(b),
+			),
+		).toEqual(["error", "getTerm", "isLoading", "refetch"]);
 	});
 });

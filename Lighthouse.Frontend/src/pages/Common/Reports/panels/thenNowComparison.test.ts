@@ -112,7 +112,7 @@ describe("compareThenNow", () => {
 		],
 	])(
 		"%s: Then %d, Now %d",
-		(_case, then, now, good, decimals, delta, percent, mark, verdict) => {
+		(...[_case, then, now, good, decimals, delta, percent, mark, verdict]) => {
 			expect(compareThenNow(then, now, good, decimals)).toEqual({
 				delta,
 				percent,

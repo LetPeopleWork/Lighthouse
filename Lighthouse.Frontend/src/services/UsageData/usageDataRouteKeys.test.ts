@@ -184,9 +184,9 @@ describe("an opening's name and its page never disagree", () => {
 
 describe("the browser list and the server list name the same members", () => {
 	it("has a counterpart here for every member the server declares, and none besides", () => {
-		expect(Object.keys(UsageDataRouteKey).sort()).toEqual(
-			[...serverMembers].sort(),
-		);
+		expect(
+			Object.keys(UsageDataRouteKey).sort((a, b) => a.localeCompare(b)),
+		).toEqual([...serverMembers].sort((a, b) => a.localeCompare(b)));
 	});
 
 	// Numbering the members here instead would compare false against every response: these names

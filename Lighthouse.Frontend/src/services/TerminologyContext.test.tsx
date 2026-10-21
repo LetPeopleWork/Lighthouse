@@ -170,8 +170,12 @@ describe("TerminologyContext", () => {
 	// lowercase, mid-sentence, read as prose. The list above only guards that while it names every term
 	// there is, so it has to be told when a new one appears.
 	it("has a word of its own for every term the product names", () => {
-		expect(theWordsAFreshInstallIsSeededWith.map(theKey).sort()).toEqual(
-			[...Object.values(TERMINOLOGY_KEYS)].sort(),
+		expect(
+			theWordsAFreshInstallIsSeededWith
+				.map(theKey)
+				.sort((a, b) => a.localeCompare(b)),
+		).toEqual(
+			[...Object.values(TERMINOLOGY_KEYS)].sort((a, b) => a.localeCompare(b)),
 		);
 	});
 });

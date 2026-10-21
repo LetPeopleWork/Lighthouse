@@ -123,7 +123,7 @@ describe("ThirdPartyPackagesSection", () => {
 		expect(screen.getByText("19.2.4")).toBeInTheDocument();
 	});
 
-	it("renders npm package link for frontend packages", async () => {
+	it("renders npm package link for an npm package in the backend list", async () => {
 		mockSystemInfoService.getBackendSbom = vi
 			.fn()
 			.mockResolvedValue(getMockCdxDocument());

@@ -53,9 +53,11 @@ const isKnownColumn = (column: string): boolean =>
 describe("the rules every context of the Work Items dialog follows", () => {
 	// @us-02 @slice-01b @example @contract-shape:pure-function
 	it("there is one context per row of the defaults table and no other", () => {
-		expect(Object.keys(WORK_ITEMS_DIALOG_CONTEXTS).sort()).toEqual(
-			[...everyContext].sort(),
-		);
+		expect(
+			Object.keys(WORK_ITEMS_DIALOG_CONTEXTS).sort((a, b) =>
+				a.localeCompare(b),
+			),
+		).toEqual([...everyContext].sort((a, b) => a.localeCompare(b)));
 	});
 
 	// @us-02 @slice-01b @example @contract-shape:pure-function
