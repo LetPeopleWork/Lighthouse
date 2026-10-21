@@ -77,7 +77,7 @@ describe("DeliverySection archive action", () => {
 		expect(onArchive.mock.calls[0][0].id).toBe(42);
 	});
 
-	it("shows Archive without a licence but will not run it, in the words the export actions use", async () => {
+	it("shows Archive without a licence but will not run it, in the words the export actions use", () => {
 		const onArchive = vi.fn();
 		renderSection({ canArchive: false, onArchive });
 

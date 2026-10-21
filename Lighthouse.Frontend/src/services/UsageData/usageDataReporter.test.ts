@@ -230,7 +230,7 @@ describe("useUsageDataReporter", () => {
 	 * sending, and this is the one place a screen could quietly opt somebody in by being rendered
 	 * before the server replied.
 	 */
-	it("records nothing while the answer about this browser has not arrived", async () => {
+	it("records nothing while the answer about this browser has not arrived", () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "a-token-this-browser-holds");
 
 		const { result, usageDataService } = renderReporterBesideTheDetector(

@@ -9,7 +9,7 @@ vi.mock("../LetPeopleWork/LighthouseVersion", () => ({
 }));
 
 describe("Footer component", () => {
-	it("renders LetPeopleWorkLogo and LighthouseVersion components", async () => {
+	it("renders LetPeopleWorkLogo and LighthouseVersion components", () => {
 		render(
 			<Router>
 				<UsageDataConsentProvider>
@@ -27,7 +27,7 @@ describe("Footer component", () => {
 		expect(version).toBeInTheDocument();
 	});
 
-	it("renders donation button with correct link", async () => {
+	it("renders donation button with correct link", () => {
 		render(
 			<Router>
 				<UsageDataConsentProvider>

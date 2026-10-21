@@ -20,7 +20,7 @@ export interface ITeamService {
 }
 
 export class TeamService extends BaseApiService implements ITeamService {
-	async getTeams(): Promise<Team[]> {
+	getTeams(): Promise<Team[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ITeam[]>("/teams");
 			return BaseApiService.asArray(response.data, "/teams")
@@ -44,13 +44,13 @@ export class TeamService extends BaseApiService implements ITeamService {
 		}
 	}
 
-	async deleteTeam(id: number): Promise<void> {
+	deleteTeam(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete<void>(`/teams/${id}`);
 		});
 	}
 
-	async getTeamSettings(id: number): Promise<ITeamSettings> {
+	getTeamSettings(id: number): Promise<ITeamSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ITeamSettings>(
 				`/teams/${id}/settings`,
@@ -94,7 +94,7 @@ export class TeamService extends BaseApiService implements ITeamService {
 		});
 	}
 
-	async validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean> {
+	validateTeamSettings(teamSettings: ITeamSettings): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<
 				boolean | { isValid?: boolean }
@@ -108,7 +108,7 @@ export class TeamService extends BaseApiService implements ITeamService {
 		});
 	}
 
-	async updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
+	updateTeam(teamSettings: ITeamSettings): Promise<ITeamSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.put<ITeamSettings>(
 				`/teams/${teamSettings.id}`,
@@ -150,7 +150,7 @@ export class TeamService extends BaseApiService implements ITeamService {
 		});
 	}
 
-	async getForecastFilterSchema(teamId: number): Promise<IWorkItemRuleSchema> {
+	getForecastFilterSchema(teamId: number): Promise<IWorkItemRuleSchema> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItemRuleSchema>(
 				`/teams/${teamId}/forecast-filter/schema`,

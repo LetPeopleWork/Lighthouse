@@ -249,13 +249,15 @@ describe("PortfolioDetail component", () => {
 			forecastsCallback = null;
 			featuresCallback = null;
 			mockSubscribeToFeatureUpdates.mockImplementation(
-				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+				(_id: number, callback: (update: IUpdateStatus) => void) => {
 					featuresCallback = callback;
+					return Promise.resolve();
 				},
 			);
 			mockSubscribeToForecastUpdates.mockImplementation(
-				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+				(_id: number, callback: (update: IUpdateStatus) => void) => {
 					forecastsCallback = callback;
+					return Promise.resolve();
 				},
 			);
 		});
@@ -411,8 +413,9 @@ describe("PortfolioDetail component", () => {
 		beforeEach(() => {
 			// Capture the subscription callback so tests can fire SignalR events
 			mockSubscribeToFeatureUpdates.mockImplementation(
-				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+				(_id: number, callback: (update: IUpdateStatus) => void) => {
 					capturedFeatureCallback = callback;
+					return Promise.resolve();
 				},
 			);
 
@@ -897,8 +900,9 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 		beforeEach(() => {
 			featuresCallback = null;
 			mockSubscribeToFeatureUpdates.mockImplementation(
-				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+				(_id: number, callback: (update: IUpdateStatus) => void) => {
 					featuresCallback = callback;
+					return Promise.resolve();
 				},
 			);
 		});

@@ -8,6 +8,7 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import { Team } from "../../../../models/Team/Team";
 import type { IRefinementService } from "../../../../services/Api/RefinementService";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import {
 	aBrowserThatVotedBefore,
 	aNeedOfFiveToEight,
@@ -782,7 +783,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 				/^5 ready — in the range/,
 			),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheLoadTestingVote(
 				aVotedRow(LOAD_TESTING, "Load testing framework", {
 					voteCount: 1,
@@ -830,7 +831,7 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
 		moveToTeam(teamNebula());
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheVote(
 				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
 					voteCount: 3,
@@ -1004,7 +1005,7 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 			theButton(await theRowOf(CONFIGURATION_MANAGEMENT), "Yes"),
 		);
 		moveToTeam(teamNebula());
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheVote(
 				aVotedRow(CONFIGURATION_MANAGEMENT, "Configuration management", {
 					voteCount: 1,

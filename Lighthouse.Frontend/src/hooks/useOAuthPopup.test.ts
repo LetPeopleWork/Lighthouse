@@ -8,6 +8,7 @@ import {
 	type MockInstance,
 	vi,
 } from "vitest";
+import { actAndSettle } from "../tests/actAndSettle";
 import { useOAuthPopup } from "./useOAuthPopup";
 
 const AUTH_URL = "https://auth.atlassian.com/authorize?state=xyz";
@@ -76,7 +77,7 @@ describe("useOAuthPopup", () => {
 
 		const pending = result.current.openOAuthPopup(AUTH_URL);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			dispatchOpenerMessage({
 				data: { type: "oauth.complete", status: "success", connectionId: 88 },
 				origin: OPENER_ORIGIN,
@@ -99,7 +100,7 @@ describe("useOAuthPopup", () => {
 
 		const pending = result.current.openOAuthPopup(AUTH_URL);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			dispatchOpenerMessage({
 				data: { type: "oauth.complete", status: "success", connectionId: 99 },
 				origin: "https://evil.example.com",
@@ -123,7 +124,7 @@ describe("useOAuthPopup", () => {
 
 		const pending = result.current.openOAuthPopup(AUTH_URL);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			dispatchOpenerMessage({
 				data: { type: "unrelated.event", payload: "noise" },
 				origin: OPENER_ORIGIN,
@@ -165,7 +166,7 @@ describe("useOAuthPopup", () => {
 
 		const pending = result.current.openOAuthPopup(AUTH_URL);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			dispatchOpenerMessage({
 				data: {
 					type: "oauth.complete",
@@ -208,7 +209,7 @@ describe("useOAuthPopup", () => {
 
 		const pending = result.current.openOAuthPopup(AUTH_URL);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			dispatchOpenerMessage({
 				data: { type: "oauth.complete", status: "success", connectionId: 88 },
 				origin: OPENER_ORIGIN,

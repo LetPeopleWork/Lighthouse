@@ -164,7 +164,7 @@ describe("FeatureMoveMenu", () => {
 	describe("when this instance does not order its own Features", () => {
 		it.each([["not-premium"], ["policy-off"]] as const)(
 			"renders no move actions at all (%s)",
-			async (reason) => {
+			(reason) => {
 				render(
 					<FeatureMoveMenu
 						feature={theSearchIndex()}

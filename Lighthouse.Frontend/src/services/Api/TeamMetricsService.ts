@@ -13,10 +13,7 @@ export class TeamMetricsService
 		super("teams");
 	}
 
-	async getFeaturesInProgress(
-		teamId: number,
-		asOfDate: Date,
-	): Promise<IWorkItem[]> {
+	getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const year = asOfDate.getFullYear();
 			const month = String(asOfDate.getMonth() + 1).padStart(2, "0");
@@ -40,7 +37,7 @@ export class TeamMetricsService
 		});
 	}
 
-	async getSleRisk(teamId: number): Promise<ISleRisk[]> {
+	getSleRisk(teamId: number): Promise<ISleRisk[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<ISleRisk[]>(
 				`/teams/${teamId}/metrics/sleRisk`,
@@ -50,7 +47,7 @@ export class TeamMetricsService
 		});
 	}
 
-	async getForecastInputCandidates(
+	getForecastInputCandidates(
 		teamId: number,
 	): Promise<IForecastInputCandidates> {
 		return this.withErrorHandling(async () => {
@@ -61,7 +58,7 @@ export class TeamMetricsService
 		});
 	}
 
-	async getFeaturesWorkedOnInfo(
+	getFeaturesWorkedOnInfo(
 		teamId: number,
 		startDate: Date,
 		endDate: Date,

@@ -16,6 +16,7 @@ import { reportsQueryKeyOf } from "../../../pages/Common/Reports/reportOwner";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IDeliveryService } from "../../../services/Api/DeliveryService";
 import type { IReportService } from "../../../services/Api/ReportService";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
 	createMockApiServiceContext,
@@ -617,7 +618,7 @@ describe("Reports on the Overview", () => {
 		});
 		await whenReady("Rocket", "reports");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			lightspeedAnswer.resolve(
 				aReportList(reportsNamed(LIGHTSPEED, "Engagement start")),
 			);

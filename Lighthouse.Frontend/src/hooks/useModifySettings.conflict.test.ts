@@ -5,6 +5,7 @@ import type {
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
+import { actAndSettle } from "../tests/actAndSettle";
 import {
 	type AutoSaveOptions,
 	type ModifySettingsBase,
@@ -104,7 +105,7 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -128,14 +129,14 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "first"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "second"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
@@ -167,18 +168,18 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "first"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "second"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		expect(saveSettings).toHaveBeenCalledTimes(1);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			resolveFirst?.(makeSettings({ concurrencyToken: "token-2" }));
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
@@ -194,7 +195,7 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -209,13 +210,13 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(result.current.saveState).toBe("conflict"));
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "70"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 		});
 
@@ -238,7 +239,7 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "edited"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(result.current.saveState).toBe("conflict"));
@@ -261,7 +262,7 @@ describe("@conflict @in-memory optimistic concurrency on settings auto-save", ()
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 

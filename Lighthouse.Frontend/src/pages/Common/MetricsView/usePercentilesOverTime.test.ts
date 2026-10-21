@@ -5,6 +5,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { PercentilesOverTimeSnapshot } from "../../../models/Metrics/PercentilesOverTimeSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import { cacheKey, usePercentilesOverTime } from "./usePercentilesOverTime";
 
 /**
@@ -253,7 +254,7 @@ describe("usePercentilesOverTime when a response outlives the request that asked
 			expect(result.current.series).toEqual(SECOND_RANGE_SERIES),
 		);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			answerFirstRequest(FIRST_RANGE_SERIES);
 		});
 

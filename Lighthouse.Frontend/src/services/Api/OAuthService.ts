@@ -14,7 +14,7 @@ export interface IOAuthService {
 }
 
 export class OAuthService extends BaseApiService implements IOAuthService {
-	async initiateConnect(
+	initiateConnect(
 		providerKey: string,
 		connectionId: number,
 	): Promise<IOAuthInitiateResponse> {
@@ -28,7 +28,7 @@ export class OAuthService extends BaseApiService implements IOAuthService {
 		});
 	}
 
-	async disconnect(providerKey: string, connectionId: number): Promise<void> {
+	disconnect(providerKey: string, connectionId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post(
 				`/oauth/${providerKey}/disconnect`,

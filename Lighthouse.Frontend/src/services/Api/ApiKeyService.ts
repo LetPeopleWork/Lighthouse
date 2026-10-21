@@ -12,16 +12,14 @@ export interface IApiKeyService {
 }
 
 export class ApiKeyService extends BaseApiService implements IApiKeyService {
-	async getApiKeys(): Promise<IApiKeyInfo[]> {
+	getApiKeys(): Promise<IApiKeyInfo[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IApiKeyInfo[]>("/apikeys");
 			return response.data;
 		});
 	}
 
-	async createApiKey(
-		request: ICreateApiKeyRequest,
-	): Promise<IApiKeyCreationResult> {
+	createApiKey(request: ICreateApiKeyRequest): Promise<IApiKeyCreationResult> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IApiKeyCreationResult>(
 				"/apikeys",
@@ -31,7 +29,7 @@ export class ApiKeyService extends BaseApiService implements IApiKeyService {
 		});
 	}
 
-	async deleteApiKey(id: number): Promise<void> {
+	deleteApiKey(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/apikeys/${id}`);
 		});

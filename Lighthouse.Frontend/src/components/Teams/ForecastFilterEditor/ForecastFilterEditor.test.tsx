@@ -166,7 +166,7 @@ describe("ForecastFilterEditor", () => {
 		expect(screen.getByText("Exclude items where…")).toBeInTheDocument();
 	});
 
-	it("does not render the rule editor when the tenant is non-premium", async () => {
+	it("does not render the rule editor when the tenant is non-premium", () => {
 		mockIsTeamAdmin.mockReturnValue(true);
 		mockCanUsePremiumFeatures.mockReturnValue(false);
 

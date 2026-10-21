@@ -15,7 +15,7 @@ export class BlackoutPeriodService
 	extends BaseApiService
 	implements IBlackoutPeriodService
 {
-	public async getAll(): Promise<IBlackoutPeriod[]> {
+	public getAll(): Promise<IBlackoutPeriod[]> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<IBlackoutPeriod[]>("/blackout-periods");
@@ -23,9 +23,7 @@ export class BlackoutPeriodService
 		});
 	}
 
-	public async create(
-		period: Omit<IBlackoutPeriod, "id">,
-	): Promise<IBlackoutPeriod> {
+	public create(period: Omit<IBlackoutPeriod, "id">): Promise<IBlackoutPeriod> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IBlackoutPeriod>(
 				"/blackout-periods",
@@ -35,7 +33,7 @@ export class BlackoutPeriodService
 		});
 	}
 
-	public async update(
+	public update(
 		id: number,
 		period: Omit<IBlackoutPeriod, "id">,
 	): Promise<IBlackoutPeriod> {
@@ -48,7 +46,7 @@ export class BlackoutPeriodService
 		});
 	}
 
-	public async delete(id: number): Promise<void> {
+	public delete(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/blackout-periods/${id}`);
 		});

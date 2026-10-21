@@ -4,6 +4,7 @@ import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import { actAndSettle } from "../tests/actAndSettle";
 import {
 	type AutoSaveOptions,
 	type ModifySettingsBase,
@@ -120,7 +121,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -134,7 +135,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -148,7 +149,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("name", "" as never));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -167,13 +168,13 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(result.current.saveState).toBe("error"));
 		expect(result.current.settings?.dataRetrievalValue).toBe("60");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			result.current.retry();
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
@@ -186,7 +187,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -203,7 +204,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		act(() => result.current.updateSettings("dataRetrievalValue", "40"));
 		act(() => result.current.updateSettings("dataRetrievalValue", "50"));
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -229,18 +230,18 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "50"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 		expect(saveSettings).toHaveBeenCalledTimes(1);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			resolveFirst?.();
 		});
 
@@ -255,7 +256,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 		await waitFor(() => expect(result.current.formValid).toBe(true));
 
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 		});
 
@@ -285,7 +286,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
 		refreshDependentData.mockClear();
 
 		act(() => result.current.doingHandlers.onAdd("Review"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -320,7 +321,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity 
 		additionalFetch.mockClear();
 
 		act(() => result.current.doingHandlers.onAdd("Review"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -355,7 +356,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (reload fa
 		refreshDependentData.mockClear();
 
 		act(() => result.current.doingHandlers.onAdd("Review"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -391,7 +392,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules", () => {
 				'{"rules":[{"field":"Type","op":"equals","value":"Bug","exclude":true}]}' as never,
 			),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -435,7 +436,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 				'{"rules":[{"field":"UnknownKey"}]}' as never,
 			),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -455,7 +456,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 				'{"rules":[{"field":"Type","value":"Bug"}]}' as never,
 			),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -480,7 +481,7 @@ describe("@US-02 @in-memory list-handler interaction marks the form as edited", 
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.doingHandlers.onRemove("Active"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -494,7 +495,7 @@ describe("@US-02 @in-memory list-handler interaction marks the form as edited", 
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.doingHandlers.onReorder(["Active", "Review"]));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -518,7 +519,7 @@ describe("@US-01 @in-memory retry and in-flight progress", () => {
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
-		await act(async () => {
+		await actAndSettle(() => {
 			result.current.retry();
 		});
 
@@ -538,14 +539,14 @@ describe("@US-01 @in-memory retry and in-flight progress", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 		expect(result.current.saveState).toBe("saving");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			resolveSave?.();
 		});
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
@@ -569,7 +570,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("name", "Atlas Program"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -583,7 +584,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("name", "Atlas Program"));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -603,7 +604,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 
 		act(() => result.current.updateSettings("name", "" as never));
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -636,7 +637,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		act(() =>
 			result.current.handleWorkTrackingSystemChange("Borealis Tracker"),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS);
 		});
 
@@ -655,7 +656,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 		await waitFor(() => expect(result.current.formValid).toBe(true));
 
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 		});
 		expect(saveSettings).not.toHaveBeenCalled();
@@ -663,7 +664,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		await act(async () => {
 			await result.current.reloadAfterConflict();
 		});
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 		});
 
@@ -686,7 +687,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		act(() =>
 			result.current.handleWorkTrackingSystemChange("Nonexistent System"),
 		);
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
 		});
 

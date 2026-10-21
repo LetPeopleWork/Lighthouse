@@ -647,7 +647,7 @@ describe("FeatureSelector", () => {
 			expect(mockOnChange).toHaveBeenCalledWith([]);
 		});
 
-		it("should respect DataGrid filters when selecting all", async () => {
+		it("should respect DataGrid filters when selecting all", () => {
 			const features = createMockFeatures([
 				{
 					stateCategory: "ToDo",

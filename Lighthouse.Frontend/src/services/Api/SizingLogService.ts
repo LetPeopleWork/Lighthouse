@@ -54,7 +54,7 @@ export class SizingLogService
 	extends BaseApiService
 	implements ISizingLogService
 {
-	public async castVote(
+	public castVote(
 		teamId: number,
 		workItemReference: string,
 		vote: ISizingVote,
@@ -70,7 +70,7 @@ export class SizingLogService
 		});
 	}
 
-	public async addComment(
+	public addComment(
 		teamId: number,
 		workItemReference: string,
 		comment: ISizingComment,
@@ -86,7 +86,7 @@ export class SizingLogService
 		});
 	}
 
-	public async takeBackMyVote(
+	public takeBackMyVote(
 		teamId: number,
 		workItemReference: string,
 		answer: SizingAnswer,
@@ -101,7 +101,7 @@ export class SizingLogService
 		});
 	}
 
-	public async getLog(
+	public getLog(
 		teamId: number,
 		workItemReference: string,
 		voterKey: string | null,

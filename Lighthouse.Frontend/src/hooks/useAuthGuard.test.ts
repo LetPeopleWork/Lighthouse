@@ -1,7 +1,8 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthMode } from "../models/Auth/AuthModels";
 import type { IAuthService } from "../services/Api/AuthService";
+import { actAndSettle } from "../tests/actAndSettle";
 import { useAuthGuard } from "./useAuthGuard";
 
 const createMockAuthService = (
@@ -184,7 +185,7 @@ describe("useAuthGuard", () => {
 			expect(result.current.shell).toBe("authenticated");
 		});
 
-		await act(async () => {
+		await actAndSettle(() => {
 			vi.advanceTimersByTime(60_000);
 		});
 
@@ -195,7 +196,7 @@ describe("useAuthGuard", () => {
 		vi.useRealTimers();
 	});
 
-	it("should provide login URL from auth service", async () => {
+	it("should provide login URL from auth service", () => {
 		const mockService = createMockAuthService({
 			getLoginUrl: vi.fn().mockReturnValue("/api/auth/login"),
 		});

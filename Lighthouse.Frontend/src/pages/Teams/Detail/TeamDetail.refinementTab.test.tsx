@@ -263,7 +263,7 @@ const reportsOfRefinementSetUp = () =>
 const theSavesAreOver = async (count = 1) =>
 	screen.findByText(`Saves over: ${count}`);
 
-const theTooltipOf = async (tab: HTMLElement, label: string) => {
+const theTooltipOf = (tab: HTMLElement, label: string) => {
 	fireEvent.mouseOver(within(tab).getByText(label));
 	return screen.findByRole("tooltip");
 };

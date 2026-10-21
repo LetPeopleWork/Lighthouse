@@ -1,10 +1,11 @@
-import { act, renderHook } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ErrorSnackbarContext } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { IRefinementView } from "../../../../models/Refinement/Refinement";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IRefinementService } from "../../../../services/Api/RefinementService";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import { createMockApiServiceContext } from "../../../../tests/MockApiServiceProvider";
 import { GRAVITY_TEAM_ID } from "../../../../tests/RefinementTabTestKit";
 import { useRefinement } from "./useRefinement";
@@ -42,7 +43,7 @@ const aTabWhoseReadIsStillOnItsWay = () => {
 		showError: snackbar.showError,
 		closeTheTab: unmount,
 		theReadFails: (message: string) =>
-			act(async () => {
+			actAndSettle(() => {
 				failTheRead(new Error(message));
 			}),
 	};

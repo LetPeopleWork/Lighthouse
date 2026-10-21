@@ -9,7 +9,7 @@ vi.mock("@mui/material", () => {
 });
 
 describe("LoadingAnimation", () => {
-	test("displays loading indicator when isLoading is true", async () => {
+	test("displays loading indicator when isLoading is true", () => {
 		render(
 			<LoadingAnimation isLoading={true} hasError={false}>
 				<div>Content</div>
@@ -19,7 +19,7 @@ describe("LoadingAnimation", () => {
 		expect(screen.getByTestId("sync-loader")).toBeInTheDocument();
 	});
 
-	test("displays error message when hasError is true", async () => {
+	test("displays error message when hasError is true", () => {
 		render(
 			<LoadingAnimation isLoading={false} hasError={true}>
 				<div>Content</div>
@@ -31,7 +31,7 @@ describe("LoadingAnimation", () => {
 		).toBeInTheDocument();
 	});
 
-	test("displays children when not loading and no error", async () => {
+	test("displays children when not loading and no error", () => {
 		render(
 			<LoadingAnimation isLoading={false} hasError={false}>
 				<div>Content</div>

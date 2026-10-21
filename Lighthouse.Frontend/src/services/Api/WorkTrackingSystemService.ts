@@ -109,7 +109,7 @@ export class WorkTrackingSystemService
 		});
 	}
 
-	async validateWorkTrackingSystemConnection(
+	validateWorkTrackingSystemConnection(
 		workTrackingConnection: IWorkTrackingSystemConnection,
 	): Promise<IConnectionValidationResult> {
 		return this.withErrorHandling(async () => {

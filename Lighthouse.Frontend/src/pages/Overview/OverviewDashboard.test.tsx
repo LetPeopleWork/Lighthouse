@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
-	act,
 	fireEvent,
 	render,
 	screen,
@@ -19,6 +18,7 @@ import {
 	type IApiServiceContext,
 } from "../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../services/TerminologyContext";
+import { actAndSettle } from "../../tests/actAndSettle";
 import { deferred } from "../../tests/HeldMetricsService";
 import {
 	createMockApiServiceContext,
@@ -1195,7 +1195,7 @@ describe("OverviewDashboard", () => {
 				within(dialog).getByRole("button", { name: "Delete" }),
 			).toBeDisabled();
 
-			await act(async () => {
+			await actAndSettle(() => {
 				recount.resolve(
 					aReportList([
 						aListedReport({ id: 1, name: "Report 1" }),

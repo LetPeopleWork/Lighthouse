@@ -43,8 +43,8 @@ const PredictabilityScoreDetailsWidget = <T extends IWorkItem>({
 		endDate,
 		filtered,
 		canAsk: canRefetch,
-		ask: async () => {
-			if (!canRefetch) return null;
+		ask: () => {
+			if (!canRefetch) return Promise.resolve(null);
 			return metricsService.getMultiItemForecastPredictabilityScore(
 				owner.ownerId,
 				startDate,

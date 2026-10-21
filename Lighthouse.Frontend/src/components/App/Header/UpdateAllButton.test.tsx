@@ -117,7 +117,7 @@ describe("UpdateAllButton", () => {
 		expect(mockHandleUpdateAll).toHaveBeenCalledOnce();
 	});
 
-	it("should not call handleUpdateAll when disabled", async () => {
+	it("should not call handleUpdateAll when disabled", () => {
 		mockUseLicenseRestrictions.mockReturnValue({
 			licenseStatus: { canUsePremiumFeatures: false },
 		} as ReturnType<typeof useLicenseRestrictions>);

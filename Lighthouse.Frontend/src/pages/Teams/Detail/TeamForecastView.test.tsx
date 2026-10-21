@@ -16,6 +16,7 @@ import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import TeamForecastView from "./TeamForecastView";
 
@@ -299,7 +300,7 @@ describe("TeamForecastView component", () => {
 
 	describe("ManualForecaster auto-run behavior", () => {
 		it("should initialize with remainingItems=null and targetDate=null", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
@@ -312,7 +313,7 @@ describe("TeamForecastView component", () => {
 		it("should NOT run forecast on initial render", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 					vi.advanceTimersByTime(500);
 				});
@@ -333,12 +334,12 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
 				// Trigger state change — React flushes effects after this act
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
 				});
 
@@ -369,11 +370,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-date-change"));
 				});
 
@@ -395,11 +396,11 @@ describe("TeamForecastView component", () => {
 		it("should NOT run forecast when remainingItems is cleared and targetDate is not set", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-null-remaining"));
 				});
 
@@ -416,11 +417,11 @@ describe("TeamForecastView component", () => {
 		it("should NOT run forecast when remainingItems becomes 0", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-zero-remaining"));
 				});
 
@@ -445,12 +446,12 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
 				// First click — starts the debounce timer
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
 				});
 
@@ -460,7 +461,7 @@ describe("TeamForecastView component", () => {
 				});
 
 				// Second click before debounce fires — resets the timer
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-remaining-change"));
 				});
 
@@ -483,11 +484,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-remaining-change"));
 			});
 
@@ -510,11 +511,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-remaining-change"));
 			});
 
@@ -534,7 +535,7 @@ describe("TeamForecastView component", () => {
 
 	describe("getForecastInputCandidates", () => {
 		it("should call getForecastInputCandidates on mount", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
@@ -544,7 +545,7 @@ describe("TeamForecastView component", () => {
 		});
 
 		it("should pass forecastInputCandidates to ManualForecaster when loaded", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
@@ -574,11 +575,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("new-item-valid-change"));
 				});
 				await act(async () => {
@@ -595,11 +596,11 @@ describe("TeamForecastView component", () => {
 		it("should not run the new item forecast while inputs are incomplete", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("new-item-incomplete-change"));
 				});
 				act(() => {
@@ -640,11 +641,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("backtest-valid-change"));
 				});
 				await act(async () => {
@@ -672,11 +673,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("backtest-valid-change"));
 				});
 				await act(async () => {
@@ -696,11 +697,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("backtest-valid-change"));
 				});
 				await act(async () => {
@@ -718,11 +719,11 @@ describe("TeamForecastView component", () => {
 		it("should not run the backtest while inputs are incomplete", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("backtest-incomplete-change"));
 				});
 				act(() => {
@@ -740,11 +741,11 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={nullTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("backtest-valid-change"));
 				});
 				await act(async () => {
@@ -769,7 +770,7 @@ describe("TeamForecastView component", () => {
 
 	describe("Feature mode orchestration", () => {
 		it("should default to Manual mode and pass mode to ManualForecaster", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 			expect(screen.getByTestId("forecast-mode-value")).toHaveTextContent(
@@ -778,10 +779,10 @@ describe("TeamForecastView component", () => {
 		});
 
 		it("should switch to Features mode when onModeChange called with features", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
 			});
 			expect(screen.getByTestId("forecast-mode-value")).toHaveTextContent(
@@ -800,15 +801,15 @@ describe("TeamForecastView component", () => {
 
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-feature-selection"));
 				});
 
@@ -830,15 +831,15 @@ describe("TeamForecastView component", () => {
 		it("should NOT run forecast when feature selection results in aggregate of 0", async () => {
 			vi.useFakeTimers();
 			try {
-				await act(async () => {
+				await actAndSettle(() => {
 					renderWithProviders(<TeamForecastView team={mockTeam} />);
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
 				});
 
-				await act(async () => {
+				await actAndSettle(() => {
 					fireEvent.click(
 						screen.getByTestId("simulate-zero-feature-selection"),
 					);
@@ -855,13 +856,13 @@ describe("TeamForecastView component", () => {
 		});
 
 		it("should pass selectedFeatures to ManualForecaster", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
 			});
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-feature-selection"));
 			});
 			expect(screen.getByTestId("selected-features-count")).toHaveTextContent(
@@ -870,19 +871,19 @@ describe("TeamForecastView component", () => {
 		});
 
 		it("should not leak feature selections into manual mode remaining-items state", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithProviders(<TeamForecastView team={mockTeam} />);
 			});
 
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-switch-to-features"));
 			});
 
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-feature-selection-multi"));
 			});
 
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(screen.getByTestId("simulate-switch-to-manual"));
 			});
 

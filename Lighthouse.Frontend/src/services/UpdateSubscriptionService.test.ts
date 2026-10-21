@@ -64,7 +64,7 @@ describe("UpdateSubscriptionService", () => {
 		vi.clearAllMocks();
 	});
 
-	it("should initialize the connection", async () => {
+	it("should initialize the connection", () => {
 		expect(mockConnection.start).toHaveBeenCalled();
 	});
 

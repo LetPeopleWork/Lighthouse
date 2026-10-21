@@ -259,9 +259,9 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		]);
 
 	const runValidation =
-		useCallback(async (): Promise<IConnectionValidationResult> => {
+		useCallback((): Promise<IConnectionValidationResult> => {
 			const dto = buildConnectionDto();
-			if (!dto) return { isValid: false };
+			if (!dto) return Promise.resolve({ isValid: false });
 
 			return validateConnection(dto);
 		}, [buildConnectionDto, validateConnection]);

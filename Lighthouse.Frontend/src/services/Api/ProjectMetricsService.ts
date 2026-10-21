@@ -14,7 +14,7 @@ export class ProjectMetricsService
 		super("portfolios");
 	}
 
-	async getFeatureSizePbc(
+	getFeatureSizePbc(
 		projectId: number,
 		startDate: Date,
 		endDate: Date,
@@ -28,7 +28,7 @@ export class ProjectMetricsService
 		});
 	}
 
-	async getFeatureSizeEstimation(
+	getFeatureSizeEstimation(
 		projectId: number,
 		startDate: Date,
 		endDate: Date,

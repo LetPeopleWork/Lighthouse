@@ -89,7 +89,7 @@ export class UsageDataService
 	extends BaseApiService
 	implements IUsageDataService
 {
-	async getState(token: string | null): Promise<IUsageDataState> {
+	getState(token: string | null): Promise<IUsageDataState> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IUsageDataState>(
 				"/usagedata/state",
@@ -99,7 +99,7 @@ export class UsageDataService
 		});
 	}
 
-	async recordDecision(decision: UsageDataDecisionValue): Promise<string> {
+	recordDecision(decision: UsageDataDecisionValue): Promise<string> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<{ token: string }>(
 				"/usagedata/consent",
@@ -109,7 +109,7 @@ export class UsageDataService
 		});
 	}
 
-	async revoke(token: string): Promise<void> {
+	revoke(token: string): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete("/usagedata/consent", {
 				headers: { [CONSENT_TOKEN_HEADER]: token },
@@ -123,7 +123,7 @@ export class UsageDataService
 	 * token too, where it does nothing: the browser has no row to be recorded against and remembers
 	 * this itself, and calling either way keeps the caller from branching on something it cannot see.
 	 */
-	async acknowledgeAsked(token: string | null): Promise<void> {
+	acknowledgeAsked(token: string | null): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post(
 				"/usagedata/asked",
@@ -133,7 +133,7 @@ export class UsageDataService
 		});
 	}
 
-	async postEvents(token: string, events: IUsageDataEvent[]): Promise<void> {
+	postEvents(token: string, events: IUsageDataEvent[]): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post(
 				"/usagedata/events",

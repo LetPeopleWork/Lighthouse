@@ -29,7 +29,7 @@ export interface ILogService {
 }
 
 export class LogService extends BaseApiService implements ILogService {
-	async getRecentProblems(): Promise<IRecentProblem[]> {
+	getRecentProblems(): Promise<IRecentProblem[]> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<IRecentProblem[]>("/logs/problems");
@@ -38,7 +38,7 @@ export class LogService extends BaseApiService implements ILogService {
 		});
 	}
 
-	async getSupportedLogLevels(): Promise<string[]> {
+	getSupportedLogLevels(): Promise<string[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<string[]>(
 				"/logs/level/supported",
@@ -48,7 +48,7 @@ export class LogService extends BaseApiService implements ILogService {
 		});
 	}
 
-	async getLogLevel(): Promise<string> {
+	getLogLevel(): Promise<string> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<string>("/logs/level");
 
@@ -62,7 +62,7 @@ export class LogService extends BaseApiService implements ILogService {
 		});
 	}
 
-	async getLogs(tailBytes?: number): Promise<string> {
+	getLogs(tailBytes?: number): Promise<string> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<string>(
 				tailBytes === undefined ? "/logs" : `/logs?tailBytes=${tailBytes}`,

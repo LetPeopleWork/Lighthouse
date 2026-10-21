@@ -165,7 +165,7 @@ describe("CumulativeStateTimeItemPicker", () => {
 		expect(onSelectionChange).toHaveBeenCalledWith([2]);
 	});
 
-	it("shows a disabled empty state when there are no candidates", async () => {
+	it("shows a disabled empty state when there are no candidates", () => {
 		render(
 			<CumulativeStateTimeItemPicker
 				candidates={[]}
@@ -228,7 +228,7 @@ describe("CumulativeStateTimeItemPicker", () => {
 		expect(screen.getAllByRole("option")).toHaveLength(3);
 	});
 
-	it("renders the current selection as removable chips", async () => {
+	it("renders the current selection as removable chips", () => {
 		render(
 			<CumulativeStateTimeItemPicker
 				candidates={threeCandidates}

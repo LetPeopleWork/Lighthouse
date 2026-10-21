@@ -122,7 +122,7 @@ export class DeliveryService
 	extends BaseApiService
 	implements IDeliveryService
 {
-	async getByPortfolio(portfolioId: number): Promise<IPortfolioDeliveries> {
+	getByPortfolio(portfolioId: number): Promise<IPortfolioDeliveries> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>(
 				`/deliveries/portfolio/${portfolioId}`,
@@ -141,7 +141,7 @@ export class DeliveryService
 		});
 	}
 
-	async create({
+	create({
 		portfolioId,
 		name,
 		date,
@@ -168,7 +168,7 @@ export class DeliveryService
 		});
 	}
 
-	async update({
+	update({
 		deliveryId,
 		name,
 		date,
@@ -197,13 +197,13 @@ export class DeliveryService
 		});
 	}
 
-	async delete(deliveryId: number): Promise<void> {
+	delete(deliveryId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete<void>(`/deliveries/${deliveryId}`);
 		});
 	}
 
-	async archive(deliveryId: number, concurrencyToken?: string): Promise<void> {
+	archive(deliveryId: number, concurrencyToken?: string): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/${deliveryId}/archive`, {
 				concurrencyToken,
@@ -211,10 +211,7 @@ export class DeliveryService
 		});
 	}
 
-	async unarchive(
-		deliveryId: number,
-		concurrencyToken?: string,
-	): Promise<void> {
+	unarchive(deliveryId: number, concurrencyToken?: string): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post<void>(`/deliveries/${deliveryId}/unarchive`, {
 				concurrencyToken,
@@ -222,7 +219,7 @@ export class DeliveryService
 		});
 	}
 
-	async getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema> {
+	getRuleSchema(portfolioId: number): Promise<IWorkItemRuleSchema> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItemRuleSchema>(
 				`/portfolios/${portfolioId}/delivery-rules/schema`,
@@ -231,7 +228,7 @@ export class DeliveryService
 		});
 	}
 
-	async validateRules(
+	validateRules(
 		portfolioId: number,
 		rules: IWorkItemRuleCondition[],
 		mode?: "and" | "or",
@@ -249,7 +246,7 @@ export class DeliveryService
 		});
 	}
 
-	async getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory> {
+	getMetricsHistory(deliveryId: number): Promise<DeliveryMetricsHistory> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>(
 				`/deliveries/${deliveryId}/metrics-history`,
@@ -258,7 +255,7 @@ export class DeliveryService
 		});
 	}
 
-	async getNotes(deliveryId: number): Promise<DeliveryNote[]> {
+	getNotes(deliveryId: number): Promise<DeliveryNote[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IDeliveryNote[]>(
 				`/deliveries/${deliveryId}/notes`,
@@ -267,7 +264,7 @@ export class DeliveryService
 		});
 	}
 
-	async addNote(deliveryId: number, text: string): Promise<DeliveryNote> {
+	addNote(deliveryId: number, text: string): Promise<DeliveryNote> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IDeliveryNote>(
 				`/deliveries/${deliveryId}/notes`,
@@ -277,7 +274,7 @@ export class DeliveryService
 		});
 	}
 
-	async updateNote(
+	updateNote(
 		deliveryId: number,
 		noteId: number,
 		text: string,
@@ -291,13 +288,13 @@ export class DeliveryService
 		});
 	}
 
-	async deleteNote(deliveryId: number, noteId: number): Promise<void> {
+	deleteNote(deliveryId: number, noteId: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/deliveries/${deliveryId}/notes/${noteId}`);
 		});
 	}
 
-	async getDeliverySources(portfolioId: number): Promise<IDeliverySource[]> {
+	getDeliverySources(portfolioId: number): Promise<IDeliverySource[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>(
 				`/portfolios/${portfolioId}/delivery-sources`,
@@ -306,7 +303,7 @@ export class DeliveryService
 		});
 	}
 
-	async getDeliverySourceOptions(
+	getDeliverySourceOptions(
 		portfolioId: number,
 		sourceKey: string,
 	): Promise<IDeliverySourceOption[]> {
@@ -321,7 +318,7 @@ export class DeliveryService
 		});
 	}
 
-	async previewDeliverySource(
+	previewDeliverySource(
 		portfolioId: number,
 		sourceKey: string,
 		sourceReference: string,

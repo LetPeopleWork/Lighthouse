@@ -265,7 +265,7 @@ describe("DataGridBase", () => {
 	});
 
 	describe("Sorting", () => {
-		it("should allow sorting by clicking on column headers", async () => {
+		it("should allow sorting by clicking on column headers", () => {
 			const { container } = render(
 				<DataGridBase
 					rows={mockRows}
@@ -727,7 +727,7 @@ describe("Persistence (Order & Widths)", () => {
 		expect(headerTexts).toEqual(["ID", "Name", "Age", "Email"]);
 	});
 
-	it("should always show reset layout and column order buttons even when export is disabled", async () => {
+	it("should always show reset layout and column order buttons even when export is disabled", () => {
 		render(
 			<DataGridBase
 				rows={mockRows}

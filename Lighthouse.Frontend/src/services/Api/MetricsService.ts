@@ -331,7 +331,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		this.api = api;
 	}
 
-	async getThroughput(
+	getThroughput(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -352,7 +352,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getWorkInProgressOverTime(
+	getWorkInProgressOverTime(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -371,7 +371,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]> {
+	getInProgressItems(id: number, asOfDate: Date): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
 				`/${this.api}/${id}/metrics/wip?asOfDate=${formatLocalDate(asOfDate)}`,
@@ -393,7 +393,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getCycleTimePercentiles(
+	getCycleTimePercentiles(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -410,7 +410,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getWorkItemAgePercentiles(
+	getWorkItemAgePercentiles(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -427,7 +427,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getAgeInStatePercentiles(
+	getAgeInStatePercentiles(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -441,7 +441,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getCumulativeStateTimeForTeam(
+	getCumulativeStateTimeForTeam(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -546,11 +546,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getCycleTimeData(
-		id: number,
-		startDate: Date,
-		endDate: Date,
-	): Promise<T[]> {
+	getCycleTimeData(id: number, startDate: Date, endDate: Date): Promise<T[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<T[]>(
 				`/${this.api}/${id}/metrics/cycleTimeData?${this.getDateFormatString(startDate, endDate)}`,
@@ -578,7 +574,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getMultiItemForecastPredictabilityScore(
+	getMultiItemForecastPredictabilityScore(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -594,7 +590,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number> {
+	getTotalWorkItemAge(id: number, asOfDate: Date): Promise<number> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<number>(
 				`/${this.api}/${id}/metrics/totalWorkItemAge?asOfDate=${formatLocalDate(asOfDate)}`,
@@ -604,7 +600,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getThroughputPbc(
+	getThroughputPbc(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -620,7 +616,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getWipPbc(
+	getWipPbc(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -634,7 +630,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getTotalWorkItemAgePbc(
+	getTotalWorkItemAgePbc(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -648,7 +644,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getCycleTimePbc(
+	getCycleTimePbc(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -662,7 +658,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getEstimationVsCycleTimeData(
+	getEstimationVsCycleTimeData(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -677,7 +673,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getArrivals(
+	getArrivals(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -696,7 +692,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getArrivalsPbc(
+	getArrivalsPbc(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -710,7 +706,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getThroughputInfo(
+	getThroughputInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -723,7 +719,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getArrivalsInfo(
+	getArrivalsInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -736,7 +732,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getWipOverviewInfo(
+	getWipOverviewInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -749,7 +745,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getTotalWorkItemAgeInfo(
+	getTotalWorkItemAgeInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -762,7 +758,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getPredictabilityScoreInfo(
+	getPredictabilityScoreInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -775,7 +771,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getCycleTimePercentilesInfo(
+	getCycleTimePercentilesInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -791,7 +787,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getBlockedCountHistory(
+	getBlockedCountHistory(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -804,7 +800,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getPercentilesOverTime(
+	getPercentilesOverTime(
 		id: number,
 		selection: PercentilesSelection,
 		startDate: Date,
@@ -818,7 +814,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getProcessBehaviorOverTime(
+	getProcessBehaviorOverTime(
 		id: number,
 		metricType: ProcessBehaviorMetricType,
 		startDate: Date,
@@ -832,10 +828,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getBlockedItemsAtDate(
-		id: number,
-		date: Date | string,
-	): Promise<IWorkItem[]> {
+	getBlockedItemsAtDate(id: number, date: Date | string): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const formattedDate =
 				typeof date === "string" ? date : formatLocalDate(date);
@@ -888,7 +881,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getSizePercentiles(
+	getSizePercentiles(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -902,7 +895,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getAllFeaturesForSizeChart(
+	getAllFeaturesForSizeChart(
 		id: number,
 		startDate: Date,
 		endDate: Date,
@@ -923,7 +916,7 @@ export abstract class BaseMetricsService<T extends IWorkItem | IFeature>
 		});
 	}
 
-	async getFeatureSizePercentilesInfo(
+	getFeatureSizePercentilesInfo(
 		id: number,
 		startDate: Date,
 		endDate: Date,

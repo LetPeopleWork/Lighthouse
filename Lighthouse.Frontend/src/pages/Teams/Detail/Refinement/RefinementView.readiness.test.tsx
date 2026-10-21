@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import { Team } from "../../../../models/Team/Team";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import {
 	createMockApiServiceContext,
 	createMockFeatureService,
@@ -328,7 +329,7 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		);
 		rerender(tabOf(OTHER_TEAM_ID));
 		await theRowOf("OE-001");
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheVote({
 				...configurationManagement({
 					voteCount: 3,

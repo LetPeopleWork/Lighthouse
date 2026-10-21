@@ -15,7 +15,7 @@ export class SurveyNudgeService
 	extends BaseApiService
 	implements ISurveyNudgeService
 {
-	async getState(): Promise<SurveyNudgeState> {
+	getState(): Promise<SurveyNudgeState> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<SurveyNudgeState>("/surveynudge");
@@ -23,7 +23,7 @@ export class SurveyNudgeService
 		});
 	}
 
-	async recordAction(action: SurveyNudgeAction): Promise<void> {
+	recordAction(action: SurveyNudgeAction): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post("/surveynudge", { action });
 		});

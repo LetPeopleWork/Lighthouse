@@ -11,7 +11,7 @@ export interface IWizardService {
 }
 
 export class WizardService extends BaseApiService implements IWizardService {
-	async getBoards(workTrackingSystemConnectionId: number): Promise<IBoard[]> {
+	getBoards(workTrackingSystemConnectionId: number): Promise<IBoard[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IBoard[]>(
 				`/wizards/${workTrackingSystemConnectionId}/boards`,
@@ -21,7 +21,7 @@ export class WizardService extends BaseApiService implements IWizardService {
 		});
 	}
 
-	async getBoardInformation(
+	getBoardInformation(
 		workTrackingSystemConnectionId: number,
 		boardId: string,
 	): Promise<IBoardInformation> {

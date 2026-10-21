@@ -5,6 +5,7 @@ import type { IFeature } from "../../../models/Feature";
 import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBehaviorSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import { cacheKey, usePbcOverTime } from "./usePbcOverTime";
 
 /**
@@ -235,7 +236,7 @@ describe("usePbcOverTime when a response outlives the request that asked for it"
 			expect(result.current.series).toEqual(SECOND_RANGE_SERIES),
 		);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			answerFirstRequest(FIRST_RANGE_SERIES);
 		});
 

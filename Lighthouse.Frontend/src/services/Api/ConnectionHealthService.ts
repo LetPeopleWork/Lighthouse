@@ -32,7 +32,7 @@ export class ConnectionHealthService
 	extends BaseApiService
 	implements IConnectionHealthService
 {
-	async getHealth(): Promise<IConnectionHealth[]> {
+	getHealth(): Promise<IConnectionHealth[]> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<IConnectionHealth[]>("/connectionhealth");
@@ -41,7 +41,7 @@ export class ConnectionHealthService
 		});
 	}
 
-	async testConnection(connectionId: number): Promise<IConnectionHealth> {
+	testConnection(connectionId: number): Promise<IConnectionHealth> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IConnectionHealth>(
 				`/connectionhealth/${connectionId}/test`,

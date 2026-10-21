@@ -106,14 +106,15 @@ describe("ReconnectBanner", () => {
 		const user = userEvent.setup();
 		const oauthService = createMockOAuthService();
 		const callOrder: string[] = [];
-		vi.mocked(oauthService.disconnect).mockImplementation(async () => {
+		vi.mocked(oauthService.disconnect).mockImplementation(() => {
 			callOrder.push("disconnect");
+			return Promise.resolve();
 		});
-		vi.mocked(oauthService.initiateConnect).mockImplementation(async () => {
+		vi.mocked(oauthService.initiateConnect).mockImplementation(() => {
 			callOrder.push("initiateConnect");
-			return {
+			return Promise.resolve({
 				authorizationUrl: "https://auth.atlassian.com/authorize?state=z",
-			};
+			});
 		});
 		openOAuthPopupMock.mockResolvedValue({
 			status: "success",

@@ -20,7 +20,7 @@ export class RecurringBlackoutRuleService
 	extends BaseApiService
 	implements IRecurringBlackoutRuleService
 {
-	public async getAll(): Promise<IRecurringBlackoutRule[]> {
+	public getAll(): Promise<IRecurringBlackoutRule[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IRecurringBlackoutRule[]>(
 				"/recurring-blackout-rules",
@@ -29,7 +29,7 @@ export class RecurringBlackoutRuleService
 		});
 	}
 
-	public async create(
+	public create(
 		rule: RecurringBlackoutRulePayload,
 	): Promise<IRecurringBlackoutRule> {
 		return this.withErrorHandling(async () => {
@@ -41,7 +41,7 @@ export class RecurringBlackoutRuleService
 		});
 	}
 
-	public async update(
+	public update(
 		id: number,
 		rule: RecurringBlackoutRulePayload,
 	): Promise<IRecurringBlackoutRule> {
@@ -54,7 +54,7 @@ export class RecurringBlackoutRuleService
 		});
 	}
 
-	public async delete(id: number): Promise<void> {
+	public delete(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`/recurring-blackout-rules/${id}`);
 		});

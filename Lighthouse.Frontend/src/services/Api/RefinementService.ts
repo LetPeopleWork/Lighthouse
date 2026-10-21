@@ -11,7 +11,7 @@ export class RefinementService
 	extends BaseApiService
 	implements IRefinementService
 {
-	public async getRefinement(teamId: number): Promise<IRefinementView> {
+	public getRefinement(teamId: number): Promise<IRefinementView> {
 		return this.withErrorHandling(async () => {
 			const address = `/teams/${teamId}/refinement`;
 			const voterKey = readVoterKey();

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -7,6 +7,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import {
 	createMockApiServiceContext,
 	createMockBlackoutPeriodService,
@@ -177,7 +178,7 @@ describe("Reporting a behaviour setting being switched", () => {
 		expect(mockUpdateFeature).toHaveBeenCalled();
 		expect(reportUsage).not.toHaveBeenCalled();
 
-		await act(async () => {
+		await actAndSettle(() => {
 			acceptTheSwitch();
 		});
 

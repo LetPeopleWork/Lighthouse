@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking/AdditionalFieldDefinition";
 import { WorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
@@ -406,7 +407,7 @@ describe("FeatureSizeComponent", () => {
 	});
 
 	it("fetches project states for suggestions when component mounts", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -414,12 +415,12 @@ describe("FeatureSizeComponent", () => {
 	});
 
 	it("adds new override state when entered", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
 		const input = screen.getByLabelText("New Size Override State");
-		await act(async () => {
+		await actAndSettle(() => {
 			fireEvent.change(input, { target: { value: "In Progress" } });
 			fireEvent.keyDown(input, { key: "Enter" });
 		});
@@ -436,7 +437,7 @@ describe("FeatureSizeComponent", () => {
 			overrideRealChildCountStates: ["Ready", "In Progress"],
 		};
 
-		await act(async () => {
+		await actAndSettle(() => {
 			render(
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<FeatureSizeComponent
@@ -451,7 +452,7 @@ describe("FeatureSizeComponent", () => {
 		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
 
 		if (deleteIcon) {
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(deleteIcon);
 			});
 		}
@@ -467,7 +468,7 @@ describe("FeatureSizeComponent", () => {
 		const mockError = new Error("Failed to fetch");
 		mockGetStatesForProjects.mockRejectedValueOnce(mockError);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 

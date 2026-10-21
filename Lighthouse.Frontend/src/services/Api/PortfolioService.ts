@@ -27,7 +27,7 @@ export class PortfolioService
 	extends BaseApiService
 	implements IPortfolioService
 {
-	async getPortfolios(): Promise<Portfolio[]> {
+	getPortfolios(): Promise<Portfolio[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPortfolio[]>("/portfolios");
 			return BaseApiService.asArray(response.data, "/portfolios").map(
@@ -53,13 +53,13 @@ export class PortfolioService
 		}
 	}
 
-	async deletePortfolio(id: number): Promise<void> {
+	deletePortfolio(id: number): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete<void>(`/portfolios/${id}`);
 		});
 	}
 
-	async getPortfolioSettings(id: number): Promise<IPortfolioSettings> {
+	getPortfolioSettings(id: number): Promise<IPortfolioSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IPortfolioSettings>(
 				`/portfolios/${id}/settings`,
@@ -84,7 +84,7 @@ export class PortfolioService
 		});
 	}
 
-	async updatePortfolio(
+	updatePortfolio(
 		portfolioSettings: IPortfolioSettings,
 	): Promise<IPortfolioSettings> {
 		return this.withErrorHandling(async () => {
@@ -126,7 +126,7 @@ export class PortfolioService
 		});
 	}
 
-	async validatePortfolioSettings(
+	validatePortfolioSettings(
 		portfolioSettings: IPortfolioSettings,
 	): Promise<boolean> {
 		return this.withErrorHandling(async () => {

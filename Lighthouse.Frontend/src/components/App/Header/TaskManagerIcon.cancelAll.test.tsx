@@ -418,7 +418,7 @@ describe("Cancel all in the Task Manager", () => {
 	 * the popover is not drawn, so the Activity heading and its Cancel all cannot be reached. That absence is
 	 * the assertion; there is no popover to open.
 	 */
-	it("is not offered to anybody who is not a System Administrator", async () => {
+	it("is not offered to anybody who is not a System Administrator", () => {
 		mockIsSystemAdmin.mockReturnValue(false);
 		renderIcon([aRunningTeam]);
 

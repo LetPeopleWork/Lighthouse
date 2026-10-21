@@ -22,7 +22,7 @@ export class DatabaseManagementService
 	extends BaseApiService
 	implements IDatabaseManagementService
 {
-	public async getStatus(): Promise<IDatabaseCapabilityStatus> {
+	public getStatus(): Promise<IDatabaseCapabilityStatus> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IDatabaseCapabilityStatus>(
 				"/database-management/status",
@@ -31,9 +31,7 @@ export class DatabaseManagementService
 		});
 	}
 
-	public async createBackup(
-		password: string,
-	): Promise<IDatabaseOperationStatus> {
+	public createBackup(password: string): Promise<IDatabaseOperationStatus> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IDatabaseOperationStatus>(
 				"/database-management/backup",
@@ -43,7 +41,7 @@ export class DatabaseManagementService
 		});
 	}
 
-	public async downloadBackupArtifact(operationId: string): Promise<Blob> {
+	public downloadBackupArtifact(operationId: string): Promise<Blob> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get(
 				`/database-management/backup/${operationId}`,
@@ -53,7 +51,7 @@ export class DatabaseManagementService
 		});
 	}
 
-	public async restoreBackup(
+	public restoreBackup(
 		file: File,
 		password: string,
 	): Promise<IDatabaseOperationStatus> {
@@ -73,7 +71,7 @@ export class DatabaseManagementService
 		});
 	}
 
-	public async clearDatabase(): Promise<IDatabaseOperationStatus> {
+	public clearDatabase(): Promise<IDatabaseOperationStatus> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<IDatabaseOperationStatus>(
 				"/database-management/clear",
@@ -82,7 +80,7 @@ export class DatabaseManagementService
 		});
 	}
 
-	public async getOperationStatus(
+	public getOperationStatus(
 		operationId: string,
 	): Promise<IDatabaseOperationStatus | null> {
 		return this.withErrorHandling(async () => {

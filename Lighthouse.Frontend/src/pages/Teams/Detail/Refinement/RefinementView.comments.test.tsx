@@ -8,6 +8,7 @@ import type {
 } from "../../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../services/Api/ApiError";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import {
 	aBrowserThatVotedBefore,
 	aRow,
@@ -391,7 +392,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		const apiVersioning = await openTheLogOf(user, API_VERSIONING);
 		expect(await within(apiVersioning).findByText("Mo Okafor")).toBeVisible();
 
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheComment(
 				aRow(ADVANCED_REPORTING, "Advanced reporting module", "Analysing", {
 					voteCount: 2,
@@ -469,7 +470,7 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(screen.getByRole("button", { name: "Send" })).toBeDisabled();
 		expect(screen.getByRole("textbox", { name: "Comment" })).toBeDisabled();
 
-		await act(async () => {
+		await actAndSettle(() => {
 			answerTheComment(apiVersioningAsked());
 		});
 		await settle();

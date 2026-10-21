@@ -16,21 +16,21 @@ export interface IVersionService {
 }
 
 export class VersionService extends BaseApiService {
-	async getCurrentVersion(): Promise<string> {
+	getCurrentVersion(): Promise<string> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<string>("/version/current");
 			return response.data;
 		});
 	}
 
-	async isUpdateAvailable(): Promise<boolean> {
+	isUpdateAvailable(): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<boolean>("/version/hasupdate");
 			return response.data;
 		});
 	}
 
-	async getNewReleases(): Promise<LighthouseRelease[]> {
+	getNewReleases(): Promise<LighthouseRelease[]> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<ILighthouseRelease[]>("/version/new");
@@ -40,7 +40,7 @@ export class VersionService extends BaseApiService {
 		});
 	}
 
-	async isUpdateSupported(): Promise<boolean> {
+	isUpdateSupported(): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<boolean>(
 				"/version/updateSupported",
@@ -49,7 +49,7 @@ export class VersionService extends BaseApiService {
 		});
 	}
 
-	async installUpdate(): Promise<boolean> {
+	installUpdate(): Promise<boolean> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.post<boolean>(
 				"/version/installUpdate",
@@ -58,7 +58,7 @@ export class VersionService extends BaseApiService {
 		});
 	}
 
-	async getDistributionInfo(): Promise<DistributionInfo> {
+	getDistributionInfo(): Promise<DistributionInfo> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<DistributionInfo>(
 				"/version/distribution",

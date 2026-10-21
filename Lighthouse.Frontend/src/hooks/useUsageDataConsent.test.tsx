@@ -343,7 +343,7 @@ describe("useUsageDataConsent", () => {
 		expect(result.current.isDialogOpen).toBe(false);
 	});
 
-	it("closes a dialog it opened", async () => {
+	it("closes a dialog it opened", () => {
 		const { result } = renderConsent(undecided);
 
 		act(() => {

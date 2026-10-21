@@ -42,7 +42,7 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 		});
 	}
 
-	async getFeaturesByReferences(
+	getFeaturesByReferences(
 		parentFeatureReferenceIds: string[],
 	): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
@@ -66,7 +66,7 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 		});
 	}
 
-	async getFeatureWorkItems(featureId: number): Promise<IWorkItem[]> {
+	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<IWorkItem[]>(
 				`/features/${featureId}/workitems`,

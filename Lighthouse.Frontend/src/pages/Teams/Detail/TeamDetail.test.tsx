@@ -447,8 +447,9 @@ describe("TeamDetail component", () => {
 			mockUpdateService.subscribeToTeamUpdates = vi
 				.fn()
 				.mockImplementation(
-					async (_id: number, callback: (update: IUpdateStatus) => void) => {
+					(_id: number, callback: (update: IUpdateStatus) => void) => {
 						capturedCallback = callback;
+						return Promise.resolve();
 					},
 				);
 			mockUpdateService.unsubscribeFromTeamUpdates = vi
@@ -578,15 +579,17 @@ describe("TeamDetail component", () => {
 			mockUpdateService.subscribeToTeamUpdates = vi
 				.fn()
 				.mockImplementation(
-					async (_id: number, cb: (update: IUpdateStatus) => void) => {
+					(_id: number, cb: (update: IUpdateStatus) => void) => {
 						teamCallback = cb;
+						return Promise.resolve();
 					},
 				);
 			mockUpdateService.subscribeToForecastUpdates = vi
 				.fn()
 				.mockImplementation(
-					async (_id: number, cb: (update: IUpdateStatus) => void) => {
+					(_id: number, cb: (update: IUpdateStatus) => void) => {
 						forecastCallback = cb;
+						return Promise.resolve();
 					},
 				);
 			mockUpdateService.unsubscribeFromTeamUpdates = vi
@@ -1107,8 +1110,9 @@ describe("TeamDetail - RBAC Access Tab and Write Controls Visibility", () => {
 		mockUpdateSubscription.subscribeToTeamUpdates = vi
 			.fn()
 			.mockImplementation(
-				async (_id: number, callback: (update: IUpdateStatus) => void) => {
+				(_id: number, callback: (update: IUpdateStatus) => void) => {
 					theUpdateFeed = callback;
+					return Promise.resolve();
 				},
 			);
 		mockUpdateSubscription.getUpdateStatus = vi

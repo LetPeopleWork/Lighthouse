@@ -179,7 +179,7 @@ describe("StateMappingsEditor", () => {
 		]);
 	});
 
-	it("removes a source state from a mapping", async () => {
+	it("removes a source state from a mapping", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "Active", states: ["In Progress", "In Review"] },
 		];

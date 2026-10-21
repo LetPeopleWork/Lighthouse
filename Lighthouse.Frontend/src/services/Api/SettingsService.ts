@@ -22,7 +22,7 @@ export class SettingsService
 	extends BaseApiService
 	implements ISettingsService
 {
-	async getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
+	getRefreshSettings(settingName: string): Promise<IRefreshSettings> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>(
 				`/appsettings/${settingName}Refresh`,
@@ -47,7 +47,7 @@ export class SettingsService
 		return Promise.resolve();
 	}
 
-	async getFeatureOrdering(): Promise<FeatureOrderingPolicy> {
+	getFeatureOrdering(): Promise<FeatureOrderingPolicy> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>(
 				"/appsettings/FeatureOrdering",

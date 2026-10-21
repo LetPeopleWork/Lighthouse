@@ -45,7 +45,7 @@ export class ForecastService
 	extends BaseApiService
 	implements IForecastService
 {
-	async runManualForecast(
+	runManualForecast(
 		teamId: number,
 		remainingItems: number | undefined,
 		targetDate: Date | null,
@@ -76,7 +76,7 @@ export class ForecastService
 		});
 	}
 
-	async runItemPrediction(
+	runItemPrediction(
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
@@ -119,7 +119,7 @@ export class ForecastService
 		return manualForecast;
 	}
 
-	async runBacktest(
+	runBacktest(
 		teamId: number,
 		startDate: Date,
 		endDate: Date,
@@ -153,7 +153,7 @@ export class ForecastService
 		});
 	}
 
-	async runRealityCheck(
+	runRealityCheck(
 		teamId: number,
 		applyFilterOverride?: boolean,
 	): Promise<RealityCheckResult> {

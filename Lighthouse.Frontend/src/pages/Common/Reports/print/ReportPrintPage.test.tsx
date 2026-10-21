@@ -2,6 +2,7 @@ import { hexToRgb } from "@mui/material/styles";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import { deferred } from "../../../../tests/HeldMetricsService";
 import {
 	aMomentLater,
@@ -429,7 +430,7 @@ describe("A report the print page cannot read", () => {
 		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 		expect(renderReadiness()).toBe("false");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			theRetriedRead.resolve(theEngagementStartReport());
 		});
 		await thePrintPageIsReady();
@@ -656,7 +657,7 @@ describe("The print page prints the report as it is now", () => {
 		expect(screen.queryByText("An older name of the report")).toBeNull();
 		expect(renderReadiness()).not.toBe("true");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			theFreshRead.resolve(theEngagementStartReport());
 		});
 		await thePrintPageIsReady();

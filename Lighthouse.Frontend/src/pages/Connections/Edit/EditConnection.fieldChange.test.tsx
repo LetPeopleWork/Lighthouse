@@ -158,7 +158,7 @@ const nordwindJiraDc = (usedBy: UsedBy, fields: Field[]) =>
 		{ usedBy },
 	);
 
-const givenPriyaOpensTheConnectionPage = async ({
+const givenPriyaOpensTheConnectionPage = ({
 	usedBy = { teams: 4, portfolios: 2 },
 	words = TheDefaultWords,
 	validation = { isValid: true },
@@ -235,8 +235,7 @@ const givenPriyaOpensTheConnectionPage = async ({
 const givenPriyaOpensNordwindJiraDc = async (
 	options: Parameters<typeof givenPriyaOpensTheConnectionPage>[0] = {},
 ) => {
-	const { server, terminology } =
-		await givenPriyaOpensTheConnectionPage(options);
+	const { server, terminology } = givenPriyaOpensTheConnectionPage(options);
 	await screen.findByDisplayValue(NordwindJiraDc);
 	if ((options.words ?? TheDefaultWords).team !== TheDefaultWords.team) {
 		await waitFor(() =>
@@ -248,7 +247,7 @@ const givenPriyaOpensNordwindJiraDc = async (
 };
 
 const givenPriyaSetsUpANewJiraConnection = async () => {
-	const { server } = await givenPriyaOpensTheConnectionPage();
+	const { server } = givenPriyaOpensTheConnectionPage();
 	fireEvent.click(await screen.findByRole("button", { name: NordwindJiraDc }));
 	fireEvent.change(await screen.findByLabelText(/API Token/), {
 		target: { value: "a-new-token" },

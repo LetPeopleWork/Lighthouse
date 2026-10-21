@@ -39,14 +39,14 @@ export class SystemInfoService
 	extends BaseApiService
 	implements ISystemInfoService
 {
-	async getSystemInfo(): Promise<SystemInfo> {
+	getSystemInfo(): Promise<SystemInfo> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>("/systeminfo");
 			return BaseApiService.parse(SystemInfoSchema, response.data);
 		});
 	}
 
-	async getRefreshLogs(): Promise<RefreshLog[]> {
+	getRefreshLogs(): Promise<RefreshLog[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RefreshLog[]>(
 				"/systeminfo/refreshlog",

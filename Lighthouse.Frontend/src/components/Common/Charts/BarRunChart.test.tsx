@@ -166,7 +166,7 @@ describe("BarRunChart component", () => {
 		expect(screen.getByText("No data available")).toBeInTheDocument();
 	});
 
-	it("should open the dialog when clicking on a bar with items", async () => {
+	it("should open the dialog when clicking on a bar with items", () => {
 		const rawData = [5, 10, 15];
 
 		// Create mock work items for the second day (index 1)
@@ -207,7 +207,7 @@ describe("BarRunChart component", () => {
 		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 	});
 
-	it("should not open the dialog when clicking on a bar without items", async () => {
+	it("should not open the dialog when clicking on a bar without items", () => {
 		const rawData = [5, 10, 15];
 
 		// Create empty work items for all days
@@ -239,7 +239,7 @@ describe("BarRunChart component", () => {
 		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
 	});
 
-	it("should close the dialog when clicking the close button", async () => {
+	it("should close the dialog when clicking the close button", () => {
 		const rawData = [5, 10, 15];
 
 		// Create mock work items for the second day (index 1)

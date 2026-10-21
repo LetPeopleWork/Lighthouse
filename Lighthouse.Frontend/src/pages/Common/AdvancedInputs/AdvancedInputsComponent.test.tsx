@@ -33,7 +33,7 @@ describe("AdvancedInputsComponent", () => {
 		);
 	});
 
-	it("calls onTeamSettingsChange with the correct parameters when the Select value changes", async () => {
+	it("calls onTeamSettingsChange with the correct parameters when the Select value changes", () => {
 		const onTeamSettingsChange = vi.fn();
 		const teamSettings = createMockTeamSettings();
 
@@ -62,7 +62,7 @@ describe("AdvancedInputsComponent", () => {
 		);
 	});
 
-	it("calls onTeamSettingsChange with null when None is selected", async () => {
+	it("calls onTeamSettingsChange with null when None is selected", () => {
 		const onTeamSettingsChange = vi.fn();
 		const teamSettings = createMockTeamSettings();
 		teamSettings.parentOverrideAdditionalFieldDefinitionId = 1;

@@ -1,10 +1,4 @@
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
@@ -16,6 +10,7 @@ import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+import { actAndSettle } from "../../../../../tests/actAndSettle";
 import {
 	createMockApiServiceContext,
 	createMockDeliveryService,
@@ -297,7 +292,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		// still reads the way it did a moment ago — which is how a first draft of the test below
 		// went green against the very bug it was written for.
 		const announce = async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				announceTheSources([JIRA_RELEASE_SOURCE]);
 			});
 		};

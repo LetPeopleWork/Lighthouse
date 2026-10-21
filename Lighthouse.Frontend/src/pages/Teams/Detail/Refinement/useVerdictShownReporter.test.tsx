@@ -16,6 +16,7 @@ import {
 	forgetWhatWasNoticed,
 	takeWhatWasNoticed,
 } from "../../../../services/UsageData/usageDataBuffer";
+import { actAndSettle } from "../../../../tests/actAndSettle";
 import { createMockApiServiceContext } from "../../../../tests/MockApiServiceProvider";
 import {
 	aNeedOfFiveToEight,
@@ -101,7 +102,7 @@ const renderWithConsentStillOnItsWay = (refinement: IRefinementView) => {
 	return {
 		...rendered,
 		consentArrives: (state: IUsageDataState) =>
-			act(async () => {
+			actAndSettle(() => {
 				answerConsent(state);
 			}),
 	};

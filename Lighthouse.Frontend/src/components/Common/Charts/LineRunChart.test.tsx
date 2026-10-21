@@ -226,7 +226,7 @@ describe("LineRunChart component", () => {
 		expect(titleElement).toBeInTheDocument();
 	});
 
-	it("should open the dialog when clicking on a line point with items", async () => {
+	it("should open the dialog when clicking on a line point with items", () => {
 		const rawData = [5, 10, 15];
 
 		// Create mock work items for the second day (index 1)
@@ -263,7 +263,7 @@ describe("LineRunChart component", () => {
 		expect(screen.getByText("Cycle Time")).toBeInTheDocument();
 	});
 
-	it("should not open the dialog when clicking on a line point without items", async () => {
+	it("should not open the dialog when clicking on a line point without items", () => {
 		const rawData = [5, 10, 15];
 
 		// Create empty work items for all days
@@ -291,7 +291,7 @@ describe("LineRunChart component", () => {
 		expect(screen.queryByTestId("work-items-dialog")).not.toBeInTheDocument();
 	});
 
-	it("should close the dialog when clicking the close button", async () => {
+	it("should close the dialog when clicking the close button", () => {
 		const rawData = [5, 10, 15];
 
 		// Create mock work items for the second day (index 1)

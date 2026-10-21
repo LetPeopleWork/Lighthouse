@@ -5,6 +5,7 @@ import type {
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
+import { actAndSettle } from "../tests/actAndSettle";
 import {
 	type AutoSaveOptions,
 	type ModifySettingsBase,
@@ -78,7 +79,7 @@ const makeArgs = (
 });
 
 const settleDebounce = async () => {
-	await act(async () => {
+	await actAndSettle(() => {
 		vi.advanceTimersByTime(DEBOUNCE_MS);
 	});
 };

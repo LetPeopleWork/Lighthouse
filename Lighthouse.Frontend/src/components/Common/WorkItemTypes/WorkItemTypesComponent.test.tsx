@@ -49,7 +49,7 @@ describe("WorkItemTypesComponent", () => {
 		mockGetWorkItemTypesForProjects.mockClear();
 	});
 
-	it("renders correctly", async () => {
+	it("renders correctly", () => {
 		renderWithContext();
 
 		expect(screen.getByText("Work Item Types")).toBeInTheDocument();

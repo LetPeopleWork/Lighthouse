@@ -5,6 +5,7 @@ import type {
 	WorkTrackingSystemType,
 } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
+import { actAndSettle } from "../tests/actAndSettle";
 import {
 	type ModifySettingsBase,
 	useModifySettings,
@@ -686,7 +687,7 @@ describe("useModifySettings", () => {
 				});
 				expect(saveSettings).toHaveBeenCalledTimes(1);
 
-				await act(async () => {
+				await actAndSettle(() => {
 					resolveFirst(makeSettings({ concurrencyToken: "token-v2" }));
 				});
 
@@ -808,7 +809,7 @@ describe("useModifySettings", () => {
 				});
 				expect(result.current.saveState).toBe("error");
 
-				await act(async () => {
+				await actAndSettle(() => {
 					result.current.retry();
 				});
 
@@ -861,7 +862,7 @@ describe("useModifySettings", () => {
 
 			await waitFor(() => expect(result.current.settings).not.toBeNull());
 
-			await act(async () => {
+			await actAndSettle(() => {
 				result.current.reloadDependentData();
 			});
 

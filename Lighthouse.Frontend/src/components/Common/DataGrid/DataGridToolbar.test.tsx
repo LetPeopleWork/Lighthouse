@@ -189,7 +189,7 @@ describe("DataGridToolbar", () => {
 			});
 		});
 
-		it("should show premium feature message when premium is not available", async () => {
+		it("should show premium feature message when premium is not available", () => {
 			render(
 				<DataGridToolbar
 					canUsePremiumFeatures={false}
@@ -249,7 +249,7 @@ describe("DataGridToolbar", () => {
 			});
 		});
 
-		it("should not copy when premium features are not available", async () => {
+		it("should not copy when premium features are not available", () => {
 			const consoleWarnSpy = vi
 				.spyOn(console, "warn")
 				.mockImplementation(() => {});
@@ -417,7 +417,7 @@ describe("DataGridToolbar", () => {
 			appendChildSpy.mockRestore();
 		});
 
-		it("should not export when premium features are not available", async () => {
+		it("should not export when premium features are not available", () => {
 			render(
 				<DataGridToolbar
 					canUsePremiumFeatures={false}
@@ -491,7 +491,7 @@ describe("DataGridToolbar", () => {
 	});
 
 	describe("Runtime Premium Checks", () => {
-		it("should prevent copy if premium is removed after render", async () => {
+		it("should prevent copy if premium is removed after render", () => {
 			const consoleWarnSpy = vi
 				.spyOn(console, "warn")
 				.mockImplementation(() => {});
@@ -519,7 +519,7 @@ describe("DataGridToolbar", () => {
 			consoleWarnSpy.mockRestore();
 		});
 
-		it("should prevent export if premium is removed after render", async () => {
+		it("should prevent export if premium is removed after render", () => {
 			const { rerender } = render(
 				<DataGridToolbar
 					canUsePremiumFeatures={true}
@@ -675,7 +675,7 @@ describe("DataGridToolbar", () => {
 			expect(html.match(/<table/g) ?? []).toHaveLength(1);
 		});
 
-		it("hands nothing over without a premium licence", async () => {
+		it("hands nothing over without a premium licence", () => {
 			const exportTable = vi.fn(() => EXPORT_TABLE);
 
 			render(

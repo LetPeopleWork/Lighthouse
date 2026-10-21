@@ -73,7 +73,7 @@ describe("ScopedGroupMappingManager", () => {
 	});
 
 	describe("initial load", () => {
-		it("renders the supplied title", async () => {
+		it("renders the supplied title", () => {
 			renderManager({ title: "Portfolio Group Access" });
 
 			expect(screen.getByTestId("scoped-groups-title")).toHaveTextContent(

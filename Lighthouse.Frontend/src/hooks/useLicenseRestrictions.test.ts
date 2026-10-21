@@ -207,7 +207,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdatePortfolioData).toBe(false);
 		});
 
-		it("should handle API errors gracefully", async () => {
+		it("should handle API errors gracefully", () => {
 			mockLicensingService.getLicenseStatus.mockRejectedValue(
 				new Error("API Error"),
 			);

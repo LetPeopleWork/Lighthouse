@@ -14,7 +14,7 @@ export interface IAuthService {
 }
 
 export class AuthService extends BaseApiService implements IAuthService {
-	async getRuntimeAuthStatus(): Promise<RuntimeAuthStatus> {
+	getRuntimeAuthStatus(): Promise<RuntimeAuthStatus> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<RuntimeAuthStatus>("/auth/mode");
@@ -22,7 +22,7 @@ export class AuthService extends BaseApiService implements IAuthService {
 		});
 	}
 
-	async getSession(): Promise<AuthSessionStatus> {
+	getSession(): Promise<AuthSessionStatus> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<AuthSessionStatus>("/auth/session");
@@ -30,7 +30,7 @@ export class AuthService extends BaseApiService implements IAuthService {
 		});
 	}
 
-	async getCurrentUserProfile(): Promise<CurrentUserProfileStatus> {
+	getCurrentUserProfile(): Promise<CurrentUserProfileStatus> {
 		return this.withErrorHandling(async () => {
 			const response =
 				await this.apiService.get<CurrentUserProfileStatus>("/auth/me");
@@ -43,7 +43,7 @@ export class AuthService extends BaseApiService implements IAuthService {
 		return `${baseUrl}/auth/login`;
 	}
 
-	async logout(): Promise<void> {
+	logout(): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.post("/auth/logout");
 		});

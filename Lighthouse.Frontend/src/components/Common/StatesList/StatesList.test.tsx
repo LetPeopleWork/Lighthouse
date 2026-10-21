@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { actAndSettle } from "../../../tests/actAndSettle";
 import {
 	createMockApiServiceContext,
 	createMockSuggestionService,
@@ -73,7 +74,7 @@ describe("StatesList", () => {
 	});
 
 	it("renders the title correctly", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -81,7 +82,7 @@ describe("StatesList", () => {
 	});
 
 	it("renders to do states correctly", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -91,7 +92,7 @@ describe("StatesList", () => {
 	});
 
 	it("fetches team states when isForTeam is true", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext(true);
 		});
 
@@ -100,7 +101,7 @@ describe("StatesList", () => {
 	});
 
 	it("fetches project states when isForTeam is false", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext(false);
 		});
 
@@ -109,7 +110,7 @@ describe("StatesList", () => {
 	});
 
 	it("provides appropriate suggestions from the API data", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext(true);
 		});
 
@@ -118,13 +119,13 @@ describe("StatesList", () => {
 	});
 
 	it("calls onAddToDoState when a new to do state is added", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
 		const input = screen.getByLabelText("New To Do States");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			fireEvent.change(input, { target: { value: "Task 3" } });
 			fireEvent.keyDown(input, { key: "Enter" });
 		});
@@ -133,7 +134,7 @@ describe("StatesList", () => {
 	});
 
 	it("calls onRemoveToDoState when an item is removed", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -142,7 +143,7 @@ describe("StatesList", () => {
 		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
 
 		if (deleteIcon) {
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(deleteIcon);
 			});
 		}
@@ -151,7 +152,7 @@ describe("StatesList", () => {
 	});
 
 	it("renders doing states correctly", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -161,13 +162,13 @@ describe("StatesList", () => {
 	});
 
 	it("calls onAddDoingState when a new doing state is added", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
 		const input = screen.getByLabelText("New Doing States");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			fireEvent.change(input, { target: { value: "Task 4" } });
 			fireEvent.keyDown(input, { key: "Enter" });
 		});
@@ -176,7 +177,7 @@ describe("StatesList", () => {
 	});
 
 	it("calls onRemoveDoingState when an item is removed", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -187,7 +188,7 @@ describe("StatesList", () => {
 		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
 
 		if (deleteIcon) {
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(deleteIcon);
 			});
 		}
@@ -196,7 +197,7 @@ describe("StatesList", () => {
 	});
 
 	it("renders done states correctly", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -206,13 +207,13 @@ describe("StatesList", () => {
 	});
 
 	it("calls onAddDoneState when a new done state is added", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
 		const input = screen.getByLabelText("New Done States");
 
-		await act(async () => {
+		await actAndSettle(() => {
 			fireEvent.change(input, { target: { value: "Task 5" } });
 			fireEvent.keyDown(input, { key: "Enter" });
 		});
@@ -221,7 +222,7 @@ describe("StatesList", () => {
 	});
 
 	it("calls onRemoveDoneState when an item is removed", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -230,7 +231,7 @@ describe("StatesList", () => {
 		const deleteIcon = chipElement?.querySelector(".MuiChip-deleteIcon");
 
 		if (deleteIcon) {
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.click(deleteIcon);
 			});
 		}
@@ -243,7 +244,7 @@ describe("StatesList", () => {
 		const mockError = new Error("Failed to fetch");
 		mockGetStatesForTeams.mockRejectedValueOnce(mockError);
 
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext();
 		});
 
@@ -256,7 +257,7 @@ describe("StatesList", () => {
 	});
 
 	it("correctly filters out already selected states from suggestions", async () => {
-		await act(async () => {
+		await actAndSettle(() => {
 			renderWithContext(true);
 		});
 
@@ -268,7 +269,7 @@ describe("StatesList", () => {
 		const mockOnReorderDoingStates = vi.fn();
 		const mockOnReorderDoneStates = vi.fn();
 
-		await act(async () => {
+		await actAndSettle(() => {
 			render(
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<StatesList
@@ -323,13 +324,13 @@ describe("StatesList", () => {
 		};
 
 		it("includes mapped names as suggestions in To Do states", async () => {
-			await act(async () => {
+			await actAndSettle(() => {
 				renderWithMappings(["Active Work", "Completed Work"]);
 			});
 
 			// The mapped names should be clickable suggestions in the autocomplete
 			const toDoInput = screen.getByLabelText("New To Do States");
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.change(toDoInput, { target: { value: "Active" } });
 			});
 
@@ -363,7 +364,7 @@ describe("StatesList", () => {
 			// "Active Work" is already used, should not appear as a suggestion
 			// "Completed Work" should still be available
 			const toDoInput = screen.getByLabelText("New To Do States");
-			await act(async () => {
+			await actAndSettle(() => {
 				fireEvent.change(toDoInput, { target: { value: "Completed" } });
 			});
 

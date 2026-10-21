@@ -42,9 +42,8 @@ const EditTeamPage: React.FC = () => {
 
 	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamData;
 
-	const validateTeamSettings = async (updatedTeamSettings: ITeamSettings) => {
-		return teamService.validateTeamSettings(updatedTeamSettings);
-	};
+	const validateTeamSettings = (updatedTeamSettings: ITeamSettings) =>
+		teamService.validateTeamSettings(updatedTeamSettings);
 
 	const saveTeamSettings = async (updatedSettings: ITeamSettings) => {
 		let newSettings: ITeamSettings;

@@ -377,7 +377,7 @@ describe("DeliveriesChips", () => {
 		expect(mockDeliveryService.getByPortfolio).not.toHaveBeenCalled();
 	});
 
-	it("should refetch deliveries when portfolioId changes", async () => {
+	it("should refetch deliveries when portfolioId changes", () => {
 		const { rerender } = renderWithProviders(
 			<DeliveriesChips portfolioId={1} />,
 		);
