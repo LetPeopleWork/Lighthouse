@@ -114,7 +114,7 @@ time of writing. The clients' commits are pushed, not yet released.
 
 ## Quality gates
 
-- **Mutation, frontend:** first run 79.01 % (715 / 905), below the 80 % gate; a kill round is in progress.
+- **Mutation, frontend:** first run 79.01 % (715 / 905); after one kill round **83.87 %** (759 / 905), tests only.
   Record: `mutation/frontend.md`.
 - **Mutation, clients:** 70.41 % before the kill round, **97.61 %** after, every file at or above 91 %. Record:
   `mutation/clients.md`.
@@ -140,7 +140,7 @@ time of writing. The clients' commits are pushed, not yet released.
 - **Standalone hand check, owed by the maintainer:** the hidden-frame export has been checked only in Chrome and
   Firefox. It has not been checked in the Standalone app on any OS (the earlier Linux probe covered the previous
   whole-page mechanism). Check on Linux, macOS and Windows; the user docs ask readers to report a failure.
-- Frontend mutation kill round (in progress).
+- Frontend mutation: the usePrintOnce "dialog opened" flag is the likeliest real gap left (a dialog that opens, closes, and the frame must go); see `mutation/frontend.md`.
 - K5 skill eval runs, after the push.
 - Clients release (one release carries slices 04 and 05).
 
