@@ -177,7 +177,9 @@ describe("DeliverySourceTab picker", () => {
 
 		const blocked = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
 		expect(blocked).toHaveAttribute("aria-disabled", "true");
-		expect(blocked).toHaveTextContent("No Release Date Set");
+		expect(blocked).toHaveTextContent(
+			"No date in Jira: set one there to follow it",
+		);
 
 		fireEvent.click(blocked);
 

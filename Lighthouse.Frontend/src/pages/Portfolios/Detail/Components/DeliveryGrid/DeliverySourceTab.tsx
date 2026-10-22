@@ -17,7 +17,9 @@ import type {
 	IDeliverySourcePreview,
 	SourceOptionBlockReason,
 } from "../../../../../models/Delivery/DeliverySource";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 
 /**
  * The entry a delivery already follows, as the delivery itself remembers it. It is remembered
@@ -56,10 +58,21 @@ export const clearDeliverySourceOptionsCache = (): void => {
 	optionCache.clear();
 };
 
-const blockedReason: Record<SourceOptionBlockReason, string> = {
-	NoDateSet: "No Release Date Set",
-	RetiredAtSource: "No longer available",
+/**
+ * The tracker a source lives in, named as the tracker names itself, so the reader is sent to the
+ * right place to fix a missing date. A source not listed here falls back to the tenant's own word.
+ */
+const trackerWordBySourceKey: Record<string, string> = {
+	"jira-release": "Jira",
 };
+
+const blockedReason = (
+	reason: SourceOptionBlockReason,
+	trackerWord: string,
+): string =>
+	reason === "NoDateSet"
+		? `No date in ${trackerWord}: set one there to follow it`
+		: "No longer available";
 
 const emptyPreviewExplanation = (
 	reason: DeliverySourcePreviewEmptyReason,
@@ -173,7 +186,8 @@ const useSourceOptions = (portfolioId: number, sourceKey: string) => {
 const SourceOptionRow: React.FC<{
 	liProps: React.HTMLAttributes<HTMLLIElement>;
 	option: IDeliverySourceOption;
-}> = ({ liProps, option }) => {
+	trackerWord: string;
+}> = ({ liProps, option, trackerWord }) => {
 	// Whether an entry can be picked is the server's verdict, carried on the entry itself. Working it
 	// out again from the date here would give two answers that drift apart, and the drift only shows
 	// up when somebody binds a Release the picker told them they could not. Taking the click handler
@@ -197,7 +211,7 @@ const SourceOptionRow: React.FC<{
 					color="text.secondary"
 					sx={{ ml: 1 }}
 				>
-					{blockedReason[option.blockedBecause]}
+					{blockedReason(option.blockedBecause, trackerWord)}
 				</Typography>
 			)}
 		</li>
@@ -206,10 +220,11 @@ const SourceOptionRow: React.FC<{
 
 const SourceOptionPicker: React.FC<{
 	sourceName: string;
+	trackerWord: string;
 	options: IDeliverySourceOption[];
 	selectedId: string;
 	onSelect: (option: IDeliverySourceOption) => void;
-}> = ({ sourceName, options, selectedId, onSelect }) => (
+}> = ({ sourceName, trackerWord, options, selectedId, onSelect }) => (
 	<Autocomplete
 		fullWidth
 		options={options}
@@ -225,9 +240,22 @@ const SourceOptionPicker: React.FC<{
 		isOptionEqualToValue={(option, picked) => option.id === picked.id}
 		renderOption={(props, option) => {
 			const { key, ...liProps } = props;
-			return <SourceOptionRow key={key} liProps={liProps} option={option} />;
+			return (
+				<SourceOptionRow
+					key={key}
+					liProps={liProps}
+					option={option}
+					trackerWord={trackerWord}
+				/>
+			);
 		}}
-		renderInput={(params) => <TextField {...params} label={sourceName} />}
+		renderInput={(params) => (
+			<TextField
+				{...params}
+				label={sourceName}
+				placeholder={`Type to search ${sourceName}s`}
+			/>
+		)}
 	/>
 );
 
@@ -315,6 +343,10 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	onPublishForecastChange,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
+	const trackerWord =
+		trackerWordBySourceKey[sourceKey] ??
+		getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 	const { options: offered, failed } = useSourceOptions(portfolioId, sourceKey);
 	// Merged on the way out of the cache rather than into it, so what the server said stays what the
 	// server said and a second form opened on a different Delivery gets its own entry offered.
@@ -376,6 +408,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 			</Typography>
 			<SourceOptionPicker
 				sourceName={sourceName}
+				trackerWord={trackerWord}
 				options={options}
 				selectedId={selectedId}
 				onSelect={handleSelect}

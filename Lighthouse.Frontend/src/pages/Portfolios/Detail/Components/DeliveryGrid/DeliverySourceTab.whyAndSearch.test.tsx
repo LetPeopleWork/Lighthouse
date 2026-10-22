@@ -89,9 +89,9 @@ beforeEach(() => {
 	clearDeliverySourceOptionsCache();
 });
 
-describe("Story 6355 slice 03 (pending): the Release picker says why and invites searching", () => {
+describe("Story 6355 slice 03: the Release picker says why and invites searching", () => {
 	// @driving_port @contract-shape:pure-function
-	it.skip("on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases", async () => {
+	it("on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases", async () => {
 		const user = userEvent.setup();
 		await renderWithTerms(
 			<DeliveryCreateModal
@@ -120,7 +120,7 @@ describe("Story 6355 slice 03 (pending): the Release picker says why and invites
 	});
 
 	// @contract-shape:pure-function
-	it.skip("a Release without a date says it has no date in Jira and to set one there", async () => {
+	it("a Release without a date says it has no date in Jira and to set one there", async () => {
 		const user = userEvent.setup();
 		await givenDanaOpensTheSourceTab(allOptions);
 
@@ -132,7 +132,7 @@ describe("Story 6355 slice 03 (pending): the Release picker says why and invites
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("a source the picker cannot name a tracker for speaks of the tenant's own word for it", async () => {
+	it("a source the picker cannot name a tracker for speaks of the tenant's own word for it", async () => {
 		const user = userEvent.setup();
 		await givenDanaOpensTheSourceTab([datelessOption], {
 			key: "some-other-release",
@@ -171,7 +171,7 @@ describe("Story 6355 slice 03: what stays as it is", () => {
 
 		await openSourceList(user);
 
-		const gone = screen.getByRole("option", { name: /Release 40/ });
+		const gone = screen.getByRole("option", { name: /^Release 40 \(/ });
 		expect(gone).toHaveTextContent("No longer available");
 		expect(gone).not.toHaveTextContent(/No date in/);
 		expect(gone).toHaveAttribute("aria-disabled", "true");
