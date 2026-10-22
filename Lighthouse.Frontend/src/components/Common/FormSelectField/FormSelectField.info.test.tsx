@@ -63,7 +63,7 @@ describe("Story 6352 slice 02: a field list with something to explain", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @edge @contract-shape:bounded-change
+	// @edge @contract-shape:pure-function
 	it("Escape closes the tip again", async () => {
 		const user = userEvent.setup();
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
@@ -75,6 +75,7 @@ describe("Story 6352 slice 02: a field list with something to explain", () => {
 			expect(screen.queryByText(TIP)).not.toBeInTheDocument(),
 		);
 		expect(theAboutButtonOf(LABEL)).toHaveAttribute("aria-expanded", "false");
+		expect(theAboutButtonOf(LABEL)).toHaveFocus();
 	});
 });
 

@@ -51,6 +51,7 @@ describe("Story 6352 slice 02: a dashboard widget's info popover stays as it is"
 		);
 	});
 
+	// @contract-shape:pure-function
 	it("is named after the widget it explains and says whether its popover is open", async () => {
 		const user = userEvent.setup();
 		render(

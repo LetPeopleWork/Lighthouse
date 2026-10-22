@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { describe, expect, it } from "vitest";
 import type { IPortfolioSettings } from "../../../../models/Portfolio/PortfolioSettings";
-import type { WorkTrackingSystemType } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type IWorkTrackingSystemConnection,
+	WorkTrackingSystemConnection,
+	type WorkTrackingSystemType,
+} from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	DEPENDENCY_FIELD_DOCS,
 	expectLearnMoreToOpen,
@@ -34,7 +38,13 @@ interface HeldSettings {
 }
 
 /** Holds the Portfolio's settings and applies every change, as the edit page does, so a test reads what is left. */
-const PortfolioSettingsInState = ({ held }: { held: HeldSettings }) => {
+const PortfolioSettingsInState = ({
+	held,
+	connection,
+}: {
+	held: HeldSettings;
+	connection: IWorkTrackingSystemConnection | null;
+}) => {
 	const [settings, setSettings] = useState(held.current);
 	held.current = settings;
 	return (
@@ -46,6 +56,7 @@ const PortfolioSettingsInState = ({ held }: { held: HeldSettings }) => {
 			additionalFieldDefinitions={[
 				{ id: 1, displayName: "Waits On", reference: "Custom.WaitsOn" },
 			]}
+			connection={connection}
 		/>
 	);
 };
@@ -53,11 +64,15 @@ const PortfolioSettingsInState = ({ held }: { held: HeldSettings }) => {
 const givenSamOpensAPortfolioOn = async (
 	tracker: WorkTrackingSystemType | undefined,
 	terms: Record<string, string> = {},
+	connection: IWorkTrackingSystemConnection | null = null,
 ) => {
 	const held: HeldSettings = {
 		current: { ...createMockProjectSettings(), workTrackingSystem: tracker },
 	};
-	await renderWithTerms(<PortfolioSettingsInState held={held} />, terms);
+	await renderWithTerms(
+		<PortfolioSettingsInState held={held} connection={connection} />,
+		terms,
+	);
 	fireEvent.click(screen.getByLabelText("toggle"));
 	return held;
 };
@@ -79,7 +94,7 @@ describe("Story 6352 slice 02: Dependency Field says which end of a link it read
 	});
 
 	// @contract-shape:pure-function
-	it("on Jira, the tip says None reads Jira's own links and a chosen field replaces them", async () => {
+	it("on Jira, the tip says None reads the tracker's own links and a chosen field replaces them", async () => {
 		await givenSamOpensAPortfolioOn("Jira");
 
 		const tip = await whenSamOpensTheTip();
@@ -95,6 +110,24 @@ describe("Story 6352 slice 02: Dependency Field says which end of a link it read
 		const tip = await whenSamOpensTheTip();
 		expect(tip).toHaveTextContent(PREDECESSOR);
 		expect(tip).toHaveTextContent(THE_REVERSE_END);
+		expect(tip).not.toHaveTextContent(IS_BLOCKED_BY);
+	});
+
+	// @edge @contract-shape:pure-function
+	it("once an Azure DevOps connection has loaded, the tip follows it, though the settings still say Jira", async () => {
+		await givenSamOpensAPortfolioOn(
+			"Jira",
+			{},
+			new WorkTrackingSystemConnection({
+				id: 2,
+				name: "Azure DevOps Payments",
+				workTrackingSystem: "AzureDevOps",
+				options: [],
+			}),
+		);
+
+		const tip = await whenSamOpensTheTip();
+		expect(tip).toHaveTextContent(PREDECESSOR);
 		expect(tip).not.toHaveTextContent(IS_BLOCKED_BY);
 	});
 
@@ -152,6 +185,7 @@ describe("Story 6352 slice 02: Dependency Field says which end of a link it read
 
 		await waitFor(() => expect(tip).not.toBeInTheDocument());
 		expect(theDependencyButton()).toHaveAttribute("aria-expanded", "false");
+		expect(theDependencyButton()).toHaveFocus();
 	});
 });
 

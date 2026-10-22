@@ -2,7 +2,11 @@ import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
-import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type IWorkTrackingSystemConnection,
+	WorkTrackingSystemConnection,
+	type WorkTrackingSystemType,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	expectLearnMoreToOpen,
 	openTheTip,
@@ -32,6 +36,7 @@ const givenSamOpensTheSettingsOf = async (
 	owner: Owner,
 	tracker: WorkTrackingSystemType | undefined,
 	terms: Record<string, string> = {},
+	connection: IWorkTrackingSystemConnection | null = null,
 ) => {
 	const settings: IBaseSettings = {
 		...createMockTeamSettings(),
@@ -41,6 +46,7 @@ const givenSamOpensTheSettingsOf = async (
 		<AdvancedInputsComponent
 			settings={settings}
 			onSettingsChange={vi.fn()}
+			connection={connection}
 			parentOverrideDefault={
 				owner === "Team"
 					? "parentOverrideForTeams"
@@ -75,6 +81,25 @@ describe("Story 6352 slice 02: Parent Override Field says which way round it rea
 	// @contract-shape:pure-function
 	it("on an Azure DevOps Team, the tip asks for the field that holds the parent's id, not a Jira phrase", async () => {
 		await givenSamOpensTheSettingsOf("Team", "AzureDevOps");
+
+		const tip = await whenSamOpensTheTip();
+		expect(tip).toHaveTextContent(THE_PARENTS_ID);
+		expect(tip).not.toHaveTextContent(IS_CAUSED_BY);
+	});
+
+	// @edge @contract-shape:pure-function
+	it("once an Azure DevOps connection has loaded, the tip follows it, though the settings still say Jira", async () => {
+		await givenSamOpensTheSettingsOf(
+			"Team",
+			"Jira",
+			{},
+			new WorkTrackingSystemConnection({
+				id: 2,
+				name: "Payments Azure DevOps",
+				workTrackingSystem: "AzureDevOps",
+				options: [],
+			}),
+		);
 
 		const tip = await whenSamOpensTheTip();
 		expect(tip).toHaveTextContent(THE_PARENTS_ID);
