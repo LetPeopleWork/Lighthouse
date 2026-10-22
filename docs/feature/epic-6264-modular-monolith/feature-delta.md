@@ -645,3 +645,49 @@ Elevator-Pitch gate: all 39 Stories carry Before / After / Decision-enabled. "Af
 9. Open for S09b: assembly per context. Deliberately deferred, may be "no".
 10. Open for FE1 DESIGN: Biome `noRestrictedImports` (no new dependency, but path-pattern expressiveness is limited) vs dependency-cruiser (expressive, but a new dev dependency, which must respect pnpm's minimum release age).
 11. `Feature.projects` wire rename needs a versioned-API decision with Lighthouse-Clients. Flagged, not owned here.
+
+## Wave: DISCUSS / [REF] ADO Stories
+
+Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in the title matches the catalogue above and the brief in `slices/`.
+
+| ADO | Story |
+|---|---|
+| #6357 | S01 Bounded contexts, context map and layout (ADR) |
+| #6358 | S02 Metrics pilot (go/no-go gate) |
+| #6359 | S03a Package WorkTracking-Integration |
+| #6360 | S03b Package WorkItems / Sync |
+| #6361 | S03c Package Forecasting |
+| #6362 | S03d Package Portfolio / Delivery |
+| #6363 | S03e Package RBAC / Identity |
+| #6364 | S03f Package Platform / Persistence |
+| #6365 | S03g Package Refinement |
+| #6366 | S03h Package Reports |
+| #6367 | S04a Close the `Models ↛ Services` gap |
+| #6368 | S04b Reduce `Models` to the shared kernel + kernel-size rule |
+| #6369 | S05a Ratchet guard: `GetAllByPredicate` callers + controllers on repositories |
+| #6370 | S05b Verify in-memory filtering via `Func` predicates; fix if confirmed |
+| #6371 | S05c Role-specific persistence ports for Team |
+| #6372 | S05d Role-specific persistence ports for Portfolio |
+| #6373 | S05e Role-specific persistence ports for WorkTrackingSystemConnection |
+| #6374 | S05f Move the two metrics services off `GetAllByPredicate` |
+| #6375 | S05g End state: `GetAllByPredicate` protected; ADR-163 generalised |
+| #6376 | S06 Connector capability interfaces |
+| #6377 | S07a Split `WorkItemService` along use cases |
+| #6378 | S07b `BaseMetricsService` inheritance → composition |
+| #6379 | S07c Evaluate `WorkTrackingSystemOptionsOwner` → `WorkTrackingOptions` value object |
+| #6380 | S07d Remove the remaining S107 suppressions on services |
+| #6381 | S08 Aggregates and invariants |
+| #6382 | S09a Context contracts + contracts-only cross-context rule |
+| #6383 | S09b Decision: one assembly per context? |
+| #6384 | S10 Data ownership per context (logical only) |
+| #6385 | S11 `PublishDir` outside the project folder |
+| #6386 | S12a Metrics controllers → read-side query ports per capability |
+| #6387 | S12b Other wide controllers: split by capability or move logic to a query port |
+| #6388 | S12c DTOs become pure mapping |
+| #6389 | FE1 Import-boundary enforcement + ratcheting allow-list |
+| #6390 | FE2 Package the frontend by module (pilot: Delivery) |
+| #6391 | FE3 Shrink `src/models` |
+| #6392 | FE4 Per-module API ports |
+| #6393 | FE5 Split wide units |
+| #6394 | FE6 "Project" → Portfolio naming in the frontend |
+| #6395 | S13 Aggregate boundaries in persistence |
