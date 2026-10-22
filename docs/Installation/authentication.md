@@ -25,7 +25,7 @@ Once authentication is enabled, you can also issue API keys for non-browser clie
 
 Authentication answers *"who is this user?"*. **Authorization** is the next layer: *"what is this user allowed to do?"*. Lighthouse provides this through **[Role-Based Access Control (RBAC)](../settings/rbac.html)** — a Premium feature that lets you scope read, edit, and create rights on individual teams and portfolios.
 
-Until RBAC is bootstrapped, every signed-in user has full access. After the first user clicks **Become First System Admin** under **Settings → Access**, only users with an explicit role assignment (or an Emergency Admin entry in `appsettings.json`) retain administrative rights. See [Role-Based Access Control](../settings/rbac.html) for the full bootstrap walkthrough, the role matrix, SSO group mappings, and the rules that govern team / portfolio creation.
+RBAC is off until you turn it on with `Authorization__Enabled=true` (see [Enabling RBAC](../settings/rbac.html#enabling-rbac)). Until it is enabled and bootstrapped, every signed-in user has full access. After the first user clicks **Become First System Admin** under **Settings → Access**, only users with an explicit role assignment (or an Emergency Admin entry in `appsettings.json`) retain administrative rights. See [Role-Based Access Control](../settings/rbac.html) for the full bootstrap walkthrough, the role matrix, SSO group mappings, and the rules that govern team / portfolio creation.
 
 ### Authentication Flow
 
@@ -78,8 +78,29 @@ All authentication settings live under the `Authentication` key in `appsettings.
 | `SessionLifetimeMinutes` | `int` | `480` | How long a session is valid before the user must sign in again (8 hours by default). |
 | `RequireHttpsMetadata` | `bool` | `true` | Whether the OIDC metadata endpoint must be served over HTTPS. Set to `false` only for local development setups that do not use TLS. |
 | `MetadataAddress` | `string` | — | Optional override for the OIDC discovery document URL, if different from `{Authority}/.well-known/openid-configuration`. |
-| `TrustedProxies` | `string[]` | `[]` | IP addresses of trusted reverse proxies for forwarded-headers support. |
-| `TrustedNetworks` | `string[]` | `[]` | CIDR network ranges of trusted networks for forwarded-headers support. |
+| `TrustedProxies` | `string[]` | `[]` | IP addresses of trusted reverse proxies. Required behind a TLS-terminating proxy — see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy). |
+| `TrustedNetworks` | `string[]` | `[]` | CIDR ranges of trusted reverse proxies. Required behind a TLS-terminating proxy — see [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy). |
+
+{: .note}
+`TrustedProxies` and `TrustedNetworks` are lists, so set through environment variables they need an index per entry: `Authentication__TrustedNetworks__0=10.0.0.0/8`, `Authentication__TrustedNetworks__1=…`. A value without the `__0` suffix is not read as a list.
+
+### Running Behind a Reverse Proxy
+
+Lighthouse builds the sign-in redirect URI (`{scheme}://{host}/api/auth/callback`) from the request it receives. It does **not** use `Lighthouse__BaseUrl` for this.
+
+If a load balancer, Application Gateway, ingress controller or similar terminates TLS and forwards plain HTTP to Lighthouse, the request reaches Lighthouse as `http://…`. Lighthouse then sends an `http://` redirect URI to your identity provider, which most providers (Microsoft Entra ID included) reject as a mismatch.
+
+The proxy reports the original scheme and host in `X-Forwarded-Proto` and `X-Forwarded-Host` headers. For safety, Lighthouse ignores these headers unless they come from a proxy you have declared as trusted. Declare the proxy's IP address, or the network range it connects from:
+
+```bash
+# A proxy with a fixed IP address
+Authentication__TrustedProxies__0=10.1.2.3
+
+# Or the subnet your load balancer / ingress connects from
+Authentication__TrustedNetworks__0=10.0.0.0/8
+```
+
+Use the narrowest range that covers your proxy, for example the subnet of your Application Gateway, AKS cluster or Container Apps environment. On Kubernetes, the Helm chart sets this via `app.proxy.trustedNetworks` — see [Kubernetes](kubernetes.html).
 
 ---
 
@@ -195,6 +216,9 @@ docker run \
 
 Replace `{tenant-id}` with your Directory (tenant) ID, `{application-client-id}` with the Application (client) ID, and `{client-secret-value}` with the secret you copied.
 
+{: .note}
+Entra ID only accepts `https://` redirect URIs (apart from `localhost`). If TLS is terminated by a load balancer or ingress in front of Lighthouse, also set `TrustedProxies` or `TrustedNetworks` — otherwise sign-in fails with `AADSTS50011`. See [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy).
+
 ---
 
 ### Google
@@ -285,6 +309,8 @@ The callback URL registered with your identity provider does not match what Ligh
 ```
 
 For example: `https://lighthouse.example.com/api/auth/callback`
+
+If the identity provider reports an `http://` redirect URI although Lighthouse is served over `https://` (for Entra ID: `AADSTS50011: The redirect URI 'http://…/api/auth/callback' … does not match`), Lighthouse sits behind a TLS-terminating proxy it does not trust yet. Setting `Lighthouse__BaseUrl` does not change this. Declare the proxy as described in [Running Behind a Reverse Proxy](#running-behind-a-reverse-proxy).
 
 ### Users are immediately shown "Session Expired"
 
