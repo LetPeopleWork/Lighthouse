@@ -1,0 +1,337 @@
+{
+  "roadmap": {
+    "project_id": "stories-6348-6352-6355-say-what-it-does",
+    "created_at": "2026-10-22T12:00:00Z",
+    "total_steps": 6,
+    "total_phases": 3,
+    "goal": "Three copy-and-hint Stories, each its own slice that ships and closes alone, frontend only (no endpoint, payload, persistence or tracker call changes). Slice 01 (#6348): the always-visible helper line under Closed Items Cutoff (days) says what the number limits, in the owner's configured term (Work Items on a Team, Features on a Portfolio), with no info icon (MD-1). Slice 02 (#6352): an info button named 'About {field label}' beside Parent Override Field and Dependency Field wherever they are chosen (Team settings, Portfolio settings, the connection's defaults) opens the dashboard widgets' popover, extracted as a shared InfoPopoverButton (MD-5, DDD-1), with tracker-aware direction copy from one module and a Learn More link to the matching docs section in a new tab. Slice 03 (#6355): the Release picker invites searching ('Type to search Jira Releases') and a dateless Release reads 'No date in {tracker}: set one there to follow it' (MD-3, DDD-6). Done when every pending scenario in the DISTILL Scenarios table is un-skipped and green, every active guard stays green, no `it.skip` remains in the seven DISTILL test files, `__SCAFFOLD__` is gone from fieldDirectionTips.ts, and `pnpm test` and `pnpm build` (tsc + Biome) are clean with zero warnings. Docs (the Cut Off Days retitle and Team default 365, the Learn More target sections, the Following a Jira Release section), screenshots, release notes and StrykerJS on frozen code belong to finalization and are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately: the frontend is TypeScript + Vitest + React Testing Library and the project references no property-testing library. DISTILL authored every acceptance scenario, example-based, with the finite tracker axis as `it.skip.each`. RED is removing `it.skip` and watching the scenario fail on its assertion, as distill/red-classification.md records; GREEN is production code. Existing tests are edited only where DISTILL's Pre-requisites for DELIVER say so (the required-prop renders, the old Release caption, the second-review hardening items), in the same commit as the change that makes them necessary.",
+    "exit_gates": [
+      "End of every step: the touched Vitest files green; `pnpm build` clean with zero warnings (prebuild runs `biome check --write`, so run `pnpm exec biome check ./src` read-only first and look at what it would rewrite).",
+      "End of every phase: the full `pnpm test` green and `pnpm build` clean; that phase's slice is releasable alone.",
+      "End of phase 02: run the existing Playwright spec that uses `BaseEditPage`'s 'Parent Override Field' combobox locally once; the info button sits beside the combobox and must not change its accessible name.",
+      "End of phase 03: the sibling `DeliverySourceTab.*` suites mock the terminology hook and answer the key for an unmapped term; read their output once the tab reads the work-tracking-system term and confirm nothing reads oddly.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no MD-, D-, DDD-, AC- or ADR- numbers).",
+      "Every user-visible word a tenant can rename comes from the terminology hook; defaults follow TerminologySeeder (Work Items, Features), never Epic or Story."
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/stories-6348-6352-6355-say-what-it-does/feature-delta.md",
+    "red_classification": "docs/feature/stories-6348-6352-6355-say-what-it-does/distill/red-classification.md",
+    "slices": "docs/feature/stories-6348-6352-6355-say-what-it-does/slices/slice-01-closed-items-cutoff-tip.md, slice-02-dependency-parent-override-tips.md, slice-03-release-picker-why-and-search.md",
+    "test_kit": "Lighthouse.Frontend/src/tests/FieldTipsTestKit.tsx",
+    "ado_stories": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6348, /6352, /6355"
+  },
+  "user_decisions": [
+    "MD-1 - #6348 rewrites the always-visible helper line; no info icon; says 'Reports', not 'Then & Now'.",
+    "MD-3 - #6355 inline caption 'No date in {tracker}: set one there to follow it'; placeholder 'Type to search {source name}s' ('Type to search Jira Releases'); 'No longer available' unchanged.",
+    "MD-5 - #6352 reuses the dashboard widgets' click popover (keyboard reachable Learn More), not a hover tooltip.",
+    "DDD-1 - InfoPopoverButton extracted from WidgetInfoButton: aria-label = full accessible name, aria-expanded, testId, children, Learn More with target _blank and rel noopener noreferrer.",
+    "DDD-2 - FormSelectField optional `info`; unset renders exactly as today.",
+    "DDD-3 - directionTip(field, tracker, terms) keyed on the connection-default name; raw tracker; Jira and AzureDevOps examples, neutral sentence otherwise.",
+    "DDD-4 - absolute docs URLs: portfolios/edit.html#dependency-field, portfolios/edit.html#parent-override-field, teams/edit.html#parent-override-field.",
+    "DDD-5 - parentOverrideDefault becomes required on AdvancedInputs and picks the Work Items vs Features term.",
+    "DDD-6 - trackerWord from a source-key map ('jira-release' -> 'Jira'), unknown key falls back to the tenant's work tracking system term."
+  ],
+  "out_of_scope": [
+    "Validation of a field that matches nothing; any change to retention, the fetch fingerprint, which Releases can be picked, or the Then & Now window.",
+    "InfoTooltip (unchanged); the Estimation, Size Estimate and Feature Owner default rows (no tip).",
+    "Usage-data event (N/A per DEVOPS); Lighthouse-Clients and website (N/A per DISCUSS).",
+    "Finalize items: docs/teams/edit.md and docs/portfolios/edit.md Closed Items Cutoff retitle and Team default 365, docs/portfolios/detail.md#following-a-jira-release, screenshots check, release notes, StrykerJS on frozen code over every touched file (>= 80 %), ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Closed Items Cutoff says what it limits (#6348)",
+      "description": "Releasable alone: one helper line on the Team and Portfolio settings, in the owner's configured term. No dependency on phases 02 or 03.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The line under Closed Items Cutoff says what it limits, in the owner's words",
+          "description": "Rewrite the cutoff field's helper text in AdvancedInputs to MD-1's copy, built from the plural term of what the owner keeps: the Work Items term when the owner is a Team (parentOverrideDefault 'parentOverrideForTeams'), the Features term when a Portfolio ('parentOverrideForPortfolios'), read through useTerminology. Make `parentOverrideDefault` required (both production callers already pass it) and update the existing renders in AdvancedInputsComponent.test.tsx and AdvancedInputs.connectionDefault.test.tsx that omit it. Second-review item: in the active guard, find the cutoff's container by role or test id rather than `.MuiGrid-root`.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.closedItemsCutoff.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.closedItemsCutoff.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputsComponent.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.connectionDefault.test.tsx"
+          ],
+          "scenario_name": "on a Team's settings, the line under the cutoff says what it limits, of its Work Items; on a Portfolio's settings, the same line speaks of its Features; a tenant that calls its Work Items Tickets reads Tickets on a Team, never Work Items; a tenant that calls its Features Bets reads Bets on a Portfolio, never Features; before the settings arrive, the line already says what the cutoff limits; names Reports in general, and the old retain-and-filter wording is gone",
+          "unskips": [
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: on a Team's settings, the line under the cutoff says what it limits, of its Work Items",
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: on a Portfolio's settings, the same line speaks of its Features",
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: a tenant that calls its Work Items Tickets reads Tickets on a Team, never Work Items",
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: a tenant that calls its Features Bets reads Bets on a Portfolio, never Features",
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: before the settings arrive, the line already says what the cutoff limits",
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: names Reports in general, and the old retain-and-filter wording is gone"
+          ],
+          "guards_kept_green": [
+            "AdvancedInputs.closedItemsCutoff.test.tsx :: the explanation sits in the open, so no info icon hides it (container lookup hardened, assertion unchanged)",
+            "AdvancedInputsComponent.test.tsx and AdvancedInputs.connectionDefault.test.tsx, every existing case",
+            "ModifyTeamSettings.* and ModifyProjectSettings.* suites"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.tsx (edit - helper text from the owner's plural term, useTerminology, parentOverrideDefault required)",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.closedItemsCutoff.test.tsx (edit - un-skip six scenarios; guard finds the cutoff's container by role or test id)",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputsComponent.test.tsx (edit - renders pass parentOverrideDefault)",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.connectionDefault.test.tsx (edit - renders that omit it pass parentOverrideDefault)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "On a Team's settings the cutoff field's accessible description is exactly 'Finished Work Items older than this many days are not kept. This limits metrics, forecasts and how far back Reports can reach. 0 keeps them all. Raising it brings older ones back with the next update.'; on a Portfolio's settings the same sentence says 'Features'.",
+            "A tenant that renamed its terms reads its own words (Tickets on a Team, Bets on a Portfolio) and never the defaults.",
+            "The line is present before the settings have loaded, and the old 'Number of days to retain closed/done items' wording and any 'Then & Now' mention are gone.",
+            "No info icon and no 'About Closed Items Cutoff' button sits beside the cutoff field.",
+            "Touched Vitest files green; `pnpm build` clean (tsc + Biome); no comment cites an internal reference; every renamable word comes from the terminology hook."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy pinned word for word by example scenarios; see paradigm_note. The guard's container lookup is a test-only hardening the second DISTILL review asked for: give the cutoff's Grid item a role or data-testid the guard can find, or look it up through the TextField's own FormControl, rather than a MUI class name; the guard's assertions stay as they are. Keep the helper text on `helperText` so MUI wires it as the field's aria-describedby (AC-1.4). Commit as `feat(settings): ...`. Exit check: a caller of AdvancedInputs that does not pass `parentOverrideDefault` no longer compiles."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Dependency and Parent Override say which way round they read (#6352)",
+      "description": "Releasable alone: an info popover beside Parent Override Field (Team and Portfolio settings, both connection-default groups) and Dependency Field (Portfolio settings, Portfolio connection-default group), with tracker-aware direction copy and a Learn More link. Refactor first (extract the widgets' popover button, widgets unchanged), then the FormSelectField prop, then the copy module and the settings pages, then the connection page.  Builds on finished phase 01 (step 02-03 reuses the terminology hook 01-01 adds to AdvancedInputs); allowed one-direction dependency, no dependency on phase 03.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The dashboard widgets' info button becomes a shared InfoPopoverButton, and widgets look and behave as today",
+          "description": "Separate refactor commit. Extract WidgetInfoButton's icon and popover from WidgetShell into components/Common/InfoPopoverButton/InfoPopoverButton.tsx with props label (the full accessible name, on the IconButton's aria-label), text, optional learnMoreUrl (Learn More link, target _blank, rel noopener noreferrer), optional children (extra popover content) and optional testId; the button carries aria-expanded. WidgetShell uses it with its existing `widget-info-${widgetKey}` test id, its status-guidance block as children, and the label 'About {widget title}'.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.infoPopover.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.infoPopover.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.test.tsx"
+          ],
+          "scenario_name": "opens with the description, the guidance and Learn More, and Escape closes it",
+          "unskips": [],
+          "guards_kept_green": [
+            "WidgetShell.infoPopover.test.tsx :: opens with the description, the guidance and Learn More, and Escape closes it",
+            "WidgetShell.test.tsx, every existing popover and info-button case",
+            "Every dashboard widget suite that clicks `widget-info-*`"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/InfoPopoverButton/InfoPopoverButton.tsx (new - extracted button + popover)",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx (edit - WidgetInfoButton replaced by InfoPopoverButton, guidance as children)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A widget's info button, found by its `widget-info-{key}` test id, still opens a popover with the widget's description, its status guidance and a Learn More link opening the docs in a new tab; Escape closes it.",
+            "The widget's info button now has an accessible name, 'About {widget title}', and reports aria-expanded.",
+            "Every existing WidgetShell and widget test passes unchanged.",
+            "Touched Vitest files green; `pnpm build` clean (tsc + Biome); no comment cites an internal reference."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: behaviour-preserving extraction held by the active guard and the existing WidgetShell suite; see paradigm_note. No test imports InfoPopoverButton directly; it is reached through WidgetShell here and through FormSelectField from 02-02. Keep the popover a MUI Popover (it moves focus in and closes on Escape or a click outside, which is what makes Learn More keyboard reachable). If a widget has no title, choose a sensible name rather than an empty aria-label. Commit as `refactor(widgets): ...`, separate from the feature commits."
+        },
+        {
+          "id": "02-02",
+          "name": "A field list can carry an info button named after the field",
+          "description": "FormSelectField renders its optional `info` ({ text, learnMoreUrl? }, already on the type surface) as an InfoPopoverButton labelled 'About {label}', in one flex row with the FormControl (alignItems center); unset renders exactly as today. ConnectionDefaultFieldSelect passes its `info` through to FormSelectField. Second-review item: scope FieldTipsTestKit's `openTheTip` to the popover that holds the tip rather than any `presentation` role. Name the scoped popover helper `theOpenTip` and export it from FieldTipsTestKit so 02-03 reuses it.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/FormSelectField/FormSelectField.info.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/FormSelectField/FormSelectField.info.test.tsx",
+            "Lighthouse.Frontend/src/tests/FieldTipsTestKit.tsx"
+          ],
+          "scenario_name": "carries an info button named after the field, closed until asked; opening the button shows the tip and a Learn More opening the docs in a new tab; a tip with nowhere to lead shows its text and no Learn More; Escape closes the tip again",
+          "unskips": [
+            "FormSelectField.info.test.tsx :: carries an info button named after the field, closed until asked",
+            "FormSelectField.info.test.tsx :: opening the button shows the tip and a Learn More opening the docs in a new tab",
+            "FormSelectField.info.test.tsx :: a tip with nowhere to lead shows its text and no Learn More",
+            "FormSelectField.info.test.tsx :: Escape closes the tip again"
+          ],
+          "guards_kept_green": [
+            "FormSelectField.info.test.tsx :: shows no info icon and no button beside it",
+            "WidgetShell.infoPopover.test.tsx :: opens with the description, the guidance and Learn More, and Escape closes it",
+            "Every existing FormSelectField and ConnectionDefaultFieldSelect suite"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/FormSelectField/FormSelectField.tsx (edit - render info as InfoPopoverButton 'About {label}' beside the FormControl)",
+            "Lighthouse.Frontend/src/components/Common/ConnectionDefault/ConnectionDefaultFieldSelect.tsx (edit - pass info through)",
+            "Lighthouse.Frontend/src/components/Common/FormSelectField/FormSelectField.info.test.tsx (edit - un-skip four scenarios)",
+            "Lighthouse.Frontend/src/tests/FieldTipsTestKit.tsx (edit - add and export the scoped popover helper theOpenTip; openTheTip returns the popover that holds the tip)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "A field list given a tip carries a button named exactly 'About {field label}', aria-expanded false, and the tip text is not shown until the button is used.",
+            "Using the button shows the tip and, when a docs URL is given, a 'Learn More' link opening it in a new tab with rel 'noopener noreferrer'; with no URL there is no Learn More.",
+            "Escape closes the tip and the button reports aria-expanded false again.",
+            "The combobox keeps its accessible name, the field label, with the button beside it.",
+            "A field list given nothing to explain renders no info icon and no button.",
+            "Touched Vitest files green; `pnpm build` clean (tsc + Biome); no comment cites an internal reference."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI interaction scenarios authored by DISTILL; see paradigm_note. The flex-row arrangement mirrors RefinementBandSettings. Do not put the icon inside the select's label or as an end adornment (it fights the select's arrow and label notch). The openTheTip change is test-kit hardening only: find the popover by the tip's own content or the popover paper rather than the first `presentation` role, so a second open overlay cannot satisfy it. Commit as `feat(settings): ...`."
+        },
+        {
+          "id": "02-03",
+          "name": "Parent Override and Dependency on the Team and Portfolio settings say which way round they read",
+          "description": "Replace the RED scaffold in fieldDirectionTips.ts with the real directionTip(field, tracker, terms) (remove `__SCAFFOLD__`): field is the connection-default name (parentOverrideForTeams | parentOverrideForPortfolios | dependencyFieldForPortfolios), tracker the raw WorkTrackingSystemType or undefined, terms the singular words it needs; returns { text, learnMoreUrl } with the DDD-4 docs URL. Jira: Dependency asks for the waiting end, 'is blocked by', not 'blocks'; Parent Override names 'is caused by'. AzureDevOps: Dependency names the Reverse end, Predecessor; Parent Override names a field holding the parent's id. Any other or unknown tracker: the neutral sentence without an example. Dependency copy says None reads the tracker's own links and a chosen field replaces them rather than adding to them. AdvancedInputs (Parent Override) and DependenciesComponent (Dependency) compute the tip from `connection?.workTrackingSystem ?? settings?.workTrackingSystem` and the owner's singular term (Work Item on a Team, Feature on a Portfolio) and pass it as `info`. Second-review items: rewrite the AC-2.5 guard to assert the resulting settings through a small stateful harness instead of `mock.calls`, and pin 'rather than' beside 'replace' in the Dependency scenario. Also scope the two direct `findByRole(\"presentation\")` / `queryByRole(\"presentation\")` queries in DependenciesComponent.directionTip.test.tsx (keyboard and Escape scenarios) to the tip's own popover, through the scoped helper 02-02 adds to FieldTipsTestKit.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.directionTip.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.directionTip.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.parentOverrideTip.test.tsx"
+          ],
+          "scenario_name": "Dependency: on Jira, the waiting end is blocked by not blocks; None reads Jira's own links and a chosen field replaces them; Azure DevOps names the Reverse end, Predecessor; Linear, Csv, ServiceNow and no tracker stay neutral; speaks of the tenant's Bet; Learn More opens the Dependency Field docs; Enter opens and Tab reaches Learn More; Escape closes and aria-expanded is false. Parent Override: Jira Team and Portfolio name is caused by and what None does; Azure DevOps names the parent's id; Linear, Csv, ServiceNow and no tracker stay neutral; Team speaks of a Ticket, Portfolio of a Bet; Learn More opens the Team or Portfolio Parent Override docs",
+          "unskips": [
+            "DependenciesComponent.directionTip.test.tsx :: on Jira, the tip asks for the phrase on the waiting end, is blocked by, not blocks",
+            "DependenciesComponent.directionTip.test.tsx :: on Jira, the tip says None reads Jira's own links and a chosen field replaces them",
+            "DependenciesComponent.directionTip.test.tsx :: on Azure DevOps, the tip names the Reverse end, Predecessor, and no Jira phrase",
+            "DependenciesComponent.directionTip.test.tsx :: on a %s Portfolio the tip stays tracker-neutral, without an example (Linear, Csv, ServiceNow, undefined)",
+            "DependenciesComponent.directionTip.test.tsx :: the tip speaks of the tenant's Bet that waits, never of a Feature",
+            "DependenciesComponent.directionTip.test.tsx :: Learn More opens the Dependency Field docs in a new tab",
+            "DependenciesComponent.directionTip.test.tsx :: with the keyboard alone, Enter opens the tip and Tab reaches Learn More",
+            "DependenciesComponent.directionTip.test.tsx :: Escape closes the tip, and the button says it is closed again",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Jira Portfolio, the tip gives the same example",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on an Azure DevOps Team, the tip asks for the field that holds the parent's id, not a Jira phrase",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a %s Team the tip stays tracker-neutral, without an example (Linear, Csv, ServiceNow, undefined)",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Team the tip speaks of the tenant's Ticket, never of a Work Item",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Portfolio the tip speaks of the tenant's Bet, never of a Feature",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Team, Learn More opens the Team's Parent Override docs in a new tab",
+            "AdvancedInputs.parentOverrideTip.test.tsx :: on a Portfolio, Learn More opens the Portfolio's Parent Override docs in a new tab"
+          ],
+          "guards_kept_green": [
+            "DependenciesComponent.directionTip.test.tsx :: choosing a Dependency Field saves exactly what it saved before (rewritten to assert the resulting settings through a stateful harness)",
+            "AdvancedInputs.closedItemsCutoff.test.tsx, every case (no info button beside the cutoff)",
+            "AdvancedInputsComponent.test.tsx, AdvancedInputs.connectionDefault.test.tsx and the existing DependenciesComponent suites",
+            "FormSelectField.info.test.tsx and WidgetShell.infoPopover.test.tsx"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/ConnectionDefault/fieldDirectionTips.ts (edit - real directionTip replaces the RED scaffold; __SCAFFOLD__ removed)",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.tsx (edit - Parent Override passes info from directionTip with the raw tracker and the owner's singular term)",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.tsx (edit - Dependency passes info from directionTip with the raw tracker and the Feature term)",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/Advanced/DependenciesComponent.directionTip.test.tsx (edit - un-skip eight scenarios (eleven test cases, the tracker axis as it.each); AC-2.5 guard through a stateful harness; 'rather than' pinned beside 'replace')",
+            "Lighthouse.Frontend/src/pages/Common/AdvancedInputs/AdvancedInputs.parentOverrideTip.test.tsx (edit - un-skip eight scenarios (eleven test cases, the tracker axis as it.each))"
+          ],
+          "dependencies": [
+            "02-02",
+            "01-01"
+          ],
+          "criteria": [
+            "On a Portfolio's settings, 'About Dependency Field' opens a tip saying the field is read on the item that waits; on Jira it gives 'is blocked by', not 'blocks'; on Azure DevOps the Reverse end, Predecessor, and no Jira phrase; on any other or unknown tracker no example.",
+            "The Dependency tip says None reads the tracker's own links and that a chosen field replaces them rather than adding to them.",
+            "On Team and Portfolio settings, 'About Parent Override Field' opens a tip naming the link or field pointing to the parent: on Jira 'is caused by' and what None does; on Azure DevOps the field holding the parent's id; on any other or unknown tracker no example.",
+            "The tips speak of the tenant's own singular term (a Ticket on a Team, a Bet on a Portfolio), never the default word.",
+            "Learn More opens the matching docs section in a new tab: portfolios/edit.html#dependency-field, portfolios/edit.html#parent-override-field, teams/edit.html#parent-override-field.",
+            "With the keyboard alone, Enter opens the tip and Tab reaches Learn More; Escape closes it and the button reports aria-expanded false.",
+            "Choosing a Dependency Field leaves the settings exactly as before this change."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: copy pinned by essential phrase in example scenarios, with the tracker axis as it.each; see paradigm_note. Read the tracker raw (not the display name `trackerHoldingTheDefault` returns) so Linear and ServiceNow reach the neutral sentence. Keying on the connection-default name makes a Team Dependency tip unrepresentable and picks the per-owner docs link. Docs URLs are absolute constants on https://docs.lighthouse.letpeople.work, as SecretHandlingNotice.tsx does. Draft wording may be polished as long as the pinned phrases hold (is blocked by, not 'blocks', None, replace + rather than, Predecessor, Reverse, is caused by, parent's id). The stateful harness for the AC-2.5 guard: a small wrapper holding the Portfolio settings in state and applying each change, then asserting the resulting dependencyFieldSource 'Own' and dependencyOverrideAdditionalFieldDefinitionId 1. Commit as `feat(settings): ...`. Exit check: no `__SCAFFOLD__` export remains in fieldDirectionTips.ts.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "02-04",
+          "name": "The connection's Parent Override and Dependency defaults carry the same tips",
+          "description": "In ModifyConnectionSettings, add a `tip` flag to the WhereEachDefaultSits entries parentOverrideForTeams, parentOverrideForPortfolios and dependencyFieldForPortfolios; when building a flagged default row, pass `info` from directionTip(name, selectedWorkTrackingSystem?.workTrackingSystem, terms) to its FormSelectField. The Estimation, Size Estimate and Feature Owner rows carry none.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.directionTips.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.directionTips.test.tsx"
+          ],
+          "scenario_name": "on a Jira connection, only the Parent Override and Dependency rows carry an About button; the Estimation, Size Estimate and Feature Owner rows carry no info icon; Teams' Parent Override tip gives Jira's example; the Dependency tip asks for is blocked by; Azure DevOps Dependency names Predecessor; a tenant's own words reach the tips; Teams' Parent Override leads to the Team docs; Portfolios' Parent Override to the Portfolio docs; Dependency to the Dependency Field docs",
+          "unskips": [
+            "ModifyConnectionSettings.directionTips.test.tsx :: on a Jira connection, only the Parent Override and Dependency rows carry an About button",
+            "ModifyConnectionSettings.directionTips.test.tsx :: the Estimation, Size Estimate and Feature Owner rows carry no info icon",
+            "ModifyConnectionSettings.directionTips.test.tsx :: on a Jira connection, the Teams' Parent Override tip gives Jira's example",
+            "ModifyConnectionSettings.directionTips.test.tsx :: on a Jira connection, the Dependency tip asks for is blocked by",
+            "ModifyConnectionSettings.directionTips.test.tsx :: on an Azure DevOps connection, the Dependency tip names Predecessor and no Jira phrase",
+            "ModifyConnectionSettings.directionTips.test.tsx :: a tenant's own words reach the tips: the Dependency tip speaks of a Bet, never of a Feature",
+            "ModifyConnectionSettings.directionTips.test.tsx :: the Teams' Parent Override tip leads to the Team docs",
+            "ModifyConnectionSettings.directionTips.test.tsx :: the Portfolios' Parent Override tip leads to the Portfolio docs",
+            "ModifyConnectionSettings.directionTips.test.tsx :: the Dependency tip leads to the Dependency Field docs"
+          ],
+          "guards_kept_green": [
+            "ModifyConnectionSettings.directionTips.test.tsx :: a CSV connection's defaults, Estimation and Feature Owner, carry no info button",
+            "Every existing ModifyConnectionSettings.* suite (defaults, followers question, save)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx (edit - tip flag on three WhereEachDefaultSits entries; info on those rows)",
+            "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.directionTips.test.tsx (edit - un-skip nine scenarios)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "On a Jira connection the Teams group carries exactly one About button, 'About Parent Override Field', and the Portfolios group exactly 'About Parent Override Field' then 'About Dependency Field'; Estimation, Size Estimate and Feature Owner rows carry no button and no icon.",
+            "The tips carry the connection's tracker example (Jira 'is caused by' / 'is blocked by'; Azure DevOps Predecessor and no Jira phrase) and the tenant's own words (a Bet, in the Programs group).",
+            "Each Learn More opens its owner's docs section in a new tab (Teams' Parent Override to the Team docs, Portfolios' Parent Override to the Portfolio docs, Dependency to the Dependency Field docs).",
+            "A CSV connection's defaults carry no info button; saving and the followers question behave as before.",
+            "Touched Vitest files green; `pnpm build` clean (tsc + Biome); no comment cites an internal reference; configurable terms throughout."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example scenarios through the real connection form; see paradigm_note. ModifyConnectionSettings is large (1200 lines); touch only the WhereEachDefaultSits type and entries and the place the default rows are built, so the mutation run at finalization can target the touched part. Use the singular Work Item term for the Teams group and the Feature term for the Portfolios group. After this step, run the Playwright spec using BaseEditPage's 'Parent Override Field' combobox locally once (phase exit gate). Commit as `feat(connections): ...`.",
+          "sizing": "@sizing-review-needed"
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "The Release picker says why and invites searching (#6355)",
+      "description": "Releasable alone: the Delivery create form's source picker gets a search placeholder and the dateless-Release caption names the tracker. No dependency on phases 01 or 02.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The Release picker invites searching and a dateless Release says to set its date in the tracker",
+          "description": "In DeliverySourceTab: a placeholder `Type to search ${sourceName}s` on the Autocomplete's TextField; a two-entry map from source key to tracker word ('jira-release' -> 'Jira'), an unknown key falling back to the tenant's work tracking system term via useTerminology; `trackerWord` passed from the tab through SourceOptionPicker to SourceOptionRow; the NoDateSet caption becomes `No date in ${trackerWord}: set one there to follow it` (the retired-Release caption 'No longer available' unchanged). Update DeliverySourceTab.picker.test.tsx:180, which pins the old 'No Release Date Set', in the same commit. Second-review item: anchor the retired-Release locator in the whyAndSearch guard to /^Release 40 \\(/.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.whyAndSearch.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.whyAndSearch.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.picker.test.tsx"
+          ],
+          "scenario_name": "on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases; a Release without a date says it has no date in Jira and to set one there; a source the picker cannot name a tracker for speaks of the tenant's own word for it",
+          "unskips": [
+            "DeliverySourceTab.whyAndSearch.test.tsx :: on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases",
+            "DeliverySourceTab.whyAndSearch.test.tsx :: a Release without a date says it has no date in Jira and to set one there",
+            "DeliverySourceTab.whyAndSearch.test.tsx :: a source the picker cannot name a tracker for speaks of the tenant's own word for it"
+          ],
+          "guards_kept_green": [
+            "DeliverySourceTab.whyAndSearch.test.tsx :: a Release without a date still cannot be picked",
+            "DeliverySourceTab.whyAndSearch.test.tsx :: a Release gone from the board still reads No longer available, never the missing-date advice (locator anchored)",
+            "DeliverySourceTab.picker.test.tsx (line 180 updated to the new caption), DeliverySourceTab.optionList.test.tsx (asserts the old caption's absence, unchanged) and every other DeliverySourceTab.* and DeliveryCreateModal suite",
+            "DeliverySourceTab.picker.test.tsx: says it is loading while the list fills",
+            "DeliverySourceTab.picker.test.tsx: shows an error rather than an empty list when the options cannot be fetched"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx (edit - placeholder, trackerWord map with terminology fallback, prop path to SourceOptionRow, NoDateSet caption)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.whyAndSearch.test.tsx (edit - un-skip three scenarios; retired-Release locator anchored)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.picker.test.tsx (edit - line 180 expects the new caption)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "On Add Delivery's Jira Release tab the empty picker's placeholder reads exactly 'Type to search Jira Releases'.",
+            "A Release without a date reads exactly 'No date in Jira: set one there to follow it' and no longer 'No Release Date Set'; it still cannot be picked and the box stays empty.",
+            "A source the tab cannot name a tracker for reads 'Type to search {source name}s' and 'No date in {tenant's work tracking system term}: set one there to follow it' (e.g. 'Tracker').",
+            "A retired Release still reads 'No longer available', never the missing-date advice, and stays unpickable.",
+            "While the options load the spinner shows as today and on a failed load the existing could-not-load message shows; the loading look (spinner in place of the picker) and the failure look (the could-not-load alert) are unchanged, as the two picker guards pin.",
+            "Touched Vitest files green; `pnpm build` clean (tsc + Biome); no comment cites an internal reference; configurable terms throughout."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy pinned word for word by example scenarios; see paradigm_note. Appending 's' to the source name is an accepted limit while Jira Release is the only source. The tab starts reading the terminology hook; the sibling DeliverySourceTab.* suites mock it and answer the key for an unmapped term, so check their output still reads sensibly (phase exit gate). Keep the trackerWord map in DeliverySourceTab.tsx; no backend or descriptor change. Commit as `feat(deliveries): ...`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "attempts": 2,
+    "date": "2026-10-22"
+  }
+}

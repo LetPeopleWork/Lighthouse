@@ -301,7 +301,7 @@ direction copy is per field × tracker and is needed by three callers (the conne
 | ConnectionDefaultFieldSelect | `components/Common/ConnectionDefault/ConnectionDefaultFieldSelect.tsx` | optional `info` passed through (slice 02) |
 | AdvancedInputs | `pages/Common/AdvancedInputs/AdvancedInputs.tsx` | cutoff helper text + terminology + required `parentOverrideDefault` (slice 01); Parent Override `info` (slice 02) |
 | DependenciesComponent | `components/Common/ProjectSettings/Advanced/DependenciesComponent.tsx` | Dependency `info` (slice 02) |
-| ModifyConnectionSettings | `components/Common/Connection/ModifyConnectionSettings.tsx` | `tip` flag on two `WhereEachDefaultSits` entries; `info` on those rows (slice 02) |
+| ModifyConnectionSettings | `components/Common/Connection/ModifyConnectionSettings.tsx` | `tip` flag on three `WhereEachDefaultSits` entries; `info` on those rows (slice 02) |
 | DeliverySourceTab | `pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx` | placeholder, `trackerWord` prop path, `NoDateSet` copy (slice 03) |
 
 Driving ports: the Team and Portfolio settings pages, the connection page, and the Delivery create modal (UI).
