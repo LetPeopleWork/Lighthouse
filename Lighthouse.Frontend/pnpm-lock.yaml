@@ -224,10 +224,10 @@ importers:
         specifier: 2.8.1
         version: 2.8.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       '@tanstack/react-query':
-        specifier: ^5.104.2
+        specifier: ^5.104.3
         version: 5.104.4(@types/react@19.3.0)(react@19.3.1)
       '@tauri-apps/api':
-        specifier: ^2.12.3
+        specifier: ^2.12.4
         version: 2.12.4
       axios:
         specifier: ^1.20.0
@@ -279,7 +279,7 @@ importers:
         specifier: ^10.0.0
         version: 10.0.0(patch_hash=890316bd6edb446e7b450b23c08fe314a14cbba08ae7adedb1ce5614d07913e0)(@stryker-mutator/core@10.0.0(@types/node@26.6.5))(vitest@5.0.5)
       '@tauri-apps/cli':
-        specifier: ^2.12.2
+        specifier: ^2.12.3
         version: 2.12.3
       '@testing-library/dom':
         specifier: ^10.4.2

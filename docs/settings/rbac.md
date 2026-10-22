@@ -8,7 +8,7 @@ nav_order: 6
 Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access**.
 
 {: .note}
-RBAC is a **Premium** feature. A valid Premium license is required, and [OIDC authentication](../Installation/authentication.html) must be enabled first.
+RBAC is a **Premium** feature. A valid Premium license is required, [OIDC authentication](../Installation/authentication.html) must be enabled first, and RBAC itself is switched off until you [enable it](#enabling-rbac).
 
 - TOC
 {:toc}
@@ -17,7 +17,7 @@ RBAC is a **Premium** feature. A valid Premium license is required, and [OIDC au
 
 ## Overview
 
-By default — with authentication enabled but RBAC not yet bootstrapped — every signed-in user has full access. RBAC narrows that down: each user holds one or more **role assignments**, and each role grants a specific set of capabilities scoped to a specific entity (the whole system, a single team, or a single portfolio).
+By default — with authentication enabled but RBAC not enabled or not yet bootstrapped — every signed-in user has full access. RBAC narrows that down: each user holds one or more **role assignments**, and each role grants a specific set of capabilities scoped to a specific entity (the whole system, a single team, or a single portfolio).
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -87,14 +87,48 @@ The team-existence check is **system-wide**, not visibility-filtered: even if yo
 
 ---
 
+## Enabling RBAC
+
+RBAC is off by default, even with authentication enabled and a Premium license in place. While it is off, every signed-in user has full access and **Settings → Access** shows RBAC as disabled.
+
+Turn it on under the `Authorization` key in `appsettings.json`:
+
+```json
+{
+  "Authorization": {
+    "Enabled": true
+  }
+}
+```
+
+Or with an environment variable:
+
+```bash
+Authorization__Enabled=true
+```
+
+Restart Lighthouse, then follow the bootstrap flow below to claim the first System Admin role.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `Enabled` | `bool` | `false` | Turns RBAC on. |
+| `EmergencySystemAdminSubjects` | `string[]` | `[]` | IdP `sub` claims of users who always keep System Admin access. See [Emergency Admin](#emergency-admin). |
+| `GroupClaimName` | `string` | `groups` | The token claim Lighthouse reads group memberships from. See [SSO group mappings](#sso-group-mappings). |
+
+{: .note}
+`EmergencySystemAdminSubjects` is a list, so set through environment variables it needs an index per entry: `Authorization__EmergencySystemAdminSubjects__0=…`, `Authorization__EmergencySystemAdminSubjects__1=…`.
+
+---
+
 ## Bootstrap: becoming the first System Admin
 
 When RBAC is enabled for the first time on a fresh database, **no System Admin exists yet**. Lighthouse handles this with a one-time bootstrap flow:
 
-1. Sign in to Lighthouse as the user you want to become the first System Admin. (Note: license upload is allowed in bootstrap mode — see below.)
-2. Go to **Settings → Access**.
-3. A yellow banner shows **You have not been granted a System Admin role yet**. Click **Become First System Admin**.
-4. You are now the first System Admin. The banner disappears and the Users / Group Mappings tables become editable.
+1. Make sure RBAC is [enabled](#enabling-rbac).
+2. Sign in to Lighthouse as the user you want to become the first System Admin. (Note: license upload is allowed in bootstrap mode — see below.)
+3. Go to **Settings → Access**.
+4. A yellow banner shows **You have not been granted a System Admin role yet**. Click **Become First System Admin**.
+5. You are now the first System Admin. The banner disappears and the Users / Group Mappings tables become editable.
 
 ### Bootstrap flow on a fresh install
 
@@ -102,11 +136,12 @@ Greenfield install with auth enabled, in order:
 
 1. Sign in as the first user (any user authorised by your IdP).
 2. On the **Premium License Required** screen, upload your Premium license. *(In bootstrap mode — i.e. before any System Admin has been granted — license upload is open to any authenticated user. Once a System Admin exists, only the System Admin or an Emergency Admin can upload / replace the license.)*
-3. Sign in as the user you want to become the first System Admin.
-4. Go to **Settings → Access → Become First System Admin**.
-5. Add at least one **work tracking system connection** (Settings → Configuration, or directly on the Overview).
-6. Create your first **team** on the Overview.
-7. The **Add Portfolio** button becomes visible once a team exists.
+3. Set `Authorization__Enabled=true` and restart Lighthouse (see [Enabling RBAC](#enabling-rbac)).
+4. Sign in as the user you want to become the first System Admin.
+5. Go to **Settings → Access → Become First System Admin**.
+6. Add at least one **work tracking system connection** (Settings → Configuration, or directly on the Overview).
+7. Create your first **team** on the Overview.
+8. The **Add Portfolio** button becomes visible once a team exists.
 
 {: .note}
 Until the first System Admin is bootstrapped, **every authenticated user** is treated as a System Admin by Lighthouse — they can manage RBAC and upload the license. Once the bootstrap is complete, the unconditional access goes away.
@@ -115,11 +150,11 @@ Until the first System Admin is bootstrapped, **every authenticated user** is tr
 
 ## Emergency Admin
 
-Lighthouse provides a configuration-driven safety net so you cannot accidentally lock yourself out. Users listed under `Authentication.EmergencySystemAdminSubjects` in `appsettings.json` always retain System Admin access, even if their database role is removed.
+Lighthouse provides a configuration-driven safety net so you cannot accidentally lock yourself out. Users listed under `Authorization.EmergencySystemAdminSubjects` in `appsettings.json` always retain System Admin access, even if their database role is removed.
 
 ```json
 {
-  "Authentication": {
+  "Authorization": {
     "Enabled": true,
     "EmergencySystemAdminSubjects": [
       "auth0|emergency-admin-1",
@@ -216,7 +251,7 @@ To restrict what an API key can reach, scope the **owner's** roles rather than t
 
 ### Recover access when locked out
 
-1. Add the locked-out user's IdP `sub` claim to `Authentication.EmergencySystemAdminSubjects` in `appsettings.json`.
+1. Add the locked-out user's IdP `sub` claim to `Authorization.EmergencySystemAdminSubjects` in `appsettings.json` (or set `Authorization__EmergencySystemAdminSubjects__0`).
 2. Restart Lighthouse.
 3. Sign in as that user — they will now have unconditional System Admin access via the emergency configuration.
 
@@ -248,15 +283,19 @@ Compare the value Lighthouse sees (visible in the browser's token after sign-in,
 
 ### I can no longer revoke a user — the Revoke button is missing
 
-That user is configured as an Emergency Admin in `appsettings.json`. To revoke their access you must remove them from `Authentication.EmergencySystemAdminSubjects` and restart Lighthouse. The badge on their row explains why the button is hidden.
+That user is configured as an Emergency Admin in `appsettings.json`. To revoke their access you must remove them from `Authorization.EmergencySystemAdminSubjects` and restart Lighthouse. The badge on their row explains why the button is hidden.
 
 ### A team or portfolio admin sees the team/portfolio but the Edit settings tab won't load
 
 Earlier versions of Lighthouse gated the work-tracking-system-connection list to System Admin only, which broke the Edit Settings tab for scoped admins. As of vNext this is fixed — Team Admin and Portfolio Admin can read the connection list (with secret values redacted at the DTO layer). Editing connection details still requires System Admin.
 
+### Settings → Access says RBAC is disabled
+
+RBAC has its own switch, separate from authentication and the license. Set `Authorization__Enabled=true` and restart Lighthouse — see [Enabling RBAC](#enabling-rbac).
+
 ### The bootstrap banner does not appear for the first user
 
-The bootstrap flow only triggers when **no** System Admin exists in the database. If you have already bootstrapped (or restored a database that contains a System Admin), the banner is correctly hidden. To recover, either sign in as that System Admin or use the Emergency Admin path described above.
+If **Settings → Access** says RBAC is disabled, [enable it](#enabling-rbac) first. Otherwise: the bootstrap flow only triggers when **no** System Admin exists in the database. If you have already bootstrapped (or restored a database that contains a System Admin), the banner is correctly hidden. To recover, either sign in as that System Admin or use the Emergency Admin path described above.
 
 ### I uploaded the license but it says "License could not be loaded"
 
