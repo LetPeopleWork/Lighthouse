@@ -287,3 +287,33 @@ states (settings pages load before the form renders; the Release picker's failed
   touch `InfoTooltip`. Slice 02 does the move and the link.
 - DISCUSS AC-1.1 and AC-1.4 (icon beside the cutoff, keyboard-reachable icon) are superseded by MD-1: the
   rewritten helper line is always visible, so there is no icon. AC-1.2 and AC-1.3 now apply to the helper line.
+
+## Wave: DEVOPS / [REF] Platform Readiness
+
+Every platform choice is the project's standing one; nothing new is needed for copy on existing controls.
+
+| Item | Answer |
+|---|---|
+| Environment matrix | One: `clean` (see `environments.yaml`). No install, migration or configuration. |
+| CI/CD | Existing `ci.yml` "Build And Deploy Lighthouse" (frontend tests, build, Biome, Sonar; E2E via the verify workflows). No pipeline change. |
+| Branching | Trunk-based on `main`; nothing pushed in AFK mode. |
+| Deployment | Ships with the next regular release; rollback is the previous release. |
+| Observability | No new logs or metrics: no server code changes. |
+| Mutation testing | per-feature (project standard), StrykerJS on the touched frontend files, ≥ 80 %. |
+| Coexistence | lefthook pre-commit (secret scan) must keep passing. |
+| Pre-requisites | None from DESIGN. |
+
+## Wave: DEVOPS / [REF] Usage-Data Event
+
+**N/A, because** none of the three Stories adds a new capability whose use could be counted. They change
+explanatory copy on existing controls, and neither "a tooltip was hovered" nor "a placeholder was seen" would
+tell whether the copy worked. Their KPIs (K1 reporter confirmation, K2 no new support questions) are
+qualitative and measured outside the product. `UsageDataEventName` and `docs/settings/usagedata.md` stay
+unchanged.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts
+
+| KPI | Instrument |
+|---|---|
+| K1 | Maintainer follows up with the reporter after the release that carries the three Stories. |
+| K2 | Slack #lighthouse and GitHub issues, 60 days after that release. |

@@ -1,0 +1,17 @@
+# Frontend copy and hints only; nothing installs into a system.
+target_environments:
+  - name: clean
+    description: "Lighthouse frontend served by the backend (Docker / standalone) or the Vite dev server"
+    platform: [linux, macos, windows]
+    preconditions: []
+
+coexistence_matrix:
+  - tool: lefthook pre-commit (secret scan, Biome)
+    must_not_break: true
+
+platform_coverage:
+  Browsers: [Chromium, Firefox, WebKit]
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "Ships with the next regular Lighthouse release; no migration, no configuration"
