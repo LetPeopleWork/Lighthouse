@@ -1,11 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
-import {
-	RenamedTerms,
-	renderWithTerms,
-	theInfoIconsIn,
-} from "../../../tests/FieldTipsTestKit";
+import { RenamedTerms, renderWithTerms } from "../../../tests/FieldTipsTestKit";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
@@ -95,7 +91,7 @@ describe("Story 6348 slice 01: the Closed Items Cutoff says what it limits", () 
 		);
 	});
 
-	// @error @contract-shape:bounded-change
+	// @error @contract-shape:pure-function
 	it("names Reports in general, and the old retain-and-filter wording is gone", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
@@ -108,13 +104,13 @@ describe("Story 6348 slice 01: the Closed Items Cutoff says what it limits", () 
 });
 
 describe("Story 6348 slice 01: what stays as it is", () => {
-	// @error @active-guard @contract-shape:unbounded-preservation
+	// @error @active-guard @contract-shape:bounded-change
 	it("the explanation sits in the open, so no info icon hides it", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
 		const theCutoffsPlace = screen.getByTestId("closed-items-cutoff");
 		expect(theCutoffsPlace).toContainElement(theCutoff());
-		expect(theInfoIconsIn(theCutoffsPlace)).toHaveLength(0);
+		expect(theCutoffsPlace.querySelectorAll("svg")).toHaveLength(0);
 		expect(
 			screen.queryByRole("button", { name: /^About Closed Items Cutoff/ }),
 		).not.toBeInTheDocument();

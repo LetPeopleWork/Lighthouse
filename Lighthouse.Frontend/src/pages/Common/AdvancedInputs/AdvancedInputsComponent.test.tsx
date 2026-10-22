@@ -24,11 +24,11 @@ describe("AdvancedInputsComponent", () => {
 			/>,
 		);
 
-		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		// Check if the Select displays the correct value (parent link field)
-		expect(screen.getByRole("combobox")).toBeInTheDocument();
+		expect(
+			screen.getByRole("combobox", { name: "Parent Override Field" }),
+		).toHaveTextContent("Parent Link Field");
 		expect(screen.getByLabelText("Closed Items Cutoff (days)")).toHaveValue(
 			180,
 		);
@@ -47,17 +47,14 @@ describe("AdvancedInputsComponent", () => {
 			/>,
 		);
 
-		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		// Open the dropdown and select an option
 		const select = screen.getByRole("combobox");
 		fireEvent.mouseDown(select);
 
 		const listbox = within(screen.getByRole("listbox"));
 		fireEvent.click(listbox.getByText("Parent Link Field"));
 
-		// Check if the callback was called with the correct parameters
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideAdditionalFieldDefinitionId",
 			1,
@@ -78,17 +75,14 @@ describe("AdvancedInputsComponent", () => {
 			/>,
 		);
 
-		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		// Open the dropdown and select "None"
 		const select = screen.getByRole("combobox");
 		fireEvent.mouseDown(select);
 
 		const listbox = within(screen.getByRole("listbox"));
 		fireEvent.click(listbox.getByText("None"));
 
-		// Check if the callback was called with null
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideAdditionalFieldDefinitionId",
 			null,
@@ -128,15 +122,12 @@ describe("AdvancedInputsComponent", () => {
 			/>,
 		);
 
-		// Expand the collapsible section first
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		// Simulate changing the cutoff days
 		fireEvent.change(screen.getByLabelText("Closed Items Cutoff (days)"), {
 			target: { value: "365" },
 		});
 
-		// Check if the callback was called with the correct parameters (numeric value)
 		expect(onTeamSettingsChange).toHaveBeenCalledWith(
 			"doneItemsCutoffDays",
 			365,
