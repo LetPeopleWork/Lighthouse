@@ -51,6 +51,7 @@ const givenTheTeamsSettingsPage = (
 		<AdvancedInputsComponent
 			settings={settings}
 			onSettingsChange={onSettingsChange}
+			parentOverrideDefault="parentOverrideForTeams"
 			additionalFieldDefinitions={fields}
 		/>,
 	);
@@ -186,6 +187,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 			<AdvancedInputsComponent
 				settings={null}
 				onSettingsChange={vi.fn()}
+				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={TheFields}
 			/>,
 		);

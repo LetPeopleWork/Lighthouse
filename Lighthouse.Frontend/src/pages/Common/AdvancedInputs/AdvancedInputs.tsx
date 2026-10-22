@@ -5,8 +5,10 @@ import ConnectionDefaultFieldSelect from "../../../components/Common/ConnectionD
 import { followOrOwn } from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { useTerminology } from "../../../services/TerminologyContext";
 
 interface AdvancedInputsComponentProps {
 	settings: IBaseSettings | null;
@@ -16,7 +18,7 @@ interface AdvancedInputsComponentProps {
 	) => void;
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 	connection?: IWorkTrackingSystemConnection | null;
-	parentOverrideDefault?: ParentOverrideDefault;
+	parentOverrideDefault: ParentOverrideDefault;
 }
 
 type ParentOverrideDefault =
@@ -28,8 +30,15 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	onSettingsChange: onTeamSettingsChange,
 	additionalFieldDefinitions = [],
 	connection,
-	parentOverrideDefault = "parentOverrideForTeams",
+	parentOverrideDefault,
 }) => {
+	const { getTerm } = useTerminology();
+	const keptItemsTerm = getTerm(
+		parentOverrideDefault === "parentOverrideForTeams"
+			? TERMINOLOGY_KEYS.WORK_ITEMS
+			: TERMINOLOGY_KEYS.FEATURES,
+	);
+
 	return (
 		<InputGroup title={"Advanced Configuration"} initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
@@ -49,7 +58,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					)}
 				/>
 			</Grid>
-			<Grid size={{ xs: 12 }}>
+			<Grid size={{ xs: 12 }} data-testid="closed-items-cutoff">
 				<TextField
 					label="Closed Items Cutoff (days)"
 					type="number"
@@ -65,7 +74,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					slotProps={{
 						htmlInput: { min: 0 },
 					}}
-					helperText="Number of days to retain closed/done items. Items older than this will be filtered out."
+					helperText={`Finished ${keptItemsTerm} older than this many days are not kept. This limits metrics, forecasts and how far back Reports can reach. 0 keeps them all. Raising it brings older ones back with the next update.`}
 				/>
 			</Grid>
 		</InputGroup>

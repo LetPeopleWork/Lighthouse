@@ -47,9 +47,9 @@ const givenSamOpensTheSettingsOf = async (
 
 const theCutoff = () => screen.getByLabelText(CUTOFF);
 
-describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it limits", () => {
+describe("Story 6348 slice 01: the Closed Items Cutoff says what it limits", () => {
 	// @driving_port @contract-shape:pure-function
-	it.skip("on a Team's settings, the line under the cutoff says what it limits, of its Work Items", async () => {
+	it("on a Team's settings, the line under the cutoff says what it limits, of its Work Items", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
 		expect(theCutoff()).toHaveAccessibleDescription(
@@ -58,7 +58,7 @@ describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it li
 	});
 
 	// @driving_port @contract-shape:pure-function
-	it.skip("on a Portfolio's settings, the same line speaks of its Features", async () => {
+	it("on a Portfolio's settings, the same line speaks of its Features", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio");
 
 		expect(theCutoff()).toHaveAccessibleDescription(
@@ -67,7 +67,7 @@ describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it li
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("a tenant that calls its Work Items Tickets reads Tickets on a Team, never Work Items", async () => {
+	it("a tenant that calls its Work Items Tickets reads Tickets on a Team, never Work Items", async () => {
 		await givenSamOpensTheSettingsOf("Team", { terms: RenamedTerms });
 
 		expect(theCutoff()).toHaveAccessibleDescription(
@@ -77,7 +77,7 @@ describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it li
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("a tenant that calls its Features Bets reads Bets on a Portfolio, never Features", async () => {
+	it("a tenant that calls its Features Bets reads Bets on a Portfolio, never Features", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", { terms: RenamedTerms });
 
 		expect(theCutoff()).toHaveAccessibleDescription(
@@ -87,7 +87,7 @@ describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it li
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("before the settings arrive, the line already says what the cutoff limits", async () => {
+	it("before the settings arrive, the line already says what the cutoff limits", async () => {
 		await givenSamOpensTheSettingsOf("Team", { settings: null });
 
 		expect(theCutoff()).toHaveAccessibleDescription(
@@ -96,7 +96,7 @@ describe("Story 6348 slice 01 (pending): the Closed Items Cutoff says what it li
 	});
 
 	// @error @contract-shape:bounded-change
-	it.skip("names Reports in general, and the old retain-and-filter wording is gone", async () => {
+	it("names Reports in general, and the old retain-and-filter wording is gone", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
 		expect(screen.getByText(/how far back Reports can reach/)).toBeVisible();
@@ -112,9 +112,9 @@ describe("Story 6348 slice 01: what stays as it is", () => {
 	it("the explanation sits in the open, so no info icon hides it", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
-		const theCutoffsPlace = theCutoff().closest(".MuiGrid-root");
-		expect(theCutoffsPlace).not.toBeNull();
-		expect(theInfoIconsIn(theCutoffsPlace as HTMLElement)).toHaveLength(0);
+		const theCutoffsPlace = screen.getByTestId("closed-items-cutoff");
+		expect(theCutoffsPlace).toContainElement(theCutoff());
+		expect(theInfoIconsIn(theCutoffsPlace)).toHaveLength(0);
 		expect(
 			screen.queryByRole("button", { name: /^About Closed Items Cutoff/ }),
 		).not.toBeInTheDocument();

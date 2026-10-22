@@ -19,6 +19,7 @@ describe("AdvancedInputsComponent", () => {
 			<AdvancedInputsComponent
 				settings={teamSettings}
 				onSettingsChange={vi.fn()}
+				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -41,6 +42,7 @@ describe("AdvancedInputsComponent", () => {
 			<AdvancedInputsComponent
 				settings={teamSettings}
 				onSettingsChange={onTeamSettingsChange}
+				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -71,6 +73,7 @@ describe("AdvancedInputsComponent", () => {
 			<AdvancedInputsComponent
 				settings={teamSettings}
 				onSettingsChange={onTeamSettingsChange}
+				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -100,6 +103,7 @@ describe("AdvancedInputsComponent", () => {
 			<AdvancedInputsComponent
 				settings={createMockTeamSettings()}
 				onSettingsChange={vi.fn()}
+				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={mockAdditionalFields}
 			/>,
 		);
@@ -120,6 +124,7 @@ describe("AdvancedInputsComponent", () => {
 			<AdvancedInputsComponent
 				settings={teamSettings}
 				onSettingsChange={onTeamSettingsChange}
+				parentOverrideDefault="parentOverrideForTeams"
 			/>,
 		);
 
