@@ -26,14 +26,14 @@ type ParentOverrideDefault =
 	| "parentOverrideForPortfolios";
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
-	settings: teamSettings,
-	onSettingsChange: onTeamSettingsChange,
+	settings,
+	onSettingsChange,
 	additionalFieldDefinitions = [],
 	connection,
 	parentOverrideDefault,
 }) => {
 	const { getTerm } = useTerminology();
-	const keptItemsTerm = getTerm(
+	const finishedItemsTerm = getTerm(
 		parentOverrideDefault === "parentOverrideForTeams"
 			? TERMINOLOGY_KEYS.WORK_ITEMS
 			: TERMINOLOGY_KEYS.FEATURES,
@@ -44,15 +44,15 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 			<Grid size={{ xs: 12 }}>
 				<ConnectionDefaultFieldSelect
 					label="Parent Override Field"
-					settings={teamSettings}
+					settings={settings}
 					connection={connection}
 					theDefault={parentOverrideDefault}
-					defaultNameTheSettingsCarry={teamSettings?.parentOverrideDefaultName}
-					source={teamSettings?.parentOverrideSource}
-					ownField={teamSettings?.parentOverrideAdditionalFieldDefinitionId}
+					defaultNameTheSettingsCarry={settings?.parentOverrideDefaultName}
+					source={settings?.parentOverrideSource}
+					ownField={settings?.parentOverrideAdditionalFieldDefinitionId}
 					additionalFieldDefinitions={additionalFieldDefinitions}
 					{...followOrOwn<IBaseSettings>(
-						onTeamSettingsChange,
+						onSettingsChange,
 						"parentOverrideSource",
 						"parentOverrideAdditionalFieldDefinitionId",
 					)}
@@ -64,9 +64,9 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					type="number"
 					fullWidth
 					margin="normal"
-					value={teamSettings?.doneItemsCutoffDays ?? 0}
+					value={settings?.doneItemsCutoffDays ?? 0}
 					onChange={(e) =>
-						onTeamSettingsChange(
+						onSettingsChange(
 							"doneItemsCutoffDays",
 							Number.parseInt(e.target.value, 10) || 0,
 						)
@@ -74,7 +74,7 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 					slotProps={{
 						htmlInput: { min: 0 },
 					}}
-					helperText={`Finished ${keptItemsTerm} older than this many days are not kept. This limits metrics, forecasts and how far back Reports can reach. 0 keeps them all. Raising it brings older ones back with the next update.`}
+					helperText={`Finished ${finishedItemsTerm} older than this many days are not kept. This limits metrics, forecasts and how far back Reports can reach. 0 keeps them all. Raising it brings older ones back with the next update.`}
 				/>
 			</Grid>
 		</InputGroup>
