@@ -50,4 +50,25 @@ describe("Story 6352 slice 02: a dashboard widget's info popover stays as it is"
 			expect(screen.queryByText(DESCRIPTION)).not.toBeInTheDocument(),
 		);
 	});
+
+	it("is named after the widget it explains and says whether its popover is open", async () => {
+		const user = userEvent.setup();
+		render(
+			<WidgetShell
+				widgetKey="throughput"
+				title="Throughput"
+				showTips={true}
+				info={{ description: DESCRIPTION, learnMoreUrl: DOCS }}
+			>
+				<div>Content</div>
+			</WidgetShell>,
+		);
+
+		const button = screen.getByRole("button", { name: "About Throughput" });
+		expect(button).toHaveAttribute("aria-expanded", "false");
+
+		await user.click(button);
+
+		expect(button).toHaveAttribute("aria-expanded", "true");
+	});
 });

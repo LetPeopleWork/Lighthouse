@@ -1,5 +1,4 @@
 import EastIcon from "@mui/icons-material/East";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import NorthEastIcon from "@mui/icons-material/NorthEast";
 import RemoveIcon from "@mui/icons-material/Remove";
 import SouthEastIcon from "@mui/icons-material/SouthEast";
@@ -11,8 +10,6 @@ import {
 	Chip,
 	CircularProgress,
 	IconButton,
-	Link,
-	Popover,
 	type SxProps,
 	type Theme,
 	Tooltip,
@@ -20,7 +17,8 @@ import {
 	useTheme,
 } from "@mui/material";
 import type React from "react";
-import { useRef, useState } from "react";
+import { useState } from "react";
+import InfoPopoverButton from "../../../components/Common/InfoPopoverButton/InfoPopoverButton";
 import WorkItemsDialog, {
 	type TimeInStateColumnDefinition,
 	type WorkItemsDialogProps,
@@ -400,98 +398,49 @@ const TrendChrome: React.FC<{
 	);
 };
 
-const WidgetInfoButton: React.FC<{
-	readonly widgetKey: string;
-	readonly info: WidgetInfo;
-	readonly showTips: boolean;
-}> = ({ widgetKey, info, showTips }) => {
-	const theme = useTheme();
-	const [infoOpen, setInfoOpen] = useState(false);
-	const infoAnchorRef = useRef<HTMLButtonElement>(null);
-	const showGuidance = showTips && !!info.statusGuidance;
-
-	return (
-		<>
-			<IconButton
-				size="small"
-				data-testid={`widget-info-${widgetKey}`}
-				ref={infoAnchorRef}
-				onClick={() => setInfoOpen((prev) => !prev)}
-				sx={{ color: theme.palette.text.secondary }}
-			>
-				<InfoOutlinedIcon fontSize="small" />
-			</IconButton>
-			<Popover
-				open={infoOpen}
-				anchorEl={infoAnchorRef.current}
-				onClose={() => setInfoOpen(false)}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "right",
-				}}
-				transformOrigin={{
-					vertical: "top",
-					horizontal: "right",
+const StatusGuidanceList: React.FC<{
+	readonly statusGuidance: WidgetStatusGuidance;
+}> = ({ statusGuidance }) => (
+	<Box
+		sx={{
+			display: "flex",
+			flexDirection: "column",
+			gap: 0.75,
+			mb: 1,
+		}}
+	>
+		{infoGuidanceOrder.map(({ guidanceKey, ragStatus }) => (
+			<Box
+				key={guidanceKey}
+				sx={{
+					display: "flex",
+					alignItems: "flex-start",
+					gap: 0.75,
 				}}
 			>
-				<Box sx={{ p: 2, maxWidth: 300 }}>
-					<Typography variant="body2" sx={{ mb: 1 }}>
-						{info.description}
-					</Typography>
-					{showGuidance && (
-						<Box
-							sx={{
-								display: "flex",
-								flexDirection: "column",
-								gap: 0.75,
-								mb: 1,
-							}}
-						>
-							{infoGuidanceOrder.map(({ guidanceKey, ragStatus }) => (
-								<Box
-									key={guidanceKey}
-									sx={{
-										display: "flex",
-										alignItems: "flex-start",
-										gap: 0.75,
-									}}
-								>
-									<Chip
-										label={ragLabelMap[ragStatus]}
-										size="small"
-										sx={{
-											backgroundColor: ragColorMap[ragStatus],
-											color: "#fff",
-											fontWeight: 600,
-											fontSize: "0.65rem",
-											height: 20,
-											minWidth: 68,
-										}}
-									/>
-									<Typography
-										variant="caption"
-										color="text.secondary"
-										sx={{ lineHeight: 1.45 }}
-									>
-										{info.statusGuidance?.[guidanceKey]}
-									</Typography>
-								</Box>
-							))}
-						</Box>
-					)}
-					<Link
-						href={info.learnMoreUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						variant="body2"
-					>
-						Learn More
-					</Link>
-				</Box>
-			</Popover>
-		</>
-	);
-};
+				<Chip
+					label={ragLabelMap[ragStatus]}
+					size="small"
+					sx={{
+						backgroundColor: ragColorMap[ragStatus],
+						color: "#fff",
+						fontWeight: 600,
+						fontSize: "0.65rem",
+						height: 20,
+						minWidth: 68,
+					}}
+				/>
+				<Typography
+					variant="caption"
+					color="text.secondary"
+					sx={{ lineHeight: 1.45 }}
+				>
+					{statusGuidance[guidanceKey]}
+				</Typography>
+			</Box>
+		))}
+	</Box>
+);
 
 const WidgetHeader: React.FC<{
 	readonly widgetKey: string;
@@ -515,11 +464,16 @@ const WidgetHeader: React.FC<{
 			}}
 		>
 			{info && (
-				<WidgetInfoButton
-					widgetKey={widgetKey}
-					info={info}
-					showTips={showTips}
-				/>
+				<InfoPopoverButton
+					label={`About ${title ?? "this widget"}`}
+					text={info.description}
+					learnMoreUrl={info.learnMoreUrl}
+					testId={`widget-info-${widgetKey}`}
+				>
+					{showTips && info.statusGuidance && (
+						<StatusGuidanceList statusGuidance={info.statusGuidance} />
+					)}
+				</InfoPopoverButton>
 			)}
 			{parts.viewData && (
 				<Tooltip title="View Data" arrow>
