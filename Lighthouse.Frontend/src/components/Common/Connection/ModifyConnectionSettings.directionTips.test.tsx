@@ -109,9 +109,9 @@ const theGroup = (name: string) =>
 const whenPriyaOpensTheTipOf = (field: string, group: string) =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(field, theGroup(group)));
 
-describe("Story 6352 slice 02 (pending): the connection's defaults say which way round they read", () => {
+describe("Story 6352 slice 02: the connection's defaults say which way round they read", () => {
 	// @driving_port @contract-shape:pure-function
-	it.skip("on a Jira connection, only the Parent Override and Dependency rows carry an About button", async () => {
+	it("on a Jira connection, only the Parent Override and Dependency rows carry an About button", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(theAboutButtonsIn(theGroup("Teams"))).toEqual([
@@ -124,7 +124,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @edge @contract-shape:unbounded-preservation
-	it.skip("the Estimation, Size Estimate and Feature Owner rows carry no info icon", async () => {
+	it("the Estimation, Size Estimate and Feature Owner rows carry no info icon", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(theInfoIconsIn(theGroup("Teams"))).toHaveLength(1);
@@ -143,7 +143,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on a Jira connection, the Teams' Parent Override tip gives Jira's example", async () => {
+	it("on a Jira connection, the Teams' Parent Override tip gives Jira's example", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(
@@ -152,7 +152,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on a Jira connection, the Dependency tip asks for is blocked by", async () => {
+	it("on a Jira connection, the Dependency tip asks for is blocked by", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(
@@ -161,7 +161,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on an Azure DevOps connection, the Dependency tip names Predecessor and no Jira phrase", async () => {
+	it("on an Azure DevOps connection, the Dependency tip names Predecessor and no Jira phrase", async () => {
 		await givenPriyaOpensAConnectionOn("AzureDevOps");
 
 		const tip = await whenPriyaOpensTheTipOf(DEPENDENCY, "Portfolios");
@@ -170,7 +170,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("a tenant's own words reach the tips: the Dependency tip speaks of a Bet, never of a Feature", async () => {
+	it("a tenant's own words reach the tips: the Dependency tip speaks of a Bet, never of a Feature", async () => {
 		await givenPriyaOpensAConnectionOn("Jira", RenamedTerms);
 
 		const tip = await whenPriyaOpensTheTipOf(DEPENDENCY, "Programs");
@@ -179,7 +179,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("the Teams' Parent Override tip leads to the Team docs", async () => {
+	it("the Teams' Parent Override tip leads to the Team docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expectLearnMoreToOpen(
@@ -189,7 +189,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("the Portfolios' Parent Override tip leads to the Portfolio docs", async () => {
+	it("the Portfolios' Parent Override tip leads to the Portfolio docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expectLearnMoreToOpen(
@@ -199,7 +199,7 @@ describe("Story 6352 slice 02 (pending): the connection's defaults say which way
 	});
 
 	// @contract-shape:pure-function
-	it.skip("the Dependency tip leads to the Dependency Field docs", async () => {
+	it("the Dependency tip leads to the Dependency Field docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expectLearnMoreToOpen(

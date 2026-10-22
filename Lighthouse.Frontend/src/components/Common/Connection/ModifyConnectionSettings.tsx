@@ -31,6 +31,7 @@ import {
 	type IFollowerGroup,
 	type IWorkTrackingSystemConnection,
 	isEstimationDefaultName,
+	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	type IWorkTrackingSystemOption,
@@ -42,6 +43,10 @@ import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBa
 import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
+import {
+	type DirectionTipField,
+	directionTip,
+} from "../ConnectionDefault/fieldDirectionTips";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
@@ -153,6 +158,8 @@ const WhereEachDefaultSits: Record<
 		readWhen: ReadWhen;
 		changes?: WhatChanges;
 		label: (featureTerm: string) => string;
+		// A field read off one end of a link carries a tip saying which end, since either end looks plausible.
+		tip?: true;
 	}
 > = {
 	parentOverrideForTeams: {
@@ -160,6 +167,7 @@ const WhereEachDefaultSits: Record<
 		readWhen: "updating",
 		changes: "parents",
 		label: () => "Parent Override Field",
+		tip: true,
 	},
 	estimationForTeams: {
 		group: "teams",
@@ -171,12 +179,14 @@ const WhereEachDefaultSits: Record<
 		readWhen: "updating",
 		changes: "parents",
 		label: () => "Parent Override Field",
+		tip: true,
 	},
 	dependencyFieldForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
 		changes: "dependencies",
 		label: () => "Dependency Field",
+		tip: true,
 	},
 	sizeEstimateFieldForPortfolios: {
 		group: "portfolios",
@@ -196,6 +206,9 @@ const WhereEachDefaultSits: Record<
 		label: () => "Estimation Field",
 	},
 };
+
+const carriesTip = (name: ConnectionDefaultName): name is DirectionTipField =>
+	WhereEachDefaultSits[name].tip === true;
 
 // A server that sends no groups is read as if every owner followed a single default.
 const followerGroupsOf = (usage: IConnectionUsage): IFollowerGroup[] =>
@@ -333,6 +346,7 @@ interface ConnectionDefaultsSectionProps {
 		name: EstimationDefaultName,
 		bundle: IEstimationDefault | null,
 	) => void;
+	tracker: WorkTrackingSystemType | undefined;
 }
 
 const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
@@ -341,11 +355,16 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	additionalFields,
 	onChange,
 	onEstimationChange,
+	tracker,
 }) => {
 	const { getTerm } = useTerminology();
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const tipTerms = {
+		feature: featureTerm,
+		workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+	};
 	const title = `Defaults for ${teamsTerm} and ${portfoliosTerm}`;
 
 	const fieldOptions = additionalFields.map((field) => ({
@@ -412,6 +431,11 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 									value={chosenFieldOf(name)}
 									options={fieldOptions}
 									onChange={(fieldId) => onChange(name, fieldId)}
+									info={
+										carriesTip(name)
+											? directionTip(name, tracker, tipTerms)
+											: undefined
+									}
 								/>
 							),
 						)}
@@ -1104,6 +1128,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 								additionalFields={additionalFields}
 								onChange={handleDefaultChange}
 								onEstimationChange={handleDefaultChange}
+								tracker={selectedWorkTrackingSystem?.workTrackingSystem}
 							/>
 						</Grid>
 					)}
