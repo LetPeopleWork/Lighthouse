@@ -226,7 +226,7 @@ Usage-data event: left to DEVOPS to answer; a tooltip is not a usage signal wort
 ## Wave: DISCUSS / [REF] Out of Scope
 
 - Validating a Dependency/Parent Override field that matches nothing (#6352 says tooltips only).
-- Picking a Release without a date or overriding its date (#6355).
+- Picking a Release without a date or overriding its date (#6355); tracked as follow-up Story #6356.
 - Then & Now window defaults and one-click fix (#6347, separate Story).
 - Listing who follows a connection default (#6353, separate Story).
 
