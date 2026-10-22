@@ -89,7 +89,7 @@ beforeEach(() => {
 	clearDeliverySourceOptionsCache();
 });
 
-describe("Story 6355 slice 03: the Release picker says why and invites searching", () => {
+describe("Story 6355: the Release picker says why and invites searching", () => {
 	// @driving_port @contract-shape:pure-function
 	it("on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases", async () => {
 		const user = userEvent.setup();
@@ -149,7 +149,7 @@ describe("Story 6355 slice 03: the Release picker says why and invites searching
 	});
 });
 
-describe("Story 6355 slice 03: what stays as it is", () => {
+describe("Story 6355: what stays as it is", () => {
 	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a Release without a date still cannot be picked", async () => {
 		const user = userEvent.setup();

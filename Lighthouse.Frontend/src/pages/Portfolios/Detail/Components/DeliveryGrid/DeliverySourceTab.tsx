@@ -66,13 +66,14 @@ const trackerWordBySourceKey: Record<string, string> = {
 	"jira-release": "Jira",
 };
 
-const blockedReason = (
-	reason: SourceOptionBlockReason,
-	trackerWord: string,
-): string =>
-	reason === "NoDateSet"
-		? `No date in ${trackerWord}: set one there to follow it`
-		: "No longer available";
+const blockedReason: Record<
+	SourceOptionBlockReason,
+	(trackerWord: string) => string
+> = {
+	NoDateSet: (trackerWord) =>
+		`No date in ${trackerWord}: set one there to follow it`,
+	RetiredAtSource: () => "No longer available",
+};
 
 const emptyPreviewExplanation = (
 	reason: DeliverySourcePreviewEmptyReason,
@@ -211,7 +212,7 @@ const SourceOptionRow: React.FC<{
 					color="text.secondary"
 					sx={{ ml: 1 }}
 				>
-					{blockedReason(option.blockedBecause, trackerWord)}
+					{blockedReason[option.blockedBecause](trackerWord)}
 				</Typography>
 			)}
 		</li>
