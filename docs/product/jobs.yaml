@@ -8496,7 +8496,7 @@ jobs:
     note: >
       From feedback by an early adopter running large Portfolios: he only understood what Closed Items
       Cutoff does after a Then & Now report refused his window. The setting is not documented anywhere under
-      docs/ today. The cutoff is part of the fetch fingerprint, so raising it makes the next update a full
+      docs/ under its UI name (only as "Cut Off Days"). The cutoff is part of the fetch fingerprint, so raising it makes the next update a full
       fetch that brings older finished items back; saving it starts no update by itself. 0 keeps everything.
     job_story: >
       When I set how many days of finished work Lighthouse keeps for a Team or Portfolio,
@@ -8504,8 +8504,8 @@ jobs:
       so I choose it on purpose instead of finding out when a metric, forecast or report comes up short.
     dimensions:
       functional: >
-        An info tip on the setting says what is kept, what it limits (metrics, forecasts, how far back a
-        Then & Now report reaches), what 0 means, and that raising it brings older items back with the
+        The always-visible line under the setting says what is kept, what it limits (metrics, forecasts, how far
+        back Reports can reach), what 0 means, and that raising it brings older items back with the
         next update.
       emotional: >
         From "the report refused me and I do not know why" to "I picked this number knowing what it costs".

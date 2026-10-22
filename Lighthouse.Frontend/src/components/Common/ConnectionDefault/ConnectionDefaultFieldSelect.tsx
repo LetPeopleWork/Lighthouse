@@ -8,7 +8,9 @@ import type {
 	ConnectionDefaultName,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import FormSelectField from "../FormSelectField/FormSelectField";
+import FormSelectField, {
+	type FieldInfo,
+} from "../FormSelectField/FormSelectField";
 import {
 	FollowTheConnection,
 	followsTheConnection,
@@ -29,6 +31,7 @@ interface ConnectionDefaultFieldSelectProps {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	onFollow: () => void;
 	onOwn: (field: number | null) => void;
+	info?: FieldInfo;
 }
 
 /** A field list that offers the connection's default above the fields, where the connection holds one. */

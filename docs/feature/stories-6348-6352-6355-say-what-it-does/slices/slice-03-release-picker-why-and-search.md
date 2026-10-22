@@ -5,8 +5,7 @@ searched.
 
 ## IN scope
 - A search placeholder on the picker input in `DeliverySourceTab.tsx`, naming the source.
-- The `NoDateSet` entry's copy: why (a following Delivery takes its date from the Release) and what to do (set
-  a release date in the tracker). Inline caption or tooltip is settled at the DISTILL sketch.
+- The `NoDateSet` entry reads "No date in {tracker}: set one there to follow it", inline on the row, no tooltip; the tracker word comes from the source, else the tenant's term for the work tracking system.
 - `docs/portfolios/detail.md#following-a-jira-release` mentions both.
 
 ## OUT of scope

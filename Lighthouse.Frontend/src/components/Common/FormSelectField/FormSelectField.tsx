@@ -14,6 +14,12 @@ interface SelectOption<T> {
 	label: string;
 }
 
+/** What an info icon beside the field explains, and where the docs say more. */
+export interface FieldInfo {
+	text: string;
+	learnMoreUrl?: string;
+}
+
 interface FormSelectFieldProps<T extends string | number> {
 	label: string;
 	value: T | "";
@@ -25,6 +31,7 @@ interface FormSelectFieldProps<T extends string | number> {
 	helperText?: string;
 	fullWidth?: boolean;
 	margin?: "none" | "dense" | "normal";
+	info?: FieldInfo;
 }
 
 function FormSelectField<T extends string | number>({
