@@ -1,3 +1,4 @@
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type {
 	ConnectionDefaultName,
 	WorkTrackingSystemType,
@@ -16,6 +17,13 @@ export interface DirectionTipTerms {
 	feature: string;
 	workItem: string;
 }
+
+export const directionTipTermsFrom = (
+	getTerm: (key: string) => string,
+): DirectionTipTerms => ({
+	feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
+	workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+});
 
 export interface DirectionTip {
 	text: string;

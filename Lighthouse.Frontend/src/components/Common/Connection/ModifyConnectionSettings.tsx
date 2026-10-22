@@ -46,6 +46,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	type DirectionTipField,
 	directionTip,
+	directionTipTermsFrom,
 } from "../ConnectionDefault/fieldDirectionTips";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
@@ -361,10 +362,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const tipTerms = {
-		feature: featureTerm,
-		workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
-	};
+	const tipTerms = directionTipTermsFrom(getTerm);
 	const title = `Defaults for ${teamsTerm} and ${portfoliosTerm}`;
 
 	const fieldOptions = additionalFields.map((field) => ({

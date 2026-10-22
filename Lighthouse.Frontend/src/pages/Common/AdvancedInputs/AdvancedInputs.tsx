@@ -2,8 +2,14 @@ import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import ConnectionDefaultFieldSelect from "../../../components/Common/ConnectionDefault/ConnectionDefaultFieldSelect";
-import { followOrOwn } from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
-import { directionTip } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
+import {
+	followOrOwn,
+	trackerOf,
+} from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
+import {
+	directionTip,
+	directionTipTermsFrom,
+} from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -41,11 +47,8 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 	);
 	const parentOverrideTip = directionTip(
 		parentOverrideDefault,
-		connection?.workTrackingSystem ?? settings?.workTrackingSystem,
-		{
-			feature: getTerm(TERMINOLOGY_KEYS.FEATURE),
-			workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
-		},
+		trackerOf(settings, connection),
+		directionTipTermsFrom(getTerm),
 	);
 
 	return (

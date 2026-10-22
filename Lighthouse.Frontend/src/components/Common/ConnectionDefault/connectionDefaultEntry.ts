@@ -63,6 +63,13 @@ export const followOrOwn = <Settings = never>(
 	},
 });
 
+/** The tracker the owner reads from: a loaded connection says so itself, and the settings answer until it has loaded. */
+export const trackerOf = (
+	settings: IBaseSettings | null,
+	connection: IWorkTrackingSystemConnection | null | undefined,
+): WorkTrackingSystemType | undefined =>
+	connection?.workTrackingSystem ?? settings?.workTrackingSystem;
+
 /**
  * The tracker's name as the helper text says it, or undefined when its connection cannot hold this default.
  * A loaded connection says itself which defaults it offers; the table above only answers when it has not.
@@ -72,8 +79,7 @@ export const trackerHoldingTheDefault = (
 	connection: IWorkTrackingSystemConnection | null | undefined,
 	theDefault: ConnectionDefaultName,
 ): string | undefined => {
-	const tracker =
-		connection?.workTrackingSystem ?? settings?.workTrackingSystem;
+	const tracker = trackerOf(settings, connection);
 	const holding = tracker ? trackersHoldingTheDefaults[tracker] : undefined;
 	const offered = connection?.supportedDefaults ?? holding?.holds;
 	return offered?.includes(theDefault) ? holding?.name : undefined;

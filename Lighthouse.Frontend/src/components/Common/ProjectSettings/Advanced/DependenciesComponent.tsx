@@ -8,8 +8,14 @@ import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
-import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
-import { directionTip } from "../../ConnectionDefault/fieldDirectionTips";
+import {
+	followOrOwn,
+	trackerOf,
+} from "../../ConnectionDefault/connectionDefaultEntry";
+import {
+	directionTip,
+	directionTipTermsFrom,
+} from "../../ConnectionDefault/fieldDirectionTips";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface DependenciesComponentProps {
@@ -34,8 +40,8 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const dependencyTip = directionTip(
 		"dependencyFieldForPortfolios",
-		connection?.workTrackingSystem ?? projectSettings?.workTrackingSystem,
-		{ feature: featureTerm, workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM) },
+		trackerOf(projectSettings, connection),
+		directionTipTermsFrom(getTerm),
 	);
 	return (
 		<InputGroup title="Dependency Settings" initiallyExpanded={false}>
