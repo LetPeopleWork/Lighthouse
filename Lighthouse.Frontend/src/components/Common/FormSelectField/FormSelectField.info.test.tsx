@@ -51,6 +51,17 @@ describe("Story 6352 slice 02: a field list with something to explain", () => {
 		expectLearnMoreToOpen(tip, DOCS);
 	});
 
+	// @contract-shape:pure-function
+	it("the button says it opens a dialog, and the open tip is that dialog, named after the button", async () => {
+		aFieldList({ text: TIP, learnMoreUrl: DOCS });
+
+		const button = theAboutButtonOf(LABEL);
+		expect(button).toHaveAttribute("aria-haspopup", "dialog");
+		const tip = await openTheTip(userEvent.setup(), button);
+
+		expect(screen.getByRole("dialog", { name: `About ${LABEL}` })).toBe(tip);
+	});
+
 	// @edge @contract-shape:pure-function
 	it("a tip with nowhere to lead shows its text and no Learn More", async () => {
 		aFieldList({ text: TIP });

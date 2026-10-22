@@ -27,6 +27,7 @@ const InfoPopoverButton: React.FC<InfoPopoverButtonProps> = ({
 				size="small"
 				aria-label={label}
 				aria-expanded={open}
+				aria-haspopup="dialog"
 				data-testid={testId}
 				ref={anchorRef}
 				onClick={() => setOpen((prev) => !prev)}
@@ -40,6 +41,7 @@ const InfoPopoverButton: React.FC<InfoPopoverButtonProps> = ({
 				onClose={() => setOpen(false)}
 				anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
 				transformOrigin={{ vertical: "top", horizontal: "right" }}
+				slotProps={{ paper: { role: "dialog", "aria-label": label } }}
 			>
 				<Box sx={{ p: 2, maxWidth: 300 }}>
 					<Typography variant="body2" sx={{ mb: 1 }}>
