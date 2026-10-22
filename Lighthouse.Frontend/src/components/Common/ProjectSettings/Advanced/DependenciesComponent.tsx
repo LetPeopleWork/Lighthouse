@@ -9,6 +9,7 @@ import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTrack
 import { useTerminology } from "../../../../services/TerminologyContext";
 import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
 import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
+import { directionTip } from "../../ConnectionDefault/fieldDirectionTips";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface DependenciesComponentProps {
@@ -31,6 +32,11 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const dependencyTip = directionTip(
+		"dependencyFieldForPortfolios",
+		connection?.workTrackingSystem ?? projectSettings?.workTrackingSystem,
+		{ feature: featureTerm, workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM) },
+	);
 	return (
 		<InputGroup title="Dependency Settings" initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
@@ -52,6 +58,7 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 						"dependencyFieldSource",
 						"dependencyOverrideAdditionalFieldDefinitionId",
 					)}
+					info={dependencyTip}
 				/>
 				<Typography variant="caption" color="text.secondary">
 					{`Read what each ${featureTerm} waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.`}

@@ -55,9 +55,9 @@ const givenSamOpensTheSettingsOf = async (
 const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
 
-describe("Story 6352 slice 02 (pending): Parent Override Field says which way round it reads", () => {
+describe("Story 6352 slice 02: Parent Override Field says which way round it reads", () => {
 	// @driving_port @contract-shape:pure-function
-	it.skip("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
+	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
 		const tip = await whenSamOpensTheTip();
@@ -66,14 +66,14 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	});
 
 	// @driving_port @contract-shape:pure-function
-	it.skip("on a Jira Portfolio, the tip gives the same example", async () => {
+	it("on a Jira Portfolio, the tip gives the same example", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira");
 
 		expect(await whenSamOpensTheTip()).toHaveTextContent(IS_CAUSED_BY);
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on an Azure DevOps Team, the tip asks for the field that holds the parent's id, not a Jira phrase", async () => {
+	it("on an Azure DevOps Team, the tip asks for the field that holds the parent's id, not a Jira phrase", async () => {
 		await givenSamOpensTheSettingsOf("Team", "AzureDevOps");
 
 		const tip = await whenSamOpensTheTip();
@@ -82,7 +82,7 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
+	it.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
 		"on a %s Team the tip stays tracker-neutral, without an example",
 		async (tracker) => {
 			await givenSamOpensTheSettingsOf("Team", tracker);
@@ -95,7 +95,7 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	);
 
 	// @edge @contract-shape:pure-function
-	it.skip("on a Team the tip speaks of the tenant's Ticket, never of a Work Item", async () => {
+	it("on a Team the tip speaks of the tenant's Ticket, never of a Work Item", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira", RenamedTerms);
 
 		const tip = await whenSamOpensTheTip();
@@ -104,7 +104,7 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("on a Portfolio the tip speaks of the tenant's Bet, never of a Feature", async () => {
+	it("on a Portfolio the tip speaks of the tenant's Bet, never of a Feature", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira", RenamedTerms);
 
 		const tip = await whenSamOpensTheTip();
@@ -113,7 +113,7 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on a Team, Learn More opens the Team's Parent Override docs in a new tab", async () => {
+	it("on a Team, Learn More opens the Team's Parent Override docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
 		expectLearnMoreToOpen(
@@ -123,7 +123,7 @@ describe("Story 6352 slice 02 (pending): Parent Override Field says which way ro
 	});
 
 	// @contract-shape:pure-function
-	it.skip("on a Portfolio, Learn More opens the Portfolio's Parent Override docs in a new tab", async () => {
+	it("on a Portfolio, Learn More opens the Portfolio's Parent Override docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira");
 
 		expectLearnMoreToOpen(
