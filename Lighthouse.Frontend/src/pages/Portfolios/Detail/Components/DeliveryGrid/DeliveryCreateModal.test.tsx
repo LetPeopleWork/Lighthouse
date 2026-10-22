@@ -9,6 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { formatLocalDate } from "../../../../../utils/date/localDate";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
 // Mock the useTerminology hook
@@ -187,7 +188,7 @@ describe("DeliveryCreateModal", () => {
 		const dateInput = screen.getByLabelText("Delivery Date");
 		const yesterday = new Date();
 		yesterday.setDate(yesterday.getDate() - 1);
-		const pastDateString = yesterday.toISOString().split("T")[0];
+		const pastDateString = formatLocalDate(yesterday);
 		await user.clear(dateInput);
 		await user.type(dateInput, pastDateString);
 
@@ -206,7 +207,7 @@ describe("DeliveryCreateModal", () => {
 		const dateInput = screen.getByLabelText("Delivery Date");
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
-		const futureDateString = tomorrow.toISOString().split("T")[0];
+		const futureDateString = formatLocalDate(tomorrow);
 		await user.clear(dateInput);
 		await user.type(dateInput, futureDateString);
 
@@ -223,7 +224,7 @@ describe("DeliveryCreateModal", () => {
 
 		const tomorrow = new Date();
 		tomorrow.setDate(tomorrow.getDate() + 1);
-		const futureDateString = tomorrow.toISOString().split("T")[0];
+		const futureDateString = formatLocalDate(tomorrow);
 
 		const dateInput = screen.getByLabelText("Delivery Date");
 		await user.clear(dateInput);
@@ -243,7 +244,7 @@ describe("DeliveryCreateModal", () => {
 
 		expect(mockOnSave).toHaveBeenCalledWith({
 			name: "Test Delivery",
-			date: tomorrow.toISOString().split("T")[0],
+			date: formatLocalDate(tomorrow),
 			featureIds: [1],
 			selectionMode: 0,
 			rules: undefined,
