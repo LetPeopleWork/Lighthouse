@@ -2,7 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	type RenderResult,
 	render,
-	screen,
 	waitFor,
 	within,
 } from "@testing-library/react";
@@ -98,13 +97,28 @@ export const theAboutButtonsIn = (container: HTMLElement): string[] =>
 		.queryAllByRole("button", { name: /^About / })
 		.map((button) => button.getAttribute("aria-label") ?? "");
 
+/**
+ * The one open tip popover, found by its paper rather than the first overlay on the page, so an open select menu
+ * (a popover too) cannot stand in for it, and two tips open at once fail instead of passing on either.
+ */
+export const theOpenTip = async (): Promise<HTMLElement> =>
+	waitFor(() => {
+		const tips = Array.from(
+			document.querySelectorAll<HTMLElement>(
+				".MuiPopover-paper:not(.MuiMenu-paper)",
+			),
+		);
+		expect(tips).toHaveLength(1);
+		return tips[0];
+	});
+
 /** Clicking the info button opens its popover; what the popover holds is returned. */
 export const openTheTip = async (
 	user: UserEvent,
 	button: HTMLElement,
 ): Promise<HTMLElement> => {
 	await user.click(button);
-	return screen.findByRole("presentation");
+	return theOpenTip();
 };
 
 /** The popover's "Learn More" opens the docs in a new tab. */

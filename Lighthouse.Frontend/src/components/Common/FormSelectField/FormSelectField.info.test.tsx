@@ -31,9 +31,9 @@ const aFieldList = (info?: { text: string; learnMoreUrl?: string }) =>
 		/>,
 	);
 
-describe("Story 6352 slice 02 (pending): a field list with something to explain", () => {
+describe("Story 6352 slice 02: a field list with something to explain", () => {
 	// @contract-shape:pure-function
-	it.skip("carries an info button named after the field, closed until asked", () => {
+	it("carries an info button named after the field, closed until asked", () => {
 		aFieldList({ text: TIP });
 
 		expect(theAboutButtonOf(LABEL)).toHaveAttribute("aria-expanded", "false");
@@ -42,7 +42,7 @@ describe("Story 6352 slice 02 (pending): a field list with something to explain"
 	});
 
 	// @contract-shape:pure-function
-	it.skip("opening the button shows the tip and a Learn More opening the docs in a new tab", async () => {
+	it("opening the button shows the tip and a Learn More opening the docs in a new tab", async () => {
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
 
 		const tip = await openTheTip(userEvent.setup(), theAboutButtonOf(LABEL));
@@ -52,7 +52,7 @@ describe("Story 6352 slice 02 (pending): a field list with something to explain"
 	});
 
 	// @edge @contract-shape:pure-function
-	it.skip("a tip with nowhere to lead shows its text and no Learn More", async () => {
+	it("a tip with nowhere to lead shows its text and no Learn More", async () => {
 		aFieldList({ text: TIP });
 
 		const tip = await openTheTip(userEvent.setup(), theAboutButtonOf(LABEL));
@@ -64,7 +64,7 @@ describe("Story 6352 slice 02 (pending): a field list with something to explain"
 	});
 
 	// @edge @contract-shape:bounded-change
-	it.skip("Escape closes the tip again", async () => {
+	it("Escape closes the tip again", async () => {
 		const user = userEvent.setup();
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
 

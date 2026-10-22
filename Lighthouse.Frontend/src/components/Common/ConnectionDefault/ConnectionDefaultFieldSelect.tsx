@@ -48,6 +48,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 	additionalFieldDefinitions,
 	onFollow,
 	onOwn,
+	info,
 }) => {
 	const trackerName = trackerHoldingTheDefault(
 		settings,
@@ -93,6 +94,7 @@ const ConnectionDefaultFieldSelect: React.FC<
 				id: field.id,
 				label: field.displayName,
 			}))}
+			info={info}
 		/>
 	);
 };

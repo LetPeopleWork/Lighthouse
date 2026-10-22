@@ -1,5 +1,6 @@
 import type { SelectChangeEvent } from "@mui/material";
 import {
+	Box,
 	FormControl,
 	FormHelperText,
 	InputLabel,
@@ -8,6 +9,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useId } from "react";
+import InfoPopoverButton from "../InfoPopoverButton/InfoPopoverButton";
 
 interface SelectOption<T> {
 	id: T;
@@ -45,6 +47,7 @@ function FormSelectField<T extends string | number>({
 	helperText,
 	fullWidth = true,
 	margin = "normal",
+	info,
 }: Readonly<FormSelectFieldProps<T>>): React.ReactElement {
 	const labelId = useId();
 	// With an entry above None, None is a choice of its own and has to stay readable when picked.
@@ -55,8 +58,12 @@ function FormSelectField<T extends string | number>({
 		onChange(selectedValue === "" ? null : (selectedValue as T));
 	};
 
-	return (
-		<FormControl fullWidth={fullWidth} margin={margin}>
+	const field = (
+		<FormControl
+			fullWidth={fullWidth}
+			margin={margin}
+			sx={info ? { flex: 1 } : undefined}
+		>
 			<InputLabel id={labelId} shrink={showsNone || undefined}>
 				{label}
 			</InputLabel>
@@ -84,6 +91,21 @@ function FormSelectField<T extends string | number>({
 			</Select>
 			{helperText && <FormHelperText>{helperText}</FormHelperText>}
 		</FormControl>
+	);
+
+	if (info === undefined) {
+		return field;
+	}
+
+	return (
+		<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+			{field}
+			<InfoPopoverButton
+				label={`About ${label}`}
+				text={info.text}
+				learnMoreUrl={info.learnMoreUrl}
+			/>
+		</Box>
 	);
 }
 
