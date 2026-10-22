@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-15
+updated: 2026-10-22
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -8487,3 +8487,45 @@ jobs:
         Importance 5 - an instance that looks dead is the most expensive failure the product has, and it
         reached a user. Satisfaction 0 - no setting mitigates it and no workaround exists short of a
         restart. Gap 5. Single informant; the code reading confirms the mechanism independently.
+  - id: job-config-admin-know-what-a-setting-limits-before-it-bites
+    title: Know what a setting limits while setting it, not when a report refuses
+    persona: config-admin
+    feature_context: stories-6348-6352-6355-say-what-it-does
+    ado: "Story #6348"
+    created: 2026-10-22
+    note: >
+      From feedback by an early adopter running large Portfolios: he only understood what Closed Items
+      Cutoff does after a Then & Now report refused his window. The setting is not documented anywhere under
+      docs/ today. The cutoff is part of the fetch fingerprint, so raising it makes the next update a full
+      fetch that brings older finished items back; saving it starts no update by itself. 0 keeps everything.
+    job_story: >
+      When I set how many days of finished work Lighthouse keeps for a Team or Portfolio,
+      I want to read, right where I set it, what that number limits,
+      so I choose it on purpose instead of finding out when a metric, forecast or report comes up short.
+    dimensions:
+      functional: >
+        An info tip on the setting says what is kept, what it limits (metrics, forecasts, how far back a
+        Then & Now report reaches), what 0 means, and that raising it brings older items back with the
+        next update.
+      emotional: >
+        From "the report refused me and I do not know why" to "I picked this number knowing what it costs".
+      social: >
+        The admin can answer a colleague's "why does the report stop in July?" without opening the code.
+    forces:
+      push: >
+        The refusal is the first place the setting explains itself, and it comes long after the setting
+        was made.
+      pull: >
+        One sentence where the number is typed in.
+      anxiety: >
+        "If I raise it, do I lose anything or have to refetch by hand?" (No; the next update fetches the
+        older items.)
+      habit: >
+        Leaving the default of 365 untouched because nothing says what it does.
+    opportunity_score:
+      importance: 3
+      current_satisfaction: 1
+      gap: 2
+      rationale: >
+        Importance 3 - it silently bounds every metric and report. Satisfaction 1 - only the report's
+        refusal explains it, and the docs do not. Gap 2. Single informant.
