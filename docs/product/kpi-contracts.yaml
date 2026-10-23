@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-18
+updated: 2026-10-23
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2497,6 +2497,108 @@ outcomes:
       against the 60 days before; support mail and community Slack reports are read by hand for the same windows.
     log_fields: {}
     measurement_window: 60 days from the release carrying slices 03 and 04
+    gate: soft
+    alerting: []
+    acceptance_scenarios: []   # outcome KPI, no scenario
+    status: designed-not-shipped
+
+  # story-6354-skip-unchanged-forecasts (DEVOPS 2026-10-23). No usage-data event: a skip is a background
+  # decision with no consenting browser, lh or MCP caller behind it, and the manual escape hatch is already counted
+  # by TeamRefreshTriggered / PortfolioRefreshTriggered / TeamManualForecastRun. Every signal below stays on the
+  # instance: Serilog summary lines and RefreshLog rows (Type 2 = RefreshType.Forecast, Skipped added by this Story).
+  - id: OUT-6354-unchanged-rounds-skip
+    feature: story-6354-skip-unchanged-forecasts
+    title: Background rounds whose forecast inputs did not change skip the forecast (K1)
+    target: ">= 95% (100% by design) of background Forecast rounds after the first of each instance day, on a day nothing changed remotely or in settings, are Skipped"
+    ga_baseline: "0% (no skip exists before slice 01)"
+    measurement_scope: per_instance
+    measured_by: >
+      Per instance, read by the operator and shared out of band. Numerator: Forecast rows with Skipped = true.
+      Denominator: Forecast rows of the same day, minus the first row per Portfolio per instance day (it always
+      computes, MD-5) and minus rows caused by a button press (they always compute, DDD-9; the operator knows when
+      they pressed one). Query, valid on SQLite and PostgreSQL:
+      SELECT "EntityName", SUM(CASE WHEN "Skipped" THEN 1 ELSE 0 END) AS skipped, COUNT(*) AS runs
+      FROM "RefreshLogs" WHERE "Type" = 2 AND "ExecutedAt" >= '<day> 00:00' AND "ExecutedAt" < '<day+1> 00:00'
+      GROUP BY "EntityName";
+      The same count can be read from the summary lines (forecast=skipped after ... vs forecast=Nms). Vendor reading:
+      the dev instance at :5169 restored with Restore-DbBackup.ps1, periodic refresh on, nothing changed remotely,
+      one quiet hour after the day's first round (DELIVER, slice 01).
+    log_fields:
+      refresh_summary_line: ["forecast=skipped after {N}ms (inputs unchanged)", "forecast={N}ms"]
+      refresh_log_row: ["Type", "Skipped", "Success", "Cancelled", "ExecutedAt", "EntityName"]
+    measurement_window: once on the dev instance after slice 01; once on the reporter's instance from a quiet day's log after the release
+    gate: soft
+    alerting:
+      - condition: "a quiet hour on the dev instance shows a computed (Skipped = false) row after the day's first"
+        action: "manual: diff the two fingerprints' members (guard test list) to find the member that moves without an input change, fix before release"
+    acceptance_scenarios:
+      - "slice 01 (DISTILL places them): A background round that changed nothing skips the forecast and says so; A Portfolio forecast that was never stored, or whose last run did not finish, is computed"
+    status: designed-not-shipped
+
+  - id: OUT-6354-skipped-round-is-fast
+    feature: story-6354-skip-unchanged-forecasts
+    title: A skipped forecast takes under 5 s on a large instance (K2)
+    target: "forecast=skipped after {N}ms with N < 5000 on the reporter's instance (Portfolios of 400-920 Features, 6-9 Teams)"
+    ga_baseline: "4-8 min per forecast (forecast=269719ms, Team 'FSS', Story #6354 log excerpt)"
+    measurement_scope: per_instance
+    measured_by: >
+      The {N} of the summary line, and RefreshLog.DurationMs of Skipped = true rows, from the log lines the reporter
+      sends after the release. Before the claim (DDD-2 risk: a skip still loads the Feature graph with its histograms,
+      stamps, stages write-back and publishes to Delivery sources), DELIVER reads it on the dev instance at :5169
+      restored with Restore-DbBackup.ps1: its slowest Portfolio, one computed run and three skipped runs, recorded in
+      feature-delta.md. That backup's forecasts take under 2 s (Epic 6311 baseline 1,766 ms), so the local reading
+      checks the skip costs a small fraction of a computed run; it cannot reproduce 400-920 Features. The < 5 s claim
+      is made only from the reporter's lines.
+    log_fields:
+      refresh_summary_line: ["forecast=skipped after {N}ms (inputs unchanged)"]
+      refresh_log_row: ["DurationMs", "Skipped"]
+    measurement_window: dev instance during slice 01 DELIVER; reporter's instance after the release
+    gate: soft
+    alerting:
+      - condition: "skipped N >= 5000 ms on the reporter's instance, or a skipped run on the dev instance costs more than a third of the computed run"
+        action: "manual: DDD-2 fallback, compare on a Feature read without histograms and load the full graph only to compute"
+    acceptance_scenarios: []   # wall-clock reading only; no CI scenario asserts a duration (ci-learnings wall-clock rule)
+    status: designed-not-shipped
+
+  - id: OUT-6354-no-stale-forecast
+    feature: story-6354-skip-unchanged-forecasts
+    title: No forecast is left stale after an input changed (K3, guardrail)
+    target: "0: every input change makes the next round compute; 0 'forecast did not update' reports in the 60 days after the release"
+    ga_baseline: "n/a (no skip exists today)"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      CI on every push: the D8 guard test (ForecastInputFingerprint.RegisteredMembers equals the expected list, one
+      case per member, the ForecastSimulationLimits reflection guard) and the AC-1.2 'still re-forecasts' outline, on
+      SQLite and on Postgres for the fresh-DbContext equality case. Once in DELIVER: a maintainer spot check on the dev
+      instance (:5169, restored backup) changing one input at a time and reading Skipped = false on the next round.
+      After the release the maintainer reads GitHub issues (gh) and community Slack for 60 days.
+    log_fields:
+      refresh_log_row: ["Skipped"]
+    measurement_window: every push (CI); once in DELIVER (spot check); 60 days after the release (reports)
+    gate: hard
+    alerting:
+      - condition: "a guard or AC-1.2 case fails"
+        action: "backend build fails (red)"
+      - condition: "a 'forecast did not update' report after the release"
+        action: "manual: the user presses Update forecast (always computes); the maintainer finds the missing member and adds it with a guard case"
+    acceptance_scenarios:
+      - "slice 01 (DISTILL places them): A background round re-forecasts when an input changed (outline, nine examples); the fingerprint guard test"
+    status: designed-not-shipped
+
+  - id: OUT-6354-fewer-heartbeat-warnings
+    feature: story-6354-skip-unchanged-forecasts
+    title: Kestrel heartbeat warnings drop on a no-change day (K4)
+    target: "a clear drop in Kestrel 'Heartbeat took longer than' warnings over a no-change day, compared with the Story's excerpt (direction, not a number)"
+    ga_baseline: "heartbeat delays up to 49 s during each forecast (Story #6354 log excerpt)"
+    measurement_scope: per_instance
+    measured_by: >
+      The reporter's log excerpt for one no-change working day after the release, compared with the excerpt quoted in
+      the Story: count of Kestrel heartbeat warnings and their largest delay, read by the maintainer. Thread-pool
+      starvation itself is analysed later; this reading only says whether removing the wasted forecasts helped.
+    log_fields:
+      kestrel_warning: ["Heartbeat took longer than {interval} at {time}"]
+      refresh_summary_line: ["forecast=skipped after {N}ms (inputs unchanged)"]
+    measurement_window: one no-change day on the reporter's instance after the release
     gate: soft
     alerting: []
     acceptance_scenarios: []   # outcome KPI, no scenario

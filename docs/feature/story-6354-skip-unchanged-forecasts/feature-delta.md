@@ -662,3 +662,216 @@ All three high findings were resolved in the text, so no second iteration was ru
 - External integrations: none new, so no contract-test annotation is needed.
 - Development paradigm: OOP (C#), functional-leaning React.
 - `nwave-ai outcomes check-delta` was not run (no shell in this wave); DISTILL or the orchestrator runs it.
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-23 · **Mode**: autonomous subagent, lean, documents only
+(no code, no build, no commit). Application change inside the existing product: one expand-only migration, no new
+workflow, job, dependency, configuration key, chart value or external call.
+
+- ✓ This file: DISCUSS (MD-1..MD-7, D1..D8, K1–K4, DoD, Standing Checklist), DESIGN (DDD-1..13, component
+  decomposition, OQ-1..3, Changed Assumptions).
+- ✓ `CLAUDE.md` (gates, usage-data rule, Program.cs and connector filter), `docs/ci-learnings.md` (CreateMigration rule
+  :222, Program.cs force-full :203, test-time budget :455-463).
+- ✓ `docs/product/kpi-contracts.yaml` (`OUT-6311-*` style), `docs/settings/usagedata.md` (event list, consent per
+  browser / `lh` / MCP), `Models/UsageData/UsageDataEventName.cs` (last member `ReportPdfExportStarted = 20`).
+- ✓ House style: DEVOPS of `stories-6348-6352-6355-say-what-it-does` and its `environments.yaml`. Precedent: DEVOPS of
+  `epic-6311-responsive-during-updates` (feature folder still present) and
+  `docs/evolution/2026-10-19-epic-6311-responsive-during-updates.md`.
+- ✓ Code read for CI facts: `Tests/TestHelpers/HistoricalSchemaPatch.cs`, the three migration fixtures that call it,
+  `Scripts/test-selection/path-classifier.sh`, `Scripts/test-timings/test-time-budget.json`, `Program.cs:1347-1348`,
+  `Lighthouse.Backend/Create-Migration.ps1`, `ForecastUpdater.cs:153-223`, `Models/RefreshLog.cs`.
+- ⊘ `lighthouse-clients`: not read here; the orchestrator's verification is recorded under Coexistence.
+
+## Wave: DEVOPS / [REF] Platform Readiness
+
+| Item | Answer |
+|---|---|
+| Deployment targets | Existing: on-premise / self-hosted, Docker images, Helm chart, Standalone builds. No image, chart or packaging change. |
+| CI/CD | Existing `ci.yml` "Build And Deploy Lighthouse" (`ci_backend`, `ci_frontend`, `ci_verifysqlite`, `ci_verifypostgres`, sonar gates). Extended by tests only; no new workflow, job or step. |
+| Branching | Trunk-based on `main`. |
+| Release | Existing release pipeline, unchanged. No flag. Slices 01 and 02 may ship in one release or apart. |
+| Observability | Existing Serilog structured logs (the refresh summary line) and `RefreshLog` / Settings → System Info → Refresh History. No metric, trace, dashboard or alert added; nothing new leaves the instance. |
+| Mutation testing | per-feature: Stryker.NET (backend) and StrykerJS (frontend touch), ≥ 80 %, run last on frozen code; the acceptance suite stays out of the backend `test-case-filter`. Scope below. |
+| Environment matrix | `environments.yaml`: clean SQLite, clean Postgres, upgraded with Portfolios, restored dev instance, multi-replica with Redis, Standalone. |
+| Pre-requisites | P1 restored dev instance (`Restore-DbBackup.ps1`, `:5169`) for K1/K2/K3 readings; P2 premium licence fixture in a worktree (local `dotnet test` only); P3 Docker for Testcontainers Postgres. |
+
+## Wave: DEVOPS / [REF] Usage-Data Event
+
+**N/A, because a skip is not a user action.** It is a background decision of `ForecastService` with no browser, `lh`
+or MCP caller behind it, and usage data is only ever sent from a caller holding live consent at that moment
+(`usagedata.md`, "What is sent"). There is nothing a person did to count, and counting skips server-side would invent
+a send path the catalogue does not have. The parts a person does do are already counted: the escape hatch (MD-2/MD-6)
+is a press of refresh or "update forecast", reported today as `TeamRefreshTriggered`, `PortfolioRefreshTriggered` and
+`TeamManualForecastRun`. Whether the feature works is answered on the instance by K1 (summary lines and `RefreshLog`
+rows), not by telemetry. `UsageDataEventName` and `docs/settings/usagedata.md` stay unchanged.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → signal)
+
+Contracts appended to `docs/product/kpi-contracts.yaml` as `OUT-6354-*`. Self-hosted: no vendor dashboard and no
+runtime alert. Signals, all on the instance:
+
+- **Summary line (DDD-8):** `ForecastUpdater: Update completed | Portfolio '<name>' | … | forecast=skipped after {N}ms (inputs unchanged)`
+  against `forecast={N}ms` for a computed run.
+- **`RefreshLog` row (DDD-7):** `Type = 2` (Forecast), `Skipped`, `Success`, `Cancelled`, `DurationMs`, `ExecutedAt`.
+- **Refresh History:** the "Skipped" count line, and duration figures over computed runs only (DDD-11).
+
+| KPI | Signal | How it is read | Threshold | Contract |
+|---|---|---|---|---|
+| K1 share of unchanged background rounds that skip | `RefreshLog` rows `Type = 2` with `Skipped`; summary lines | **Dev instance (P1), slice 01 DELIVER:** periodic refresh on, nothing changed remotely, one quiet hour after the day's first round. **Reporter's instance, after release:** the operator sends one quiet day's summary lines, or the query result below. Denominator excludes the first row per Portfolio per instance day (MD-5) and rows caused by a button press (DDD-9) | ≥ 95 % (100 % by design) | `OUT-6354-unchanged-rounds-skip` |
+| K2 skipped forecast < 5 s on a large instance | `{N}` of `forecast=skipped after {N}ms`; `DurationMs` of `Skipped` rows | **Claimed only from the reporter's lines.** Before that, DELIVER measures on the dev instance (below) | < 5 s on the reporter's instance; locally, a skip costs at most a third of a computed run of the same Portfolio | `OUT-6354-skipped-round-is-fast` |
+| K3 guardrail: no stale forecast after an input change | CI: D8 guard test and the AC-1.2 outline (per member); `Skipped = false` on the round after a change | Every push (hard). Once in DELIVER: maintainer changes one input at a time on the dev instance and reads the next row. 60 days after release: GitHub issues / community Slack for "forecast did not update" | 0 | `OUT-6354-no-stale-forecast` |
+| K4 Kestrel heartbeat warnings on a quiet day | Kestrel `Heartbeat took longer than …` warnings in the reporter's log | Maintainer compares one no-change day's excerpt after the release with the Story's excerpt (count and largest delay) | Clear drop (direction) | `OUT-6354-fewer-heartbeat-warnings` |
+
+K1 query (SQLite and PostgreSQL; the day bounds are the instance day):
+
+```sql
+SELECT "EntityName",
+       SUM(CASE WHEN "Skipped" THEN 1 ELSE 0 END) AS skipped,
+       COUNT(*) AS runs
+FROM "RefreshLogs"
+WHERE "Type" = 2 AND "ExecutedAt" >= '<day> 00:00' AND "ExecutedAt" < '<day+1> 00:00'
+GROUP BY "EntityName";
+```
+
+**K2 and the DDD-2 risk.** A skip still loads the Feature graph with its forecast histograms, hashes, stamps (slice
+02), stages write-back and publishes `PortfolioForecastsUpdated`. The `forecast=` stopwatch (`ForecastUpdater.cs:163-183`)
+spans all of `ForecastPortfolio`, including the awaited publish, so if the dispatcher runs the Delivery-publishing
+handler inline, `{N}` includes one tracker round-trip per Delivery source. DELIVER measures, on the dev instance at
+`:5169` restored with `Restore-DbBackup.ps1` (throwaway copy, credentials never printed): the slowest Portfolio, one
+computed run (a button press) and three skipped runs (quiet periodic rounds). It records the four `DurationMs` values
+and whether the publish is inside the timed span here, before K2 is claimed. That backup's forecasts take under 2 s
+(Epic 6311 baseline: 1,766 ms cold), so the local reading cannot show the 400–920-Feature cost. It checks the
+relative cost only: a skip above a third of the computed run triggers DDD-2's fallback (Features read without
+histograms; full graph only to compute) before release, not after.
+
+## Wave: DEVOPS / [REF] CI Impact
+
+No new workflow, job or step. What the existing pipeline does with this change:
+
+| Existing job | What it proves here |
+|---|---|
+| `ci_changes` → `path-classifier.sh` | No touched path matches `SHARED_REGEX` or a connector regex: **no live-connector suite is forced** |
+| `ci_backend` | Build (`TreatWarningsAsErrors`), unit + acceptance, `Integration/Containers/*` (Testcontainers Postgres) incl. the migration fixtures; ends with the test-time budget check (`--warn-only`) |
+| `ci_frontend` | Touched (Refresh History, DDD-11): Vitest, `tsc -b`, `vite build`, Biome |
+| sonar gates | No new issue; a red backend job skips Sonar |
+| `ci_verifysqlite`, `ci_verifypostgres` | App start on a clean database **applies the new migration on both providers**, then the existing E2E. No new spec |
+
+- **Migration.** Expand-only, one migration adding `Portfolios.ForecastInputFingerprint` (nullable text) and
+  `RefreshLogs.Skipped` (bool, NOT NULL, **default `false` in the database**, so an older build's inserts still
+  succeed). Generated with `Lighthouse.Backend/Create-Migration.ps1 -MigrationName <Name>` for SQLite and PostgreSQL
+  (`Lighthouse.Migrations.Sqlite/`, `Lighthouse.Migrations.Postgres/`), never `dotnet ef migrations add`. Build the
+  backend first; the migration projects reference its DLL by HintPath, and a stale DLL reports PendingModelChanges.
+- **`HistoricalSchemaPatch` applies to Portfolios, not to RefreshLogs.** It already lists Portfolios columns
+  (`FetchFingerprint`, `IgnoreDependencies`, …), and all three fixtures that call it seed Portfolios through the current
+  model (`BlockedRuleSetMigrationTests:182`, `ConnectionDefaultsUpgradeMigrationTests:250`,
+  `DeliveryMetricSnapshotDayKeyMigrationTests:376-386`). `PropertySaveBehavior.Ignore` applies after insert, so the
+  INSERT still names the column. Add `new("Portfolios", "ForecastInputFingerprint", "TEXT", "<migration suffix>")` in
+  the same commit as the migration. No fixture seeds RefreshLogs, so `Skipped` needs no entry.
+- **Program.cs: untouched.** `IPortfolioRepository` and `IFeatureRepository` are registered (`Program.cs:1347-1348`);
+  `ForecastInputFingerprint` is static and `ForecastRunOutcome` a value. Controllers come through DI, and a controller
+  split for S107 (DDD-9) is discovered by `AddControllers`. If DELIVER finds it must edit `Program.cs`, that push runs
+  every live-connector category: budget the full run plus one flake re-run, and call it out.
+- **Test-time budget (warn-only; backend 34 s per class).** `ForecastServiceTest` sits at a 36 s ceiling: put the
+  fingerprint cases in a new pure `ForecastInputFingerprintTest`, not in it. A new acceptance class running real
+  forecasts tends to land over 34 s (the `Slice00OneForecastPerBatchScenarios` ceiling is 59 s). Read its CI time on the
+  slice-01 push, and if it is over, speed it up first or add an allowlist entry with a reason and a ceiling of at least
+  2.1 × CI time. Postgres cases (fresh-DbContext equality) reuse `SharedPostgresContainer` with a fresh database per
+  case. Never `StartFreshAsync` per case. No wall-clock assertion; K2 stays a reading.
+- **Local gates (mirror CI)** before each commit: `dotnet build` (zero warnings), the filtered `dotnet test` from
+  `CLAUDE.md`, `pnpm test`, `pnpm build` (runs `biome check --write`).
+
+## Wave: DEVOPS / [REF] Coexistence
+
+- **Docker images, Helm chart, Standalone:** no change beyond the migration, which runs at start as every migration does.
+- **Lighthouse-Clients (CLI + MCP):** verified by the orchestrator on 2026-10-23. The clients read `lastUpdated` only as
+  a Team's or Portfolio's update time, never a Feature forecast's, so slice 02's change in meaning reaches no client
+  text. **DDD-12's gate is cleared:** no version bump, no wording change, nothing to do at finalize. `RefreshLogDto.skipped`
+  is additive, and no client reads refresh logs for it.
+- **Older web bundle against a new server:** ignores `skipped`; a skipped row reads as a short successful Forecast run.
+- **Multi-replica (Redis admission):** the bypass is a database forget (DDD-9), so every replica reads the same null
+  fingerprint and Redis carries nothing new. No new container test.
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback
+
+Ships in an ordinary release through the existing pipeline. No flag.
+
+**Rollback first.** Install the previous release (re-pin the image tag, `helm rollback`, or reinstall Standalone).
+- The migration is additive. An older build does not map `ForecastInputFingerprint` (nullable, ignored) and inserts
+  `RefreshLog` rows without `Skipped`, which the database default fills with `false`. DELIVER checks that the generated
+  migration carries `defaultValue: false` on both providers.
+- An older frontend (or an older build's Refresh History) shows a skipped row as a short successful Forecast run, so
+  the duration figures dip until the skipped rows age out. This is cosmetic.
+- The old build forecasts on every round again, so forecasts stay correct. Feature `lastUpdated` reads the compute time
+  again.
+- **Rolling forward the same day:** the old build never touched the stored fingerprints. If the inputs return exactly
+  to where they were at the last recorded fingerprint, a stale-by-construction confirm is possible for that day only.
+  The release and rollback notes say: after rolling forward, press "refresh all" for Portfolios (it forgets every
+  fingerprint). The next instance day clears it anyway.
+- **Rolling upgrade (multi-replica):** an old replica does not forget on a button press, so for the seconds of the
+  overlap a new replica may skip that forecast. Accepted; the next press or the next day clears it.
+
+**Production validation** (per instance, advisory): after the upgrade each Portfolio computes once. The next quiet
+round shows `forecast=skipped after …ms (inputs unchanged)` and a "Skipped" count in Refresh History. A press of
+"Update forecast" shows a full run.
+
+## Wave: DEVOPS / [REF] Mutation Scope (for DELIVER, run last on frozen code)
+
+Stryker.NET silently ignores line spans, so backend entries are whole files only. A large file whose change is a line
+or two would score its pre-existing suite rather than this change, so it is excluded, and its changed lines are covered
+as named. Gate ≥ 80 % over the included set; read the per-file table in `mutation-report.json` before believing a score.
+
+| File (`Lighthouse.Backend/Lighthouse.Backend/` unless `FE:`) | Slice | Scope | Covered by |
+|---|---|---|---|
+| `Services/Implementation/Forecast/ForecastInputFingerprint.cs` (new) | 01 | whole file | D8 guard + per-member cases, golden value |
+| `Services/Interfaces/Forecast/ForecastRunOutcome.cs` (new) | 01 | whole file | outcome tests |
+| `Services/Implementation/Forecast/ForecastService.cs` (357 lines) | 01 | whole file (mutated whole in Epic 6311; its unit suite is broad) | `ForecastServiceTest` + new compare cases |
+| `Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs` (226) | 01, 02 | whole file | updater unit tests (outcome → row, line, CAS, forget, stamp) |
+| `Services/Implementation/Repositories/PortfolioRepository.cs` (80) | 01 | whole file | relational tests of `TryRecordForecastInputs` / `ForgetForecastInputs` (see note) |
+| `Services/Implementation/Repositories/FeatureRepository.cs` (70) | 02 | whole file | relational test of `ConfirmForecastsAsOf` |
+| `Services/Implementation/RefreshRoundSummary.cs` (30), `RefreshRoundSummaryLine.cs` (53) | 01 | whole file | summary-line tests (the `skipped after` branch) |
+| `API/DTO/RefreshLogDto.cs` (80) | 01 | whole file | DTO mapping test |
+| `Data/LighthouseAppContext.cs` (922) | 01 | **excluded** | stale full-entity `Update` guard test; migration applied in verify workflows |
+| `Models/Portfolio.cs`, `Models/RefreshLog.cs` | 01 | **excluded** (auto-properties) | — |
+| `API/ForecastController.cs` (239), `TeamController.cs` (291), `TeamsController.cs` (217), `PortfolioController.cs` (196), `PortfoliosController.cs` (152) | 01 / 02 | **excluded** (one forget call each) | controller unit tests verifying `ForgetForecastInputs` with exactly the touched Portfolio ids before the trigger; acceptance ATs |
+| `Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs` (318) | 01 | **excluded**; keep the wording branch in `RefreshRoundSummaryLine` | summary-line tests |
+| Migrations | 01 | **excluded** (generated) | verify workflows |
+| `FE: pages/Settings/SystemInfo/RefreshHistorySection.tsx` (330) | 01 | StrykerJS line spans of the changed regions, **one span per entry** | `RefreshHistorySection` Vitest |
+| `FE: components/Common/Charts/RefreshHistoryChart.tsx` (68) | 01 | whole file if OQ-2 changes it (R-B), else spans | chart Vitest |
+| `FE: models/SystemInfo/RefreshLog.ts` | 01 | excluded (types only) | — |
+| `FE: components/App/Header/TaskManager/ActivitySection.tsx` + `UpdateProgress.cs` | 01 | spans, **only under T-B** (OQ-1) | Task Manager Vitest |
+
+Backend `test-case-filter` shape: `(FullyQualifiedName~Services.Implementation.Forecast|FullyQualifiedName~BackgroundServices.Update|FullyQualifiedName~Repositories|FullyQualifiedName~RefreshRoundSummary|FullyQualifiedName~API.DTO)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration&…`.
+**Note for DISTILL:** if the CAS, forget and confirm-stamp tests live only in `Integration.Containers` (Postgres), this
+filter leaves the repository mutants uncovered. Give them a relational SQLite (in-memory connection) class in a unit
+namespace too; `ExecuteUpdateAsync` runs there. StrykerJS: `inPlace`, `disableTypeChecks: false`, commit first; run the
+two stacks one after the other, never together. Configs are committed under `mutation/` as in prior features.
+
+## Wave: DEVOPS / [REF] Flags Against DESIGN (not silently fixed)
+
+1. **DDD-2's K2 trigger cannot fire on the restored backup.** DDD-2 says "if a skipped round's `forecast=` exceeds
+   5 s" on the dev instance; that database's computed forecasts take under 2 s, so a skip there never reaches 5 s
+   however costly the graph load is at scale. DEVOPS reads it as a relative threshold locally (a third of a computed run)
+   and claims K2 only from the reporter's lines. DESIGN may prefer another ratio.
+2. **K2 may include tracker round-trips.** The `forecast=` stopwatch spans the awaited `PortfolioForecastsUpdated`
+   publish, which DDD-6 keeps on every skip (one remote call per Delivery source). If the handler runs inline, a skip's
+   `{N}` depends on tracker latency, and K2 reads more than the skip. DELIVER confirms the span. If it is inline, either
+   accept it or time the publish separately; DESIGN decides.
+3. **Migration default.** DDD-3/DDD-7 call the migration expand-only. A safe rollback also needs `RefreshLogs.Skipped` to
+   carry a database default of `false`, because older builds insert rows without it. EF normally generates that; DELIVER
+   checks it.
+4. **Same-day roll-forward edge** (see Rollback): not covered by DDD-3's "stored forecasts are never older than the
+   fingerprint", which holds only while every writer is the new build. Mitigated by a release-note step, not by code.
+5. **DDD-12** is cleared (Coexistence). DESIGN's "gate before slice 02 ships" needs no further DELIVER action.
+
+## Wave: DISTILL / [REF] Maintainer Decisions — 2026-10-23, before scenarios
+
+Sketches for DESIGN's open questions were walked through with the maintainer before any scenario was written.
+
+| # | Decision | Options weighed |
+|---|----------|-----------------|
+| MD-8 | **Task Manager unchanged (OQ-1, T-A).** A skipped forecast's row appears and leaves as today, only faster. The skip is shown in Refresh History. Loading and failure looks unchanged. | T-A no change (chosen) vs. T-B a brief "Skipped, nothing changed" state (rejected: new enum value and copy for a row that is gone in seconds). |
+| MD-9 | **Refresh History shows a count line (OQ-2, R-A).** The last-run line reads "skipped (nothing changed)" for a skip; duration figures (average, minimum, maximum and the duration line) count computed runs only, and skipped runs leave a gap in the line; a line reads "Skipped (nothing changed): N of the last M runs". The existing spinner and "Could not load refresh history." stay as the loading and failure looks. | R-A count line (chosen) vs. R-B skipped runs as their own series (rejected: more chart work for the same information). |
+| MD-10 | **A press guarantees the next forecast computes (OQ-3).** A refresh a user starts clears the fingerprint, so the next forecast of each touched Portfolio computes in full; if one is already queued, that one recomputes. Docs may say "a refresh you start always recomputes the forecast". | As designed (chosen) vs. a new computing run per press (rejected: needs a "user started" mark through the queue, lost across replicas and on early returns). |
+
+DEVOPS flags taken as recommended: locally a skip may cost at most a third of a computed run, and K2's 5 s is claimed only from the reporter's log lines; a skip's timing may include the Delivery publishing call, DELIVER confirms; `RefreshLogs.Skipped` carries a database default of false on both providers; a same-day roll-forward after a rollback is covered by a release-note line ("press refresh all for Portfolios afterwards").
