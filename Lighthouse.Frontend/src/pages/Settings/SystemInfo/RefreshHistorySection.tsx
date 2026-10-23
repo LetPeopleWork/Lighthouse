@@ -134,7 +134,7 @@ const RefreshHistorySection: React.FC = () => {
 									eLogs.reduce((s, l) => s + l.itemCount, 0) / eLogs.length,
 								)
 							: 0,
-					avgDuration: averageSeconds(computedOnly(eLogs)) ?? 0,
+					avgDuration: averageSeconds(computedOnly(eLogs)),
 				};
 			});
 
