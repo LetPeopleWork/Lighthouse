@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("contract-shape:bounded-change")]
         public async Task A_first_record_succeeds_and_the_next_one_has_to_start_from_it()
@@ -79,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("contract-shape:bounded-change")]
         public async Task A_forget_that_lands_while_a_forecast_runs_wins_over_that_forecast()
@@ -106,7 +104,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         /// nothing again, and the forecast would record over the second press as though nobody had pressed.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -130,7 +127,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         /// <summary>An instance upgraded into this release has nothing recorded, and a press during its first forecast still has to win.</summary>
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
@@ -145,7 +141,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("contract-shape:bounded-change")]
         public async Task A_forget_clears_exactly_the_Portfolios_it_names()
@@ -172,7 +167,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         /// round after it skip.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
@@ -202,7 +196,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         /// value back, and the next round would compare against inputs nobody computed from.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -225,7 +218,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("slice-01")]
         [Category("edge")]
         [Category("contract-shape:unbounded-preservation")]

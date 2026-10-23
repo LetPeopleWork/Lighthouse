@@ -8,23 +8,39 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class PortfolioRepository(LighthouseAppContext context, ILogger<PortfolioRepository> logger)
         : RepositoryBase<Portfolio>(context, (context) => context.Portfolios, logger), IPortfolioRepository
     {
-        // __SCAFFOLD__: acceptance tests were written ahead of these three; DELIVER replaces the bodies.
-        private const string NotWrittenYet = "Recording a Portfolio's forecast inputs is not written yet";
+        private const string ForgottenTokenPrefix = "forgotten:";
 
-        public Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken)
+        // The stored value has to still be the one this run read, or a forget landed in between and must win.
+        // EF compares a null read as IS NULL, so a first record only succeeds while nothing is recorded yet.
+        public async Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException($"{NotWrittenYet} (Portfolio {portfolioId})");
+            var recorded = await Context.Portfolios
+                .Where(portfolio => portfolio.Id == portfolioId && portfolio.ForecastInputFingerprint == readAtGather)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, fresh), cancellationToken);
+
+            return recorded == 1;
         }
 
+        // A fresh token rather than null: a forecast that read an earlier forget, or read nothing at all, would
+        // otherwise still find the value it read and record over this forget as though nobody had asked.
         public Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException($"{NotWrittenYet} ({portfolioIds.Count} Portfolios)");
+            var token = NewForgottenToken();
+
+            return Context.Portfolios
+                .Where(portfolio => portfolioIds.Contains(portfolio.Id))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, token), cancellationToken);
         }
 
         public Task ForgetAllForecastInputs(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException($"{NotWrittenYet} (every Portfolio)");
+            var token = NewForgottenToken();
+
+            return Context.Portfolios
+                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, token), cancellationToken);
         }
+
+        private static string NewForgottenToken() => ForgottenTokenPrefix + Guid.NewGuid().ToString("N");
 
         public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
         {
