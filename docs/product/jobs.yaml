@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-22
+updated: 2026-10-23
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -67,6 +67,7 @@ feature_context:
   - story-6307-refresh-on-additional-fields-change
   - epic-6298-report-pdf-export
   - epic-6311-responsive-during-updates
+  - story-6354-skip-unchanged-forecasts
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8451,6 +8452,14 @@ jobs:
       token reaches it; a run may cover 100,000 simulated days. Stopping a forecast or clearing the queue
       traces to the reused job-operator-stop-a-refresh-that-is-doing-harm; the forecast-honesty half of the
       5-year horizon to the reused job-forecast-no-false-certainty.
+      REUSED 2026-10-23 by story-6354-skip-unchanged-forecasts (ADO Story #6354, from Epic 6321's ideas): on a
+      large instance (Portfolios of 400-920 Features, 6-9 Teams) every Team or Portfolio refresh re-forecast
+      every Feature of the involved Teams for 4-8 minutes even when it found nothing new, and Kestrel reported
+      heartbeat delays of up to 49 s meanwhile. 6311 made a forecast share the machine; 6354 stops paying for a
+      forecast whose inputs have not changed since the last one (input fingerprint, manual refreshes always
+      forecast). Wording unchanged: the outcome is still "every page keeps answering". Secondary persona for
+      this story: delivery-forecaster, who needs the forecast to stay current and to say when it was last
+      confirmed.
     job_story: >
       When Lighthouse is recalculating a Portfolio's forecasts in the background,
       I want every page to keep answering,
