@@ -45,7 +45,11 @@ vi.mock("../../../../../hooks/useLicenseRestrictions", () => ({
 }));
 
 const THE_SEARCH_INVITATION = "Type to search Jira Releases";
-const NO_DATE_IN_JIRA = "No date in Jira: set one there to follow it";
+// The whole row, anchored at both ends, so a second caption beside the advice or a clause after it fails.
+const THE_DATELESS_ROW_IN_JIRA =
+	/^Release 45 \(Project X\)\s*No date in Jira: set one there to follow it$/;
+const THE_DATELESS_ROW_IN_TRACKER =
+	/^Release 45 \(Project X\)\s*No date in Tracker: set one there to follow it$/;
 
 const aBoardListing = (options: IDeliverySourceOption[]) => {
 	const deliveryService = createMockDeliveryService();
@@ -127,7 +131,7 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 		await openSourceList(user);
 
 		const dateless = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
-		expect(dateless).toHaveTextContent(NO_DATE_IN_JIRA);
+		expect(dateless).toHaveTextContent(THE_DATELESS_ROW_IN_JIRA);
 	});
 
 	// @edge @contract-shape:pure-function
@@ -144,7 +148,7 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 
 		expect(
 			screen.getByRole("option", { name: THE_DATELESS_RELEASE }),
-		).toHaveTextContent("No date in Tracker: set one there to follow it");
+		).toHaveTextContent(THE_DATELESS_ROW_IN_TRACKER);
 	});
 });
 
