@@ -143,7 +143,7 @@ The rule editor and all per-run / per-view toggles are visible only to premium t
 ## Cut Off Days
 The *Cut Off Days* setting controls how far back in time Lighthouse will look when fetching work items. Work ITems that were closed *before* this date will be ignored. This helps to speed up the update and forecast process.
 
-- Team default: **180 days**
+- Team default: **365 days**
 - Enter a value (in days) appropriate for your team — shorter windows emphasize recent behaviour, longer windows smooth variability.
 
 {: .note}
