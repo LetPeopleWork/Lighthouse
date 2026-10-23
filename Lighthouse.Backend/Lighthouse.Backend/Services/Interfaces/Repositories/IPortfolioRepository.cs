@@ -18,7 +18,17 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// </summary>
         Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken);
 
-        /// <summary>Clears the recorded inputs, so the next forecast of each of these Portfolios computes in full.</summary>
+        /// <summary>
+        /// Replaces the recorded inputs of each of these Portfolios with a value no forecast ever computed from,
+        /// new on every call, so the next forecast of each one computes in full. A forecast already running read
+        /// the value from before the call, nothing included, so it can no longer record its own.
+        /// </summary>
         Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Forgets the recorded inputs of every Portfolio, in one statement. Run when the app starts, because
+        /// another build may have computed forecasts in between without recording what it computed them from.
+        /// </summary>
+        Task ForgetAllForecastInputs(CancellationToken cancellationToken);
     }
 }

@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     [TestFixture]
     [Category("story-6354-skip-unchanged-forecasts")]
     [Category("slice-01")]
+    [Category("contract-shape:pure-function")]
     public class ForecastInputFingerprintTest
     {
         private const string Pending = "Story 6354: pending until DELIVER writes the forecast input fingerprint";
@@ -35,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             "Today",
             "Trials",
             "MostDaysOneSimulatedRunMayCover",
-            "MostRunsAtOnce",
             "FeaturesInForecastOrder",
             "TeamsOfTheFeatures",
             "RemainingWorkRows",
@@ -52,14 +52,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Category("guard")]
         public void Names_every_input_the_simulation_is_handed_and_nothing_else()
         {
-            Assert.That(ForecastInputFingerprint.RegisteredMembers, Is.EqualTo(EveryInputTheSimulationIsHanded),
+            Assert.That(ForecastInputFingerprint.RegisteredMembers, Is.EquivalentTo(EveryInputTheSimulationIsHanded),
                 "A forecast input was added or dropped without deciding its place in the fingerprint.");
         }
 
         /// <summary>
         /// A new simulation limit would otherwise reach the run without reaching the fingerprint, and a forecast
-        /// computed under the old limit would be confirmed under the new one. The cores reach the run only
-        /// through how many runs go at once.
+        /// computed under the old limit would be confirmed under the new one. The cores, and how many runs go
+        /// at once because of them, decide how fast the runs go, not what any run computes, so they are left out.
         /// </summary>
         [Test]
         [Ignore(Pending)]
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var limitsTheRunReads = typeof(ForecastSimulationLimits)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(property => property.Name)
-                .Where(name => name != nameof(ForecastSimulationLimits.CoresSeen));
+                .Where(name => name is not nameof(ForecastSimulationLimits.CoresSeen) and not nameof(ForecastSimulationLimits.MostRunsAtOnce));
 
             Assert.That(limitsTheRunReads.Except(ForecastInputFingerprint.RegisteredMembers), Is.Empty);
         }
@@ -145,6 +145,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 $"Changing {member} alone left the fingerprint as it was, so the forecast would not have been computed again.");
         }
 
+        /// <summary>
+        /// The other way the fingerprint can be wrong: something the simulation is not handed moves it, and
+        /// every round computes again for nothing.
+        /// </summary>
+        [TestCaseSource(nameof(ThingsTheSimulationIsNotHanded))]
+        [Ignore(Pending)]
+        [Category("edge")]
+        public void Something_the_simulation_is_not_handed_leaves_the_fingerprint_alone(Action<APortfolioForecast> change)
+        {
+            var before = ForecastInputFingerprint.Of(new APortfolioForecast().Inputs());
+
+            var changed = new APortfolioForecast();
+            change(changed);
+
+            Assert.That(ForecastInputFingerprint.Of(changed.Inputs()), Is.EqualTo(before));
+        }
+
         [Test]
         [Ignore(Pending)]
         [Category("guard")]
@@ -175,12 +192,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             RefundsWaitsForCardVault(ignored);
             var cannotBeForecast = new APortfolioForecast { CardVaultCanBeForecast = false };
             RefundsWaitsForCardVault(cannotBeForecast);
+            var withoutPremium = new APortfolioForecast { PremiumLicence = false };
+            RefundsWaitsForCardVault(withoutPremium);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(waitsOn.Inputs().Waits.Of("PAY-90"), Is.EqualTo(OnlyCardVault));
                 Assert.That(ignored.Inputs().Waits.Of("PAY-90"), Is.Empty);
                 Assert.That(cannotBeForecast.Inputs().Waits.Of("PAY-90"), Is.Empty);
+                Assert.That(withoutPremium.Inputs().Waits.Of("PAY-90"), Is.Empty);
             }
         }
 
@@ -189,7 +209,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             yield return Case("Today", "the day has turned", forecast => forecast.Today = forecast.Today.AddDays(1));
             yield return Case("Trials", "one more run per forecast", forecast => forecast.Trials += 1);
             yield return Case("MostDaysOneSimulatedRunMayCover", "a run may cover one more day", forecast => forecast.MostDays += 1);
-            yield return Case("MostRunsAtOnce", "the instance was given more cores", forecast => forecast.Cores = 8);
             yield return Case("FeaturesInForecastOrder", "two Features swapped order", forecast => forecast.FirstTwoFeaturesSwapped = true);
             yield return Case("FeaturesInForecastOrder", "a Feature left the Portfolio", forecast => forecast.FraudRulesInScope = false);
             yield return Case("TeamsOfTheFeatures", "another Team's throughput is read", forecast => forecast.OrionIsRead = true);
@@ -213,7 +232,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 RefundsWaitsForCardVault, forecast => forecast.PortfolioIgnoresDependencies = true);
             yield return Case("WhatEachFeatureWaitsFor", "the Feature waited on can no longer be forecast",
                 RefundsWaitsForCardVault, forecast => forecast.CardVaultCanBeForecast = false);
+            yield return Case("WhatEachFeatureWaitsFor", "the instance lost its premium licence",
+                RefundsWaitsForCardVault, forecast => forecast.PremiumLicence = false);
         }
+
+        private static IEnumerable<TestCaseData> ThingsTheSimulationIsNotHanded()
+        {
+            yield return NotHanded("the instance was given more cores", forecast => forecast.Cores = 8);
+            yield return NotHanded("a Feature was renamed", forecast => forecast.CardVaultName = "Card Vault 2.0");
+            yield return NotHanded("the Portfolio was renamed", forecast => forecast.PortfolioName = "Payments");
+            yield return NotHanded("the stored forecasts say other dates", forecast => forecast.StoredForecastDays = 21);
+            yield return NotHanded("the stored forecasts were computed at another time", forecast => forecast.StoredForecastsComputedAt = new DateTime(2026, 10, 23, 9, 45, 0, DateTimeKind.Utc));
+        }
+
+        private static TestCaseData NotHanded(string change, Action<APortfolioForecast> apply)
+            => new TestCaseData(apply).SetName($"Something the simulation is not handed leaves the fingerprint alone: {change}");
 
         private static void RefundsWaitsForCardVault(APortfolioForecast forecast) => forecast.RefundsWaitsFor = ["PAY-88"];
 
@@ -266,18 +299,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             public bool CardVaultCanBeForecast { get; set; } = true;
 
+            public bool PremiumLicence { get; set; } = true;
+
+            public string CardVaultName { get; set; } = "Card Vault";
+
+            public string PortfolioName { get; set; } = "Payments Platform";
+
+            public int StoredForecastDays { get; set; } = 14;
+
+            public DateTime StoredForecastsComputedAt { get; set; } = new(2026, 10, 23, 6, 0, 0, DateTimeKind.Utc);
+
             public int ExtraFeatures { get; set; }
 
             public bool EveryUnorderedCollectionReversed { get; set; }
 
             public ForecastInputs Inputs()
             {
-                var portfolio = new Portfolio { Id = 7, Name = "Payments Platform", IgnoreDependencies = PortfolioIgnoresDependencies };
+                var portfolio = new Portfolio { Id = 7, Name = PortfolioName, IgnoreDependencies = PortfolioIgnoresDependencies };
                 var fss = new Team { Id = 11, Name = "FSS", FeatureWIP = FssFeatureWip };
                 var atlas = new Team { Id = 12, Name = "Atlas", FeatureWIP = 1 };
                 var orion = new Team { Id = 13, Name = "Orion", FeatureWIP = 1 };
 
                 var cardVault = AFeature(88, "PAY-88", portfolio, [(fss, CardVaultRemainingForFss)], CardVaultCanBeForecast);
+                cardVault.Name = CardVaultName;
                 var refunds = AFeature(90, "PAY-90", portfolio, [(fss, RefundsRemainingForFss), (atlas, RefundsRemainingForAtlas)], true);
                 refunds.ReplaceDependsOnReferences(RefundsWaitsFor.Select(blocker => new FeatureDependencyReference(refunds.Id, blocker, DependencySource.TrackerLink)));
 
@@ -316,10 +360,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                     new ForecastSimulationLimits(Trials, MostDays) { CoresSeen = Cores },
                     features,
                     throughput.ToDictionary(pair => pair.Key, pair => pair.Value),
-                    WhatTheyWaitFor(features));
+                    WhatTheyWaitFor(features, PremiumLicence));
             }
 
-            private static Feature AFeature(int id, string referenceId, Portfolio portfolio, (Team Team, int Remaining)[] work, bool canBeForecast)
+            private Feature AFeature(int id, string referenceId, Portfolio portfolio, (Team Team, int Remaining)[] work, bool canBeForecast)
             {
                 var feature = new Feature(work.Select(row => (row.Team, row.Remaining, row.Remaining + 1)))
                 {
@@ -332,17 +376,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 feature.Portfolios.Add(portfolio);
 
                 // A Feature the last forecast could not simulate for one of its Teams cannot be waited on.
-                feature.Forecasts = [.. work.Select(row => new WhenForecast { TeamId = row.Team.Id, TotalTrials = canBeForecast ? 200 : 0 })];
+                feature.Forecasts = [.. work.Select(row => AStoredForecast(row.Team.Id, canBeForecast))];
 
                 return feature;
             }
 
+            private WhenForecast AStoredForecast(int teamId, bool canBeForecast)
+            {
+                var forecast = new WhenForecast { TeamId = teamId, TotalTrials = canBeForecast ? 200 : 0, CreationTime = StoredForecastsComputedAt };
+
+                if (canBeForecast)
+                {
+                    forecast.SimulationResults.Add(new IndividualSimulationResult { Key = StoredForecastDays, Value = 200 });
+                }
+
+                return forecast;
+            }
+
             private static RunChartData AsHanded(int[] eachDay) => new(RunChartDataGenerator.GenerateRunChartData(eachDay));
 
-            private static ForecastWaits WhatTheyWaitFor(IReadOnlyCollection<Feature> features)
+            private static ForecastWaits WhatTheyWaitFor(IReadOnlyCollection<Feature> features, bool premiumLicence)
             {
                 var licence = new Mock<ILicenseService>();
-                licence.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
+                licence.Setup(service => service.CanUsePremiumFeatures()).Returns(premiumLicence);
 
                 return new WhatTheForecastWaitsFor(new DependencyDecision(new DependencyHonourPolicy(), licence.Object)).Of(features);
             }

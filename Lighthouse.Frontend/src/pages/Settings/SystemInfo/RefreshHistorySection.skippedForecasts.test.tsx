@@ -155,11 +155,23 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 
 		await selectPaymentsPlatform();
 
-		const lastRun = theFigure(/^Last Run$/);
-		expect(lastRun.textContent).toContain(
-			new Date(theLastRunAt).toLocaleString(),
+		expect(theFigure(/^Last Run$/).textContent).toBe(
+			`${new Date(theLastRunAt).toLocaleString()} · skipped (nothing changed)`,
 		);
-		expect(lastRun).toHaveTextContent(/(^|\s)skipped \(nothing changed\)$/);
+	});
+
+	it.skip("shows a dash for the durations when every run of the forecast was skipped", async () => {
+		getRefreshLogs.mockResolvedValue([
+			aForecastOfPaymentsPlatform("2026-10-23T06:15:01Z", 900, true),
+			aForecastOfPaymentsPlatform("2026-10-23T06:30:02Z", 1100, true),
+		]);
+		renderRefreshHistory();
+
+		await selectPaymentsPlatform();
+
+		expect(theFigure(/^Avg Duration$/)).toHaveTextContent(/^—$/);
+		expect(theFigure(/^Min Duration$/)).toHaveTextContent(/^—$/);
+		expect(theFigure(/^Max Duration$/)).toHaveTextContent(/^—$/);
 	});
 
 	it.skip("leaves a gap in the duration line at each skipped forecast and still draws its items", async () => {
@@ -190,8 +202,8 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 
 		await screen.findByText(/^Total Items Fetched$/);
 
-		// Computed: 240.10 + 268.20 + 305.90 s of forecasts and 16.448 + 17.552 s of FSS refreshes, over five runs.
-		expect(theFigure(/^Avg Duration$/)).toHaveTextContent(/^169\.65 s$/);
+		// Computed: 240.10 + 268.20 + 305.90 s of forecasts and 16.448 + 17.552 s of FSS refreshes = 848.20 s, over five runs.
+		expect(theFigure(/^Avg Duration$/)).toHaveTextContent(/^169\.64 s$/);
 		expect(theFigure(/^Max Duration$/)).toHaveTextContent(/^305\.90 s$/);
 	});
 
@@ -208,7 +220,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 	});
 });
 
-describe("Story 6354: Refresh History guards", () => {
+describe("Story 6354: Refresh History reads as before wherever nothing was skipped", () => {
 	it("says nothing about skipped runs when every forecast computed", async () => {
 		getRefreshLogs.mockResolvedValue(
 			aQuietMorning().map((log) => ({ ...log, skipped: false })),

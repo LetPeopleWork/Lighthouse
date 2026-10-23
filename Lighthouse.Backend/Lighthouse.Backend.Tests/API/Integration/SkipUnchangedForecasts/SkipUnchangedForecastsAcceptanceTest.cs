@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Events;
@@ -48,6 +49,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         protected const string Orion = "Orion";
 
+        protected const string Loyalty = "Loyalty";
+
         protected const string Pending = "Story 6354: pending until DELIVER";
 
         protected static readonly DateTimeOffset TenOClock = new(2026, 10, 23, 10, 0, 0, TimeSpan.Zero);
@@ -80,6 +83,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         protected int PaymentsPlatformId { get; private set; }
 
         protected int OnboardingId { get; private set; }
+
+        protected int LoyaltyId { get; private set; }
 
         protected int FssId { get; private set; }
 
@@ -199,6 +204,43 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             Clock.SetInstant(at);
             await TheTeamRefreshRuns(OrionId);
             await ThePortfolioRefreshRuns(OnboardingId);
+        }
+
+        /// <summary>
+        /// Loyalty: one Feature, worked on by FSS. Because a forecast of Payments Platform forecasts every
+        /// Feature its Teams work on, Loyalty's Feature is one of the inputs of Payments Platform's forecast
+        /// although it belongs to another Portfolio. Comes before the cycle that forecasts Payments Platform,
+        /// so FSS's items find their Feature.
+        /// </summary>
+        protected async Task GivenLoyaltyWhichFssAlsoWorksOn()
+        {
+            LoyaltyId = SeedPortfolio(connectionId, Loyalty);
+            Tracker.HoldsFeature(Loyalty, "LOY-1", "Points Wallet", order: "1");
+            Tracker.HoldsItems(Fss, "LOY-1", "FSS-20", "FSS-21");
+
+            Clock.SetInstant(TenOClock);
+            await ThePortfolioRefreshRuns(LoyaltyId);
+        }
+
+        /// <summary>
+        /// The work tracking system answers the cheap identity scan, as Jira Cloud and Azure DevOps do, so a
+        /// refresh after the first downloads only what moved: the reporter's "mode=Delta | fetched=0" rounds.
+        /// </summary>
+        protected void GivenTheTrackerCanBeScanned()
+        {
+            ConnectorMock.Setup(connector => connector.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
+            ConnectorMock
+                .Setup(connector => connector.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Team team, CancellationToken _) => Tracker.StampsOfTheItemsOf(team));
+            ConnectorMock
+                .Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Team team, IReadOnlyCollection<string> referenceIds, CancellationToken _) => Tracker.WorkItemsOf(team).Where(item => referenceIds.Contains(item.ReferenceId)));
+            ConnectorMock
+                .Setup(connector => connector.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio portfolio, CancellationToken _) => Tracker.StampsOfTheFeaturesOf(portfolio));
+            ConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((Portfolio portfolio, IReadOnlyCollection<string> referenceIds, CancellationToken _) => [.. Tracker.FeaturesOf(portfolio).Where(feature => referenceIds.Contains(feature.ReferenceId))]);
         }
 
         protected int GivenTheQ4ReleaseIsTrackedOnPaymentsPlatform()
@@ -322,6 +364,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             Factory.Services.GetRequiredService<IForecastUpdater>().TriggerUpdate(PaymentsPlatformId);
         }
 
+        /// <summary>
+        /// The operator presses the button and the forecast it causes is part-way through its runs and held
+        /// there. The press forgot what was confirmed, so that forecast computes, and only a computing
+        /// forecast can be held.
+        /// </summary>
+        protected async Task AForecastIsUnderWayAfterThePressAt(DateTimeOffset at, UserPress press)
+        {
+            Clock.SetInstant(at);
+            Draws.HoldOnceRunsHaveBegun(TheRunsBeforeAForecastIsHeld);
+
+            await Press(press);
+
+            Assert.That(Draws.IsHeldWithin(TheLongestAScenarioWaits), Is.True,
+                "The forecast the press caused never reached the run it was to be held at, so nothing in this scenario happened during it.");
+        }
+
+        /// <summary>
+        /// The instance is started again, by an upgrade, a rollback or a restart, and does at start what it
+        /// always does then: the start-up seeding, which is also what runs after a database is restored.
+        /// </summary>
+        protected void WhenTheInstanceStartsAgain()
+        {
+            using var scope = Factory.Services.CreateScope();
+
+            DatabaseConfigurator.SeedDatabase(scope.ServiceProvider);
+        }
+
         protected async Task TheRunningForecastIsLetGo()
         {
             Draws.LetItCarryOn();
@@ -403,6 +472,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                     $"{because}, yet the refresh history records no computed forecast. Rows: {Describe(rounds.NewForecastRows)}");
             }
         }
+
+        protected static void ThenTheForecastOfTheRoundFailed(ObservedRounds rounds)
+            => Assert.That(rounds.NewForecastRows.Select(row => Bool(row, "success")), Has.Some.False,
+                "The forecast this scenario breaks did not fail, so it says nothing about a failed one.");
+
+        /// <summary>The Task Manager row of the forecast ends the way any finished forecast ends, within the time a scenario waits.</summary>
+        protected Task ThenTheTaskManagerShowsTheForecastFinished()
+            => Until(
+                () => TheBrowserWasTold.LastStatusOf(UpdateType.Forecasts, PaymentsPlatformId) == UpdateProgress.Completed,
+                $"The Task Manager row of the forecast of {PaymentsPlatform} never read as finished. The browser was told: {TheBrowserWasTold.Describe()}");
 
         protected static string? TheLineOfTheTeamRound(ObservedRounds rounds, string teamName)
             => rounds.OperatorLines.LastOrDefault(line => line.Contains($"Update completed | Team '{teamName}'", StringComparison.Ordinal));
@@ -491,9 +570,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         private bool TheQueueIsBusy() => Factory.Services.GetRequiredService<IUpdateStatusStore>().HasActiveWork();
 
-        private static Task Until(Func<bool> condition, string failure) => Until(() => Task.FromResult(condition()), failure);
+        protected static Task Until(Func<bool> condition, string failure) => Until(() => Task.FromResult(condition()), failure);
 
-        private static async Task Until(Func<Task<bool>> condition, string failure)
+        protected static async Task Until(Func<Task<bool>> condition, string failure)
         {
             var deadline = DateTime.UtcNow + TheLongestAScenarioWaits;
 
@@ -510,19 +589,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         /// <summary>
         /// The work tracking system as one test sees it: the Features of each Portfolio and the items of each
-        /// Team, which a scenario changes the way somebody working in the tracker would.
+        /// Team, which a scenario changes the way somebody working in the tracker would. Every change moves the
+        /// record's change stamp, so a refresh that scans for what moved sees it, as it would in the tracker.
         /// </summary>
         protected sealed class WhatTheTrackerHolds
         {
+            private static readonly DateTime TheFirstChange = new(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc);
+
             private readonly Lock gate = new();
-            private readonly Dictionary<string, List<(string ReferenceId, string Name, string Order)>> featuresByPortfolio = [];
-            private readonly Dictionary<string, List<(string ReferenceId, string Parent)>> itemsByTeam = [];
+            private readonly Dictionary<string, List<(string ReferenceId, string Name, string Order, DateTime ChangedAt)>> featuresByPortfolio = [];
+            private readonly Dictionary<string, List<(string ReferenceId, string Parent, DateTime ChangedAt)>> itemsByTeam = [];
+            private int changes;
 
             public void HoldsFeature(string portfolio, string referenceId, string name, string order)
             {
                 lock (gate)
                 {
-                    FeaturesIn(portfolio).Add((referenceId, name, order));
+                    FeaturesIn(portfolio).Add((referenceId, name, order, AChange()));
                 }
             }
 
@@ -540,7 +623,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                 {
                     var features = FeaturesIn(portfolio);
                     var index = features.FindIndex(feature => feature.ReferenceId == referenceId);
-                    features[index] = features[index] with { Order = order };
+                    features[index] = features[index] with { Order = order, ChangedAt = AChange() };
                 }
             }
 
@@ -548,7 +631,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             {
                 lock (gate)
                 {
-                    ItemsOf(team).AddRange(referenceIds.Select(referenceId => (referenceId, parent)));
+                    ItemsOf(team).AddRange(referenceIds.Select(referenceId => (referenceId, parent, AChange())));
                 }
             }
 
@@ -573,8 +656,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                         StateCategory = StateCategories.ToDo,
                         Order = "1",
                         ParentReferenceId = item.Parent,
-                        CreatedDate = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+                        CreatedDate = TheFirstChange,
+                        LastChangedRemote = item.ChangedAt,
                     }, team))];
+                }
+            }
+
+            public List<RemoteRecordStamp> StampsOfTheItemsOf(Team team)
+            {
+                lock (gate)
+                {
+                    return ItemsOf(team.Name).ConvertAll(item => new RemoteRecordStamp(item.ReferenceId, item.ChangedAt));
+                }
+            }
+
+            public List<RemoteRecordStamp> StampsOfTheFeaturesOf(Portfolio portfolio)
+            {
+                lock (gate)
+                {
+                    return FeaturesIn(portfolio.Name).ConvertAll(feature => new RemoteRecordStamp(feature.ReferenceId, feature.ChangedAt));
                 }
             }
 
@@ -591,12 +691,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                         StateCategory = StateCategories.ToDo,
                         Order = feature.Order,
                         ParentReferenceId = string.Empty,
-                        CreatedDate = new DateTime(2026, 9, 1, 0, 0, 0, DateTimeKind.Utc),
+                        CreatedDate = TheFirstChange,
+                        LastChangedRemote = feature.ChangedAt,
                     }))];
                 }
             }
 
-            private List<(string ReferenceId, string Name, string Order)> FeaturesIn(string portfolio)
+            private DateTime AChange() => TheFirstChange.AddMinutes(++changes);
+
+            private List<(string ReferenceId, string Name, string Order, DateTime ChangedAt)> FeaturesIn(string portfolio)
             {
                 if (!featuresByPortfolio.TryGetValue(portfolio, out var features))
                 {
@@ -607,7 +710,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
                 return features;
             }
 
-            private List<(string ReferenceId, string Parent)> ItemsOf(string team)
+            private List<(string ReferenceId, string Parent, DateTime ChangedAt)> ItemsOf(string team)
             {
                 if (!itemsByTeam.TryGetValue(team, out var items))
                 {

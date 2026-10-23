@@ -61,13 +61,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [Test]
         [Ignore(Pending)]
         [Category("slice-01")]
+        [Category("contract-shape:bounded-change")]
         public async Task A_first_record_succeeds_and_the_next_one_has_to_start_from_it()
         {
             var portfolioId = await APortfolio("Payments Platform");
 
-            var first = await Portfolios().TryRecordForecastInputs(portfolioId, null, WhatTheTenOClockRunRead, CancellationToken.None);
-            var fromAValueNoLongerStored = await Portfolios().TryRecordForecastInputs(portfolioId, null, WhatTheTenFifteenRunRead, CancellationToken.None);
-            var fromTheValueStored = await Portfolios().TryRecordForecastInputs(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead, CancellationToken.None);
+            var first = await Record(portfolioId, null, WhatTheTenOClockRunRead);
+            var fromAValueNoLongerStored = await Record(portfolioId, null, WhatTheTenFifteenRunRead);
+            var fromTheValueStored = await Record(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead);
 
             using (Assert.EnterMultipleScope())
             {
@@ -80,20 +81,67 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [Test]
         [Ignore(Pending)]
         [Category("slice-01")]
+        [Category("contract-shape:bounded-change")]
         public async Task A_forget_that_lands_while_a_forecast_runs_wins_over_that_forecast()
         {
             var portfolioId = await APortfolio("Payments Platform");
-            await Portfolios().TryRecordForecastInputs(portfolioId, null, WhatTheTenOClockRunRead, CancellationToken.None);
+            await Record(portfolioId, null, WhatTheTenOClockRunRead);
 
-            await Portfolios().ForgetForecastInputs([portfolioId], CancellationToken.None);
-            var theRunningForecastRecords = await Portfolios().TryRecordForecastInputs(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead, CancellationToken.None);
-            var nothingIsRecordedNow = await Portfolios().TryRecordForecastInputs(portfolioId, null, WhatTheTenFifteenRunRead, CancellationToken.None);
+            await Forget(portfolioId);
+            var theRunningForecastRecords = await Record(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead);
+            var whatTheNextForecastReads = await WhatIsRecordedFor(portfolioId);
+            var theNextForecastRecords = await Record(portfolioId, whatTheNextForecastReads, WhatTheTenFifteenRunRead);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(theRunningForecastRecords, Is.False, "A forecast that started before the press recorded its inputs over the forget.");
-                Assert.That(nothingIsRecordedNow, Is.True, "The forget did not leave the Portfolio with nothing recorded.");
+                Assert.That(whatTheNextForecastReads, Is.Not.EqualTo(WhatTheTenOClockRunRead), "The forget left the inputs it was meant to forget.");
+                Assert.That(theNextForecastRecords, Is.True, "The forecast after the forget could not record what it computed from.");
             }
+        }
+
+        /// <summary>
+        /// A forecast that started after one press and before the next read whatever the first press left.
+        /// If a forget only emptied the value, that forecast would read nothing, the second press would leave
+        /// nothing again, and the forecast would record over the second press as though nobody had pressed.
+        /// </summary>
+        [Test]
+        [Ignore(Pending)]
+        [Category("slice-01")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_forecast_that_read_what_an_earlier_forget_left_loses_to_the_next_forget()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+
+            await Forget(portfolioId);
+            var whatTheForecastAfterTheFirstPressRead = await WhatIsRecordedFor(portfolioId);
+            await Forget(portfolioId);
+
+            var thatForecastRecords = await Record(portfolioId, whatTheForecastAfterTheFirstPressRead, WhatTheTenOClockRunRead);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whatTheForecastAfterTheFirstPressRead, Is.Not.Null,
+                    "A forget left the Portfolio with nothing recorded, which is also what a Portfolio nobody forecast yet has.");
+                Assert.That(thatForecastRecords, Is.False, "A forecast that started before the second press recorded its inputs over it.");
+            }
+        }
+
+        /// <summary>An instance upgraded into this release has nothing recorded, and a press during its first forecast still has to win.</summary>
+        [Test]
+        [Ignore(Pending)]
+        [Category("slice-01")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_forecast_that_read_nothing_recorded_loses_to_a_forget()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+
+            await Forget(portfolioId);
+
+            Assert.That(await Record(portfolioId, null, WhatTheTenOClockRunRead), Is.False,
+                "A forecast that started before the press, on a Portfolio with nothing recorded, recorded its inputs over the press.");
         }
 
         [Test]
@@ -104,17 +152,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         {
             var paymentsPlatform = await APortfolio("Payments Platform");
             var onboarding = await APortfolio("Onboarding");
-            await Portfolios().TryRecordForecastInputs(paymentsPlatform, null, WhatTheTenOClockRunRead, CancellationToken.None);
-            await Portfolios().TryRecordForecastInputs(onboarding, null, WhatTheTenOClockRunRead, CancellationToken.None);
+            await Record(paymentsPlatform, null, WhatTheTenOClockRunRead);
+            await Record(onboarding, null, WhatTheTenOClockRunRead);
 
-            await Portfolios().ForgetForecastInputs([paymentsPlatform], CancellationToken.None);
+            await Forget(paymentsPlatform);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(await Portfolios().TryRecordForecastInputs(paymentsPlatform, null, WhatTheTenFifteenRunRead, CancellationToken.None), Is.True,
+                Assert.That(await Record(paymentsPlatform, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead), Is.False,
                     "The Portfolio that was named still had its inputs recorded.");
-                Assert.That(await Portfolios().TryRecordForecastInputs(onboarding, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead, CancellationToken.None), Is.True,
+                Assert.That(await Record(onboarding, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead), Is.True,
                     "The forget also cleared a Portfolio it did not name.");
+            }
+        }
+
+        /// <summary>
+        /// Another build may have run in between, a rollback for instance, and computed forecasts without
+        /// recording what it computed them from. So nothing recorded before the app started may let the first
+        /// round after it skip.
+        /// </summary>
+        [Test]
+        [Ignore(Pending)]
+        [Category("slice-01")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Starting_the_app_forgets_what_every_Portfolio_recorded()
+        {
+            var paymentsPlatform = await APortfolio("Payments Platform");
+            var onboarding = await APortfolio("Onboarding");
+            await Record(paymentsPlatform, null, WhatTheTenOClockRunRead);
+
+            using (var context = AContext())
+            {
+                await new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance).ForgetAllForecastInputs(CancellationToken.None);
+            }
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await Record(paymentsPlatform, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead), Is.False,
+                    "What Payments Platform recorded before the start still counts after it.");
+                Assert.That(await Record(onboarding, null, WhatTheTenFifteenRunRead), Is.False,
+                    "A forecast that started before the app did, on a Portfolio with nothing recorded, recorded over the start.");
             }
         }
 
@@ -127,6 +205,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [Ignore(Pending)]
         [Category("slice-01")]
         [Category("error")]
+        [Category("contract-shape:unbounded-preservation")]
         public async Task A_Portfolio_saved_whole_from_an_old_copy_leaves_the_recorded_inputs_alone()
         {
             var portfolioId = await APortfolio("Payments Platform");
@@ -135,13 +214,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var staleRepository = new PortfolioRepository(staleContext, NullLogger<PortfolioRepository>.Instance);
             var staleCopy = staleRepository.GetById(portfolioId)!;
 
-            await Portfolios().TryRecordForecastInputs(portfolioId, null, WhatTheTenOClockRunRead, CancellationToken.None);
+            await Record(portfolioId, null, WhatTheTenOClockRunRead);
 
             staleCopy.DefaultAmountOfWorkItemsPerFeature = 30;
             staleRepository.Update(staleCopy);
             await staleRepository.Save();
 
-            Assert.That(await Portfolios().TryRecordForecastInputs(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead, CancellationToken.None), Is.True,
+            Assert.That(await Record(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead), Is.True,
                 "Saving an old copy of the Portfolio wrote the inputs it was read with back over the ones recorded since.");
         }
 
@@ -149,9 +228,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         [Ignore(Pending)]
         [Category("slice-01")]
         [Category("edge")]
+        [Category("contract-shape:unbounded-preservation")]
         public async Task Recording_for_a_Portfolio_that_is_gone_records_nothing()
         {
-            Assert.That(await Portfolios().TryRecordForecastInputs(4242, null, WhatTheTenOClockRunRead, CancellationToken.None), Is.False);
+            Assert.That(await Record(4242, null, WhatTheTenOClockRunRead), Is.False);
         }
 
         [Test]
@@ -163,7 +243,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var (cardVault, refunds) = await TwoForecastFeatures();
             var before = TheForecastsOf(cardVault, refunds);
 
-            await Features().ConfirmForecastsAsOf([cardVault], ConfirmedAtNineFortyFive, CancellationToken.None);
+            using (var context = AContext())
+            {
+                await new FeatureRepository(context, Mock.Of<IFeatureOrdering>(), NullLogger<FeatureRepository>.Instance)
+                    .ConfirmForecastsAsOf([cardVault], ConfirmedAtNineFortyFive, CancellationToken.None);
+            }
 
             var after = TheForecastsOf(cardVault, refunds);
 
@@ -180,13 +264,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
-        // --- Seeding ---
+        // --- Each step on its own context, as each request and each round has its own ---
 
         private LighthouseAppContext AContext() => new(options, crypto.Object, Mock.Of<ILogger<LighthouseAppContext>>());
 
-        private PortfolioRepository Portfolios() => new(AContext(), NullLogger<PortfolioRepository>.Instance);
+        private async Task<bool> Record(int portfolioId, string? readAtGather, string fresh)
+        {
+            using var context = AContext();
 
-        private FeatureRepository Features() => new(AContext(), Mock.Of<IFeatureOrdering>(), NullLogger<FeatureRepository>.Instance);
+            return await new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance)
+                .TryRecordForecastInputs(portfolioId, readAtGather, fresh, CancellationToken.None);
+        }
+
+        private async Task Forget(int portfolioId)
+        {
+            using var context = AContext();
+
+            await new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance)
+                .ForgetForecastInputs([portfolioId], CancellationToken.None);
+        }
+
+        /// <summary>
+        /// What the next forecast of the Portfolio would read. Read as a column, because the Portfolio model
+        /// gains the property only with the migration that adds the column. Qualified with the table, because
+        /// SQLite reads an unknown double-quoted name on its own as a string.
+        /// </summary>
+        private async Task<string?> WhatIsRecordedFor(int portfolioId)
+        {
+            using var context = AContext();
+
+            return await context.Database
+                .SqlQuery<string?>($"SELECT portfolio.\"ForecastInputFingerprint\" AS \"Value\" FROM \"Portfolios\" AS portfolio WHERE portfolio.\"Id\" = {portfolioId}")
+                .SingleAsync();
+        }
+
+        // --- Seeding ---
 
         private async Task<int> APortfolio(string name)
         {
