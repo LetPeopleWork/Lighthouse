@@ -42,6 +42,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private static readonly int[] TheFeaturesTheSkippedForecastRead = [3, 7, 12];
 
+        private const string TheRunMark = "computing:5d0c3b7a9e1f4a2c8b6d0e2f4a6c8e1b";
+
+        private const string InputsNotRecorded = "not recorded";
+
         private const int SlowForecastMilliseconds = 60;
 
         private const int ShortestCredibleDurationMilliseconds = 25;
@@ -619,7 +623,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            TheForecastAnswers(new ForecastRunOutcome.Computed("read", "fresh"));
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
 
             var sequence = new List<string>();
             writeBackTriggerServiceMock
@@ -631,7 +635,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Callback(() => sequence.Add("forecastsUpdatedEvent"))
                 .Returns(Task.CompletedTask);
             forecastInputsMock
-                .Setup(x => x.TryRecordForecastInputs(portfolio.Id, "read", "fresh", It.IsAny<CancellationToken>()))
+                .Setup(x => x.TryRecordForecastInputs(portfolio.Id, TheRunMark, "fresh", It.IsAny<CancellationToken>()))
                 .Callback(() => sequence.Add("recordInputs"))
                 .ReturnsAsync(true);
 
@@ -642,11 +646,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void Update_ShouldRecordNothingAndNotFail_WhenTheComputedForecastHasNoFreshInputs()
+        public void Update_ShouldLeaveTheMarkAndNotFail_WhenTheComputedForecastHasNoFreshInputs()
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            TheForecastAnswers(new ForecastRunOutcome.Computed("read", null));
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, null));
 
             var recorded = CaptureRefreshLog();
 
@@ -719,6 +723,116 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void Update_ShouldRecordNothingAndSaySo_WhenTheRunCouldNotMarkItself()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(null, "fresh"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastInputsMock.VerifyNoOtherCalls();
+            Assert.That(DebugLines(), Has.Some.Contains(InputsNotRecorded));
+        }
+
+        [Test]
+        public void Update_ShouldSaySo_WhenTheInputsCouldNotReplaceTheMark()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+            forecastInputsMock
+                .Setup(x => x.TryRecordForecastInputs(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(DebugLines(), Has.Some.Contains(InputsNotRecorded));
+        }
+
+        [Test]
+        public void Update_ShouldNotSaySo_WhenTheInputsWereRecorded()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(DebugLines(), Has.None.Contains(InputsNotRecorded));
+        }
+
+        /// <summary>
+        /// The forecasts were saved and the run's mark stands in place of the inputs, so the next round already
+        /// cannot match. Nothing has to be forgotten, and the mark must not be swapped for the fresh inputs.
+        /// </summary>
+        [Test]
+        public void Update_ShouldLeaveTheMarkAndForgetNothing_WhenStagingFailsAfterAComputedForecast()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Throws(new InvalidOperationException("Staging failed"));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(recorded.Entry.Success, Is.False);
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldLeaveTheMarkAndForgetNothing_WhenAnnouncingFailsAfterAComputedForecast()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("Publishing failed"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        /// <summary>
+        /// A skipped run writes no mark, so the inputs it confirmed would still match next round. A failure part
+        /// way through it is a reason to doubt them, and doubt means compute.
+        /// </summary>
+        [Test]
+        public void Update_ShouldForgetTheInputs_WhenStagingFailsAfterASkippedForecast()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Throws(new InvalidOperationException("Staging failed"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        private List<string> DebugLines()
+        {
+            return [.. loggerMock.Invocations
+                .Where(i => i.Arguments[0] is LogLevel.Debug)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)];
+        }
+
+        [Test]
         public void Update_ShouldConfirmTheForecastsOfEveryFeatureItRead_AtTheRound_BeforeStagingAndAnnouncing_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
@@ -762,7 +876,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            TheForecastAnswers(new ForecastRunOutcome.Computed("read", "fresh"));
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);

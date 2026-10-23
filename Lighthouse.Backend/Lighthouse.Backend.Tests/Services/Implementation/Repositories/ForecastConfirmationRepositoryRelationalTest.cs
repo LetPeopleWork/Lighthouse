@@ -253,6 +253,84 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        [Test]
+        [Category("slice-01")]
+        [Category("contract-shape:bounded-change")]
+        public async Task Marking_a_run_replaces_what_it_read_with_a_mark_that_only_the_run_can_replace()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+            await Record(portfolioId, null, WhatTheTenOClockRunRead);
+
+            var mark = await Mark(portfolioId, WhatTheTenOClockRunRead);
+            var whatTheNextRoundReads = await WhatIsRecordedFor(portfolioId);
+            var fromWhatTheRunRead = await Record(portfolioId, WhatTheTenOClockRunRead, WhatTheTenFifteenRunRead);
+            var fromTheMark = await Record(portfolioId, mark, WhatTheTenFifteenRunRead);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mark, Is.Not.Null.And.Not.EqualTo(WhatTheTenOClockRunRead), "The run could not mark the inputs it read.");
+                Assert.That(whatTheNextRoundReads, Is.EqualTo(mark), "While the run is under way, the next round would still read the inputs it is replacing.");
+                Assert.That(fromWhatTheRunRead, Is.False, "The inputs the run replaced could still be recorded over its mark.");
+                Assert.That(fromTheMark, Is.True, "The run could not replace its own mark with what it computed from.");
+            }
+        }
+
+        [Test]
+        [Category("slice-01")]
+        [Category("edge")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_Portfolio_with_nothing_recorded_can_be_marked_and_every_mark_is_new()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+
+            var first = await Mark(portfolioId, null);
+            await Record(portfolioId, first, WhatTheTenOClockRunRead);
+            var second = await Mark(portfolioId, WhatTheTenOClockRunRead);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(first, Is.Not.Null, "A first forecast could not mark a Portfolio that had nothing recorded.");
+                Assert.That(second, Is.Not.Null.And.Not.EqualTo(first), "Two runs were given the same mark, so a dead run's mark could be taken for a live one's.");
+            }
+        }
+
+        [Test]
+        [Category("slice-01")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_run_that_read_a_value_a_forget_replaced_marks_nothing()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+            await Record(portfolioId, null, WhatTheTenOClockRunRead);
+            await Forget(portfolioId);
+            var whatTheForgetLeft = await WhatIsRecordedFor(portfolioId);
+
+            var mark = await Mark(portfolioId, WhatTheTenOClockRunRead);
+            var whatIsRecordedAfterwards = await WhatIsRecordedFor(portfolioId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mark, Is.Null, "A run that started before the press marked over it.");
+                Assert.That(whatIsRecordedAfterwards, Is.EqualTo(whatTheForgetLeft), "The press was overwritten.");
+            }
+        }
+
+        [Test]
+        [Category("slice-01")]
+        [Category("error")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_forget_that_lands_after_the_mark_wins_over_the_run()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+            await Record(portfolioId, null, WhatTheTenOClockRunRead);
+
+            var mark = await Mark(portfolioId, WhatTheTenOClockRunRead);
+            await Forget(portfolioId);
+
+            Assert.That(await Record(portfolioId, mark, WhatTheTenFifteenRunRead), Is.False,
+                "A run recorded its inputs over a press that landed while it was saving.");
+        }
+
         // --- Each step on its own context, as each request and each round has its own ---
 
         private LighthouseAppContext AContext() => new(options, crypto.Object, Mock.Of<ILogger<LighthouseAppContext>>());
@@ -263,6 +341,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             return await new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance)
                 .TryRecordForecastInputs(portfolioId, readAtGather, fresh, CancellationToken.None);
+        }
+
+        private async Task<string?> Mark(int portfolioId, string? readAtGather)
+        {
+            using var context = AContext();
+
+            return await new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance)
+                .TryMarkForecastRunning(portfolioId, readAtGather, CancellationToken.None);
         }
 
         private async Task Forget(int portfolioId)

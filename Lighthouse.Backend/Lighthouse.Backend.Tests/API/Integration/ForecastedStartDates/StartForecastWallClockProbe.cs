@@ -90,6 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetrics.Object,
                 featureRepository.Object,
+                Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),
                 TimeProvider.System);
