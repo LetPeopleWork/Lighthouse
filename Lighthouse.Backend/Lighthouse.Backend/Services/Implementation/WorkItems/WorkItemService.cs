@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             dependencyRefreshReporter.ReportOn(portfolio);
 
-            portfolio.RefreshUpdateTime();
+            portfolio.RefreshUpdateTime(clock.Now.UtcDateTime);
 
             // Recorded beside UpdateTime, and only once the fetch it describes actually completed.
             portfolio.FetchFingerprint = fetchShape.Fingerprint;

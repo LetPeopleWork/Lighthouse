@@ -11,7 +11,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
         IApiKeyRepository repository,
         IRepository<UserProfile> userProfileRepository,
         IRepository<ApiKeyPermission> apiKeyPermissionRepository,
-        ILogger<ApiKeyService> logger) : IApiKeyService
+        ILogger<ApiKeyService> logger,
+        TimeProvider timeProvider) : IApiKeyService
     {
         private const int KeyByteLength = 32;
         private const int SaltByteLength = 16;
@@ -37,6 +38,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             var salt = GenerateSalt();
             var hash = HashKey(plainTextKey, salt);
             var ownerProfile = ResolveOwnerProfileBySubject(ownerSubject, userProfileRepository.GetAll().ToList());
+            var createdAt = timeProvider.GetUtcNow().UtcDateTime;
 
             var apiKey = new ApiKey
             {
@@ -45,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 CreatedByUser = createdByUser,
                 OwnerUserProfileId = ownerProfile?.Id,
                 OwnerSubject = ownerSubject,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = createdAt,
                 KeyHash = hash,
                 Salt = salt,
             };
@@ -63,7 +65,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                         Role = entry.Role,
                         ScopeType = entry.ScopeType,
                         ScopeId = entry.ScopeId,
-                        GrantedAt = DateTime.UtcNow,
+                        GrantedAt = createdAt,
                     });
                 }
 
@@ -161,7 +163,7 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             var profiles = userProfileRepository.GetAll().ToList();
             var ownerProfile = TryResolveOwnerProfile(key, profiles);
 
-            key.LastUsedAt = DateTime.UtcNow;
+            key.LastUsedAt = timeProvider.GetUtcNow().UtcDateTime;
             if (ownerProfile is not null)
             {
                 key.OwnerUserProfileId = ownerProfile.Id;

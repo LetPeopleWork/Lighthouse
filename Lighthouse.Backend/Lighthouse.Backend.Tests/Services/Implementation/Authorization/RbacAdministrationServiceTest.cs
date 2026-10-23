@@ -11,6 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using System.Security.Claims;
 
@@ -25,6 +26,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         private Mock<ILogger<RbacAdministrationService>> serviceLogger;
         private Mock<ILicenseService> licenseService;
         private Mock<ICurrentUserProfileService> currentUserProfileService;
+        private readonly FakeTimeProvider time = new(TheClocksInstant);
+
+        private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
         [SetUp]
         public void SetUp()
@@ -1851,6 +1855,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
+        public async Task EveryKindOfGrant_IsStampedWithTheClockInstant()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            context.UserProfiles.Add(new UserProfile { Id = 7, Subject = "auth0|grantee", SubjectClaimType = "sub" });
+            await context.SaveChangesAsync();
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            await subject.GrantSystemAdminAsync(7, CancellationToken.None);
+            await subject.SetTeamMemberRoleAsync(7, 12, UserRole.TeamAdmin, CancellationToken.None);
+            await subject.SetPortfolioMemberRoleAsync(7, 13, UserRole.PortfolioAdmin, CancellationToken.None);
+            await subject.GrantCreatorTeamAdminAsync(7, 14, CancellationToken.None);
+
+            var grants = await context.UserPermissions.Where(p => p.UserProfileId == 7).ToListAsync();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(grants, Has.Count.EqualTo(4));
+                Assert.That(grants.Select(g => g.GrantedAt), Is.All.EqualTo(TheClocksInstant.UtcDateTime));
+            }
+        }
+
+        [Test]
         public async Task GrantSystemAdminAsync_WhenAlreadySystemAdmin_ReturnsSuccessWithoutDuplication()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
@@ -3457,7 +3482,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 config,
                 licenseService.Object,
                 currentUserProfileService.Object,
-                serviceLogger.Object);
+                serviceLogger.Object,
+                time);
         }
 
         private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)

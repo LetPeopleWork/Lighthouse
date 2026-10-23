@@ -22,6 +22,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Microsoft.Extensions.Time.Testing;
 using NUnit.Framework;
 using System.Security.Claims;
 
@@ -518,7 +519,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 configuration,
                 licenseService.Object,
                 currentUserProfileService.Object,
-                Mock.Of<ILogger<RbacAdministrationService>>());
+                Mock.Of<ILogger<RbacAdministrationService>>(),
+                new FakeTimeProvider(TestToday.FrozenNow));
         }
 
         protected static LighthouseAppContext BuildIsolatedContext()

@@ -16,6 +16,6 @@ namespace Lighthouse.Backend.Models.Authorization
 
         public int? GrantedByUserProfileId { get; set; }
 
-        public DateTime GrantedAt { get; set; } = DateTime.UtcNow;
+        public DateTime GrantedAt { get; set; }
     }
 }

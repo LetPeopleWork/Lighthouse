@@ -113,6 +113,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public async Task UpdateFeaturesForPortfolio_StampsTheRefreshWithTheClockInstant()
+        {
+            var theRefreshInstant = new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var portfolio = CreatePortfolio();
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(portfolio.UpdateTime, Is.EqualTo(theRefreshInstant.UtcDateTime));
+        }
+
+        [Test]
         public async Task UpdateFeaturesForProject_SingleTeamInvolved_FindsFeauture()
         {
             var team = CreateTeam();

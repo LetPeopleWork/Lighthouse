@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
@@ -14,6 +15,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         private Mock<IRepository<ApiKeyPermission>> apiKeyPermissionRepositoryMock;
         private Mock<ILogger<ApiKeyService>> loggerMock;
         private ApiKeyService subject;
+        private readonly FakeTimeProvider time = new(TheClocksInstant);
+
+        private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
         [SetUp]
         public void Setup()
@@ -28,10 +32,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 repositoryMock.Object,
                 userProfileRepositoryMock.Object,
                 apiKeyPermissionRepositoryMock.Object,
-                loggerMock.Object);
+                loggerMock.Object,
+                time);
         }
 
         // --- CreateApiKey ---
+
+        [Test]
+        public async Task CreateApiKey_StampsCreatedAtAndGrantedAtWithTheClockInstant_NeverMinValue()
+        {
+            ApiKey? storedKey = null;
+            var storedGrants = new List<ApiKeyPermission>();
+            repositoryMock.Setup(r => r.Add(It.IsAny<ApiKey>())).Callback<ApiKey>(k => storedKey = k);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Add(It.IsAny<ApiKeyPermission>())).Callback<ApiKeyPermission>(storedGrants.Add);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            var scope = new List<ApiKeyScopeDto> { new() { Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 12 } };
+
+            var result = await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", scope);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedKey!.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(result.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(storedGrants.Select(g => g.GrantedAt), Is.EqualTo(new[] { TheClocksInstant.UtcDateTime }));
+            }
+        }
+
+        [Test]
+        public async Task ValidateApiKeyWithOwnerAsync_StampsLastUsedAtWithTheClockInstant()
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 78, KeyHash = hash, Salt = salt };
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            Assert.That(key.LastUsedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+        }
 
         [Test]
         public async Task CreateApiKey_ReturnsNonEmptyPlainTextKey()
@@ -116,18 +155,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 Assert.That(result.Name, Is.EqualTo("my-key"));
                 Assert.That(result.Description, Is.EqualTo("A description"));
             }
-        }
-
-        [Test]
-        public async Task CreateApiKey_CreatedAtIsApproximatelyNow()
-        {
-            SetupSave();
-
-            var before = DateTime.UtcNow;
-            var result = await subject.CreateApiKeyAsync("key", "desc", "alice", "alice-subject");
-            var after = DateTime.UtcNow;
-
-            Assert.That(result.CreatedAt, Is.InRange(before, after));
         }
 
         // --- GetApiKeysByOwnerSubject ---

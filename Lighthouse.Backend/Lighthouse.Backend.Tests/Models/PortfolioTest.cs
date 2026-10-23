@@ -31,11 +31,9 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var subject = CreateSubject();
 
-            var initialUpdateTime = subject.UpdateTime;
+            subject.RefreshUpdateTime(TestToday.FrozenNow.UtcDateTime);
 
-            subject.RefreshUpdateTime();
-
-            Assert.That(subject.UpdateTime, Is.Not.EqualTo(initialUpdateTime));
+            Assert.That(subject.UpdateTime, Is.EqualTo(TestToday.FrozenNow.UtcDateTime));
         }
 
         [Test]

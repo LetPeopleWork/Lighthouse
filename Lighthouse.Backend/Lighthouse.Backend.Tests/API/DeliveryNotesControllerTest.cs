@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,24 @@ namespace Lighthouse.Backend.Tests.API
             currentUserProfileService
                 .Setup(x => x.GetOrCreateFromPrincipalAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserProfile?)null);
+        }
+
+        [Test]
+        public async Task AddingAndEditingANote_StampsBothWithTheClockInstant()
+        {
+            var created = new DateTimeOffset(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var edited = created.AddHours(2);
+
+            var noteId = ResultOf(await CreateSubject(new FakeLighthouseClock(created)).AddNote(DeliveryId, new DeliveryNoteRequest { Text = "first" })).Id;
+            await CreateSubject(new FakeLighthouseClock(edited)).UpdateNote(DeliveryId, noteId, new DeliveryNoteRequest { Text = "second" });
+
+            using var context = CreateContext();
+            var stored = context.DeliveryNotes.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.CreatedAt, Is.EqualTo(created.UtcDateTime));
+                Assert.That(stored.LastEditedAt, Is.EqualTo(edited.UtcDateTime));
+            }
         }
 
         [Test]
@@ -252,12 +271,17 @@ namespace Lighthouse.Backend.Tests.API
 
         private DeliveryNotesController CreateSubject()
         {
+            return CreateSubject(TestToday.Clock);
+        }
+
+        private DeliveryNotesController CreateSubject(ILighthouseClock clock)
+        {
             return new DeliveryNotesController(
                 CreateContext(),
                 deliveryRepository.Object,
                 rbacAdministrationService.Object,
                 currentUserProfileService.Object,
-                TestToday.Clock);
+                clock);
         }
     }
 }

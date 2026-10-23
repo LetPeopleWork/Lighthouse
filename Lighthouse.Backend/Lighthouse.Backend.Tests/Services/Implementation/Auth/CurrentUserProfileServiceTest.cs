@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using System.Security.Claims;
 
@@ -22,6 +23,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         private Mock<ILogger<CurrentUserProfileService>> serviceLogger;
 
         private SqliteConnection connection;
+        private readonly FakeTimeProvider time = new(TheClocksInstant);
+
+        private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
         [SetUp]
         public void SetUp()
@@ -51,10 +55,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         }
 
         [Test]
+        public async Task GetOrCreateFromPrincipalAsync_FirstSignIn_StampsTheProfileWithTheClockInstant()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            await subject.GetOrCreateFromPrincipalAsync(BuildPrincipal(new Claim("sub", "auth0|first")), CancellationToken.None);
+
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|first");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(stored.LastSeenAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+            }
+        }
+
+        [Test]
+        public async Task GetOrCreateFromPrincipalAsync_ReturningUser_StampsLastSeenAtWithTheClockInstant()
+        {
+            using (var seedContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object))
+            {
+                seedContext.UserProfiles.Add(new UserProfile { Subject = "auth0|back", SubjectClaimType = "sub" });
+                await seedContext.SaveChangesAsync();
+            }
+
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
+
+            await subject.GetOrCreateFromPrincipalAsync(BuildPrincipal(new Claim("sub", "auth0|back")), CancellationToken.None);
+
+            using var freshContext = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            var stored = await freshContext.UserProfiles.SingleAsync(p => p.Subject == "auth0|back");
+            Assert.That(stored.LastSeenAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+        }
+
+        [Test]
         public async Task GetOrCreateFromPrincipalAsync_SubClaimPresent_CreatesProfile()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var subject = new CurrentUserProfileService(context, serviceLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("sub", "auth0|abc123"),
@@ -78,7 +118,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task GetOrCreateFromPrincipalAsync_OidFallback_UsesOidAsStableSubject()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var subject = new CurrentUserProfileService(context, serviceLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("oid", "aad-oid-42"),
@@ -98,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task GetOrCreateFromPrincipalAsync_NoStableSubject_ReturnsNullAndDoesNotPersist()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var subject = new CurrentUserProfileService(context, serviceLogger.Object);
+            var subject = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("name", "Missing Subject"),
@@ -123,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task GetOrCreateFromPrincipalAsync_BothNameAndBothEmailClaims_PrefersTheShortNameAndTheSchemaEmail()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("sub", "auth0|both"),
@@ -145,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task GetOrCreateFromPrincipalAsync_OnlyTheOtherNameAndEmailClaims_FallsBackToThem()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("sub", "auth0|fallback"),
@@ -186,7 +226,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             });
             await context.SaveChangesAsync();
 
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var principal = BuildPrincipal(
                 new Claim("sub", "auth0|existing"),
@@ -217,7 +257,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             await AnasProfileWithoutADisplayName(context);
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
             var stored = await context.UserProfiles.AsNoTracking().SingleAsync(p => p.Subject == "ana");
@@ -235,7 +275,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         public async Task GetOrCreateFromPrincipalAsync_ApiKeyPrincipalWhoseOwnerHasNoProfile_ReturnsNullAndDoesNotPersist()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
 
             var profile = await service.GetOrCreateFromPrincipalAsync(AnasApiKey(), CancellationToken.None);
 
@@ -251,7 +291,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
             await AnasProfileWithoutADisplayName(context);
-            var service = new CurrentUserProfileService(context, serviceLogger.Object);
+            var service = new CurrentUserProfileService(context, serviceLogger.Object, time);
             var principal = AnasApiKey();
             var resolver = new VoterIdentityResolver(
                 Mock.Of<IAuthModeResolver>(modes => modes.Resolve() == new RuntimeAuthStatus { Mode = AuthMode.Enabled }),

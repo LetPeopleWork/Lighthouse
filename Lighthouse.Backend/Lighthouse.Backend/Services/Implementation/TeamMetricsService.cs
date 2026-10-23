@@ -892,7 +892,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             InvalidateTeamMetrics(team);
 
-            team.RefreshUpdateTime();
+            team.RefreshUpdateTime(Clock.Now.UtcDateTime);
             UpdateFeatureWipForTeam(team);
 
             await workItemRepository.Save();

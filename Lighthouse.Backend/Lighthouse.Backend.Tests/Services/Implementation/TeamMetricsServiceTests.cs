@@ -817,11 +817,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task UpdateTeamMetrics_RefreshesUpdateTimeForTeam()
         {
-            testTeam.UpdateTime = DateTime.UtcNow.AddDays(-1);
+            testTeam.UpdateTime = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
 
             await subject.UpdateTeamMetrics(testTeam);
 
-            Assert.That(testTeam.UpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+            Assert.That(testTeam.UpdateTime, Is.EqualTo(TestToday.FrozenNow.UtcDateTime));
         }
 
         [Test]

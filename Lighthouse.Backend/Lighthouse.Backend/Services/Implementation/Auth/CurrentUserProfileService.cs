@@ -9,7 +9,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public class CurrentUserProfileService(
         LighthouseAppContext context,
-        ILogger<CurrentUserProfileService> logger) : ICurrentUserProfileService
+        ILogger<CurrentUserProfileService> logger,
+        TimeProvider timeProvider) : ICurrentUserProfileService
     {
         public async Task<UserProfile?> GetOrCreateFromPrincipalAsync(
     ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -31,6 +32,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                 return existingProfile;
             }
 
+            var now = timeProvider.GetUtcNow().UtcDateTime;
+
             if (existingProfile is null)
             {
                 var createdProfile = new UserProfile
@@ -39,8 +42,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                     SubjectClaimType = stableSubject.Value.claimType,
                     DisplayName = ResolveDisplayName(principal),
                     Email = ResolveEmail(principal),
-                    CreatedAt = DateTime.UtcNow,
-                    LastSeenAt = DateTime.UtcNow,
+                    CreatedAt = now,
+                    LastSeenAt = now,
                 };
                 context.UserProfiles.Add(createdProfile);
                 await context.SaveChangesAsync(cancellationToken);
@@ -50,7 +53,6 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
             // Bypass the change tracker entirely — only UPDATE this one row
             var displayName = ResolveDisplayName(principal);
             var email = ResolveEmail(principal);
-            var now = DateTime.UtcNow;
 
             await context.UserProfiles
                 .Where(p => p.Id == existingProfile.Id)

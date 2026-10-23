@@ -16,9 +16,9 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string? Email { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
 
-        public DateTime LastSeenAt { get; set; } = DateTime.UtcNow;
+        public DateTime LastSeenAt { get; set; }
 
         public string? LastKnownGroupClaimValues { get; set; }
     }

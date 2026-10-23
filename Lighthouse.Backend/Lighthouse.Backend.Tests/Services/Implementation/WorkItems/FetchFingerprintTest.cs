@@ -287,7 +287,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private static IEnumerable<TestCaseData> ARepresentativeOfEveryExcludedGroup()
         {
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.Name), p => p.Name = "Renamed");
-            yield return Case(nameof(WorkTrackingSystemOptionsOwner.UpdateTime), p => p.RefreshUpdateTime());
+            yield return Case(nameof(WorkTrackingSystemOptionsOwner.UpdateTime), p => p.RefreshUpdateTime(TestToday.FrozenNow.UtcDateTime));
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.FetchFingerprint), p => p.FetchFingerprint = "whatever the last cycle wrote");
             yield return Case(nameof(WorkTrackingSystemConnection.AuthenticationMethodKey), p => p.WorkTrackingSystemConnection.AuthenticationMethodKey = "RotatedToken");
             yield return Case(nameof(WorkTrackingSystemConnection.Options), p => p.WorkTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption { Key = "ApiToken", Value = "rotated" }));

@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -60,25 +59,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Audit/lifecycle stamps - <c>Models/Auth/UserProfile.cs:19,21</c> and
-        /// <c>Models/Auth/ApiKey.cs:25</c> in the RCA section 5(b) inventory.
-        /// </summary>
-        [Test]
-        public void AuditStamps_UnderANonUtcInstanceZone_StayAtTheUtcInstant()
-        {
-            GivenAnInstanceZoneThatMovesTheCalendarDay();
-
-            var before = DateTime.UtcNow;
-            var profile = new UserProfile();
-            var apiKey = new ApiKey();
-            var after = DateTime.UtcNow;
-
-            AssertStillAnInstant(profile.CreatedAt, before, after, "UserProfile.CreatedAt");
-            AssertStillAnInstant(profile.LastSeenAt, before, after, "UserProfile.LastSeenAt");
-            AssertStillAnInstant(apiKey.CreatedAt, before, after, "ApiKey.CreatedAt");
-        }
-
-        /// <summary>
         /// Sync/refresh bookkeeping - <c>Models/WorkTrackingSystemOptionsOwner.cs:138</c>, the cursor
         /// every updater compares its refresh interval against.
         /// </summary>
@@ -90,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var team = new Team();
 
             var before = DateTime.UtcNow;
-            team.RefreshUpdateTime();
+            team.RefreshUpdateTime(DateTime.UtcNow);
             var after = DateTime.UtcNow;
 
             AssertStillAnInstant(team.UpdateTime, before, after, "WorkTrackingSystemOptionsOwner.UpdateTime");

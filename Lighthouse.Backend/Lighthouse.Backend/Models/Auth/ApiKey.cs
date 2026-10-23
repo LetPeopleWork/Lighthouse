@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Models.Auth
 
         public string? OwnerSubject { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; }
 
         public DateTime? LastUsedAt { get; set; }
     }
