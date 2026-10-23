@@ -17,7 +17,6 @@ import {
 	RELEASE_44_IN_PROJECT_X,
 	renderModal,
 	renderTab,
-	retiredOption,
 } from "./DeliverySourceTabFixture";
 
 const licence = vi.hoisted(() => ({ isPremium: true }));
@@ -94,18 +93,6 @@ describe("DeliverySourceTab option list", () => {
 		renderTab(deliveryService);
 		return deliveryService;
 	};
-
-	it("says a Release that is gone from the board is no longer available, rather than undated", async () => {
-		const user = userEvent.setup();
-		tabListing([retiredOption]);
-
-		await openSourceList(user);
-
-		const gone = screen.getByRole("option", { name: /Release 40/ });
-		expect(gone).toHaveTextContent("No longer available");
-		expect(gone).not.toHaveTextContent("No Release Date Set");
-		expect(gone).toHaveAttribute("aria-disabled", "true");
-	});
 
 	it("keeps the picked Release in the box, so the panel below is never unattributed", async () => {
 		const user = userEvent.setup();

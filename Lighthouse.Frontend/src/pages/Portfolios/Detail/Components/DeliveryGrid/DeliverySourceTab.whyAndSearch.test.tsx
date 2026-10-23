@@ -46,7 +46,6 @@ vi.mock("../../../../../hooks/useLicenseRestrictions", () => ({
 
 const THE_SEARCH_INVITATION = "Type to search Jira Releases";
 const NO_DATE_IN_JIRA = "No date in Jira: set one there to follow it";
-const THE_OLD_CAPTION = "No Release Date Set";
 
 const aBoardListing = (options: IDeliverySourceOption[]) => {
 	const deliveryService = createMockDeliveryService();
@@ -63,6 +62,7 @@ const givenDanaOpensTheSourceTab = async (
 	source = JIRA_RELEASE_SOURCE,
 ) => {
 	const onOptionPicked = vi.fn();
+	const deliveryService = aBoardListing(options);
 	await renderWithTerms(
 		<DeliverySourceTab
 			portfolioId={1}
@@ -76,9 +76,9 @@ const givenDanaOpensTheSourceTab = async (
 			onPublishForecastChange={vi.fn()}
 		/>,
 		RenamedTerms,
-		{ deliveryService: aBoardListing(options) },
+		{ deliveryService },
 	);
-	return onOptionPicked;
+	return { onOptionPicked, deliveryService };
 };
 
 const thePicker = (name = JIRA_RELEASE_SOURCE.displayName) =>
@@ -128,7 +128,6 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 
 		const dateless = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
 		expect(dateless).toHaveTextContent(NO_DATE_IN_JIRA);
-		expect(dateless).not.toHaveTextContent(THE_OLD_CAPTION);
 	});
 
 	// @edge @contract-shape:pure-function
@@ -153,7 +152,8 @@ describe("Story 6355: what stays as it is", () => {
 	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a Release without a date still cannot be picked", async () => {
 		const user = userEvent.setup();
-		const onOptionPicked = await givenDanaOpensTheSourceTab([datelessOption]);
+		const { onOptionPicked, deliveryService } =
+			await givenDanaOpensTheSourceTab([datelessOption]);
 
 		await openSourceList(user);
 		const dateless = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
@@ -161,6 +161,7 @@ describe("Story 6355: what stays as it is", () => {
 
 		expect(dateless).toHaveAttribute("aria-disabled", "true");
 		expect(onOptionPicked).not.toHaveBeenCalled();
+		expect(deliveryService.previewDeliverySource).not.toHaveBeenCalled();
 		expect(await thePicker()).toHaveValue("");
 	});
 

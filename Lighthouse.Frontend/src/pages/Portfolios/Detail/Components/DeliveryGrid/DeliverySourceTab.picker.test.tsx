@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
@@ -163,27 +163,6 @@ describe("DeliverySourceTab picker", () => {
 		expect(
 			screen.queryByRole("option", { name: RELEASE_44_IN_PROJECT_TEST }),
 		).toBeNull();
-	});
-
-	it("lists a dateless Release but refuses to let it be picked, saying what is missing", async () => {
-		const user = userEvent.setup();
-		const deliveryService = createMockDeliveryService();
-		deliveryService.getDeliverySourceOptions = vi
-			.fn()
-			.mockResolvedValue(allOptions);
-
-		renderTab(deliveryService);
-		await openSourceList(user);
-
-		const blocked = screen.getByRole("option", { name: THE_DATELESS_RELEASE });
-		expect(blocked).toHaveAttribute("aria-disabled", "true");
-		expect(blocked).toHaveTextContent(
-			"No date in Jira: set one there to follow it",
-		);
-
-		fireEvent.click(blocked);
-
-		expect(deliveryService.previewDeliverySource).not.toHaveBeenCalled();
 	});
 
 	it("renders selectability from the server even when the dates disagree with it", async () => {
