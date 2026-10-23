@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -245,7 +246,7 @@ namespace Lighthouse.Backend.API
                     new WorkTrackingSystemConnectionOption
                     {
                         Key = option.Key,
-                        Value = option.Value,
+                        Value = JiraSiteAddress.ForOption(connectionDto.WorkTrackingSystem, option.Key, option.Value),
                         IsSecret = option.IsSecret,
                         IsOptional = option.IsOptional,
                     }

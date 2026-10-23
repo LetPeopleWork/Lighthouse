@@ -9,6 +9,7 @@ using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -143,6 +144,50 @@ namespace Lighthouse.Backend.Tests.API
 
             repositoryMock.Verify(x => x.Add(It.IsAny<WorkTrackingSystemConnection>()));
             repositoryMock.Verify(x => x.Save());
+        }
+
+        [Test]
+        [TestCase(WorkTrackingSystems.Jira, "https://x.atlassian.net/jira/", "https://x.atlassian.net")]
+        [TestCase(WorkTrackingSystems.Jira, "https://host/jira/", "https://host/jira")]
+        [TestCase(WorkTrackingSystems.AzureDevOps, "https://x.atlassian.net/jira/", "https://x.atlassian.net/jira/")]
+        public async Task CreateNewWorkTrackingSystemConnection_UrlOption_IsStoredAsTheSiteAddressOnlyForJira(WorkTrackingSystems workTrackingSystem, string enteredUrl, string expectedUrl)
+        {
+            var newConnectionDto = new WorkTrackingSystemConnectionDto { Name = "Test", WorkTrackingSystem = workTrackingSystem };
+            newConnectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = JiraWorkTrackingOptionNames.Url, Value = enteredUrl });
+            newConnectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = JiraWorkTrackingOptionNames.Username, Value = enteredUrl });
+
+            WorkTrackingSystemConnection? stored = null;
+            repositoryMock.Setup(x => x.Add(It.IsAny<WorkTrackingSystemConnection>())).Callback<WorkTrackingSystemConnection>(c => stored = c);
+
+            var subject = CreateSubject();
+
+            await subject.CreateNewWorkTrackingSystemConnectionAsync(newConnectionDto);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored?.Options.Single(o => o.Key == JiraWorkTrackingOptionNames.Url).Value, Is.EqualTo(expectedUrl));
+                Assert.That(stored?.Options.Single(o => o.Key == JiraWorkTrackingOptionNames.Username).Value, Is.EqualTo(enteredUrl));
+            }
+        }
+
+        [Test]
+        public async Task ValidateConnection_JiraUrlCopiedFromTheBrowser_PassesTheSiteAddressToTheConnector()
+        {
+            var connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock
+                .Setup(x => x.ValidateConnection(It.IsAny<WorkTrackingSystemConnection>()))
+                .ReturnsAsync(ConnectionValidationResult.Success());
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(WorkTrackingSystems.Jira)).Returns(connectorMock.Object);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = JiraWorkTrackingOptionNames.Url, Value = "https://x.atlassian.net/jira/" });
+
+            var subject = CreateSubject();
+
+            await subject.ValidateConnection(connectionDto);
+
+            connectorMock.Verify(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(
+                c => c.Options.Single(o => o.Key == JiraWorkTrackingOptionNames.Url).Value == "https://x.atlassian.net")));
         }
 
         [Test]

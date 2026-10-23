@@ -33,6 +33,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return address.EndsWith('/') ? address[..^1] : address;
         }
 
+        /// <summary>
+        /// The value a connection option is stored with: a Jira connection's site URL is kept as its site
+        /// address, and every other option, including those of other systems, exactly as entered.
+        /// </summary>
+        public static string ForOption(WorkTrackingSystems workTrackingSystem, string optionKey, string value)
+            => workTrackingSystem == WorkTrackingSystems.Jira && optionKey == JiraWorkTrackingOptionNames.Url
+                ? Of(value)
+                : value;
+
         private static string SchemeAndAuthorityAsTyped(string address, Uri uri)
         {
             var authorityStart = uri.Scheme.Length + Uri.SchemeDelimiter.Length;
