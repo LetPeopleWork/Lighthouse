@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// have computed forecasts without recording what from. The first round after the start computes.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
         public async Task After_the_instance_starts_again_the_next_quiet_round_forecasts_in_full()
