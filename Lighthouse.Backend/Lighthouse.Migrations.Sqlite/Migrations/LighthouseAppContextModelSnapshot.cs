@@ -1026,6 +1026,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ForecastInputFingerprint")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("IgnoreDependencies")
                         .HasColumnType("INTEGER");
 
@@ -1310,6 +1313,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<int>("RecordsWhoseLinksNamedMoreThanOneParent")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("Skipped")
                         .HasColumnType("INTEGER");
 
                     b.Property<bool>("Success")

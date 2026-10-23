@@ -15,8 +15,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// through. <c>BlockedRuleSetMigrationTests.EnsureLegacyColumnsHaveWorkingDefaultAsync</c> already
     /// does the same thing for the opposite case (a column the model has stopped declaring).
     ///
-    /// Epic #5687 slice 05 is what surfaced it: <c>FetchFingerprint</c> is the first column added to
-    /// Teams or Portfolios since either fixture's pinned migration. Any future column on a table these
+    /// <c>FetchFingerprint</c> was the first column added to Teams or Portfolios after the fixtures
+    /// pinned their migration, and the first to hit this. Any future column on a table these
     /// fixtures seed has to be listed below - that is the price of seeding through the model rather than
     /// through raw SQL, and it is cheaper than hand-writing an insert for thirty NOT NULL columns across
     /// two providers.
@@ -65,6 +65,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("WorkTrackingSystemConnections", "EstimationUnitForPortfolios", "TEXT", "AddEstimationDefaults"),
             new("WorkTrackingSystemConnections", "UseNonNumericEstimationForPortfolios", "boolean", "AddEstimationDefaults"),
             new("WorkTrackingSystemConnections", "EstimationCategoryValuesForPortfolios", "TEXT", "AddEstimationDefaults", "text[]"),
+            new("Portfolios", "ForecastInputFingerprint", "TEXT", "AddForecastInputFingerprintAndRefreshLogSkipped"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

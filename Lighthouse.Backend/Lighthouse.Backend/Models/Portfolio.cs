@@ -95,6 +95,15 @@ namespace Lighthouse.Backend.Models
 
         public List<string> OverrideRealChildCountStates { get; set; } = [];
 
+        /// <summary>
+        /// A digest of everything the last forecast that ran to the end was computed from. When the next
+        /// update finds the same inputs, the forecast it would compute is the one already stored. Null means
+        /// nothing has been recorded, so the next update computes. Saving the whole Portfolio never writes it:
+        /// only the forecast run records or forgets it, so an edit made in the meantime cannot put back a
+        /// stale value.
+        /// </summary>
+        public string? ForecastInputFingerprint { get; set; }
+
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
 
         protected override EstimationBundle EstimationConnectionDefault => WorkTrackingSystemConnection?.EstimationForPortfolios ?? EstimationBundle.None;

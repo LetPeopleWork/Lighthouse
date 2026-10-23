@@ -201,6 +201,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             new(nameof(Portfolio.DefaultWorkItemPercentile), Cost.Nothing, "Recomputed every cycle."),
             new(nameof(Portfolio.OwningTeamId), Cost.Nothing, "Who owns the portfolio in Lighthouse; never sent to the tracker."),
             new(nameof(Portfolio.OwningTeam), Cost.Nothing, "Navigation property for OwningTeamId."),
+            new(nameof(Portfolio.ForecastInputFingerprint), Cost.Nothing, "Written by the forecast run after the fetch, to tell whether the forecast must be recomputed; never sent to the tracker."),
         ];
 
         /// <summary>

@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("contract-shape:bounded-change")]
     public class RefreshLogSkippedColumnMigrationTests
     {
-        private const string Pending = "Story 6354: pending until DELIVER adds the migration with the Skipped column";
-
         // Started by the first Postgres case, so a run of the SQLite case alone needs no Docker.
         private SharedPostgresContainer? postgres;
 
@@ -36,7 +34,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task On_Sqlite_a_row_written_by_the_previous_release_reads_as_a_forecast_that_computed()
         {
             var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-refreshlog-skipped-{Guid.NewGuid():N}.db");
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task On_Postgres_a_row_written_by_the_previous_release_reads_as_a_forecast_that_computed()
         {
             postgres ??= await SharedPostgresContainer.StartAsync();

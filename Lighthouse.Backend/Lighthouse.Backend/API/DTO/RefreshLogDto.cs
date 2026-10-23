@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.API.DTO
 
         public bool Cancelled { get; init; }
 
+        public bool Skipped { get; init; }
+
         public int RecordsWhoseLinksNamedMoreThanOneParent { get; init; }
 
         public int RecordsPlacedFromLinksNamingMoreThanOneParent { get; init; }
@@ -71,6 +73,7 @@ namespace Lighthouse.Backend.API.DTO
             ExecutedAt = row.ExecutedAt,
             Success = row.Success,
             Cancelled = row.Cancelled,
+            Skipped = row.Skipped,
             RecordsWhoseLinksNamedMoreThanOneParent = row.RecordsWhoseLinksNamedMoreThanOneParent,
             RecordsPlacedFromLinksNamingMoreThanOneParent = row.RecordsPlacedFromLinksNamingMoreThanOneParent,
             LatestFullRunFindings = latestWithFindings?.Findings,

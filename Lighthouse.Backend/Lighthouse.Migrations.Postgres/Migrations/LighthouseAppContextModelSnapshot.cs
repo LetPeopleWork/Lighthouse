@@ -1080,6 +1080,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<string>("FetchFingerprint")
                         .HasColumnType("text");
 
+                    b.Property<string>("ForecastInputFingerprint")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IgnoreDependencies")
                         .HasColumnType("boolean");
 
@@ -1373,6 +1376,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int>("RecordsWhoseLinksNamedMoreThanOneParent")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("Skipped")
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Success")
                         .HasColumnType("boolean");

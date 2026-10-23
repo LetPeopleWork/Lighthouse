@@ -44,6 +44,12 @@ namespace Lighthouse.Backend.Models
         public bool Cancelled { get; set; }
 
         /// <summary>
+        /// Whether this forecast was confirmed rather than computed, because nothing it is computed from had
+        /// changed since the last one. A row written before skipping existed reads false, which is what it was.
+        /// </summary>
+        public bool Skipped { get; set; }
+
+        /// <summary>
         /// How many records this refresh read whose links named more than one issue to hang them under, and
         /// that it could not place under any of them. Each of those took no parent from its links, which on
         /// screen is indistinguishable from a record nobody ever linked - so without a number here, refresh

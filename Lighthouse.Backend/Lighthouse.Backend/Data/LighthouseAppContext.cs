@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Models.UsageData;
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
@@ -340,6 +341,12 @@ namespace Lighthouse.Backend.Data
             // the teams table to store it in.
             modelBuilder.Entity<Portfolio>()
                 .Ignore(p => p.Teams);
+
+            // Only the forecast run writes this, with a targeted update. A Portfolio loaded before that run
+            // and saved after it would otherwise write back the value it was loaded with.
+            modelBuilder.Entity<Portfolio>()
+                .Property(p => p.ForecastInputFingerprint)
+                .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
 
             modelBuilder.Entity<Team>()
                 .Property<SettingSource>("storedParentOverrideSource")
