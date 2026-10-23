@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
         private static readonly DateTime ConfirmedAtNineFortyFive = new(2026, 10, 23, 9, 45, 0, DateTimeKind.Utc);
 
+        private static readonly DateTime ConfirmedAtFive = new(2026, 10, 23, 5, 0, 0, DateTimeKind.Utc);
+
         private SqliteConnection connection = null!;
         private DbContextOptions<LighthouseAppContext> options = null!;
         private Mock<ICryptoService> crypto = null!;
@@ -253,6 +255,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        /// <summary>
+        /// Two quiet rounds can overlap on different replicas, and the one that read its clock first can be the
+        /// one that stamps last. A forecast that already reads as confirmed later must not be moved back.
+        /// </summary>
+        [Test]
+        [Category("slice-02")]
+        [Category("edge")]
+        [Category("contract-shape:unbounded-preservation")]
+        public async Task Confirming_at_a_time_older_than_a_forecast_already_reads_leaves_it_alone()
+        {
+            var (cardVault, refunds) = await TwoForecastFeatures();
+            var before = TheForecastsOf(cardVault, refunds);
+
+            using (var context = AContext())
+            {
+                await new FeatureRepository(context, Mock.Of<IFeatureOrdering>(), NullLogger<FeatureRepository>.Instance)
+                    .ConfirmForecastsAsOf([cardVault, refunds], ConfirmedAtFive, CancellationToken.None);
+            }
+
+            Assert.That(TheForecastsOf(cardVault, refunds), Is.EqualTo(before), "A confirmation older than the forecast moved its time back.");
+        }
+
         [Test]
         [Category("slice-01")]
         [Category("contract-shape:bounded-change")]
@@ -359,17 +383,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 .ForgetForecastInputs([portfolioId], CancellationToken.None);
         }
 
-        /// <summary>
-        /// What the next forecast of the Portfolio would read. Read as a column, because the Portfolio model
-        /// gains the property only with the migration that adds the column. Qualified with the table, because
-        /// SQLite reads an unknown double-quoted name on its own as a string.
-        /// </summary>
+        /// <summary>What the next forecast of the Portfolio would read.</summary>
         private async Task<string?> WhatIsRecordedFor(int portfolioId)
         {
             using var context = AContext();
 
-            return await context.Database
-                .SqlQuery<string?>($"SELECT portfolio.\"ForecastInputFingerprint\" AS \"Value\" FROM \"Portfolios\" AS portfolio WHERE portfolio.\"Id\" = {portfolioId}")
+            return await context.Portfolios
+                .Where(portfolio => portfolio.Id == portfolioId)
+                .Select(portfolio => portfolio.ForecastInputFingerprint)
                 .SingleAsync();
         }
 
