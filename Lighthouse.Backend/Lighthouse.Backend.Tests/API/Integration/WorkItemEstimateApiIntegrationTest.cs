@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
-            windowEnd = DateTime.UtcNow.Date.AddHours(12);
+            windowEnd = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight.AddHours(12);
             windowStart = windowEnd.AddDays(-WindowLengthInDays);
 
             SeedTwoTeamsAndTwoPortfolios();
@@ -334,8 +334,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var query = endpoint switch
             {
-                Wip or FeaturesInProgress => $"asOfDate={windowEnd:O}",
-                BlockedItemsAtDate => $"date={windowEnd:O}",
+                Wip or FeaturesInProgress => $"asOfDate={windowEnd:yyyy-MM-dd}",
+                BlockedItemsAtDate => $"date={windowEnd:yyyy-MM-dd}",
                 _ => $"startDate={windowStart:O}&endDate={windowEnd:O}",
             };
             var body = await GetBody($"{metricsPath}/{endpoint}?{query}");

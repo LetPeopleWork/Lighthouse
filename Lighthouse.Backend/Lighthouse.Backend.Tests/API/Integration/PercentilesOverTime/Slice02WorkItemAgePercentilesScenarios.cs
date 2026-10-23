@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             ThenTheDatedAgePercentilesTrendComesBackOrderedByDate(response, new List<AgePercentilePoint>
             {
-                new(DateOnly.FromDateTime(DateTime.Today), P50: 4, P70: 4, P85: 4, P95: 4),
+                new(InstanceClock.Today, P50: 4, P70: 4, P85: 4, P95: 4),
             });
         }
 

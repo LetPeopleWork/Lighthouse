@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         protected int SeededTeamId { get; private set; }
 
-        protected static DateTime Today => DateTime.UtcNow.Date;
+        protected DateTime Today => Factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         protected void StartApplicationWithDeterministicForecast()
         {

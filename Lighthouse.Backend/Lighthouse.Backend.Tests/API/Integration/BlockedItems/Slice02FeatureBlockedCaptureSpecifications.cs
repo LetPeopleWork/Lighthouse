@@ -1,5 +1,8 @@
 using System.Net;
 using System.Text.Json;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
@@ -113,7 +116,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private async Task ThenTheTeamFeatureListReportsTheFeatureBlocked(SeededTeamForPortfolio team, string referenceId)
         {
-            var (status, body) = await GetTeamFeaturesInProgress(team.TeamId, DateTime.UtcNow);
+            Client.AsTeamAdmin(team.TeamId);
+            var response = await Client.GetAsync($"/api/latest/teams/{team.TeamId}/metrics/featuresInProgress?asOfDate={InstanceToday:yyyy-MM-dd}");
+            var (status, body) = (response.StatusCode, await response.Content.ReadAsStringAsync());
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
 
             var item = ItemByReference(body, referenceId);
@@ -121,9 +126,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 $"The scope-free team feature list must keep reporting a feature blocked when any portfolio blocks it (Any read projection). Item: {item}");
         }
 
+        private DateOnly InstanceToday => Factory.Services.GetRequiredService<ILighthouseClock>().Today;
+
         private async Task<JsonElement> GetFeatureFromWip(SeededPortfolio portfolio, string referenceId)
         {
-            var (status, body) = await GetPortfolioWip(portfolio.PortfolioId, DateTime.UtcNow);
+            Client.AsPortfolioAdmin(portfolio.PortfolioId);
+            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolio.PortfolioId}/metrics/wip?asOfDate={InstanceToday:yyyy-MM-dd}");
+            var (status, body) = (response.StatusCode, await response.Content.ReadAsStringAsync());
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
             return ItemByReference(body, referenceId);
         }

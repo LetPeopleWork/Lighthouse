@@ -24,19 +24,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Converters = { new JsonStringEnumConverter() },
         };
 
-        private static DateTime Today => DateTime.UtcNow.Date;
-
         [Test]
         public async Task GetDelivery_FeatureWithFutureBlackoutDays_FeaturePercentileDateStepsOverTheBlackoutSpan()
         {
             var portfolio = await SeedPortfolioWithForecastedFeature();
-            ConfigureBlackoutPeriod(Today.AddDays(3), Today.AddDays(4));
+            ConfigureBlackoutPeriod(InstanceToday.AddDays(3), InstanceToday.AddDays(4));
             await CreateDelivery(portfolio);
 
             var delivery = await GetSingleDelivery(portfolio.Id);
 
             var completionDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
-            Assert.That(completionDate, Is.EqualTo(Today.AddDays(12)));
+            Assert.That(completionDate, Is.EqualTo(InstanceToday.AddDays(12)));
         }
 
         [Test]
@@ -48,20 +46,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var delivery = await GetSingleDelivery(portfolio.Id);
 
             var completionDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
-            Assert.That(completionDate, Is.EqualTo(Today.AddDays(WorkingDaysToCompletion)));
+            Assert.That(completionDate, Is.EqualTo(InstanceToday.AddDays(WorkingDaysToCompletion)));
         }
 
         [Test]
         public async Task GetDelivery_MultiTeamFeatureWithBlackoutDays_StillForecastsPerTeamThenStepsTheWorstCaseDate()
         {
             var portfolio = await SeedPortfolioWithMultiTeamForecastedFeature();
-            ConfigureBlackoutPeriod(Today.AddDays(3), Today.AddDays(4));
+            ConfigureBlackoutPeriod(InstanceToday.AddDays(3), InstanceToday.AddDays(4));
             await CreateDelivery(portfolio);
 
             var delivery = await GetSingleDelivery(portfolio.Id);
 
             var completionDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
-            Assert.That(completionDate, Is.EqualTo(Today.AddDays(12)));
+            Assert.That(completionDate, Is.EqualTo(InstanceToday.AddDays(12)));
         }
 
         private void ConfigureBlackoutPeriod(DateTime start, DateTime end)
@@ -146,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var request = new UpdateDeliveryRequest
             {
                 Name = "Release 1",
-                Date = Today.AddDays(30),
+                Date = InstanceToday.AddDays(30),
                 FeatureIds = featureIds,
                 SelectionMode = DeliverySelectionMode.Manual,
             };

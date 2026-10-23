@@ -3,6 +3,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -31,6 +32,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected HttpClient Client = null!;
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected DateTime SyncDay;
+
+        protected ILighthouseClock InstanceClock => Factory.Services.GetRequiredService<ILighthouseClock>();
 
         [SetUp]
         public void Init()
@@ -196,7 +199,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             // Anchored in UTC: every persisted DateTime goes through UtcDateTimeConverter, which converts a
             // Local-kind value with ToUniversalTime() — a local midnight would land on the previous UTC day
             // and inflate the age by one, exactly as real synced (UTC) work-item dates never would.
-            var startedDate = DateTime.UtcNow.Date.AddDays(-(ageInDays - 1));
+            var startedDate = InstanceClock.TodayAsUtcMidnight.AddDays(-(ageInDays - 1));
             workItemRepository.Add(new WorkItem
             {
                 TeamId = teamId,
