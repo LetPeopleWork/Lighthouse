@@ -447,6 +447,105 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
         }
 
+        [Test]
+        public async Task CreateApiKey_EmptyScope_GrantsNothing()
+        {
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", []);
+
+            using (Assert.EnterMultipleScope())
+            {
+                apiKeyPermissionRepositoryMock.Verify(r => r.Add(It.IsAny<ApiKeyPermission>()), Times.Never);
+                apiKeyPermissionRepositoryMock.Verify(r => r.Save(), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task CreateApiKey_WithScope_SavesTheGrants()
+        {
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            var scope = new List<ApiKeyScopeDto> { new() { Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 12 } };
+
+            await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", scope);
+
+            apiKeyPermissionRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteApiKey_OwnedByTheCaller_RemovesAndSavesIt()
+        {
+            repositoryMock.Setup(r => r.Exists(7)).Returns(true);
+            repositoryMock.Setup(r => r.GetById(7)).Returns(new ApiKey { Id = 7, OwnerSubject = "alice-subject" });
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.DeleteApiKey(7, "alice-subject");
+
+            using (Assert.EnterMultipleScope())
+            {
+                repositoryMock.Verify(r => r.Remove(7), Times.Once);
+                repositoryMock.Verify(r => r.Save(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task DeleteApiKey_KeyVanishesBetweenTheExistenceCheckAndTheRead_ReturnsFalse()
+        {
+            repositoryMock.Setup(r => r.Exists(7)).Returns(true);
+            repositoryMock.Setup(r => r.GetById(7)).Returns((ApiKey?)null);
+
+            var result = await subject.DeleteApiKey(7, "alice-subject");
+
+            Assert.That(result, Is.False);
+        }
+
+        private static List<UserProfile> OwnerCandidates() =>
+        [
+            new UserProfile { Id = 5, Subject = "alice-subject", DisplayName = "Alice", Email = "alice@example.com" },
+            new UserProfile { Id = 6, Subject = "bob-subject", DisplayName = "Bob", Email = "bob@example.com" },
+            new UserProfile { Id = 7, Subject = "carol-subject", DisplayName = "Carol", Email = "" },
+        ];
+
+        [TestCase(5, "bob-subject", "", "alice-subject", TestName = "The linked profile wins over a stale subject")]
+        [TestCase(99, "bob-subject", "", "bob-subject", TestName = "A link to a deleted profile falls back to the subject")]
+        [TestCase(null, null, "Alice", "alice-subject", TestName = "A key with no owner is matched by its creator's display name")]
+        [TestCase(null, null, "BOB@example.com", "bob-subject", TestName = "A key with no owner is matched by its creator's email, ignoring case")]
+        [TestCase(null, null, "", null, TestName = "A key with no owner and no creator stays unlinked")]
+        public async Task ValidateApiKeyWithOwnerAsync_ResolvesTheOwnerFromWhatTheKeyRecords(
+            int? ownerProfileId, string? ownerSubject, string createdByUser, string? expectedSubject)
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 1, KeyHash = hash, Salt = salt, OwnerUserProfileId = ownerProfileId, OwnerSubject = ownerSubject, CreatedByUser = createdByUser };
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            userProfileRepositoryMock.Setup(r => r.GetAll()).Returns(OwnerCandidates());
+
+            var result = await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            Assert.That(result.OwnerSubject, Is.EqualTo(expectedSubject));
+        }
+
+        [Test]
+        public async Task ValidateApiKeyWithOwnerAsync_OwnerFoundByCreator_LinksTheKeyToThatProfileAndSavesIt()
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 1, KeyHash = hash, Salt = salt, CreatedByUser = "Alice" };
+            repositoryMock.Invocations.Clear();
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            userProfileRepositoryMock.Setup(r => r.GetAll()).Returns(OwnerCandidates());
+
+            await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.OwnerUserProfileId, Is.EqualTo(5));
+                Assert.That(key.OwnerSubject, Is.EqualTo("alice-subject"));
+                repositoryMock.Verify(r => r.Save(), Times.Once);
+            }
+        }
+
         private (string plainText, string hash, string salt) GenerateTestKey()
         {
             // Generate a real key+hash using the service to set up test data

@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.TeamData;
@@ -195,6 +196,118 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             CreateSubject().TriggerUpdate(team.Id);
 
             Assert.That(recordedRefresh?.ExecutedAt, Is.EqualTo(Now));
+        }
+
+        [Test]
+        public async Task ExecuteAsync_TeamLastRefreshedExactlyTheConfiguredMinutesAgo_IsRefreshed()
+        {
+            SetupRefreshSettings(10, 360);
+            var team = CreateTeam(Now.AddMinutes(-360));
+            SetupTeams([team]);
+
+            await CreateSubject().StartAsync(CancellationToken.None);
+
+            await WaitUntilVerified(() => teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once));
+        }
+
+        [Test]
+        public void TriggerUpdate_NoPremiumLicense_ThreeTeams_StillRefreshes()
+        {
+            var team = CreateTeam(Now.AddDays(-1));
+            SetupTeams([team, CreateTeam(Now), CreateTeam(Now)]);
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            teamDataServiceMock.Verify(x => x.UpdateTeamData(team), Times.Once);
+        }
+
+        [Test]
+        public void TriggerUpdate_NoPremiumLicense_MoreThanThreeTeams_RefreshesNothingAndReportsWhy()
+        {
+            var team = CreateTeam(Now.AddDays(-1));
+            SetupTeams([team, CreateTeam(Now), CreateTeam(Now), CreateTeam(Now)]);
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                teamDataServiceMock.Verify(x => x.UpdateTeamData(It.IsAny<Team>()), Times.Never);
+                Assert.That(recordedRefresh, Is.Null);
+                Assert.That(ReadErrors(), Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_TeamNoLongerExists_DoesNothingAndDoesNotFail()
+        {
+            SetupTeams([CreateTeam(Now)]);
+
+            CreateSubject().TriggerUpdate(9999);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.Null);
+                Assert.That(recordedRefresh, Is.Null);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefreshSucceeds_TellsConnectionHealthItSucceeded()
+        {
+            var health = RegisterConnectionHealth();
+            var team = CreateTeam(Now.AddDays(-1));
+            SetupTeams([team]);
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                health.Verify(x => x.RecordRefreshSucceededAsync(team.WorkTrackingSystemConnection), Times.Once);
+                health.Verify(x => x.RecordRefreshFailedAsync(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefreshFails_TellsConnectionHealthItFailed()
+        {
+            var health = RegisterConnectionHealth();
+            var team = CreateTeam(Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock.Setup(x => x.UpdateTeamData(team)).ThrowsAsync(new InvalidOperationException("boom"));
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                health.Verify(x => x.RecordRefreshFailedAsync(team.WorkTrackingSystemConnection), Times.Once);
+                health.Verify(x => x.RecordRefreshSucceededAsync(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_Cancelled_TellsConnectionHealthNothing()
+        {
+            var health = RegisterConnectionHealth();
+            var team = CreateTeam(Now.AddDays(-1));
+            SetupTeams([team]);
+            teamDataServiceMock.Setup(x => x.UpdateTeamData(team)).ThrowsAsync(new OperationCanceledException());
+
+            CreateSubject().TriggerUpdate(team.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                health.Verify(x => x.RecordRefreshFailedAsync(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+                health.Verify(x => x.RecordRefreshSucceededAsync(It.IsAny<WorkTrackingSystemConnection>()), Times.Never);
+            }
+        }
+
+        private Mock<IConnectionHealthService> RegisterConnectionHealth()
+        {
+            var health = new Mock<IConnectionHealthService>();
+            health.Setup(x => x.RecordRefreshSucceededAsync(It.IsAny<WorkTrackingSystemConnection>())).Returns(Task.CompletedTask);
+            health.Setup(x => x.RecordRefreshFailedAsync(It.IsAny<WorkTrackingSystemConnection>())).Returns(Task.CompletedTask);
+            SetupServiceProviderMock(health.Object);
+            return health;
         }
 
         private void SetupRefreshSettings(int interval, int refreshAfter)

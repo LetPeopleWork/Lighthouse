@@ -345,6 +345,94 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        private static readonly string[] DefaultToDoStates = ["New", "Proposed", "To Do"];
+
+        private static readonly string[] DefaultDoingStates = ["Active", "Resolved", "In Progress", "Committed"];
+
+        private static readonly string[] DefaultDoneStates = ["Done", "Closed"];
+
+        private static readonly string[] OwnedCategoryValues = ["S", "M"];
+
+        [Test]
+        public void NewWorkTrackingSystemOptionsOwner_StartsWithTheCommonStateNamesAndNoQuery()
+        {
+            var subject = CreateSubject();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ToDoStates, Is.EqualTo(DefaultToDoStates));
+                Assert.That(subject.DoingStates, Is.EqualTo(DefaultDoingStates));
+                Assert.That(subject.DoneStates, Is.EqualTo(DefaultDoneStates));
+                Assert.That(subject.DataRetrievalValue, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void FollowsConnectionDefault_AnOwnerThatOffersNoDefaults_FollowsNone()
+        {
+            var subject = CreateSubject();
+
+            Assert.That(Enum.GetValues<ConnectionDefaultSetting>().Where(subject.FollowsConnectionDefault), Is.Empty);
+        }
+
+        [Test]
+        public void OwnEstimation_StoresTheWholeBundleAsTheOwnersOwn()
+        {
+            var subject = CreateSubject();
+
+            subject.OwnEstimation(new EstimationBundle(12, "Points", true, ["S", "M"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.EstimationSource, Is.EqualTo(SettingSource.Own));
+                Assert.That(subject.OwnEstimationAdditionalFieldDefinitionId, Is.EqualTo(12));
+                Assert.That(subject.OwnEstimationUnit, Is.EqualTo("Points"));
+                Assert.That(subject.OwnUseNonNumericEstimation, Is.True);
+                Assert.That(subject.OwnEstimationCategoryValues, Is.EqualTo(OwnedCategoryValues));
+            }
+        }
+
+        [Test]
+        public void RefreshUpdateTime_RecordsTheGivenInstant_AndResetForgetsIt()
+        {
+            var subject = CreateSubject();
+            var refreshedAt = new DateTime(2026, 7, 27, 23, 30, 0, DateTimeKind.Utc);
+
+            subject.RefreshUpdateTime(refreshedAt);
+            var afterRefresh = subject.UpdateTime;
+            subject.ResetUpdateTime();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(afterRefresh, Is.EqualTo(refreshedAt));
+                Assert.That(subject.UpdateTime, Is.EqualTo(DateTime.MinValue));
+            }
+        }
+
+        [TestCase("New", "Done", true)]
+        [TestCase("Jellybean", "Done", false)]
+        [TestCase("New", "Jellybean", false)]
+        [TestCase("Nothing", "Done", false)]
+        [TestCase("New", "Nothing", false)]
+        [TestCase("Partly", "Done", false)]
+        [TestCase("New", "Partly", false)]
+        [TestCase("Started", "Finished", true)]
+        public void IsCycleTimeDefinitionValid_NeedsBothBoundariesToNameOnlyStatesTheOwnerKnows(string start, string end, bool expected)
+        {
+            var subject = CreateSubject();
+            subject.StateMappings =
+            [
+                new StateMapping { Name = "Nothing", States = [] },
+                new StateMapping { Name = "Partly", States = ["New", "Jellybean"] },
+                new StateMapping { Name = "Started", States = ["New", "Active"] },
+                new StateMapping { Name = "Finished", States = ["Done", "Closed"] },
+            ];
+
+            var valid = subject.IsCycleTimeDefinitionValid(new CycleTimeDefinition { Name = "Lead", StartState = start, EndState = end });
+
+            Assert.That(valid, Is.EqualTo(expected));
+        }
+
         // The setter is private because only EF, loading a stored row, writes the value without choosing a source.
         private static void StoreOwnParentOverrideAsReadFromTheDatabase(WorkTrackingSystemOptionsOwner owner, int fieldId)
             => typeof(WorkTrackingSystemOptionsOwner)

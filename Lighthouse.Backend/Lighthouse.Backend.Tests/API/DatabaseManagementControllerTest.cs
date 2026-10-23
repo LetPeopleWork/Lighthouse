@@ -91,7 +91,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var result = await subject.CreateBackup(new DatabaseManagementController.BackupRequest(""));
 
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("Password is required for backup."));
         }
 
         [Test]
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var result = await subject.RestoreBackup(null!, "pw");
 
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("A backup file is required."));
         }
 
         [Test]
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var result = await subject.RestoreBackup(fileMock.Object, "");
 
-            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("Password is required for restore."));
         }
 
         [Test]

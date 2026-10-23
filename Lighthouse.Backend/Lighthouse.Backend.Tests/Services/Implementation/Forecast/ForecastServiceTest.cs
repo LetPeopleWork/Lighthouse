@@ -577,6 +577,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Assert.That(forecast.HasSufficientData, Is.False);
         }
 
+        [Test]
+        public void HowMany_SimulatesExactlyTheConfiguredNumberOfRuns()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), 7);
+
+            Assert.That(forecast.TotalTrials, Is.EqualTo(ForecastSimulationLimits.Default.Trials));
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_ForecastsAFeatureSharedWithATeamOutsideThePortfolio_AndSavesIt()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var portfolioTeam = CreateTeam(1, [1]);
+            var otherTeam = CreateTeam(1, [1]);
+            var ownFeature = SetupFeature(portfolioTeam, 5);
+            var sharedFeature = SetupFeature([(portfolioTeam, 3, 3), (otherTeam, 4, 4)]);
+            SetupFeatures(ownFeature, sharedFeature);
+
+            await subject.UpdateForecastsForPortfolio(CreatePortfolio(ownFeature));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(sharedFeature.Forecasts, Is.Not.Empty);
+                featureRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
         private Feature SetupFeature(Team team, int remainingItems)
         {
             return SetupFeature([(team, remainingItems, remainingItems)]);

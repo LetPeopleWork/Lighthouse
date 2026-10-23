@@ -10,6 +10,11 @@ using Lighthouse.Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.Time.Testing;
+using System.IO.Compression;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -22,6 +27,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private DatabaseOperationTracker tracker;
         private ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses;
         private DatabaseManagementService subject;
+        private Mock<ISeeder> seederMock;
+
+        private static readonly DateTimeOffset BackupInstant = new(2026, 7, 27, 23, 30, 0, TimeSpan.Zero);
 
         [SetUp]
         public void SetUp()
@@ -32,6 +40,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             providerMock.Setup(p => p.RecycleConnection());
 
             serviceProviderMock = new Mock<IServiceProvider>();
+            seederMock = new Mock<ISeeder>();
+            seederMock.Setup(s => s.Seed()).Returns(Task.CompletedTask);
 
             // MigrateAndSeedDatabase creates a scope — wire up IServiceScope + IServiceScopeFactory
             var scopeMock = new Mock<IServiceScope>();
@@ -61,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             serviceProviderMock
                 .Setup(sp => sp.GetService(typeof(IEnumerable<ISeeder>)))
-                .Returns(Enumerable.Empty<ISeeder>());
+                .Returns(new[] { seederMock.Object });
 
             updateStatuses = new ConcurrentDictionary<UpdateKey, UpdateStatus>();
             gate = new DatabaseMaintenanceGate(new InProcessUpdateStatusStore(updateStatuses, Clocks.SystemUtc));
@@ -74,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 tracker,
                 loggerMock.Object,
                 serviceProviderMock.Object,
-                TimeProvider.System);
+                new FakeTimeProvider(BackupInstant));
         }
 
         [Test]
@@ -374,6 +384,308 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var status = subject.GetOperationStatus("nonexistent");
 
             Assert.That(status, Is.Null);
+        }
+
+        private const string Password = "password123";
+
+        private const string WrongPasswordReason = "Failed to decrypt the backup file. The password may be incorrect or the file may be corrupted.";
+
+        private static readonly string[] EveryBackedUpFile = ["lighthouse.db", "nested/wal.log", "manifest.json"];
+
+        private static readonly string[] ManifestKeysWithoutServerVersion = ["provider", "createdAt", "appVersion"];
+
+        private const string NotABackupReason = "Failed to extract the backup archive. The file may be corrupted or not a valid backup.";
+
+        [Test]
+        public async Task CreateBackup_ThenRestoringIt_HandsTheProviderBackExactlyWhatItBackedUp()
+        {
+            providerMock.Setup(p => p.GetServerVersion()).Returns("16.2");
+
+            var restored = await BackUpAndRestore();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(restored.Restore.State, Is.EqualTo(DatabaseOperationState.Completed));
+                Assert.That(restored.Files.Keys, Is.EquivalentTo(EveryBackedUpFile));
+                Assert.That(restored.Files["lighthouse.db"], Is.EqualTo("database bytes"));
+                Assert.That(restored.Files["nested/wal.log"], Is.EqualTo("write-ahead log"));
+            }
+        }
+
+        [Test]
+        public async Task CreateBackup_WritesAManifestNamingTheProviderTheInstantTheVersionAndTheServer()
+        {
+            providerMock.Setup(p => p.GetServerVersion()).Returns("16.2");
+
+            var restored = await BackUpAndRestore();
+            var manifest = JsonSerializer.Deserialize<Dictionary<string, string>>(restored.Files["manifest.json"])!;
+
+            Assert.That(manifest, Is.EquivalentTo(new Dictionary<string, string>
+            {
+                ["provider"] = "sqlite",
+                ["createdAt"] = BackupInstant.UtcDateTime.ToString("O"),
+                ["appVersion"] = typeof(DatabaseManagementService).Assembly.GetName().Version!.ToString(),
+                ["serverVersion"] = "16.2",
+            }));
+        }
+
+        [Test]
+        public async Task CreateBackup_ProviderWithoutAServerVersion_LeavesItOutOfTheManifest()
+        {
+            providerMock.Setup(p => p.GetServerVersion()).Returns((string?)null);
+
+            var restored = await BackUpAndRestore();
+            var manifest = JsonSerializer.Deserialize<Dictionary<string, string?>>(restored.Files["manifest.json"])!;
+
+            Assert.That(manifest.Keys, Is.EquivalentTo(ManifestKeysWithoutServerVersion));
+        }
+
+        [Test]
+        public async Task BackupAndRestore_LeaveNoWorkingFilesBehind()
+        {
+            var restored = await BackUpAndRestore();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Directory.Exists(restored.BackupWorkingDirectory), Is.False, "backup working directory");
+                Assert.That(File.Exists(restored.ArtifactPath + ".tmp"), Is.False, "unencrypted intermediate zip");
+                Assert.That(Directory.Exists(restored.RestoreWorkingDirectory), Is.False, "restore working directory");
+            }
+        }
+
+        [Test]
+        public async Task BackupAndRestore_ReportThemselvesAsExecutingWhileTheProviderWorks()
+        {
+            var restored = await BackUpAndRestore();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(restored.StateWhileBackingUp, Is.EqualTo(DatabaseOperationState.Executing));
+                Assert.That(restored.StateWhileRestoring, Is.EqualTo(DatabaseOperationState.Executing));
+            }
+        }
+
+        [Test]
+        public async Task ClearDatabase_ReportsItselfAsExecutingWhileTheProviderWorks()
+        {
+            DatabaseOperationState? stateWhileClearing = null;
+            providerMock.Setup(p => p.ClearDatabase())
+                .Callback(() => stateWhileClearing = subject.GetCapabilityStatus().ActiveOperation?.State)
+                .Returns(Task.CompletedTask);
+
+            await subject.ClearDatabase();
+
+            Assert.That(stateWhileClearing, Is.EqualTo(DatabaseOperationState.Executing));
+        }
+
+        [Test]
+        public async Task ClearDatabase_Success_SeedsTheFreshDatabase()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).Returns(Task.CompletedTask);
+
+            await subject.ClearDatabase();
+
+            seederMock.Verify(s => s.Seed(), Times.Once);
+        }
+
+        [Test]
+        public async Task RestoreBackup_ProviderThrows_ReportsTheFailureAndItsReason()
+        {
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>())).ThrowsAsync(new InvalidOperationException("Disk full"));
+
+            using var stream = EncryptedBackupStream.Create(Password);
+            var status = await subject.RestoreBackup(stream, Password);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo("Disk full"));
+            }
+        }
+
+        [Test]
+        public async Task ClearDatabase_ProviderThrows_ReportsTheFailureAndItsReason()
+        {
+            providerMock.Setup(p => p.ClearDatabase()).ThrowsAsync(new InvalidOperationException("Disk full"));
+
+            var status = await subject.ClearDatabase();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo("Disk full"));
+            }
+        }
+
+        [Test]
+        public async Task RestoreBackup_WrongPassword_FailsWithoutTouchingTheDatabase()
+        {
+            using var stream = EncryptedBackupStream.Create(Password);
+
+            var status = await subject.RestoreBackup(stream, "not the password");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                // A wrong key usually breaks the padding, but now and then the padding survives and the zip is what fails.
+                Assert.That(status.FailureReason, Is.AnyOf(WrongPasswordReason, NotABackupReason));
+                providerMock.Verify(p => p.RestoreBackup(It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task RestoreBackup_EncryptedFileThatIsNotAZip_FailsAsNotAValidBackup()
+        {
+            using var stream = new MemoryStream(Encrypt(Encoding.UTF8.GetBytes("this is not a zip archive at all"), Password));
+
+            var status = await subject.RestoreBackup(stream, Password);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo(NotABackupReason));
+                providerMock.Verify(p => p.RestoreBackup(It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task RestoreBackup_FileTooShortToCarryTheEncryptionHeader_FailsSayingSo()
+        {
+            using var stream = new MemoryStream([1, 2, 3]);
+
+            var status = await subject.RestoreBackup(stream, Password);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo("Invalid backup file: too short to contain encryption header."));
+            }
+        }
+
+        [Test]
+        public async Task RestoreBackup_ArchiveWithAnEntryEscapingTheTargetDirectory_IsRefused()
+        {
+            using var stream = new MemoryStream(Encrypt(ZipWithEntry("../escaped.txt"), Password));
+
+            var status = await subject.RestoreBackup(stream, Password);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(status.State, Is.EqualTo(DatabaseOperationState.Failed));
+                Assert.That(status.FailureReason, Is.EqualTo("Zip Slip detected: ../escaped.txt"));
+                providerMock.Verify(p => p.RestoreBackup(It.IsAny<string>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public void GetBackupArtifact_UnknownOperation_IsNotFound()
+        {
+            var thrown = Assert.Throws<FileNotFoundException>(() => subject.GetBackupArtifact("no-such-op"));
+
+            Assert.That(thrown.Message, Is.EqualTo("Backup artifact for operation no-such-op not found."));
+        }
+
+        [Test]
+        public async Task GetBackupArtifact_ArtifactGoneFromDisk_IsNotFound()
+        {
+            providerMock.Setup(p => p.CreateBackup(It.IsAny<string>())).ReturnsAsync("backup.db");
+            var backup = await subject.CreateBackup(Password);
+            string artifactPath;
+            using (var artifact = (FileStream)subject.GetBackupArtifact(backup.OperationId))
+            {
+                artifactPath = artifact.Name;
+            }
+
+            File.Delete(artifactPath);
+
+            var thrown = Assert.Throws<FileNotFoundException>(() => subject.GetBackupArtifact(backup.OperationId));
+            Assert.That(thrown.Message, Is.EqualTo($"Backup artifact for operation {backup.OperationId} not found."));
+        }
+
+        private sealed record RoundTrip(
+            DatabaseOperationStatus Restore,
+            Dictionary<string, string> Files,
+            string BackupWorkingDirectory,
+            string RestoreWorkingDirectory,
+            string ArtifactPath,
+            DatabaseOperationState? StateWhileBackingUp,
+            DatabaseOperationState? StateWhileRestoring);
+
+        private async Task<RoundTrip> BackUpAndRestore()
+        {
+            var backupDirectory = string.Empty;
+            DatabaseOperationState? stateWhileBackingUp = null;
+            providerMock.Setup(p => p.CreateBackup(It.IsAny<string>()))
+                .Returns<string>(async directory =>
+                {
+                    backupDirectory = directory;
+                    stateWhileBackingUp = subject.GetCapabilityStatus().ActiveOperation?.State;
+                    await File.WriteAllTextAsync(Path.Combine(directory, "lighthouse.db"), "database bytes");
+                    Directory.CreateDirectory(Path.Combine(directory, "nested"));
+                    await File.WriteAllTextAsync(Path.Combine(directory, "nested", "wal.log"), "write-ahead log");
+                    Directory.CreateDirectory(Path.Combine(directory, "empty"));
+                    return "lighthouse.db";
+                });
+
+            var files = new Dictionary<string, string>();
+            var restoreDirectory = string.Empty;
+            DatabaseOperationState? stateWhileRestoring = null;
+            providerMock.Setup(p => p.RestoreBackup(It.IsAny<string>()))
+                .Returns<string>(async directory =>
+                {
+                    restoreDirectory = Path.GetDirectoryName(directory)!;
+                    stateWhileRestoring = subject.GetCapabilityStatus().ActiveOperation?.State;
+                    foreach (var file in Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories))
+                    {
+                        var relative = Path.GetRelativePath(directory, file).Replace(Path.DirectorySeparatorChar, '/');
+                        files[relative] = await File.ReadAllTextAsync(file);
+                    }
+                });
+
+            var backup = await subject.CreateBackup(Password);
+            Assert.That(backup.State, Is.EqualTo(DatabaseOperationState.Completed), backup.FailureReason);
+
+            using var copy = new MemoryStream();
+            string artifactPath;
+            using (var artifact = (FileStream)subject.GetBackupArtifact(backup.OperationId))
+            {
+                artifactPath = artifact.Name;
+                await artifact.CopyToAsync(copy);
+            }
+
+            copy.Position = 0;
+            var restore = await subject.RestoreBackup(copy, Password);
+
+            return new RoundTrip(restore, files, backupDirectory, restoreDirectory, artifactPath, stateWhileBackingUp, stateWhileRestoring);
+        }
+
+        private static byte[] ZipWithEntry(string entryName)
+        {
+            using var buffer = new MemoryStream();
+            using (var archive = new ZipArchive(buffer, ZipArchiveMode.Create, leaveOpen: true))
+            {
+                var entry = archive.CreateEntry(entryName);
+                using var writer = new StreamWriter(entry.Open());
+                writer.Write("payload");
+            }
+
+            return buffer.ToArray();
+        }
+
+        private static byte[] Encrypt(byte[] content, string password)
+        {
+            var key = Rfc2898DeriveBytes.Pbkdf2(password, Encoding.UTF8.GetBytes("LighthouseDbBackup"), 100_000, HashAlgorithmName.SHA256, 32);
+            using var aes = Aes.Create();
+            aes.Key = key;
+
+            using var output = new MemoryStream();
+            output.Write(aes.IV);
+            using (var crypto = new CryptoStream(output, aes.CreateEncryptor(), CryptoStreamMode.Write, leaveOpen: true))
+            {
+                crypto.Write(content);
+            }
+
+            return output.ToArray();
         }
     }
 }

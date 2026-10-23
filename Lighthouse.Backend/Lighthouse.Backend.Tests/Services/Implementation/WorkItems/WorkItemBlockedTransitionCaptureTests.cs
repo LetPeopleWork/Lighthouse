@@ -88,6 +88,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        public async Task WorkItemBlockedCaptureHandler_OnlyAnOpenTransitionOfThatItemCountsAsAlreadyBlocked()
+        {
+            var handler = new WorkItemBlockedTransitionCaptureHandler(transitionRepositoryMock.Object, time, captureLoggerMock.Object);
+            StoreTransitions(
+                new WorkItemBlockedTransition { Id = 1, WorkItemId = 43, LeftAt = null },
+                new WorkItemBlockedTransition { Id = 2, WorkItemId = 42, LeftAt = TheInstantTheClockReads.UtcDateTime.AddDays(-1) });
+
+            await handler.HandleAsync(new WorkItemBlocked(42, "Blocked"), CancellationToken.None);
+
+            transitionRepositoryMock.Verify(r => r.Add(It.Is<WorkItemBlockedTransition>(t => t.WorkItemId == 42 && t.LeftAt == null)), Times.Once);
+        }
+
+        [Test]
+        public async Task WorkItemUnblockedCaptureHandler_ClosesTheOpenTransitionOfThatItemAndNoOther()
+        {
+            var closeHandler = new WorkItemBlockedTransitionCloseHandler(transitionRepositoryMock.Object, time, closeLoggerMock.Object);
+            var earlierClose = TheInstantTheClockReads.UtcDateTime.AddDays(-1);
+            var otherItemsOpen = new WorkItemBlockedTransition { Id = 1, WorkItemId = 43, LeftAt = null };
+            var alreadyClosed = new WorkItemBlockedTransition { Id = 2, WorkItemId = 42, LeftAt = earlierClose };
+            var open = new WorkItemBlockedTransition { Id = 3, WorkItemId = 42, LeftAt = null };
+            StoreTransitions(otherItemsOpen, alreadyClosed, open);
+
+            await closeHandler.HandleAsync(new WorkItemUnblocked(42), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(open.LeftAt, Is.EqualTo(TheInstantTheClockReads.UtcDateTime));
+                Assert.That(otherItemsOpen.LeftAt, Is.Null);
+                Assert.That(alreadyClosed.LeftAt, Is.EqualTo(earlierClose));
+            }
+        }
+
+        private void StoreTransitions(params WorkItemBlockedTransition[] stored)
+        {
+            transitionRepositoryMock
+                .Setup(r => r.GetByPredicate(It.IsAny<Func<WorkItemBlockedTransition, bool>>()))
+                .Returns((Func<WorkItemBlockedTransition, bool> predicate) => stored.FirstOrDefault(predicate));
+        }
+
+        [Test]
         public async Task WorkItemUnblockedCaptureHandler_ClosesOpenTransition()
         {
             var closeHandler = new WorkItemBlockedTransitionCloseHandler(

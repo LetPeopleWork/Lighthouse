@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -545,6 +546,63 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     "What stopped the refresh is explained on the round's summary line and the failure itself is "
                     + "reported by the queue; a third account of it here is the same broken credential read twice.");
             }
+        }
+
+        [Test]
+        public async Task ExecuteAsync_PortfolioLastRefreshedExactlyTheConfiguredMinutesAgo_IsRefreshed()
+        {
+            SetupRefreshSettings(10, 360);
+            var project = CreateProject(Now.AddMinutes(-360));
+            SetupProjects(project);
+
+            await CreateSubject().StartAsync(CancellationToken.None);
+
+            await WaitForEnqueue(project.Id);
+        }
+
+        [Test]
+        public void TriggerUpdate_NoPremiumLicense_MoreThanOnePortfolio_RefreshesNothingAndReportsWhy()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project, CreateProject(Now));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var errors = loggerMock.Invocations.Count(i => i.Arguments[0] is LogLevel.Error);
+            using (Assert.EnterMultipleScope())
+            {
+                workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()), Times.Never);
+                Assert.That(recordedRefresh, Is.Null);
+                Assert.That(errors, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_PortfolioNoLongerExists_DoesNothingAndDoesNotFail()
+        {
+            SetupProjects(CreateProject(Now));
+
+            CreateSubject().TriggerUpdate(9999);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.Null);
+                Assert.That(recordedRefresh, Is.Null);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefreshSucceeds_TellsConnectionHealthItSucceeded()
+        {
+            var health = new Mock<IConnectionHealthService>();
+            health.Setup(x => x.RecordRefreshSucceededAsync(It.IsAny<WorkTrackingSystemConnection>())).Returns(Task.CompletedTask);
+            SetupServiceProviderMock(health.Object);
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            health.Verify(x => x.RecordRefreshSucceededAsync(project.WorkTrackingSystemConnection), Times.Once);
         }
 
         [Test]
