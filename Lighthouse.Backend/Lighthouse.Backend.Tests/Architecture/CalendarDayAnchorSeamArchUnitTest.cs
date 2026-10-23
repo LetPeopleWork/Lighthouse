@@ -11,8 +11,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     ///
     /// Three source-text rules and one type rule:
     /// <list type="number">
-    /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c> or <c>UtcNow.Date</c>
-    /// anywhere in the production project outside the clock adapter;</item>
+    /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c>, <c>UtcNow.Date</c>,
+    /// <c>GetUtcNow().Date</c> or <c>UtcDateTime.Date</c> anywhere in the production project outside
+    /// the clock adapter;</item>
     /// <item>each tracker history cutoff that deliberately stays UTC still exists and still states why;</item>
     /// <item>no persisted snapshot entity keys its day with an instant.</item>
     /// </list>
@@ -33,6 +34,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string DateTimeToday = "DateTime.Today";
 
         private const string UtcNowDate = "UtcNow.Date";
+
+        private const string TimeProviderUtcDate = "GetUtcNow().Date";
+
+        private const string InstantUtcDate = "UtcDateTime.Date";
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -71,14 +76,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const int KnownSnapshotEntityCount = 4;
 
         /// <summary>
-        /// The three spellings of the defect. Scanned independently of one another, so a line such as
+        /// The spellings of the defect. Scanned independently of one another, so a line such as
         /// <c>DateOnly.FromDateTime(DateTime.UtcNow.Date)</c> reports both of the patterns it carries.
+        /// The last two are how a UTC day is written once the ambient clock cannot be read: taken
+        /// from an injected <see cref="TimeProvider"/>, or from any instant's UTC form. Both are the
+        /// UTC calendar day, which is not the instance's day for part of every night.
         /// </summary>
         private static readonly string[] AnchorPatterns =
         [
             DateOnlyFromDateTime,
             DateTimeToday,
             UtcNowDate,
+            TimeProviderUtcDate,
+            InstantUtcDate,
         ];
 
         /// <summary>
@@ -257,6 +267,20 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 Assert.That(described, Has.Count.EqualTo(1));
                 Assert.That(described[0], Does.Contain("API/BrandNewController.cs"));
+            }
+        }
+
+        [TestCase("var today = timeProvider.GetUtcNow().Date;", TimeProviderUtcDate)]
+        [TestCase("var today = clock.Now.UtcDateTime.Date;", InstantUtcDate)]
+        [TestCase("var today = timeProvider.GetUtcNow().UtcDateTime.Date;", InstantUtcDate)]
+        public void Scanner_UtcDayFromAnInjectedClock_IsReported(string line, string expectedAnchor)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(expectedAnchor));
             }
         }
 
