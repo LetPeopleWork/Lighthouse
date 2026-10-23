@@ -8,14 +8,7 @@ import type { IAdditionalFieldDefinition } from "../../../../models/WorkTracking
 import type { IWorkTrackingSystemConnection } from "../../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import ConnectionDefaultFieldSelect from "../../ConnectionDefault/ConnectionDefaultFieldSelect";
-import {
-	followOrOwn,
-	trackerOf,
-} from "../../ConnectionDefault/connectionDefaultEntry";
-import {
-	directionTip,
-	directionTipTermsFrom,
-} from "../../ConnectionDefault/fieldDirectionTips";
+import { followOrOwn } from "../../ConnectionDefault/connectionDefaultEntry";
 import InputGroup from "../../InputGroup/InputGroup";
 
 interface DependenciesComponentProps {
@@ -38,11 +31,6 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const dependencyTip = directionTip(
-		"dependencyFieldForPortfolios",
-		trackerOf(projectSettings, connection),
-		directionTipTermsFrom(getTerm),
-	);
 	return (
 		<InputGroup title="Dependency Settings" initiallyExpanded={false}>
 			<Grid size={{ xs: 12 }}>
@@ -64,7 +52,6 @@ const DependenciesComponent: React.FC<DependenciesComponentProps> = ({
 						"dependencyFieldSource",
 						"dependencyOverrideAdditionalFieldDefinitionId",
 					)}
-					info={dependencyTip}
 				/>
 				<Typography variant="caption" color="text.secondary">
 					{`Read what each ${featureTerm} waits on from this field, separated by commas or semicolons, instead of from the links in your work tracking system.`}

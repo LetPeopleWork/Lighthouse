@@ -8,15 +8,16 @@ import type {
 	ConnectionDefaultName,
 	IWorkTrackingSystemConnection,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import FormSelectField, {
-	type FieldInfo,
-} from "../FormSelectField/FormSelectField";
+import { useTerminology } from "../../../services/TerminologyContext";
+import FormSelectField from "../FormSelectField/FormSelectField";
 import {
 	FollowTheConnection,
 	followsTheConnection,
 	nameOfTheDefault,
 	trackerHoldingTheDefault,
+	trackerOf,
 } from "./connectionDefaultEntry";
+import { directionTip, directionTipTermsFrom } from "./fieldDirectionTips";
 
 type FieldChoice = number | typeof FollowTheConnection;
 
@@ -31,7 +32,6 @@ interface ConnectionDefaultFieldSelectProps {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	onFollow: () => void;
 	onOwn: (field: number | null) => void;
-	info?: FieldInfo;
 }
 
 /** A field list that offers the connection's default above the fields, where the connection holds one. */
@@ -48,8 +48,13 @@ const ConnectionDefaultFieldSelect: React.FC<
 	additionalFieldDefinitions,
 	onFollow,
 	onOwn,
-	info,
 }) => {
+	const { getTerm } = useTerminology();
+	const info = directionTip(
+		theDefault,
+		trackerOf(settings, connection),
+		directionTipTermsFrom(getTerm),
+	);
 	const trackerName = trackerHoldingTheDefault(
 		settings,
 		connection,

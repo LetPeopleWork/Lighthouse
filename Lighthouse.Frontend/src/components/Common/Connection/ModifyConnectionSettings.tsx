@@ -44,7 +44,6 @@ import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import {
-	type DirectionTipField,
 	directionTip,
 	directionTipTermsFrom,
 } from "../ConnectionDefault/fieldDirectionTips";
@@ -159,8 +158,6 @@ const WhereEachDefaultSits: Record<
 		readWhen: ReadWhen;
 		changes?: WhatChanges;
 		label: (featureTerm: string) => string;
-		// A field read off one end of a link carries a tip saying which end, since either end looks plausible.
-		tip?: true;
 	}
 > = {
 	parentOverrideForTeams: {
@@ -168,7 +165,6 @@ const WhereEachDefaultSits: Record<
 		readWhen: "updating",
 		changes: "parents",
 		label: () => "Parent Override Field",
-		tip: true,
 	},
 	estimationForTeams: {
 		group: "teams",
@@ -180,14 +176,12 @@ const WhereEachDefaultSits: Record<
 		readWhen: "updating",
 		changes: "parents",
 		label: () => "Parent Override Field",
-		tip: true,
 	},
 	dependencyFieldForPortfolios: {
 		group: "portfolios",
 		readWhen: "updating",
 		changes: "dependencies",
 		label: () => "Dependency Field",
-		tip: true,
 	},
 	sizeEstimateFieldForPortfolios: {
 		group: "portfolios",
@@ -207,9 +201,6 @@ const WhereEachDefaultSits: Record<
 		label: () => "Estimation Field",
 	},
 };
-
-const carriesTip = (name: ConnectionDefaultName): name is DirectionTipField =>
-	WhereEachDefaultSits[name].tip === true;
 
 // A server that sends no groups is read as if every owner followed a single default.
 const followerGroupsOf = (usage: IConnectionUsage): IFollowerGroup[] =>
@@ -429,11 +420,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 									value={chosenFieldOf(name)}
 									options={fieldOptions}
 									onChange={(fieldId) => onChange(name, fieldId)}
-									info={
-										carriesTip(name)
-											? directionTip(name, tracker, tipTerms)
-											: undefined
-									}
+									info={directionTip(name, tracker, tipTerms)}
 								/>
 							),
 						)}

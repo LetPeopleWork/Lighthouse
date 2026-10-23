@@ -5,7 +5,7 @@ import type {
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 /** The settings whose field is read off one end of a link, so the tip has to say which end. */
-export type DirectionTipField = Extract<
+type DirectionTipField = Extract<
 	ConnectionDefaultName,
 	| "parentOverrideForTeams"
 	| "parentOverrideForPortfolios"
@@ -77,17 +77,24 @@ const directions: Record<DirectionTipField, FieldDirection> = {
 	},
 };
 
+const readsOneEndOfALink = (
+	setting: ConnectionDefaultName,
+): setting is DirectionTipField => setting in directions;
+
 /**
- * Which end of a link the field reads, with the tracker's own example where the tracker is known, and where the
- * docs explain it. One place for the copy, because the connection page and the Team and Portfolio settings both
- * show it and must never drift apart.
+ * Which end of a link the setting's field reads, with the tracker's own example where the tracker is known, and
+ * where the docs explain it; undefined for a setting whose field reads no link. One place for the copy, because
+ * the connection page and the Team and Portfolio settings both show it and must never drift apart.
  */
 export const directionTip = (
-	field: DirectionTipField,
+	setting: ConnectionDefaultName,
 	tracker: WorkTrackingSystemType | undefined,
 	terms: DirectionTipTerms,
-): DirectionTip => {
-	const direction = directions[field];
+): DirectionTip | undefined => {
+	if (!readsOneEndOfALink(setting)) {
+		return undefined;
+	}
+	const direction = directions[setting];
 	const example = tracker ? direction.examples[tracker] : undefined;
 	return {
 		text: [direction.whichEnd(terms), example, direction.none]
