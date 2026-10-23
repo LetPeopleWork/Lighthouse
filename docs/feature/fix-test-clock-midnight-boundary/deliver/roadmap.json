@@ -1,0 +1,399 @@
+{
+  "roadmap": {
+    "project_id": "fix-test-clock-midnight-boundary",
+    "goal": "Make the backend suite's calendar-day behaviour independent of the hour CI runs: one frozen, boundary-placed test instant shared by the integration host and TestToday, no ambient local clock in tests, and every production clock read going through TimeProvider / ILighthouseClock (RCA steps 1-6; step 7, zoning TestToday to Local, is out of scope).",
+    "created_at": "2026-10-23T09:00:00Z",
+    "total_steps": 11,
+    "methodology": "bugfix-rca",
+    "source": "docs/feature/fix-test-clock-midnight-boundary/rca.md",
+    "out_of_scope": [
+      "RCA step 7: set TestToday.Clock zone to TimeZoneInfo.Local (separate story)",
+      "Frontend and E2E suites (already pinned through localDate.ts)",
+      "Hosts not built on TestWebApplicationFactory (HealthCheckTestHost, TelemetryTestHost, ClusterSubstrateProbeRegistrationTest, ServiceProviderValidationTest, EncryptionBootstrapOrderTests, PostgresEmbedFactory) stay on real time",
+      "Lighthouse.Migrations.Postgres / Lighthouse.Migrations.Sqlite projects are not put under either ban"
+    ],
+    "standing_rules": [
+      "Every step leaves the filtered backend suite green on its own (dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"); dotnet build with zero warnings (TreatWarningsAsErrors, Directory.Build.props).",
+      "Comments: plain-language why only; never cite RCA step numbers, ADR numbers or 'root cause D'. Fix offending comments in touched files (several existing comments cite 'root cause D' / 'Bug #5567').",
+      "Consult docs/ci-learnings.md lines ~205-245 and ~698-705 (calendar days vs instants, Zurich pin) before each step.",
+      "BannedApiAnalyzers (steps 01-07 and 01-11): explicit Version on the PackageReference (no central package management in this repo), PrivateAssets=all, per-csproj AdditionalFiles only - never Directory.Build.props, so the migration projects are not banned. Pick one released version older than the NuGet min-release-age rule and use it in both steps."
+    ]
+  },
+  "phases": [
+    {
+      "phase_id": "01",
+      "id": "01",
+      "name": "Deterministic test time and ambient-clock bans",
+      "steps": [
+        {
+          "step_id": "01-01",
+          "id": "01-01",
+          "name": "test(clock): pin the boundary instant as a named, asserted test fixture",
+          "description": "Introduce TestToday.FrozenNow = today's UTC date (taken once at test-host start) at 23:30Z, and a guard test proving that instant sits where the UTC day and the Zurich instance day disagree. Nothing consumes FrozenNow yet, so the suite is unchanged; the guard makes later moves of the instant or an un-pinned TZ fail loudly.",
+          "acceptance_criteria": [
+            "TestToday exposes a FrozenNow instant whose UTC time of day is 23:30 and whose UTC date is the date the test process started.",
+            "The guard test passes when the process zone is Europe/Zurich (runsettings pin) under both summer (UTC+2) and winter (UTC+1) offsets: the instance-zone day of FrozenNow is the day after its UTC day.",
+            "The guard test fails with a message naming the zone if the process zone is UTC (the TZ pin was removed) or if FrozenNow is moved off the boundary.",
+            "Whole backend suite stays green; no existing test changes behaviour."
+          ],
+          "criteria": [
+            "TestToday exposes a FrozenNow instant whose UTC time of day is 23:30 and whose UTC date is the date the test process started.",
+            "The guard test passes when the process zone is Europe/Zurich (runsettings pin) under both summer (UTC+2) and winter (UTC+1) offsets: the instance-zone day of FrozenNow is the day after its UTC day.",
+            "The guard test fails with a message naming the zone if the process zone is UTC (the TZ pin was removed) or if FrozenNow is moved off the boundary.",
+            "Whole backend suite stays green; no existing test changes behaviour."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestToday.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestClockBoundaryTest.cs"
+          ],
+          "dependencies": [],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestClockBoundaryTest.cs",
+          "scenario_name": "FrozenNow_FallsOnTheNextInstanceDay_WhenTheProcessZoneIsZurich",
+          "implementation_notes": "New test class TestClockBoundaryTest.cs. Reduce FrozenNow through the production instance-day reduction (FakeLighthouseClock with zone TimeZoneInfo.Local) and compare against DateOnly.FromDateTime(FrozenNow.UtcDateTime); never re-derive the production expression as the expected value. Also assert TimeZoneInfo.Local resolves to Europe/Zurich so the guard explains itself when the runsettings pin is missing. EXEMPT FROM PARADIGM: C#/NUnit project, Hypothesis/assert_state_delta do not exist here; the contract is a single boundary instant. Compensate with [TestCase] over a summer and a winter date reduced through the same zone."
+        },
+        {
+          "step_id": "01-02",
+          "id": "01-02",
+          "name": "test(embed): forged session tickets take their time from the host clock",
+          "description": "ViewerEmbedTestHost forges the interactive cookie ticket (IssuedUtc / ExpiresUtc) from DateTimeOffset.UtcNow while the cookie handler validates it against the host's TimeProvider. Read the instant from the host's TimeProvider so the ticket stays valid once the host clock is frozen (latent today; it would hide 38 embed tests after the freeze). A committed guard test runs the embed host with a TimeProvider 18h ahead of real time.",
+          "acceptance_criteria": [
+            "With the embed host's TimeProvider overridden to real now + 18h, a forged interactive cookie is still accepted as a live Lighthouse session (red before this step, green after).",
+            "No test helper under TestHelpers forges a time-bound ticket or token from the ambient clock.",
+            "All ViewerEmbedSessionJourneyTests and the embed scenarios in EncryptionControllerTests stay green."
+          ],
+          "criteria": [
+            "With the embed host's TimeProvider overridden to real now + 18h, a forged interactive cookie is still accepted as a live Lighthouse session (red before this step, green after).",
+            "No test helper under TestHelpers forges a time-bound ticket or token from the ambient clock.",
+            "All ViewerEmbedSessionJourneyTests and the embed scenarios in EncryptionControllerTests stay green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ViewerEmbedTestHost.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ViewerEmbedSessionJourneyTests.cs"
+          ],
+          "dependencies": ["01-01"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ViewerEmbedSessionJourneyTests.cs",
+          "scenario_name": "AForgedInteractiveCookie_IsAccepted_WhenTheHostClockIsHoursAheadOfRealTime",
+          "implementation_notes": "Only sites today: ViewerEmbedTestHost.cs:258-259 (cookie forging). Resolve TimeProvider from the host's Services. The guard overrides the host TimeProvider via WithWebHostBuilder with a FakeTimeProvider at DateTimeOffset.UtcNow + 18h (experiment A's worst offset); if ViewerEmbedTestHost owns its factory, give it an optional way to take a TimeProvider override for this test rather than duplicating the host. The existing Control_AForgedInteractiveCookie_IsARealLighthouseSession test is not the proof. EXEMPT FROM PARADIGM: integration wiring, single-example by mandate."
+        },
+        {
+          "step_id": "01-03",
+          "id": "01-03",
+          "name": "test(integration): the nightly-failing integration tests read today from the host's instance clock",
+          "description": "Give IntegrationTestBase an InstanceClock (the host's ILighthouseClock) and InstanceToday (its TodayAsUtcMidnight). Replace the private Today => DateTime.UtcNow.Date helpers and the UTC-derived as-of / drill dates in the 16 integration tests that failed nightly; send as-of and drill dates as yyyy-MM-dd the way the frontend does.",
+          "acceptance_criteria": [
+            "The 16 nightly integration failures (BlackoutForecastShift x3, RecurringBlackoutRules Delivery/DownstreamParity/WriteBack x6, MultiTeamJointForecast x1, Slice02FeatureBlockedCapture x1, Slice04PortfolioBlockedDrillThrough x1, Slice08BlockedDrilldown x1, WorkItemEstimateApi x2, Slice02WorkItemAgePercentiles x1) derive 'today' from the host's instance day, never from DateTime.UtcNow.Date.",
+            "Every as-of / drill-through date these tests send to wip?asOfDate and blockedItemsAtDate?date is a calendar day in yyyy-MM-dd form, never an instant.",
+            "With the host frozen at TestToday.FrozenNow (temporary, uncommitted local run) those 16 tests are red before this step and green after.",
+            "Whole backend suite stays green in the committed state."
+          ],
+          "criteria": [
+            "The 16 nightly integration failures (BlackoutForecastShift x3, RecurringBlackoutRules Delivery/DownstreamParity/WriteBack x6, MultiTeamJointForecast x1, Slice02FeatureBlockedCapture x1, Slice04PortfolioBlockedDrillThrough x1, Slice08BlockedDrilldown x1, WorkItemEstimateApi x2, Slice02WorkItemAgePercentiles x1) derive 'today' from the host's instance day, never from DateTime.UtcNow.Date.",
+            "Every as-of / drill-through date these tests send to wip?asOfDate and blockedItemsAtDate?date is a calendar day in yyyy-MM-dd form, never an instant.",
+            "With the host frozen at TestToday.FrozenNow (temporary, uncommitted local run) those 16 tests are red before this step and green after.",
+            "Whole backend suite stays green in the committed state."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationTestBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesTestBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/MultiTeamJointForecastDeliveryIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice02FeatureBlockedCaptureSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice04PortfolioBlockedDrillThroughScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice08BlockedDrilldownScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemEstimateApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice02WorkItemAgePercentilesScenarios.cs"
+          ],
+          "dependencies": ["01-01"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftDeliveryIntegrationTest.cs",
+          "scenario_name": "The 16 nightly integration failures stay green under a host frozen at 23:30Z",
+          "implementation_notes": "Known lines: BlackoutForecastShift:27, RecurringBlackoutRulesTestBase:39, RecurringBlackoutRulesWriteBack:34, MultiTeamJoint:31, Slice02FeatureBlockedCaptureSpecifications:116,126 (instant sent as asOfDate), Slice04 scenarios:43, Slice08 scenarios:59-61 (rewrite the 'real today (UtcNow.Date)' comment), WorkItemEstimateApi:77, PercentilesOverTimeAcceptanceTest:199 (seed StartedDate from InstanceToday), Slice02WorkItemAgePercentilesScenarios:32 (expect InstanceClock.Today; also removes a DateTime.Today the test ban would flag). Tests whose host already overrides TimeProvider/ILighthouseClock keep working because InstanceClock resolves from that same host. HONEST PROOF NOTE: nothing committed in this step can fail at daytime - the proof is a temporary, uncommitted local run with the 01-05 freeze applied (red before, green after); 01-05, the very next freeze commit, makes it permanently enforced. No text-scan guard is added. EXEMPT FROM PARADIGM: integration tests are single-example by mandate; this step changes test oracles only."
+        },
+        {
+          "step_id": "01-04",
+          "id": "01-04",
+          "name": "test(integration): sweep the remaining integration tests off the UTC day",
+          "description": "Migrate the other integration tests that derive a calendar day from DateTime.UtcNow.Date and compare it with, or send it to, the host, onto IntegrationTestBase.InstanceToday / InstanceClock. They passed nightly, but they share the defect pattern and would become wrong (or newly red) once the host is frozen.",
+          "acceptance_criteria": [
+            "No integration test under API/Integration derives a day it compares with or sends to the host from DateTime.UtcNow.Date; each reads the host's instance day.",
+            "Seeded snapshot days (RecordedAt / RecordedDay), baseline / display windows and throughput-history dates in these tests are expressed relative to the host's instance day.",
+            "With the host frozen at TestToday.FrozenNow (temporary, uncommitted local run) every file in this step is green.",
+            "Whole backend suite stays green."
+          ],
+          "criteria": [
+            "No integration test under API/Integration derives a day it compares with or sends to the host from DateTime.UtcNow.Date; each reads the host's instance day.",
+            "Seeded snapshot days (RecordedAt / RecordedDay), baseline / display windows and throughput-history dates in these tests are expressed relative to the host's instance day.",
+            "With the host frozen at TestToday.FrozenNow (temporary, uncommitted local run) every file in this step is green.",
+            "Whole backend suite stays green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricSnapshotCascadeDeleteIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice01DemoBackfillTeamHistorySpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/Slice05DemoPortfolioBlockedHistorySpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastFilterThroughputChartIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamThroughputHistoryValidationIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RunChartPayloadContractIntegrationTest.cs"
+          ],
+          "dependencies": ["01-03"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs",
+          "scenario_name": "Every swept integration test stays green under a host frozen at 23:30Z",
+          "implementation_notes": "Grep of 2026-10-23 found UtcNow.Date in 17 API/Integration files; 8 are covered by 01-03, the 9 here are the rest: DeliveryMetricsHistoryReadApi (~20 sites, :314-584), DeliveryMetricSnapshotCascadeDelete:31, Slice01DemoBackfillTeamHistory:16,93,104,116 (a static readonly PastRangeDate computed at type-load - make it an instance-day property), Slice05DemoPortfolioBlockedHistory:46,54,71,106,119, ForecastFilterThroughputChart:71,73, TeamThroughputHistoryValidation:164-165, WorkItemAgePercentilesReadApi:56 and :385 (comment), WorkItemAgePercentilesPortfolioReadApi:53, RunChartPayloadContract:120. Re-grep before starting and add any integration file the grep shows that is missing here. A site that only seeds a far-away instant with no day comparison may stay; say so in the commit body. Same HONEST PROOF NOTE as 01-03: proof is a temporary, uncommitted local run with the freeze applied; the 01-05 freeze makes it permanent. EXEMPT FROM PARADIGM: integration oracle migration, single-example by mandate."
+        },
+        {
+          "step_id": "01-05",
+          "id": "01-05",
+          "name": "test(clock): freeze the integration host and TestToday at 23:30Z",
+          "description": "TestWebApplicationFactory registers FakeTimeProvider(TestToday.FrozenNow) as the host TimeProvider (ILighthouseClock follows; Program.cs resolves it from DI), and TestToday.Clock is built from FrozenNow (zone stays UTC). Every integration test built on the shared factory now runs inside the nightly window on every build, so the Bug #5567 defect class fails deterministically in integration tests instead of only between 22:00Z and 24:00Z.",
+          "acceptance_criteria": [
+            "An integration host built from TestWebApplicationFactory reports TestToday.FrozenNow as its current instant and the day after FrozenNow's UTC date as its instance day (Zurich).",
+            "TestToday.Ambient equals FrozenNow's UTC date; TestToday's zone is still UTC.",
+            "Per-test WithWebHostBuilder clock overrides (16 files) still take precedence over the factory default.",
+            "After this step the integration and embed tests are deterministic at every hour of the day. The 7 Branch-B unit tests (ForecastControllerTest RunManualForecast_* x3, LicenseServiceTest ValidFromToday, PortfolioMetricsServiceTests GetCycleTimeDataForProject_FeatureClosedAtStartDate, TeamMetricsServiceTests GetClosedItemsForTeam_IgnoresItemsOutOfDateRange, LogsControllerTest DownloadAllLogs) REMAIN window-dependent (red only between 22:00Z/23:00Z and 24:00Z) until 01-06..01-08.",
+            "Whole backend suite green outside the nightly window."
+          ],
+          "criteria": [
+            "An integration host built from TestWebApplicationFactory reports TestToday.FrozenNow as its current instant and the day after FrozenNow's UTC date as its instance day (Zurich).",
+            "TestToday.Ambient equals FrozenNow's UTC date; TestToday's zone is still UTC.",
+            "Per-test WithWebHostBuilder clock overrides (16 files) still take precedence over the factory default.",
+            "After this step the integration and embed tests are deterministic at every hour of the day. The 7 Branch-B unit tests (ForecastControllerTest RunManualForecast_* x3, LicenseServiceTest ValidFromToday, PortfolioMetricsServiceTests GetCycleTimeDataForProject_FeatureClosedAtStartDate, TeamMetricsServiceTests GetClosedItemsForTeam_IgnoresItemsOutOfDateRange, LogsControllerTest DownloadAllLogs) REMAIN window-dependent (red only between 22:00Z/23:00Z and 24:00Z) until 01-06..01-08.",
+            "Whole backend suite green outside the nightly window."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestToday.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestClockBoundaryTest.cs"
+          ],
+          "dependencies": ["01-02", "01-04"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestClockBoundaryTest.cs",
+          "scenario_name": "TheIntegrationHost_ReadsTheFrozenBoundaryInstant_AndItsInstanceDayIsTheNextUtcDay",
+          "implementation_notes": "Package: Microsoft.Extensions.TimeProvider.Testing 10.11.0 is ALREADY referenced in Lighthouse.Backend.Tests.csproj (no Directory.Packages.props) - no package change. In ConfigureWebHost (TestWebApplicationFactory.cs ~117-133) RemoveAll<TimeProvider>() then AddSingleton<TimeProvider>(new FakeTimeProvider(TestToday.FrozenNow)). FakeTimeProvider never advances: GetTimestamp durations read 0, DatabaseMaintenanceGate's 1-minute window never elapses, timers from the DI TimeProvider never fire - experiment A found no failure from these; if one appears, Advance() in that test rather than unfreezing. Update the TestToday doc comment in plain language (why the instant sits at 23:30Z). Anything that goes red here and was not covered by 01-02..01-04 is a true positive of the defect class: fix the oracle in this commit, do not loosen the freeze. EXEMPT FROM PARADIGM: host wiring; single-example integration assertion."
+        },
+        {
+          "step_id": "01-06",
+          "id": "01-06",
+          "name": "test(clock): API-layer tests take their days and instants from TestToday",
+          "description": "First half of the test-side ambient-clock migration, without the ban yet: controller, DTO and chart-fixture tests stop reading DateTime.Now, DateTime.Today and DateTimeOffset.Now and use TestToday (or the subject's clock). Fixes ForecastControllerTest RunManualForecast_* x3 for good.",
+          "acceptance_criteria": [
+            "No test file in this step reads DateTime.Now, DateTime.Today or DateTimeOffset.Now.",
+            "ForecastControllerTest RunManualForecast_* (x3) build their target dates from the same clock the controller receives.",
+            "LogsControllerTest expects the file name the subject currently produces (UTC day); 01-08 replaces this with a literal.",
+            "Whole backend suite stays green."
+          ],
+          "criteria": [
+            "No test file in this step reads DateTime.Now, DateTime.Today or DateTimeOffset.Now.",
+            "ForecastControllerTest RunManualForecast_* (x3) build their target dates from the same clock the controller receives.",
+            "LogsControllerTest expects the file name the subject currently produces (UTC day); 01-08 replaces this with a literal.",
+            "Whole backend suite stays green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioMetricsControllerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/RunChartDataGenerator.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerCalendarDayAnchorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LogsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/TeamDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/PortfolioDtoTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/FeatureDtoTest.cs"
+          ],
+          "dependencies": ["01-05"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+          "scenario_name": "RunManualForecast_HasTargetDate_RunsHowManyForecast (and the other two RunManualForecast_* failures) with the target date taken from TestToday",
+          "implementation_notes": "Prefer TestToday.AmbientAsUtcMidnight for day inputs and TestToday.Clock.Now for instants; for start/end range-validation tests any consistent pair works. LogsControllerTest:224: switch the expectation to DateTime.UtcNow formatted (UtcNow is not banned in tests). HONEST PROOF NOTE: the ForecastControllerTest fixes are verified with a temporary, uncommitted run where TestToday is constructed at FrozenNow in a Zurich zone (or by running inside the 22:00-24:00Z window) - red before, green after; the analyzer enabled in 01-07 becomes the permanent guard. EXEMPT FROM PARADIGM: mechanical test-input migration."
+        },
+        {
+          "step_id": "01-07",
+          "id": "01-07",
+          "name": "test(clock): ban the local ambient clock in tests",
+          "description": "Second half of the test-side migration (service, updater, licence, repository, connector and acceptance tests), then enable Microsoft.CodeAnalysis.BannedApiAnalyzers in the test project with BannedSymbols.Tests.txt banning DateTime.Now, DateTime.Today and DateTimeOffset.Now (RS0030 is a build error under TreatWarningsAsErrors). Fixes LicenseServiceTest ValidFromToday, PortfolioMetricsServiceTests and TeamMetricsServiceTests failures for good.",
+          "acceptance_criteria": [
+            "A test that reads DateTime.Now, DateTime.Today or DateTimeOffset.Now fails the build with RS0030 and a message naming the replacement.",
+            "No test file reads those three APIs (comments and string literals, e.g. in CalendarDayAnchorSeamArchUnitTest, are not flagged and may stay).",
+            "LicenseServiceTest CanUsePremiumFeature_ValidLicense_ValidFromToday_ReturnsTrue, PortfolioMetricsServiceTests GetCycleTimeDataForProject_FeatureClosedAtStartDate_ReturnsFeature and TeamMetricsServiceTests GetClosedItemsForTeam_IgnoresItemsOutOfDateRange build their inputs from the same clock the subject receives.",
+            "dotnet build zero warnings; whole backend suite green."
+          ],
+          "criteria": [
+            "A test that reads DateTime.Now, DateTime.Today or DateTimeOffset.Now fails the build with RS0030 and a message naming the replacement.",
+            "No test file reads those three APIs (comments and string literals, e.g. in CalendarDayAnchorSeamArchUnitTest, are not flagged and may stay).",
+            "LicenseServiceTest CanUsePremiumFeature_ValidLicense_ValidFromToday_ReturnsTrue, PortfolioMetricsServiceTests GetCycleTimeDataForProject_FeatureClosedAtStartDate_ReturnsFeature and TeamMetricsServiceTests GetClosedItemsForTeam_IgnoresItemsOutOfDateRange build their inputs from the same clock the subject receives.",
+            "dotnet build zero warnings; whole backend suite green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/BannedSymbols.Tests.txt",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/LicenseInformationRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/LicenseServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamData/TeamDataServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs"
+          ],
+          "dependencies": ["01-06"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/LicenseServiceTest.cs",
+          "scenario_name": "CanUsePremiumFeature_ValidLicense_ValidFromToday_ReturnsTrue (plus the PortfolioMetrics/TeamMetrics service failures) with inputs from TestToday; the build rejects a reintroduced DateTime.Now",
+          "implementation_notes": "Package: Microsoft.CodeAnalysis.BannedApiAnalyzers is NOT referenced anywhere today. Add it HERE only (last test-migration step): explicit Version, PrivateAssets=all, <AdditionalFiles Include=\"BannedSymbols.Tests.txt\" /> in Lighthouse.Backend.Tests.csproj - never Directory.Build.props. Symbols: P:System.DateTime.Now, P:System.DateTime.Today, P:System.DateTimeOffset.Now, each with a plain-language replacement hint. Build once with the analyzer enabled first to enumerate every RS0030 hit, migrate them, then commit; any hit outside this file list (the 2026-10-23 grep found 27 files incl. 01-06's and comment-only ones) joins this commit. Comment-only matches (the five DomainEvents handler tests) need no code change. HONEST PROOF NOTE: the three unit fixes are verified with a temporary, uncommitted run where TestToday is constructed at FrozenNow in a Zurich zone, or by running at the Zurich-vs-UTC boundary - red before, green after; the analyzer is the permanent guard. The ban does not catch UtcNow.Date - the 01-05 freeze covers that. EXEMPT FROM PARADIGM: mechanical migration + analyzer configuration; the build is the guard."
+        },
+        {
+          "step_id": "01-08",
+          "id": "01-08",
+          "name": "fix(logs): the log download is named for the instance day",
+          "description": "The one production bug: LogsController labels the downloaded log file with the UTC day. Inject ILighthouseClock and label it with clock.Today. The test pins a FakeLighthouseClock at a 23:30Z instant in Europe/Zurich and asserts the literal next-day file name (red before the fix, green after).",
+          "acceptance_criteria": [
+            "At 23:30Z on day D with the instance zone Europe/Zurich, the downloaded log file is named Lighthouse_Log_<D+1 as yyyy.MM.dd>.txt, in both summer and winter time.",
+            "Outside the boundary window the name is the same instance day as before.",
+            "The test asserts a literal file name, not one re-derived from a clock expression.",
+            "Whole backend suite green."
+          ],
+          "criteria": [
+            "At 23:30Z on day D with the instance zone Europe/Zurich, the downloaded log file is named Lighthouse_Log_<D+1 as yyyy.MM.dd>.txt, in both summer and winter time.",
+            "Outside the boundary window the name is the same instance day as before.",
+            "The test asserts a literal file name, not one re-derived from a clock expression.",
+            "Whole backend suite green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/LogsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LogsControllerTest.cs"
+          ],
+          "dependencies": ["01-07"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LogsControllerTest.cs",
+          "scenario_name": "DownloadAllLogs_AtTheUtcBoundary_IsNamedForTheInstanceDay",
+          "implementation_notes": "LogsController.cs:103 is the only site. ILighthouseClock is already registered in DI (Program.cs ~1502-1507); update the test's subject construction for the new constructor parameter. Use explicit FakeLighthouseClock instances with TimeZoneInfo.FindSystemTimeZoneById(\"Europe/Zurich\") at a literal CEST and a literal CET instant ([TestCase]), independent of TestToday. EXEMPT FROM PARADIGM: exact file-name string contract; compensated by summer + winter TestCases."
+        },
+        {
+          "step_id": "01-09",
+          "id": "01-09",
+          "name": "refactor(time): blocked spells, updaters, sync time and cache read instants through the clock",
+          "description": "Move the ambient instant reads in the blocked-transition handlers (EnteredAt/LeftAt), the Team/Portfolio/Forecast updaters (ExecutedAt, minutesSinceLastUpdate), WorkItemService's refresh sync time and Cache/CacheItem elapsed TTL onto the injected clock, so a frozen host no longer mixes real-time instants with frozen days.",
+          "acceptance_criteria": [
+            "A blocked spell captured or closed by the domain-event handlers carries the injected clock's current instant as EnteredAt / LeftAt.",
+            "A team or portfolio whose UpdateTime equals the clock's current instant is not due for an update; one older than its interval is; the logged ExecutedAt equals the clock's instant.",
+            "The work-item refresh records the clock's instant as its sync time.",
+            "A cached entry is served just before its expiry and refetched at and after it, as measured by the TimeProvider it was given.",
+            "Whole backend suite green; CalendarDayAnchorSeamArchUnitTest unchanged and green."
+          ],
+          "criteria": [
+            "A blocked spell captured or closed by the domain-event handlers carries the injected clock's current instant as EnteredAt / LeftAt.",
+            "A team or portfolio whose UpdateTime equals the clock's current instant is not due for an update; one older than its interval is; the logged ExecutedAt equals the clock's instant.",
+            "The work-item refresh records the clock's instant as its sync time.",
+            "A cached entry is served just before its expiry and refetched at and after it, as measured by the TimeProvider it was given.",
+            "Whole backend suite green; CalendarDayAnchorSeamArchUnitTest unchanged and green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Cache/Cache.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Cache/CacheItem.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/FeatureBlockedTransitionHandlerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemBlockedTransitionCaptureTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Cache/CacheTest.cs"
+          ],
+          "dependencies": ["01-08"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/FeatureBlockedTransitionHandlerTests.cs",
+          "scenario_name": "A captured or closed blocked spell is stamped with the injected clock's instant (and matching clock-driven assertions in the updater, WorkItemService and Cache tests)",
+          "implementation_notes": "Sites (grep 2026-10-23): the four handlers (:30, :25, :29, :25), ForecastUpdater:220, PortfolioUpdater:36,170, TeamUpdater:107,123, WorkItemService:136 only (837/840 move in 01-11), Cache:29 + CacheItem:13 (CacheItem used DateTimeOffset.Now - switch to UTC instants; inject TimeProvider with TimeProvider.System default). Prefer the already-injected ILighthouseClock.Now over adding a TimeProvider ctor parameter, to stay under S107 (see docs/ci-learnings.md). Once Cache uses the DI TimeProvider, entries never expire inside a frozen host; helpers clear caches explicitly, but any test that relies on expiry must Advance(). EXEMPT FROM PARADIGM: C#/NUnit; compensate with [TestCase]-driven assertions on the cache expiry boundary (just before / at / after) and on the update-interval boundary."
+        },
+        {
+          "step_id": "01-10",
+          "id": "01-10",
+          "name": "refactor(time): auth, RBAC, delivery notes and forecasts stamp their timestamps from the clock",
+          "description": "Move the remaining class-(a) instant reads - ApiKeyService, CurrentUserProfileService, RbacAdministrationService grants, DeliveryNotesController create/edit, ForecastBase.CreationTime, WorkTrackingSystemOptionsOwner.RefreshUpdateTime - onto the injected clock, and remove the entity default initialisers (ApiKey, UserProfile, ApiKeyPermission, UserPermission, ForecastBase) so the services set those timestamps.",
+          "acceptance_criteria": [
+            "A newly created API key, and the user profile created on first sign-in, carry the clock's current instant as CreatedAt (and LastSeenAt / LastUsedAt where set) - never DateTime.MinValue.",
+            "Permission grants (system admin, team/portfolio member role, scoped admin, API-key permission) carry the clock's instant as GrantedAt.",
+            "Delivery note create and edit timestamps, forecast creation time and a refreshed team/portfolio UpdateTime equal the clock's instant.",
+            "No production entity class defaults a timestamp property from the ambient clock.",
+            "Whole backend suite green."
+          ],
+          "criteria": [
+            "A newly created API key, and the user profile created on first sign-in, carry the clock's current instant as CreatedAt (and LastSeenAt / LastUsedAt where set) - never DateTime.MinValue.",
+            "Permission grants (system admin, team/portfolio member role, scoped admin, API-key permission) carry the clock's instant as GrantedAt.",
+            "Delivery note create and edit timestamps, forecast creation time and a refreshed team/portfolio UpdateTime equal the clock's instant.",
+            "No production entity class defaults a timestamp property from the ambient clock.",
+            "Whole backend suite green."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/ApiKey.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Auth/UserProfile.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/ApiKeyPermission.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/UserPermission.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/ForecastBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/ApiKeyService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Auth/ApiKeyServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Auth/CurrentUserProfileServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveryNotesControllerTest.cs"
+          ],
+          "dependencies": ["01-09"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Auth/ApiKeyServiceTest.cs",
+          "scenario_name": "CreateApiKey_StampsCreatedAtAndGrantedAtWithTheClockInstant_NeverMinValue (plus CurrentUserProfileServiceTest: the first-sign-in profile is stamped with the clock instant)",
+          "implementation_notes": "Sites (grep 2026-10-23): ApiKey:25, UserProfile:19,21, ApiKeyPermission:17, UserPermission:19, ForecastBase:19 (ctor), WorkTrackingSystemOptionsOwner:256 (RefreshUpdateTime is a model method - take the instant as a parameter from its callers, which may sit in files beyond this list; add them), ApiKeyService:48,66,164, CurrentUserProfileService:42,43,53, RbacAdministrationService:525,748,794,1426, DeliveryNotesController:69,110. BEFORE removing the entity default initialisers, grep every construction site - new ApiKey / new UserProfile / new ApiKeyPermission / new UserPermission / ForecastBase subclasses, seeders (e.g. ApiKeyOwnerReconciliationSeeder), demo data, EF HasData, test factories/builders - and set the timestamp there, otherwise rows land with DateTime.MinValue; add those files to this commit. Prefer the already-injected ILighthouseClock.Now over adding a TimeProvider ctor parameter, to stay under S107. EXEMPT FROM PARADIGM: C#/NUnit; single-instant stamping assertions with a FakeLighthouseClock at a literal instant."
+        },
+        {
+          "step_id": "01-11",
+          "id": "01-11",
+          "name": "refactor(time): tracker cutoffs through the clock, and ban the ambient clock in production",
+          "description": "Move the four UTC tracker history cutoffs (WorkItemService GetDefaultRemainingWork x2, Azure DevOps and Jira PrepareCutoffDateFilter) onto the injected clock with clock-driven unit tests, update CalendarDayAnchorSeamArchUnitTest's pinned tracker-cutoff strings and ExemptedTrackerCutoffCount in the same commit, then enable BannedApiAnalyzers in the production project with BannedSymbols.txt banning DateTime.Now, DateTime.UtcNow, DateTime.Today, DateTimeOffset.Now and DateTimeOffset.UtcNow. The two backup-artefact sites keep real UTC behind a narrow, justified RS0030 suppression.",
+          "acceptance_criteria": [
+            "With a fake clock at a literal instant, the Azure DevOps and Jira history cutoff equals that instant minus the configured history days, in UTC; WorkItemService's default remaining-work window ends at the clock's instant and starts history-days before it.",
+            "A production source file that reads any of the five ambient clock APIs fails the build with RS0030, except at the two backup-artefact sites, each carrying a plain-language reason inline.",
+            "TimeProvider.System remains usable (key-ring bootstrap in Program.cs needs no change).",
+            "CalendarDayAnchorSeamArchUnitTest reflects the new cutoff spellings and count, stays green, and would still fail on a new UtcNow.Date anchor.",
+            "dotnet build zero warnings; whole backend suite green (live connector categories excluded)."
+          ],
+          "criteria": [
+            "With a fake clock at a literal instant, the Azure DevOps and Jira history cutoff equals that instant minus the configured history days, in UTC; WorkItemService's default remaining-work window ends at the clock's instant and starts history-days before it.",
+            "A production source file that reads any of the five ambient clock APIs fails the build with RS0030, except at the two backup-artefact sites, each carrying a plain-language reason inline.",
+            "TimeProvider.System remains usable (key-ring bootstrap in Program.cs needs no change).",
+            "CalendarDayAnchorSeamArchUnitTest reflects the new cutoff spellings and count, stays green, and would still fail on a new UtcNow.Date anchor.",
+            "dotnet build zero warnings; whole backend suite green (live connector categories excluded)."
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj",
+            "Lighthouse.Backend/Lighthouse.Backend/BannedSymbols.txt",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DatabaseManagementController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CalendarDayAnchorSeamArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/WorkItemServiceTest.cs"
+          ],
+          "dependencies": ["01-10"],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorTest.cs",
+          "scenario_name": "HistoryCutoff_IsTheClockInstantMinusHistoryDays (Jira, Azure DevOps and WorkItemService variants)",
+          "implementation_notes": "Arch test: AnchorPatterns ~line 78; the 4 pinned tracker-cutoff strings + ExemptedTrackerCutoffCount=4 change in THIS commit together with WorkItemService.cs:837,840, AzureDevOpsWorkTrackingConnector.cs:1631, JiraWorkTrackingConnector.cs:2751. If no cutoff contains an anchor spelling any more, the exemption list may shrink to zero - keep the guard able to fail on a fresh UtcNow.Date. Cutoff tests: the existing Jira/ADO connector test classes contain live-tracker categories; put the new cutoff assertions in a non-live fixture (a category-free method in these files, or a sibling file if the class is category-tagged at class level) driven by FakeTimeProvider / FakeLighthouseClock - no network. Do NOT run the live Jira/ADO/Linear categories (Linear key is shared with CI). Ban: build FIRST with the analyzer enabled to enumerate every RS0030 hit before finalising BannedSymbols.txt and the suppressions; any hit that 01-09/01-10 missed is fixed by injection, not suppression. Package per standing rule (same version as 01-07, PrivateAssets=all, AdditionalFiles in Lighthouse.Backend.csproj only). Suppressions: '#pragma warning disable RS0030' / restore around the single lines DatabaseManagementController.cs:47 and DatabaseManagementService.cs:231, with a plain-language reason (backup artefacts are labelled in real UTC on purpose) - no internal ids. EXEMPT FROM PARADIGM: analyzer configuration + arch-test pin; cutoff contract covered by [TestCase] over several history-day values."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "user (RCA approval); reviewer APPROVED with HIGH items addressed in revision 2",
+    "notes": "Decomposition: 11 steps over ~95 file touches (ratio well under 2.5). RCA step 3 split into 01-03 (16 nightly failures) + 01-04 (sweep); RCA step 5 split into 01-06 (API tests, no ban) + 01-07 (service tests + ban enabled last); RCA step 6 split into 01-08 (logs fix), 01-09 / 01-10 (instant reads by domain) and 01-11 (cutoffs + arch test + production ban in one commit)."
+  }
+}
