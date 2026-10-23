@@ -30,12 +30,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private UpdateCancellationContext cancellationContext;
         private Mock<ILogger<ForecastUpdater>> loggerMock;
         private Mock<IPortfolioRepository> forecastInputsMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
 
         private int idCounter = 0;
 
         private static readonly string[] WriteBackThenEventDispatchOrder = ["forecastWriteBack", "forecastsUpdatedEvent"];
 
         private static readonly string[] WriteBackThenEventDispatchThenRecordOrder = ["forecastWriteBack", "forecastsUpdatedEvent", "recordInputs"];
+
+        private static readonly string[] ConfirmThenWriteBackThenEventDispatchOrder = ["confirmForecasts", "forecastWriteBack", "forecastsUpdatedEvent"];
+
+        private static readonly int[] TheFeaturesTheSkippedForecastRead = [3, 7, 12];
 
         private const int SlowForecastMilliseconds = 60;
 
@@ -78,8 +83,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            featureRepositoryMock = new Mock<IFeatureRepository>();
+            featureRepositoryMock
+                .Setup(x => x.ConfirmForecastsAsOf(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
             SetupServiceProviderMock(portfolioRepositoryMock.Object);
             SetupServiceProviderMock(forecastInputsMock.Object);
+            SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
@@ -692,6 +703,88 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(WhatTheRefreshThrew, Is.SameAs(forecastFailure));
                 Assert.That(recorded.Entry.Success, Is.False);
             }
+        }
+
+        [Test]
+        public void Update_ShouldConfirmTheForecastsOfEveryFeatureItRead_AtTheRound_BeforeStagingAndAnnouncing_WhenTheInputsAreConfirmedUnchanged()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged(TheFeaturesTheSkippedForecastRead));
+
+            var sequence = new List<string>();
+            IReadOnlyCollection<int>? confirmedFeatures = null;
+            var confirmedAt = DateTime.MinValue;
+            featureRepositoryMock
+                .Setup(x => x.ConfirmForecastsAsOf(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, DateTime, CancellationToken>((ids, at, _) =>
+                {
+                    sequence.Add("confirmForecasts");
+                    confirmedFeatures = ids;
+                    confirmedAt = at;
+                })
+                .Returns(Task.CompletedTask);
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Callback(() => sequence.Add("forecastWriteBack"))
+                .Returns([]);
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
+                .Callback(() => sequence.Add("forecastsUpdatedEvent"))
+                .Returns(Task.CompletedTask);
+
+            var roundStarted = DateTime.UtcNow;
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+            var roundEnded = DateTime.UtcNow;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(confirmedFeatures, Is.EquivalentTo(TheFeaturesTheSkippedForecastRead));
+                Assert.That(confirmedAt, Is.InRange(roundStarted, roundEnded));
+                Assert.That(sequence, Is.EqualTo(ConfirmThenWriteBackThenEventDispatchOrder));
+            }
+        }
+
+        [Test]
+        public void Update_ShouldConfirmNothing_WhenTheForecastWasComputed()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed("read", "fresh"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            featureRepositoryMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldConfirmNothing_WhenTheForecastFails()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("The simulation failed"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            featureRepositoryMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldConfirmNothing_WhenTheForecastIsStopped()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastIsStopped();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            featureRepositoryMock.VerifyNoOtherCalls();
         }
 
         private void TheForecastAnswers(ForecastRunOutcome outcome)

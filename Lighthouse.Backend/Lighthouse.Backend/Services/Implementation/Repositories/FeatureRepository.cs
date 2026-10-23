@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -21,10 +22,19 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(GetFeatures().ToList());
         }
 
-        // __SCAFFOLD__: acceptance tests were written ahead of this; DELIVER replaces the body.
-        public Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken)
+        /// <summary>
+        /// A plain update rather than a compare-and-set: a forecast rewritten by another run in the
+        /// meantime is newer still, so reading it as current at this moment is true of it as well.
+        /// </summary>
+        public async Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException($"Confirming the forecasts of {featureIds.Count} Features is not written yet");
+            await Context.Set<WhenForecast>()
+                .Where(forecast => featureIds.Contains(forecast.FeatureId))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(forecast => forecast.CreationTime, confirmedAt), cancellationToken);
+
+            await Context.Set<StartForecast>()
+                .Where(forecast => featureIds.Contains(forecast.FeatureId))
+                .ExecuteUpdateAsync(setters => setters.SetProperty(forecast => forecast.CreationTime, confirmedAt), cancellationToken);
         }
 
         public override IQueryable<Feature> GetAllByPredicate(Expression<Func<Feature, bool>> predicate)

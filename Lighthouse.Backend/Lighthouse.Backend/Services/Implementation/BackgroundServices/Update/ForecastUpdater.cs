@@ -206,6 +206,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var outcome = await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
             var gatherMs = gatherWatch.ElapsedMilliseconds;
 
+            await ConfirmTheForecastsAreCurrent(outcome, serviceProvider);
+
             var publishWatch = Stopwatch.StartNew();
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
@@ -220,6 +222,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 portfolio.Name, outcomeName, gatherMs, publishMs);
 
             return outcome;
+        }
+
+        /// <summary>
+        /// A skipped forecast was not drawn again, but it was checked against current data, so every Feature
+        /// it covers reads as last updated now rather than at the run that computed it. The time is taken the
+        /// same way a computed forecast takes its own.
+        /// </summary>
+        private async Task ConfirmTheForecastsAreCurrent(ForecastRunOutcome outcome, IServiceProvider serviceProvider)
+        {
+            if (outcome is not ForecastRunOutcome.ConfirmedUnchanged confirmed)
+            {
+                return;
+            }
+
+            await serviceProvider.GetRequiredService<IFeatureRepository>()
+                .ConfirmForecastsAsOf(confirmed.FeatureIds, DateTime.UtcNow, cancellationContext.Current);
         }
 
         /// <summary>

@@ -25,8 +25,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     [Category("story-6354-skip-unchanged-forecasts")]
     public class ForecastConfirmationRepositoryRelationalTest
     {
-        private const string Pending = "Story 6354: pending until DELIVER writes the set-based recording and confirmation";
-
         private const string WhatTheTenOClockRunRead = "3f1c0a9e5b7d4c2e8a6f1b0d9c7e5a31";
 
         private const string WhatTheTenFifteenRunRead = "9b2e7d5c3a1f4e6b8d0c2a4f6e8b0d13";
@@ -227,7 +225,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("slice-02")]
         [Category("contract-shape:bounded-change")]
         public async Task Confirming_stamps_every_forecast_of_the_named_Features_and_changes_no_value()

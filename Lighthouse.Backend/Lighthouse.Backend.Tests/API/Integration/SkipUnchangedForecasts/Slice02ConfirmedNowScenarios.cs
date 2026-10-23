@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// read none of its Features and must leave their time alone.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task A_skipped_forecast_reads_as_confirmed_at_that_round_with_its_dates_unchanged()
@@ -60,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// confirmation confirms that Feature too. Atlas's round causes no forecast of Loyalty itself.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task A_skipped_forecast_also_confirms_a_Feature_of_another_Portfolio_its_Teams_work_on()
