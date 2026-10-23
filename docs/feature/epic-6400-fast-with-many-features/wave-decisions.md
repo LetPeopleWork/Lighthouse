@@ -175,3 +175,31 @@ brief's `## Application Architecture — epic-6400-…` section.
   the save; the alternatives (hand over the gathered Features; keep the full tracked `GetById`) are rejected in
   ADR-261. One finding (narrow the list's completion read) was answered with evidence instead: `Feature.Forecast`
   aggregates every per-Team completion forecast, so no narrower row exists.
+
+## DEVOPS (2026-10-23)
+
+**Agent**: Apex (`nw-platform-architect`), subagent mode, autonomous; held after DEVOPS at the maintainer's request
+(DISTILL not started). Configuration from project precedent (Story 6354, Epic 6311): existing self-hosted
+distribution, GitHub Actions existing workflows, Serilog + opt-in PostHog, release-based, usage data only, trunk-based,
+mutation per-feature. Artifacts: `feature-delta.md` (Wave: DEVOPS sections), `environments.yaml`,
+`docs/product/kpi-contracts.yaml` (`OUT-6400-*`).
+
+- **[DO-1] Usage data**: no new event; `featuresHeld` (`features_held`) on `TeamTabOpened` and `PortfolioTabOpened`,
+  closed enum `UpTo100 = 0`, `From101To399 = 1`, `From400 = 2`, `Unknown = 3`. Boundaries follow the nudge (> 100) and
+  the 100 / 400 / 920 points. Computed in the browser from the owner payload, sent at the existing 5 s dwell, `Unknown`
+  only when the owner never arrived while the page was open. Server: refused on every other event, accepted absent on
+  the two tab events (older bundles). Justified by K5 and the population claim, which the name alone cannot count.
+- **[DO-2] KPI instruments**: K1/K2 Playwright marks and server split in the dev-only harness; K3 harness log scan +
+  `dotnet-counters`, the lane probe as a hard CI precondition, and the reporter's next log as the production reading;
+  K4 the Debug round split and Refresh History durations; K5 PostHog; G1–G4 hard CI gates.
+- **[DO-3] Harness stays out of CI**: CI runs `playwright test` on `testDir ./tests` only; `perf/` gets its own script
+  and is added to the E2E `tsconfig` include and the Biome path so it is linted locally; outputs gitignored.
+- **[DO-4] CI**: no new workflow; Program.cs in slices 01 and 04 forces every live-connector suite; Postgres via
+  `SharedPostgresContainer`; budget watch per slice; analyzer rules pre-listed (CA1001/S3881, CA2008, S8733, S107,
+  NUnit1028/2045, Release-only ArchUnit edges); a source-scan test for `ConfigureAwait(false)` on the round path.
+- **[DO-5] Mutation**: per slice, whole files on the backend, spans on the frontend, acceptance suite excluded;
+  `TeamMetricsService` excluded (996 lines) unless DELIVER extracts the in-progress resolution.
+- **[DO-6] Deployment**: calver release, no flag, no knob (the lane follows `MostRunsAtOnce`), no migration unless
+  DDD-20's index; rollback = previous release; the banner's lane line is what operators see.
+- **Flags against DESIGN**: F1–F8 (feature-delta). **Maintainer questions**: (1) accept the band absent from older
+  bundles (default yes); (2) the three bands, no `From1000` (default as written).

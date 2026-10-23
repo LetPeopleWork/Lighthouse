@@ -1,0 +1,144 @@
+# Environment inventory - epic-6400-fast-with-many-features
+# Consumed by DISTILL for environmental realism. House location: the feature root (as story-6354); the nWave
+# skill's devops/ sub-folder is not used.
+#
+# Application change inside the existing product: no migration (unless DDD-20's measured index on
+# Features.ReferenceId lands, expand-only through Create-Migration.ps1), no configuration key, no chart or image change,
+# no new dependency, no new external call, no Redis channel, no feature flag. Program.cs gains a registration in slice
+# 01 (ForecastLane) and slice 04 (the Features list service), so those two pushes run every live-connector suite.
+# The axes that matter: database provider, cores (they size the forecast lane), RBAC, packaging, data size.
+
+target_environments:
+  - name: clean-sqlite
+    description: >
+      Fresh SQLite database (Standalone and Docker default). WAL with busy_timeout=10000, so a long round save makes
+      other writers wait (CF-7). Every golden (bodies, verdicts, positions, forecasts, fingerprints) and every
+      provider-backed reader test runs here.
+    platform: [linux, macos, windows, docker]
+    preconditions: []
+
+  - name: clean-postgres
+    description: >
+      Fresh PostgreSQL database. Same goldens as clean-sqlite; EF returns collections in provider-dependent order, so
+      identity is asserted through a fresh DbContext on both providers.
+    platform: [linux, docker, kubernetes]
+    preconditions:
+      - "Docker available to Testcontainers (SharedPostgresContainer, a fresh database per case; never StartFreshAsync per case)"
+
+  - name: rbac-on
+    description: >
+      Authentication and RBAC on. The new list routes refuse an unreadable owner (PortfolioRead / TeamRead guard) and
+      filter unreadable Portfolios inside; /features/ids and /features/references keep answering with the readable
+      subset. Slice 02's licence gates count the served, RBAC-filtered lists as today.
+    platform: [linux, docker, kubernetes]
+    preconditions: []
+
+  - name: rbac-off
+    description: "Authentication off (the reporter's set-up and the scaled set's). Every caller shares one subject."
+    platform: [linux, macos, windows, docker]
+    preconditions: []
+
+  - name: cores-1
+    description: >
+      One core (or DOTNET_PROCESSOR_COUNT=1). MostRunsAtOnce = max(1, 1/2) = 1: one lane thread, the simulation runs
+      on it alone. The banner says "1 dedicated thread; up to 1 of 1 cores". Pages and the round share the one core,
+      so K3 is not claimed here; correctness is (probe on 1 lane thread).
+    platform: [linux, docker]
+    preconditions: []
+
+  - name: cores-2
+    description: "Two cores. Lane = 1 thread, as the forecast's bound is today. Banner and probe as cores-1."
+    platform: [linux, docker]
+    preconditions: []
+
+  - name: cores-4
+    description: >
+      Four cores, the reference host of K1-K4 (D26). Lane = 2 threads. Harness readings are taken here only, in a
+      container limited with docker run --cpus=4 on cgroup v2 (cpu.stat throttling is read), or on a 4-core machine.
+    platform: [linux, docker]
+    preconditions:
+      - "cgroup v2 when in a container (cpu.stat)"
+
+  - name: docker
+    description: "ghcr.io/letpeoplework/lighthouse image, unchanged. CPU limit moves the lane size through the runtime's processor count."
+    platform: [docker, kubernetes]
+    preconditions: []
+
+  - name: standalone
+    description: >
+      Standalone desktop build (SQLite, one process). Lane threads are background threads and are joined with a short
+      timeout on disposal, after the update queue drains, so quitting the app during a round cancels it with nothing
+      half-saved (DDD-23).
+    platform: [linux, macos, windows]
+    preconditions: []
+
+  - name: multi-replica-redis
+    description: >
+      Two or more replicas sharing a database and Redis admission. Each replica has its own lane; admission, holds,
+      Stop and Cancel all are unchanged. No new Redis container test.
+    platform: [linux, kubernetes]
+    preconditions: []
+
+  - name: restored-dev-instance
+    description: >
+      Dev instance at http://localhost:5169 on a throwaway copy of the backup restored with
+      Lighthouse.Backend/Restore-DbBackup.ps1 (real history: 102 Features, 3 Portfolios, 3 Teams; live credentials,
+      never printed). Guardrail G4: identical screens, verdicts, positions and forecasts before and after each slice.
+      Too small for any timing claim.
+    platform: [linux, docker]
+    preconditions:
+      - "Backend built first if a migration is generated (migration DLLs are HintPath references)"
+
+  - name: scaled-harness
+    description: >
+      Dev-only, never in CI. Built by Lighthouse.EndToEndTests/perf/ (playwright.perf.config.ts, testDir ./perf) over
+      the public REST API with the CSV connector: 8 Teams (Atlas, Borealis, Cobalt, Delta Ops, Ember, Fjord, Granite,
+      Harbour) and 6 Portfolios (Northwind Platform 920, Northwind Payments 400, Northwind Mobile 100, three fillers to
+      about 3,000 Features). Readings: median of 5 after one warm-up, min-max, cold start apart; idle, during a computed
+      round, during a skipped round; SQLite and PostgreSQL (examples/postgres); main and the v26.10.19.10 tag;
+      cores-4. Log levels raised by command-line arguments only (Serilog overrides for
+      Microsoft.AspNetCore.Hosting.Diagnostics and Microsoft.EntityFrameworkCore.Database.Command at Information, the
+      ForecastUpdater category at Debug). Outputs to the gitignored perf/out/.
+    platform: [linux, docker]
+    preconditions:
+      - "Premium licence fixture tests/fixtures/valid_premium_license.json copied from the main checkout (gitignored)"
+      - "dotnet-counters installed on the measuring machine"
+      - "Docker for examples/postgres"
+      - "A worktree at the v26.10.19.10 tag for the release comparison"
+
+coexistence_matrix:
+  - tool: Docker images (ghcr.io/letpeoplework/lighthouse)
+    must_not_break: true
+    note: "No image change"
+  - tool: Helm chart
+    must_not_break: true
+    note: "No values or template change; no new knob (the lane follows the CPU limit)"
+  - tool: Standalone builds
+    must_not_break: true
+  - tool: lighthouse-clients (lh CLI, MCP)
+    must_not_break: true
+    note: "Every existing body unchanged (D20); new routes additive; clients send no tab-opened events; no release"
+  - tool: Web bundle open across the upgrade
+    must_not_break: true
+    note: "Its tab-opened events arrive without featuresHeld and are accepted (maintainer question 1, default)"
+  - tool: Update queue (Stop, Cancel all), Story 6354 skip and forget, forecast write-back
+    must_not_break: true
+    note: "Probe and host-stop tests, G1 goldens, DDD-17/18 write-back tests on both providers"
+  - tool: E2E suite (ci_verifysqlite, ci_verifypostgres)
+    must_not_break: true
+    note: "Runs testDir ./tests only; perf/ never runs; Features-tab page object waits on data-widget-status=ready from slice 04"
+  - tool: lefthook / .githooks (gitleaks)
+    must_not_break: true
+
+platform_coverage:
+  Databases: [SQLite, PostgreSQL]
+  Cores: [1, 2, 4]
+  RBAC: [on, off]
+  Packaging: [zip, Docker, Helm, Standalone]
+  Replicas: [single, multi with Redis (unchanged)]
+  CI: [GitHub Actions ubuntu-latest (ci_backend, ci_frontend, ci_verifysqlite, ci_verifypostgres, sonar gates)]
+
+deployment_assumptions:
+  - "Each slice ships with a regular calver release through the existing pipeline; no flag, no configuration"
+  - "Rollback is the previous release: no schema change (an index, if added, is expand-only), additive routes, unchanged bodies"
+  - "The lane is sized by ForecastSimulationLimits.MostRunsAtOnce; DOTNET_PROCESSOR_COUNT or the container CPU limit moves it"

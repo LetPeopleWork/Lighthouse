@@ -2615,3 +2615,138 @@ outcomes:
     alerting: []
     acceptance_scenarios: []   # outcome KPI, no scenario
     status: designed-not-shipped
+
+  # epic-6400-fast-with-many-features (DEVOPS 2026-10-23). Timing KPIs are readings of the dev-only harness in
+  # Lighthouse.EndToEndTests/perf/ (playwright.perf.config.ts, never in CI) on the scaled set: 920 / 400 / 100 Features
+  # per Portfolio, 8 Teams, 4 cores, SQLite and PostgreSQL, median of 5 after one warm-up, idle and during a computed and
+  # a skipped round. They are never CI budgets (maintainer). Targets are provisional until the Task 01a baseline and the
+  # D27 re-score. One usage-data change: features_held, a closed band on the two existing tab-opened events.
+  - id: OUT-6400-navigation-and-settings-answer
+    feature: epic-6400-fast-with-many-features
+    title: Navigation and Settings answer within a second on a large instance, also during a forecast round (K1)
+    target: "first navigation paint < 1 s and Settings usable < 1 s after opening the Overview, idle and during a round, at 920 Features on 4 cores"
+    ga_baseline: "unknown until Task 01a; the reporter describes 'a loading wheel'"
+    measurement_scope: vendor_demo_only   # the scaled synthetic set; directional
+    measured_by: >
+      Playwright marks in the harness: first navigation paint, and Settings usable after the Overview. Each split into
+      server, network and client time from the request log and the server's request-finished lines
+      (--Serilog:MinimumLevel:Override:Microsoft.AspNetCore.Hosting.Diagnostics=Information on the measured process).
+    log_fields:
+      request_finished_line: ["Request finished {Method} {Path} - {StatusCode} {ElapsedMilliseconds}ms"]
+    measurement_window: Task 01a baseline, then before/after each slice
+    gate: soft
+    alerting: []
+    acceptance_scenarios: []   # wall-clock reading only
+    status: designed-not-shipped
+
+  - id: OUT-6400-first-feature-row
+    feature: epic-6400-fast-with-many-features
+    title: The first Feature row of a 920-Feature list shows within 2 s (K2)
+    target: "first Feature row < 2 s on the Portfolio and the Team Features tab, idle and during a round, 920 Features, 4 cores"
+    ga_baseline: "about 50 s (one second-hand reading on the reporter's instance); Task 01a records the scaled value"
+    measurement_scope: vendor_demo_only
+    measured_by: >
+      Harness first-row mark; requests per open and bytes from the Playwright request log; server time from the
+      request-finished lines and EF command lines
+      (--Serilog:MinimumLevel:Override:Microsoft.EntityFrameworkCore.Database.Command=Information). The falsifier of
+      the list claim is an idle first row under about 10 s.
+    log_fields:
+      ef_command_line: ["Executed DbCommand ({ElapsedMilliseconds}ms)"]
+    measurement_window: Task 01a baseline, then slices 03 and 04
+    gate: soft
+    alerting:
+      - condition: "first row still >= 2 s at 920 after slice 04"
+        action: "manual: read the completion-histogram share of the list's server time; if it alone exceeds the budget, the stored-percentile read model is the follow-up (ADR-260)"
+    acceptance_scenarios: []
+    status: designed-not-shipped
+
+  - id: OUT-6400-no-stall-during-rounds
+    feature: epic-6400-fast-with-many-features
+    title: No Kestrel heartbeat warning while forecast rounds run (K3, north star, exit criterion)
+    target: "0 'Heartbeat took longer than' warnings across 5 computed + 5 skipped rounds at 920 Features / 8 Teams; K1 and K2 during a round <= 1.2 x idle; 0 such warnings inside forecast windows in the reporter's first log after the release"
+    ga_baseline: "9 warnings, 1.4-49.3 s, across 4 rounds (reporter's log, 2026-10-20, v26.10.19.10)"
+    measurement_scope: per_instance   # harness on the scaled set, plus the reporter's log shared out of band
+    measured_by: >
+      Harness: log scan for Kestrel heartbeat warnings; dotnet-counters System.Runtime each second (thread-pool queue
+      length and thread count, GC pause time, gen 2 count); cgroup cpu.stat throttling; windows T, R, RT, C, C0 and
+      the classification fixed in DDD-3. CI precondition (hard): the ForecastLane probe asserts every recorded round
+      frame runs on a lane thread, on 1, 2 and 4 lane threads. Production: the reporter's first working-day log after
+      the release, at shipped log levels. The startup banner line 'Forecast rounds run on N dedicated threads' proves
+      the lane ran; a warning counts when its time falls inside a forecast window, taken from each
+      'ForecastUpdater: Update completed ... forecast={N}ms' line (its timestamp minus N ms). Customer names and hosts
+      from that log are never committed.
+    log_fields:
+      kestrel_warning: ["Heartbeat took longer than {interval} at {time}"]
+      refresh_summary_line: ["forecast={N}ms", "forecast=skipped after {N}ms (inputs unchanged)"]
+      startup_banner_line: ["Forecast rounds run on {N} dedicated threads; each forecast uses up to {N} of {M} cores"]
+    measurement_window: Task 01a baseline, after slice 01, after the last slice; the reporter's first log after the release of slice 01
+    gate: hard   # the probe in CI; the readings are soft
+    alerting:
+      - condition: "the lane probe fails"
+        action: "backend build fails (red)"
+      - condition: "heartbeat warnings remain after slice 01 on the scaled set or in the reporter's log"
+        action: "manual: classify by DDD-3 (pool, GC, CPU quota) and follow its D27 branch; Dissent B if S_q > 0.3"
+    acceptance_scenarios: []   # DISTILL names the probe and host-stop classes
+    status: designed-not-shipped
+
+  - id: OUT-6400-shorter-rounds
+    feature: epic-6400-fast-with-many-features
+    title: Forecast rounds take less time, and updates take no longer (K4, guardrail G5)
+    target: "skipped round <= 15% of the baseline computed round; computed round >= 30% shorter (provisional, fixed at the D27 re-score, Q-M4); Team and Portfolio updates no slower than baseline"
+    ga_baseline: "264-483 s per round (reporter); Task 01a records the scaled value"
+    measurement_scope: per_instance
+    measured_by: >
+      Harness: the ForecastUpdater Debug line splitting a round into gather, simulate, save and publish milliseconds
+      (--Serilog:MinimumLevel:Override:Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.ForecastUpdater=Debug),
+      and RefreshLog DurationMs for Type 2 (forecast, computed vs Skipped) and Types 0 and 1 (Team and Portfolio
+      updates, G5). Production: the reporter's RefreshLog rows, read with the OUT-6354-unchanged-rounds-skip query
+      shape over DurationMs.
+    log_fields:
+      forecast_timing_debug_line: ["gather={G}ms", "simulate={S}ms", "save={V}ms", "publish={P}ms"]
+      refresh_log_row: ["Type", "EntityId", "DurationMs", "Skipped", "ExecutedAt"]
+    measurement_window: Task 01a baseline, after slice 05
+    gate: soft
+    alerting: []
+    acceptance_scenarios: []
+    status: designed-not-shipped
+
+  - id: OUT-6400-openings-by-size
+    feature: epic-6400-fast-with-many-features
+    title: How many Team and Portfolio tab openings are of large ones (K5, descriptive)
+    target: "none (descriptive): share of TeamTabOpened and PortfolioTabOpened per features_held band, and of consenting browsers with at least one From400 opening, 90 days after the release"
+    ga_baseline: "none (the band does not exist before slice 01)"
+    measurement_scope: opt_in_telemetry_required
+    rationale: >
+      Tests the population claim behind the Epic: the maintainer expects people to start with Portfolios of a few
+      hundred Features, and today the evidence is one instance. The identifier is per consent answer (a browser), not
+      per instance, so this counts openings and browsers by size, never instances.
+    measured_by: >
+      PostHog breakdown of the two tab-opened events by features_held: UpTo100 (0-100, the nudge never shows),
+      From101To399, From400 (the reporter's 400-920 range), Unknown (the owner had not loaded before the person left).
+      An absent value means a web bundle from before the release.
+    log_fields:
+      usage_data_property: ["features_held"]
+    measurement_window: 90 days after the release that carries slice 01
+    gate: soft
+    alerting: []
+    acceptance_scenarios: []   # DISTILL names the shape, controller, publisher and band tests
+    status: designed-not-shipped
+
+  - id: OUT-6400-answers-unchanged
+    feature: epic-6400-fast-with-many-features
+    title: Every answer stays the same while the work behind it shrinks (guardrails G1-G4)
+    target: "0 differences: forecast outputs and Story 6354 fingerprints, dependency verdicts, positions, RBAC readability, every existing response body, and the dev-backup screens"
+    ga_baseline: "n/a (identity with the code before each slice)"
+    measurement_scope: vendor_repository
+    measured_by: >
+      CI on every push, SQLite and PostgreSQL: golden response bodies, property-style verdict identity over seeded
+      graphs, list parity with the old endpoints, computed-round row diff, write-back staging equality, fingerprint
+      equality. Reading, not gate: the dev backup restored with Restore-DbBackup.ps1, screens compared by hand per slice.
+    log_fields: {}
+    measurement_window: every push (gate); once per slice (reading)
+    gate: hard
+    alerting:
+      - condition: "a golden or identity test fails"
+        action: "backend build fails (red)"
+    acceptance_scenarios: []   # DISTILL names the golden and identity classes
+    status: designed-not-shipped

@@ -2029,3 +2029,316 @@ where `/features/ids` and `/features/references` today answer with the readable 
   06 shows a failed count and labels the count as of the last update (DDD-19); the duplicate reference-id rule is a
   maintainer question (DDD-13); licence refusal covers creation only (DDD-11); the lane's lifecycle (DDD-23) and the
   Overview's looks (DDD-24) are added; ADR-260's RBAC text and DDD-21's ratchet arithmetic are corrected.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-23 · **Mode**: autonomous subagent, lean, documents only
+(no code, no build, no commit, no ADO). The maintainer asked to **hold after DEVOPS**: DISTILL is not started. An
+application change inside the existing product: no new workflow, job, dependency, configuration key, chart value,
+image change or external call; no migration unless DDD-20's measured index lands.
+
+| Read | Status |
+|---|---|
+| `CLAUDE.md` (Quality Gates, the live-connector filter, the usage-data rule, loading and failure looks, comments) | ✓ |
+| `docs/ci-learnings.md`: preflight rules (S107, CA1859, CA1861, S8733, NUnit1028/2045, S2325/S4487), Program.cs force-full (:203), test-time budget (:455-463), blocking participants need their own threads (:467-469), ArchUnit edges that vanish in Release (:581-585), render-heavy Vitest files under load (:589-591) | ✓ |
+| This delta: DISCUSS (D17–D31, K1–K5, G1–G5, DoD, checklist, maintainer answers), DESIGN (CF-1..14, DDD-1..24, Task 01a, component decomposition, enforcement, hand-off notes, Q-M1..4, OQ-1..6) | ✓ |
+| `wave-decisions.md` (DIVERGE, DISCUSS, DESIGN) | ✓ |
+| `design/upstream-changes.md`, `slices/*.md` | ⊘ not opened; their content is carried by the DESIGN sections and Changed Assumptions above |
+| House precedent: DEVOPS of `story-6354-skip-unchanged-forecasts` and its `environments.yaml` (feature root); `epic-6311-responsive-during-updates/mutation/` configs | ✓ |
+| `docs/settings/usagedata.md`; `Models/UsageData/UsageDataEventName.cs` (last member `ReportPdfExportStarted = 20`), `UsageDataEventShapes.cs`, `UsageDataEventReported.cs`, `UsageDataUpdates.cs`; `API/UsageDataController.cs`, `API/DTO/UsageDataEventBatchDto.cs`, `UsageData/PostHogUsageDataPublisher.cs`; commit `d731c6f56` + `5c89c1325` (how `updates` was added) | ✓ |
+| Frontend emitter: `services/UsageData/usageDataEvents.ts` (`useUsageDataEventDetector`, 5 s dwell), `usageDataRouteKeys.ts`, `pages/Common/Reports/useReportOpenedReporter.ts`; `PortfolioDetail.tsx` / `TeamDetail.tsx` (owner held in `useState`) | ✓ |
+| `.github/workflows/` (`ci_verifysqlite.yml` runs `pnpm run test`), `Lighthouse.EndToEndTests/{playwright.config.ts,tsconfig.json,package.json,.gitignore}`, `.githooks/pre-commit`, `Scripts/test-selection/path-classifier.sh`, `Scripts/test-timings/test-time-budget.json`, `Startup/StartupBanner.cs:224-229`, `Program.cs:1564`, `appsettings.json` Serilog overrides | ✓ |
+| `docs/product/kpi-contracts.yaml` (`OUT-6354-*` style) | ✓ |
+| `lighthouse-clients` | ⊘ outside this checkout; nothing they read changes (D20) |
+
+## Wave: DEVOPS / [REF] Platform Readiness
+
+| Item | Answer |
+|---|---|
+| Deployment targets | Existing: self-hosted zip, Docker image, Helm chart, Standalone desktop app. No image, chart or packaging change. |
+| CI/CD | Existing `ci.yml` "Build And Deploy Lighthouse" (`ci_changes`, `ci_backend`, `ci_frontend`, `ci_verifysqlite`, `ci_verifypostgres`, `ci_sonar_gates`). Extended by tests only; no new workflow, job or step. |
+| Branching | Trunk-based on `main`; one Story per slice, slices ordered and pushed one at a time. |
+| Release | Calver release through the existing pipeline; users upgrade. **No feature flag**: DESIGN needs none (every slice keeps bodies and outputs identical, G1–G4). Each slice can ship in its own release or together. |
+| Observability | Serilog structured logs (forecast summary line, Kestrel warnings, one new banner line, one Debug split, one Information nudge line) and Refresh History (`RefreshLog`). Usage data: one closed property on two existing events. No metric endpoint, trace, dashboard or alert added. |
+| Configuration knob | **None.** The lane is sized by `ForecastSimulationLimits.MostRunsAtOnce` (DDD-7), which `DOTNET_PROCESSOR_COUNT` and the container's CPU limit already move (ADR-248). A lane-thread setting would be a second number for one bound; not needed. |
+| Mutation testing | per-feature (CLAUDE.md, unchanged): Stryker.NET + StrykerJS, ≥ 80 %, last on frozen code, per slice. Scope below. |
+| Environment matrix | `environments.yaml` (feature root, house location; the skill's `devops/` path is not used, as in Story 6354). |
+| Pre-requisites | See Pre-requisites below. |
+
+## Wave: DEVOPS / [REF] Usage-Data Event Design (D24, DDD-8, OQ-6)
+
+**Answer: no new event. One closed property, `featuresHeld`, on the existing `TeamTabOpened` (0) and
+`PortfolioTabOpened` (1).** `UsageDataEventName` is not touched, so nothing is appended or renumbered. Emitted in
+**slice 01** (D24, maintainer-accepted) and listed in `docs/settings/usagedata.md` in that slice.
+
+**Why a property, against the "name-only unless a KPI cannot be counted without it" rule.** K5 ("share of tab openings
+per size bucket", descriptive) and D25's population claim (the maintainer expects people to start with Portfolios of
+a few hundred Features; today the evidence is one instance) cannot be counted from the name: both tab events already
+exist and are counted, and what this Epic needs to know is how many of those openings are of large Portfolios and
+Teams. Without the band, nothing in the catalogue tells a 30-Feature Portfolio from a 920-Feature one. It is a closed
+enum of four values, never a count and never an id, which is the narrowest shape that answers it.
+
+| Part | Decision |
+|---|---|
+| Backend enum | `Models/UsageData/UsageDataFeaturesHeld.cs`: `UpTo100 = 0`, `From101To399 = 1`, `From400 = 2`, `Unknown = 3`. Appended only; with the house's "zero is a real answer" comment. |
+| Record / DTO field | `UsageDataEventReported.FeaturesHeld` and `UsageDataEventDto.FeaturesHeld` (`UsageDataFeaturesHeld?`, last optional parameter, as `Updates` was added). JSON from the browser: `featuresHeld`. |
+| PostHog property | `features_held`, written with `JsonIgnoreCondition.WhenWritingNull` (left out entirely on every other event), from `FeaturesHeld?.ToString()`. Added to the allowed property list in `Architecture/UsageDataEmitSeamArchUnitTest.cs`. |
+| Where the server allowlists it | `UsageDataController.AsTakenIn`: `reported.FeaturesHeld is { } held && !Enum.IsDefined(held)` refuses the batch. `UsageDataEventShapes`: a new declaration `EventsThatSayHowManyFeaturesTheirPageHolds = {TeamTabOpened, PortfolioTabOpened}`, judged **"carried only when declared"**: on any other event it is refused; on the two tab events it may be absent (see the next row and maintainer question 1). |
+| Unknown vs absent | **The browser always sends it on the two tab events.** `Unknown` means the browser did not know the size when the opening was counted (the owner failed to load, or the person left before it arrived). **Absent** therefore means only an older web bundle (a tab left open across the upgrade). The server accepts absent on these two events so such a tab does not lose its whole batch (`HandInEvents` refuses a batch on one unreadable event) and so the ~17 backend test classes that post tab events today keep passing without a band. |
+| Boundaries | Aligned with the nudge (D23: more than 100) and the measurement points (100 / 400 / 920): **`UpTo100`** = 0–100 Features (the nudge never shows; the 100 scale point), **`From101To399`** = 101–399 (nudged, below the reporter's range), **`From400`** = 400 and more (the reporter's range: both the 400 and the 920 scale points). DISCUSS's `Under100` / `100To399` would have put exactly 100, which the nudge leaves silent, among the nudged; corrected here. No higher band: no KPI needs to tell 920 from 2,000, and every extra band is one more distinguishing value. |
+| What is counted | `portfolio.features.length` / `team.features.length` of the owner payload the detail page already holds (DDD-8). For a Team that is the Features it works on, the same list its Features tab shows. The same band rides on every tab of that owner (Features, Metrics, Settings, …). |
+| When it is sent | The opening counts after the existing 5 s dwell, as today, so a tab-opened count keeps its meaning. If the owner has arrived by then, the band goes with it. If not, the noticed opening waits for the owner while the person stays on that page, and goes with `Unknown` if they leave first or the owner fails to load. A tab opening is never dropped for want of a band. |
+| Frontend | `UsageDataFeaturesHeld` in `models/UsageData/UsageData.ts`; one pure function `featuresHeldOf(count: number \| undefined): UsageDataFeaturesHeld` (the length never leaves it); the event type carries the enum, not a number; `UsageDataService.ts` and `usageDataBuffer.ts` pass it through. The detail pages hand their owner's band to the detector (flag F1: the mechanism is DELIVER's). |
+| CLI / MCP | N/A: `lh` and the MCP server never send tab openings. No Lighthouse-Clients release (D20). |
+
+**Why it can never carry a raw count or an id.**
+1. The wire field is an enum: a number such as `920`, `-1` or `4` fails `Enum.IsDefined`, and a string that is not
+   one of the four names fails to read; either refuses the batch (`400`). Tests: `UsageDataControllerTests` cases for
+   `920`, `4`, `"920"`, and `featuresHeld` on `ReportCreated` (refused).
+2. What leaves the instance is `enum.ToString()` into `features_held`: four possible strings. Test:
+   `UsageDataPublishedMessageTests` (present on a tab event, absent on every other event).
+3. The browser computes the band in one pure function; the TypeScript event type has no numeric field for it. Vitest
+   at 0, 100, 101, 399, 400, 920 and `undefined` → `Unknown`.
+4. Which Team or Portfolio stays unsent, as today: the route is a label (`UsageDataRouteKey`), never an id.
+
+**`docs/settings/usagedata.md` rows to add (slice 01, at the commit that emits):**
+- The two rows "A Team tab was opened" / "A Portfolio tab was opened", column *What travels with it*, append: "and how
+  many Features it holds, as a band: `UpTo100`, `From101To399`, `From400`, or `Unknown` when your browser did not
+  know yet. **Never the number itself**".
+- The field table gains one row, after "When the updates run":
+
+  | How many Features it holds | **Only on the two tab openings.** A band, never the number: `UpTo100` (100 or fewer), `From101To399`, `From400` (400 or more), and `Unknown` when the page had not finished loading the Team or Portfolio before you left it. A browser from before this release leaves it out. **Never how many Features exactly, never which Team or Portfolio.** On the other nineteen events this field is not empty — it is not there at all | `From400` |
+
+- The page's count of name-only events is unchanged (both tab events already carried a page); re-read the sentence
+  saying the two tab openings "are the only events that can name a page" and keep it true.
+- Use the seeded terms (`Features`, `Team`, `Portfolio`), per Terminology.
+
+**What it can and cannot say (K5).** The identifier is per consent answer (one browser, one `lh` machine, one MCP
+server), not per instance, so the band counts **openings** and **consenting browsers** by size, not instances. D25's
+"how many real instances are this large" is read that way (flag F3).
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+Contracts appended to `docs/product/kpi-contracts.yaml` as `OUT-6400-*`. Self-hosted: no vendor dashboard and no runtime
+alert. Timing KPIs are **harness readings**, never CI budgets (D26, maintainer).
+
+| KPI | Instrument | Where it lives | Reading | Target | Contract |
+|---|---|---|---|---|---|
+| K1 navigation and Settings < 1 s | Playwright marks (first navigation paint; Settings usable after the Overview) | `Lighthouse.EndToEndTests/perf/readings` | 920 scale, 4 cores, SQLite + PostgreSQL, idle and during a round; median of 5 after one warm-up | < 1 s each | `OUT-6400-navigation-and-settings-answer` |
+| K2 first Feature row < 2 s at 920 | Playwright first-row mark; server split from the request-finished lines (`Microsoft.AspNetCore.Hosting.Diagnostics`) and EF command lines (`Microsoft.EntityFrameworkCore.Database.Command`); bytes from the Playwright request log | `perf/readings`, `perf/collect` | as K1, Portfolio and Team tab | < 2 s | `OUT-6400-first-feature-row` |
+| K3 no heartbeat warning during rounds (north star) | (a) harness log scan for Kestrel `Heartbeat took longer than`, `dotnet-counters` `System.Runtime` (pool queue, threads, GC pause, gen 2), cgroup `cpu.stat`; (b) **CI precondition**: the lane probe test (every round frame on a lane thread, 1/2/4 lane threads) is a hard gate; (c) **production**: the reporter's first log after the release | `perf/collect`; `ForecastLane` probe tests; reporter's log | 5 computed + 5 skipped rounds at 920 / 8 Teams; during-round K1/K2 ≤ 1.2 × idle. Production: the banner line shows the lane ran; count the Kestrel warnings whose time falls inside a forecast window, from each `ForecastUpdater: Update completed … forecast={N}ms` line (window = its timestamp minus `{N}` ms) | 0 warnings | `OUT-6400-no-stall-during-rounds` |
+| K4 round duration (computed −30 %, skipped ≤ 15 % of baseline computed) | DDD-4's Debug split (`gather`, `simulate`, `save`, `publish` ms) in the harness; `RefreshLog` `Type = 2` `DurationMs` with `Skipped` for production | `ForecastUpdater` Debug line; Refresh History | Harness at 8 Teams; production: the 6354 query shape over `DurationMs`, computed vs skipped | Provisional, fixed at D27 (Q-M4) | `OUT-6400-shorter-rounds` |
+| K5 openings by size | `features_held` on `TeamTabOpened` / `PortfolioTabOpened` | PostHog (opt-in) | Share of openings and of consenting browsers per band, 90 days after release | Descriptive | `OUT-6400-openings-by-size` |
+| G1–G4 identity | Goldens (bodies, verdicts, positions, forecasts, fingerprints), SQLite + PostgreSQL | `ci_backend` | Every push | 0 differences (hard) | `OUT-6400-answers-unchanged` |
+| G5 update not slower | `RefreshLog` `DurationMs` of Team (`Type 0`) and Portfolio (`Type 1`) updates in the harness, before vs after each slice | `perf/collect` | Per slice | ≤ baseline + spread | in `OUT-6400-shorter-rounds` |
+
+**Log levels the harness needs** (shipped `appsettings.json` keeps `Microsoft.AspNetCore` and
+`Microsoft.EntityFrameworkCore` at Warning, and our code at Information). Pass them as **command-line arguments** to the
+measured process, because bash cannot export an environment variable whose name contains dots:
+`--Serilog:MinimumLevel:Override:Microsoft.AspNetCore.Hosting.Diagnostics=Information`,
+`--Serilog:MinimumLevel:Override:Microsoft.EntityFrameworkCore.Database.Command=Information`,
+`--Serilog:MinimumLevel:Override:Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.ForecastUpdater=Debug`.
+In a container use `docker run -e "Serilog__MinimumLevel__Override__Microsoft.EntityFrameworkCore.Database.Command=Information"`
+(Docker passes dotted names). Kestrel's heartbeat warning is Warning-level and visible at shipped defaults, so the
+reporter's production log needs no change.
+
+**Production reading for K3 (the reporter's next log).** What the maintainer asks for: one working day's log after the
+upgrade, unedited, with periodic updates on. The banner's new line ("Forecast rounds run on N dedicated threads; each
+forecast uses up to N of M cores") proves the lane ran; the Kestrel warnings inside forecast windows are counted
+against the 2026-10-20 excerpt (9 warnings, 1.4–49.3 s, 4 rounds). Customer names, hosts and Portfolio names in that
+log are never committed (memory: no customer identifiers in git).
+
+**The harness is dev-only and never in CI — checked.**
+- CI runs E2E only as `pnpm run test` = `playwright test` with the default `playwright.config.ts`, `testDir: "./tests"`
+  (`ci_verifysqlite.yml:140-146`, same in `ci_verifypostgres.yml`). `perf/` and `playwright.perf.config.ts` are never
+  named. DELIVER adds a separate script (`"perf": "playwright test --config playwright.perf.config.ts"`) and never
+  widens `testDir`.
+- **Lint and type-check do not see `perf/` today** (flag F6): `tsconfig.json` includes only `tests/**/*.ts` and
+  `playwright.config.ts`, and `prebuild` runs Biome on `./tests` only. DELIVER adds `perf/**/*.ts` and
+  `playwright.perf.config.ts` to `include`, and `./perf` to the Biome path, so the harness is linted and type-checked
+  locally and still never runs in CI (no workflow runs the E2E `build`).
+- Sonar: `Lighthouse.EndToEndTests/**` is in `sonar.exclusions` (`ci_backend.yml:102`). gitleaks (pre-commit) scans it.
+- Outputs (generated CSV, counters, traces, result tables) go to a gitignored `Lighthouse.EndToEndTests/perf/out/`;
+  only the summarised table is pasted into this delta. The harness reads the gitignored Premium fixture
+  `tests/fixtures/valid_premium_license.json`; it never copies it.
+
+## Wave: DEVOPS / [REF] CI Impact
+
+No new workflow, job or step. Per slice:
+
+| Slice | New tests (where they run) | Program.cs? | Watch |
+|---|---|---|---|
+| 01a | Line-format unit test of the Debug split (`ci_backend`); harness files (no CI) | No | Biome/tsc include for `perf/` (above) |
+| 01 | `ForecastLane` unit tests; the **lane probe** over round frames on 1, 2, 4 lane threads; host-stop test (cancel, nothing saved, threads end); banner line test; ArchUnitNET (`ForecastService` does not call `Task.Run`; only `ForecastUpdater` and the composition root depend on `ForecastLane`); identity goldens SQLite + PostgreSQL (`Integration.Containers`); usage-data shape, controller, publisher and seam tests (`ci_backend`); `featuresHeldOf` and the detector hand-off (`ci_frontend`) | **Yes** (lane registration) → `path-classifier.sh` sets `connector_shared`, **every live-connector suite runs** on that push | Budget the full run plus one flake re-run; a red backend job skips `sonar-gates` |
+| 02 | Golden JSON for `GET /portfolios`, `/teams`, `/teams/{id}`, `/portfolios/{id}`, `/portfolios/{id}/settings` (dev backup + seeded scaled set, SQLite + PostgreSQL); SQL-capture test for `GetById`; `useLicenseRestrictions` hook tests per state; source-tree test that only the shared query calls `getLicenseStatus` | No | Overview tests are already allowlisted at 77 s; add cases in a new file, not `OverviewDashboard.test.tsx` |
+| 03 | Verdict identity as `TestCaseSource` over seeded generated graphs; reference-id read SQL capture; duplicate-reference test; `features/ids`, `features/references`, `featuresInProgress` goldens | No (constructor parameter **types** change, DI resolves them) | Bound the generated case count so the class stays under 34 s |
+| 04 | `FeatureListController` / `FeatureListService` tests; list-parity goldens; ArchUnitNET (`FeatureListController` depends on no repository); RBAC on/off scenarios; `useFeatureList` and the looks (Vitest); the Features-tab page object waits on `data-widget-status="ready"` (`ci_verifysqlite`, `ci_verifypostgres`) | **Yes** (service registration) → full live-connector suites | DataGrid renders in jsdom are slow and flake under load (ci-learnings 589): one file per look, keep each under 63 s |
+| 05 | Computed-round row diff on SQLite + PostgreSQL; cascade test asserting `PRAGMA foreign_keys = 1` first; write-back staging equality for a computed and a skipped round with a mapping on Premium | No | `ForecastServiceTest` sits at its 36 s ceiling: new cases in a new class |
+| 06 | `PortfolioSize` unit (100 / 101); size endpoint; the update's log line; the note (Vitest, looks incl. failure) | No | — |
+
+- **Postgres**: every provider-backed class reuses `SharedPostgresContainer` with a fresh database per case; never
+  `StartFreshAsync` per case. Docker must be available locally (P3).
+- **Test-time budget** (backend 34 s per class, frontend 63 s per file, both `--warn-only` today): read each new
+  class's CI time on its slice's push. Over it: speed it up first; if the time is real (a container, a real round),
+  add an allowlist entry with a plain reason and a ceiling ≥ 2.1 × CI time. No wall-clock assertion anywhere; timings
+  are readings.
+- **Sonar and analyzer rules likely to bite** (pre-apply):
+  - `ForecastLane` owns threads and a blocking queue: **CA1001 / S3881** (owns disposables → `sealed`, plain
+    `Dispose`, no finaliser); **CA2008** (every `StartNew` / `ContinueWith` names its scheduler, as DDD-6 already does);
+    **S2696** / static mutable state (none: a DI singleton, ci-learnings 849); `Thread.Join(timeout)` return value used
+    (CA1806 style); threads `IsBackground = true` and named.
+  - Probe and host-stop tests: participants that block on a latch need their own threads (ci-learnings 467-469); no
+    `Thread.Sleep` in tests (S2925), use `ManualResetEventSlim` / `SemaphoreSlim` with a timeout.
+  - ArchUnitNET: assert against fields, signatures or a constant list, never an edge that exists only inside an
+    `async` body (vanishes in Release, ci-learnings 581-585); run `dotnet build -c Release && dotnet test -c Release`
+    on the Architecture namespace before pushing. Fluent slices typed concretely (CA1859 on fields).
+  - **`ConfigureAwait(false)` on the round path** is a convention in DDD-6, not a check (flag F8): add a source-scan
+    test (as `ZonedTimestampParsingArchUnitTest` does) over `ForecastUpdater.cs`, `ForecastService.cs` and
+    `ForecastLane.cs`.
+  - New EF reads with two or more collection `Include`s: **S8733**, suppress at the call site naming
+    `DatabaseConfigurator`, never `.AsSplitQuery()`.
+  - **S107** at 7: `ForecastUpdater` and `ForecastService` stay at 7 (lane from the scope's provider, DDD-6);
+    `FeatureListService` ≤ 7 (DDD-15); `FeaturesController` / `PortfoliosController` keep their existing suppressions
+    and gain no parameter.
+  - `TestCaseSource` providers `private static` (NUnit1028, which then arms CA1859); independent asserts in
+    `Assert.EnterMultipleScope()` (NUnit2045); goldens' expected arrays hoisted (CA1861); S1192 in DISTILL scaffolds.
+- **Local gates (mirror CI)** before each commit: `dotnet build` (zero warnings), the filtered `dotnet test` from
+  `CLAUDE.md`, `pnpm test`, `pnpm build` (runs `biome check --write`). Never the live-connector categories locally.
+
+## Wave: DEVOPS / [REF] Mutation Scope (for DELIVER, per slice, run last on frozen code)
+
+Stryker.NET ignores line spans, so backend entries are whole files; a large file with a small change is excluded and
+its changed lines are covered by the named tests. Gate ≥ 80 % over the included set; read the per-file table in
+`mutation-report.json`. Backend `test-case-filter` always ends with
+`&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration`
+(the acceptance suite stays out: 80 min vs 3). StrykerJS: `inPlace`, `disableTypeChecks: false`, commit first, **one
+span per entry**; the two stacks one after the other. Configs under `docs/feature/epic-6400-fast-with-many-features/mutation/`
+as `stryker.<storyId>.{backend,frontend}.json`.
+
+| Slice | Included (whole file unless `FE:` span) | Excluded, and what covers it |
+|---|---|---|
+| 01a | none (log-only change, dev-only harness) | `ForecastUpdater.cs` Debug line: line-format test; mutated whole in 01 and 05 |
+| 01 | `ForecastLane.cs` (new); `ForecastUpdater.cs` (315); `ForecastService.cs` (415, mutated whole in 6311 and 6354); `Models/UsageData/UsageDataEventShapes.cs` (124); `FE: featuresHeldOf` file (new, whole); `FE: usageDataEvents.ts` changed spans; `FE:` detail-page hand-off spans | `StartupBanner.cs` (one line: banner test); `UsageDataController.cs`, `PostHogUsageDataPublisher.cs` (one line each: controller and publisher tests); `Program.cs`; the enum |
+| 02 | `PortfolioRepository.cs` (113); `FE: useLicenseRestrictions.ts` (99, whole); `FE: OverviewDashboard.tsx` changed spans | `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` (read swaps: goldens) |
+| 03 | `FeatureRepository.cs` (86) | `FeaturesController.cs` (349, one read swap: goldens); **`TeamMetricsService.cs` (996)**: its in-progress change is substantive but the file is too large to mutate whole (flag F7; if DELIVER extracts the in-progress resolution into a small class, mutate that class whole) |
+| 04 | `FeatureListController.cs`, `FeatureListService.cs`, the shared dependency-rendering collaborator (all new); `FE: useFeatureList.ts` (new, whole); `FE: PortfolioFeatureList.tsx`, `TeamFeatureList.tsx`, `FeatureListDataGrid.tsx`, `FeatureService` `getFeatureList` spans | DTO records; `FeaturesController.cs` (delegates to the collaborator: goldens) |
+| 05 | `ForecastService.cs`, `ForecastUpdater.cs`, `FeatureRepository.cs`, `PortfolioRepository.cs` | — |
+| 06 | `Models/PortfolioSize.cs` (new); `FE:` the size note component (new, whole); `FE: ModifyProjectSettings.tsx` and `PortfolioService.ts` `getSize` spans | `PortfolioController.cs` (one action: controller test); `PortfolioUpdater.cs` (one log line: line test) |
+
+Note for DISTILL: any repository test that lives only in `Integration.Containers` is outside the filter, so the
+repository mutants would be uncovered; give each new reader a relational SQLite (in-memory connection) class in a unit
+namespace as well (Story 6354 precedent).
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback
+
+Ships in ordinary calver releases through the existing pipeline; users upgrade. No flag, no configuration.
+
+**Rollback first.** Install the previous release (re-pin the image tag, `helm rollback`, or reinstall Standalone/zip).
+- **Schema**: no migration in any slice. If DDD-20's index on `Features.ReferenceId` lands, it is expand-only through
+  `Create-Migration.ps1` for SQLite and PostgreSQL; an older build ignores an index, so rollback stays safe.
+- **API**: `GET /portfolios/{id}/feature-list`, `GET /teams/{id}/feature-list` and `GET /portfolios/{id}/size` are
+  additive; every existing body is unchanged (D20), so `lh`, MCP and an older bundle are unaffected. The web bundle is
+  served by the same server, so after a rollback the old bundle comes back with it.
+- **Forecast round**: the previous release runs the round on the shared pool again; forecasts are identical (G1), only
+  the stalls return. Nothing persisted depends on the lane.
+- **Usage data**: an older server reading a newer bundle's batch ignores the unknown `featuresHeld` member
+  (System.Text.Json default), so the opening still counts, without the band.
+- **Licence gates (slice 02)**: the server's `LicenseGuard` is unchanged in both directions.
+
+**What operators see.** The startup banner's cores line becomes the lane line (DDD-7): "Forecast rounds run on N
+dedicated threads; each forecast uses up to N of M cores". On 1 or 2 cores N is 1 (`max(1, cores ÷ 2)`), as the
+forecast's bound is today. Slice 06 adds one Information line at the end of a Portfolio update over 100 Features.
+
+**Production validation (per instance, advisory).** After the upgrade: the lane line is in the banner; during a
+forecast round the Overview, Settings and the Features tabs answer; the log has no Kestrel heartbeat warning inside a
+round; Refresh History shows forecast rounds as before. Shutdown during a round stops it without a half-saved forecast
+(DDD-23).
+
+## Wave: DEVOPS / [REF] Observability Stack
+
+Unchanged: Serilog console and file sinks, the Kestrel warnings, Refresh History, the backend-forwarded PostHog pipe
+(opt-in). Added: the lane banner line (01), the Debug round split (01a), the over-100 Information line (06), the
+duplicate-reference warning once per refresh (03, DDD-13), and `features_held` (01). The harness's instruments
+(`dotnet-counters`, cgroup `cpu.stat`, Playwright traces, request and EF command logging by argument) are on the
+measuring machine only and never ship.
+
+## Wave: DEVOPS / [REF] Branching and Delivery Order
+
+Trunk-based on `main`, no branches or PRs. Order (D18, D27): Task 01a first and its baseline written here before
+slice 01's isolation step; then 01; 02, 03, 05 in the order D27 fixes; 04 after a finished 03; 06 last. One focused
+commit per step; never push red; never rebase autonomously.
+
+## Wave: DEVOPS / [REF] Coexistence
+
+| With | Must hold | How it is kept |
+|---|---|---|
+| Update queue, Stop / Cancel all (Epic 6311) | A round on the lane is stopped by the same per-update token; Cancel all empties the queue as today | The queue, holds and drain are unchanged (DDD-5); a probe-class scenario cancels a lane round; host-stop test (DDD-23) |
+| Story 6354 skip and forget | Fingerprints identical; a skip still skips; every start still forgets | G1 goldens on SQLite + PostgreSQL; the fingerprint's members untouched (C12); slice 05's gather reads headers the fingerprint already uses (CF-4) |
+| Forecast write-back | Staged values identical for a computed and a skipped round | DDD-17/18 provider tests on Premium with a mapping |
+| Epic 6264 ratchets | No new `GetAllByPredicate` caller; touched files only shrink; no controller depends on a repository | DDD-21; ArchUnitNET rule for `FeatureListController`; S05a's guard is not in code yet, so the review checks call counts in touched files |
+| E2E suite | Green on SQLite and PostgreSQL; no new walking skeleton | The Features-tab page object waits on `data-widget-status="ready"` from slice 04; demo Portfolios stay under 100, so the note never shows in E2E or screenshots |
+| Multi-replica (Redis) | Unchanged admission | Each replica has its own lane; Redis carries nothing new |
+| Standalone | Shuts down cleanly | Lane threads are background threads, joined with a timeout on disposal |
+| Lighthouse-Clients (`lh`, MCP) | No change | Bodies unchanged (D20); no tab events from clients; no release |
+| Web bundle open across the upgrade | Its usage-data batches still accepted | `featuresHeld` may be absent on the two tab events (maintainer question 1) |
+| lefthook / git hooks (gitleaks) | Unchanged | Harness outputs gitignored; the licence fixture never copied |
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- **P1** Task 01a (harness + baseline) before any other DELIVER step (D17, D27).
+- **P2** Premium licence fixture in the worktree: backend `valid_not_expired_license.json` (two Licensing tests) and the
+  E2E `tests/fixtures/valid_premium_license.json` (the harness), both copied from the main checkout, never committed.
+- **P3** Docker for Testcontainers (`SharedPostgresContainer`) and for `examples/postgres` (harness PostgreSQL).
+- **P4** The dev DB backup restored with `Restore-DbBackup.ps1` on a throwaway copy for G4 (credentials never printed).
+- **P5** `dotnet-counters` on the measuring machine (`dotnet tool install -g dotnet-counters`).
+- **P6** A worktree at the v26.10.19.10 tag for the release comparison (OQ-4).
+- **P7** A 4-core measuring host: `docker run --cpus=4` with cgroup v2 (for `cpu.stat`), or a 4-core machine with
+  `DOTNET_PROCESSOR_COUNT=4`.
+
+## Wave: DEVOPS / [REF] Flags Against DESIGN (not silently fixed)
+
+1. **F1 — DDD-8's "sent once that payload has arrived" has no seam today.** The tab-opened events are emitted by the
+   app-level `useUsageDataEventDetector` (`usageDataEvents.ts:63-89`), which sees only the path; the owner sits in the
+   detail pages' local `useState`. DELIVER needs a small hand-off (default: the detail page reports its owner's band,
+   keyed by owner kind and id, into a holder the detector reads when the dwell ends; one emitter, one dwell clock).
+   DEVOPS fixed the semantics (above), not the mechanism.
+2. **F2 — "the backend's event-shape check gains the enum" read strictly would make the band required.** That refuses
+   the whole batch of any web bundle open across the upgrade and touches ~17 backend test classes that post tab events.
+   DEVOPS chose "carried only when declared, not required on the two tab events" (maintainer question 1).
+3. **F3 — D25 says the band shows "how many real instances are this large".** The identifier is per consent answer,
+   not per instance, so K5 counts openings and consenting browsers by size. Wording, not design.
+4. **F4 — Program.cs is touched in slices 01 and 04** (lane and list-service registrations). DESIGN does not say so;
+   each of those pushes runs every live-connector suite.
+5. **F5 — DDD-2's "switched on by configuration only"** needs Serilog overrides for three categories, passed as
+   command-line arguments (dotted names). Clarified above; no design change.
+6. **F6 — DDD-1's "outside testDir" covers running, not linting.** `perf/` is outside the E2E `tsconfig` include and
+   the Biome path; DELIVER adds both.
+7. **F7 — `TeamMetricsService` (996 lines) carries slice 03's substantive change** and cannot be mutated by span.
+   Either accept the gap (named tests cover it) or extract the in-progress resolution into a small class. DELIVER's
+   call; no design change required.
+8. **F8 — the `ConfigureAwait(false)` ban on the round path (DDD-6) has no check.** The probe sees only the frames it
+   records. Add a source-scan architecture test over the three files (automate the check rather than rely on review).
+
+## Wave: DEVOPS / [REF] Questions for the Maintainer
+
+Each carries the default this wave took; none blocks DISTILL.
+
+1. **The band on an older bundle's tab events: accept absent, or require it?** *Default: accept absent on the two tab
+   events (refuse it everywhere else); the browser always sends a value, `Unknown` included.* Requiring it would drop
+   whole batches from tabs left open across the upgrade and needs ~17 test classes edited.
+2. **The bands `UpTo100` / `From101To399` / `From400` (+ `Unknown`).** *Default: as written, aligned with the nudge
+   and the 100 / 400 / 920 points; no band above 400.* Say if a `From1000` band is wanted.
+
+## Wave: DEVOPS / [REF] Wave Decisions Summary
+
+- **Usage data**: `featuresHeld` (`features_held`), closed enum `UpTo100 / From101To399 / From400 / Unknown` on
+  `TeamTabOpened` and `PortfolioTabOpened`; no new event, no renumbering; emitted in slice 01; absent only from older
+  bundles.
+- **KPIs**: `OUT-6400-*` in `kpi-contracts.yaml`; K1–K4 are harness readings (dev-only, never CI), K3's production
+  reading is the reporter's next log, K5 is opt-in telemetry, G1–G4 are hard CI gates.
+- **CI**: no new workflow; Program.cs in 01 and 04 forces the live-connector suites; Postgres via
+  `SharedPostgresContainer`; budget watch per slice; `perf/` added to E2E lint and type-check only.
+- **Deployment**: release-based, no flag, no knob, no migration (unless DDD-20's index); rollback = previous release.
+- **Flags**: F1–F8. **Questions**: two, with defaults.
