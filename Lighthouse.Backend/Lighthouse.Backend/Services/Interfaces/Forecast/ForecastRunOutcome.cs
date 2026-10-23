@@ -10,9 +10,9 @@ namespace Lighthouse.Backend.Services.Interfaces.Forecast
         {
         }
 
-        /// <param name="ReadFingerprint">The recorded inputs the run found when it started, if any.</param>
+        /// <param name="RunMark">What the run put in place of the recorded inputs before it saved, or null when somebody changed them first.</param>
         /// <param name="FreshFingerprint">The inputs this run computed from, or null when they could not be told apart.</param>
-        public sealed record Computed(string? ReadFingerprint, string? FreshFingerprint) : ForecastRunOutcome;
+        public sealed record Computed(string? RunMark, string? FreshFingerprint) : ForecastRunOutcome;
 
         /// <param name="FeatureIds">The Features whose stored forecasts still hold.</param>
         public sealed record ConfirmedUnchanged(IReadOnlyCollection<int> FeatureIds) : ForecastRunOutcome;

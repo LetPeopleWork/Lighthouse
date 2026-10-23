@@ -166,10 +166,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var cancelled = false;
             var skipped = false;
             var itemCount = 0;
+            ForecastRunOutcome? outcome = null;
 
             try
             {
-                var outcome = await ForecastPortfolio(portfolio, serviceProvider);
+                var forecastWatch = Stopwatch.StartNew();
+                outcome = await ForecastPortfolio(portfolio, serviceProvider);
+                await ConfirmTheForecastsAreCurrent(outcome, serviceProvider);
+                await PassTheForecastOn(portfolio, forecastWatch.ElapsedMilliseconds, serviceProvider);
                 await RecordWhatTheForecastWasComputedFrom(portfolio.Id, outcome, serviceProvider);
 
                 itemCount = portfolio.Features.Count;
@@ -185,7 +189,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 stopwatch.Stop();
 
-                if (!success)
+                if (!success && outcome is not ForecastRunOutcome.Computed)
                 {
                     await ForgetWhatTheForecastWasComputedFrom(portfolio.Id);
                 }
@@ -195,29 +199,27 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             }
         }
 
+        private Task<ForecastRunOutcome> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
+        {
+            var instanceDay = serviceProvider.GetRequiredService<ILighthouseClock>().Today;
+
+            return serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
+        }
+
         /// <summary>
         /// A skipped run still stages its write-back and announces itself, because what listens for the
         /// announcement (the day's snapshot, the write-back of forecast dates) does not care whether the
         /// numbers were drawn again, only that they are current.
         /// </summary>
-        private async Task<ForecastRunOutcome> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
+        /// <param name="forecastMs">How long the forecast took, from gathering its inputs to saving or confirming what it produced.</param>
+        private async Task PassTheForecastOn(Portfolio portfolio, long forecastMs, IServiceProvider serviceProvider)
         {
-            var gatherWatch = Stopwatch.StartNew();
-            var instanceDay = serviceProvider.GetRequiredService<ILighthouseClock>().Today;
-            var outcome = await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
-            var gatherMs = gatherWatch.ElapsedMilliseconds;
-
-            await ConfirmTheForecastsAreCurrent(outcome, serviceProvider);
-
             var publishWatch = Stopwatch.StartNew();
             await StageTheWriteBackAndAnnounce(portfolio, serviceProvider);
             var publishMs = publishWatch.ElapsedMilliseconds;
 
-            var outcomeName = WasSkipped(outcome) ? "skipped" : "computed";
-            Logger.LogDebug("Forecast of {Portfolio} {Outcome}: gathered in {GatherMs}ms, staged and published in {PublishMs}ms",
-                portfolio.Name, outcomeName, gatherMs, publishMs);
-
-            return outcome;
+            Logger.LogDebug("Forecast round timings | Portfolio '{Portfolio}' | forecast={ForecastMs}ms | publish={PublishMs}ms",
+                portfolio.Name, forecastMs, publishMs);
         }
 
         private static bool WasSkipped(ForecastRunOutcome outcome) => outcome is ForecastRunOutcome.ConfirmedUnchanged;
@@ -251,7 +253,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// <summary>
         /// Recorded last, once everything the run owes is staged and announced: a recorded value is the
         /// promise that the stored forecasts are current, and a later quiet round trusts it without looking.
-        /// A run that could not fingerprint its inputs records nothing, so the next one computes too.
+        /// The inputs replace only the mark the run put down before saving, so a run that fails anywhere in
+        /// between, or a press or a restart that changed the value meanwhile, leaves the next round to compute.
+        /// A run that could not fingerprint its inputs leaves its mark, which computes next time too.
         /// </summary>
         private async Task RecordWhatTheForecastWasComputedFrom(int portfolioId, ForecastRunOutcome outcome, IServiceProvider serviceProvider)
         {
@@ -260,14 +264,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 return;
             }
 
-            await serviceProvider.GetRequiredService<IPortfolioRepository>()
-                .TryRecordForecastInputs(portfolioId, computed.ReadFingerprint, fresh, cancellationContext.Current);
+            var recorded = computed.RunMark is { } runMark
+                && await serviceProvider.GetRequiredService<IPortfolioRepository>()
+                    .TryRecordForecastInputs(portfolioId, runMark, fresh, cancellationContext.Current);
+
+            if (!recorded)
+            {
+                Logger.LogDebug("Forecast inputs of Portfolio {Id} not recorded: a press or a restart landed during the run", portfolioId);
+            }
         }
 
         /// <summary>
-        /// A run that failed or was stopped may have saved some of its forecasts and not others, so the next
-        /// round must not trust what was recorded before it. Forgetting is best effort and must not turn a
-        /// failed forecast into a different failure, so it runs in a scope of its own and is never cancelled.
+        /// A run that failed or was stopped before the forecast answered, or part way through confirming an
+        /// unchanged one, can leave what was recorded before it standing, and the next round must not trust it.
+        /// A run that answered with a computed forecast needs none of this: the mark it put down before saving
+        /// already stands in place of the inputs. Forgetting is best effort and must not turn a failed forecast
+        /// into a different failure, so it runs in a scope of its own and is never cancelled.
         /// </summary>
         private async Task ForgetWhatTheForecastWasComputedFrom(int portfolioId)
         {

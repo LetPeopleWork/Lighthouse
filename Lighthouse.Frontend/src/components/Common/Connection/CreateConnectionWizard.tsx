@@ -41,6 +41,9 @@ const CANCELLED_COPY = "OAuth was cancelled. Click Connect to try again.";
 const UNEXPLAINED_REFUSAL_COPY =
 	"Could not validate the connection. Check your settings and try again.";
 
+const UNEXPLAINED_SAVE_FAILURE_COPY =
+	"Could not save the connection. Check your settings and try again.";
+
 interface InlineMessage {
 	severity: "error" | "info";
 	text: string;
@@ -270,9 +273,17 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		const dto = buildConnectionDto();
 		if (!dto) return;
 		setSaving(true);
+		clearValidationFeedback();
 		try {
 			await saveConnection(dto);
 			onComplete?.();
+		} catch (error) {
+			if (error instanceof ApiError && error.code !== 403) {
+				setValidationError(`Could not save the connection: ${error.message}`);
+				setValidationTechnicalDetails(error.technicalDetails ?? null);
+			} else {
+				setValidationError(UNEXPLAINED_SAVE_FAILURE_COPY);
+			}
 		} finally {
 			setSaving(false);
 		}
@@ -419,6 +430,18 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const showAuthMethodSelector =
 		(selectedSystem?.availableAuthenticationMethods?.length ?? 0) > 1;
 
+	const renderErrorAlert = () =>
+		validationError ? (
+			<Alert severity="error" sx={{ width: "100%" }}>
+				<Typography variant="body2">{validationError}</Typography>
+				{validationTechnicalDetails && (
+					<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
+						{validationTechnicalDetails}
+					</Typography>
+				)}
+			</Alert>
+		) : null;
+
 	const renderStep1 = () => (
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
 			<Typography variant="body1">
@@ -523,16 +546,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 					/>
 				))}
 
-				{validationError && (
-					<Alert severity="error" sx={{ width: "100%" }}>
-						<Typography variant="body2">{validationError}</Typography>
-						{validationTechnicalDetails && (
-							<Typography variant="caption" sx={{ display: "block", mt: 1 }}>
-								{validationTechnicalDetails}
-							</Typography>
-						)}
-					</Alert>
-				)}
+				{renderErrorAlert()}
 
 				{inlineMessage !== null && (
 					<Alert
@@ -549,6 +563,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 
 	const renderStep3 = () => (
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
+			{renderErrorAlert()}
 			<TextField
 				label="Connection Name"
 				fullWidth

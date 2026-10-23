@@ -10659,7 +10659,7 @@ Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md`
 ### ADR References (this feature)
 
 - [ADR-256](./adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md): an
-  unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked. **Proposed 2026-10-23.**
+  unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked. **Accepted 2026-10-23.**
 - Relied on, unchanged: ADR-197, ADR-248, ADR-249.
 
 ## Application Architecture — epic-6400-fast-with-many-features (Lighthouse stays fast with many Features)

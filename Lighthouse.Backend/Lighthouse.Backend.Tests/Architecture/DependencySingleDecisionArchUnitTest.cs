@@ -650,6 +650,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetricsService.Object,
                 featureRepository.Object,
+                Mock.Of<Lighthouse.Backend.Services.Interfaces.Repositories.IPortfolioRepository>(),
                 new Lighthouse.Backend.Tests.TestDoubles.NothingWaitsForAnything(),
                 new ForecastSimulation(new Lighthouse.Backend.Tests.TestDoubles.DrawsFromAPinnedStartingNumber(TheSeedBothRunsShare), Lighthouse.Backend.Models.Forecast.ForecastSimulationLimits.Default),
                 TimeProvider.System);

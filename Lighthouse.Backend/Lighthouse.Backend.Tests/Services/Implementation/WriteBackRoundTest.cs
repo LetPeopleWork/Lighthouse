@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(summary.ForecastDurationMs, Is.Null);
                 Assert.That(summary.ForecastSucceeded, Is.True);
                 Assert.That(summary.ForecastCancelled, Is.False);
+                Assert.That(summary.ForecastSkipped, Is.False);
             }
         }
 

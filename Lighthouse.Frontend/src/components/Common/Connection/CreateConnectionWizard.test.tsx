@@ -264,6 +264,7 @@ interface RenderOptions {
 		conn: WorkTrackingSystemConnection,
 	) => Promise<WorkTrackingSystemConnection>;
 	onCancel?: () => void;
+	onComplete?: () => void;
 	canUsePremiumFeatures?: boolean;
 	baseUrl?: string | null;
 	oauthService?: IOAuthService;
@@ -280,6 +281,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 			.fn()
 			.mockImplementation(async (conn: WorkTrackingSystemConnection) => conn),
 		onCancel = vi.fn(),
+		onComplete = vi.fn(),
 		canUsePremiumFeatures = true,
 		baseUrl,
 		oauthService = createMockOAuthService(),
@@ -347,6 +349,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 							validateConnection={validateConnection}
 							saveConnection={saveConnection}
 							onCancel={onCancel}
+							onComplete={onComplete}
 						/>
 					</TerminologyProvider>
 				</ApiServiceContext.Provider>
@@ -359,6 +362,7 @@ const renderWizard = (options: RenderOptions = {}) => {
 		validateConnection,
 		saveConnection,
 		onCancel,
+		onComplete,
 		deleteWorkTrackingSystemConnection,
 	};
 };
@@ -1111,11 +1115,15 @@ describe("CreateConnectionWizard", () => {
 	});
 
 	describe("Step 3: Name & Create", () => {
-		const goToStep3 = async () => {
+		const goToStep3 = async (
+			saveConnection = vi.fn().mockResolvedValue(undefined),
+		) => {
 			const user = userEvent.setup();
 			const validateConnection = vi.fn().mockResolvedValue({ isValid: true });
-			const saveConnection = vi.fn().mockResolvedValue(undefined);
-			renderWizard({ validateConnection, saveConnection });
+			const { onComplete } = renderWizard({
+				validateConnection,
+				saveConnection,
+			});
 			await waitFor(() => {
 				expect(
 					screen.getByRole("button", { name: /Azure DevOps/i }),
@@ -1137,7 +1145,7 @@ describe("CreateConnectionWizard", () => {
 			await waitFor(() => {
 				expect(screen.getByLabelText("Connection Name")).toBeInTheDocument();
 			});
-			return { user, validateConnection, saveConnection };
+			return { user, validateConnection, saveConnection, onComplete };
 		};
 
 		it("renders name input with default name from selected system", async () => {
@@ -1204,6 +1212,102 @@ describe("CreateConnectionWizard", () => {
 			await waitFor(() => {
 				expect(screen.getByLabelText("Organization URL")).toBeInTheDocument();
 			});
+		});
+
+		it("shows the server's reason on step 3 and stays there when saving fails", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(
+						400,
+						"A connection with this name already exists.",
+						"Pick a different name and try again.",
+					),
+				);
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection: A connection with this name already exists.",
+				);
+			});
+			expect(screen.getByRole("alert")).toHaveTextContent(
+				"Pick a different name and try again.",
+			);
+			await waitFor(() => {
+				expect(screen.getByRole("button", { name: /^Create$/ })).toBeEnabled();
+			});
+			expect(screen.getByLabelText("Connection Name")).toBeInTheDocument();
+			expect(onComplete).not.toHaveBeenCalled();
+		});
+
+		it("shows a fallback reason on step 3 when saving fails without one", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValue(new Error("Failed to fetch"));
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection. Check your settings and try again.",
+				);
+			});
+			await waitFor(() => {
+				expect(screen.getByRole("button", { name: /^Create$/ })).toBeEnabled();
+			});
+			expect(onComplete).not.toHaveBeenCalled();
+		});
+
+		it("clears the earlier save failure when Create is pressed again", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValueOnce(
+					new ApiError(400, "A connection with this name already exists."),
+				)
+				.mockResolvedValueOnce(undefined);
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection: A connection with this name already exists.",
+				);
+			});
+			await waitFor(() => {
+				expect(screen.getByRole("button", { name: /^Create$/ })).toBeEnabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(onComplete).toHaveBeenCalledTimes(1);
+			});
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		});
+
+		it("falls back to the general reason when saving is refused (403)", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(403, "You are not allowed to manage connections."),
+				);
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection. Check your settings and try again.",
+				);
+			});
+			expect(screen.getByRole("alert")).not.toHaveTextContent(
+				"You are not allowed to manage connections.",
+			);
+			expect(onComplete).not.toHaveBeenCalled();
 		});
 	});
 

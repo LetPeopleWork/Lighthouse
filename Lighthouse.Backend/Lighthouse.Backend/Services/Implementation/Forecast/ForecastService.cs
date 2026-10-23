@@ -10,15 +10,18 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
 {
+#pragma warning disable S107 // The run marks the Portfolio's recorded inputs right beside saving its forecasts, so the Portfolio repository joins. Every other collaborator is used on its own, and grouping any of them would invent a concept.
     public class ForecastService(
         IRandomNumberService randomNumberService,
         ILogger<ForecastService> logger,
         ITeamMetricsService teamMetricsService,
         IRepository<Feature> featureRepository,
+        IPortfolioRepository portfolioRepository,
         IWhatTheForecastWaitsFor whatTheForecastWaitsFor,
         ForecastSimulation simulation,
         TimeProvider timeProvider)
         : IForecastService
+#pragma warning restore S107
     {
         private readonly IDrawStreamFactory drawStreamFactory = simulation.Draws;
 
@@ -78,6 +81,9 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// When everything the simulation would be handed matches what the Portfolio recorded after its last
         /// computed forecast, the forecasts it already has are the ones this run would produce, so nothing runs
         /// and nothing is written.
+        ///
+        /// Otherwise the recorded inputs are swapped for a mark of this run before the new forecasts are saved,
+        /// so that until the caller records what they were computed from, no round can take them for current.
         /// </summary>
         public async Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateOnly instanceDay, CancellationToken cancellationToken = default)
         {
@@ -101,9 +107,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             await Simulate(gathered, cancellationToken);
 
+            var runMark = await portfolioRepository.TryMarkForecastRunning(portfolio.Id, recorded, cancellationToken);
             await featureRepository.Save();
 
-            return new ForecastRunOutcome.Computed(recorded, fresh);
+            return new ForecastRunOutcome.Computed(runMark, fresh);
         }
 
         private static bool IsUnchangedSinceRecorded(string? fresh, string? recorded)
@@ -128,7 +135,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 return ForecastInputFingerprint.Of(new ForecastInputs(instanceDay, limits, gathered.Features, gathered.ChipStatusByTeam, gathered.Waits));
             }
+            // Whatever went wrong, the cost is only a forecast computed in full, and the forecast must not fail over it.
+#pragma warning disable CA1031
             catch (Exception e)
+#pragma warning restore CA1031
             {
                 logger.LogWarning(e, "Could not fingerprint the forecast inputs of Portfolio {Portfolio}, so it is forecast in full", portfolio.Name);
                 return null;

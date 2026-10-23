@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -186,6 +187,7 @@ namespace Lighthouse.Backend.API
 
             foreach (var option in incomingOptions)
             {
+                var value = JiraSiteAddress.ForOption(existingConnection.WorkTrackingSystem, option.Key, option.Value);
                 var existingOption = existingConnection.Options.SingleOrDefault(o => o.Key == option.Key);
 
                 if (existingOption == null)
@@ -193,19 +195,19 @@ namespace Lighthouse.Backend.API
                     existingConnection.Options.Add(new WorkTrackingSystemConnectionOption
                     {
                         Key = option.Key,
-                        Value = option.Value,
+                        Value = value,
                         IsSecret = option.IsSecret,
                         IsOptional = option.IsOptional,
                     });
                     continue;
                 }
 
-                if (existingOption.IsSecret && string.IsNullOrEmpty(option.Value))
+                if (existingOption.IsSecret && string.IsNullOrEmpty(value))
                 {
                     continue;
                 }
 
-                existingOption.Value = option.Value;
+                existingOption.Value = value;
             }
         }
 

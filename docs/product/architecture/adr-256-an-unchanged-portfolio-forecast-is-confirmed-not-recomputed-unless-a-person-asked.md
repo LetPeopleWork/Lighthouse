@@ -1,7 +1,8 @@
 # ADR-256: An unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked
 
-**Status**: Proposed (DESIGN, 2026-10-23; recommendation taken in PROPOSE mode; revised after the review gate, which
-returned "approved with notes"; amended at the DISTILL review gate).
+**Status**: Accepted (2026-10-23); built with Story #6354, not yet released. Proposed at DESIGN the same day
+(recommendation taken in PROPOSE mode; revised after the review gate, which returned "approved with notes"; amended
+at the DISTILL review gate and at the DELIVER review).
 **Feature**: `story-6354-skip-unchanged-forecasts` (ADO Story #6354)
 **Relates to**: ADR-197 (forecasts have no periodic refresh of their own), ADR-249 (a cancelled forecast keeps its
 rows), the `FetchFingerprint` convention (a fingerprint stored on its owner; null means changed; a guard test lists
@@ -22,6 +23,11 @@ can be lost.
 forgets (6), the promise of a press is split between "Update forecast" and the refresh buttons (5), the port takes the
 instance day as a `DateOnly` and an error while fingerprinting means compute (2, 4), the Feature read is narrowed
 (Consequences), and no controller gains a parameter (Consequences).*
+
+*Amended at the DELIVER review (2026-10-23): just before a computed run saves its forecasts, it swaps the recorded
+value, by compare-and-set from what it read, for a `"computing:"` mark of its own, and at the end it records the fresh
+fingerprint only by swapping that mark, so a failure, crash, cancel or forget anywhere between the save and the record
+leaves a value no round can match (2, 3, 4).*
 
 1. **Fingerprint at the simulation's input boundary.** A pure `ForecastInputFingerprint` renders exactly what the run
    is about to be handed:

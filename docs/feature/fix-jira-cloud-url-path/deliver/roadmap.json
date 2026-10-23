@@ -1,0 +1,166 @@
+{
+  "roadmap": {
+    "project_id": "fix-jira-cloud-url-path",
+    "created_at": "2026-10-23",
+    "total_steps": 4,
+    "total_phases": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6401. Jira connection URL: a Jira Cloud site URL copied from the browser (https://<site>.atlassian.net/jira/) is reduced to its site root wherever the connector reads it and when a connection is saved; a Data Center URL keeps its context path and that path now actually reaches every request. Frontend: the create-connection wizard shows a failed save, and the Overview tells a system admin that the connection list was refused instead of showing onboarding. All paths under /storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth.",
+    "goal": "Users who paste the Jira Cloud address bar URL (with a /jira/ path) get a working connection on OAuth and API token alike; Data Center context paths work; a failed save or a refused connection list is never shown as 'nothing happened' / 'no connections'.",
+    "paradigm_note": "C# / NUnit 4 in Lighthouse.Backend.Tests; Vitest + RTL in Lighthouse.Frontend. No DISTILL wave for a bugfix: RED is a crafter-authored regression test through the driving port (IWorkTrackingConnector.ValidateConnection / request URIs seen by the injected HttpMessageHandler; controller actions; rendered components), failing on today's code for the bug's reason before production code changes."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6306 / bug-6254 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-23",
+    "notes": "No architect dispatch: the Phase-1 RCA (nw-troubleshooter, 2026-10-23, docs/feature/fix-jira-cloud-url-path/rca.md, approved by the maintainer) prescribes every fix site. Steps/files ratio 4/9."
+  },
+  "user_decisions": [
+    "Maintainer approved the RCA and the fix direction (2026-10-23).",
+    "Fix Data Center context paths too (client BaseAddress keeps the path); call it out in the release notes.",
+    "Include save-time normalisation (Create, Validate and Update of a Jira connection).",
+    "Approved UI sketches: (a) wizard step 3 shows an error Alert (severity error) when Create fails, stays on the step, does not call onComplete; (b) Overview: a system admin whose connection list returned 403 sees a warning Alert \"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.\" instead of the onboarding stepper.",
+    "Go ahead without waiting for the reporter's HAR / request log."
+  ],
+  "ssot_inputs": [
+    "docs/feature/fix-jira-cloud-url-path/rca.md",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Custom Cloud domains (not *.atlassian.net) are left as entered.",
+    "Frontend-side URL normalisation (the rule lives in the backend only).",
+    "Migrating already-stored URLs (read-time normalisation covers them; expand-only migrations).",
+    "Moving OverviewDashboard to TanStack Query or adding an error state to useRbac."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Backend: one canonical Jira site address",
+      "description": "Regression tests through the connector and the connection controllers, then the minimal fix.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The connector uses the site root of a Jira Cloud URL and keeps a Data Center context path",
+          "description": "A new JiraSiteAddress reduces *.atlassian.net URLs to scheme+host and trims one trailing slash otherwise; every connector read of the Url option goes through it; the HTTP client base address ends in '/' so a DC context path survives; the OAuth cloud-id lookup uses the injectable test handler and names the expected URL form when the site answers with a non-JSON page.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs",
+          "scenario_name": "A Jira Cloud URL with a /jira/ path validates against the site root on API token and OAuth; a Data Center context path reaches every request",
+          "red_to_green_tests": [
+            "JiraSiteAddressTest :: https://x.atlassian.net/jira/ -> https://x.atlassian.net; https://X.Atlassian.net/jira/software/projects -> https://X.Atlassian.net; https://host/jira and https://host/jira/ -> https://host/jira; https://host/ -> https://host; malformed input returned unchanged",
+            "connector (handler-backed) :: API token + https://x.atlassian.net/jira/ -> request to https://x.atlassian.net/rest/api/2/myself (or whichever validate route is used)",
+            "connector (handler-backed) :: Data Center https://host/jira -> request to https://host/jira/rest/... (fails today: path is dropped)",
+            "connector (handler-backed) :: OAuth + https://x.atlassian.net/jira/ -> tenant_info requested at https://x.atlassian.net/_edge/tenant_info (fails today: /jira/_edge/tenant_info, and the lookup bypasses the handler)",
+            "connector (handler-backed) :: OAuth, tenant_info answers 200 text/html -> validation is invalid with a message naming the expected form \"Use your site address, e.g. https://yourcompany.atlassian.net\" (not the generic unexpected-error verdict)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddress.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddressTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnectorAuthDelegationTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "RED captured before production changes: the DC context-path, OAuth tenant_info URL and non-JSON-message tests fail on today's code for the bug's reason.",
+            "JiraSiteAddress.Of(string): trim; Uri.TryCreate absolute; host ends with .atlassian.net (case-insensitive) -> scheme://host (host casing preserved, port kept if non-default); otherwise the input with one trailing '/' trimmed; non-absolute/malformed input returned unchanged so the existing invalid_url verdict still fires.",
+            "Every read of the Url option inside JiraWorkTrackingConnector (validate guard area, browse link, gateway cloud-id, direct BaseAddress + client cache key, DeploymentCache keys) goes through one private helper using JiraSiteAddress; no ad-hoc TrimEnd('/') of the Url remains.",
+            "The direct client BaseAddress ends with '/'; relative routes (JiraRestRoutes) are unchanged, so Cloud request URIs are byte-identical to today for a clean site URL.",
+            "ResolveCloudIdAsync uses _httpMessageHandlerForTesting when set (same pattern as GetOrCreateClient) and a non-JSON tenant_info answer yields an invalid verdict whose user message is \"Use your site address, e.g. https://yourcompany.atlassian.net\".",
+            "No live Jira: tests use the injected handler only; JiraWorkTrackingConnectorTest.cs (Integration/JiraIntegration) is not touched.",
+            "dotnet build zero warnings; dotnet test with the standard live-connector exclusion filter green."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (CA1861 static readonly arrays for TestCase data, CA1859, etc.). Prefer [TestCase] over duplicated tests. No comments citing the bug number or internal ids. Commit: fix(jira): use the site root of a Jira Cloud URL and keep a Data Center context path (bug 6401)"
+        },
+        {
+          "id": "01-02",
+          "name": "A Jira connection is saved with its canonical site address",
+          "description": "Create, Validate and Update of a Jira connection store the Url option as JiraSiteAddress.Of(raw); other systems' options are untouched.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+          "scenario_name": "Creating or updating a Jira connection with https://x.atlassian.net/jira/ stores https://x.atlassian.net",
+          "red_to_green_tests": [
+            "WorkTrackingSystemConnectionsControllerTest :: Create with a Jira Url https://x.atlassian.net/jira/ persists https://x.atlassian.net",
+            "WorkTrackingSystemConnectionsControllerTest :: Validate passes the canonical Url to the connector",
+            "WorkTrackingSystemConnectionControllerTest :: Update with a Jira Url https://x.atlassian.net/jira/ persists https://x.atlassian.net",
+            "a non-Jira connection's Url option is stored as entered; a Jira DC Url https://host/jira/ is stored as https://host/jira"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionsControllerTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Backend/Lighthouse.Backend.Tests/API/WorkTrackingSystemConnectionControllerTest.cs"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "RED captured: the Create and Update tests fail on the 01-01 code (raw URL stored).",
+            "The canonicalisation is applied in exactly one place per save path (CreateConnectionFromDto shared by Create+Validate; the Update action), keyed on WorkTrackingSystem == Jira and JiraWorkTrackingOptionNames.Url; reuse JiraSiteAddress, do not duplicate the rule.",
+            "If both controllers need the same rewrite, extract one shared helper rather than two copies.",
+            "Existing controller tests stay green; dotnet build zero warnings; dotnet test (standard exclusion filter) green."
+          ],
+          "implementation_notes": "Commit: fix(jira): save a Jira connection with its site address (bug 6401)"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Frontend: a failed save or a refused list is visible",
+      "description": "Wizard save error on step 3; Overview refused alert for a system admin.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The create-connection wizard shows a failed save",
+          "description": "handleCreate catches a rejected save the same way handleNext does and the existing error Alert renders on step 3.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx",
+          "scenario_name": "When saving the connection fails, step 3 shows the error and the wizard does not complete",
+          "red_to_green_tests": [
+            "CreateConnectionWizard.test :: save rejects with an ApiError -> an alert with its message is visible on step 3; onComplete not called; Create button usable again",
+            "CreateConnectionWizard.test :: save rejects with a plain Error -> a fallback error message is visible on step 3"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "RED captured: the test fails on today's code (no alert on step 3 / unhandled rejection).",
+            "Reuse the existing error state and Alert markup from step 2 (extract a small render helper if both steps need it); copy mirrors handleNext's message + technicalDetails handling.",
+            "Any user-facing fallback copy uses configurable terminology where a renamable term appears.",
+            "pnpm test green; pnpm build zero errors/warnings (Biome clean). Note: prebuild runs biome check --write; remove any */docs symlinks first if present."
+          ],
+          "implementation_notes": "Commit: fix(connections): show why saving a new connection failed (bug 6401)"
+        },
+        {
+          "id": "02-02",
+          "name": "The Overview says the connection list was refused instead of showing onboarding",
+          "description": "When the connections request returns 403 for a user useRbac() reports as system admin, render a warning Alert in place of the onboarding stepper; genuine non-admins keep today's behaviour.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+          "scenario_name": "A system admin whose connection list is refused sees that access was refused, not onboarding",
+          "red_to_green_tests": [
+            "OverviewDashboard.test :: system admin + connections 403 -> alert \"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.\" is shown and the onboarding stepper is absent",
+            "OverviewDashboard.test :: non-admin + connections 403 -> behaviour unchanged (existing no-access handling, no new alert)",
+            "OverviewDashboard.test :: system admin + connections 200 [] -> onboarding stepper still shown"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/spicy-chasing-knuth/Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx"
+          ],
+          "dependencies": ["02-01"],
+          "criteria": [
+            "RED captured: the system-admin 403 test fails on today's code (stepper shown).",
+            "RBAC state comes only from useRbac(); no direct fetch of /api/latest/authorization/my-summary.",
+            "Alert uses MUI Alert severity=\"warning\" with the approved copy; keep showRbacNoAccessAlert behaviour for non-admins.",
+            "pnpm test green; pnpm build zero errors/warnings."
+          ],
+          "implementation_notes": "Commit: fix(overview): tell an admin when the connection list was refused (bug 6401)"
+        }
+      ]
+    }
+  ]
+}

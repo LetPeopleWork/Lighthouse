@@ -22,6 +22,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
+        /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last
+        /// cannot move it back.
         /// </summary>
         Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken);
     }

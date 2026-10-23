@@ -405,13 +405,15 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        private static readonly int[] TheTeamsToUpdate = [12, 13, 14];
+
         [Test]
         public async Task UpdateAllTeamData_ForgetsWhatWasConfirmedForEveryPortfolioOfTheTeamsThenTriggersUpdateOfAllTeams()
         {
             var teams = new[] { new Team { Id = 12 }, new Team { Id = 13 }, new Team { Id = 14 } };
-            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([4, 5]);
-            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(13)).Returns([5, 6]);
-            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(14)).Returns([]);
+            portfolioRepositoryMock
+                .Setup(x => x.GetPortfolioIdsForTeams(It.Is<IReadOnlyCollection<int>>(ids => ids.Order().SequenceEqual(TheTeamsToUpdate))))
+                .Returns([6, 4, 5]);
             var calls = new List<string>();
             portfolioRepositoryMock
                 .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))

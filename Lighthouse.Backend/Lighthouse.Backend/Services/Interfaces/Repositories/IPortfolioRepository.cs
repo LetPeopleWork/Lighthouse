@@ -12,11 +12,25 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId);
 
         /// <summary>
+        /// The ids of the portfolios any of the given teams does work for, each once, in one read.
+        /// </summary>
+        IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds);
+
+        /// <summary>
         /// Records the inputs a forecast was computed from, but only if nobody changed the stored value since
         /// that forecast read it. Answers whether the value was recorded: a person who asked for a fresh
         /// forecast while this one ran has cleared it, and that request has to win.
         /// </summary>
         Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Replaces the stored inputs with a mark of this run, new on every call and never equal to any inputs,
+        /// but only if nobody changed the stored value since the run read it. Taken just before a computed
+        /// forecast is saved: until the run swaps the mark for what it computed from, no round can match it,
+        /// so a run that fails or dies after saving leaves the next one to compute. Answers the mark, or null
+        /// when the value had already changed.
+        /// </summary>
+        Task<string?> TryMarkForecastRunning(int portfolioId, string? readAtGather, CancellationToken cancellationToken);
 
         /// <summary>
         /// Replaces the recorded inputs of each of these Portfolios with a value no forecast ever computed from,

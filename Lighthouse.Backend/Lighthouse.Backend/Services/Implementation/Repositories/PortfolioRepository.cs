@@ -10,6 +10,8 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     {
         private const string ForgottenTokenPrefix = "forgotten:";
 
+        private const string RunningMarkPrefix = "computing:";
+
         // The stored value has to still be the one this run read, or a forget landed in between and must win.
         // EF compares a null read as IS NULL, so a first record only succeeds while nothing is recorded yet.
         public async Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken)
@@ -19,6 +21,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, fresh), cancellationToken);
 
             return recorded == 1;
+        }
+
+        public async Task<string?> TryMarkForecastRunning(int portfolioId, string? readAtGather, CancellationToken cancellationToken)
+        {
+            var mark = RunningMarkPrefix + Guid.NewGuid().ToString("N");
+
+            return await TryRecordForecastInputs(portfolioId, readAtGather, mark, cancellationToken) ? mark : null;
         }
 
         public Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken)
@@ -43,8 +52,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
         {
+            return GetPortfolioIdsForTeams([teamId]);
+        }
+
+        public IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds)
+        {
             return Context.Features
-                .Where(feature => feature.FeatureWork.Any(work => work.TeamId == teamId))
+                .Where(feature => feature.FeatureWork.Any(work => teamIds.Contains(work.TeamId)))
                 .SelectMany(feature => feature.Portfolios)
                 .Select(portfolio => portfolio.Id)
                 .Distinct()

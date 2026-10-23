@@ -146,6 +146,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 NullLogger<ForecastService>.Instance,
                 teamMetrics.Object,
                 features,
+                new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default),
                 TimeProvider.System);

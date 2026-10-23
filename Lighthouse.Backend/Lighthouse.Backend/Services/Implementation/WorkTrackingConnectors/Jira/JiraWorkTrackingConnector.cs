@@ -39,6 +39,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private const string BoardsEndpoint = "rest/agile/latest/board";
 
+        private const string InvalidUrlCode = "invalid_url";
+
         private const string LinkTypesProperty = "issueLinkTypes";
 
         private const string InwardLabelProperty = "inward";
@@ -410,7 +412,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             if (!Uri.TryCreate(url, UriKind.Absolute, out _))
             {
                 return ConnectionValidationResult.Failure(
-                    "invalid_url",
+                    InvalidUrlCode,
                     "The Jira URL appears to be invalid.",
                     "Provide a full URL, for example https://your-domain.atlassian.net.",
                     JiraWorkTrackingOptionNames.Url);
@@ -468,7 +470,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation(ex, "Jira URL parsing failed for connection {ConnectionName}", connection.Name);
 
                 return ConnectionValidationResult.Failure(
-                    "invalid_url",
+                    InvalidUrlCode,
                     "The Jira URL appears to be invalid.",
                     ex.Message,
                     JiraWorkTrackingOptionNames.Url);
@@ -1771,8 +1773,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
         {
-            var baseAddress = workItemQueryOwner.WorkTrackingSystemConnection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url);
-            var url = $"{baseAddress.TrimEnd('/')}/browse/{issue.Key}";
+            var url = $"{SiteAddressOf(workItemQueryOwner.WorkTrackingSystemConnection)}/browse/{issue.Key}";
 
             var additionalFieldDefs = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions;
 
@@ -2807,16 +2808,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         {
             if (RoutesViaAtlassianCloudGateway(connection.AuthenticationMethodKey))
             {
-                var jiraUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
-                var cloudId = await ResolveCloudIdAsync(jiraUrl);
+                var cloudId = await ResolveCloudIdAsync(SiteAddressOf(connection));
                 var baseUrl = $"https://api.atlassian.com/ex/jira/{cloudId}/";
                 return (baseUrl, $"{baseUrl}|conn:{connection.Id}");
             }
 
             var encryptedApiToken = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.ApiToken);
-            var url = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+            var url = SiteAddressOf(connection);
             return (url, $"{url}|{encryptedApiToken}");
         }
+
+        private static string SiteAddressOf(WorkTrackingSystemConnection connection)
+            => JiraSiteAddress.Of(connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url));
 
         private async Task<string> ResolveCloudIdAsync(string jiraUrl)
         {
@@ -2828,12 +2831,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             logger.LogDebug("Fetching Cloud ID from {Url}/_edge/tenant_info", jiraUrl);
 
-            using var tempClient = new HttpClient();
-            var response = await tempClient.GetAsync($"{jiraUrl}/_edge/tenant_info");
+            var tenantInfoUrl = $"{jiraUrl}/_edge/tenant_info";
+            using var tempClient = _httpMessageHandlerForTesting is null
+                ? new HttpClient()
+                : new HttpClient(_httpMessageHandlerForTesting, disposeHandler: false);
+            var response = await tempClient.GetAsync(tenantInfoUrl);
             response.EnsureSuccessStatusCode();
 
             var body = await response.Content.ReadAsStringAsync();
-            using var json = JsonDocument.Parse(body);
+            using var json = TenantInfoFrom(body, tenantInfoUrl);
 
             var cloudId = json.RootElement.GetProperty("cloudId").GetString()
                 ?? throw new InvalidOperationException(
@@ -2846,20 +2852,43 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return cloudId;
         }
 
+        /// <summary>
+        /// A Cloud site asked for its cloud id anywhere but at its root answers with the Jira web page rather
+        /// than JSON, and that is the usual result of pasting the browser's address with its /jira/ path.
+        /// </summary>
+        private static JsonDocument TenantInfoFrom(string body, string tenantInfoUrl)
+        {
+            try
+            {
+                return JsonDocument.Parse(body);
+            }
+            catch (JsonException notJson)
+            {
+                throw new JiraReadException(ConnectionValidationResult.Failure(
+                    InvalidUrlCode,
+                    "Use your site address, e.g. https://yourcompany.atlassian.net",
+                    $"{tenantInfoUrl} did not answer with the site's cloud id: {notJson.Message}",
+                    JiraWorkTrackingOptionNames.Url));
+            }
+        }
+
+        private static Uri AsBaseAddress(string baseUrl)
+            => new(baseUrl.EndsWith('/') ? baseUrl : baseUrl + "/");
+
         private HttpClient GetOrCreateClient(string cacheKey, string baseUrl, int timeoutInSeconds)
         {
             if (_httpMessageHandlerForTesting is not null)
             {
                 return new HttpClient(_httpMessageHandlerForTesting, disposeHandler: false)
                 {
-                    BaseAddress = new Uri(baseUrl),
+                    BaseAddress = AsBaseAddress(baseUrl),
                     Timeout = TimeSpan.FromSeconds(timeoutInSeconds)
                 };
             }
 
             return ClientCache.GetOrAdd(cacheKey, _ => new HttpClient(SharedHandler)
             {
-                BaseAddress = new Uri(baseUrl),
+                BaseAddress = AsBaseAddress(baseUrl),
                 Timeout = TimeSpan.FromSeconds(timeoutInSeconds)
             });
         }
@@ -2894,7 +2923,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return true;
             }
 
-            var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+            var baseUrl = SiteAddressOf(connection);
 
             return DeploymentCache.TryGetValue(baseUrl, out deployment);
         }
@@ -2911,7 +2940,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return known;
             }
 
-            var baseUrl = connection.GetWorkTrackingSystemConnectionOptionByKey(JiraWorkTrackingOptionNames.Url).TrimEnd('/');
+            var baseUrl = SiteAddressOf(connection);
 
             logger.LogDebug("Getting Deployment Type of Jira Instance for {Url}", baseUrl);
 

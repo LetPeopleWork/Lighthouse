@@ -48,6 +48,9 @@ import {
 } from "../Common/Reports/reportOwner";
 import { useOwnerReports } from "../Common/Reports/useOwnerReports";
 
+const connectionsRefusedMessage =
+	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
+
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
 const reportsClauseOf = (
 	isCounting: boolean,
@@ -109,6 +112,7 @@ const OverviewDashboard: React.FC = () => {
 	const [connections, setConnections] = useState<
 		IWorkTrackingSystemConnection[]
 	>([]);
+	const [connectionsRefused, setConnectionsRefused] = useState(false);
 	const rbac = useRbac();
 	const [isLoading, setIsLoading] = useState(true);
 	const [hasError, setHasError] = useState(false);
@@ -175,9 +179,13 @@ const OverviewDashboard: React.FC = () => {
 			});
 			const configuredConnectionsPromise = workTrackingSystemService
 				.getConfiguredWorkTrackingSystems()
+				.then((connectionList) => {
+					setConnectionsRefused(false);
+					return connectionList;
+				})
 				.catch((error: unknown) => {
 					if (error instanceof ApiError && error.code === 403) {
-						// Non-system-admin users cannot access connection settings.
+						setConnectionsRefused(true);
 						return [];
 					}
 
@@ -441,7 +449,17 @@ const OverviewDashboard: React.FC = () => {
 					</Alert>
 				)}
 
-				{rbac.isSystemAdmin && (
+				{!rbac.isLoading && rbac.isSystemAdmin && connectionsRefused && (
+					<Alert
+						severity="warning"
+						sx={{ mt: 2 }}
+						data-testid="connections-refused-alert"
+					>
+						{connectionsRefusedMessage}
+					</Alert>
+				)}
+
+				{rbac.isSystemAdmin && !connectionsRefused && (
 					<Box sx={{ mt: 2 }}>
 						<OnboardingStepper
 							hasConnections={hasConnections}

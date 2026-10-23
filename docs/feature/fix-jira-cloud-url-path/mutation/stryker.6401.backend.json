@@ -1,0 +1,20 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraSiteAddress.cs",
+      "**/API/WorkTrackingSystemConnectionsController.cs",
+      "**/API/WorkTrackingSystemConnectionController.cs"
+    ],
+    "ignore-methods": ["*Log*", "Console.*"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~JiraSiteAddressTest|FullyQualifiedName~JiraWorkTrackingConnectorAuthDelegationTest|FullyQualifiedName~WorkTrackingSystemConnectionsControllerTest|FullyQualifiedName~WorkTrackingSystemConnectionControllerTest)&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration&TestCategory!=LinearIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration&TestCategory!=Integration&TestCategory!=requires-docker&TestCategory!=real-io&FullyQualifiedName!~API.Integration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

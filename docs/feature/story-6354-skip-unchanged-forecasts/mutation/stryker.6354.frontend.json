@@ -1,0 +1,30 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts", "related": false },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports", "/StrykerOutput"],
+  "incrementalFile": "reports/mutation/stryker-incremental-6354.json",
+  "mutate": [
+    "src/components/Common/Charts/RefreshHistoryChart.tsx:29-29",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:36-63",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:121-123",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:137-137",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:154-154",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:160-160",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:219-221",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:223-227",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:229-234",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:272-277",
+    "src/pages/Settings/SystemInfo/RefreshHistorySection.tsx:299-303"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6354-frontend.json" },
+  "tempDirName": ".stryker-tmp-6354"
+}
