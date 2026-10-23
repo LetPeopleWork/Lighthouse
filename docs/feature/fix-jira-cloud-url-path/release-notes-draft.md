@@ -1,0 +1,4 @@
+## Bugfixes and Improvements
+
+- **Paste your Jira address straight from the browser.** Jira Cloud now shows your site under a `/jira/` path, and a connection created with that address failed: OAuth reported an error, and an API token connection could seem to vanish after Create. Lighthouse now keeps just your site address (`https://yourcompany.atlassian.net`), when you set up the connection and for connections you already have. Jira Data Center installations served under a path, such as `https://jira.example.com/jira`, now work too: Lighthouse used to drop that path from every request.
+- **A failed save no longer looks like nothing happened.** If saving a new connection fails, the wizard now tells you why and keeps your entries. An administrator who isn't allowed to read the connection list is told so on the Overview, instead of being sent back to onboarding.

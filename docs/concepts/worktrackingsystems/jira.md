@@ -21,6 +21,8 @@ To create a connection to a Jira system, you need three things:
 
 The URL will look something like this: `https://letpeoplework.atlassian.net` where *letpeoplework* is your instance name.  
 
+You can paste the address straight from your browser: for Jira Cloud (`*.atlassian.net`), Lighthouse keeps only the site address, so `https://letpeoplework.atlassian.net/jira/software/projects` is saved as `https://letpeoplework.atlassian.net`. For Jira Data Center, enter the base URL including any context path your Jira is served under (for example `https://jira.example.com/jira`); Lighthouse keeps that path on every request.
+
 ## Authentication
 Depending on whether you use Jira Cloud or Jira Data Center, you have different Authentication Options.
 
@@ -64,6 +66,7 @@ When at least one OAuth connection exists, system admins see a cloud icon in the
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | HTTP 400 *invalid_redirect_uri* after consent | Callback URL registered with Atlassian doesn't match `{Lighthouse:BaseUrl}/api/oauth/callback` exactly. | Confirm `Lighthouse:BaseUrl` and re-copy the URL into Atlassian. Scheme + host + port + path must match character-for-character. |
+| *"Use your site address, e.g. https://yourcompany.atlassian.net"* when validating | The URL does not lead to your Jira Cloud site's root, so Atlassian answered the site lookup with a web page. Usually a custom domain or a mistyped address. | Enter your `https://<site>.atlassian.net` address. |
 | HTTP 400 *invalid_scope* | One of the seven scopes is missing from the app permissions. The most common cause is forgetting to check the **Granular scopes** tab separately from **Classic scopes**. | Re-open the app under **Permissions → Jira API**, check both tabs, confirm `offline_access` is also ticked, retry. |
 | Auth-type dropdown does not show **Jira Cloud (OAuth)** | The instance has no Premium licence, or it has lapsed. | Confirm the licence status in **Settings → Licensing**. |
 | Yellow *"Reconnect required"* banner appears on a connection that was syncing fine | A silent refresh attempt failed — most often a revoked grant or `offline_access` removed from the app. | Click **Reconnect** on the banner and complete the consent flow again. If the banner reappears immediately, re-check that `offline_access` is granted on the Atlassian app. |
