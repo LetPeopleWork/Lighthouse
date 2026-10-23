@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <list type="number">
     /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c>, <c>UtcNow.Date</c>,
     /// <c>GetUtcNow().Date</c> or <c>UtcDateTime.Date</c> anywhere in the production project outside
-    /// the clock adapter;</item>
+    /// the clock adapter, nor a UTC instant from an injected clock handed to <c>DateOnly.FromDateTime</c>
+    /// or formatted as a date;</item>
     /// <item>each tracker history cutoff that deliberately stays UTC still exists and still states why;</item>
     /// <item>no persisted snapshot entity keys its day with an instant.</item>
     /// </list>
@@ -38,6 +40,16 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string TimeProviderUtcDate = "GetUtcNow().Date";
 
         private const string InstantUtcDate = "UtcDateTime.Date";
+
+        private const string UtcInstantAsDateOnly = "DateOnly.FromDateTime(<UTC instant>)";
+
+        private const string UtcInstantInADateFormatHole = "{<UTC instant>:<date format>}";
+
+        /// <summary>
+        /// How a UTC instant is spelled once it comes from an injected clock: a time provider's reading,
+        /// any instant's UTC form, or the instance clock's moment.
+        /// </summary>
+        private const string UtcInstant = @"(?:GetUtcNow\(\)|\.UtcDateTime\b|\b[Cc]lock\.Now\b)";
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -89,6 +101,30 @@ namespace Lighthouse.Backend.Tests.Architecture
             UtcNowDate,
             TimeProviderUtcDate,
             InstantUtcDate,
+        ];
+
+        /// <summary>
+        /// The same defect without the word <c>.Date</c>: a UTC instant from the injected clock handed
+        /// straight to <c>DateOnly.FromDateTime</c>, or formatted as a date inside an interpolation
+        /// hole, as in a download named after the day. Both give the UTC calendar day.
+        /// </summary>
+        private static readonly (string Name, Regex Pattern)[] UtcInstantDayPatterns =
+        [
+            (UtcInstantAsDateOnly, new Regex(@"DateOnly\.FromDateTime\([^;]*?" + UtcInstant, RegexOptions.None, TimeSpan.FromSeconds(1))),
+            (UtcInstantInADateFormatHole, new Regex(@"\{[^{}]*?" + UtcInstant + @"[^{}:]*:[^{}]*?(?:yyyy|dd)", RegexOptions.None, TimeSpan.FromSeconds(1))),
+        ];
+
+        /// <summary>
+        /// Places that format a UTC instant as a date on purpose, because the text is a timestamp label
+        /// rather than "today". Each must still exist, so the list cannot outlive the code it excuses.
+        /// </summary>
+        private static readonly UtcTimestampLabel[] UtcTimestampLabels =
+        [
+            new(
+                "API/DatabaseManagementController.cs",
+                "var fileName = $\"Lighthouse_Backup_{timeProvider.GetUtcNow().UtcDateTime:yyyy.MM.dd_HH.mm.ss}.zip\";",
+                "A backup file is named after the moment it was taken, down to the second. That is a UTC "
+                + "timestamp label, not a claim about which day it is on the instance."),
         ];
 
         /// <summary>
@@ -157,6 +193,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private sealed record TrackerHistoryCutoff(string RelativePath, string Expression, string Reason);
 
         private sealed record LegacyInstantColumn(string EntityName, string PropertyName, string Reason);
+
+        private sealed record UtcTimestampLabel(string RelativePath, string Expression, string Reason);
 
         [Test]
         public void CalendarDayAnchors_OutsideTheClockAdapter_AreAbsentFromProduction()
@@ -282,6 +320,79 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(findings, Has.Count.EqualTo(1));
                 Assert.That(findings[0].Anchors, Is.EqualTo(expectedAnchor));
             }
+        }
+
+        [TestCase("var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);")]
+        [TestCase("var today = DateOnly.FromDateTime(stamp.UtcDateTime);")]
+        [TestCase("var today = DateOnly.FromDateTime(clock.Now.DateTime);")]
+        public void Scanner_UtcInstantHandedToDateOnly_IsReported(string line)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(UtcInstantAsDateOnly));
+            }
+        }
+
+        [TestCase("var fileName = $\"Lighthouse_Log_{timeProvider.GetUtcNow():yyyy.MM.dd}.txt\";")]
+        [TestCase("var fileName = $\"Lighthouse_Log_{stamp.UtcDateTime:yyyy.MM.dd}.txt\";")]
+        [TestCase("var fileName = string.Create(culture, $\"Log_{clock.Now:dd.MM.yyyy}.txt\");")]
+        public void Scanner_UtcInstantFormattedAsADateInAnInterpolationHole_IsReported(string line)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(UtcInstantInADateFormatHole));
+            }
+        }
+
+        [TestCase("var fileName = $\"Lighthouse_Log_{clock.Today:yyyy.MM.dd}.txt\";")]
+        [TestCase("var day = DateOnly.FromDateTime(delivery.Date);")]
+        [TestCase("var stampedAt = $\"{timeProvider.GetUtcNow():O}\";")]
+        public void Scanner_InstanceDayOrAnInstantKeptWhole_IsNotReported(string line)
+        {
+            Assert.That(FindAnchors("API/BrandNewController.cs", line), Is.Empty);
+        }
+
+        [Test]
+        public void UtcTimestampLabels_StillExist()
+        {
+            Assert.That(
+                StaleUtcTimestampLabels(UtcTimestampLabels, ProductionSourceOf),
+                Is.Empty,
+                "A place excused for formatting a UTC instant as a date no longer exists. Remove its entry, "
+                + "otherwise the excuse outlives the code it was written for.");
+        }
+
+        [Test]
+        public void Scanner_ExcusedTimestampLabel_IsNotReported_ButADayAnchorOnItsLineStillIs()
+        {
+            UtcTimestampLabel[] labels = [new("API/Backups.cs", "{stamp.UtcDateTime:yyyy.MM.dd}", "a label")];
+
+            var excused = WithoutExcusedLabels(
+                "API/Backups.cs", "var name = $\"Backup_{stamp.UtcDateTime:yyyy.MM.dd}.zip\";", labels);
+            var notExcused = WithoutExcusedLabels(
+                "API/Backups.cs", "var name = $\"Backup_{stamp.UtcDateTime:yyyy.MM.dd}_{DateTime.Today}.zip\";", labels);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(excused, Is.Empty);
+                Assert.That(notExcused, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void UtcTimestampLabelCheck_LabelThatNoLongerExists_IsReportedAsStale()
+        {
+            UtcTimestampLabel[] labels = [new("API/Backups.cs", "{stamp.UtcDateTime:yyyy.MM.dd}", "a label")];
+
+            var stale = StaleUtcTimestampLabels(labels, _ => "var name = $\"Backup_{clock.Today:yyyy.MM.dd}.zip\";");
+
+            Assert.That(stale, Has.Count.EqualTo(1));
         }
 
         /// <summary>
@@ -448,7 +559,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 }
 
                 filesScanned++;
-                findings.AddRange(FindAnchors(relativePath, File.ReadAllText(file)));
+                findings.AddRange(WithoutExcusedLabels(relativePath, File.ReadAllText(file), UtcTimestampLabels));
             }
 
             return new ScanResult(findings, filesScanned);
@@ -471,6 +582,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 var line = lines[offset];
                 var anchors = AnchorPatterns
                     .Where(pattern => line.Contains(pattern, StringComparison.Ordinal))
+                    .Concat(UtcInstantDayPatterns
+                        .Where(pattern => pattern.Pattern.IsMatch(line))
+                        .Select(pattern => pattern.Name))
                     .ToList();
 
                 if (anchors.Count > 0)
@@ -480,6 +594,30 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return findings;
+        }
+
+        /// <summary>
+        /// Drops a finding only when the excused label is the one thing wrong with its line, so an
+        /// excuse never covers a day anchor written next to it.
+        /// </summary>
+        private static List<AnchorFinding> WithoutExcusedLabels(string relativePath, string source, UtcTimestampLabel[] labels)
+        {
+            var lines = source.Split('\n');
+
+            return FindAnchors(relativePath, source)
+                .Where(finding => !(finding.Anchors == UtcInstantInADateFormatHole
+                    && labels.Any(label => label.RelativePath == relativePath
+                        && lines[finding.Line - 1].Contains(label.Expression, StringComparison.Ordinal))))
+                .ToList();
+        }
+
+        private static List<string> StaleUtcTimestampLabels(UtcTimestampLabel[] labels, Func<string, string?> sourceOf)
+        {
+            return labels
+                .Where(label => sourceOf(label.RelativePath) is not { } source
+                    || IndexOfCodeLineContaining(source.Split('\n'), label.Expression) < 0)
+                .Select(label => $"{label.RelativePath}: '{label.Expression}' no longer exists.")
+                .ToList();
         }
 
         private static List<string> Describe(List<AnchorFinding> findings)
