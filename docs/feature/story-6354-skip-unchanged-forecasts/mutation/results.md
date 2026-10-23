@@ -146,3 +146,16 @@ History specs (32 tests); `@mui/x-charts` is mocked in them, so the chart compon
 - **`:229`** `lastRun?.skipped` → `lastRun.skipped`: equivalent. `lastRun` is null only when the selected
   entity has no runs, and the entity list is built from the loaded runs, so a selected entity always has one.
 - **`:300`** `sx={{ mt: 2 }}` → `sx={{}}`: margin on the skipped-count line.
+
+## After the run: the review fix round
+
+The review fix round (`dadfe5a07..0e36fbcf9`, merged as `4de2a9c62`) changed `ForecastService.cs`,
+`ForecastUpdater.cs`, `PortfolioRepository.cs`, `FeatureRepository.cs` and `TeamsController.cs` after this run,
+and on the frontend one line of `RefreshHistorySection.tsx` (the All view's average is null, not 0, for an entity
+whose every run was skipped). The figures above describe those files as they stood at `ead31f93f`. A narrow re-run
+on them was skipped at the maintainer's request on 2026-10-23. The fixes are covered by their own new tests: the run
+mark and its two-phase compare-and-set (`ForecastServiceTest`, `ForecastUpdaterTest`,
+`ForecastConfirmationRepositoryRelationalTest` and the new `ForecastInputsCompareAndSetOnPostgresTests`), the
+confirmation that never moves a forecast's time back (`ForecastConfirmationRepositoryRelationalTest`), the one-query
+Portfolio read on refresh-all (`TeamsControllerTest`, `PortfolioRepositoryTest`), and the missing bar
+(`RefreshHistorySection.skippedForecasts.test.tsx`).
