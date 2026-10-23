@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             ForecastWaits waits, Func<List<Feature>> theFeatures, Mock<ILogger<ForecastService>> logger)
         {
             var features = theFeatures();
-            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -67,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public async Task<List<Feature>> RunsOver(IDrawStreamFactory draws, ForecastSimulationLimits limits, IWhatTheForecastWaitsFor waits, params Feature[] forecast)
         {
             var all = forecast.ToList();
-            features.Setup(repository => repository.GetAll()).Returns(all);
+            features.Holds(all);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(all);

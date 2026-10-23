@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -106,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 ReferenceId = $"{idCounter++}",
             };
 
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns([feature]);
+            featureRepositoryMock.Holds([feature]);
 
             return feature;
         }

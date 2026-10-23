@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -119,7 +120,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var ordinary = CreateTeam(2, [3, 4, 2, 5, 3]);
             var feature = CreateFeature(2, "F-2", ordinary, 5);
             var features = new List<Feature> { feature };
-            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);
@@ -222,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
             var features = new List<Feature> { theSlowOne, theOrdinaryOne };
 
-            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

@@ -209,7 +209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Returns(new ForecastThroughputStatus(throughput, false, null));
 
             var features = theFeatures(team);
-            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

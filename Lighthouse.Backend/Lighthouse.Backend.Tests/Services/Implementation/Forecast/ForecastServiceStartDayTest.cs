@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -300,7 +301,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private async Task TheForecastRunsOver(params Feature[] features)
         {
-            featureRepository.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepository.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

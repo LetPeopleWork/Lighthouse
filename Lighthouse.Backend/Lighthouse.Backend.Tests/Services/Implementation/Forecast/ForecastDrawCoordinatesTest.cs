@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -102,7 +103,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 CreateFeature(3, secondTeam, 5),
             };
 
-            featureRepositoryMock.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

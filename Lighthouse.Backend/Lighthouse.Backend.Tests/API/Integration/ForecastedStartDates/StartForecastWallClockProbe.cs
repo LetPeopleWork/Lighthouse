@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using NUnit.Framework;
 
@@ -79,7 +80,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                 })
                 .ToList();
 
-            featureRepository.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepository.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Probe Portfolio" };
             portfolio.UpdateFeatures(features);

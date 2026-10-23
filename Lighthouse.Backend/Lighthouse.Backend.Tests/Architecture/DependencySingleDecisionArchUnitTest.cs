@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Microsoft.Extensions.Logging;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 using NUnit.Framework;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
@@ -639,7 +640,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var features = TheFixturePortfolio(team, storeDependencies);
 
             var featureRepository = new Mock<IRepository<Feature>>();
-            featureRepository.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepository.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);

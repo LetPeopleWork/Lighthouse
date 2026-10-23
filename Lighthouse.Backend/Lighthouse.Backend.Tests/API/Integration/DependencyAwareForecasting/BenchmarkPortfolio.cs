@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
@@ -68,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
             // rather than only the single-Team path.
             features.Add(CreateFeature(id, [(teams[0], RemainingItemsPerFeature), (teams[1], RemainingItemsPerFeature)]));
 
-            featureRepository.Setup(repository => repository.GetAll()).Returns(features);
+            featureRepository.Holds(features);
 
             var portfolio = new Portfolio
             {

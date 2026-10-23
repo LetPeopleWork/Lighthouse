@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Models;
+﻿using System.Collections;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation;
@@ -8,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -25,8 +27,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// </summary>
         private const int TheSeedTheRealDataForecastsShare = 20260916;
 
+        private static readonly DateOnly TheInstanceDay = new(2026, 10, 23);
+
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
+        private Mock<ILogger<ForecastService>> loggerMock;
 
         private int idCounter;
 
@@ -35,6 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             featureRepositoryMock = new Mock<IRepository<Feature>>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+            loggerMock = new Mock<ILogger<ForecastService>>();
         }
 
         [Test]
@@ -260,6 +266,109 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(outcome, Is.InstanceOf<ForecastRunOutcome.Computed>());
                 Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
                 featureRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_RecordedInputsEqualTheGatheredOnes_ConfirmsTheForecastsAndWritesNothing()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            SetupFeatures(feature);
+            var portfolio = CreatePortfolio(feature);
+
+            var firstRun = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+            var recorded = ((ForecastRunOutcome.Computed)firstRun).FreshFingerprint;
+            portfolio.ForecastInputFingerprint = recorded;
+            var forecastsBefore = feature.Forecasts.ToList();
+            var startForecastsBefore = feature.StartForecasts.ToList();
+            featureRepositoryMock.Invocations.Clear();
+
+            var outcome = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            Assert.That(outcome, Is.TypeOf<ForecastRunOutcome.ConfirmedUnchanged>());
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(((ForecastRunOutcome.ConfirmedUnchanged)outcome).FeatureIds, Is.EquivalentTo(new[] { feature.Id }));
+                Assert.That(feature.Forecasts, Is.EqualTo(forecastsBefore).Using((IEqualityComparer)ReferenceEqualityComparer.Instance));
+                Assert.That(feature.StartForecasts, Is.EqualTo(startForecastsBefore).Using((IEqualityComparer)ReferenceEqualityComparer.Instance));
+                Assert.That(portfolio.ForecastInputFingerprint, Is.EqualTo(recorded));
+                featureRepositoryMock.Verify(x => x.Save(), Times.Never);
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase("forgotten:6b1f0e2c9d8a4b7e9f3c5a1d2e4b6c8a")]
+        public async Task UpdateForecastsForPortfolio_NothingOrAForgetRecorded_ComputesAndSavesWithoutRecording(string? recorded)
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            SetupFeatures(feature);
+            var portfolio = CreatePortfolio(feature);
+            portfolio.ForecastInputFingerprint = recorded;
+
+            var outcome = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            AssertComputedAndSavedWithoutRecording(outcome, portfolio, feature, recorded);
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_InputsRecordedOnAnEarlierDay_ComputesAndSavesWithoutRecording()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            SetupFeatures(feature);
+            var portfolio = CreatePortfolio(feature);
+
+            var yesterday = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay.AddDays(-1));
+            var recorded = ((ForecastRunOutcome.Computed)yesterday).FreshFingerprint;
+            portfolio.ForecastInputFingerprint = recorded;
+            featureRepositoryMock.Invocations.Clear();
+
+            var outcome = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            Assert.That(recorded, Is.Not.Null);
+            AssertComputedAndSavedWithoutRecording(outcome, portfolio, feature, recorded);
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_InputsCannotBeFingerprinted_ComputesWithNothingToRecordAndWarns()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            typeof(Feature).GetProperty(nameof(Feature.ReferenceId))?.SetValue(feature, null);
+            SetupFeatures(feature);
+            var portfolio = CreatePortfolio(feature);
+            portfolio.ForecastInputFingerprint = "0123456789abcdef0123456789abcdef";
+
+            var outcome = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.EqualTo(new ForecastRunOutcome.Computed("0123456789abcdef0123456789abcdef", null)));
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
+                featureRepositoryMock.Verify(x => x.Save(), Times.Once);
+                loggerMock.Verify(
+                    logger => logger.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_ReadsOnlyTheFeaturesOfThePortfoliosTeams()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            var ofAnotherTeam = SetupFeature(CreateTeam(1, [1]), 10);
+            SetupFeatures(feature, ofAnotherTeam);
+            var portfolio = CreatePortfolio(feature);
+
+            await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(ofAnotherTeam.Forecasts, Is.Empty);
             }
         }
 
@@ -573,6 +682,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             Assert.That(forecast.HasSufficientData, Is.False);
         }
 
+        private void AssertComputedAndSavedWithoutRecording(ForecastRunOutcome outcome, Portfolio portfolio, Feature feature, string? recorded)
+        {
+            Assert.That(outcome, Is.TypeOf<ForecastRunOutcome.Computed>());
+            var computed = (ForecastRunOutcome.Computed)outcome;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(computed.ReadFingerprint, Is.EqualTo(recorded));
+                Assert.That(computed.FreshFingerprint, Is.Not.Null.And.Not.EqualTo(recorded));
+                Assert.That(feature.Forecast.GetProbability(50), Is.EqualTo(35));
+                Assert.That(portfolio.ForecastInputFingerprint, Is.EqualTo(recorded));
+                featureRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
         private Feature SetupFeature(Team team, int remainingItems)
         {
             return SetupFeature([(team, remainingItems, remainingItems)]);
@@ -591,12 +715,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private void SetupFeatures(params Feature[] features)
         {
-            featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
+            featureRepositoryMock.Holds(features);
         }
 
         private ForecastService CreateSubjectWithPersistentThroughput()
         {
-            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default);
+            return new ForecastService(new NotSoRandomNumberService(), loggerMock.Object, teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default);
         }
 
         private ForecastService CreateSubjectWithRealThroughput()

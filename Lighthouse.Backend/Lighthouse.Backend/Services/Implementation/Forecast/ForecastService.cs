@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             logger.LogDebug("Running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items (mode {Mode}).", team.Name, remainingItems, mode);
 
             var fakeFeature = new Feature(team, remainingItems);
-            await ForecastFeatures([fakeFeature], mode, CancellationToken.None);
+            await Simulate(Gather([fakeFeature], mode), CancellationToken.None);
 
             logger.LogDebug("Finished running Monte Carlo Forecast When for Team {TeamName} and {RemainingItems} items.", team.Name, remainingItems);
 
@@ -68,41 +68,87 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// A stop asked for while the runs are going ends the forecast between two runs: the cancellation
         /// leaves before anything is saved, so the Features keep the forecast they already had rather than
         /// one built from part of the runs.
+        ///
+        /// When everything the simulation would be handed matches what the Portfolio recorded after its last
+        /// computed forecast, the forecasts it already has are the ones this run would produce, so nothing runs
+        /// and nothing is written.
         /// </summary>
         public async Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateOnly instanceDay, CancellationToken cancellationToken = default)
         {
-            await UpdateForecastsForTeams(portfolio.Teams, cancellationToken);
+            var recorded = portfolio.ForecastInputFingerprint;
+            var teams = portfolio.Teams;
 
-            return new ForecastRunOutcome.Computed(portfolio.ForecastInputFingerprint, null);
-        }
-
-        private async Task UpdateForecastsForTeams(IEnumerable<Team> teams, CancellationToken cancellationToken)
-        {
             logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
-            var features = featureRepository.GetAll().Where(f => f.Teams.Any(teams.Contains)).ToList();
+            var features = TheFeaturesWorkedOnBy(teams);
 
             logger.LogDebug("Features that are being forecasted: {Features}", string.Join(",", features.Select(f => f.Name)));
 
-            await ForecastFeatures(features, ThroughputFilterMode.RespectTeamSetting, cancellationToken);
+            var gathered = Gather(features, ThroughputFilterMode.RespectTeamSetting);
+            var fresh = FingerprintOf(gathered, instanceDay, portfolio);
+
+            if (fresh is not null && string.Equals(fresh, recorded, StringComparison.Ordinal))
+            {
+                logger.LogInformation("Forecast inputs of Portfolio {Portfolio} are unchanged since its last forecast, so its forecasts stand", portfolio.Name);
+                return new ForecastRunOutcome.ConfirmedUnchanged(features.Select(f => f.Id).ToList());
+            }
+
+            await Simulate(gathered, cancellationToken);
 
             await featureRepository.Save();
+
+            return new ForecastRunOutcome.Computed(recorded, fresh);
         }
 
-        private async Task ForecastFeatures(IEnumerable<Feature> features, ThroughputFilterMode mode, CancellationToken cancellationToken)
+        private List<Feature> TheFeaturesWorkedOnBy(List<Team> teams)
         {
-            var featuresToForecast = features as IReadOnlyCollection<Feature> ?? features.ToList();
-            var throughputByTeam = InitializeThroughputPerTeam(featuresToForecast, mode, out var chipStatusByTeam);
+            var teamIds = teams.Select(team => team.Id).ToList();
 
-            var simulationResults = InitializeSimulationResults(featuresToForecast);
-            var waits = whatTheForecastWaitsFor.Of(featuresToForecast);
+            return featureRepository
+                .GetAllByPredicate(feature => feature.FeatureWork.Any(work => teamIds.Contains(work.TeamId)))
+                .ToList();
+        }
+
+        /// <summary>
+        /// A fingerprint is only ever a reason to skip work, so one that cannot be taken means the forecast
+        /// computes, with nothing to record afterwards; the forecast itself must not fail over it.
+        /// </summary>
+        private string? FingerprintOf(GatheredInputs gathered, DateOnly instanceDay, Portfolio portfolio)
+        {
+            try
+            {
+                return ForecastInputFingerprint.Of(new ForecastInputs(instanceDay, limits, gathered.Features, gathered.ChipStatusByTeam, gathered.Waits));
+            }
+            catch (Exception e)
+            {
+                logger.LogWarning(e, "Could not fingerprint the forecast inputs of Portfolio {Portfolio}, so it is forecast in full", portfolio.Name);
+                return null;
+            }
+        }
+
+        private GatheredInputs Gather(List<Feature> features, ThroughputFilterMode mode)
+        {
+            var throughputByTeam = InitializeThroughputPerTeam(features, mode, out var chipStatusByTeam);
+
+            return new GatheredInputs(features, throughputByTeam, chipStatusByTeam, whatTheForecastWaitsFor.Of(features));
+        }
+
+        private async Task Simulate(GatheredInputs gathered, CancellationToken cancellationToken)
+        {
+            var simulationResults = InitializeSimulationResults(gathered.Features);
             var draws = drawStreamFactory.ForOneRun();
 
             var startForecasts = await Task.Run(
-                () => RunMonteCarloSimulation(simulationResults, throughputByTeam, waits, draws, cancellationToken), cancellationToken);
+                () => RunMonteCarloSimulation(simulationResults, gathered.ThroughputByTeam, gathered.Waits, draws, cancellationToken), cancellationToken);
 
-            UpdateFeatureForecasts(featuresToForecast, simulationResults, chipStatusByTeam, startForecasts);
+            UpdateFeatureForecasts(gathered.Features, simulationResults, gathered.ChipStatusByTeam, startForecasts);
         }
+
+        private sealed record GatheredInputs(
+            List<Feature> Features,
+            Dictionary<int, RunChartData> ThroughputByTeam,
+            Dictionary<int, ForecastThroughputStatus> ChipStatusByTeam,
+            ForecastWaits Waits);
 
         private Dictionary<int, RunChartData> InitializeThroughputPerTeam(IEnumerable<Feature> features, ThroughputFilterMode mode, out Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
         {
