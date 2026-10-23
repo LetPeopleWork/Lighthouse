@@ -1,6 +1,10 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
@@ -21,14 +25,105 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         IReadOnlyDictionary<int, ForecastThroughputStatus> ThroughputByTeam,
         ForecastWaits Waits);
 
-    // __SCAFFOLD__: acceptance tests were written ahead of this; DELIVER replaces the member list and the body.
+    /// <summary>
+    /// One short value standing for everything a Portfolio forecast hands the simulation, so an unchanged
+    /// round can be recognised by comparing two strings.
+    /// </summary>
+    /// <remarks>
+    /// A stored fingerprint has to still match after a restart and after an upgrade, so nothing here reaches
+    /// for <c>GetHashCode</c> or object identity, and every number is written in the invariant culture. Only
+    /// the Features keep the order they were handed in, because that order decides which Feature a Team works
+    /// on first; everything else arrives in whatever order the database produced and is sorted.
+    /// </remarks>
     public static class ForecastInputFingerprint
     {
-        public static IReadOnlyList<string> RegisteredMembers { get; } = [];
+        /// <summary>
+        /// Bumped whenever the rendering below changes, so a value stored by an older version can never
+        /// match a new one by accident and every forecast computes once after the upgrade.
+        /// </summary>
+        private const string FormatVersion = "1";
+
+        public static IReadOnlyList<string> RegisteredMembers { get; } =
+        [
+            nameof(FormatVersion),
+            nameof(ForecastInputs.Today),
+            nameof(ForecastSimulationLimits.Trials),
+            nameof(ForecastSimulationLimits.MostDaysOneSimulatedRunMayCover),
+            nameof(ForecastInputs.FeaturesInForecastOrder),
+            "TeamsOfTheFeatures",
+            "RemainingWorkRows",
+            "ThroughputAsHanded",
+            "ThroughputFilterApplied",
+            "ThroughputExcludedSummary",
+            nameof(ForecastThroughputStatus.HasSufficientData),
+            "FeatureWip",
+            "WhatEachFeatureWaitsFor",
+        ];
 
         public static string Of(ForecastInputs inputs)
         {
-            throw new NotImplementedException($"The fingerprint of {inputs.FeaturesInForecastOrder.Count} Features is not written yet");
+            var features = inputs.FeaturesInForecastOrder;
+            var throughputByTeam = inputs.ThroughputByTeam;
+
+            string[] whatTheSimulationIsHanded =
+            [
+                FormatVersion,
+                inputs.Today.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                Render(inputs.Limits.Trials),
+                Render(inputs.Limits.MostDaysOneSimulatedRunMayCover),
+                string.Join(BetweenItems, features.Select(feature => Render(feature.Id))),
+                Unordered(throughputByTeam.Keys.Select(Render)),
+                Unordered(features.SelectMany(feature => feature.FeatureWork.Select(row =>
+                    string.Join(WithinAnItem, Render(feature.Id), Render(row.TeamId), Render(row.RemainingWorkItems))))),
+                PerTeam(throughputByTeam, status => Render(status.Throughput)),
+                PerTeam(throughputByTeam, status => Render(status.FilterApplied)),
+                PerTeam(throughputByTeam, status => status.ExcludedSummary ?? Absent),
+                PerTeam(throughputByTeam, status => Render(status.HasSufficientData)),
+                Unordered(features
+                    .SelectMany(feature => feature.FeatureWork)
+                    .Select(row => string.Join(WithinAnItem, Render(row.TeamId), Render(row.Team.FeatureWIP)))
+                    .Distinct(StringComparer.Ordinal)),
+                Unordered(features.Select(feature => string.Join(
+                    WithinAnItem,
+                    feature.ReferenceId,
+                    Unordered(inputs.Waits.Of(feature.ReferenceId), BetweenNestedItems)))),
+            ];
+
+            return Digest(string.Join(BetweenProperties, whatTheSimulationIsHanded));
         }
+
+        private const string Absent = "-";
+
+        private const char BetweenProperties = '\u001E';
+
+        private const char BetweenItems = '\u001F';
+
+        private const char WithinAnItem = '\u001D';
+
+        private const char BetweenNestedItems = '\u001C';
+
+        private static string Render(int value) => value.ToString(CultureInfo.InvariantCulture);
+
+        private static string Render(bool value) => value ? "1" : "0";
+
+        /// <summary>
+        /// Day by day, in day order: the simulation draws a day by its position, so the same counts on other
+        /// days are a different throughput.
+        /// </summary>
+        private static string Render(RunChartData throughput)
+            => string.Join(
+                BetweenNestedItems,
+                throughput.WorkItemsPerUnitOfTime
+                    .OrderBy(day => day.Key)
+                    .Select(day => string.Join(WithinAnItem, Render(day.Key), Render(day.Value.Count))));
+
+        private static string PerTeam(IReadOnlyDictionary<int, ForecastThroughputStatus> throughputByTeam, Func<ForecastThroughputStatus, string> render)
+            => Unordered(throughputByTeam.Select(team => string.Join(WithinAnItem, Render(team.Key), render(team.Value))));
+
+        private static string Unordered(IEnumerable<string> renderedItems, char separator = BetweenItems)
+            => string.Join(separator, renderedItems.OrderBy(item => item, StringComparer.Ordinal));
+
+        private static string Digest(string renderedInput)
+            => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(renderedInput)).AsSpan(0, 16));
     }
 }

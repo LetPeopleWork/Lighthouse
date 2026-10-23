@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     [Category("contract-shape:pure-function")]
     public class ForecastInputFingerprintTest
     {
-        private const string Pending = "Story 6354: pending until DELIVER writes the forecast input fingerprint";
-
         private static readonly string[] OnlyCardVault = ["PAY-88"];
 
         private static readonly string[] EveryInputTheSimulationIsHanded =
@@ -48,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         ];
 
         [Test]
-        [Ignore(Pending)]
         [Category("guard")]
         public void Names_every_input_the_simulation_is_handed_and_nothing_else()
         {
@@ -62,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// at once because of them, decide how fast the runs go, not what any run computes, so they are left out.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("guard")]
         public void Every_simulation_limit_is_one_of_its_inputs()
         {
@@ -75,7 +71,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(Pending)]
         public void The_same_inputs_built_twice_give_the_same_fingerprint()
         {
             Assert.That(
@@ -83,9 +78,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Is.EqualTo(ForecastInputFingerprint.Of(new APortfolioForecast().Inputs())));
         }
 
+        /// <summary>
+        /// A stored fingerprint is compared after a restart and after an upgrade. A pinned value catches what
+        /// two calls in one process cannot: a per-process hash, a culture-dependent number, or an order that
+        /// only holds by accident. Changing the rendering on purpose means bumping its format version and
+        /// pinning the new value here.
+        /// </summary>
+        [Test]
+        [Category("guard")]
+        public void A_fixed_input_gives_the_same_fingerprint_in_every_process()
+        {
+            Assert.That(ForecastInputFingerprint.Of(new APortfolioForecast().Inputs()), Is.EqualTo("9e955635d881535b54ce36ba8f19dfc8"));
+        }
+
         /// <summary>The stored column has no declared length, so the value has to be a digest, not the inputs written out.</summary>
         [Test]
-        [Ignore(Pending)]
         public void Is_a_short_lower_case_digest_however_many_Features_there_are()
         {
             var aLargePortfolio = new APortfolioForecast { ExtraFeatures = 400 };
@@ -98,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// whatever order the provider produced. Reading that order would make rounds compute at random.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         public void Teams_rows_and_throughput_handed_in_another_order_give_the_same_fingerprint()
         {
             var handedInAnotherOrder = new APortfolioForecast { EveryUnorderedCollectionReversed = true };
@@ -110,7 +116,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         /// <summary>An instance running under a Turkish locale must not read its own fingerprints as changed.</summary>
         [Test]
-        [Ignore(Pending)]
         public void Reads_the_same_whatever_culture_the_instance_runs_under()
         {
             var forecast = new APortfolioForecast { FssExcludedSummary = "2 Items excluded: Bug, Incident" };
@@ -130,7 +135,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [TestCaseSource(nameof(EachInputChangedOnItsOwn))]
-        [Ignore(Pending)]
         public void One_input_changed_on_its_own_changes_the_fingerprint(string member, Action<APortfolioForecast> startingPoint, Action<APortfolioForecast> change)
         {
             var unchanged = new APortfolioForecast();
@@ -150,7 +154,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         /// every round computes again for nothing.
         /// </summary>
         [TestCaseSource(nameof(ThingsTheSimulationIsNotHanded))]
-        [Ignore(Pending)]
         [Category("edge")]
         public void Something_the_simulation_is_not_handed_leaves_the_fingerprint_alone(Action<APortfolioForecast> change)
         {
@@ -163,7 +166,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("guard")]
         public void Every_input_has_a_case_above_that_changes_it_on_its_own()
         {
