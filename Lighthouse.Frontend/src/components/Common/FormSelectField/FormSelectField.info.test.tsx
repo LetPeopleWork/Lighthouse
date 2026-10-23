@@ -31,7 +31,7 @@ const aFieldList = (info?: { text: string; learnMoreUrl?: string }) =>
 		/>,
 	);
 
-describe("Story 6352 slice 02: a field list with something to explain", () => {
+describe("Story 6352: a field list with something to explain", () => {
 	// @contract-shape:pure-function
 	it("carries an info button named after the field, closed until asked", () => {
 		aFieldList({ text: TIP });
@@ -90,7 +90,7 @@ describe("Story 6352 slice 02: a field list with something to explain", () => {
 	});
 });
 
-describe("Story 6352 slice 02: a field list with nothing to explain", () => {
+describe("Story 6352: a field list with nothing to explain", () => {
 	// @error @active-guard @contract-shape:unbounded-preservation
 	it("shows no info icon and no button beside it", () => {
 		const { container } = aFieldList();

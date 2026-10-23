@@ -109,7 +109,7 @@ const theGroup = (name: string) =>
 const whenPriyaOpensTheTipOf = (field: string, group: string) =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(field, theGroup(group)));
 
-describe("Story 6352 slice 02: the connection's defaults say which way round they read", () => {
+describe("Story 6352: the connection's defaults say which way round they read", () => {
 	// @driving_port @contract-shape:pure-function
 	it("on a Jira connection, only the Parent Override and Dependency rows carry an About button", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
@@ -209,7 +209,7 @@ describe("Story 6352 slice 02: the connection's defaults say which way round the
 	});
 });
 
-describe("Story 6352 slice 02: defaults that read no link", () => {
+describe("Story 6352: defaults that read no link", () => {
 	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a CSV connection's defaults, Estimation and Feature Owner, carry no info button", async () => {
 		await givenPriyaOpensAConnectionOn("Csv");

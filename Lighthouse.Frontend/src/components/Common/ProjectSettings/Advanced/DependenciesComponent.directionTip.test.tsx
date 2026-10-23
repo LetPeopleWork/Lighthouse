@@ -82,7 +82,7 @@ const theDependencyButton = () => theAboutButtonOf(DEPENDENCY);
 const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theDependencyButton());
 
-describe("Story 6352 slice 02: Dependency Field says which end of a link it reads", () => {
+describe("Story 6352: Dependency Field says which end of a link it reads", () => {
 	// @driving_port @contract-shape:pure-function
 	it("on Jira, the tip asks for the phrase on the waiting end, is blocked by, not blocks", async () => {
 		await givenSamOpensAPortfolioOn("Jira");
@@ -189,7 +189,7 @@ describe("Story 6352 slice 02: Dependency Field says which end of a link it read
 	});
 });
 
-describe("Story 6352 slice 02: what stays as it is", () => {
+describe("Story 6352: what stays as it is", () => {
 	// @error @active-guard @contract-shape:bounded-change
 	it("choosing a Dependency Field saves exactly what it saved before", async () => {
 		const held = await givenSamOpensAPortfolioOn("Jira");

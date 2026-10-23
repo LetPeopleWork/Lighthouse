@@ -32,7 +32,7 @@ const aWidgetWithInfo = () =>
 		</WidgetShell>,
 	);
 
-describe("Story 6352 slice 02: a dashboard widget's info popover stays as it is", () => {
+describe("Story 6352: a dashboard widget's info popover stays as it is", () => {
 	// @error @active-guard @contract-shape:unbounded-preservation
 	it("opens with the description, the guidance and Learn More, and Escape closes it", async () => {
 		const user = userEvent.setup();

@@ -43,7 +43,7 @@ const givenSamOpensTheSettingsOf = async (
 
 const theCutoff = () => screen.getByLabelText(CUTOFF);
 
-describe("Story 6348 slice 01: the Closed Items Cutoff says what it limits", () => {
+describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 	// @driving_port @contract-shape:pure-function
 	it("on a Team's settings, the line under the cutoff says what it limits, of its Work Items", async () => {
 		await givenSamOpensTheSettingsOf("Team");
@@ -103,7 +103,7 @@ describe("Story 6348 slice 01: the Closed Items Cutoff says what it limits", () 
 	});
 });
 
-describe("Story 6348 slice 01: what stays as it is", () => {
+describe("Story 6348: what stays as it is", () => {
 	// @error @active-guard @contract-shape:bounded-change
 	it("the explanation sits in the open, so no info icon hides it", async () => {
 		await givenSamOpensTheSettingsOf("Team");

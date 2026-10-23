@@ -61,7 +61,7 @@ const givenSamOpensTheSettingsOf = async (
 const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
 
-describe("Story 6352 slice 02: Parent Override Field says which way round it reads", () => {
+describe("Story 6352: Parent Override Field says which way round it reads", () => {
 	// @driving_port @contract-shape:pure-function
 	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
