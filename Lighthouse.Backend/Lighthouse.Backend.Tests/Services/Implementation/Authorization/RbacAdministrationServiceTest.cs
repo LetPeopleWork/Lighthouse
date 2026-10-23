@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,9 +31,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
         private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
+        /// <summary>
+        /// The clock's local zone is moved far off UTC, so a stamp taken from the local wall clock
+        /// instead of the UTC instant lands fourteen hours away and fails on its value, not only on its kind.
+        /// </summary>
         [SetUp]
         public void SetUp()
         {
+            time.SetLocalTimeZone(TestZones.FarAheadOfUtc);
             options = new DbContextOptionsBuilder<LighthouseAppContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
@@ -1872,6 +1878,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             {
                 Assert.That(grants, Has.Count.EqualTo(4));
                 Assert.That(grants.Select(g => g.GrantedAt), Is.All.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(grants.Select(g => g.GrantedAt.Kind), Is.All.EqualTo(DateTimeKind.Utc));
             }
         }
 

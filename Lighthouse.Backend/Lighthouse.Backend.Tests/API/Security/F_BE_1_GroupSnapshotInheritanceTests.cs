@@ -71,6 +71,28 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
+        public async Task BE_1_1b_SnapshotWriter_ForASubjectWithNoProfile_StampsTheNewProfileWithTheHostClock()
+        {
+            const string newcomer = "newcomer-subject";
+            using var scope = rootFactory.Services.CreateScope();
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            dbContext.Database.EnsureCreated();
+            var writer = scope.ServiceProvider.GetRequiredService<IOidcGroupSnapshotWriter>();
+            var hostInstant = rootFactory.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+
+            await writer.WriteAsync(newcomer, AlphaOnlyGroups, CancellationToken.None);
+
+            var created = dbContext.UserProfiles.Single(p => p.Subject == newcomer);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(created.CreatedAt, Is.EqualTo(hostInstant));
+                Assert.That(created.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(created.LastSeenAt, Is.EqualTo(hostInstant));
+                Assert.That(created.LastSeenAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
         public async Task BE_1_2_ApiKeyOwnerWithSnapshot_ResolvesGroupMappedTeamThroughApiKey()
         {
             var ownerProfile = SeedOwnerWithSnapshot(OwnerSubject, AlphaOnlyGroups);

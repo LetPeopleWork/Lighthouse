@@ -2,6 +2,7 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
@@ -19,9 +20,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
         private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
+        /// <summary>
+        /// The clock's local zone is moved far off UTC, so a stamp taken from the local wall clock
+        /// instead of the UTC instant lands fourteen hours away and fails on its value, not only on its kind.
+        /// </summary>
         [SetUp]
         public void Setup()
         {
+            time.SetLocalTimeZone(TestZones.FarAheadOfUtc);
             repositoryMock = new Mock<IApiKeyRepository>();
             userProfileRepositoryMock = new Mock<IRepository<UserProfile>>();
             apiKeyPermissionRepositoryMock = new Mock<IRepository<ApiKeyPermission>>();
@@ -54,8 +60,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(storedKey!.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(storedKey.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(result.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(result.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
                 Assert.That(storedGrants.Select(g => g.GrantedAt), Is.EqualTo(new[] { TheClocksInstant.UtcDateTime }));
+                Assert.That(storedGrants.Select(g => g.GrantedAt.Kind), Is.All.EqualTo(DateTimeKind.Utc));
             }
         }
 
@@ -69,7 +78,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
 
             await subject.ValidateApiKeyWithOwnerAsync(plainText);
 
-            Assert.That(key.LastUsedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.LastUsedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(key.LastUsedAt?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
         }
 
         [Test]
