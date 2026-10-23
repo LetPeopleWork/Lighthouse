@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var gathered = Gather(features, ThroughputFilterMode.RespectTeamSetting);
             var fresh = FingerprintOf(gathered, instanceDay, portfolio);
 
-            if (fresh is not null && string.Equals(fresh, recorded, StringComparison.Ordinal))
+            if (IsUnchangedSinceRecorded(fresh, recorded))
             {
                 logger.LogInformation("Forecast inputs of Portfolio {Portfolio} are unchanged since its last forecast, so its forecasts stand", portfolio.Name);
                 return new ForecastRunOutcome.ConfirmedUnchanged(features.Select(f => f.Id).ToList());
@@ -99,6 +99,9 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             return new ForecastRunOutcome.Computed(recorded, fresh);
         }
+
+        private static bool IsUnchangedSinceRecorded(string? fresh, string? recorded)
+            => fresh is not null && string.Equals(fresh, recorded, StringComparison.Ordinal);
 
         private List<Feature> TheFeaturesWorkedOnBy(List<Team> teams)
         {

@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 await RecordWhatTheForecastWasComputedFrom(portfolio.Id, outcome, serviceProvider);
 
                 itemCount = portfolio.Features.Count;
-                skipped = outcome is ForecastRunOutcome.ConfirmedUnchanged;
+                skipped = WasSkipped(outcome);
                 success = true;
             }
             catch (OperationCanceledException) when (cancellationContext.Current.IsCancellationRequested)
@@ -209,19 +209,26 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             await ConfirmTheForecastsAreCurrent(outcome, serviceProvider);
 
             var publishWatch = Stopwatch.StartNew();
+            await StageTheWriteBackAndAnnounce(portfolio, serviceProvider);
+            var publishMs = publishWatch.ElapsedMilliseconds;
+
+            var outcomeName = WasSkipped(outcome) ? "skipped" : "computed";
+            Logger.LogDebug("Forecast of {Portfolio} {Outcome}: gathered in {GatherMs}ms, staged and published in {PublishMs}ms",
+                portfolio.Name, outcomeName, gatherMs, publishMs);
+
+            return outcome;
+        }
+
+        private static bool WasSkipped(ForecastRunOutcome outcome) => outcome is ForecastRunOutcome.ConfirmedUnchanged;
+
+        private async Task StageTheWriteBackAndAnnounce(Portfolio portfolio, IServiceProvider serviceProvider)
+        {
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
                 portfolio.WorkTrackingSystemConnection,
                 writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
 
             await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
-            var publishMs = publishWatch.ElapsedMilliseconds;
-
-            var outcomeName = outcome is ForecastRunOutcome.ConfirmedUnchanged ? "skipped" : "computed";
-            Logger.LogDebug("Forecast of {Portfolio} {Outcome}: gathered in {GatherMs}ms, staged and published in {PublishMs}ms",
-                portfolio.Name, outcomeName, gatherMs, publishMs);
-
-            return outcome;
         }
 
         /// <summary>

@@ -21,26 +21,25 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return recorded == 1;
         }
 
-        // A fresh token rather than null: a forecast that read an earlier forget, or read nothing at all, would
-        // otherwise still find the value it read and record over this forget as though nobody had asked.
         public Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken)
         {
-            var token = NewForgottenToken();
-
-            return Context.Portfolios
-                .Where(portfolio => portfolioIds.Contains(portfolio.Id))
-                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, token), cancellationToken);
+            return Forget(Context.Portfolios.Where(portfolio => portfolioIds.Contains(portfolio.Id)), cancellationToken);
         }
 
         public Task ForgetAllForecastInputs(CancellationToken cancellationToken)
         {
-            var token = NewForgottenToken();
-
-            return Context.Portfolios
-                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, token), cancellationToken);
+            return Forget(Context.Portfolios, cancellationToken);
         }
 
-        private static string NewForgottenToken() => ForgottenTokenPrefix + Guid.NewGuid().ToString("N");
+        // A fresh token rather than null: a forecast that read an earlier forget, or read nothing at all, would
+        // otherwise still find the value it read and record over this forget as though nobody had asked.
+        private static Task<int> Forget(IQueryable<Portfolio> portfolios, CancellationToken cancellationToken)
+        {
+            var token = ForgottenTokenPrefix + Guid.NewGuid().ToString("N");
+
+            return portfolios
+                .ExecuteUpdateAsync(setters => setters.SetProperty(portfolio => portfolio.ForecastInputFingerprint, token), cancellationToken);
+        }
 
         public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
         {

@@ -51,8 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         protected const string Loyalty = "Loyalty";
 
-        protected const string Pending = "Story 6354: pending until DELIVER";
-
         protected static readonly DateTimeOffset TenOClock = new(2026, 10, 23, 10, 0, 0, TimeSpan.Zero);
 
         protected static readonly TimeSpan AQuarterOfAnHour = TimeSpan.FromMinutes(15);

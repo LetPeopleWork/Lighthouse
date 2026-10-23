@@ -83,15 +83,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         /// <summary>
         /// What the forecast of this round did. It reads what an earlier refresh already fetched, so the
-        /// time it took is all it has to add to the round's line.
-        /// </summary>
-        protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success, bool cancelled)
-        {
-            ReportForecastSummary(serviceProvider, entityName, durationMs, success, cancelled, skipped: false);
-        }
-
-        /// <summary>
-        /// A skipped forecast still reports its time: how long confirming unchanged inputs costs is read off it.
+        /// time it took is all it has to add to the round's line. A skipped forecast still reports its time:
+        /// how long confirming unchanged inputs costs is read off it.
         /// </summary>
         protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success, bool cancelled, bool skipped)
         {
