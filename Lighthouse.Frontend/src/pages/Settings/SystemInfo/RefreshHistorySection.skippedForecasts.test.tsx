@@ -126,8 +126,8 @@ beforeEach(() => {
 	chartsWereHanded.perEntityBars.length = 0;
 });
 
-describe("Story 6354 (pending): Refresh History tells a skipped forecast from a computed one", () => {
-	it.skip("averages, and finds the shortest and longest forecast, over the forecasts that computed", async () => {
+describe("Refresh History tells a skipped forecast from a computed one", () => {
+	it("averages, and finds the shortest and longest forecast, over the forecasts that computed", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 
@@ -138,7 +138,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		expect(theFigure(/^Max Duration$/)).toHaveTextContent(/^305\.90 s$/);
 	});
 
-	it.skip("says how many of the runs were skipped because nothing changed", async () => {
+	it("says how many of the runs were skipped because nothing changed", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 
@@ -149,7 +149,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		).toBeInTheDocument();
 	});
 
-	it.skip("says the last run was skipped because nothing changed, and when it ran", async () => {
+	it("says the last run was skipped because nothing changed, and when it ran", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 
@@ -160,7 +160,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		);
 	});
 
-	it.skip("shows a dash for the durations when every run of the forecast was skipped", async () => {
+	it("shows a dash for the durations when every run of the forecast was skipped", async () => {
 		getRefreshLogs.mockResolvedValue([
 			aForecastOfPaymentsPlatform("2026-10-23T06:15:01Z", 900, true),
 			aForecastOfPaymentsPlatform("2026-10-23T06:30:02Z", 1100, true),
@@ -174,7 +174,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		expect(theFigure(/^Max Duration$/)).toHaveTextContent(/^—$/);
 	});
 
-	it.skip("leaves a gap in the duration line at each skipped forecast and still draws its items", async () => {
+	it("leaves a gap in the duration line at each skipped forecast and still draws its items", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 
@@ -196,7 +196,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		);
 	});
 
-	it.skip("averages and finds the longest run of the whole instance over the runs that computed", async () => {
+	it("averages and finds the longest run of the whole instance over the runs that computed", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 
@@ -207,7 +207,7 @@ describe("Story 6354 (pending): Refresh History tells a skipped forecast from a 
 		expect(theFigure(/^Max Duration$/)).toHaveTextContent(/^305\.90 s$/);
 	});
 
-	it.skip("draws each entity's average duration over the runs that computed", async () => {
+	it("draws each entity's average duration over the runs that computed", async () => {
 		getRefreshLogs.mockResolvedValue(aQuietMorning());
 		renderRefreshHistory();
 

@@ -33,6 +33,34 @@ const mostInOneRefresh = (
 	countOf: (refresh: RefreshLog) => number | null | undefined,
 ) => Math.max(0, ...refreshes.map((refresh) => countOf(refresh) ?? 0));
 
+// A skipped forecast only confirmed that nothing had changed, so its duration says nothing about how long
+// computing one takes and is left out of every duration figure.
+const computedOnly = (refreshes: RefreshLog[]) =>
+	refreshes.filter((refresh) => !refresh.skipped);
+
+const averageSeconds = (refreshes: RefreshLog[]) =>
+	refreshes.length > 0
+		? Math.round(
+				(refreshes.reduce((sum, l) => sum + l.durationMs, 0) /
+					refreshes.length /
+					1000) *
+					100,
+			) / 100
+		: null;
+
+const longestSeconds = (refreshes: RefreshLog[]) =>
+	refreshes.length > 0
+		? Math.max(...refreshes.map((l) => l.durationMs)) / 1000
+		: null;
+
+const shortestSeconds = (refreshes: RefreshLog[]) =>
+	refreshes.length > 0
+		? Math.min(...refreshes.map((l) => l.durationMs)) / 1000
+		: null;
+
+const asSeconds = (seconds: number | null) =>
+	seconds === null ? "—" : `${seconds.toFixed(2)} s`;
+
 const RefreshHistorySection: React.FC = () => {
 	const theme = useTheme();
 	const [logs, setLogs] = useState<RefreshLog[]>([]);
@@ -90,9 +118,9 @@ const RefreshHistorySection: React.FC = () => {
 
 		if (selectedKey === ALL_KEY) {
 			const totalItems = logs.reduce((sum, l) => sum + l.itemCount, 0);
-			const avgDuration =
-				logs.reduce((sum, l) => sum + l.durationMs, 0) / logs.length / 1000;
-			const maxDuration = Math.max(...logs.map((l) => l.durationMs)) / 1000;
+			const computedLogs = computedOnly(logs);
+			const avgDuration = averageSeconds(computedLogs);
+			const maxDuration = longestSeconds(computedLogs);
 
 			const entityStats = entityOptions.map((opt) => {
 				const eLogs = logs.filter(
@@ -106,15 +134,7 @@ const RefreshHistorySection: React.FC = () => {
 									eLogs.reduce((s, l) => s + l.itemCount, 0) / eLogs.length,
 								)
 							: 0,
-					avgDuration:
-						eLogs.length > 0
-							? Math.round(
-									(eLogs.reduce((s, l) => s + l.durationMs, 0) /
-										eLogs.length /
-										1000) *
-										100,
-								) / 100
-							: 0,
+					avgDuration: averageSeconds(computedOnly(eLogs)) ?? 0,
 				};
 			});
 
@@ -131,13 +151,13 @@ const RefreshHistorySection: React.FC = () => {
 							<Typography variant="caption" color="text.secondary">
 								Avg Duration
 							</Typography>
-							<Typography variant="h6">{avgDuration.toFixed(2)} s</Typography>
+							<Typography variant="h6">{asSeconds(avgDuration)}</Typography>
 						</Box>
 						<Box>
 							<Typography variant="caption" color="text.secondary">
 								Max Duration
 							</Typography>
-							<Typography variant="h6">{maxDuration.toFixed(2)} s</Typography>
+							<Typography variant="h6">{asSeconds(maxDuration)}</Typography>
 						</Box>
 					</Box>
 					{entityStats.length > 0 && (
@@ -196,27 +216,22 @@ const RefreshHistorySection: React.FC = () => {
 			runs > 0
 				? Math.round(filtered.reduce((s, l) => s + l.itemCount, 0) / runs)
 				: 0;
-		const avgDuration =
+		const computedRuns = computedOnly(filtered);
+		const skippedCount = runs - computedRuns.length;
+		const lastRun =
 			runs > 0
-				? Math.round(
-						(filtered.reduce((s, l) => s + l.durationMs, 0) / runs / 1000) *
-							100,
-					) / 100
-				: 0;
-		const minDuration =
-			runs > 0 ? Math.min(...filtered.map((l) => l.durationMs)) / 1000 : 0;
-		const maxDuration =
-			runs > 0 ? Math.max(...filtered.map((l) => l.durationMs)) / 1000 : 0;
-		const lastRunAt =
-			runs > 0
-				? new Date(
-						[...filtered].sort(
-							(a, b) =>
-								new Date(b.executedAt).getTime() -
-								new Date(a.executedAt).getTime(),
-						)[0].executedAt,
-					).toLocaleString()
+				? [...filtered].sort(
+						(a, b) =>
+							new Date(b.executedAt).getTime() -
+							new Date(a.executedAt).getTime(),
+					)[0]
 				: null;
+		const lastRunSkippedMarker = lastRun?.skipped
+			? " · skipped (nothing changed)"
+			: "";
+		const lastRunAt = lastRun
+			? new Date(lastRun.executedAt).toLocaleString() + lastRunSkippedMarker
+			: null;
 
 		// The worst single refresh in the window, not a total across it. Every refresh re-reads the same
 		// untidy records, so adding the counts up renders one messy ticket as fifty. Averaging is worse
@@ -254,9 +269,12 @@ const RefreshHistorySection: React.FC = () => {
 				: []),
 			...parentFigures,
 			{ label: "Avg Items", value: avgItems },
-			{ label: "Avg Duration", value: `${avgDuration.toFixed(2)} s` },
-			{ label: "Min Duration", value: `${minDuration.toFixed(2)} s` },
-			{ label: "Max Duration", value: `${maxDuration.toFixed(2)} s` },
+			{ label: "Avg Duration", value: asSeconds(averageSeconds(computedRuns)) },
+			{
+				label: "Min Duration",
+				value: asSeconds(shortestSeconds(computedRuns)),
+			},
+			{ label: "Max Duration", value: asSeconds(longestSeconds(computedRuns)) },
 			...(lastRunAt ? [{ label: "Last Run", value: lastRunAt }] : []),
 		];
 
@@ -278,6 +296,11 @@ const RefreshHistorySection: React.FC = () => {
 						</Box>
 					))}
 				</Box>
+				{skippedCount > 0 && (
+					<Typography variant="body2" sx={{ mt: 2 }}>
+						{`Skipped (nothing changed): ${skippedCount} of the last ${runs} runs`}
+					</Typography>
+				)}
 				{findingSentences.map((sentence) => (
 					<Typography key={sentence} variant="body2" sx={{ mt: 2 }}>
 						{sentence}

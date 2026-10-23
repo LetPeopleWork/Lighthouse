@@ -25,7 +25,8 @@ const RefreshHistoryChart: React.FC<RefreshHistoryChartProps> = ({ data }) => {
 	const dataset = sorted.map((entry) => ({
 		label: new Date(entry.executedAt).toLocaleString(),
 		itemCount: entry.itemCount,
-		durationS: entry.durationMs / 1000,
+		// A skipped forecast took no time to compute, so its point would drag the line to zero; a gap says nothing ran.
+		durationS: entry.skipped ? null : entry.durationMs / 1000,
 	}));
 
 	return (
