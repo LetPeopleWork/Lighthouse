@@ -231,6 +231,9 @@ describe("Story 6354: Refresh History reads as before wherever nothing was skipp
 
 		expect(screen.queryByText(/^Skipped/)).not.toBeInTheDocument();
 		expect(theFigure(/^Last Run$/)).not.toHaveTextContent(/skipped/);
+		expect(theFigure(/^Last Run$/).textContent).toBe(
+			new Date(theLastRunAt).toLocaleString(),
+		);
 	});
 
 	it("counts a skipped forecast as a run that succeeded", async () => {
