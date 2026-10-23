@@ -120,6 +120,15 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 	);
 
 	// @edge @contract-shape:pure-function
+	it("without an example, the tip reads as two sentences: which end the field reads, then what None does", async () => {
+		await givenSamOpensTheSettingsOf("Team", "Linear");
+
+		expect(await whenSamOpensTheTip()).toHaveTextContent(
+			"Read on each Work Item, this names the link or field that points to its parent. With None, the parent the tracker itself records is used.",
+		);
+	});
+
+	// @edge @contract-shape:pure-function
 	it("on a Team the tip speaks of the tenant's Ticket, never of a Work Item", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira", RenamedTerms);
 
