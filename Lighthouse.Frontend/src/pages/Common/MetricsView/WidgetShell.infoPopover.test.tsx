@@ -72,4 +72,13 @@ describe("Story 6352: a dashboard widget's info popover stays as it is", () => {
 
 		expect(button).toHaveAttribute("aria-expanded", "true");
 	});
+
+	// @edge @contract-shape:pure-function
+	it("on a widget without a title, the info button is named after the widget all the same", () => {
+		aWidgetWithInfo();
+
+		expect(
+			screen.getByRole("button", { name: "About this widget" }),
+		).toBeInTheDocument();
+	});
 });
