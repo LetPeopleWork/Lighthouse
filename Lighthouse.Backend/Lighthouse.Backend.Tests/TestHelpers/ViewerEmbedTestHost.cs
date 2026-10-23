@@ -253,10 +253,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
 
             var identity = new ClaimsIdentity(claims, OpenIdConnectDefaults.AuthenticationScheme, "name", ClaimTypes.Role);
+            var now = host.Services.GetRequiredService<TimeProvider>().GetUtcNow();
             var properties = new AuthenticationProperties
             {
-                IssuedUtc = DateTimeOffset.UtcNow.AddMinutes(-1),
-                ExpiresUtc = DateTimeOffset.UtcNow.AddHours(1),
+                IssuedUtc = now.AddMinutes(-1),
+                ExpiresUtc = now.AddHours(1),
                 IsPersistent = false,
             };
 

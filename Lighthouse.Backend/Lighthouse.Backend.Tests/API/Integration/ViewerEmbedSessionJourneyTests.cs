@@ -4,6 +4,9 @@ using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -50,6 +53,39 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(document.RootElement.GetProperty("isAuthenticated").GetBoolean(), Is.True,
                     "the ordinary cookie handler must accept this cookie, or D56's positive branch is untestable");
+            }
+        }
+
+        /// <summary>
+        /// The cookie handler judges a ticket's lifetime by the host's clock, not the wall clock. A
+        /// forged ticket stamped from real time would read as long expired on a host whose clock is
+        /// frozen hours away from it, and every test built on the forgery would fail for no product reason.
+        /// </summary>
+        [Test]
+        public async Task AForgedInteractiveCookie_IsAccepted_WhenTheHostClockIsHoursAheadOfRealTime()
+        {
+            var clock = new FakeTimeProvider(DateTimeOffset.UtcNow.AddHours(18));
+            await using var hostAheadOfRealTime = host.AuthEnabled.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(clock);
+                }));
+
+            var sessionCookie = host.ForgeInteractiveSessionCookie(
+                hostAheadOfRealTime, ViewerEmbedTestHost.ExplicitViewerSubject, "Explicitly Permissioned Viewer");
+
+            using var response = await ViewerEmbedTestHost.GetAsViewerAsync(
+                hostAheadOfRealTime, ViewerEmbedTestHost.SessionStatusPath, sessionCookie: sessionCookie);
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(body);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(document.RootElement.GetProperty("isAuthenticated").GetBoolean(), Is.True,
+                    "a forged session must be live by the host's own clock, whatever the wall clock says");
             }
         }
 
