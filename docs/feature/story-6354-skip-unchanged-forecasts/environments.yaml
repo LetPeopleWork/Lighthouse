@@ -4,8 +4,8 @@
 # Application change inside the existing product: one expand-only migration (Portfolios.ForecastInputFingerprint,
 # nullable text; RefreshLogs.Skipped, bool NOT NULL DEFAULT false), generated with Lighthouse.Backend/Create-Migration.ps1
 # for SQLite and PostgreSQL. No configuration key, no chart or image change, no new dependency, no new external call,
-# no Redis channel. Program.cs is untouched (IPortfolioRepository and IFeatureRepository are already registered), so
-# no live-connector suite is forced. The axes that matter are the database's history, the replica count and the
+# no Redis channel. Program.cs gains one line, the registration of the seeder that forgets every fingerprint at start
+# (amended at the DISTILL review gate; this said untouched), so that push runs every live-connector suite. The axes that matter are the database's history, the replica count and the
 # server version during an upgrade or rollback.
 
 target_environments:
@@ -26,9 +26,10 @@ target_environments:
   - name: upgraded-with-portfolios
     description: >
       An existing database with Portfolios, forecasts and RefreshLog history, migrated forward. Every
-      ForecastInputFingerprint is null after the migration, so each Portfolio's first round after the upgrade computes
-      in full (as after a restart today) and skips are possible from the second round of that day on. Old RefreshLog
-      rows read Skipped = false. Covered in CI by ci_verifysqlite / ci_verifypostgres starting the app, and by the
+      ForecastInputFingerprint is null after the migration, and the start-up seeder forgets every fingerprint anyway,
+      so each Portfolio's first round after the upgrade computes in full and skips are possible from the second round
+      of that day on. Old RefreshLog rows read Skipped = false, pinned on both providers by
+      RefreshLogSkippedColumnMigrationTests. Covered in CI by ci_verifysqlite / ci_verifypostgres starting the app, and by the
       three migration fixtures that seed Portfolios (HistoricalSchemaPatch gains the new Portfolios column).
     platform: [linux, macos, windows, docker, kubernetes]
     preconditions:
@@ -48,7 +49,7 @@ target_environments:
   - name: multi-replica-redis
     description: >
       Two or more replicas sharing a database and Redis admission. The user bypass (DDD-9) is a database forget at
-      the entry point, so whichever replica admits the next forecast reads the same null fingerprint; Redis carries
+      the entry point, so whichever replica admits the next forecast reads the same forget token; Redis carries
       nothing new. The CAS on record (DDD-3) settles a forget racing a run on another replica. No new Redis
       container test is needed: the in-process acceptance test of "forget, then the next forecast computes" proves
       the database contract that every replica reads.
@@ -57,8 +58,10 @@ target_environments:
 
   - name: standalone
     description: >
-      Standalone desktop build (SQLite, one process). Same as clean-sqlite / upgraded-with-portfolios. The fingerprint
-      is persisted, so a restart of the app does not force a recompute; the first round of each instance day does.
+      Standalone desktop build (SQLite, one process). Same as clean-sqlite / upgraded-with-portfolios. Every start of
+      the app forgets every fingerprint (amended at the DISTILL review gate), so the first round after a restart
+      computes, as does the first round of each instance day. A desktop app restarted daily therefore computes
+      once per Portfolio per start and skips from the second round on.
     platform: [linux, macos, windows]
     preconditions: []
 
@@ -98,13 +101,11 @@ notes:
       overlap, and the next instance day (date member) or another press clears it. No test spans two binaries.
   rollback_then_roll_forward_same_day:
     why: >
-      An old build computes forecasts without touching the stored fingerprint. If the new build returns the same
-      day and the inputs happen to be back exactly where they were when that fingerprint was recorded, the stored
-      forecasts (computed by the old build from other inputs) would be confirmed. Rare and bounded to that day; the
-      release/rollback note says to press "refresh all" for Portfolios after rolling forward, which forgets every
-      fingerprint.
+      An old build computes forecasts without touching the stored fingerprint, so a stored value could match inputs
+      the old build computed other forecasts from. Closed (amended at the DISTILL review gate): every start of the new
+      build forgets every fingerprint, so the first round after rolling forward computes. No release-note step.
 
 deployment_assumptions:
   - "Ships with the next regular Lighthouse release through the existing release pipeline; no flag, no configuration"
   - "Rollback is the previous release: the column additions are expand-only; an older build ignores the nullable fingerprint and inserts RefreshLog rows relying on the column default false"
-  - "After the upgrade each Portfolio computes once before it can skip"
+  - "After the upgrade, and after every start, each Portfolio computes once before it can skip"

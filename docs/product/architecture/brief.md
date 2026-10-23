@@ -10604,23 +10604,30 @@ What DELIVER settled beyond the design above:
 
 ## Application Architecture — story-6354-skip-unchanged-forecasts (Updates that change nothing skip the forecast)
 
-Feature: story-6354-skip-unchanged-forecasts (ADO Story #6354) · Wave: DESIGN · 2026-10-23 · Morgan, PROPOSE mode.
-Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-13).
+Feature: story-6354-skip-unchanged-forecasts (ADO Story #6354) · Wave: DESIGN · 2026-10-23 · Morgan, PROPOSE mode;
+amended at the DISTILL review gate the same day.
+Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-14).
 
 ### Key invariants introduced
 
 - **A Portfolio forecast is skipped only when a computed run would be handed the inputs the stored forecasts were
   computed from.** `ForecastService` computes a pure `ForecastInputFingerprint` from the values it has already
-  gathered: today, the limits, the Features in forecast order, the Teams of those Features and the remaining-work
-  rows; per Team, the throughput as handed, the chip status and the Feature WIP; per Feature, `ForecastWaits.Of`. It
-  compares that with `Portfolio.ForecastInputFingerprint` before simulating. On a match it writes nothing.
+  gathered: today (the instance day, a `DateOnly` from `ILighthouseClock.Today`), the limits, the Features in forecast
+  order, the Teams of those Features and the remaining-work rows; per Team, the throughput as handed, the chip status
+  and the Feature WIP; per Feature, `ForecastWaits.Of`. It compares that with `Portfolio.ForecastInputFingerprint`
+  before simulating. On a match it writes nothing. If fingerprinting throws, it simulates and records nothing.
 - **The fingerprint is written only by set-based updates.** EF ignores the column on entity updates.
-  `ForecastUpdater` records it **last**, after the save, the staging and the publish, with a CAS against the value
-  read at gathering. A failed or cancelled run clears it, and a missing one means compute.
-- **A person always gets a computed forecast.** The update-forecast, refresh and refresh-all endpoints clear the
-  fingerprint of every Portfolio they touch, in the database, before queuing. This holds across replicas and every
-  queue coalescing path, and a run in flight loses its CAS. No origin travels through the queue, the updaters or
-  `TeamDataRefreshed`.
+  `ForecastUpdater` records it **last**, after the save, the staging and the publish, with a null-safe CAS against the
+  value read at gathering. A forget writes a new `forgotten:` token, never null, so any later forget beats a run in
+  flight whatever it read. A failed or cancelled run forgets; nothing recorded or a token means compute.
+- **"Update forecast" always computes; the refresh buttons do unless a forecast ran in between.** All six user entry
+  points forget the fingerprint of every Portfolio they touch, in the database, before queuing. The two "Update
+  forecast" buttons queue the forecast itself, so the next forecast computes on any replica and through every
+  coalescing path. The four refresh buttons queue a refresh; a forecast of that Portfolio that runs before the
+  refreshed data uses the forget up, so their promise is best effort. No origin travels through the queue, the
+  updaters or `TeamDataRefreshed`.
+- **Every start forgets.** An `ISeeder` forgets every Portfolio's fingerprint at every start and after a database
+  restore, so an upgrade, a rollback, a roll-forward or a restore never leaves a stale match.
 - **A skip is still a forecast round.** It writes a `RefreshLog` row with `Skipped = true` and logs
   `forecast=skipped after Nms (inputs unchanged)`. From slice 02 it stamps the in-scope forecasts' `CreationTime` with
   one set-based update. It still stages write-back and publishes `PortfolioForecastsUpdated`, so "dispatched once per
@@ -10628,14 +10635,16 @@ Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md`
 
 ### Component changes
 
-- NEW: `ForecastInputFingerprint` (pure), `ForecastRunOutcome`, and one expand-only migration
-  (`Portfolio.ForecastInputFingerprint`, `RefreshLog.Skipped`).
-- MODIFIED, backend: `IForecastService`/`ForecastService` (signature `(portfolio, today, ct)`, constructor unchanged),
-  `ForecastUpdater` (the shell that acts on the outcome), `IPortfolioRepository` (`TryRecordForecastInputs` CAS,
-  `ForgetForecastInputs`), `IFeatureRepository` (`ConfirmForecastsAsOf`), the six user entry points in five
-  controllers, `RefreshLog(Dto)` and the round summary line.
-- MODIFIED, frontend: `RefreshHistorySection` (durations over computed runs, a Skipped count). The Task Manager
-  changes only if the maintainer picks T-B at DISTILL.
+- NEW: `ForecastInputFingerprint` (pure), `ForecastRunOutcome`, `ForecastInputsForgottenAtStartSeeder`, and one
+  expand-only migration (`Portfolio.ForecastInputFingerprint`, `RefreshLog.Skipped` with a database default of false).
+- MODIFIED, backend: `IForecastService`/`ForecastService` (signature `(portfolio, DateOnly today, ct)`, constructor
+  unchanged; the Feature read narrowed at query level to the Portfolio's Teams), `ForecastUpdater` (the shell that acts
+  on the outcome; a Debug line timing gather and publish), `IPortfolioRepository` (`TryRecordForecastInputs` CAS,
+  `ForgetForecastInputs`, `ForgetAllForecastInputs`), `IFeatureRepository` (`ConfirmForecastsAsOf`), the six user entry
+  points in five controllers (no controller gains a parameter), `RefreshLog(Dto)`, the round summary line, and one
+  seeder registration in `Program.cs`.
+- MODIFIED, frontend: `RefreshHistorySection` (durations over computed runs, `—` when none computed, a Skipped count
+  line, the Last Run marker). The Task Manager is unchanged (maintainer decision at DISTILL).
 - UNCHANGED: `UpdateQueueService`, `UpdateServiceBase`, the Team and Portfolio updaters, `TeamDataRefreshed`, the
   simulation, `TeamMetricsService`, the `PortfolioForecastsUpdated` handlers, write-back, connectors and HTTP
   contracts (the only change is an additive `skipped` on refresh logs). L1/L2 C4 unchanged.
@@ -10643,7 +10652,7 @@ Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md`
 ### Architectural Enforcement (this feature)
 
 - A guard test lists the fingerprint members, with one case per member. A reflection guard covers
-  `ForecastSimulationLimits`.
+  `ForecastSimulationLimits` (all but `CoresSeen` and `MostRunsAtOnce`).
 - A golden fingerprint, and equality after a fresh `DbContext` read on SQLite and on Postgres.
 - ArchUnitNET: `ForecastInputFingerprint` depends on nothing in `BackgroundServices` or `Data`.
 
