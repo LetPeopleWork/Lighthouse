@@ -800,6 +800,82 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
+	describe("when the connection list is refused", () => {
+		const connectionsRefusedCopy =
+			"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
+
+		const renderWithConnections = (
+			isSystemAdmin: boolean,
+			getConfiguredWorkTrackingSystems: ReturnType<
+				typeof createMockWorkTrackingSystemService
+			>["getConfiguredWorkTrackingSystems"],
+		) => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+				isRbacEnabled: true,
+				isSystemAdmin,
+				canCreateTeam: isSystemAdmin,
+				canCreatePortfolio: isSystemAdmin,
+				systemAdminDisplayNames: ["Admin User"],
+			});
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems =
+				getConfiguredWorkTrackingSystems;
+
+			renderWithProviders(
+				<OverviewDashboard />,
+				{
+					rbacService: mockRbacService,
+					workTrackingSystemService: mockWorkTrackingSystemService,
+				},
+				{ teams: [], portfolios: [] },
+			);
+		};
+
+		it("tells a system admin that access was refused instead of showing onboarding", async () => {
+			renderWithConnections(
+				true,
+				vi.fn().mockRejectedValue(new ApiError(403, "Forbidden")),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText(connectionsRefusedCopy)).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
+		});
+
+		it("keeps the no-access guidance for a non-admin and says nothing about connections", async () => {
+			renderWithConnections(
+				false,
+				vi.fn().mockRejectedValue(new ApiError(403, "Forbidden")),
+			);
+
+			await waitFor(() => {
+				expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(connectionsRefusedCopy),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByTestId("onboarding-stepper"),
+			).not.toBeInTheDocument();
+		});
+
+		it("still shows onboarding to a system admin who simply has no connections yet", async () => {
+			renderWithConnections(true, vi.fn().mockResolvedValue([]));
+
+			await waitFor(() => {
+				expect(screen.getByTestId("onboarding-stepper")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(connectionsRefusedCopy),
+			).not.toBeInTheDocument();
+		});
+	});
+
 	describe("Row action gating via DataOverviewTable predicates", () => {
 		it("shows only Details icon on every team and portfolio row for Team Reader (no admin scopes)", async () => {
 			const mockRbacService = createMockRbacService();
