@@ -1261,6 +1261,54 @@ describe("CreateConnectionWizard", () => {
 			});
 			expect(onComplete).not.toHaveBeenCalled();
 		});
+
+		it("clears the earlier save failure when Create is pressed again", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValueOnce(
+					new ApiError(400, "A connection with this name already exists."),
+				)
+				.mockResolvedValueOnce(undefined);
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection: A connection with this name already exists.",
+				);
+			});
+			await waitFor(() => {
+				expect(screen.getByRole("button", { name: /^Create$/ })).toBeEnabled();
+			});
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(onComplete).toHaveBeenCalledTimes(1);
+			});
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		});
+
+		it("falls back to the general reason when saving is refused (403)", async () => {
+			const saveConnection = vi
+				.fn()
+				.mockRejectedValue(
+					new ApiError(403, "You are not allowed to manage connections."),
+				);
+			const { user, onComplete } = await goToStep3(saveConnection);
+
+			await user.click(screen.getByRole("button", { name: /^Create$/ }));
+
+			await waitFor(() => {
+				expect(screen.getByRole("alert")).toHaveTextContent(
+					"Could not save the connection. Check your settings and try again.",
+				);
+			});
+			expect(screen.getByRole("alert")).not.toHaveTextContent(
+				"You are not allowed to manage connections.",
+			);
+			expect(onComplete).not.toHaveBeenCalled();
+		});
 	});
 
 	describe("Cancel", () => {

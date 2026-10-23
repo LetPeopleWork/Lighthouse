@@ -892,6 +892,22 @@ describe("OverviewDashboard", () => {
 			).not.toBeInTheDocument();
 		});
 
+		it("does not call a failed connection list a refusal", async () => {
+			renderWithConnections(
+				true,
+				vi.fn().mockRejectedValue(new ApiError(500, "Internal Server Error")),
+			);
+
+			await waitFor(() => {
+				expect(
+					screen.getByText("Error loading data. Please try again later."),
+				).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(connectionsRefusedCopy),
+			).not.toBeInTheDocument();
+		});
+
 		it("still shows onboarding to a system admin who simply has no connections yet", async () => {
 			renderWithConnections(true, vi.fn().mockResolvedValue([]));
 
