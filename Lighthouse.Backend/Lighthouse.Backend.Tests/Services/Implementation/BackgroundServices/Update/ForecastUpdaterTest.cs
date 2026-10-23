@@ -825,6 +825,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             forecastInputsMock.VerifyNoOtherCalls();
         }
 
+        [Test]
+        public void Update_ShouldTimeTheForecastAndThePublishingApart_AtDebug()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(DebugLines(), Has.Some.Match($@"^Forecast round timings \| Portfolio '{portfolio.Name}' \| forecast=\d+ms \| publish=\d+ms$"));
+        }
+
+        /// <summary>
+        /// The confirmation is part of what the forecast costs on a quiet round, so it has to land inside the
+        /// forecast figure rather than between the two figures, where nothing would show it.
+        /// </summary>
+        [Test]
+        public void Update_ShouldCountTheConfirmationInTheForecastFigure_WhenTheInputsAreConfirmedUnchanged()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged(TheFeaturesTheSkippedForecastRead));
+            featureRepositoryMock
+                .Setup(x => x.ConfirmForecastsAsOf(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
+                .Returns(async () => await Task.Delay(SlowForecastMilliseconds, CancellationToken.None));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            var timings = DebugLines().Single(line => line.StartsWith("Forecast round timings", StringComparison.Ordinal));
+            var forecastMs = int.Parse(timings.Split("forecast=")[1].Split("ms")[0], System.Globalization.CultureInfo.InvariantCulture);
+
+            Assert.That(forecastMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+        }
+
         private List<string> DebugLines()
         {
             return [.. loggerMock.Invocations
