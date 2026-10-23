@@ -167,6 +167,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 logger.Object,
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
+                Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(
                     new DrawsFromAPinnedStartingNumber(4242),

@@ -42,7 +42,7 @@ A row reads `Refreshing Team '<name>' — Running`: what is happening, what it i
 |---------------------|----------|
 | `Refreshing Team '<name>'` | Lighthouse is fetching that Team's Work Items. |
 | `Refreshing Portfolio '<name>'` | The same for a Portfolio: its Features and the Work Items under them. |
-| `Forecasting Portfolio '<name>'` | Lighthouse is recalculating that Portfolio's forecasts. |
+| `Forecasting Portfolio '<name>'` | Lighthouse is updating that Portfolio's forecasts: it recalculates them, or confirms them when nothing they read has changed. |
 | `Removing Team '<name>'` | That Team is being deleted and the deletion is still running. |
 | `Removing Portfolio '<name>'` | The same for a Portfolio. |
 
@@ -50,6 +50,9 @@ The words *Team* and *Portfolio* follow your own [terminology](configuration.htm
 
 {: .note}
 Refreshing a Portfolio and forecasting it are two separate pieces of work, so **one Portfolio can appear twice**. A Portfolio refresh ends by queueing a forecast of that same Portfolio: you see `Refreshing Portfolio '<name>'` run, then `Forecasting Portfolio '<name>'` behind it. Nothing is duplicated and nothing has gone wrong.
+
+{: .note}
+A forecast row that leaves within seconds is usually one that had nothing to recalculate. When a background update finds that nothing a Portfolio's forecast reads has changed, Lighthouse confirms the existing forecast instead of recalculating it. What you start yourself recalculates, and so does the first forecast after Lighthouse starts. [Refresh History](systeminfo.html#forecasts-that-were-confirmed-not-recalculated) marks these runs as *skipped (nothing changed)*.
 
 After the name comes the state:
 

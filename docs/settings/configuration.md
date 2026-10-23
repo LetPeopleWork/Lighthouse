@@ -185,6 +185,8 @@ There are two types of refreshes:
 
 The Team refresh fetches all items related to your team, and is equivalent to clicking the update icon on the Team page, while the Feature refresh updates portfolio data and is equivalent to using the refresh icon on the Portfolio page.
 
+Each refresh is followed by a forecast of the Portfolios it touched. When a background refresh changed nothing that forecast reads, Lighthouse confirms the existing forecast instead of recalculating it, so a short interval costs little while your data is quiet. A refresh you start yourself recalculates, with one exception described under [Forecasts that were confirmed, not recalculated](systeminfo.html#forecasts-that-were-confirmed-not-recalculated).
+
 ![Feature Refresh Settings](../assets/settings/featurerefreshsettings.png)
 
 ### Setting Details

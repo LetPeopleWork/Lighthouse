@@ -168,6 +168,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task GetPortfolioIdsForTeam_TeamSharesAFeatureWithAnotherTeam_ReturnsPortfolio()
+        {
+            var subject = CreateSubject();
+
+            var connection = CreateConnection();
+            var team = new Team { Name = "Team1", WorkTrackingSystemConnection = connection };
+            var otherTeam = new Team { Name = "Team2", WorkTrackingSystemConnection = connection };
+            DatabaseContext.Teams.AddRange(team, otherTeam);
+            await DatabaseContext.SaveChangesAsync();
+
+            var portfolio = new Portfolio { Name = "Portfolio", WorkTrackingSystemConnection = connection };
+            var feature = new Feature { Name = "Feature", Order = "12" };
+            feature.FeatureWork.Add(new FeatureWork(team, 5, 10, feature));
+            feature.FeatureWork.Add(new FeatureWork(otherTeam, 7, 10, feature));
+            portfolio.Features.Add(feature);
+
+            subject.Add(portfolio);
+            await subject.Save();
+
+            var portfolioIds = subject.GetPortfolioIdsForTeam(team.Id);
+
+            Assert.That(portfolioIds, Is.EquivalentTo([portfolio.Id]));
+        }
+
+        [Test]
         public async Task GetPortfolioIdsForTeam_TeamWorksOnNoneOfThePortfoliosFeatures_ReturnsNothing()
         {
             var subject = CreateSubject();
@@ -189,6 +214,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var portfolioIds = subject.GetPortfolioIdsForTeam(team.Id);
 
             Assert.That(portfolioIds, Is.Empty);
+        }
+
+        [Test]
+        public async Task GetPortfolioIdsForTeams_SeveralTeamsSharingAPortfolio_ReturnsEachOfTheirPortfoliosOnce()
+        {
+            var subject = CreateSubject();
+
+            var connection = CreateConnection();
+            var payments = new Team { Name = "Payments", WorkTrackingSystemConnection = connection };
+            var ledger = new Team { Name = "Ledger", WorkTrackingSystemConnection = connection };
+            var onboarding = new Team { Name = "Onboarding", WorkTrackingSystemConnection = connection };
+            var elsewhere = new Team { Name = "Elsewhere", WorkTrackingSystemConnection = connection };
+            DatabaseContext.Teams.AddRange(payments, ledger, onboarding, elsewhere);
+            await DatabaseContext.SaveChangesAsync();
+
+            var shared = APortfolioWorkedOnBy("Shared", connection, payments, ledger);
+            var ownedByOnboarding = APortfolioWorkedOnBy("Onboarding", connection, onboarding);
+            var unrelated = APortfolioWorkedOnBy("Unrelated", connection, elsewhere);
+            subject.Add(shared);
+            subject.Add(ownedByOnboarding);
+            subject.Add(unrelated);
+            await subject.Save();
+
+            DatabaseContext.ChangeTracker.Clear();
+
+            var portfolioIds = subject.GetPortfolioIdsForTeams([payments.Id, ledger.Id, onboarding.Id]);
+
+            Assert.That(portfolioIds, Is.EquivalentTo(new[] { shared.Id, ownedByOnboarding.Id }));
+        }
+
+        private static Portfolio APortfolioWorkedOnBy(string name, WorkTrackingSystemConnection connection, params Team[] teams)
+        {
+            var portfolio = new Portfolio { Name = name, WorkTrackingSystemConnection = connection };
+
+            foreach (var team in teams)
+            {
+                var feature = new Feature { Name = $"{name} for {team.Name}", Order = "12" };
+                feature.FeatureWork.Add(new FeatureWork(team, 1, 2, feature));
+                portfolio.Features.Add(feature);
+            }
+
+            return portfolio;
         }
 
         [Test]

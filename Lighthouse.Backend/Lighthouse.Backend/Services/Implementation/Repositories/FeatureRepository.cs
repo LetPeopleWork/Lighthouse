@@ -29,11 +29,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public async Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken)
         {
             await Context.Set<WhenForecast>()
-                .Where(forecast => featureIds.Contains(forecast.FeatureId))
+                .Where(forecast => featureIds.Contains(forecast.FeatureId) && forecast.CreationTime < confirmedAt)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(forecast => forecast.CreationTime, confirmedAt), cancellationToken);
 
             await Context.Set<StartForecast>()
-                .Where(forecast => featureIds.Contains(forecast.FeatureId))
+                .Where(forecast => featureIds.Contains(forecast.FeatureId) && forecast.CreationTime < confirmedAt)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(forecast => forecast.CreationTime, confirmedAt), cancellationToken);
         }
 

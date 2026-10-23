@@ -1,0 +1,43 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Forecast/ForecastInputFingerprint.cs",
+      "**/Services/Interfaces/Forecast/ForecastRunOutcome.cs",
+      "**/Services/Implementation/Forecast/ForecastService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/Repositories/PortfolioRepository.cs",
+      "**/Services/Implementation/Repositories/FeatureRepository.cs",
+      "**/Services/Implementation/RefreshRoundSummaryLine.cs",
+      "**/Services/Implementation/RefreshRoundSummary.cs",
+      "**/Services/Implementation/WriteBackRound.cs",
+      "**/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs",
+      "**/API/ForecastController.cs",
+      "**/API/PortfolioController.cs",
+      "**/API/PortfoliosController.cs",
+      "**/API/TeamController.cs",
+      "**/API/TeamsController.cs",
+      "**/API/DTO/RefreshLogDto.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Forecast.|FullyQualifiedName~Tests.Services.Implementation.BackgroundServices.Update.|FullyQualifiedName~Tests.Services.Implementation.Repositories.PortfolioRepositoryTest|FullyQualifiedName~Tests.Services.Implementation.Repositories.FeatureRepositoryTest|FullyQualifiedName~ForecastConfirmationRepositoryRelationalTest|FullyQualifiedName~RefreshRoundSummary|FullyQualifiedName~WriteBackRound|FullyQualifiedName~ForecastInputsForgottenAtStartSeeder|FullyQualifiedName~Tests.API.ForecastController|FullyQualifiedName~Tests.API.PortfolioControllerTest|FullyQualifiedName~Tests.API.PortfoliosControllerTest|FullyQualifiedName~Tests.API.TeamControllerTest|FullyQualifiedName~Tests.API.TeamsControllerTest|FullyQualifiedName~RefreshLogDto)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~IntegrationTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

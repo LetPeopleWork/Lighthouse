@@ -113,6 +113,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
+                Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(recording, ForecastSimulationLimits.Default),
                 TimeProvider.System);
