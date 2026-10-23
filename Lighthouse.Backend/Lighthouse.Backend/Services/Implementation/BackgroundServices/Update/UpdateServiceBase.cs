@@ -87,11 +87,20 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// </summary>
         protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success, bool cancelled)
         {
+            ReportForecastSummary(serviceProvider, entityName, durationMs, success, cancelled, skipped: false);
+        }
+
+        /// <summary>
+        /// A skipped forecast still reports its time: how long confirming unchanged inputs costs is read off it.
+        /// </summary>
+        protected void ReportForecastSummary(IServiceProvider serviceProvider, string entityName, long durationMs, bool success, bool cancelled, bool skipped)
+        {
             var summary = new RefreshRoundSummary(EntityTypeName, entityName, durationMs, success)
             {
                 ForecastDurationMs = durationMs,
                 ForecastSucceeded = success,
                 ForecastCancelled = cancelled,
+                ForecastSkipped = skipped,
             };
 
             HandToRound(serviceProvider, summary, static (round, reported) => round.ReportForecast(reported));

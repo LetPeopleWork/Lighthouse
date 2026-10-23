@@ -16,12 +16,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     [Category("contract-shape:pure-function")]
     public class RefreshRoundSummaryLineSkippedForecastTest
     {
-        private const string Pending = "Story 6354: pending until DELIVER words the line for a skipped forecast";
-
         private static readonly SyncOutcome NothingFetched = new(SyncMode.Delta, 71, 0);
 
         [Test]
-        [Ignore(Pending)]
         public void A_Team_round_whose_forecast_was_skipped_ends_with_the_skip_and_its_time()
         {
             var logger = new RecordingLogger<RefreshRoundSummaryLineSkippedForecastTest>();
@@ -38,7 +35,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_round_that_only_forecast_names_the_skip_where_the_forecast_time_goes()
         {
             var logger = new RecordingLogger<RefreshRoundSummaryLineSkippedForecastTest>();
@@ -54,7 +50,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_skip_reported_into_a_refresh_round_reaches_the_line_as_a_skip()
         {
             var round = new WriteBackRound();
@@ -80,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         /// Only a round in which every forecast was skipped reads as skipped.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("edge")]
         public void A_round_in_which_one_forecast_computed_and_a_later_one_was_skipped_reads_as_computed()
         {
@@ -102,7 +96,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("edge")]
         public void A_round_in_which_every_forecast_was_skipped_reads_as_skipped()
         {

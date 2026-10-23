@@ -47,9 +47,17 @@ namespace Lighthouse.Backend.Services.Implementation
             refreshSummary = reported;
         }
 
-        /// <summary>What the forecast of this round did.</summary>
+        /// <summary>
+        /// What the forecast of this round did. A Team in two Portfolios forecasts twice in one round, and
+        /// if either of them computed, the round paid for a forecast, so a later skip does not hide that.
+        /// </summary>
         public void ReportForecast(RefreshRoundSummary reported)
         {
+            if (reported.ForecastSkipped && forecastSummary is { ForecastSkipped: false })
+            {
+                return;
+            }
+
             forecastSummary = reported;
         }
 
@@ -68,6 +76,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     ForecastDurationMs = forecastSummary?.ForecastDurationMs,
                     ForecastSucceeded = forecastSummary?.ForecastSucceeded ?? true,
                     ForecastCancelled = forecastSummary?.ForecastCancelled ?? false,
+                    ForecastSkipped = forecastSummary?.ForecastSkipped ?? false,
                 };
 
             refreshSummary = null;

@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Services.Implementation
                 summary.EntityType, summary.EntityName, outcome.Mode, outcome.RecordsScanned, outcome.RecordsFetched, summary.DurationMs, summary.Success, forecast, reason);
         }
 
+        private const string ForecastField = " | forecast=";
+
         private static string DescribeForecast(RefreshRoundSummary summary)
         {
             if (summary.ForecastDurationMs is not { } forecastMs)
@@ -40,14 +42,24 @@ namespace Lighthouse.Backend.Services.Implementation
                 return string.Empty;
             }
 
+            return ForecastField + DescribeForecastOutcome(summary, forecastMs);
+        }
+
+        private static string DescribeForecastOutcome(RefreshRoundSummary summary, long forecastMs)
+        {
+            if (summary.ForecastSkipped)
+            {
+                return string.Create(CultureInfo.InvariantCulture, $"skipped after {forecastMs}ms (inputs unchanged)");
+            }
+
             if (summary.ForecastSucceeded)
             {
-                return string.Create(CultureInfo.InvariantCulture, $" | forecast={forecastMs}ms");
+                return string.Create(CultureInfo.InvariantCulture, $"{forecastMs}ms");
             }
 
             return summary.ForecastCancelled
-                ? string.Create(CultureInfo.InvariantCulture, $" | forecast=cancelled after {forecastMs}ms")
-                : string.Create(CultureInfo.InvariantCulture, $" | forecast=failed after {forecastMs}ms");
+                ? string.Create(CultureInfo.InvariantCulture, $"cancelled after {forecastMs}ms")
+                : string.Create(CultureInfo.InvariantCulture, $"failed after {forecastMs}ms");
         }
     }
 }
