@@ -1,0 +1,23 @@
+reviewer: nw-diverger-reviewer
+feature: epic-6400-fast-with-many-features
+date: 2026-10-23
+iterations:
+  - iteration: 1
+    verdict: NEEDS_REVISION
+    blocking:
+      - B1 dissent trigger not derivable from the matrix (S2 off-rubric, most likely case unscored, no numeric thresholds)
+      - B2 recommended Epic could close with its top outcome (K3, during a forecast) unmet
+    high: [H1 slice 1 is an enabler, H2 scaffold credit rests on unvalidated A12, H3 gather slice acceptance, H4 swap set,
+           H5 loading and failure looks, H6 Epic 6264 overlap, H7 rubrics for T1-T3, H8 feasibility rule asymmetry,
+           H9 job not strategic, H10 diversity table incomplete, H11 overclaim on reporter's wish,
+           H12 falsifier vs target, H13 50 s reading confounded with forecasts]
+    resolution: >
+      All applied. B2 resolved by an orchestrator decision taken under the maintainer's "continue autonomously":
+      K3 is an exit criterion and Option 3's round-isolation step is slice 2 (hybrid). Flagged for the maintainer.
+  - iteration: 2
+    verdict: APPROVED
+    weighted_totals_recomputed: true
+    advisory:
+      - "A-a: taste-evaluation section 6, Option 3 alone passes the filter as worded and ranks below the hybrid (3.60 vs 3.85); result unchanged."
+      - "A-b: record the Epic 6264 hand-off where 6264's DESIGN will see it (its delta or its ADO item)."
+      - "A-c: Jira limits carry no fetch date in places; Nave not checked."

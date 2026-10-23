@@ -68,6 +68,7 @@ feature_context:
   - epic-6298-report-pdf-export
   - epic-6311-responsive-during-updates
   - story-6354-skip-unchanged-forecasts
+  - epic-6400-fast-with-many-features
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8460,6 +8461,11 @@ jobs:
       forecast). Wording unchanged: the outcome is still "every page keeps answering". Secondary persona for
       this story: delivery-forecaster, who needs the forecast to stay current and to say when it was last
       confirmed.
+      REUSED 2026-10-23 by epic-6400-fast-with-many-features (ADO Epic #6400), DIVERGE: the log of 2026-10-20 on
+      v26.10.19.10, which carries 6311's half-the-cores limit, shows nine Kestrel heartbeat warnings (1.4-49.3 s)
+      only during forecast rounds, so the job is still under-served after 6311. Story 6354 skips the simulation
+      and save of an unchanged round but not its gather. Wording unchanged; 6400 serves it alongside the new
+      job-reach-and-read-what-i-came-for-on-a-large-instance (OS1 16 as a desk estimate).
     job_story: >
       When Lighthouse is recalculating a Portfolio's forecasts in the background,
       I want every page to keep answering,
@@ -8496,6 +8502,62 @@ jobs:
         Importance 5 - an instance that looks dead is the most expensive failure the product has, and it
         reached a user. Satisfaction 0 - no setting mitigates it and no workaround exists short of a
         restart. Gap 5. Single informant; the code reading confirms the mechanism independently.
+
+  - id: job-reach-and-read-what-i-came-for-on-a-large-instance
+    title: Reach and read what I came for, however large the instance
+    persona: "delivery-lead-rte (also delivery-forecaster, product-owner; platform-operator for the way to Settings)"
+    feature_context: epic-6400-fast-with-many-features
+    ado: "Epic #6400 Lighthouse stays fast with many Features (replaces Story #6351)"
+    created: 2026-10-23
+    complements: job-operator-keep-lighthouse-usable-while-it-forecasts
+    note: >
+      NEW in DIVERGE of epic-6400-fast-with-many-features. Changelog: created 2026-10-23 from
+      diverge/job-analysis.md, merging the two candidate jobs DISCOVER named (a large Portfolio's or Team's
+      Features list appearing quickly; the navigation and the lists of Portfolios, Teams and connections at once
+      on the way to Settings), because they share one success measure and one cause: reads that scale with every
+      Feature of the instance rather than with what the screen shows. Distinct from the forecasting job because it
+      holds with no forecast running. Evidence: one reporting instance (Portfolios of 400-920 Features, 8 Teams);
+      one second-hand reading of about 50 s to the 920-Feature list, the scaffold wish as stated intent, the
+      mechanism from the code. If the idle 920-Feature list on the scaled data set loads in under about 10 s, the
+      list half fails and the job narrows to the way to Settings (that falsifier is a go/no-go for the claim; the
+      target is a first row under 2 s). Not fully independent of the forecasting job: at several 4-8 minute rounds
+      an hour, a random reading overlaps a round about 20-80% of the time. Scores are DESK ESTIMATES by the
+      diverger. Revised 2026-10-23 after DIVERGE peer review: the job story now carries the strategic outcome
+      (keep using Lighthouse instead of the tracker or a spreadsheet) and names no screen element.
+    job_story: >
+      When I open Lighthouse on an instance with hundreds of Features per Portfolio, to see where a Portfolio's or
+      a Team's Features stand or to change a setting,
+      I want to get what I came for without waiting on data I did not ask for,
+      so I keep using Lighthouse for delivery decisions instead of falling back to the tracker or a spreadsheet.
+    dimensions:
+      functional: >
+        Time to the screen I came for under a second, and to the first Feature row of a 920-Feature list under
+        two, with no forecast running and while one runs; a load that fails or finds nothing says so instead of
+        loading forever.
+      emotional: >
+        From "every visit is a wait" to "it is just there; when it is busy, it says so".
+      social: >
+        The delivery lead opens a large Portfolio in front of a steering group without apologising for the tool.
+    forces:
+      push: >
+        About 50 s to a 920-Feature list on every open, and a loading wheel on the Overview when the user only
+        wants Settings.
+      pull: >
+        The screens show names, counts, dates and a dependency verdict; most of what is read today is never shown.
+      anxiety: >
+        "Will a faster list show different dependencies or a different order?" (No; verdicts stay computed over
+        the whole graph and positions stay global.)
+      habit: >
+        Opening the work tracking system or a spreadsheet instead, or waiting it out in another tab.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - every visit pays it on large instances, which the maintainer expects to be common; not 5
+        because the page does load. Satisfaction 1 - no setting shortens it. Desk estimates on a 1-10 scale in
+        diverge/job-analysis.md (OS2 I8 S2 = 14; OS3 10), mapped to this file's 1-5 by halving and rounding
+        (I8 -> 4, S2 -> 1); re-scored after the epic's baseline measurement.
   - id: job-config-admin-know-what-a-setting-limits-before-it-bites
     title: Know what a setting limits while setting it, not when a report refuses
     persona: config-admin

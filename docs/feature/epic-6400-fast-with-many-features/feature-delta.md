@@ -218,7 +218,7 @@ claims are kept apart; neither carries the other.
 | # | Assumption | Evidence | Confidence | Risk |
 |---|---|---|---|---|
 | V1a | **Forecast stalls**: requests stall while forecasts run, on the current release. | Nine heartbeat warnings (1.4–49.3 s) across four forecast rounds, only during those rounds; v26.10.19.10, 2026-10-20. Observed, second-hand (maintainer transcription). | **High** that the stalls happen and coincide with forecasts; their cause inside the round is unmeasured (W8). | 13 |
-| V1b | **List slowness**: the 920-Feature Features list is slow on the current release. | One second-hand reading, ≈50 s. Whether a forecast overlapped it is unknown (A13). | **Low-Medium.** A single reading; falsifier (a) in the Handoff waiver tests it. | 14 |
+| V1b | **List slowness**: the 920-Feature Features list is slow on the current release. | One second-hand reading, ≈50 s. Whether a forecast overlapped it is unknown (A13); by the round frequency in the log, the prior for an overlap is about 20–80%, so this reading is not independent of V1a. | **Low-Medium.** A single reading; falsifier (a) in the Handoff waiver tests it (idle under ~10 s fails the claim; the target K2 is a separate < 2 s). | 14 |
 | V2 | The Features list's server work scales with the whole instance, not the Portfolio. | W4, W5. | **High** for the mechanism; its share of any slowness is unmeasured (A11). | 9 |
 | V3 | The Overview and every detail page pay for reads they do not show. | W2, W3, W3b. | **High** for the mechanism; share unmeasured. | 9 |
 | V4 | The Team Features list has the same cost as the Portfolio one. | W6b. | **High** (same endpoints). | 6 |
@@ -247,7 +247,7 @@ claims are kept apart; neither carries the other.
 |---|---|---|---|
 | A11 | The instance-wide reads dominate over the Portfolio-sized ones. | Instance size, database, cores and hosting are unknown; the scaled data set uses assumed values. **Unvalidated — needs measurement.** | 13 |
 | A12 | The reporter is held on the Overview because the Settings page's own requests wait behind a busy server, not because navigation is blocked. | It separates client work (O1) from server work (O2, O5). Alternatives: the reporter's network, browser or proxy. **Unvalidated — settled by the disconfirmation check.** | 12 |
-| A13 | The ≈50 s reading was taken with no forecast running. | If a forecast was running, part of the 50 s belongs to O5, not O3/O4. **Unknown; the measurement takes both readings.** | 10 |
+| A13 | The ≈50 s reading was taken with no forecast running. | If a forecast was running, part of the 50 s belongs to O5, not O3/O4. **Prior (added in DIVERGE)**: several 4–8 minute rounds an hour keep a forecast running roughly 12–48 minutes of every hour, so a random reading overlaps one about **20–80%** of the time. The list symptom is therefore not independent of V1a. **Unknown; the measurement takes both readings.** | 10 |
 | A14 | Story 6354, once released, shortens a large share of the reporter's forecast rounds. | Only the no-change round in the log would be skipped, and that one only in simulation and save; its gather still runs. The three rounds that fetched 1, 7 and 10 items would compute in full. **Unvalidated — gather time measured in step 6; reporter's log after the next release.** | 10 |
 | A10 | A warning at about 100 Features leads some users to narrow their query. | A nudge only (V7). Stated intent. **Unvalidated — DISCUSS confirms the threshold.** | 7 |
 
@@ -282,7 +282,7 @@ claims are kept apart; neither carries the other.
 
 | Gate | Status | Why |
 |---|---|---|
-| G1 Problem | **PASS on the stall symptom; CONDITIONAL on the list symptom** | **Passes on symptoms, not on a causal argument.**<br>(1) **Forecast stalls (V1a)**: nine heartbeat warnings across four forecast rounds on v26.10.19.10, the current release. Observed, second-hand. **Pass.**<br>(2) **List slowness (V1b)**: one second-hand ≈50 s reading, and whether a forecast overlapped it is unknown (A13). **Conditional** on an independent falsifier: if the idle 920-Feature list on the seeded scaled instance loads in under about 10 s, the 50 s is environmental (a forecast running, the reporter's network or host), and G1 fails for the list claim. The stall claim stands either way.<br>Forecast timings are used only to calibrate the data set, by ratio (forecast round vs list load), never as absolute seconds on hardware we do not know.<br>**Why the five-informant threshold does not fit:** that threshold tests whether a pain is shared across people's judgement. A performance symptom is a measurable property of the software at a given data size, so one reproduction on a representative data set tests it more directly than more opinions would. Who is affected is then a question of how many instances reach that size (Population served). |
+| G1 Problem | **PASS on the stall symptom; CONDITIONAL on the list symptom** | **Passes on symptoms, not on a causal argument.**<br>(1) **Forecast stalls (V1a)**: nine heartbeat warnings across four forecast rounds on v26.10.19.10, the current release. Observed, second-hand. **Pass.**<br>(2) **List slowness (V1b)**: one second-hand ≈50 s reading, and whether a forecast overlapped it is unknown (A13). **Conditional** on an independent falsifier: if the idle 920-Feature list on the seeded scaled instance loads in under about 10 s, the 50 s is environmental (a forecast running, the reporter's network or host), and G1 fails for the list claim. The stall claim stands either way.<br>**Falsifier vs target (clarified in DIVERGE, 2026-10-23)**: the ~10 s falsifier is a go/no-go for the *claim*, not the target. The target is K2, first row under 2 s. Between 2 s and 10 s the claim stands and the target is unmet.<br>Forecast timings are used only to calibrate the data set, by ratio (forecast round vs list load), never as absolute seconds on hardware we do not know.<br>**Why the five-informant threshold does not fit:** that threshold tests whether a pain is shared across people's judgement. A performance symptom is a measurable property of the software at a given data size, so one reproduction on a representative data set tests it more directly than more opinions would. Who is affected is then a question of how many instances reach that size (Population served). |
 | G2 Opportunity | **PENDING** | Ten opportunities, scores provisional. The causal claim moves here as a hypothesis, not a finding: the mechanism is deterministic code whose cost grows with every Feature of the instance (W2–W5) and every Feature of the involved Teams (W8b), so **if A11 holds**, any instance of that size would hit it. A11 is unvalidated. G2 passes when the baseline ranks opportunities by measured share of the time and the maintainer accepts the slice order. |
 | G3 Solution | **PENDING** | Nothing tested. Here, tested means before/after readings on the scaled data set against K1–K4, taken by DELIVER for each slice. |
 | G4 Viability | **CONDITIONAL** until G2 and G3 pass | Lean Canvas N/A: this is a free performance change to an existing product, with no new revenue, channel or pricing. The four risks, each with its evidence:<br>• **Value: amber.** The symptoms are observed on the current release, but on one instance (V1a, V1b). The maintainer states that instances will start at that size (Q7), which is stated intent.<br>• **Usability: green.** Same screens, with loading and failure looks added under the existing CLAUDE.md rule; nothing new to learn.<br>• **Feasibility: amber.** Each candidate fix uses a pattern already in the code: projections (`FeaturePositionMap.cs:24-28`), TanStack Query (`useFeatureChildItems.ts:31`), bounded parallelism (`ForecastService.cs:205-211`). Async EF on the request paths is a wide change, and its share of the stall is unmeasured.<br>• **Viability: green.** No licence change; dependency projection approved (Q8).<br>The maintainer's answers of 2026-10-23 are a direction, not yet a go on a measured case. |
@@ -295,8 +295,10 @@ claims are kept apart; neither carries the other.
 
 - **DIVERGE starts now.** It works on directions, not on slice order.
 - **DISCUSS goes ahead without readings first.** It makes the measurement the Epic's **first slice**: the dev-only
-  scaled data set (P1) and a before/after harness, which ships value on its own because every later slice proves its
-  gain with it.
+  scaled data set (P1) and a before/after harness. Every later slice proves its gain with it.
+  - **Correction (DIVERGE, 2026-10-23)**: this used to say the slice "ships value on its own". It does not. It is an
+    internal enabler, dev-only, with no user-visible value. The Epic's first user-visible value is the next slice,
+    which takes the forecast round off the request pool (`recommendation.md`).
   - That slice takes **(a)** the idle 920-Feature list (time to first row and requests per open, G1's independent
     falsifier for the list claim: < ~10 s means the list claim fails), **(b)** the client-side split of that load
     (server, network and client time, W10), and the forecast-round timings (gather, simulation and save apart) with
@@ -460,3 +462,107 @@ The maintainer answered Q1, Q2 and Q5–Q11 of the first pass on 2026-10-23 (see
 6. **The reporter's log after the next release** (A14), to see what Story 6354 removed on their instance. *Default:
    ask when the release is out; do not block on it.*
 7. **K1's Settings half and K3–K4** are proposed here, not yet accepted. *Default: accept, revise after the baseline.*
+
+---
+
+## Wave: DIVERGE / [REF] Maintainer answers (DIVERGE) — 2026-10-23
+
+Answers to the eight questions that DIVERGE handed over. No customer, Portfolio, Team or tracker names.
+
+| # | Question | Answer | Effect |
+|---|---|---|---|
+| 1 | Too-many-Features nudge | Threshold 100; a log line plus a non-blocking note; last slice. Yes. | Slice 7. Copy is DISCUSS's. |
+| 2 | Overlap with Epic 6264 | Default accepted ("ok fair"). | S05b stays 6264's. This Epic only adds database-side reader methods for its hot callers. 6400 lands first, and 6264's S05c–e adopt them. The S05a ratchet only shrinks. S13's Feature → Forecast navigation is left in place. Recorded for 6264's DESIGN; 6264's files are not edited. |
+| 3 | Lighthouse-Clients | Keep it simple. New endpoints are additive; the clients stay on `FeatureDto` and the current Features endpoint. | C6 unchanged. |
+| 4 | Hide-completed | Stays client-side. Yes. | The lean list returns all Features. |
+| 5 | K1's Settings half, K3, K4 | Accepted; figures set after the baseline. | K1's Settings half is credited only when slice 1 shows the server holds Settings back (A12). |
+| 6 | Harness readings as CI budgets | Not in this Epic. | — |
+| 7 | Journey | Seed `epic-6400-fast-with-many-features.yaml`, and link the 6311 journey's error path. | For DISCUSS. |
+| 8 | Usage data | Extend the existing "A Portfolio tab was opened" and "A Team tab was opened" events (`docs/settings/usagedata.md`) with how many Features there are. | For DEVOPS, recorded as a **closed size-bucket enum** on those two events, for example `Under100` / `100To399` / `400Plus` (DEVOPS fixes the buckets). Never the raw count, and never which Portfolio or Team. |
+
+**Orchestrator decision, 2026-10-23.** It was taken under the maintainer's "continue autonomously", and the
+maintainer may overturn it: **K3 is an exit criterion of this Epic.** Option 3's round-isolation step becomes an
+unconditional slice, right after the measurement.
+
+## Wave: DIVERGE / [REF] Job and outcomes
+
+Full text: `diverge/job-analysis.md` (revision 1). Desk estimates, 1–10; `jobs.yaml` uses 1–5, halved and
+rounded.
+
+- **Reused**: `job-operator-keep-lighthouse-usable-while-it-forecasts`, wording unchanged. It is still under-served
+  on a release with the half-the-cores limit (X5).
+- **New**: `job-reach-and-read-what-i-came-for-on-a-large-instance` (`delivery-lead-rte`, `delivery-forecaster`,
+  `product-owner`; `platform-operator` on the way to Settings).
+  - The job: "… I want to get what I came for without waiting on data I did not ask for, so I keep using Lighthouse
+    for delivery decisions instead of falling back to the tracker or a spreadsheet."
+  - It merges DISCOVER's two candidates.
+  - It is not independent of the stall: a random reading overlaps a round about 20–80% of the time.
+- **Outcomes**:
+
+  | # | Outcome | Target | Score |
+  |---|---|---|---|
+  | OS1 | Minimise the time a page waits for an answer while a forecast runs | K3 | 16 |
+  | OS2 | Minimise the time to read the first Feature of a large Portfolio or Team | K2 | 14 |
+  | OS3 | Minimise the time to reach the screen I came for | K1 | 10 |
+  | OS4 | Minimise the time one forecast round takes | K4 | 10 |
+  | OS5 | Minimise the likelihood that a slow or failed load reads as empty | C5 | 10 |
+  | OS6 | Minimise the likelihood of an oversized Portfolio built unknowingly | O7 | 5 |
+
+## Wave: DIVERGE / [REF] Comparables
+
+Full text: `diverge/competitive-research.md`. Sources fetched 2026-10-23.
+
+| Comparable | What it does | What it means here |
+|---|---|---|
+| Jira Cloud boards | A 5,000-issue display cap with a warning | An honest state at the limit; the push-back-on-size direction |
+| Jira Plans | A bounded calculation; "exclude completed work" | The forecast round is the thing to bound |
+| ActionableAgile | Fetches less per load | Fetch only what is shown |
+| Linear (non-obvious) | Local-first sync | Its cheap half, the shell from cache, is TanStack Query's stale-while-revalidate |
+| Recording rules and CQRS read models | Precompute the expensive answer | Our forecasts already are precomputed; the reads around them are what is heavy |
+| .NET thread-pool starvation guidance | Diagnose with dotnet-counters; async end to end | Isolation is a lever separate from cost |
+
+## Wave: DIVERGE / [REF] Recommendation
+
+Full text: `recommendation.md` · artifacts: `diverge/` · decisions DV-1..DV-11: `wave-decisions.md`.
+Revision 1, after peer review round 1.
+
+- **Matrix** (weights DVF 30 / Subtraction 15 / Concept count 15 / Staging 10 / Speed-as-trust 30, with numeric
+  rubrics):
+  1. "Scope every read to what the screen shows" **3.95**
+  2. "The forecast gets its own lane" 3.60
+  3. "Shell first, then a client cache" 3.05, which wins the tie with read models (3.05) on DVF
+  4. In-flight first plus a nudge 2.95
+  5. Forecast less often 2.75
+- **Direction: a stated hybrid.** Option 1's direction, plus Option 3's round-isolation step as slice 2: the round
+  runs off the request pool, on a dedicated worker with bounded parallelism, with no async request paths. The hybrid
+  scores 3.85, and 3.95 in the most likely case (S7). Under the K3 exit criterion it is the best row that moves both
+  conditions.
+- **Why a hybrid**: the surer problem (the stalls, V1a) and the surer code change (the scoped reads, W2–W5) sit in
+  different options.
+- **Endpoints**: additive; the clients stay on `FeatureDto` (C6). Forecast results are unchanged (C12).
+- **Falsifier and target, separately**:
+  - The falsifier is the idle 920-Feature list under ~10 s. It fails the list claim.
+  - The target is K2, under 2 s.
+- **Triggers**, as ratios on the scaled set:
+  - Q_r is the round-attributable share of queue and heartbeat time. S_q is the request-read share of request wall
+    time during a round.
+  - **Dissent A**: Q_r ≥ 0.6, S_q ≤ 0.3, and idle already met. Option 3 alone would have sufficed, so slices 4–5
+    become optional.
+  - **Dissent B**: K3 still fails after slice 2 or at the end, and S_q > 0.3. Open the async-request-paths Epic.
+  - Prior: 9 of 9 warnings inside rounds has a chance probability of p⁹ ≤ 0.13.
+- **Provisional slice order** (Handoff waiver):
+  1. Measurement. An **internal enabler, not user value**.
+  2. The forecast round off the request pool. **K3, and the first user-visible value.**
+  3. Scaffold reads. K1 idle; the Settings half is conditional on A12.
+  4. The Features list's instance-wide parts, with response shapes unchanged.
+  5. The lean Features list with loading, failure and empty looks. **Depends on 4.**
+  6. A lighter forecast gather. It touches C12; outputs and the Story 6354 fingerprint must be identical on SQLite
+     and PostgreSQL.
+  7. The too-many-Features nudge at 100.
+
+  Slices 3, 4 and 6 swap freely; 5 must follow 4; 1 and 2 are fixed first; 7 is last. Every slice states its
+  loading and failure look, or "N/A, because …". Slices 5 and 7 are sketched at the start of DISTILL.
+- **Candidate follow-up Epics**: async request paths (Dissent B); forecast less often; client cache; tracker read
+  (O10); paging.
+- **Into DISCUSS**: DISCOVER's G4 is CONDITIONAL, and G2 and G3 are PENDING (Handoff waiver). Also: confirm the K3
+  exit-criterion decision with the maintainer; the nudge copy; the journey's content.
