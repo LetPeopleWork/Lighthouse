@@ -6,7 +6,6 @@ using Lighthouse.Backend.API.DTO.Archived;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +13,7 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // Story #5587 (ADR-113), slice-01, through the real driving port:
+    // Through the real driving port:
     // GET /api/latest/deliveries/portfolio/{portfolioId}.
     //
     // Two features on two separate teams, each 90 % likely by the delivery date. The governing-feature
@@ -46,14 +45,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Converters = { new JsonStringEnumConverter() },
         };
 
-        // The server anchors on the instance zone, so the expectations must too - Bug #5567.
-        private DateTime Today => ServiceProvider.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
-
         [Test]
         public async Task GetDelivery_TwoFeaturesOnSeparateTeams_LikelihoodIsTheJointAcrossEveryFeature()
         {
             var portfolio = await SeedPortfolioWithTwoSingleTeamFeatures();
-            await CreateDelivery(portfolio, Today.AddDays(TargetDays));
+            await CreateDelivery(portfolio, InstanceToday.AddDays(TargetDays));
 
             var delivery = await GetSingleDelivery(portfolio.Id);
 
@@ -74,23 +70,23 @@ namespace Lighthouse.Backend.Tests.API.Integration
             // under-communicated consequence of the change. The joint 85th percentile falls past the
             // target day onto the tail, while each feature's own 85th is still the target day.
             var portfolio = await SeedPortfolioWithTwoSingleTeamFeatures();
-            await CreateDelivery(portfolio, Today.AddDays(TargetDays));
+            await CreateDelivery(portfolio, InstanceToday.AddDays(TargetDays));
 
             var delivery = await GetSingleDelivery(portfolio.Id);
 
             var eightyFifth = delivery.CompletionDates.Single(forecast => forecast.Probability == 85);
 
-            Assert.That(eightyFifth.ExpectedDate, Is.EqualTo(Today.AddDays(TailDays)));
+            Assert.That(eightyFifth.ExpectedDate, Is.EqualTo(InstanceToday.AddDays(TailDays)));
         }
 
         [Test]
         public async Task GetDelivery_JointRollup_LeavesTheDeliveryPayloadShapeUnchanged()
         {
-            // AC-01.12, a contract guard: LikelihoodPercentage and CompletionDates carry different
+            // A contract guard: LikelihoodPercentage and CompletionDates carry different
             // values on the SAME wire shape, which is what keeps the CLI/MCP clients out of this
             // release. Green today and it must stay green.
             var portfolio = await SeedPortfolioWithTwoSingleTeamFeatures();
-            await CreateDelivery(portfolio, Today.AddDays(TargetDays));
+            await CreateDelivery(portfolio, InstanceToday.AddDays(TargetDays));
 
             Client.AsPortfolioViewer(portfolio.Id);
             var response = await Client.GetAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}");
@@ -105,18 +101,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task FromDelivery_JointRollup_AttachesNothingToTheChangeTracker()
         {
-            // ADR-113 enforcement: the delivery read path is read-only over the entity graph. The
+            // The delivery read path is read-only over the entity graph. The
             // per-team carriers deliberately leave Team/Feature unset, which is what structurally stops
             // EF fixing these transient read-path entities onto a tracked Feature or Team.
             var portfolio = await SeedPortfolioWithTwoSingleTeamFeatures();
-            await CreateDelivery(portfolio, Today.AddDays(TargetDays));
+            await CreateDelivery(portfolio, InstanceToday.AddDays(TargetDays));
 
             var delivery = ServiceProvider.GetRequiredService<IDeliveryRepository>().GetAll().Single();
 
             var trackedBefore = DatabaseContext.ChangeTracker.Entries<WhenForecast>().Count();
             var trackedResultsBefore = DatabaseContext.ChangeTracker.Entries<IndividualSimulationResult>().Count();
 
-            DeliveryWithLikelihoodDto.FromDelivery(delivery, DateOnly.FromDateTime(Today), []);
+            DeliveryWithLikelihoodDto.FromDelivery(delivery, DateOnly.FromDateTime(InstanceToday), []);
 
             using (Assert.EnterMultipleScope())
             {

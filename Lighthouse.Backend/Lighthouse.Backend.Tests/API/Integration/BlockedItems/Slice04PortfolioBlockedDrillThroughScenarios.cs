@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
@@ -42,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             GivenAFeatureInState(portfolio, "F-LIVE-BLOCKED", "Blocked");
             GivenAFeatureInState(portfolio, "F-LIVE-CLEAR", "In Progress");
 
-            var response = await WhenTheCoachDrillsIntoThePortfolioBlockedTrendAt(portfolio, Factory.Services.GetRequiredService<ILighthouseClock>().Today);
+            var response = await WhenTheCoachDrillsIntoThePortfolioBlockedTrendAt(portfolio, InstanceClock.Today);
 
             ThenTheDialogListsExactly(response, "F-LIVE-BLOCKED");
         }

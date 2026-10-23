@@ -45,7 +45,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
         protected DateTime SyncDay;
 
-        protected DateTime InstanceToday => Factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
+        protected ILighthouseClock InstanceClock => Factory.Services.GetRequiredService<ILighthouseClock>();
+
+        protected DateTime InstanceToday => InstanceClock.TodayAsUtcMidnight;
 
         [SetUp]
         public void Init()

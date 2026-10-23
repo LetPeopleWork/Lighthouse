@@ -6,6 +6,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -34,6 +35,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected HttpClient Client = null!;
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected DateTime SyncDay;
+
+        protected ILighthouseClock InstanceClock => Factory.Services.GetRequiredService<ILighthouseClock>();
 
         [SetUp]
         public void Init()

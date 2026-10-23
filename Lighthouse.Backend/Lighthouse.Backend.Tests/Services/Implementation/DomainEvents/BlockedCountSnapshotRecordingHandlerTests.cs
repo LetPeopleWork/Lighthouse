@@ -136,9 +136,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             return feature;
         }
 
-        // Bug #5567 - the day under test comes from the SAME clock the subject reads, pinned to a
-        // fixed instant. Re-deriving the production expression (DateTime.Today) here is root cause D:
-        // the assertion would then hold for every possible value of "today" and prove nothing.
+        // The day under test comes from the SAME clock the subject reads, pinned to a fixed instant.
+        // Taking it from the machine's clock instead would make the assertion hold for every possible
+        // value of "today" and prove nothing.
         private static readonly FakeLighthouseClock Clock =
             new(new DateTimeOffset(2026, 3, 17, 9, 30, 0, TimeSpan.Zero), TimeZoneInfo.Utc);
 

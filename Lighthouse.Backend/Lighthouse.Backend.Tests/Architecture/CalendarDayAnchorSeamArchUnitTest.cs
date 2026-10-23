@@ -7,13 +7,13 @@ using Microsoft.EntityFrameworkCore;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Bug #5567 - the anchor seam guard (RCA section 8-T2), hard-fail since step 03-01.
+    /// Guards the one seam allowed to turn an instant into a calendar day.
     ///
     /// Three source-text rules and one type rule:
     /// <list type="number">
     /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c> or <c>UtcNow.Date</c>
     /// anywhere in the production project outside the clock adapter;</item>
-    /// <item>each decision-4 tracker cutoff still exists and still states why it stays UTC;</item>
+    /// <item>each tracker history cutoff that deliberately stays UTC still exists and still states why;</item>
     /// <item>no persisted snapshot entity keys its day with an instant.</item>
     /// </list>
     ///
@@ -22,9 +22,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// depends on, so no dependency rule can express it. The type rule is reflection over
     /// <see cref="LighthouseAppContext"/>'s <c>DbSet</c>s, because it is about persisted shape.
     ///
-    /// Root cause D was not "someone wrote the wrong expression", it was "nothing could tell them
-    /// they had". There is no warn-list any more: the migration is complete, so a new anchor is a
-    /// failure to fix at the source.
+    /// The defect this guards against was never "someone wrote the wrong expression", it was "nothing
+    /// could tell them they had". There is no warn-list: a new anchor is a failure to fix at the source.
     /// </summary>
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// A guard that silently scans nothing is worse than no guard. The production project held
-        /// 510 source files at step 03-01; the floor is slack enough that ordinary growth and
+        /// about 510 source files when this floor was set; it is slack enough that ordinary growth and
         /// deletion never touch it, and a broken root resolution fails loudly rather than passing
         /// vacuously.
         /// </summary>
@@ -66,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const int ExemptedTrackerCutoffCount = 4;
 
         /// <summary>
-        /// Four snapshot tables at step 03-01. A floor rather than an equality: a fifth table is not
+        /// Four snapshot tables when this floor was set. A floor rather than an equality: a fifth table is not
         /// blocked, it is subjected to the day-key rule below, which is the point.
         /// </summary>
         private const int KnownSnapshotEntityCount = 4;
@@ -84,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// Build output, mutation output, worktrees and the vendored GitHub-runner artifact. Without
-        /// these the scan double-counts generated copies and stops matching the RCA section 5 inventory.
+        /// these the scan double-counts generated copies.
         /// </summary>
         private static readonly string[] ExcludedPathSegments =
         [
@@ -96,9 +95,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         /// <summary>
-        /// Decision 4: a tracker's history window is an instant offset, not a calendar day, so these
-        /// four lines stay UTC instants, read from the injected clock. None of the three scanned
-        /// patterns match how they spell it, so the scanner never sees them - which is exactly why they
+        /// A tracker's history window is an instant offset, not a calendar day, so these four lines
+        /// stay UTC instants, read from the injected clock. None of the scanned patterns match how they spell it, so the scanner never sees them - which is exactly why they
         /// are listed here. The rule below requires each one to still exist AND to still carry its
         /// stated reason, so the list cannot rot into a permanent unexplained allowlist.
         /// </summary>
@@ -204,9 +202,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// The fourth rule, and the only one about type rather than text. Root cause C was "the
-        /// recorded day was never modelled": a type rule closes that more completely than any source
-        /// rule can, because it catches a FIFTH snapshot table on the day it is added rather than on
+        /// The fourth rule, and the only one about type rather than text. A recorded day that is never
+        /// modelled as a day forces every writer to pick an anchor zone of its own; a type rule closes
+        /// that more completely than any source rule can, because it catches a FIFTH snapshot table on the day it is added rather than on
         /// the day someone writes UtcNow.Date next to it.
         ///
         /// It is deliberately silent about property NAMES - the four tables do not agree on one
@@ -263,10 +261,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// A guard that punishes documentation gets suppressed rather than obeyed. During step 01-02
-        /// the repo-wide count came back 50 instead of 49 because the XML doc on ILighthouseClock
-        /// QUOTED DateTime.UtcNow.Date while explaining the root cause. Comments and string literals
-        /// are stripped before matching so the next person to explain this bug in a comment does not
+        /// A guard that punishes documentation gets suppressed rather than obeyed: an XML doc that
+        /// QUOTED DateTime.UtcNow.Date while explaining the defect once tripped this scan. Comments and
+        /// string literals are stripped before matching so the next person to explain this bug in a comment does not
         /// re-break the guard.
         /// </summary>
         [Test]
@@ -814,7 +811,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return directory!.FullName;
         }
 
-        /// <summary>A fifth snapshot table as it would look if it repeated root cause C.</summary>
+        /// <summary>A fifth snapshot table as it would look if it keyed its day with an instant.</summary>
         private sealed class InstantKeyedSnapshotProbe
         {
             public int Id { get; set; }

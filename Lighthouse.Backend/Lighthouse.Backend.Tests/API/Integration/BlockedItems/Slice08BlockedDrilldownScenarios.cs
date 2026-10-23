@@ -1,6 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
@@ -60,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
             // Drill at the host's own calendar day so the endpoint takes the live latest-date branch —
             // the fixed test SyncDay (2026-06-15) is in the past and would route to interval reconstruction.
-            var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, Factory.Services.GetRequiredService<ILighthouseClock>().Today);
+            var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, InstanceClock.Today);
 
             ThenTheDialogListsExactly(response, "TODO-BLK", "DOING-BLK");
         }
