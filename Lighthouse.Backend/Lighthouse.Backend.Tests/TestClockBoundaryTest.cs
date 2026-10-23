@@ -1,5 +1,8 @@
 using System.Diagnostics;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests
 {
@@ -48,6 +51,32 @@ namespace Lighthouse.Backend.Tests
                 instanceDay,
                 Is.EqualTo(utcDay.AddDays(1)),
                 $"{TestToday.FrozenNow:O} is on {instanceDay} in the test host zone '{TimeZoneInfo.Local.Id}', the same day as in UTC.");
+        }
+
+        [Test]
+        public void TheIntegrationHost_ReadsTheFrozenBoundaryInstant_AndItsInstanceDayIsTheNextUtcDay()
+        {
+            using var factory = new TestWebApplicationFactory<Program>();
+            var hostClock = factory.Services.GetRequiredService<ILighthouseClock>();
+            var utcDay = DateOnly.FromDateTime(TestToday.FrozenNow.UtcDateTime);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(factory.Services.GetRequiredService<TimeProvider>().GetUtcNow(), Is.EqualTo(TestToday.FrozenNow));
+                Assert.That(hostClock.Now, Is.EqualTo(TestToday.FrozenNow));
+                Assert.That(hostClock.Today, Is.EqualTo(utcDay.AddDays(1)));
+            }
+        }
+
+        [Test]
+        public void TestToday_IsTheUtcDayOfTheFrozenInstant()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(TestToday.Clock.Now, Is.EqualTo(TestToday.FrozenNow));
+                Assert.That(TestToday.Ambient, Is.EqualTo(DateOnly.FromDateTime(TestToday.FrozenNow.UtcDateTime)));
+                Assert.That(TestToday.Zone, Is.EqualTo(TimeZoneInfo.Utc));
+            }
         }
 
         [TestCase(2026, 7, 15, 2, TestName = "Summer: Zurich keeps UTC+2")]

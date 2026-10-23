@@ -22,10 +22,12 @@ namespace Lighthouse.Backend.Tests
         internal static DateTimeOffset FrozenNow { get; } = HalfPastElevenUtcOnTheDayTheProcessStarted();
 
         /// <summary>
-        /// One clock per test host, so a subject and the expectations around it can never land on
-        /// different days - not even for a run that crosses midnight.
+        /// Stopped at <see cref="FrozenNow"/>, the same instant every integration test host reads, so a
+        /// subject and the expectations around it can never land on different days - not even for a
+        /// run that crosses midnight. Its days are UTC days, which at this instant are one day behind
+        /// the instance day a test host reports.
         /// </summary>
-        internal static TestDoubles.FakeLighthouseClock Clock { get; } = new(DateTimeOffset.UtcNow);
+        internal static TestDoubles.FakeLighthouseClock Clock { get; } = new(FrozenNow);
 
         internal static DateOnly Ambient => Clock.Today;
 
