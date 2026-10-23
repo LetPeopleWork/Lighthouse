@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.API
         public async Task<ActionResult> UpdateAllTeams(CancellationToken cancellationToken)
         {
             var teams = teamRepository.GetAll().ToList();
-            var portfolioIds = teams.SelectMany(team => portfolioRepository.GetPortfolioIdsForTeam(team.Id)).Distinct().ToList();
+            var portfolioIds = portfolioRepository.GetPortfolioIdsForTeams(teams.Select(team => team.Id).ToList());
             await portfolioRepository.ForgetForecastInputs(portfolioIds, cancellationToken);
 
             foreach (var team in teams)

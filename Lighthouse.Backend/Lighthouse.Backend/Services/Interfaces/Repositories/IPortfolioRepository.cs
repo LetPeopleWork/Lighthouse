@@ -12,6 +12,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId);
 
         /// <summary>
+        /// The ids of the portfolios any of the given teams does work for, each once, in one read.
+        /// </summary>
+        IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds);
+
+        /// <summary>
         /// Records the inputs a forecast was computed from, but only if nobody changed the stored value since
         /// that forecast read it. Answers whether the value was recorded: a person who asked for a fresh
         /// forecast while this one ran has cleared it, and that request has to win.

@@ -52,8 +52,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
         {
+            return GetPortfolioIdsForTeams([teamId]);
+        }
+
+        public IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds)
+        {
             return Context.Features
-                .Where(feature => feature.FeatureWork.Any(work => work.TeamId == teamId))
+                .Where(feature => feature.FeatureWork.Any(work => teamIds.Contains(work.TeamId)))
                 .SelectMany(feature => feature.Portfolios)
                 .Select(portfolio => portfolio.Id)
                 .Distinct()
