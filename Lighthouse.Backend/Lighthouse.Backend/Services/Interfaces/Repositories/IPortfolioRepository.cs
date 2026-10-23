@@ -10,5 +10,15 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// than a refresh trigger needs to decide which portfolios its team just made stale.
         /// </summary>
         IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId);
+
+        /// <summary>
+        /// Records the inputs a forecast was computed from, but only if nobody changed the stored value since
+        /// that forecast read it. Answers whether the value was recorded: a person who asked for a fresh
+        /// forecast while this one ran has cleared it, and that request has to win.
+        /// </summary>
+        Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken);
+
+        /// <summary>Clears the recorded inputs, so the next forecast of each of these Portfolios computes in full.</summary>
+        Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken);
     }
 }

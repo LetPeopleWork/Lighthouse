@@ -26,5 +26,9 @@ namespace Lighthouse.Backend.Services.Implementation
 
         /// <summary>A forecast someone stopped did not succeed, but it did not break either.</summary>
         public bool ForecastCancelled { get; init; }
+
+        // __SCAFFOLD__: nothing sets or reads it yet; DELIVER does both and words the line for it.
+        /// <summary>A forecast whose inputs were the ones its stored forecasts were computed from, so nothing was simulated.</summary>
+        public bool ForecastSkipped { get; init; }
     }
 }

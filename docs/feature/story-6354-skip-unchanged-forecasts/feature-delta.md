@@ -875,3 +875,182 @@ Sketches for DESIGN's open questions were walked through with the maintainer bef
 | MD-10 | **A press guarantees the next forecast computes (OQ-3).** A refresh a user starts clears the fingerprint, so the next forecast of each touched Portfolio computes in full; if one is already queued, that one recomputes. Docs may say "a refresh you start always recomputes the forecast". | As designed (chosen) vs. a new computing run per press (rejected: needs a "user started" mark through the queue, lost across replicas and on early returns). |
 
 DEVOPS flags taken as recommended: locally a skip may cost at most a third of a computed run, and K2's 5 s is claimed only from the reporter's log lines; a skip's timing may include the Delivery publishing call, DELIVER confirms; `RefreshLogs.Skipped` carries a database default of false on both providers; a same-day roll-forward after a rollback is covered by a release-note line ("press refresh all for Portfolios afterwards").
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+- ✓ This file: DISCUSS (MD-1..7, D1..8, US-01/US-02 and their ACs, K1–K4, DoD, Standing Checklist), DESIGN (DDD-1..13,
+  component decomposition, contract shapes, Architecture Enforcement, OQ-1..3, Changed Assumptions), DEVOPS (CI impact,
+  mutation scope and its note for DISTILL, coexistence, flags), DISTILL maintainer decisions MD-8..10.
+- ✓ `slices/slice-01-…md`, `slices/slice-02-…md`, `environments.yaml`.
+- ✓ `docs/product/architecture/brief.md` (Story 6354 section) and ADR-256.
+- ✓ `CLAUDE.md`, `docs/ci-learnings.md` (S1192 const for scaffold messages, instance-derived scaffold messages,
+  CA1861, NUnit2045 via `Assert.EnterMultipleScope`, S6608, the `dotnet format analyzers` pass), and
+  `docs/architecture/atdd-infrastructure-policy.md` (inherited; one row appended, see Adapter coverage).
+- ✓ House style: DISTILL of `stories-6348-6352-6355-say-what-it-does`; precedent harnesses `ResponsiveDuringUpdates/*`,
+  `TaskManager/TaskManagerAcceptanceTest`, `DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios`,
+  `FasterUpdates/*`.
+- ⊘ No `discuss/`, `design/`, `devops/` `wave-decisions.md` files: every decision lives in this delta, read above.
+- ⊘ `docs/product/journeys/`: no journey covers background rounds (DISCUSS). KPI contracts read through DEVOPS's
+  `OUT-6354-*` names; scenarios carry `kpi-OUT-6354-*` categories.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+Reconciliation passed — 0 contradictions between DISCUSS, DESIGN, DEVOPS and the DISTILL maintainer decisions. DESIGN's
+Changed Assumptions are read as amendments, not contradictions, and the scenarios follow them:
+
+| Earlier wording | What the scenarios follow |
+|---|---|
+| DISCUSS "no UI change", "no new E2E" | MD-7/MD-9: Refresh History changes; Vitest scenarios, no E2E (existing coverage stays the sanity check) |
+| AC-1.5 "says so in place of a duration", draft `forecast=skipped (nothing changed)` | DDD-8: ` \| forecast=skipped after {N}ms (inputs unchanged)`, pinned word for word |
+| Slice 02 brief: carry a user-started origin through the queue | DDD-9/MD-10: each entry point forgets the fingerprint; the scenarios observe the next forecast computing, through the HTTP buttons |
+| D1 lists upstream settings (blackouts, window, filter, sizes) | DDD-1: the fingerprint reads what the simulation is handed; those examples change the throughput or the remaining work as handed |
+| MD-8 Task Manager unchanged | The walking skeleton asserts the forecast's row ends `Completed`, as any finished forecast does; no Task Manager scenario |
+
+## Wave: DISTILL / [REF] Test placement
+
+- Backend acceptance: `Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/` — harness
+  `SkipUnchangedForecastsAcceptanceTest` (extends `TaskManagerAcceptanceTest`: real host, queue, updaters, work item
+  refresh, `ForecastService`, refresh log, domain events, controllers; SQLite), `Slice01UnchangedRoundsSkipScenarios`,
+  `Slice02UserRefreshAndConfirmedNowScenarios`. Precedent: `ResponsiveDuringUpdates/ForecastWhileItUpdatesAcceptanceTest`.
+- Backend unit namespaces (inside the DEVOPS mutation filter, outside `API.Integration`):
+  `Services/Implementation/Forecast/ForecastInputFingerprintTest` (pure; new class, as DEVOPS asked, so
+  `ForecastServiceTest`'s time budget is untouched), `Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest`
+  (SQLite in-memory connection, one context per step: CAS, forget, stale whole-entity save, confirm-stamp),
+  `Services/Implementation/RefreshRoundSummaryLineSkippedForecastTest`.
+- Frontend: `Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.skippedForecasts.test.tsx`, colocated
+  with the component, real component tree, `it.skip` per pending case.
+- No Postgres container class: no scenario here needs one. DESIGN's "same Portfolio fingerprints the same after a fresh
+  `DbContext` on SQLite and Postgres" is a DELIVER test once `ForecastService` computes the fingerprint (it needs the
+  production gathering, which is DELIVER's); it goes in `Integration/Containers` on `SharedPostgresContainer` with a
+  fresh database per case. Listed under Pre-requisites.
+- Step-reuse ratio: N/A (NUnit/Vitest, no Gherkin). Mandate-12 equivalent: typed driving vocabulary in the harness
+  (`UserPress`, `InputChange` enums, `TheTeamRoundAt` / `ThePortfolioRoundAt` / `TheBackgroundCycleAt` /
+  `WhenTheOperatorPresses`, `ThenNothingWasSimulated` / `ThenPaymentsPlatformWasForecastInFull`), scenarios carry no logic.
+
+## Wave: DISTILL / [REF] Scenarios
+
+Status: P = pending (`[Ignore]` / `it.skip`), G = active guard (green today). E = error/edge/guard. Shape = `contract-shape`.
+
+### Slice 01 (shippable alone: skip, its marker, its line, both "Update forecast" buttons, the CAS)
+
+| Scenario (driving port) | AC | Status | E | Shape |
+|---|---|---|---|---|
+| `A_background_round_that_changed_nothing_skips_the_forecast_and_says_so` (periodic Team refresh; WS, `driving_port`, `kpi-OUT-6354-unchanged-rounds-skip`): nothing simulated, row `skipped=true success=true cancelled=false`, line ` \| forecast=skipped after Nms (inputs unchanged)`, forecast values unchanged, Task Manager row ends `Completed` | 1.1, 1.5, MD-8, older bundle | P | | unbounded-preservation |
+| `A_background_round_after_an_input_changed_forecasts_in_full` ×14 (`kpi-OUT-6354-no-stale-forecast`): day turned; item left a Team's query; Feature WIP 2→3; throughput window grew; blackout took a day out; forecast filter now excludes items; Team no longer has enough data; Portfolio default Feature size changed; Feature gained a dependency; two Features swapped order; Feature joined; Feature left; Team joined; Team left | 1.2 | P | E ×14 | bounded-change |
+| `A_Portfolio_with_nothing_confirmed_yet_is_forecast_in_full_and_the_next_quiet_round_skips` (clean or upgraded) | 1.3 | P | E | bounded-change |
+| `After_a_forecast_that_failed_the_next_quiet_round_forecasts_in_full` | 1.3, DDD-5 | P | E | bounded-change |
+| `After_a_forecast_that_was_stopped_the_next_quiet_round_forecasts_in_full` (stop via the Task Manager route) | 1.3 | P | E | bounded-change |
+| `Update_forecast_always_forecasts_in_full` ×2 (`forecast/update/{id}`, `update-portfolios-for-team/{teamId}`) | 1.4, MD-10 | P | | bounded-change |
+| `Update_forecast_pressed_while_a_forecast_runs_still_ends_in_a_computed_forecast` ×2 (running; running with another forecast already waiting behind it) — the CAS at acceptance level | 1.4, DDD-3, MD-10 | P | E ×2 | bounded-change |
+| `A_skipped_forecast_is_still_announced_and_the_days_snapshot_is_not_doubled` (`PortfolioForecastsUpdated` once, one snapshot of the day) | 1.1, DDD-6 | P | | bounded-change |
+| `The_first_round_of_a_day_forecasts_in_full_and_records_that_days_snapshot` | 1.6, MD-5 | P | E | bounded-change |
+| `ForecastInputFingerprintTest`: member list (guard, D8); every `ForecastSimulationLimits` property registered (reflection guard); same inputs twice equal; 32 lower-case hex for 403 Features; Teams/rows/throughput order-insensitive; `tr-TR` culture; one input changed alone changes it ×20 (every member, incl. blackout, window, filter, owner split, `IgnoreDependencies`, `CanBeForecast`, changed reference target); every member has a case | 1.7, DDD-1 | P ×27 | E ×25 | pure-function |
+| `ForecastInputFingerprintTest.The_dependency_the_cases_start_from_is_one_the_forecast_waits_on` (fixture validity) | DDD-1(10) | G | E | pure-function |
+| `ForecastConfirmationRepositoryRelationalTest`: first record then CAS; forget wins over a running forecast; forget clears exactly the named Portfolios; stale whole-entity save leaves the value; record for a missing Portfolio is false | DDD-3, DDD-9 | P ×5 | E ×3 | bounded-change |
+| `RefreshRoundSummaryLineSkippedForecastTest`: Team line ends with the skip; forecast-only line; a skip folded into a round stays a skip | 1.5, DDD-8 | P ×3 | | pure-function |
+| `RefreshRoundSummaryLineSkippedForecastTest.A_computed_forecast_still_reads_as_its_time_alone` | DDD-8 | G | E | pure-function |
+| Refresh History: Avg/Min/Max over computed runs (271.40 / 240.10 / 305.90 s); count line `Skipped (nothing changed): 5 of the last 8 runs`; Last Run shows the time and ends `skipped (nothing changed)`; duration line has a gap (null) at each skip, items still drawn; All view Avg/Max over computed runs; per-entity bar average over computed runs | 1.5, MD-9, DDD-11 | P ×6 | | pure-function |
+| Refresh History guards: no "Skipped" line and no "skipped" in Last Run when every run computed; a skip counts as a successful run (Total Runs 8, Success Rate 100%); an older server's rows without `skipped` read as computed | MD-9, coexistence | G ×3 | E ×3 | pure-function |
+| Existing `RefreshHistorySection.test.tsx` "shows a spinner while the history is on its way…" and "says it could not load the history…" (`/^Could not load refresh history\.$/`) | MD-9 (looks unchanged) | G (existing) | E | — |
+
+### Slice 02 (builds on 01)
+
+| Scenario (driving port) | AC | Status | E | Shape |
+|---|---|---|---|---|
+| `A_refresh_a_person_starts_forecasts_in_full_even_when_nothing_changed` ×4 (`POST teams/{id}`, `teams/update-all`, `portfolios/{id}/refresh`, `portfolios/refresh-all`) | 2.1, MD-6, MD-10 | P | | bounded-change |
+| `A_skipped_forecast_reads_as_confirmed_at_that_round_with_its_dates_unchanged` (Features API `lastUpdated` in the round's window, `forecasts` unchanged; every stored completion and start forecast stamped; a Feature of Onboarding, no shared Team, untouched) | 2.2, DDD-6 | P | | bounded-change |
+| `ForecastConfirmationRepositoryRelationalTest.Confirming_stamps_every_forecast_of_the_named_Features_and_changes_no_value` | 2.2, DDD-6 | P | | bounded-change |
+| `A_round_whose_forecast_failed_changes_no_Features_time_or_dates` | 2.3 | G | E | unbounded-preservation |
+| `A_computed_forecast_reads_as_last_updated_at_its_round_with_its_new_dates` | 2.4 | G | E | bounded-change |
+
+Totals: 78 tests — 71 pending (slice 01: 65, slice 02: 6), 7 new active guards (slice 01: 5, slice 02: 2), plus 2
+existing frontend guards referenced. Error/edge/guard: 55 of 78 (71 %). Fail-for-the-right-reason:
+`distill/red-classification.md`.
+
+## Wave: DISTILL / [REF] WS strategy
+
+One walking skeleton, `A_background_round_that_changed_nothing_skips_the_forecast_and_says_so`, through the real
+production host (`TestWebApplicationFactory<Program>`), entered at the periodic Team refresh (`ITeamUpdater.TriggerUpdate`,
+what the scheduler calls) and read back through the operator's surfaces: the summary line, `GET
+/api/latest/systeminfo/refreshlog` (Refresh History's source), the stored forecasts and the Task Manager push. Pending
+like everything else: it needs the skip to exist. Environment matrix: clean SQLite per case; the upgraded-database
+case is the "nothing confirmed yet" scenario (a null fingerprint is the upgraded state); multi-replica is covered by the
+database-level forget scenarios, as `environments.yaml` says, with no Redis test.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven port | Treatment | Covered by |
+|---|---|---|
+| EF repositories (`IPortfolioRepository` CAS + forget, `IFeatureRepository` confirm-stamp, `IRefreshLogService`, `IDeliveryMetricSnapshotRepository`) | Real, SQLite (relational, so `ExecuteUpdateAsync` runs) | `ForecastConfirmationRepositoryRelationalTest`; every acceptance scenario |
+| `IWorkTrackingConnector` | Fake: `WhatTheTrackerHolds` behind the existing `ConnectorMock` (Features per Portfolio, items per Team, changed as someone in the tracker would) | every acceptance scenario |
+| `IDrawStreamFactory` | Fake: `DrawsCountedAndHeld` (counts draws; holds a computing run) — **policy row appended** | every acceptance scenario |
+| `ITeamMetricsService` | Fake (`Mock`), the epic-6033 waiver: throughput as handed is the fingerprint member | throughput-change cases |
+| `ILighthouseClock` | `FakeLighthouseClock` | day-turn, first round of the day, snapshot day |
+| `ILicenseService` | Mock, premium | dependency case, refresh-all buttons |
+| `IDomainEventDispatcher` + handlers | Real, plus a capturing handler for `PortfolioForecastsUpdated` | skip-announced scenario |
+
+What the fakes cannot model: the real throughput derivation (blackouts, window, filter) — owned and tested by
+`TeamMetricsService`'s suite; Postgres collection order — DELIVER's container test (Pre-requisites).
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port (DESIGN) | Scenario(s) |
+|---|---|
+| Periodic Team refresh (`ITeamUpdater`) → `TeamDataRefreshed` → forecast | WS, re-forecast cases, failed/stopped, snapshot, stamp |
+| Periodic Portfolio refresh (`IPortfolioUpdater`) → forecast | re-forecast cases (size, order, Feature/Team joined/left), first cycle |
+| Event-triggered forecast (`IForecastUpdater.TriggerUpdate`) | press-while-running with another waiting |
+| `POST api/latest/forecast/update/{id}` | `Update_forecast_always_forecasts_in_full`, press-while-running |
+| `POST api/latest/forecast/update-portfolios-for-team/{teamId}` | `Update_forecast_always_forecasts_in_full` |
+| `POST api/latest/teams/{teamId}` | slice 02 press ×1 |
+| `POST api/latest/teams/update-all` | slice 02 press ×1 |
+| `POST api/latest/portfolios/{id}/refresh` | slice 02 press ×1 |
+| `POST api/latest/portfolios/refresh-all` | slice 02 press ×1 |
+| `POST api/latest/update/tasks/Forecasts/{id}/cancel` (stop) | stopped scenario |
+| `GET api/latest/systeminfo/refreshlog` (Refresh History) | every scenario's `skipped`/`success` reads |
+| `GET api/latest/features` (`lastUpdated`, `forecasts`) | slice 02 stamp + guards |
+| `RefreshHistorySection` (UI) | frontend file |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+All compile; none changes behaviour; no schema change (the migration is DELIVER's, through `Create-Migration.ps1`).
+`grep -rn "__SCAFFOLD__" Lighthouse.Backend/Lighthouse.Backend` lists them.
+
+| File | Scaffold |
+|---|---|
+| `Services/Implementation/Forecast/ForecastInputFingerprint.cs` (new) | `ForecastInputs(DateOnly Today, ForecastSimulationLimits Limits, IReadOnlyList<Feature> FeaturesInForecastOrder, IReadOnlyDictionary<int, ForecastThroughputStatus> ThroughputByTeam, ForecastWaits Waits)`; `ForecastInputFingerprint.RegisteredMembers` (empty) and `Of(ForecastInputs)` (throws `NotImplementedException`). Engineering choice recorded: the day is a `DateOnly` instance day (`ILighthouseClock.Today`); DDD-4's `DateTime today` on the port stays DELIVER's. |
+| `IPortfolioRepository` / `PortfolioRepository` | `Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken)`, `Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken)`; bodies throw. `Portfolio.ForecastInputFingerprint` is **not** added (needs the migration); tests observe the column only through the CAS's answer. |
+| `IFeatureRepository` / `FeatureRepository` | `Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken)`; body throws. |
+| `RefreshRoundSummary` | `bool ForecastSkipped { get; init; }`, read and set by nothing yet. |
+| `FE: models/SystemInfo/RefreshLog.ts` | `skipped?: boolean` (type only). |
+
+Not scaffolded, because no test imports them: `ForecastRunOutcome`, the new `IForecastService` signature,
+`RefreshLog.Skipped` / `RefreshLogDto.Skipped` (both need the migration; acceptance reads the JSON `skipped`).
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER
+
+- Slice 01 migration (`Portfolios.ForecastInputFingerprint`, `RefreshLogs.Skipped` default `false` on both providers) and
+  the `HistoricalSchemaPatch` row, as DEVOPS lists. `RefreshLogDto.Skipped` must serialise as `skipped` and be present on
+  every row (the acceptance reads an explicit `false` for a computed forecast).
+- Unit tests DELIVER writes with the code, not here: `ForecastUpdater` (outcome → row, line, CAS last, forget on failure
+  or cancel, stamp), the `RefreshLogDto` mapping, controller tests that each forget exactly the touched Portfolio ids
+  before triggering (DEVOPS mutation scope), the golden fingerprint value once `Of` exists, and the fresh-`DbContext`
+  fingerprint equality on SQLite and on Postgres (`SharedPostgresContainer`, fresh database per case).
+- `confirmedAt` uses the clock a computed forecast's `CreationTime` uses (`DateTime.UtcNow` today): the slice 02
+  scenario asserts the stamp falls inside the round's wall-clock window.
+- The duration line's gap is `durationS: null` in the dataset handed to the chart (MUI draws `null` as a gap).
+- `A_refresh_a_person_starts…(RefreshOfATeam)` needs the forget in `TeamController.UpdateTeamData`; the queue answers
+  a press during a running forecast with one follow-up (`pendingReruns`), which is what the press-while-running cases
+  rely on.
+- Observed while probing, unchanged by this Story: a Team that leaves a Portfolio triggers no forecast from its own
+  round (after its remaining work is recomputed it no longer belongs to the Portfolio); the Portfolio's next round
+  forecasts. The "Team left" case therefore runs Atlas's round and then the Portfolio's.
+- Test-time: unskipped, the two acceptance classes ran 31 cases in 53 s locally (most of it slice 01); read CI time on
+  the slice-01 push against the 34 s budget.
+
+## Wave: DISTILL / [REF] Open product questions (non-blocking)
+
+- When every run of a Forecast entity in the history was skipped, there is no computed run to average. Today's code
+  would show `0.00 s`. What should Avg/Min/Max Duration show then (a dash, the last computed run's figures, or hide the
+  three)? No scenario pins it; DELIVER sketches it with the maintainer before building.
+- The Last Run figure is pinned as "the run's time, then `skipped (nothing changed)` at the end"; the separator between
+  them is left to DELIVER's sketch.

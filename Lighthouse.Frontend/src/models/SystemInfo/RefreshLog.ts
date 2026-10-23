@@ -41,4 +41,7 @@ export interface RefreshLog {
 	// Optional for the same reason as the fields above.
 	latestFullRunFindings?: RefreshFinding[];
 	latestFullRunAt?: string;
+	// A forecast whose inputs had not changed since the last one, so nothing was computed. Optional for the
+	// same reason as the fields above.
+	skipped?: boolean;
 }

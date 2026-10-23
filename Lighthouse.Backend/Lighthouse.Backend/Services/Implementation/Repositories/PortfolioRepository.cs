@@ -8,6 +8,19 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class PortfolioRepository(LighthouseAppContext context, ILogger<PortfolioRepository> logger)
         : RepositoryBase<Portfolio>(context, (context) => context.Portfolios, logger), IPortfolioRepository
     {
+        // __SCAFFOLD__: acceptance tests were written ahead of these two; DELIVER replaces the bodies.
+        private const string NotWrittenYet = "Recording a Portfolio's forecast inputs is not written yet";
+
+        public Task<bool> TryRecordForecastInputs(int portfolioId, string? readAtGather, string fresh, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException($"{NotWrittenYet} (Portfolio {portfolioId})");
+        }
+
+        public Task ForgetForecastInputs(IReadOnlyCollection<int> portfolioIds, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException($"{NotWrittenYet} ({portfolioIds.Count} Portfolios)");
+        }
+
         public IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId)
         {
             return Context.Features

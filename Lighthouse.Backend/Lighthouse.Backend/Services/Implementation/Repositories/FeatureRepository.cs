@@ -21,6 +21,12 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(GetFeatures().ToList());
         }
 
+        // __SCAFFOLD__: acceptance tests were written ahead of this; DELIVER replaces the body.
+        public Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException($"Confirming the forecasts of {featureIds.Count} Features is not written yet");
+        }
+
         public override IQueryable<Feature> GetAllByPredicate(Expression<Func<Feature, bool>> predicate)
         {
             return featureOrdering.Order(GetFeatures().Where(predicate).AsEnumerable()).AsQueryable();

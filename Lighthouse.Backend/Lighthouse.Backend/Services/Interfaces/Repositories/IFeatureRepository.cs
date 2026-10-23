@@ -18,5 +18,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// for some migrated issues is not a known one.
         /// </summary>
         StoredFeatures GetStoredFeatureCreatedDates();
+
+        /// <summary>
+        /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
+        /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
+        /// </summary>
+        Task ConfirmForecastsAsOf(IReadOnlyCollection<int> featureIds, DateTime confirmedAt, CancellationToken cancellationToken);
     }
 }
