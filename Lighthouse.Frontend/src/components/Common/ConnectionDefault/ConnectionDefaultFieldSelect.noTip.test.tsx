@@ -3,12 +3,12 @@ import type { ReactElement } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
-import { createMockSuggestionService } from "../../../tests/MockApiServiceProvider";
 import {
 	renderWithTerms,
 	theAboutButtonsIn,
 	theInfoIconsIn,
 } from "../../../tests/FieldTipsTestKit";
+import { createMockSuggestionService } from "../../../tests/MockApiServiceProvider";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import FeatureSizeComponent from "../ProjectSettings/Advanced/FeatureSizeComponent";
