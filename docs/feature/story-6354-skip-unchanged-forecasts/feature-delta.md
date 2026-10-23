@@ -370,3 +370,295 @@ already sees the effect in the log and Refresh History.
   sketches that marker, and which duration figures exclude skips, with the maintainer before writing scenarios.
   The log-line wording is settled in DESIGN (MD-3).
 - **Loading and failure looks**: N/A, because there is no new or changed view.
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+- ✓ This feature delta (MD-1..MD-7, D1..D8, US-01/US-02, K1–K4, Out of Scope) and both slice briefs.
+- ✓ `docs/product/architecture/brief.md` (delivery-metrics section: `PortfolioForecastsUpdated` once per forecast
+  completion; Epic 6311 section) and ADR-197, ADR-248, ADR-249. Highest ADR in use: ADR-255; no feature folder
+  claims 256+, so this wave takes **ADR-256**.
+- ✓ Code opened (paths under `Lighthouse.Backend/Lighthouse.Backend/`): `ForecastUpdater.cs`, `UpdateServiceBase.cs`,
+  `UpdateQueueService.cs:222-330`, `TeamUpdater.cs`, `PortfolioUpdater.cs:60-135`, `TeamDataService.cs`,
+  `TeamDataRefreshedForecastTriggerHandler.cs`, `IForecastUpdater.cs`, `IUpdateService.cs`, `ForecastController.cs:37-73`,
+  `TeamController.cs:75-90`, `Forecast/ForecastService.cs`, `ForecastRunPlan.cs`, `SimulatedRun.cs:112`,
+  `Models/Dependencies/ForecastWaits.cs:41`, `WorkItems/FetchFingerprint.cs`, `Models/RefreshLog.cs`,
+  `API/DTO/RefreshLogDto.cs`, `RefreshRoundSummaryLine.cs`, `FeatureRepository.cs`, `RepositoryBase.cs:96-100`,
+  `FeatureRankingService.cs:93-113`, `DeliveryForecastPublishingHandler.cs`, `DeliveryMetricSnapshotRecordingHandler.cs`,
+  `WriteBackTriggerService.cs:62-103`, `TeamMetricsService.cs:105-134`, `UpdateProgress.cs`, `LighthouseClock.cs`,
+  `Program.cs:1586-1600` (Redis status store when a Redis connection is configured). Frontend (read-only):
+  `pages/Settings/SystemInfo/RefreshHistorySection.tsx`, `components/Common/Charts/RefreshHistoryChart.tsx`,
+  `models/SystemInfo/RefreshLog.ts`, `components/App/Header/TaskManager/ActivitySection.tsx`, `RecentProblemsSection.tsx`.
+- ✓ Codebase facts of 2026-10-23 (orchestrator scratchpad), cited not re-derived.
+- ✓ `CLAUDE.md` DESIGN rules, `docs/ci-learnings.md` (S107 ≤ 7 parameters; a persisted property needs a migration
+  through `CreateMigration`; InMemory never catches it).
+- ⊘ `lighthouse-clients`: outside this checkout and outside the tools' allowed root, so not grepped here (DDD-12 makes
+  the grep a slice-02 gate).
+- ⊘ `nwave-ai outcomes check-delta`: no shell in this wave; not run.
+
+## Wave: DESIGN / [REF] Scope and Mode
+
+Application scope (`nw-solution-architect`), PROPOSE mode, run AFK. The recommended option is taken at every point
+except those that change what a user sees (Open Questions). Ports-and-adapters as established. No new style, no new
+container, no new external call. The L1 and L2 C4 views are unchanged; an L3 of the update-and-forecast subsystem is
+below. Revised once after the review gate (see Review below).
+
+The invariant this design rests on: **a skip happens only when a computed run would have been handed exactly the same
+inputs as the forecasts now stored** (randomness aside, D5). The fingerprint is therefore taken at the simulation's input
+boundary, from the very values the run is about to be handed, not from the settings upstream of them. A skip is
+possible only within one instance day, because the first round of each day always computes (MD-5).
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `FetchFingerprint` | `Services/Implementation/WorkItems/FetchFingerprint.cs` | Registered member list, rendered → sorted → SHA-256, stored on the owner, null = changed, guard test | **REUSE THE PATTERN, not the class** | Different members and a different question ("what does the query ask" vs "what does the simulation get"). One class for both would couple the fetch to the forecast. The rendering rules (invariant culture, ordinal sort, separators, 128-bit hex digest) are copied as a convention. |
+| `ForecastService.ForecastFeatures` | `Forecast/ForecastService.cs:90-103` | Already gathers every input (Features in order, rows, throughput + chip status, waits) before the simulation | **EXTEND** | The comparison sits between the gathering and `RunMonteCarloSimulation`, so there is no second reading path and no extra query. |
+| `ForecastUpdater.Update` | `BackgroundServices/Update/ForecastUpdater.cs:153-223` | The effect shell: `RefreshLog` row, round summary, write-back staging, publish | **EXTEND** | Acts on the outcome: stamps a confirmation, records the fingerprint last, marks the row and the line. |
+| `IPortfolioRepository` | `Services/Interfaces/Repositories/IPortfolioRepository.cs` | Portfolio persistence | **EXTEND** with two set-based methods | The fingerprint is written only through these (DDD-3). |
+| `IFeatureRepository` | `Services/Interfaces/Repositories/IFeatureRepository.cs` | Feature persistence; set-based update precedent in `FeatureRankingService` | **EXTEND** with a confirm-stamp method | One statement instead of loading and saving thousands of forecast rows. |
+| `RefreshLog` / `RefreshLogDto` | `Models/RefreshLog.cs`, `API/DTO/RefreshLogDto.cs` | Forecast rows; `Cancelled` flag precedent | **EXTEND** with `Skipped` | MD-7: own row, marked. |
+| `RefreshRoundSummary(Line)` | `RefreshRoundSummaryLine.cs` | `forecast=cancelled after Nms` precedent | **EXTEND** | One more wording branch. |
+| Refresh and forecast controllers | `API/ForecastController.cs`, `TeamController.cs`, `TeamsController.cs`, `PortfolioController.cs`, `PortfoliosController.cs` | The user-started entry points | **EXTEND** | Each forgets the confirmed inputs of the Portfolios it touches before queuing (DDD-9). |
+| `RefreshHistorySection` | `pages/Settings/SystemInfo/RefreshHistorySection.tsx` | Duration figures; "Cancelled" count line precedent | **EXTEND** | MD-7. |
+| `PortfolioForecastsUpdated` + its two handlers, `UpdateQueueService`, `UpdateServiceBase`, `TeamDataRefreshed` | as named | Publishing, queueing, the Team → forecast road | **REUSE AS-IS** | A skip publishes like a compute (DDD-6). The user bypass needs no origin on the queue or the event (DDD-9). |
+
+CREATE NEW (each justified by "no existing alternative"):
+- `ForecastInputFingerprint` (static, `Services/Implementation/Forecast/ForecastInputFingerprint.cs`): no existing type
+  renders the simulation's inputs.
+- `ForecastRunOutcome` (value type beside `IForecastService`): the port's answer, either `Computed(readFingerprint,
+  freshFingerprint)` or `ConfirmedUnchanged(featureIds)`. A bare `bool` cannot carry what the shell needs to act on.
+- One expand-only migration (`Portfolio.ForecastInputFingerprint` nullable, `RefreshLog.Skipped` default `false`),
+  generated with `CreateMigration` for every provider.
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | Rejected |
+|---|---|---|
+| DDD-1 | **The fingerprint is a pure function of what the simulation is handed.** `ForecastInputFingerprint.Of(...)` renders these members, in order. (1) A format version. (2) Today, the instance day from `ILighthouseClock.Today` (MD-5). (3) The simulation limits: `Trials`, `MostDaysOneSimulatedRunMayCover`, `MostRunsAtOnce`. (4) The Features in scope **in forecast order**, as ids, so one member covers order and membership. (5) The Teams of those Features, which are the keys of the run's chip-status map (`ForecastService.cs:107`), not `portfolio.Teams`, as ids sorted. (6) Every row: Feature id, Team id and remaining items. Remaining items already carries sizes, defaults, percentile sizes and the owner split. (7) Per Team, the throughput as handed (the day counts after window, blackout removal and forecast filter). (8) Per Team, its chip status (`FilterApplied`, `ExcludedSummary`, `HasSufficientData`), which lands on the stored forecast. (9) Per Team, its `FeatureWIP` (`SimulatedRun.cs:112`). (10) Per in-scope Feature reference id, `ForecastWaits.Of(referenceId)`: the reference ids it waits for, sorted. That list is the only thing the plan reads from waits (`ForecastRunPlan.cs:184`), so `IgnoreDependencies`, `CanBeForecast`, Portfolio membership and the licence are covered through it. Order is kept only where it carries meaning (Features); everything else is sorted ordinally. Rendering follows `FetchFingerprint`: invariant culture, control-character separators, never `GetHashCode` or identity, SHA-256 truncated to 128 bits, lower-case hex. A `RegisteredMembers` list names each member for the guard test (D8). | Fingerprinting the upstream settings (blackouts, filter rules, size settings, forecast settings) as D1 lists them: a second list of the same knowledge that drifts from what the run reads, and it misses anything a later change adds to the run. Hashing the `ForecastRunPlan` object graph by reflection: unstable across EF materialisations, and silent about what it covers. |
+| DDD-2 | **Cost: no extra reads, and only the simulation is saved.** The fingerprint is computed from values `ForecastFeatures` already gathers. Throughput comes from the same cached `TeamMetricsService.GetForecastThroughputStatus` call the run makes. A skip still pays for the Feature graph load (`FeatureRepository.GetFeatures` includes the forecast histograms), the hash, the confirm-stamp, the write-back staging and the Delivery publishing, which makes one remote call per Delivery source, as every round does today. **K2 risk, measured in DELIVER on the dev instance (`:5169`, real history):** if a skipped round's `forecast=` exceeds 5 s, the check moves to a lighter read (Features without histograms), and the full graph is loaded only to compute. Not built up front. | A separate component that reads the inputs again: twice the input cost, and a second reading path. |
+| DDD-3 | **Stored on the Portfolio, written only by set-based updates.** `Portfolio.ForecastInputFingerprint` is a `string?`; null means changed (D7). It is mapped with `PropertySaveBehavior.Ignore` after insert, so a full-entity `Update` of a stale Portfolio (`RepositoryBase.cs:99` marks every column modified) can never write an old value back. It is written through two `IPortfolioRepository` methods. `TryRecordForecastInputs(portfolioId, readAtGather, fresh)` is a CAS: an `ExecuteUpdateAsync` whose WHERE requires the column to still hold the value read at gathering, with the affected-row count as the answer (the repo's CAS idiom). `ForgetForecastInputs(portfolioIds)` sets the column to null. **Write order:** `ForecastService` saves the forecasts; `ForecastUpdater` stages write-back and publishes, then records the fingerprint **last**. A crash, cancel or failure anywhere earlier leaves the old value. That old value no longer matches the new inputs, or is null, so the next run computes. A forget that lands during a run makes the CAS miss, so the forget wins. Stored forecasts can therefore be newer than the fingerprint, never older. One expand-only migration adds the column and `RefreshLog.Skipped`. | Writing the fingerprint in the same `SaveChanges` as the forecasts (the first version of this design): a stale full-entity `Update` could write an old value back, and a "user asked" forget during the run would be overwritten. A separate `PortfolioForecastState` table: one value per Portfolio, a join for nothing. An in-memory map: across replicas a stale match could survive, and every restart recomputes everything. A JSON column: one string needs no JSON. |
+| DDD-4 | **The comparison sits inside `ForecastService.UpdateForecastsForPortfolio`, between the gathering and the simulation**, not in `ForecastUpdater.Update` before `ForecastPortfolio` as the facts suggested, because the inputs exist only there. The port becomes `Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateTime today, CancellationToken cancellationToken)`. It compares the fresh value with `portfolio.ForecastInputFingerprint` as loaded. On a match it returns `ConfirmedUnchanged` **without writing anything**. Otherwise it simulates, saves the forecasts as today, and returns `Computed`. Every other effect (stamp, fingerprint, row, line, staging, publish) is `ForecastUpdater`'s, the imperative shell. `today` is a parameter because `ForecastService` already has 7 constructor parameters (S107), and its constructor stays unchanged. The manual `When`, multi-team and probe paths are untouched. | The check in `ForecastUpdater` with its own fingerprinter: a second reading path, the drift `FetchFingerprint`'s own comment warns of. Splitting the port into prepare and run, with a plan value in between: two new port methods for one decision. That split stays the refactoring route if a second consumer of the prepared inputs appears. |
+| DDD-5 | **D7, failed or cancelled last run.** A failed or cancelled compute never reaches the CAS (DDD-3), so it is covered by construction. For a skip that fails (stamp or publish), `ForecastUpdater` calls `ForgetForecastInputs` best-effort, the same as it does on any failed or cancelled run. It runs in its own scope with `CancellationToken.None`, because the run's token is the cancelled one, and it is logged and never fails the round (the `RecordConnectionHealth` precedent). This protects a recompute after a failed round, not correctness: the stored forecasts are never older than the fingerprint (DDD-3). If the forget itself fails, the next instance day repairs it through the date member. | Reading the latest `RefreshLog` Forecast row as the "last run went well" signal: it ties a forecast decision to a log table with its own retention. |
+| DDD-6 | **What a skip does.** It runs no simulation, rewrites no forecast rows or histograms, and writes no fingerprint. **Slice 02:** `ForecastUpdater` stamps `CreationTime = now` on every `ForecastBase` row (When and Start forecasts) of the Features in scope. It uses one set-based `IFeatureRepository.ConfirmForecastsAsOf(featureIds, confirmedAt, cancellationToken)` (`ExecuteUpdateAsync`, `OfType<>` per derived type as needed; the `FeatureRankingService` precedent), resolved in the updater's scope. This is a plain bulk update, not a CAS, because no competing writer can be lost: if a concurrent forecast of another Portfolio rewrote shared Features, those rows are newer, and "confirmed now" is true of them. A cancel before the stamp changes nothing (AC-2.3). **Both slices:** the skip stages the forecast write-back and publishes `PortfolioForecastsUpdated` exactly as a computed run does. The daily snapshot is an upsert on `GetOrCreateForDay`, so it gets no duplicate. Delivery publishing re-reads target dates the Portfolio refresh just re-synced, and both handlers' best-effort retries rely on "the next forecast asks again". Keeping them on every round keeps today's cadence for everything but the simulation. | A skip that publishes nothing: today's snapshot would stop following intra-day Delivery target-date and done-work changes, a Release's published likelihood would lag a target-date move, and retries would wait up to a day. Stamping by loading and saving the tracked rows: thousands of UPDATE statements per skip on the large instance. |
+| DDD-7 | **`RefreshLog.Skipped` (bool, default false), and `RefreshLogDto.Skipped`.** A skipped row has `Success = true`, `Cancelled = false` and its short duration. `UpdateNotificationHub.WhatTheLastRunSaysHappened` keeps answering `Completed`. | `SyncMode.Skipped`: `Mode` says how much a fetch downloaded, and the frontend mirrors it as a string. A new `RefreshType`: a skip is still a Forecast. No row at all: ruled out by MD-7. |
+| DDD-8 | **Summary line:** ` \| forecast=skipped after {N}ms (inputs unchanged)`, in the shape of `cancelled after` and `failed after`. The duration stays because K2 reads it. `RefreshRoundSummary` gains `ForecastSkipped`; `WriteBackRound` keeps the last reported forecast, as today. | `forecast=skipped (nothing changed)`, the DISCUSS draft: it drops the K2 figure, and "nothing changed" is untrue when the fetch moved data the forecast does not read. |
+| DDD-9 | **A user-started refresh forgets the confirmed inputs of the Portfolios it touches, in the database, before it queues anything.** The six user entry points call `IPortfolioRepository.ForgetForecastInputs(...)` and then trigger exactly as today. They are: `ForecastController` `update/{id}` (that Portfolio) and `update-portfolios-for-team/{teamId}` (the Team's Portfolios), both slice 01; `TeamController.UpdateTeamData` (the Team's Portfolios), `TeamsController.UpdateAllTeams` (the Portfolios of every Team it queues), `PortfolioController.UpdateFeaturesForPortfolio` (that Portfolio) and `PortfoliosController.UpdateAllPortfolios` (every Portfolio it queues), all slice 02. The next forecast of each of those Portfolios, on whichever replica and through whichever coalescing path, finds no fingerprint and computes in full. A forecast already running when the button is pressed cannot record its own fingerprint over the forget, because its CAS misses (DDD-3). **No signature changes** on `IUpdateService`, `IForecastUpdater`, `UpdateServiceBase`, `ITeamDataService` or `TeamDataRefreshed`. The rank and ordering-policy triggers stay as they are (D6). Before adding `IPortfolioRepository` to a controller constructor, DELIVER checks S107; at 8 it splits the controller rather than suppressing (house rule). | An in-memory "user asked" mark carried through the updaters with an `UpdateOrigin` (the first version of this design). The review showed it is lost when Redis admission parks the request on another replica (`UpdateQueueService.cs:239, :312`, `Program.cs:1593`), and before queuing when `ForecastUpdater.TriggerUpdate` returns early on an owed or held forecast (`ForecastUpdater.cs:39-49`). Carrying the origin in the queued closure: the follow-up slot keeps only the newest closure. Treating `TriggerImmediateUpdate` as "user": the rank and policy handlers use it too. |
+| DDD-10 | **Concurrency.** Same Portfolio: the queue admits one forecast key at a time, so two runs of one Portfolio never interleave. A Team refresh during a forecast queues a follow-up that gathers afresh: its fingerprint differs if the Team changed anything, and matches (skip) if not. Overlapping Portfolios (a Team in N Portfolios): each stores its own fingerprint over its own scope, and each scope holds every Feature of its Teams. A change in a shared Team therefore moves every one of their fingerprints, and last-writer-wins on shared Features stays exactly as today. A forget racing a run is settled by the CAS: the forget wins. | — |
+| DDD-11 | **Frontend (MD-7).** `models/SystemInfo/RefreshLog.ts` gains `skipped?: boolean`, optional because an older backend omits it. `RefreshHistorySection` computes every duration figure over computed runs only: per entity Avg, Min and Max, and in the All view Avg, Max and the per-entity bar series. It adds a "Skipped" count line, shown only when it is non-zero, following the `Cancelled` precedent. Skipped runs count as successful in the success rate. The chart treatment and any Task Manager change are maintainer decisions at the start of DISTILL (Open Questions, sketches below). | A separate "Forecast" panel: one marker suffices. |
+| DDD-12 | **Lighthouse-Clients.** No payload shape changes: `lastUpdated` keeps its type and name. So **no version bump**. The meaning of `lastUpdated` moves from "computed at" to "confirmed current at" in slice 02. This is unverified, because the clients checkout is outside this wave's tools. **Gate before slice 02 ships:** DELIVER runs `grep -rn "lastUpdated\|last updated\|computed\|calculated"` over the clients' source, MCP tool descriptions and skills. It rewords any text that says the forecast was computed or calculated at that time, and records the result in this delta. If nothing reads it, the item is N/A. | — |
+| DDD-13 | Usage data and RBAC: unchanged from DISCUSS. DEVOPS answers the event question. No guard changes: the same endpoints only forget before queuing, under their existing write guards. | — |
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+Paths under `Lighthouse.Backend/Lighthouse.Backend/` unless marked `FE:` (`Lighthouse.Frontend/src/`).
+
+| Component | Path | Change | Slice |
+|---|---|---|---|
+| ForecastInputFingerprint | `Services/Implementation/Forecast/ForecastInputFingerprint.cs` | NEW, pure static | 01 |
+| ForecastRunOutcome | `Services/Interfaces/Forecast/` (beside `IForecastService`) | NEW value type | 01 |
+| IForecastService / ForecastService | `Services/Interfaces/Forecast/IForecastService.cs`, `Services/Implementation/Forecast/ForecastService.cs` | MODIFIED: new signature, the comparison, no writes on a match; constructor unchanged | 01 |
+| Portfolio + model config | `Models/Portfolio.cs`, `Data/LighthouseAppContext.cs` | MODIFIED: `ForecastInputFingerprint`, save behaviour Ignore after insert | 01 |
+| IPortfolioRepository / PortfolioRepository | `Services/Interfaces/Repositories/IPortfolioRepository.cs`, implementation | MODIFIED: `TryRecordForecastInputs` (CAS), `ForgetForecastInputs` | 01 |
+| RefreshLog / RefreshLogDto | `Models/RefreshLog.cs`, `API/DTO/RefreshLogDto.cs` | MODIFIED: `Skipped` | 01 |
+| Migration | `Migrations/*` through `CreateMigration` | NEW, expand-only, both providers | 01 |
+| ForecastUpdater | `Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs` | MODIFIED: acts on the outcome; records the fingerprint last; forgets on failure or cancel; marks the row and the line | 01 (stamp in 02) |
+| RefreshRoundSummary / Line | `Services/Implementation/RefreshRoundSummary*.cs`, `UpdateServiceBase.ReportForecastSummary` | MODIFIED: `ForecastSkipped` wording | 01 |
+| ForecastController | `API/ForecastController.cs:46, :69` | MODIFIED: forget, then trigger as today | 01 |
+| TeamController, TeamsController, PortfolioController, PortfoliosController | `API/*.cs` | MODIFIED: forget, then trigger as today | 02 |
+| IFeatureRepository / FeatureRepository | `Services/Interfaces/Repositories/IFeatureRepository.cs`, `Services/Implementation/Repositories/FeatureRepository.cs` | MODIFIED: `ConfirmForecastsAsOf` | 02 |
+| RefreshLog model, RefreshHistorySection, RefreshHistoryChart | `FE: models/SystemInfo/RefreshLog.ts`, `FE: pages/Settings/SystemInfo/RefreshHistorySection.tsx`, `FE: components/Common/Charts/RefreshHistoryChart.tsx` | MODIFIED (per the DISTILL sketch) | 01 |
+| Task Manager | `FE: components/App/Header/TaskManager/ActivitySection.tsx` (+ `UpdateProgress.cs` under T-B) | UNCHANGED under T-A, MODIFIED under T-B | 01 |
+
+Unchanged: `UpdateQueueService`, `UpdateServiceBase` (apart from the summary wording), `TeamUpdater`, `PortfolioUpdater`,
+`TeamDataService`, `TeamDataRefreshed` and its handler, `WorkItemService`, `TeamMetricsService`, the simulation
+(`ForecastRunPlan`, `SimulatedRun`, draws), the two `PortfolioForecastsUpdated` handlers, write-back, connectors, HTTP
+contracts.
+
+### Contract shapes (crafter assertions)
+
+| Component | Shape | Universe and assertion |
+|---|---|---|
+| `ForecastInputFingerprint.Of` | pure function | Return-only. The same inputs give the same string across a fresh `DbContext`, a restart (golden value) and the `tr-TR` culture. Changing any one registered member alone changes it. |
+| `ForecastService.UpdateForecastsForPortfolio` → `Computed` | bounded change | Mutates only the in-scope Features' When and Start forecasts, in one save, exactly as today. The fingerprint column is untouched. |
+| `ForecastService.UpdateForecastsForPortfolio` → `ConfirmedUnchanged` | pure read | Mutates nothing: every `ForecastBase` row, every histogram and the fingerprint are byte-equal before and after. |
+| `ForecastUpdater` after `Computed` | bounded change | Its `RefreshLog` row, staging, the publish, then exactly one CAS on `Portfolio.ForecastInputFingerprint`. |
+| `ForecastUpdater` after `ConfirmedUnchanged` | bounded change | Slice 02: `CreationTime` of the in-scope `ForecastBase` rows only. Plus the row (`Skipped = true`), staging and the publish. |
+| `ForecastUpdater` on failure or cancel | bounded change | `Portfolio.ForecastInputFingerprint := null` and the `RefreshLog` row. |
+| User entry points | bounded change | `ForecastInputFingerprint := null` for exactly the Portfolios they touch, then today's triggers. |
+
+## Wave: DESIGN / [REF] Driving and Driven Ports
+
+- **Driving (HTTP contracts unchanged):** `POST api/forecast/update/{id}`, `POST api/forecast/update-portfolios-for-team/{teamId}`,
+  the Team and Portfolio refresh endpoints, and both refresh-all endpoints. Each now forgets the confirmed inputs of
+  the Portfolios it touches before it queues. The background updaters, which run the periodic rounds through
+  `UpdateQueueService`, are unchanged. `GET` refresh logs gains `skipped` (additive).
+- **Driven:** persistence only. `IFeatureRepository` gains `ConfirmForecastsAsOf`, `IPortfolioRepository` gains
+  `TryRecordForecastInputs` and `ForgetForecastInputs`, and `IRefreshLogService` stores the new column. **No new external
+  call.** A skip contacts the tracker only for the write-back and Delivery publishing that a computed run already does.
+
+## Wave: DESIGN / [REF] C4 Component (update and forecast subsystem)
+
+```mermaid
+C4Component
+  title Update and forecast subsystem — Story 6354
+  Person(op, "Platform operator")
+  Container_Boundary(api, "Lighthouse API (ASP.NET Core 10)") {
+    Component(ctl, "Refresh and forecast controllers", "ASP.NET Core", "Team/Portfolio refresh, refresh-all, update forecast")
+    Component(tu, "TeamUpdater / PortfolioUpdater", "UpdateServiceBase", "Unchanged")
+    Component(q, "UpdateQueueService", "Channel", "Admits, coalesces, holds - unchanged")
+    Component(h, "TeamDataRefreshedForecastTriggerHandler", "Domain event handler", "Unchanged")
+    Component(fu, "ForecastUpdater", "Imperative shell", "Acts on the outcome: stamp, CAS, RefreshLog row, summary line, publish")
+    Component(fs, "ForecastService", "Service", "Gathers inputs, compares the fingerprint, simulates on a mismatch")
+    Component(fp, "ForecastInputFingerprint", "Pure static", "Renders and digests the simulation's inputs")
+    Component(tms, "TeamMetricsService", "Service (cached)", "Throughput as handed to the run - unchanged")
+    Component(repo, "Portfolio and Feature repositories", "EF Core", "Forget, CAS record, confirm-stamp (set-based)")
+    Component(dh, "PortfolioForecastsUpdated handlers", "Domain event handlers", "Daily snapshot upsert, Delivery publishing - unchanged")
+  }
+  ContainerDb(db, "Database", "SQLite / PostgreSQL", "Portfolio.ForecastInputFingerprint, RefreshLog.Skipped, ForecastBase")
+  Rel(op, ctl, "Presses refresh or update forecast on")
+  Rel(ctl, repo, "Forgets the touched Portfolios' confirmed inputs through")
+  Rel(ctl, tu, "Triggers refreshes on")
+  Rel(ctl, fu, "Triggers immediate forecasts on")
+  Rel(tu, q, "Enqueues work through")
+  Rel(fu, q, "Enqueues and holds work through")
+  Rel(tu, h, "Publishes TeamDataRefreshed to")
+  Rel(h, fu, "Triggers forecasts on")
+  Rel(fu, fs, "Asks for a forecast with today from")
+  Rel(fs, tms, "Reads throughput and chip status from")
+  Rel(fs, fp, "Computes the fingerprint with")
+  Rel(fs, db, "Reads inputs and saves computed forecasts in")
+  Rel(fu, repo, "Stamps confirmations and records the fingerprint last through")
+  Rel(repo, db, "Runs set-based updates in")
+  Rel(fu, dh, "Publishes PortfolioForecastsUpdated to, computed or skipped")
+```
+
+## Wave: DESIGN / [REF] Loading and Failure Looks, and Sketch Options for DISTILL
+
+Refresh History loads once on mount and keeps its existing looks: a centred `CircularProgress` while loading, and an
+`Alert severity="error"` reading "Could not load refresh history." on failure. The skip marker exists only in the
+loaded look, and no figure is drawn before the rows arrive. The Task Manager keeps its live list and fetches nothing new.
+
+**R-A: a count line, with durations over computed runs** (recommended)
+```
+Entity: [Forecast: Payments Platform v]
+ Duration (s) line ─ computed runs only; skipped runs leave a gap in the line, bars (items) still drawn
+ Total Runs 40 | Success Rate 100% | Skipped 31 | Avg Items 412
+ Avg Duration 271.40 s | Min Duration 240.10 s | Max Duration 305.90 s | Last Run 23/10/2026, 10:15:02
+ loading: (spinner)          failure: [!] Could not load refresh history.
+```
+
+**R-B: skipped runs drawn as their own series**
+```
+ Duration (s): ── computed   ○ skipped (inputs unchanged), plotted at their own short duration
+ Total Runs 40 | Computed 9 | Skipped 31 | Success Rate 100% | Avg Items 412
+ Avg Duration (computed) 271.40 s | Min 240.10 s | Max 305.90 s | Last Run …
+ loading / failure: as R-A
+```
+
+**Task Manager.** The list holds running and queued work only, so a finished skip leaves no row today.
+```
+T-A (recommended, no change)              T-B (append UpdateProgress.Skipped)
+◌ Forecasting Portfolio 'Payments' —      ◌ Forecasting Portfolio 'Payments' — Running
+  Running   (gone within seconds)           then, briefly: Forecasting Portfolio 'Payments' —
+                                            Skipped, nothing changed
+```
+
+## Wave: DESIGN / [REF] Architecture Enforcement
+
+Style: hexagonal. Language: C#. Tools: ArchUnitNET (existing) plus guard tests.
+- **Guard test (D8):** `ForecastInputFingerprint.RegisteredMembers` equals the expected list. One test case per member
+  shows that changing only that member changes the fingerprint. The dependency member gets separate cases for
+  `IgnoreDependencies`, `CanBeForecast` and a changed reference target, each reaching the fingerprint through
+  `ForecastWaits`.
+- **Structural guard:** a reflection test requires every public property of `ForecastSimulationLimits` to be a
+  registered member, so a new limit cannot slip past.
+- **Earned trust:**
+  - A golden fingerprint for a fixed input catches `GetHashCode`, culture and ordering slips across restarts and
+    upgrades.
+  - The same Portfolio, re-read through a fresh `DbContext`, must fingerprint the same on SQLite **and** on Postgres,
+    because EF returns collections in provider-dependent order.
+  - A stale Portfolio entity saved through `Update` after a recorded fingerprint must leave the column unchanged.
+  - A forget during a run must leave the column null after the run.
+  - The set-based tests run on a relational provider, because EF InMemory does not support `ExecuteUpdateAsync`.
+- **ArchUnitNET:** `ForecastInputFingerprint` depends on nothing in `Services.Implementation.BackgroundServices` or
+  `Data`. `Lighthouse.Backend.Models` stays independent of `BackgroundServices.Update` (existing rule).
+- **DELIVER pre-checks:** whether `HistoricalSchemaPatch` needs the new `Portfolios` or `RefreshLogs` column (memory says
+  it needs every new Deliveries column). Generate the migration with `CreateMigration`.
+
+## Wave: DESIGN / [REF] Open Questions (maintainer, at DISTILL start)
+
+- **OQ-1 Task Manager marker (changes what the user sees).** MD-7 says the Task Manager shows a skip as a skip, but
+  the Task Manager lists only running and queued work.
+  - T-A (recommended): no Task Manager change. The row leaves within seconds, and the skip is visible in Refresh
+    History. It adds no new terminal state and nothing to unlearn.
+  - T-B: append `UpdateProgress.Skipped`, so the row briefly reads "Skipped, nothing changed". This needs an
+    append-only enum member, the frontend `UpdateProgress` type and `ActivitySection` wording.
+- **OQ-2 Refresh History chart (changes what the user sees).** R-A or R-B above (recommended: R-A).
+- **OQ-3 What "a refresh you start always forecasts" promises (changes what the user is told; recommendation
+  taken, confirm).** Pressing a button forgets the Portfolios' confirmed inputs, so the next forecast of each one
+  computes in full (DDD-9).
+  - The ordinary case: a forecast was already queued or held when the button was pressed, so it is that forecast that
+    computes.
+  - The rare case: a forecast is still running from before the press. Its own fingerprint is discarded, so the
+    forecast the press causes computes.
+  - Either way the user sees a full "Forecasting Portfolio" run after the press, and the docs can keep saying "a
+    button press always recomputes".
+
+Settled in DESIGN and not open: the log wording (DDD-8; MD-3 delegated it), publishing on a skip (DDD-6, which keeps
+today's behaviour).
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- **D1 / MD-1 member list.** The members are taken at the simulation's input boundary (DDD-1). Sizes, defaults and
+  percentile sizes are covered through remaining work. Blackouts, the throughput window and the forecast filter are
+  covered through the throughput as handed. Dependency settings are covered through `ForecastWaits`.
+  Consequence for DISTILL: a Team setting saved without a refresh reaches the forecast only after that Team's next
+  refresh, which invalidates the metrics cache. That is exactly what a computed run would see. AC-1.2's settings and
+  blackout examples are therefore driven through a Team refresh, as the scenario already words them.
+- **AC-1.5, "in place of a duration".** The line keeps the duration (`forecast=skipped after Nms (inputs unchanged)`),
+  because K2 is read from it.
+- **AC-2.1, "user-started ... end in a full forecast".** This is read as "the next forecast of every Portfolio the
+  press touches computes in full" (DDD-9, OQ-3).
+- **D3 / MD-6 mechanism.** The bypass is a database forget at the entry point, not an origin carried through the
+  queue. Slice 02's brief ("carry the user-started origin ... through the update queue and `TeamDataRefreshed`") is
+  superseded: no queue, updater or event change is needed.
+- **D7.** A failed or cancelled compute is covered by recording the fingerprint last, with a CAS. A failed skip is
+  covered by a best-effort forget (DDD-5).
+- **The daily snapshot.** MD-5 made it safe through the date member. DESIGN also publishes `PortfolioForecastsUpdated`
+  on every skip (DDD-6), so the snapshot and Delivery publishing keep their every-round cadence. The brief's
+  "dispatched exactly once per portfolio-forecast-completion" still holds, because a skip completes the round.
+- **UI scope.** This supersedes four DISCUSS items: the Scope line, DoD items 1–2, the Out of Scope line "any UI
+  change" and the Standing Checklist line "Loading and failure looks: N/A". MD-7 is a UI change. The frontend is
+  touched (Refresh History, plus the Task Manager only under T-B), so the `pnpm test`, `pnpm build` and Biome gates
+  apply, and so do the loading and failure looks above. No new E2E: the existing Refresh History and Task Manager
+  coverage stays the thin sanity check.
+- **Where the skip check sits.** Inside `ForecastService`, not in `ForecastUpdater` before `ForecastPortfolio` (DDD-4).
+
+## Wave: DESIGN / [REF] Review
+
+Peer review by `nw-solution-architect-reviewer`, iteration 1: **approved with notes**, with 0 critical, 3 high, 5 medium
+and 3 low issues. The design was revised as follows:
+
+| Finding | Severity | Resolution |
+|---|---|---|
+| The in-memory "user asked" mark is lost across replicas when Redis admission parks the request on another replica | high | DDD-9 rewritten: a database forget at the entry points, shared by every replica |
+| The mark is never recorded when `ForecastUpdater.TriggerUpdate` returns early (owed or held) | high | Gone with the mark: the forget happens before any trigger |
+| A stale full-entity `Update` can write an old fingerprint back | high | DDD-3: save behaviour Ignore, written only by set-based updates, recorded last by CAS |
+| The Team set was ambiguous | medium | DDD-1(5): the Teams of the simulated Features |
+| Dependency inputs were covered only implicitly | medium | DDD-1(10) names `ForecastWaits.Of`; guard cases added |
+| D7 was over-claimed; "next computed run repairs it"; the cancel token | medium | DDD-5 restated; the forget uses `CancellationToken.None`; the next instance day repairs a failed forget |
+| How `ForecastService` reaches the stamp | medium | The stamp moved to `ForecastUpdater` (shell); `ForecastService`'s constructor is unchanged |
+| The clients' meaning change is unverified | medium | DDD-12 makes the grep a gate before slice 02 ships |
+| The skip cost was overstated | low | DDD-2 states that only the simulation is saved |
+| A skip is only possible within one day | low | Stated in Scope and Mode |
+| `HistoricalSchemaPatch` and seeding were unchecked | low | `HistoricalSchemaPatch` is a DELIVER pre-check. `DrawStreamFactory.cs:14` is unseeded (`Random.Shared`), so the fingerprint omits it (D5) |
+
+All three high findings were resolved in the text, so no second iteration was run.
+
+## Wave: DESIGN / [REF] Handoff
+
+- ADR: [ADR-256](../../product/architecture/adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md).
+  `brief.md` gains a short section for this Story.
+- External integrations: none new, so no contract-test annotation is needed.
+- Development paradigm: OOP (C#), functional-leaning React.
+- `nwave-ai outcomes check-delta` was not run (no shell in this wave); DISTILL or the orchestrator runs it.

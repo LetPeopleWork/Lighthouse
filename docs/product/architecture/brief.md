@@ -10601,3 +10601,54 @@ What DELIVER settled beyond the design above:
 - [ADR-254](./adr-254-a-published-release-forecast-says-more-than-five-years-instead-of-a-date.md): a published Release
   forecast says "more than 5 years" instead of a date. **Accepted 2026-10-18.**
 - Relied on, unchanged: ADR-110, ADR-113, ADR-154, ADR-178, ADR-183, ADR-233.
+
+## Application Architecture — story-6354-skip-unchanged-forecasts (Updates that change nothing skip the forecast)
+
+Feature: story-6354-skip-unchanged-forecasts (ADO Story #6354) · Wave: DESIGN · 2026-10-23 · Morgan, PROPOSE mode.
+Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-13).
+
+### Key invariants introduced
+
+- **A Portfolio forecast is skipped only when a computed run would be handed the inputs the stored forecasts were
+  computed from.** `ForecastService` computes a pure `ForecastInputFingerprint` from the values it has already
+  gathered: today, the limits, the Features in forecast order, the Teams of those Features and the remaining-work
+  rows; per Team, the throughput as handed, the chip status and the Feature WIP; per Feature, `ForecastWaits.Of`. It
+  compares that with `Portfolio.ForecastInputFingerprint` before simulating. On a match it writes nothing.
+- **The fingerprint is written only by set-based updates.** EF ignores the column on entity updates.
+  `ForecastUpdater` records it **last**, after the save, the staging and the publish, with a CAS against the value
+  read at gathering. A failed or cancelled run clears it, and a missing one means compute.
+- **A person always gets a computed forecast.** The update-forecast, refresh and refresh-all endpoints clear the
+  fingerprint of every Portfolio they touch, in the database, before queuing. This holds across replicas and every
+  queue coalescing path, and a run in flight loses its CAS. No origin travels through the queue, the updaters or
+  `TeamDataRefreshed`.
+- **A skip is still a forecast round.** It writes a `RefreshLog` row with `Skipped = true` and logs
+  `forecast=skipped after Nms (inputs unchanged)`. From slice 02 it stamps the in-scope forecasts' `CreationTime` with
+  one set-based update. It still stages write-back and publishes `PortfolioForecastsUpdated`, so "dispatched once per
+  forecast completion" holds.
+
+### Component changes
+
+- NEW: `ForecastInputFingerprint` (pure), `ForecastRunOutcome`, and one expand-only migration
+  (`Portfolio.ForecastInputFingerprint`, `RefreshLog.Skipped`).
+- MODIFIED, backend: `IForecastService`/`ForecastService` (signature `(portfolio, today, ct)`, constructor unchanged),
+  `ForecastUpdater` (the shell that acts on the outcome), `IPortfolioRepository` (`TryRecordForecastInputs` CAS,
+  `ForgetForecastInputs`), `IFeatureRepository` (`ConfirmForecastsAsOf`), the six user entry points in five
+  controllers, `RefreshLog(Dto)` and the round summary line.
+- MODIFIED, frontend: `RefreshHistorySection` (durations over computed runs, a Skipped count). The Task Manager
+  changes only if the maintainer picks T-B at DISTILL.
+- UNCHANGED: `UpdateQueueService`, `UpdateServiceBase`, the Team and Portfolio updaters, `TeamDataRefreshed`, the
+  simulation, `TeamMetricsService`, the `PortfolioForecastsUpdated` handlers, write-back, connectors and HTTP
+  contracts (the only change is an additive `skipped` on refresh logs). L1/L2 C4 unchanged.
+
+### Architectural Enforcement (this feature)
+
+- A guard test lists the fingerprint members, with one case per member. A reflection guard covers
+  `ForecastSimulationLimits`.
+- A golden fingerprint, and equality after a fresh `DbContext` read on SQLite and on Postgres.
+- ArchUnitNET: `ForecastInputFingerprint` depends on nothing in `BackgroundServices` or `Data`.
+
+### ADR References (this feature)
+
+- [ADR-256](./adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md): an
+  unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked. **Proposed 2026-10-23.**
+- Relied on, unchanged: ADR-197, ADR-248, ADR-249.
