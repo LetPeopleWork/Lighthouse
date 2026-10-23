@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         private static readonly DateTimeOffset TenFifteen = TenOClock + AQuarterOfAnHour;
 
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task A_skipped_forecast_is_still_announced_and_the_days_snapshot_is_not_doubled()
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]

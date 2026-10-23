@@ -168,8 +168,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         protected void GivenRunsThatFinish(int inEveryTen) => Draws.RunsInTenThatDrawTheFirstDay = inEveryTen;
 
         /// <summary>The forecast as it ran yesterday: through the queue, to the end, as a scheduled one would.</summary>
-        protected Task GivenThePortfolioWasForecastBefore(SeededPortfolio portfolio)
-            => RunUpdate(sp => sp.GetRequiredService<IForecastUpdater>().TriggerUpdate(portfolio.Id));
+        /// <remarks>
+        /// Yesterday's forecast was computed for another day, so what it was computed from no longer holds
+        /// today; without forgetting it, the next background forecast would find nothing changed and skip.
+        /// </remarks>
+        protected async Task GivenThePortfolioWasForecastBefore(SeededPortfolio portfolio)
+        {
+            await RunUpdate(sp => sp.GetRequiredService<IForecastUpdater>().TriggerUpdate(portfolio.Id));
+
+            using var scope = Factory.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<IPortfolioRepository>()
+                .ForgetForecastInputs([portfolio.Id], CancellationToken.None);
+        }
 
         // --- When ---
 

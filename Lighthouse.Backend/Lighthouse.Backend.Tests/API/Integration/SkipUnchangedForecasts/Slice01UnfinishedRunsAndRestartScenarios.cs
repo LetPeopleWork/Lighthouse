@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         private static readonly DateTimeOffset TenFortyFive = TenThirty + AQuarterOfAnHour;
 
         [Test]
-        [Ignore(Pending)]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public async Task After_a_forecast_that_failed_the_next_quiet_round_forecasts_in_full()
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         }
 
         [Test]
-        [Ignore(Pending)]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
         public async Task After_a_forecast_that_was_stopped_the_next_quiet_round_forecasts_in_full()

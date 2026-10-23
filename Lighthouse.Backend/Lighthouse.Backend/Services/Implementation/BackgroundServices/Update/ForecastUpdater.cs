@@ -163,11 +163,16 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             var stopwatch = Stopwatch.StartNew();
             var success = false;
             var cancelled = false;
+            var skipped = false;
             var itemCount = 0;
 
             try
             {
-                itemCount = await ForecastPortfolio(portfolio, serviceProvider);
+                var outcome = await ForecastPortfolio(portfolio, serviceProvider);
+                await RecordWhatTheForecastWasComputedFrom(portfolio.Id, outcome, serviceProvider);
+
+                itemCount = portfolio.Features.Count;
+                skipped = outcome is ForecastRunOutcome.ConfirmedUnchanged;
                 success = true;
             }
             catch (OperationCanceledException) when (cancellationContext.Current.IsCancellationRequested)
@@ -179,24 +184,80 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 stopwatch.Stop();
 
-                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success, cancelled);
-                ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success, cancelled);
+                if (!success)
+                {
+                    await ForgetWhatTheForecastWasComputedFrom(portfolio.Id);
+                }
+
+                await LogForecastRefresh(refreshLogService, portfolio, itemCount, stopwatch.ElapsedMilliseconds, success, cancelled, skipped);
+                ReportForecastSummary(serviceProvider, portfolio.Name, stopwatch.ElapsedMilliseconds, success, cancelled, skipped);
             }
         }
 
-        private async Task<int> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
+        /// <summary>
+        /// A skipped run still stages its write-back and announces itself, because what listens for the
+        /// announcement (the day's snapshot, the write-back of forecast dates) does not care whether the
+        /// numbers were drawn again, only that they are current.
+        /// </summary>
+        private async Task<ForecastRunOutcome> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
         {
+            var gatherWatch = Stopwatch.StartNew();
             var instanceDay = serviceProvider.GetRequiredService<ILighthouseClock>().Today;
-            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
+            var outcome = await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
+            var gatherMs = gatherWatch.ElapsedMilliseconds;
 
+            var publishWatch = Stopwatch.StartNew();
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
                 portfolio.WorkTrackingSystemConnection,
                 writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
 
             await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
+            var publishMs = publishWatch.ElapsedMilliseconds;
 
-            return portfolio.Features.Count;
+            var outcomeName = outcome is ForecastRunOutcome.ConfirmedUnchanged ? "skipped" : "computed";
+            Logger.LogDebug("Forecast of {Portfolio} {Outcome}: gathered in {GatherMs}ms, staged and published in {PublishMs}ms",
+                portfolio.Name, outcomeName, gatherMs, publishMs);
+
+            return outcome;
+        }
+
+        /// <summary>
+        /// Recorded last, once everything the run owes is staged and announced: a recorded value is the
+        /// promise that the stored forecasts are current, and a later quiet round trusts it without looking.
+        /// A run that could not fingerprint its inputs records nothing, so the next one computes too.
+        /// </summary>
+        private async Task RecordWhatTheForecastWasComputedFrom(int portfolioId, ForecastRunOutcome outcome, IServiceProvider serviceProvider)
+        {
+            if (outcome is not ForecastRunOutcome.Computed { FreshFingerprint: { } fresh } computed)
+            {
+                return;
+            }
+
+            await serviceProvider.GetRequiredService<IPortfolioRepository>()
+                .TryRecordForecastInputs(portfolioId, computed.ReadFingerprint, fresh, cancellationContext.Current);
+        }
+
+        /// <summary>
+        /// A run that failed or was stopped may have saved some of its forecasts and not others, so the next
+        /// round must not trust what was recorded before it. Forgetting is best effort and must not turn a
+        /// failed forecast into a different failure, so it runs in a scope of its own and is never cancelled.
+        /// </summary>
+        private async Task ForgetWhatTheForecastWasComputedFrom(int portfolioId)
+        {
+            try
+            {
+                using var scope = scopeFactory.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<IPortfolioRepository>()
+                    .ForgetForecastInputs([portfolioId], CancellationToken.None);
+            }
+            // The forecast already failed; failing to forget its inputs must not replace that failure.
+#pragma warning disable CA1031
+            catch (Exception exception)
+#pragma warning restore CA1031
+            {
+                Logger.LogWarning(exception, "Could not forget the forecast inputs of Portfolio {Id}: {Exception}", portfolioId, exception.Message);
+            }
         }
 
         /// <summary>
@@ -204,7 +265,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// tracking system - there is nothing scanned or downloaded to record.
         /// </summary>
         private static Task LogForecastRefresh(
-            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success, bool cancelled)
+            IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success, bool cancelled, bool skipped)
         {
             var nothingFetched = SyncOutcome.None;
 
@@ -220,7 +281,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 DurationMs = durationMs,
                 ExecutedAt = DateTime.UtcNow,
                 Success = success,
-                Cancelled = cancelled
+                Cancelled = cancelled,
+                Skipped = skipped
             });
         }
     }

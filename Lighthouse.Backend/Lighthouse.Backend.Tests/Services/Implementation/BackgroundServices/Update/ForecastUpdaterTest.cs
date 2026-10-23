@@ -29,10 +29,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private InProcessUpdateStatusStore inProcessUpdateStatusStore;
         private UpdateCancellationContext cancellationContext;
         private Mock<ILogger<ForecastUpdater>> loggerMock;
+        private Mock<IPortfolioRepository> forecastInputsMock;
 
         private int idCounter = 0;
 
         private static readonly string[] WriteBackThenEventDispatchOrder = ["forecastWriteBack", "forecastsUpdatedEvent"];
+
+        private static readonly string[] WriteBackThenEventDispatchThenRecordOrder = ["forecastWriteBack", "forecastsUpdatedEvent", "recordInputs"];
 
         private const int SlowForecastMilliseconds = 60;
 
@@ -67,7 +70,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Returns(Task.CompletedTask);
 
             SetupServiceProviderMock(appSettingServiceMock.Object);
+            forecastInputsMock = new Mock<IPortfolioRepository>();
+            forecastInputsMock
+                .Setup(x => x.TryRecordForecastInputs(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            forecastInputsMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
             SetupServiceProviderMock(portfolioRepositoryMock.Object);
+            SetupServiceProviderMock(forecastInputsMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
@@ -540,6 +552,153 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await updateQueue.DrainAsync(CancellationToken.None);
 
             forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Test]
+        public void Update_ShouldRecordASkippedSuccessfulRefreshAndSaySo_WhenTheInputsAreConfirmedUnchanged()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Skipped, Is.True);
+                Assert.That(recorded.Entry.Success, Is.True, "A skipped forecast is a successful one.");
+                Assert.That(recorded.Entry.Cancelled, Is.False);
+                Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=skipped after "));
+            }
+        }
+
+        [Test]
+        public void Update_ShouldStillStageAndAnnounceButRecordNothing_WhenTheInputsAreConfirmedUnchanged()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(portfolio), Times.Once);
+            domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == portfolio.Id), It.IsAny<CancellationToken>()), Times.Once);
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldRecordTheInputsLast_AfterStagingAndAnnouncing_WhenTheForecastWasComputed()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed("read", "fresh"));
+
+            var sequence = new List<string>();
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Callback(() => sequence.Add("forecastWriteBack"))
+                .Returns([]);
+            domainEventDispatcherMock
+                .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
+                .Callback(() => sequence.Add("forecastsUpdatedEvent"))
+                .Returns(Task.CompletedTask);
+            forecastInputsMock
+                .Setup(x => x.TryRecordForecastInputs(portfolio.Id, "read", "fresh", It.IsAny<CancellationToken>()))
+                .Callback(() => sequence.Add("recordInputs"))
+                .ReturnsAsync(true);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            Assert.That(sequence, Is.EqualTo(WriteBackThenEventDispatchThenRecordOrder));
+        }
+
+        [Test]
+        public void Update_ShouldRecordNothingAndNotFail_WhenTheComputedForecastHasNoFreshInputs()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed("read", null));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Success, Is.True);
+                Assert.That(recorded.Entry.Skipped, Is.False);
+                Assert.That(WhatTheRefreshThrew, Is.Null);
+            }
+
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldForgetTheInputsAndRecordNothing_WhenTheForecastFails()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("The forecast failed"));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldForgetTheInputs_WhenTheForecastIsStopped()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            TheForecastIsStopped();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        [Test]
+        public void Update_ShouldStillReportTheForecastsOwnFailure_WhenForgettingTheInputsFails()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            var forecastFailure = new InvalidOperationException("The forecast failed");
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(forecastFailure);
+            forecastInputsMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("The database is gone"));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.SameAs(forecastFailure));
+                Assert.That(recorded.Entry.Success, Is.False);
+            }
+        }
+
+        private void TheForecastAnswers(ForecastRunOutcome outcome)
+        {
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(outcome);
         }
 
         private void RecordUpdate(UpdateType updateType, int id, UpdateProgress progress)

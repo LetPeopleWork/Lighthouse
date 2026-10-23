@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             refreshLogServiceMock.Setup(l => l.LogRefreshAsync(It.IsAny<RefreshLog>())).Returns(Task.CompletedTask);
 
             SetupServiceProviderMock(portfolioRepositoryMock.Object);
+            SetupServiceProviderMock(Mock.Of<IPortfolioRepository>());
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
             SetupServiceProviderMock(Mock.Of<IWriteBackTriggerService>());

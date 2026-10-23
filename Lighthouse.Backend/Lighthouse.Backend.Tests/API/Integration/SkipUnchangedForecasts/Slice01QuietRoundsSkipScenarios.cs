@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         private static readonly DateTimeOffset TenFifteen = TenOClock + AQuarterOfAnHour;
 
         [Test]
-        [Ignore(Pending)]
         [Category("walking_skeleton")]
         [Category("driving_port")]
         [Category("kpi-OUT-6354-unchanged-rounds-skip")]
@@ -57,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// Its first round computes, and that computation is what a later quiet round can be compared with.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]
         public async Task A_Portfolio_with_nothing_confirmed_yet_is_forecast_in_full_and_the_next_quiet_round_skips()
