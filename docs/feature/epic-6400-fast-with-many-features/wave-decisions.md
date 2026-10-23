@@ -145,3 +145,33 @@ alone and the K's share one harness (D31).
 - K3 stays an exit criterion, flagged for the maintainer (D19).
 - No existing response shape changes; no clients release (D20).
 - DoR: PASSED, 9 of 9.
+
+## DESIGN (2026-10-23)
+
+**Agent**: Morgan (`nw-solution-architect`), PROPOSE mode, autonomous subagent. Decisions DDD-1..DDD-24, C4 L1/L2/L3,
+the loading and failure looks and the architecture summary live in `feature-delta.md` (Wave: DESIGN sections); ADRs
+ADR-257..ADR-262 in `docs/product/architecture/`; upstream changes UC-1..UC-5 in `design/upstream-changes.md`; the
+brief's `## Application Architecture — epic-6400-…` section.
+
+- Slice 01: a background round's own frames run on a dedicated `ForecastLane` (ADR-257): one hop with
+  `StartNew(…, lane.Scheduler).Unwrap()`, no `ConfigureAwait(false)` in round code, the queue loop and driver
+  continuations stay on the pool, the lane is disposed after the hosted services stop. Task 01a's harness lives in
+  `Lighthouse.EndToEndTests/perf/`, builds the scaled set over the REST API, and adds controls C and C0 with fixed
+  thresholds that classify the stalls as pool, GC or CPU; the D27 order follows the branch.
+- Slices 02, 03, 05: readers that leave histograms out (ADR-258, ADR-261); licence gates share queries and refuse only
+  the create actions while unknown, edits as today (ADR-259); the forecast write-back resolves against a fresh,
+  no-tracking full read of the Portfolio's Features after the save, only with a write-back mapping (ADR-261).
+- Slice 04: owner-keyed list endpoint with `FeatureDto`-named rows (ADR-260), 403 for an unreadable owner and filtered
+  inside; it keeps every completion histogram and drops per-Team start histograms; looks reuse `DataGridBase` and
+  `WidgetBody`.
+- Slice 06: `PortfolioSize` and a `COUNT` endpoint (ADR-262); the note reads "as of its last update" and has a
+  one-line failure look.
+- No new package, no new external call, no migration unless a measured index is needed.
+- Questions for the maintainer: Q-M1 (licence gates: refuse creation only while unknown), Q-M2 (a reference id stored
+  twice: first in forecast order plus a warning), Q-M3 (slice 06's failure line and "as of" label), Q-M4 (K4's −30%
+  computed-round figure, set at D27).
+- Review: `nw-solution-architect-reviewer` iteration 1 returned NEEDS_REVISION (one blocker, six high); Revision 1
+  applied the same day. The blocker (B1, which read the write-back resolves against) took the fresh full read after
+  the save; the alternatives (hand over the gathered Features; keep the full tracked `GetById`) are rejected in
+  ADR-261. One finding (narrow the list's completion read) was answered with evidence instead: `Feature.Forecast`
+  aggregates every per-Team completion forecast, so no narrower row exists.

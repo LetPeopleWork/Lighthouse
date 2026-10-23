@@ -1388,3 +1388,644 @@ figures; no website claim).
 | 04 The Features list opens fast and says when it cannot load | User Story #6408 |
 | 05 Forecast rounds finish sooner | User Story #6409 |
 | 06 Lighthouse says when a Portfolio grows past 100 Features | User Story #6410 |
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-23 · **Mode**: PROPOSE, autonomous subagent under the
+maintainer's "continue autonomously". Every significant decision lists its options and takes the recommendation; what
+genuinely needs the maintainer is under "Questions for the maintainer", each with the default this wave took. Skills
+loaded: `nw-architecture-patterns`, `nw-architectural-styles-tradeoffs`, `nw-sa-critique-dimensions`. Paths below are
+relative to `Lighthouse.Backend/Lighthouse.Backend/` or `Lighthouse.Frontend/src/` unless written in full.
+
+| Read | Status |
+|---|---|
+| `CLAUDE.md` (hexagonal; RBAC through `IRbacAdministrationService` and `useRbac()`; comments rare, no internal refs; loading and failure looks at DESIGN; architecture summary at the end of DESIGN; expand-only migrations; domain events preferred) | ✓ |
+| `docs/ci-learnings.md`, preflight rules (S107 ≤ 7 constructor parameters, CA1859, CA1861, S1192, NUnit2045, S4136, S2325/S4487 on skeletons) | ✓ |
+| This delta: DISCOVER, DIVERGE, DISCUSS (US-01..06, AC, D17–D31, K1–K5, guardrails G1–G5, Out of Scope, Changed Assumptions, Maintainer answers and ADO mirror) | ✓ |
+| `wave-decisions.md` (DV-1..DV-11), `slices/slice-01-…md` | ✓ |
+| `recommendation.md`, `slices/slice-02..06` | ⊘ not opened; their content is carried by the DIVERGE Recommendation section, DV-1..DV-11 and US-02..US-06 in this delta |
+| `docs/product/architecture/brief.md` (head; the Epic 6311 and Story 6354 sections), ADR-248 | ✓ |
+| ADR-249, ADR-253, ADR-256 | ⊘ not opened; relied on through the brief's 6311 and 6354 sections and Story 6354's DESIGN DDD-1..DDD-5 (✓ read) |
+| `docs/product/journeys/epic-6400-fast-with-many-features.yaml` (jobs, linked 6311 error path, the reach-and-read journey) | ✓ |
+| `docs/product/journeys/epic-6311-responsive-during-updates.yaml` | ⊘ not opened; its linked error path is quoted in the 6400 journey |
+| `docs/feature/epic-6264-modular-monolith/feature-delta.md` S05a–S05g, the S13 dependency lines | ✓. The S05a guard is **not yet in code** (no `GetAllByPredicate` rule under `Lighthouse.Backend.Tests/Architecture/`) |
+| Code: `Forecast/ForecastService.cs`, `BackgroundServices/Update/ForecastUpdater.cs`, `UpdateQueueService.cs` (constructor, loop `:792-812`, enqueue `:222-300`), `Models/Forecast/ForecastSimulationLimits.cs`, `ForecastBase.cs`, `Models/Feature.cs` (`CanBeForecast`, `TeamsWithoutForecast`), `Models/Portfolio.cs`, `Repositories/PortfolioRepository.cs`, `FeatureRepository.cs`, `TeamRepository.cs`, `IFeatureRepository.cs`, `IPortfolioRepository.cs`, `API/APIHelpers.cs`, `FeaturesController.cs`, `PortfoliosController.cs`, `TeamsController.cs`, route and guard attributes of `PortfolioController` / `TeamController` / the metrics controllers, `DTO/PortfolioDto.cs`, `DtoExtensions.cs`, `Helpers/TeamExtensions.cs`, `DTO/FeatureDto.cs`, `Dependencies/DependencyDecision.cs`, `DependencyFacts.cs`, `WhatTheForecastWaitsFor.cs`, `TeamMetricsService.cs:1-80`, `WriteBackTriggerService.cs:62-103`, `DomainEvents/DomainEventDispatcher.cs`, `Data/DatabaseConfigurator.cs` (WAL, `busy_timeout=10000`, split queries), `LighthouseAppContext.cs` (indexes, cascades), `Csv/CsvWorkTrackingConnector.cs`, `CsvWorkTrackingOptionNames.cs`, `Tests/Architecture/*` (ArchUnitNET in use) | ✓ |
+| Frontend: `hooks/useLicenseRestrictions.ts` and its 23 call sites, `components/Common/LicenseStatus/LicenseStatusIcon.tsx` (key `["licenseStatus"]`), `App.tsx` (QueryClient: stale 5 min, retry 2), `pages/Overview/OverviewDashboard.tsx:106-240`, `pages/Portfolios/Detail/PortfolioDetail.tsx:186-370`, `PortfolioFeatureList.tsx`, `pages/Teams/Detail/TeamFeatureList.tsx`, `hooks/useParentWorkItems.ts`, `FeatureListDataGrid.tsx`, `DataGridBase.tsx` (`loading`, `emptyStateMessage`), `pages/Common/MetricsView/WidgetShell.tsx` (`WidgetBody`) | ✓ |
+| `Lighthouse.EndToEndTests/playwright.config.ts` (`testDir: "./tests"`) | ✓ |
+| `nwave-ai outcomes check-delta` | ⊘ no shell in this wave; left to the orchestrator |
+| `lighthouse-clients` | ⊘ outside this checkout; nothing they read changes (D20) |
+
+Highest ADR in use: ADR-256; no feature folder claims ADR-257 or later. This wave takes **ADR-257..ADR-262**.
+
+## Wave: DESIGN / [REF] Scope and Mode
+
+Application scope, PROPOSE mode, AFK. **Style unchanged**: ports-and-adapters inside the existing modular monolith; no
+new container, no new external call, no new package. Default (simplest-first) honoured: every slice is a narrower read
+or a moved thread, never a new tier. L1 and L2 C4 views change only by one dev-only actor (the harness); an L3 of the
+forecast round and its isolation is below because it has more than five collaborating parts.
+
+The invariant every slice rests on: **the answer does not change, only the work behind it.** Forecast outputs and
+Story 6354 fingerprints (C12), dependency verdicts, positions and RBAC readability (C1–C3), and every existing response
+body (D20) are identical before and after, on the dev backup and on the scaled set, SQLite and PostgreSQL.
+
+## Wave: DESIGN / [REF] What the Code Says That DISCUSS Could Not See
+
+| # | Fact | Where | Consequence |
+|---|---|---|---|
+| CF-1 | The update queue is one sequential reader that runs each update inline on whatever pool thread its loop resumes on (`UpdateQueueService.cs:796-804`; the loop itself stays on the pool after this Epic). `ForecastService.Simulate` calls `Task.Run`, which always schedules on the shared pool; `Parallel.For` inside it uses up to ⌊cores ÷ 2⌋ pool workers. The gather is a synchronous EF read on the loop's pool thread; the save is awaited (`ForecastService.cs:104`), but SQLite's provider does its work synchronously under the await, and the continuation resumes on a pool thread. | `UpdateQueueService.cs:792-812`; `ForecastService.cs:145-154, :205-221` | Slice 01 needs one hop at the edge of the round **and** `Simulate` must stop forcing the pool (DDD-5, DDD-6). |
+| CF-2 | **Hypothesis, unverified (OQ-1)**: recent Kestrel versions may run the heartbeat on a dedicated thread rather than a timer on the pool. Neither can be checked offline for the .NET 10 Kestrel in use. On a pool timer, the warnings measure pool starvation; on a dedicated thread, they measure stop-the-world GC pauses, CPU throttling, or work the heartbeat itself waits on. | runtime behaviour | Task 01a keeps both branches open and classifies stalls by measurement, not by this assumption (DDD-3); `design/upstream-changes.md` UC-2. |
+| CF-3 | `useLicenseRestrictions` is **permissive** while loading and on any failure (`licenseStatus === null` → every count-based answer `true`). Only 5 of the 23 call sites read the counts (two create gates on the Overview, three edit/update gates); 18 read the licence status. `LicenseStatusIcon` already queries `["licenseStatus"]` through TanStack Query. | `hooks/useLicenseRestrictions.ts:61-73`; `LicenseStatusIcon.tsx:27-45` | D30's "exactly as today" and AC-2.5 cannot both hold; UC-1, Q-M1 (scope: create gates only). The shared query reuses the existing key (DDD-11). |
+| CF-4 | `Feature.CanBeForecast` reads forecast **headers** (`TeamId`, stored `TotalTrials`) and Team work, never histogram rows. Dependency facts read `ReferenceId`, Portfolio ids and `IgnoreDependencies`, `CanBeForecast`, dependency references, positions. | `Feature.cs:122, :189-227`; `DependencyFacts.cs`; `ForecastBase.cs:26` | The whole graph for verdicts, and the forecast gather and fingerprint, can be read without histograms (DDD-12, DDD-17). |
+| CF-5 | Every round, computed or skipped, stages forecast write-back by resolving `portfolio.Features` → `feature.Forecast` percentiles on the Portfolio object `ForecastUpdater` read (`WriteBackTriggerService.cs:92, :287-294`); a Feature whose value resolves to null is silently dropped (`:211`). Today that Portfolio is tracked in the round's context, so it sees the new forecasts after a compute. Domain-event handlers open a scope of their own. | `ForecastUpdater.cs` `StageTheWriteBackAndAnnounce`; `WriteBackTriggerService.cs`; `DomainEventDispatcher.cs:11` | Any lighter Portfolio read in the round must not be what write-back resolves against: untracked copies never receive a computed round's forecasts and carry no histograms on a skip. Write-back gets its own read after the save (DDD-17, DDD-18, ADR-261). Handlers are unaffected. |
+| CF-6 | A forecast's histogram rows cascade-delete with it in the model. | `LighthouseAppContext.cs:278-282` | A computed round can replace forecasts without loading old histograms (ADR-261). |
+| CF-7 | SQLite runs WAL with `busy_timeout=10000`; the round saves in one transaction that today deletes every old histogram row one by one. | `DatabaseConfigurator.cs:67-68` | During a long save any other writer waits up to 10 s, then fails. Slice 05's lighter save shortens it; slice 01 does not change it. |
+| CF-8 | Every forecast trigger reads its Portfolio through `GetById` (every Portfolio with every histogram, W3b) to learn its Team ids. | `ForecastUpdater.cs` `TeamsOfThePortfolioWaitingToRefresh` | Slice 02 makes it one Portfolio; slice 05 makes it ids only (DDD-18). |
+| CF-9 | `GetByPredicate` runs `SingleOrDefault` in memory (`FeatureRepository.cs:52`), so two stored Features with the same reference id make the in-progress lookup throw today, which breaks `featuresInProgress` and the Feature WIP and worked-on counts of that Team. | `FeatureRepository.cs:50-53` | The batched read takes the first in forecast order, the dependency path's precedent (`DependencyHonourPolicy.cs:180-181`), and logs a warning (DDD-13, Q-M2). |
+| CF-10 | `FeatureListDataGrid` already forwards `loading` and `emptyStateMessage` to `DataGridBase`; `WidgetBody` is exported with `status`, `hasContentToDim`, `failureMessage`, `onRetry`. | `FeatureListDataGrid.tsx`; `DataGridBase.tsx:167-170, :363, :493`; `WidgetShell.tsx` | Slice 04's looks need no new component (DDD-16). |
+| CF-11 | The Features grid never reads `teamForecasts`; only the Delivery timeline does. `Feature.Forecast`, which the forecast column shows, is `AggregatedWhenForecast(Forecasts)`: a fold over **every per-Team completion forecast** (`Feature.cs:53-57`); there is no Feature-level completion row. Only start forecasts have a Feature-level row (`TeamId` null, `Feature.cs:63-67`). | search of `teamForecasts` in `src`; `Feature.cs` | The lean row drops `teamForecasts` and per-Team start histograms; the per-Team completion histograms must still be read (ADR-260, DDD-15). |
+| CF-12 | Usage events start in the browser with closed shapes the backend validates; the detail pages already hold `PortfolioDto.features` / `TeamDto.features`. | `Tests/Integration/UsageData/*`; `PortfolioDto.cs`, `TeamExtensions.cs` | The size bucket needs no new read (DDD-8). |
+| CF-13 | The CSV connector reads its rows from the owner's `DataRetrievalValue` and supports Parent and Depends-On columns. | `CsvWorkTrackingConnector.cs:208, :425, :492-508` | The scaled set can be built entirely through the public REST API, with no production code (DDD-1). |
+| CF-14 | `ForecastUpdater` has 7 constructor parameters, `ForecastService` 7, `FeaturesController` and `PortfoliosController` carry S107 suppressions. | constructors | No new constructor parameter on those four (DDD-6, DDD-15). |
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| `UpdateQueueService` | `BackgroundServices/Update/UpdateQueueService.cs` | Sequential update loop, holds, Stop, Cancel all, write-back round | **REUSE AS-IS** | The round stays a queued update; only where its body runs moves (ADR-257). |
+| `ForecastUpdater` | `BackgroundServices/Update/ForecastUpdater.cs` | The round's imperative shell | **EXTEND** | Hops onto the lane once (01); its Portfolio read becomes the catalogue read and its trigger reads Team ids (05); one Debug timing line (01a). |
+| `ForecastService` | `Forecast/ForecastService.cs` | Gather, fingerprint, simulate, save | **EXTEND** | `Simulate` follows the current scheduler (01); the gather reads without histograms (05). |
+| `ForecastSimulationLimits` | `Models/Forecast/ForecastSimulationLimits.cs` | `MostRunsAtOnce` | **REUSE AS-IS** | Sizes the lane, so the bound stays one number (ADR-248). |
+| `PortfolioRepository` / `IPortfolioRepository` | `Repositories/PortfolioRepository.cs` | Portfolio reads, set-based fingerprint writes | **EXTEND** | `GetById` filters in the database; catalogue readers; Team-ids and Feature-count reads (02, 05, 06). |
+| `FeatureRepository` / `IFeatureRepository` | `Repositories/FeatureRepository.cs` | Feature reads; narrow-reader precedent (`GetAllReferenceIds`, `ConfirmForecastsAsOf`) | **EXTEND** | Whole graph without histograms; by reference ids; by owner for the list; gather without histograms (03, 04, 05). |
+| `DependencyFacts` / `DependencyDecision` / `WhatTheForecastWaitsFor` | `Dependencies/` | The one projection and decision | **REUSE AS-IS** | Fed lighter entities; the code that decides is untouched (C2). |
+| `TeamMetricsService` | `TeamMetricsService.cs` | In-progress Features per Team, cached | **EXTEND** | In-progress as reference ids; counts from them; one batched read for the endpoint (03). |
+| `FeaturesController` | `API/FeaturesController.cs` | Rows, dependencies, positions, move verdicts | **EXTEND** | Swaps its whole-graph read (03); its private dependency rendering moves to one shared collaborator (04). |
+| `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` | `API/` | Catalogue and detail reads | **EXTEND** | Read through the catalogue readers; one new `size` action on `PortfolioController` (02, 06). |
+| `PortfolioUpdater` | `BackgroundServices/Update/PortfolioUpdater.cs` | End of a Features update | **EXTEND** | One log line over the threshold (06). |
+| `useLicenseRestrictions` | `hooks/useLicenseRestrictions.ts` | Licence gating | **EXTEND** | Shared queries, a status; while not ready only the create answers refuse, edits as today (02). |
+| `LicenseStatusIcon`'s query | `components/Common/LicenseStatus/LicenseStatusIcon.tsx` | `["licenseStatus"]` | **REUSE** the key and query function | One request per page for both (ADR-259). |
+| `PortfolioFeatureList`, `TeamFeatureList` | `pages/…/Detail/` | The two Features tabs | **EXTEND** | Read through one keyed hook; stop calling `features/ids`, `useParentWorkItems` and per-Team `featuresInProgress` (04). |
+| `FeatureListDataGrid`, `DataGridBase` | `components/Common/` | Grid, `loading`, `emptyStateMessage`, hide-completed | **EXTEND** | Empty and all-hidden messages; `data-widget-status` on the container (04). |
+| `WidgetBody` | `pages/Common/MetricsView/WidgetShell.tsx` | Dimmed-under-spinner and could-not-load looks with Retry | **REUSE** | The house look for slow and failed data (CLAUDE.md). |
+| `useParentWorkItems` | `hooks/useParentWorkItems.ts` | Parent names | **REUSE AS-IS** for its other callers | The two lists take parents from the list response instead. |
+| Portfolio edit page (`ModifyProjectSettings`) | `components/Common/ProjectSettings/` | The query editor | **EXTEND** | The size note above the query (06). |
+| Usage-data tab-opened events | `Models/UsageData/`, frontend reporter | `PortfolioTabOpened`, `TeamTabOpened` | **EXTEND** (DEVOPS designs) | A closed size bucket from data already on screen (DDD-8). |
+| Playwright project | `Lighthouse.EndToEndTests/` | API helpers, browser driving | **EXTEND** with a separate `perf/` folder and config | Outside `testDir: "./tests"`, so never in CI (DDD-1). |
+
+**CREATE NEW** (each with "no existing alternative"):
+- `ForecastLane` (dedicated-thread `TaskScheduler`, singleton): nothing in the code or the BCL runs tasks on a fixed set of
+  non-pool threads; `ConcurrentExclusiveSchedulerPair` and `LongRunning` both leave work on the pool (ADR-257).
+- `FeatureListController` (two routes) + driving port `IFeatureListService` + `FeatureListService` + `FeatureListDto` /
+  `FeatureListRowDto`: no owner-keyed list endpoint exists; `FeaturesController` is at S107 and on Epic 6264's S05a
+  baseline, so it should not grow (ADR-260).
+- One shared dependency-rendering collaborator, extracted from `FeaturesController`'s private `WhatTheseFeaturesWaitOn` /
+  `DependenciesAsRead`: two endpoints must render verdicts identically, so it is one piece of knowledge.
+- `useFeatureList` hook: no keyed query for list rows exists.
+- `PortfolioSize` domain value and `GET /portfolios/{id}/size`: no rule or read for a Portfolio's size exists (ADR-262).
+- `Lighthouse.EndToEndTests/perf/` (generator and harness, dev-only): no tool builds a large instance; the demo data is
+  102 Features and the maintainer ruled out a demo scenario (Q10).
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Slice | Decision | Options weighed (rejected, one line each) |
+|---|---|---|---|
+| DDD-1 | 01a | **The generator and harness live in `Lighthouse.EndToEndTests/perf/`**, a Playwright folder with its own `playwright.perf.config.ts`, outside `testDir: "./tests"`, so CI never runs it and nothing of it is in any build. The generator writes CSV text for 8 Teams and 6 Portfolios (D29 names) and builds the instance **through the public REST API**: connections, Teams and Portfolios whose CSV query carries the rows (CF-13), then Team and Portfolio updates and forecasts. It needs the Premium licence fixture (P2). | A dev-only seeder in the backend: production assembly, so "not reachable in a release build" becomes a claim to prove. An NUnit fixture: in-process, cannot observe a real Kestrel's pool or heartbeat, and could be swept into `dotnet test`. A `DemoDataService` scenario: ruled out by the maintainer (Q10). |
+| DDD-2 | 01a | **Readings and instruments.** Server: request durations from ASP.NET Core's request-finished log lines and Entity Framework command durations (`Database.Command` at Information), both switched on by configuration only; payload bytes from Playwright. Runtime: `dotnet-counters` on `System.Runtime` (pool queue length, pool thread count, GC pause time, gen 2 count) sampled each second, cgroup `cpu.stat` throttling when in a container, and a log scan for Kestrel heartbeat warnings. Client: Playwright request log (count, order, bytes per open), marks for first navigation paint, Settings usable after the Overview, and first Feature row; a long-task observer injected before load; one Chrome trace per open for scripting versus rendering. Median of 5 after one warm-up, min–max, cold start apart; idle, during a computed round and during a skipped round; 100 / 400 / 920; SQLite and PostgreSQL (`examples/postgres`); `main` and the v26.10.19.10 tag. | OpenTelemetry exporters or Prometheus: a new dependency for a one-off baseline. BenchmarkDotNet: micro-level, not end to end. Browser HAR only: no server split. |
+| DDD-3 | 01a | **Ratios and classification, thresholds fixed before reading.** Windows of 5 minutes each: **T** scripted page traffic only, **R** a round only, **RT** both; **C** = RT with only the pool's minimum worker threads raised (`System.Threading.ThreadPool.MinThreads`, or its `DOTNET_` environment form in a container); **C0** = T with the same raised minimum and no round (the page-only control: raising the minimum adds threads, context switches and allocation, so C0 shows what the knob costs on its own). *Q_r* = delay(R) ÷ delay(RT), for heartbeat delay (primary, K3's measure) and integrated pool queue length (secondary). *S_q* = Σ Entity Framework command time ÷ Σ request wall time over requests that finish inside RT's round (a floor: materialisation is not counted). **Classification of RT's stalls** (decided now, applied to the readings): **pool starvation** if C removes ≥ 80% of RT's heartbeat delay and C0 shows no new warnings; **GC** if GC pause time is ≥ 10% of wall time across RT, or ≥ 50% of the wall time inside the ±1 s around each warning; **CPU quota** if throttled periods are ≥ 20% of all periods (cgroup `cpu.stat`) across RT. More than one may hold; each is reported. **D27 ordering per branch**: pool starvation → 01's lane as planned, then 03 (instance-wide request reads), 02, 05; GC → 01 still ships (K3 is an exit criterion) but 05 and 03 (smaller tracked graphs) move ahead of 02; CPU quota → 01 ships, the finding goes to the maintainer as host sizing (nothing in the Epic adds CPU), and the order stays 03, 02, 05 by measured share. The heartbeat thread question (OQ-1) changes how Q_r is read, never these thresholds. **Calibration**: a computed round at 920 lasts ≥ 60 s and ≥ 3× the idle first-row time, else the set is reshaped first. **Falsifier**: idle 920 first row under ~10 s. All recorded before slice 01's isolation step (AC-1.0, D27). | Absolute seconds against the reporter's (unknown hardware). Q_r from one window (cannot separate round from traffic). Thresholds chosen after the readings (lets the data pick the story). |
+| DDD-4 | 01a | **The only production change of Task 01a is log-only**: `ForecastUpdater`'s existing Debug line splits the round into gather, simulate, save and publish milliseconds. No behaviour, setting or endpoint changes. The v26.10.19.10 readings use the Refresh History round duration, which that tag already writes. | An `EventSource` or a `Meter`: more code for the same four numbers. |
+| DDD-5 | 01 | **The forecast round runs on a dedicated `ForecastLane`** (ADR-257): a singleton `TaskScheduler` over `MostRunsAtOnce` named background threads. | Raising the pool's minimum (kept as control experiment C). A separate forecast process or container (new deployable, breaks standalone). A hosted service with its own forecast queue (leaves 6311's holds, Stop, Cancel all). `ConcurrentExclusiveSchedulerPair` / `LongRunning` (still on the pool). Below-normal priority (ignored in Linux containers). Async request paths (Dissent B, a later Epic). |
+| DDD-6 | 01 | **One hop, in `ForecastUpdater.Update`, and what it does and does not cover.** Mechanism: `Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.DenyChildAttach, lane.Scheduler).Unwrap()`, awaited by the queue's update task (the loop's thread is released, not blocked; the loop itself stays on the pool, `UpdateQueueService.cs:796-804`). Inside the body, every `await` in Lighthouse's own round code resumes on `TaskScheduler.Current`, which is the lane, because ASP.NET Core has no synchronisation context; so round code must not use `ConfigureAwait(false)` on its own awaits (none does today on that path). EF Core and Npgsql internals do use `ConfigureAwait(false)`, so their internal continuations (I/O completions inside a query or save) run briefly on pool threads: **accepted and stated**, those are short and non-blocking. The lane is resolved from the scope's service provider (constructor stays at 7, CF-14). **`Simulate`** starts the simulation with `Task.Factory.StartNew(…, cancellationToken, DenyChildAttach, TaskScheduler.Current)` and awaits it, and sets `ParallelOptions.TaskScheduler = TaskScheduler.Current`: on the lane the workers are lane threads; for a manual `When` from a page the current scheduler is the pool, so the request thread is still released while the simulation runs and the forecast keeps its own half (ADR-248, NMD-14). The per-update cancellation token, the write-back round and `AsyncLocal` contexts flow to the lane with the execution context. | The lane injected into `ForecastService` (8th parameter, S107; manual forecasts would queue behind a background round). A scheduler parameter on `IForecastService` (leaks threading into the port). Hopping inside `ForecastService` (the shell's reads, confirm, staging, publish and record would stay on the pool). Running the simulation inline without `StartNew` (a manual `When` would block its request thread). |
+| DDD-7 | 01 | **Lane size = `MostRunsAtOnce`**, so CPU use is unchanged; the startup banner reads the lane: "Forecast rounds run on N dedicated threads; each forecast uses up to N of M cores". | A separate setting: `DOTNET_PROCESSOR_COUNT` already moves the bound (ADR-248). One thread for the round body plus N workers: an idle extra thread, since `Parallel.For` runs on its calling thread. |
+| DDD-8 | 01 (D24) | **The size bucket is computed in the browser from the owner payload the detail page already holds** (`portfolio.features.length`, `team.features.length`), and the tab-opened event carrying it is sent once that payload has arrived. DEVOPS fixes the closed enum and the backend's shape check gains it; never the count, never the id. No new read. | A server-side count per tab open: a request for telemetry. An `Unknown` bucket sent before the payload: a value nobody can read; DEVOPS may still add it. |
+| DDD-9 | 02 | **`PortfolioRepository.GetById` filters in the database** with unchanged includes, so every caller (detail pages, `ApiHelpers`, the forecast updater) reads one Portfolio. | Leaving it for Epic 6264's S05d: the forecast updater calls it on every trigger (CF-8), today. |
+| DDD-10 | 02 | **Catalogue readers** on `IPortfolioRepository` (provisional names `AllWithoutForecasts()`, `OneWithoutForecasts(id)`): root, connection and options, Features with Team work and Teams, **no forecasts**, no tracking with identity resolution. `GET /portfolios`, `GET /teams`, `GET /teams/{id}`, `GET /portfolios/{id}`, `GET /portfolios/{id}/settings` build their unchanged DTOs from them (ADR-258). | Projection records with new DTO constructors (a second mapping of every DTO; bodies must stay byte-identical). Caching the heavy read (stale, per replica, the same memory). |
+| DDD-11 | 02 | **Licence gating is one shared query per answer** (ADR-259): `["licenseStatus"]` (the key `LicenseStatusIcon` already uses) and the counts from shared `["teams"]` / `["portfolios"]` list queries, enabled only when the licence is known and not Premium, stale time 0. The hook adds `status: loading / ready / failed`. **Scope of the refusal (Q-M1)**: while `loading` or `failed`, only the count-gated **create** actions (new Team, new Portfolio) are refused, with "Couldn't check your licence" when failed and no reason while loading; edits and updates of existing Teams and Portfolios (`canUpdateTeamData`, `canUpdatePortfolioData` in `EditTeam`, `ModifyProjectSettings`, the detail pages) stay allowed as today. `ready` answers exactly as today. The server's `LicenseGuard` is unchanged. Count meaning unchanged (the served, RBAC-filtered list). | A new count endpoint (new contract; RBAC count re-implemented). A context provider (a second cache). Refusing edits too (a transient failure would block saving settings someone is mid-way through, for an instance already within its licence; the server still refuses anything over the limit). Keeping everything fail-open (contradicts AC-2.5 for creation). |
+| DDD-12 | 03 | **The dependency graph is read without histograms** (ADR-258): `IFeatureRepository` reader (provisional `WholeGraphWithoutHistograms()`) with Portfolios, Team work and Teams, dependency references and completion-forecast headers; no histogram rows, no start forecasts; no tracking **with identity resolution** (so shared Teams and Portfolios stay one object, as in a tracked read). `FeaturesController` passes it to the unchanged `DependencyFacts` / `DependencyDecision`. Used for `features/ids` and `features/references`; `GET /features` keeps its own full list. | A projection record plus a second `DependencyFacts.About` (two projections, the class's own warning). Plain no-tracking (separate Team objects per row; harmless for `Any()` but not provably identical). Requested Features only (C2). |
+| DDD-13 | 03 | **In-progress by reference id, and a rule for a reference id stored twice (maintainer-visible, Q-M2).** `TeamMetricsService` derives a Team's in-progress Feature references from its WIP snapshot (it already does) and caches them under today's key and lifetime; Feature WIP and worked-on counts use them, with no Feature read. The `featuresInProgress` endpoint resolves them with one database-side read by reference id (provisional `WithReferenceIds(...)`, full includes), keeps first-seen order and the "not tracked by Lighthouse" placeholders. **Duplicates**: today `GetByPredicate`'s `SingleOrDefault` (`FeatureRepository.cs:52`) throws when two stored Features share a reference id, which breaks `featuresInProgress` and that Team's WIP counts. The new read takes **the first in forecast order**, the rule the dependency path already uses (`DependencyHonourPolicy.cs:180-181`), and logs one warning per refresh naming the reference id. Default: adopt (it turns a crash into an answer). Test: two Features with one reference id → the endpoint answers with the first in forecast order, the counts count it once, one warning. `TeamMetricsService` and `ForecastService` take `IFeatureRepository` instead of `IRepository<Feature>` (same parameter count). | Keep throwing (a crash on data the tracker produced). Return both (changes the endpoint's body and the counts). One `GetAllByPredicate` with `Contains` in `TeamMetricsService` (adds the call to the ratchet's biggest file). Per-reference reads (instance-wide per in-progress Feature, W5). |
+| DDD-14 | 04 | **Owner-keyed list endpoint** (ADR-260): `GET api/latest/portfolios/{portfolioId}/feature-list` (`PortfolioRead`) and `GET api/latest/teams/{teamId}/feature-list` (`TeamRead`), each also under `api/v1` as every controller is. Body `{ features, parents, activeWork }`; a row is a **field subset of `FeatureDto` with the same names and shapes**, without `teamForecasts`, parsed by the existing `Feature` model. Same order, same readability. | One endpoint with an owner discriminator (custom guarding). Full `FeatureDto` rows (per-Team start histograms and payload the grid ignores). A POST with an id body (the client still owns the id list). GraphQL (new technology). A precomputed percentile read model (the larger win; waits for 6264, recorded as the K2 follow-up). |
+| DDD-15 | 04 | **Server path**: thin `FeatureListController` (no repository dependency) → driving port `IFeatureListService` → the owner's Features read in the database by owner via `IFeatureRepository`, with **every per-Team completion forecast and its histogram** (`Feature.Forecast` folds all of them, `Feature.cs:53-57`; there is no Feature-level completion row to narrow to) and **only the Feature-level start forecast** (`TeamId` null) with its histogram; per-Team start forecasts are not read. Then the histogram-free graph (DDD-12), `IFeaturePositionMap`, `IFeatureMoveAuthorization`, the shared dependency collaborator extracted from `FeaturesController`, RBAC readability via `IRbacAdministrationService`, and `TeamMetricsService`'s in-progress references. Parents: a database-side read of reference, name, url and Portfolio ids, named only when readable, as `/features/references` does. Constructor ≤ 7. **K2 consequence**: the completion histograms of the owner's Features remain the largest part of the list read; the per-Team start histograms (about half of all start rows) and the payload go. K2-miss risk stays **M** (see Risks). | Growing `FeaturesController` (S107, S05a baseline). Copying the dependency rendering (two renderings of one verdict). Narrowing completion to one row (none exists; it would change `Feature.Forecast`). |
+| DDD-16 | 04 | **Frontend**: `useFeatureList(owner)` over a keyed TanStack query `["feature-list", "portfolio" \| "team", id]`; `PortfolioDetail` and `TeamDetail` invalidate that key on a completed Features or Forecasts update (the handler that refetches the owner today). Looks (below): first answer → `DataGridBase` loading placeholders (today's); refetch with rows → `WidgetBody` dimmed under a small spinner; failure → `WidgetBody` could-not-load with Retry; empty and all-hidden → `DataGridBase` `emptyStateMessage`. The container carries `data-widget-status` (`loading` / `ready` / `error`) for the E2E page object (AC-4.7). The two lists stop calling `features/ids`, `useParentWorkItems` and per-Team `featuresInProgress`. Hide completed stays client-side (maintainer). | Local `useState` + `useEffect` as today (no keyed cancellation; a late answer can land). A new list-status component (CLAUDE.md: reuse `WidgetShell`'s look). |
+| DDD-17 | 05 | **The gather reads forecast headers, not histograms** (ADR-261): Features of the involved Teams, tracked, with Portfolios, Team work and Teams, dependency references and completion-forecast headers. Fingerprint and skip are decided on that (CF-4). A computed round replaces forecasts as today; old histogram rows go by the database cascade (CF-6). **Write-back resolves against its own read (B1, option chosen: a fresh read after the save).** After the save and the confirm-stamp, and only when the Portfolio's connection has a forecast write-back mapping that the licence allows, `ForecastUpdater` reads the Portfolio's Features with their completion and start forecasts **and histograms**, no tracking, from the database, and passes that to write-back resolution. A computed round therefore resolves the forecasts just saved; a skipped round the stored ones with their histograms; both stage today's values. Without a mapping nothing extra is read. | (a) Pass the tracked gathered Features: they are the Features of the involved Teams, not the Portfolio's, so membership differs at the edges (a Portfolio Feature with no Team work), and on a skip they carry no histograms. (b) Keep the full tracked `GetById` read in the round: its histograms are identity-resolved into the gather and deleted row by row again, undoing slice 05. Set-based delete plus bulk insert (provider-specific; the general bulk library is dual-licensed commercial). Storing percentiles instead of histograms (C12). |
+| DDD-18 | 05 | **The round's other reads shrink**: `ForecastUpdater` reads its Portfolio through the catalogue reader (no forecasts) for what it needs of the root (name, id, fingerprint, connection and mappings, Teams, Feature count), and the trigger's collision check reads the Portfolio's Team ids only (provisional `TeamIdsOf(portfolioId)`). That Portfolio object is **never** what write-back resolves against (DDD-17). Tests (SQLite and PostgreSQL): a computed round and a skipped round, each with a forecast write-back mapping on a Premium licence, stage exactly the field values today's code stages for the same seed; a round without a mapping reads no histograms. | Keeping `GetById` there (re-imports histograms into the tracked gather). |
+| DDD-19 | 06 | **Size note** (ADR-262): `PortfolioSize` in `Models` (count, threshold 100, "over" = more than 100); `GET api/latest/portfolios/{portfolioId}/size` → `{ featureCount, threshold, isOverThreshold }`, `PortfolioRead`, one `COUNT` (provisional `FeatureCountOf(id)`); `PortfolioUpdater` logs one Information line after a successful Features update when over, from the count it holds. **Looks (decision, maintainer may overturn, Q-M3)**: loaded and over → the info note, worded as of the last update ("This {Portfolio} holds {N} {Features} (as of its last update). …"); loading → nothing yet; **failed → the same info Alert with one line, "Couldn't check this {Portfolio}'s size."**, never silent (CLAUDE.md: a failure must not look like "no data"); at or under 100, or never updated → nothing. Copy provisional, settled at DISTILL's sketch. Save never waits on the count. | A field on `PortfolioSettingDto` (an input DTO; clients read it). Counting on the client (two threshold constants). Blocking validation (maintainer: a nudge). Silent failure (DISCUSS's default; hides a failed read as "under 100"). |
+| DDD-20 | all | **Indexes: none planned.** Every new filter is on a key or a foreign key that is already indexed (Portfolio id, Team id through `FeatureWork`), except `Features.ReferenceId` (the in-progress and parent lookups), a few thousand rows. **Condition**: if the slice-03 or slice-04 command log shows a reference-id lookup above 50 ms at 3,000 Features, add one index on `Features.ReferenceId`, expand-only, through `CreateMigration` for every provider. No column is added anywhere. | Adding the index up front: a migration for an unmeasured cost. |
+| DDD-21 | all | **Epic 6264 fit** (D28, DV-9): every new reader is a method on an existing repository port (`IPortfolioRepository`, `IFeatureRepository`), takes and returns no `IQueryable`, `Expression` or `Func`, and is named for what it reads and what it leaves out. The S05a ratchet is **per file** (a file is on the list or not), so the rule here is: no file that does not call `GetAllByPredicate` today starts to, and no touched file calls it more often. Effects: `FeaturesController` drops one of its three calls (stays on the list); `ForecastService` drops its only call (`ForecastService.cs:117`) in slice 05, so it leaves; `TeamMetricsService` drops its `GetByPredicate(Func)` call (S05b's concern, not S05a's). **Recorded for 6264's DESIGN, without editing its files**: its S05a baseline of 14 (its `feature-delta.md:215`) omits `ForecastService`, which calls `GetAllByPredicate` today; after slice 05 the omission is moot. The new controller depends on no repository. Names are provisional until 6264's S01 glossary; S05c–e and S13 adopt or rename them. | Waiting for 6264's ports (6400 lands first, maintainer). Role-specific reader interfaces now (6264's S05c–e own that split). |
+| DDD-22 | all | **Enforcement**: see Architecture Enforcement; three layers for the lane (behavioural probe, ArchUnitNET structure, identity goldens), parity goldens for every unchanged body, property-based verdict identity. | Convention and review only (ADR rules without enforcement erode). |
+| DDD-23 | 01 | **`ForecastLane` lifecycle.** A singleton created at startup, disposed by the container after the hosted services have stopped. On host stop the update queue's existing drain (`UpdateQueueService.DrainAsync`: complete the channel, wait for the in-flight update up to the shutdown timeout, then abandon) runs first; an in-flight round is stopped through its existing cancellation token, which leaves between simulated runs before anything is saved (ADR-249), so nothing is half-saved. A save already in its transaction either commits or is rolled back by the database if the process ends; no fingerprint is recorded for an unfinished round, and every start forgets fingerprints anyway (Story 6354). Disposal stops accepting tasks, completes the lane's queue, and joins its threads with a short timeout; the threads are background threads, so they never hold the process open. | Foreground threads (could block shutdown). Disposing the lane before the queue drains (an in-flight round would fault instead of cancelling). |
+| DDD-24 | 02 | **The Overview's looks are stated, unchanged in kind.** Slice 02 changes what its two list requests cost, not how the page waits: the header and its links render at once (W1); the page body shows `LoadingAnimation`'s spinner while the Portfolios, Teams and connections are on their way, and its existing "Error loading data. Please try again later." when one fails. **Reporter's "scaffold first" intent**: slice 02 serves it by making the lists themselves cheap (the server no longer reads histograms to name them), so the wait for the body becomes about one cheap request; it does not render the lists before the rest of the body, and it does not cache them across visits (client cache is a follow-up, Out of Scope). | A per-section skeleton on the Overview (a new look for a page whose wait this slice shortens; reconsider only if K1 is missed after 02). |
+
+## Wave: DESIGN / [REF] Task 01a — the measurement harness (dev-only)
+
+```
+Lighthouse.EndToEndTests/
+  playwright.config.ts            testDir ./tests   (CI; unchanged)
+  playwright.perf.config.ts       testDir ./perf    (never in CI)
+  perf/
+    scaled-set   -> writes CSV text for 8 Teams + 6 Portfolios (D29), builds the instance over REST:
+                    connection, Teams (CSV rows as their query), Portfolios (920 / 400 / 100 + three fillers to
+                    ~3,000 Features), parents and Depends-On links, then Team + Portfolio updates and forecasts
+    readings     -> opens Overview, Overview->Settings, Portfolio Features tab, Team Features tab;
+                    idle / during a computed round / during a skipped round; median of 5 after a warm-up
+    rounds       -> starts a computed round ("Update forecast" forgets the fingerprint) or a skipped one
+                    (an update that changes nothing), and waits on the Task Manager status
+    collect      -> reads request and EF log lines, dotnet-counters CSV, cgroup cpu.stat, heartbeat lines;
+                    writes one results table per run for this delta
+```
+
+- **Shape of the set** (assumed, calibrated by ratio): every Feature has 0–15 remaining child Work Items spread over
+  1–3 of the 8 Teams; each Team has about 90 days of closed history; about 10% of Features carry Depends-On links (some
+  across Portfolios); about half have a parent above them.
+- **Both builds**: the harness runs against `main` and against a worktree at the v26.10.19.10 tag. If the tag's API
+  shape differs, the seeding step carries a small per-version map (OQ-4).
+- **Results** go into this delta as `Wave: DELIVER / [REF] Baseline (Task 01a)`, with the D27 re-score (G2, Q_r, S_q,
+  control experiment C, Dissent A/B, order of 02, 03, 05) before slice 01's isolation step starts.
+- **Never ships**: no backend code except the log-only Debug split (DDD-4); no demo scenario; not a CI budget.
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+| Slice | NEW | MODIFIED | UNCHANGED (named because a reader might expect a change) |
+|---|---|---|---|
+| 01a | `Lighthouse.EndToEndTests/perf/` (generator, harness, perf config) | `ForecastUpdater` (Debug timing split, log-only) | Everything else |
+| 01 | `ForecastLane` (+ registration, banner line) | `ForecastUpdater.Update` (one hop); `ForecastService.Simulate` (current scheduler); usage-data reporter of the two tab-opened events (bucket, with DEVOPS) | `UpdateQueueService`, `UpdateServiceBase`, the Team and Portfolio updaters, holds, Stop, Cancel all, `ForecastSimulationLimits`, the simulation, every HTTP contract |
+| 02 | — | `PortfolioRepository` (`GetById` in the database; catalogue readers), `IPortfolioRepository`; `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` (read through the catalogue); `useLicenseRestrictions` (shared queries, status); `OverviewDashboard` (the two create actions show the could-not-check reason on `failed`) | Response bodies; `LicenseGuard`; `useRbac`; the edit and update gates in `PortfolioDetail`, `ModifyProjectSettings`, `TeamDetail`, `EditTeam`; the Overview's `LoadingAnimation` spinner and error look |
+| 03 | — | `IFeatureRepository` / `FeatureRepository` (whole graph without histograms; by reference ids); `FeaturesController` (graph read); `TeamMetricsService` / `ITeamMetricsService` (in-progress references, batched read) | `DependencyFacts`, `DependencyDecision`, `FeaturePositionMap`, `FeatureMoveAuthorization`; all response bodies |
+| 04 | `FeatureListController`, `IFeatureListService`, `FeatureListService`, `FeatureListDto` / `FeatureListRowDto` / parent and active-work items; the shared dependency-rendering collaborator; `useFeatureList`; `FeatureService.getFeatureList` (frontend service method) | `FeaturesController` (uses the shared collaborator); `IFeatureRepository` (owner reads); `PortfolioFeatureList`, `TeamFeatureList`, `FeatureListDataGrid` (messages, status attribute); `PortfolioDetail`, `TeamDetail` (invalidate the key); the Features-tab E2E page object (waits on `data-widget-status="ready"`) | `GET /features`, `/features/ids`, `/features/references`, `FeatureDto`, `useParentWorkItems`, the Delivery timeline, the `Feature` model |
+| 05 | — | `ForecastService` (gather without histograms), `IFeatureRepository` (team gather; the Portfolio's Features with full forecasts for write-back), `ForecastUpdater` (catalogue Portfolio read, Team-ids trigger check, write-back resolved against its own read after the save), `IPortfolioRepository` (`TeamIdsOf`) | The fingerprint and its members, `ForecastRunOutcome`, the CAS and forget writes, `WriteBackTriggerService`, domain-event handlers |
+| 06 | `PortfolioSize`; `GET /portfolios/{id}/size` (action on `PortfolioController`); the note in the edit page | `IPortfolioRepository` (`FeatureCountOf`); `PortfolioUpdater` (log line); `PortfolioService.ts` (`getSize`) | Save, validation, updates |
+
+### Contract shapes (effects)
+
+| Component | Shape | Universe | How the crafter asserts it |
+|---|---|---|---|
+| Catalogue readers, whole-graph reader, reference-id reader, owner list read, `TeamIdsOf`, `FeatureCountOf` | pure read (no tracking) | the database rows they select | No `SaveChanges` path can reach them (no tracking); golden bodies equal |
+| Gather without histograms | read, tracked (the round writes these Features) | Features of the involved Teams | The computed round's stored rows equal the old code's for the same seed |
+| Write-back read after the save | pure read (no tracking), only with a forecast mapping | the Portfolio's Features with full forecasts | Staged values equal today's for a computed and a skipped round |
+| `ForecastService.UpdateForecastsForPortfolio` | bounded change | the forecasts of the gathered Features, nothing else | Row diff on SQLite and PostgreSQL limited to forecast and histogram tables of those Features |
+| `ForecastLane` | effect shell (threads) | its own threads | Probe test: round work never on a pool thread |
+| `IFeatureListService.For(owner)` | pure read | the owner's Features, the graph, positions, verdicts | Parity with `/features/ids`, `/features/references`, `featuresInProgress` |
+| `PortfolioSize` | pure function | count, constant | Unit at 100 / 101 |
+| `useLicenseRestrictions` | pure derivation over shared queries | three query states | Hook tests per state |
+
+## Wave: DESIGN / [REF] Driving Ports
+
+| Port | Kind | Slice | Change |
+|---|---|---|---|
+| Header links (Overview, System Settings) | UI | 02 | Unchanged |
+| `GET /portfolios`, `GET /teams`, `GET /teams/{id}`, `GET /portfolios/{id}`, `GET /portfolios/{id}/settings` | HTTP | 02 | Same bodies, catalogue reads behind them |
+| `GET /features/ids`, `GET /features/references`, `GET /teams/{id}/metrics/featuresInProgress` | HTTP | 03 | Same bodies, lighter reads |
+| `GET /portfolios/{id}/feature-list`, `GET /teams/{id}/feature-list` → `IFeatureListService` | HTTP, **new** | 04 | Additive |
+| `GET /portfolios/{id}/size` | HTTP, **new** | 06 | Additive |
+| Update queue: Team and Portfolio updates, "Update forecast", refresh buttons | queue | 01, 05 | Forecast rounds run on the lane |
+| Task Manager Stop / Cancel all; Refresh History | UI | 01, 05 | Unchanged |
+| Portfolio edit page | UI | 06 | Note above the query |
+| Usage-data tab-opened events | browser → backend | 01 | Closed bucket property (DEVOPS) |
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port | Adapter | Change |
+|---|---|---|
+| `IPortfolioRepository` | `PortfolioRepository` (EF Core; SQLite and Npgsql) | `GetById` in the database; catalogue readers; `TeamIdsOf`; `FeatureCountOf` |
+| `IFeatureRepository` | `FeatureRepository` (EF Core) | Whole graph without histograms; by reference ids; by owner for the list; team gather without histograms; histogram load for given Features |
+| `ITeamMetricsService` (application service used as a port by controllers) | `TeamMetricsService` | In-progress references |
+| `IRbacAdministrationService` | `RbacAdministrationService` | Unchanged (readability as today) |
+| Thread scheduling | `ForecastLane` | New (in-process; no external system) |
+| Work tracking connectors, PostHog forwarder, Redis substrate | as today | Unchanged; **no new external call** |
+
+**External integrations**: none new. Contract tests are not newly recommended; the PostHog pipe gains one closed
+property on two existing events through the existing backend forwarder (DEVOPS).
+
+## Wave: DESIGN / [REF] Technology Choices
+
+No new package. Everything uses what is installed:
+
+| Need | Choice | Licence | Why not something new |
+|---|---|---|---|
+| Dedicated threads | `System.Threading.Thread` + a small `TaskScheduler` subclass (BCL) | MIT (.NET) | No OSS scheduler package is needed for ~60 lines; the BCL has none built in |
+| Narrow reads | EF Core 10 includes, filtered includes, `AsNoTrackingWithIdentityResolution`, `ExecuteUpdate` precedent | MIT | Already the persistence adapter |
+| Shared client cache | TanStack Query (already in `App.tsx`) | MIT | Already the cache |
+| Harness | Playwright (already the E2E tool), `dotnet-counters` (Microsoft diagnostics, MIT) | Apache-2.0 / MIT | OpenTelemetry or BenchmarkDotNet add dependencies for a one-off baseline |
+| Bulk insert for the save | **Rejected**: EFCore.BulkExtensions (dual licence with a commercial tier); Npgsql binary `COPY` (PostgreSQL only) | — | OSS-first, two providers |
+
+## Wave: DESIGN / [REF] C4 — System Context (L1)
+
+```mermaid
+C4Context
+  title System Context — Lighthouse on a large instance (epic-6400)
+  Person(reader, "Delivery lead / Product owner", "Reads a large Portfolio's or Team's Features")
+  Person(operator, "Platform operator", "Self-hosts; reaches Settings; watches forecast rounds")
+  Person(admin, "Config admin", "Writes a Portfolio's query")
+  System(lighthouse, "Lighthouse", "Forecasts delivery from work tracking data")
+  System_Ext(trackers, "Work tracking systems", "Jira, Azure DevOps, Linear, ServiceNow, CSV")
+  System_Ext(posthog, "PostHog", "Opt-in usage data, forwarded by the backend")
+  System_Ext(clients, "Lighthouse-Clients", "CLI and MCP; read GET /features and FeatureDto (unchanged)")
+  System_Ext(harness, "Scaled-data harness", "Dev-only Playwright tooling; never shipped")
+  Rel(reader, lighthouse, "Opens Features lists in")
+  Rel(operator, lighthouse, "Opens Settings and watches rounds in")
+  Rel(admin, lighthouse, "Edits Portfolio queries in")
+  Rel(lighthouse, trackers, "Reads Work Items and writes forecast fields to")
+  Rel(lighthouse, posthog, "Forwards closed usage events to")
+  Rel(clients, lighthouse, "Reads Features from")
+  Rel(harness, lighthouse, "Builds a scaled instance and measures it through")
+```
+
+## Wave: DESIGN / [REF] C4 — Container (L2)
+
+```mermaid
+C4Container
+  title Container — Lighthouse (changes of epic-6400 marked)
+  Person(user, "Reader / operator / admin")
+  System_Ext(harness, "Scaled-data harness (dev-only)", "Playwright perf project")
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "Single-page app", "React 19, MUI, TanStack Query", "Shared licence queries (02); keyed Features list (04); size note (06)")
+    Container(api, "Backend", "ASP.NET Core, .NET 10", "Request pool serves pages; update queue; forecast lane (01, new)")
+    ContainerDb(db, "Database", "SQLite (WAL) or PostgreSQL", "Portfolios, Features, forecasts and histogram rows")
+    ContainerDb(redis, "Redis (optional)", "Redis", "Multi-replica update substrate; unchanged")
+  }
+  System_Ext(trackers, "Work tracking systems")
+  System_Ext(posthog, "PostHog")
+  Rel(user, spa, "Uses")
+  Rel(spa, api, "Calls JSON API on")
+  Rel(harness, api, "Seeds and measures through REST on")
+  Rel(api, db, "Reads narrowed graphs from and writes forecasts to")
+  Rel(api, redis, "Shares update status through")
+  Rel(api, trackers, "Fetches Work Items from")
+  Rel(api, posthog, "Forwards usage events to")
+```
+
+## Wave: DESIGN / [REF] C4 — Component (L3): the forecast round and its isolation
+
+```mermaid
+C4Component
+  title Component — Forecast round on the lane, page requests on the pool (slices 01, 05)
+  Container_Boundary(api, "Backend") {
+    Component(ctl, "Page controllers", "ASP.NET Core", "Portfolios, Teams, Features, FeatureList; shared request thread pool")
+    Component(queue, "UpdateQueueService", "Channel, one reader", "Runs queued updates in order; holds, Stop, Cancel all")
+    Component(updater, "ForecastUpdater", "Imperative shell", "Hops the round onto the lane; records, stages, publishes")
+    Component(lane, "ForecastLane", "TaskScheduler over N dedicated threads", "NEW: runs only background forecast rounds")
+    Component(fsvc, "ForecastService", "Gather, fingerprint, simulate", "Gather without histograms (05); simulation on the current scheduler (01)")
+    Component(sim, "Simulation workers", "Parallel.For, at most N at once", "Run on lane threads for a round; on the pool for a manual When")
+    Component(frepo, "FeatureRepository", "EF Core adapter", "Narrow readers (03, 04, 05)")
+    Component(prepo, "PortfolioRepository", "EF Core adapter", "Catalogue readers, CAS, Team ids, count (02, 05, 06)")
+    Component(events, "DomainEventDispatcher + handlers", "Own scope per publish", "Snapshots, Delivery publishing; unchanged")
+  }
+  ContainerDb(db, "Database", "SQLite or PostgreSQL")
+  Rel(queue, updater, "Runs the round through")
+  Rel(updater, lane, "Schedules the whole round on")
+  Rel(lane, fsvc, "Executes")
+  Rel(fsvc, sim, "Starts the simulation on")
+  Rel(fsvc, frepo, "Gathers Features through")
+  Rel(updater, prepo, "Reads the Portfolio and records the fingerprint through")
+  Rel(updater, events, "Publishes PortfolioForecastsUpdated to")
+  Rel(ctl, prepo, "Reads catalogue through")
+  Rel(ctl, frepo, "Reads lists and graphs through")
+  Rel(frepo, db, "Queries")
+  Rel(prepo, db, "Queries and updates")
+```
+
+## Wave: DESIGN / [REF] Loading and Failure Looks (slices 02, 04, 06)
+
+Copy is provisional and uses the seeded defaults ({Features}, {Portfolio}, {Team}); every word a user can rename renders
+as their term. DISTILL walks these with the maintainer before writing scenarios (CLAUDE.md). Slices 01, 03 and 05:
+**N/A, because** no screen's fetch or response changes (01 moves threads; 03 lightens reads behind the same bodies;
+05 changes the round only). Check every look by hand with the browser throttled to a slow connection.
+
+### Slice 02 — the Overview (unchanged components, cheaper requests)
+
+Slice 02 changes what the Overview's requests cost, not how it waits (DDD-24). Reuses `Header` and `LoadingAnimation`.
+
+```
+Scaffold ready, lists on their way          Lists loaded                         A list failed to load
++---------------------------------------+   +-------------------------------+   +---------------------------------------+
+| Lighthouse  Overview  Features  System|   | Lighthouse  Overview  ...     |   | Lighthouse  Overview  Features  System|
+|             Settings  [Update All]    |   +-------------------------------+   |             Settings                  |
++---------------------------------------+   | Portfolios  [+ Add Portfolio] |   +---------------------------------------+
+|                                       |   |  Northwind Platform  920 ...  |   | Error loading data. Please try again  |
+|               ( o )                   |   | Teams       [+ Add Team]      |   | later.                                |
+|  (links clickable; Settings opens)    |   |  Atlas ...                    |   |  (links still clickable)              |
++---------------------------------------+   +-------------------------------+   +---------------------------------------+
+```
+
+The reporter asked for the scaffold first and the rest in the background. The header already renders first (W1); slice
+02 makes the body's wait about one cheap request instead of six reads of every histogram. It does not render the lists
+before the rest of the body or keep them across visits (a client cache is a follow-up).
+
+### Slice 02 — the licence-gated create actions (reuses each control's existing disabled-with-tooltip style)
+
+Only creating a Team or a Portfolio changes (DDD-11, Q-M1). Edits and updates of existing Teams and Portfolios keep
+today's behaviour in every state.
+
+```
+Loaded, under the limit (today)        Loaded, at the limit (today, today's reason)
++------------------+                   +------------------+
+| + Add Team       |                   | + Add Team       |  (disabled)
++------------------+                   +------------------+
+                                         tooltip: today's limit text, unchanged
+
+Licence still loading (new)            Licence could not be checked (new)
++------------------+                   +------------------+
+| + Add Team       |  (disabled,       | + Add Team       |  (disabled)
++------------------+   no tooltip)     +------------------+
+                                         tooltip: "Couldn't check your licence. Reload the page to try again."
+```
+
+On a Premium instance the "loading" state lasts one `/license` request and no list is fetched for licensing.
+
+### Slice 04 — the Features list (Portfolio and Team tab; reuses `DataGridBase`, `WidgetBody`, `FeatureListDataGrid`)
+
+```
+Loaded (same columns and values as today)                         data-widget-status="ready"
++--------------------------------------------------------------------------------------------+
+|                                                     Hide Completed Features [ o]           |
+| #  | Feature            | ! | Working on it | Progress     | Parent  | Start | Forecast | . |
+| 1  | Checkout redesign  |   | Atlas, Cobalt | ======--  6/9| Pay 2027| 03 Nov| 85%: Dec | . |
+| 2  | ...                                                                                    |
+|                                                           Rows 1-100 of 920   < 1 2 ... > |
++--------------------------------------------------------------------------------------------+
+
+First answer on its way (today's placeholders)                    data-widget-status="loading"
++--------------------------------------------------------------------------------------------+
+| #  | Feature            | ! | Working on it | Progress     | Parent  | Start | Forecast | . |
+| ░░ | ░░░░░░░░░░░░░░     |   | ░░░░░░░░      | ░░░░░░░░░░   | ░░░░░░  | ░░░░  | ░░░░░░   |   |
+| ░░ | ░░░░░░░░░░         |   | ░░░░░         | ░░░░░░░░░░   | ░░░░    | ░░░░  | ░░░░░░   |   |
++--------------------------------------------------------------------------------------------+
+
+Refreshing after a completed update (rows kept, dimmed, not clickable)   data-widget-status="loading"
++--------------------------------------------------------------------------------------------+
+| (rows of the last answer at 40% opacity)            ( o )   <- small centred spinner       |
++--------------------------------------------------------------------------------------------+
+  A late answer for an older request never replaces a newer one (keyed query).
+
+Could not be loaded (first load, or a refresh that failed)        data-widget-status="error"
++--------------------------------------------------------------------------------------------+
+|                 /!\  The Features couldn't be loaded.   [ Retry ]                          |
++--------------------------------------------------------------------------------------------+
+
+Empty (loaded, nothing stored)                                    data-widget-status="ready"
++--------------------------------------------------------------------------------------------+
+|                      This Portfolio has no Features yet.     (Team tab: "This Team …")      |
++--------------------------------------------------------------------------------------------+
+
+All hidden by Hide completed (loaded, every row completed)        data-widget-status="ready"
++--------------------------------------------------------------------------------------------+
+|                                                     Hide Completed Features [x]            |
+|   All 100 Features are completed. Turn off Hide Completed Features to see them.            |
++--------------------------------------------------------------------------------------------+
+```
+
+Decision for DISTILL's sketch (S-1): a refresh that fails after rows were shown takes the could-not-load look (default;
+the previous answer is never shown as current), or keeps the rows dimmed with an inline "couldn't refresh" line. The
+default follows `WidgetShell`.
+
+### Slice 06 — the size note on the Portfolio edit page (reuses MUI `Alert` severity `info`, as other settings notes)
+
+```
+Loaded, over 100 (920 stored at the last update)
+  Work Item Query
+  +--------------------------------------------------------------------------------------+
+  | (i) This Portfolio holds 920 Features (as of its last update). Above 100, its pages  |
+  |     and forecasts get slower. If you don't plan with all of them, narrow the query.  |
+  +--------------------------------------------------------------------------------------+
+  [ query editor ................................................................ ]   [Save]
+
+The count could not be loaded (new; never silent)
+  Work Item Query
+  +--------------------------------------------------------------------------------------+
+  | (i) Couldn't check this Portfolio's size.                                            |
+  +--------------------------------------------------------------------------------------+
+  [ query editor ................................................................ ]   [Save]
+
+Loaded at or under 100, never updated (0), or still loading
+  Work Item Query
+  [ query editor ................................................................ ]   [Save]
+  (no note; Save never waits on the count)
+```
+
+## Wave: DESIGN / [REF] Quality Attributes
+
+| Attribute (ISO 25010) | Strategy | Measured by |
+|---|---|---|
+| Performance: time behaviour | Narrow reads (02, 03, 05), one list request (04), off-pool rounds (01) | K1, K2, K4 (harness) |
+| Performance: resource use | Smaller tracked graphs (fewer GC cycles), shorter save transactions | GC pause and pool counters in 01a and each slice |
+| Reliability: availability under load | Lane isolation; no heartbeat warning through a round | K3 |
+| Reliability: fault tolerance | Failure looks with Retry; licence gates refuse when unknown; cancellation unchanged | DISTILL scenarios |
+| Functional correctness | Identity goldens: bodies, verdicts, positions, forecasts, fingerprints | G1–G4 |
+| Security | Same RBAC guards; readability rules unchanged; new endpoints guarded `PortfolioRead` / `TeamRead`; usage data a closed enum | RBAC on/off scenarios |
+| Maintainability | Fits 6264's reader direction; one dependency rendering; ArchUnitNET rules | Architecture tests |
+| Portability | SQLite and PostgreSQL in every reading; threads named, background, no OS priority | Provider-backed tests |
+| Observability | Round timing split (Debug), lane banner line, harness | Logs |
+
+## Wave: DESIGN / [REF] Architecture Enforcement
+
+Style: ports-and-adapters within the modular monolith. Language: C# and TypeScript. Tools: ArchUnitNET (already in
+`Lighthouse.Backend.Tests/Architecture/`), NUnit provider-backed tests, Vitest.
+
+- **Lane, three layers** (ADR-257). **Behavioural probe over round frames**: a queued round on seeded data records the
+  thread at each of `ForecastUpdater`'s segments (Portfolio read, after the gather, each simulation worker's share, after
+  the save, after `ConfirmForecastsAsOf`, after staging, after publish, after recording or forgetting the fingerprint)
+  and at `ForecastService.UpdateForecastsForPortfolio`'s entry and exit; every recorded frame is a lane thread
+  (`IsThreadPoolThread == false` and named by the lane). Continuations inside EF Core or Npgsql are not frames and are
+  not asserted (DDD-6). The probe runs on 1, 2 and 4 lane threads. A manual `When` forecast runs its workers on pool
+  threads and **releases its request thread** while they run (the caller's continuation is not the worker thread).
+  Structural (ArchUnitNET): `ForecastService` does not call `Task.Run`; only `ForecastUpdater` and the composition root
+  depend on `ForecastLane`. Identity: seeded percentiles, histogram rows and fingerprints equal before and after, SQLite
+  and PostgreSQL.
+- **Lane lifecycle** (DDD-23): host stop during a round cancels it with nothing saved; the lane's threads end after
+  disposal.
+- **Bodies**: golden JSON for every endpoint listed under Driving Ports as "same bodies", dev backup and scaled set.
+- **Verdicts**: property-style NUnit `TestCaseSource` over seeded, generated graphs (no property-testing package is in
+  the test project, and none is added): verdicts from the full read equal those from the histogram-free read.
+- **List parity** (ADR-260): row fields equal `FeatureDto` fields; parents and active work equal the old endpoints.
+- **Reads in the database**: provider-backed tests capture SQL for `GetById`, the reference-id read and the owner read
+  (a `WHERE`, never a full scan into memory).
+- **6264 rules** (until S05a's guard lands): ArchUnitNET rule that `FeatureListController` depends on no
+  `IRepository<>` / `I*Repository`; a review check that `GetAllByPredicate` call counts in touched files only shrink.
+- **Cascade**: provider-backed test that a computed round leaves no orphaned histogram row; on SQLite the test first
+  asserts `PRAGMA foreign_keys` reads 1 on the connection the round uses (the configurator sets only WAL and
+  `busy_timeout`, so this must be proven, not assumed from the provider default).
+- **Write-back** (DDD-17/18): SQLite and PostgreSQL, a computed and a skipped round with a forecast write-back mapping
+  stage the same values as today's code for the same seed.
+- **Duplicates** (DDD-13): two Features with one reference id give one in-progress answer (the first in forecast order),
+  counts count it once, one warning.
+- **Frontend**: hook tests for shared queries and states; a source-tree test that only the shared licence query calls
+  `getLicenseStatus`; the Features-tab page object waits on `data-widget-status="ready"`.
+
+## Wave: DESIGN / [REF] Risks
+
+| Risk | P | I | Mitigation |
+|---|---|---|---|
+| The stalls are GC or CPU throttling, not pool starvation (UC-2) | M | H | Control experiment C and GC/throttling readings in 01a; slices 03 and 05 shrink tracked graphs; D27 re-orders |
+| K2 still missed at 920 after slice 04: every per-Team completion histogram of the owner's Features must still be read, because `Feature.Forecast` folds them all (CF-11); only per-Team start histograms and the payload go | M | M | The 01a baseline shows the completion-histogram share of the list's server time; if it alone exceeds the K2 budget, the percentile read model is the named follow-up (ADR-260) |
+| K4's computed −30% unreachable if the simulation dominates (UC-3) | M | L | Target set at D27 from the measured split |
+| A lane task blocks on another lane task (deadlock) | L | H | `Parallel.For` runs on its caller; ADR-257 forbids blocking on lane work; probe test runs a full round on 1, 2 and 4 lane threads |
+| A partial entity (no histograms or untracked) reaches a percentile read or write-back | L | H | Names say what is left out; no tracking on read-only readers; golden bodies; write-back resolves only against its own full read after the save, with provider-backed tests for a computed and a skipped round (DDD-17, DDD-18) |
+| SQLite writers time out during a long round save (CF-7) | M | M | Slice 05 shortens the save; record busy errors in 01a |
+| The tag v26.10.19.10 API differs for seeding (OQ-4) | M | L | Per-version map in the seeder |
+| Collision with 6264's port Stories | L | M | DDD-21; names provisional |
+
+## Wave: DESIGN / [REF] Open Questions (DISTILL / DELIVER)
+
+- **OQ-1** Hypothesis, unverified: does the .NET 10 Kestrel heartbeat run on a dedicated thread or on a timer on the
+  pool? It changes how Q_r is read, not the thresholds of DDD-3. 01a answers it from the Kestrel source of the version
+  in use or by experiment C0/C, and records it beside the baseline (UC-2).
+- **OQ-2** The licence "could not check" copy for the two create actions (DISTILL sketch, slice 02).
+- **OQ-3** Settled as DDD-13 (Q-M2); DELIVER records whether the dev backup holds any duplicated reference id.
+- **OQ-4** If the v26.10.19.10 tag's API differs for the seeder, a per-version map; otherwise one path.
+- **OQ-5** `WidgetBody` inside the grid's `TableContainer`: it assumes a sized flex parent; DELIVER may need a small
+  height wrapper (no new look).
+- **OQ-6** Usage data (DEVOPS): the bucket enum, and whether an `Unknown` value is wanted for a tab opened before its
+  owner loaded (default: send after the owner loads, DDD-8).
+- **S-1** The refresh-failure look in slice 04 (sketch decision above).
+
+## Wave: DESIGN / [REF] Questions for the maintainer
+
+Each has the default this wave took; none blocks DISTILL.
+
+1. **Q-M1 Licence gate scope** (ADR-259, UC-1). Today every count-gated action is offered while the licence is loading
+   and when it cannot be loaded; AC-2.5 asks the opposite. *Default: while loading or failed, refuse only creating a
+   Team or a Portfolio ("Couldn't check your licence" when failed); edits and updates stay allowed; the server's guard
+   is unchanged.* Cost of the alternative (refuse edits too): a transient failure blocks saving settings someone is
+   mid-way through, on an instance that is within its licence.
+2. **Q-M2 A reference id stored twice** (DDD-13, UC-4). Today `featuresInProgress` and that Team's WIP counts throw.
+   *Default: the first Feature in forecast order answers (the dependency path's rule), with a warning naming the id once
+   per refresh.*
+3. **Q-M3 Slice 06 looks** (DDD-19, UC-5). *Default: a failed count shows "Couldn't check this {Portfolio}'s size." in
+   the info note instead of nothing; the count reads "as of its last update". Copy settled at DISTILL's sketch.*
+4. **Q-M4 K4's computed-round figure** may be unreachable without touching the simulation (UC-3). *Default: keep −30%
+   as provisional and set it at the D27 re-score from the measured split.*
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+Full text with verbatim quotes: `design/upstream-changes.md`.
+
+| Was (source, verbatim) | Now | Why |
+|---|---|---|
+| D30: "a gated action is allowed or refused exactly as today, with RBAC on and off. A count that failed to load never reads as 'under the limit'." and AC-2.5: "A failed count never enables a gated action." | "Exactly as today" holds once loaded. While loading or failed, only the count-gated **create** actions refuse; edits and updates of existing Teams and Portfolios stay allowed (UC-1, Q-M1). | Today's hook is permissive in both states, so D30's halves conflict; refusing edits on a transient failure would block saving settings on an instance already within its licence, and the server's guard refuses anything over the limit anyway. |
+| DISCOVER W8: "Every request that arrives meanwhile blocks one more pool thread in its own synchronous P\*/F\* read." | Pool starvation is one candidate cause; GC pauses and CPU throttling are others. Task 01a classifies by thresholds fixed in DDD-3 (UC-2). | Whether the heartbeat runs on the pool or on a dedicated thread is an unverified hypothesis (OQ-1), so the warnings alone cannot name the cause. |
+| AC-5.2: "Computed round ≥ 30% shorter." | Provisional until the 01a split (UC-3, Q-M4). | Slice 05 cannot shorten the simulation (C12). |
+| AC-3.4: "In-progress answers unchanged, on the list and in a Team update." | Unchanged wherever today answers; where two stored Features share a reference id (today a thrown exception), the first in forecast order answers and a warning is logged (UC-4, Q-M2). | Today's answer in that case is a crash. |
+| US-06 Looks: "no note while the count is unknown or failed to load — a missing nudge cannot be misread as data" | Loading shows nothing; a failed count shows one line, "Couldn't check this {Portfolio}'s size.", in the same info note; the count is labelled "as of its last update" (UC-5, Q-M3). | CLAUDE.md: a failed load must not look like "no data"; a silent failure reads as "under 100". |
+
+## Wave: DESIGN / [REF] Hand-off Notes for DEVOPS
+
+- **Usage data** (D24): two existing events gain one closed size-bucket property; the count comes from the owner payload
+  on screen (DDD-8); the backend's event-shape check gains the enum; listed in `docs/settings/usagedata.md` in slice 01.
+- **Observability**: the round timing split is a Debug line; the startup banner gains the lane line. No new metric
+  endpoint.
+- **Deployment**: nothing new to deploy; thread count follows `DOTNET_PROCESSOR_COUNT` as today. The harness needs a
+  PostgreSQL container (`examples/postgres`) and `dotnet-counters` on the measuring machine only.
+- **Contract tests**: no new external integration; none newly recommended.
+- **Paradigm**: object-oriented (CLAUDE.md).
+
+## Wave: DESIGN / [REF] Self-Review (critique dimensions)
+
+Per-wave peer review is not run, as in DISCUSS; the consolidated review runs at the end of DISTILL. Self-check against
+`nw-sa-critique-dimensions`:
+- **Bias**: no new technology; the only new mechanism (dedicated threads) is the fallback ADR-248 already named. The
+  bulk-insert library was rejected on licence, not preference.
+- **ADR quality**: six ADRs, each with context, two or more alternatives with rejection reasons, consequences and
+  enforcement.
+- **Completeness**: performance, reliability, security, maintainability, portability and observability addressed above.
+- **Feasibility**: every change uses a pattern already in the code (narrow readers, set-based writes, TanStack queries,
+  `WidgetBody`, ArchUnitNET).
+- **Priority (Q1–Q4)**: largest bottleneck is unmeasured by design (Handoff waiver); 01a measures before any change,
+  and D27 re-orders 02, 03, 05 on measured shares. Simpler alternatives are recorded for every decision. Q4 (data) is
+  NO_DATA until 01a, which the waiver accepts.
+
+## Wave: DESIGN / [REF] Architecture Summary for the Maintainer
+
+**The shape, in hexagonal terms.** Nothing about Lighthouse's style changes. Six slices narrow what the adapters read
+and move where one piece of work runs. **No new external call**; Lighthouse talks to the same trackers, database,
+Redis and PostHog as today.
+
+```
+ DRIVING ADAPTERS                    APPLICATION / DOMAIN                        DRIVEN ADAPTERS
+ (browser, queue)                    (services, ports, Models)                   (persistence, threads)
+
+ [SPA] useLicenseRestrictions (M) ─┐
+ [SPA] useFeatureList (N) ─────────┤
+ [SPA] size note (N) ──────────────┤
+                                   v
+ PortfoliosController (M) ──────────────────────────────────────────┐
+ TeamsController / TeamController (M) ──────────────────────────────┤
+ PortfolioController (M, +size) ─── PortfolioSize (N, Models) ──────┤
+ FeaturesController (M) ─────┐                                      │
+ FeatureListController (N) ──┴─> IFeatureListService (N)            │
+                                  ├─ dependency rendering (N, moved)│
+                                  ├─ DependencyFacts/Decision (=)   │
+                                  └─ TeamMetricsService (M) ────────┤
+                                                                    v
+                                                  IPortfolioRepository (M) ──> PortfolioRepository (M) ─┐
+                                                  IFeatureRepository  (M) ──> FeatureRepository  (M) ─┤
+                                                                                                         v
+ UpdateQueueService (=) ─> ForecastUpdater (M) ──> ForecastLane (N, own threads) ──> ForecastService (M)  [SQLite /
+                                                    └─ simulation workers on the lane                      PostgreSQL]
+ PortfolioUpdater (M, log line)
+
+ (N) new   (M) modified   (=) unchanged
+```
+
+- **Driving adapters**: `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` and
+  `FeaturesController` are **modified** to read through narrower readers; `FeatureListController` is **new** (two
+  additive routes); `PortfolioController` gains a **new** `size` action. On the client, `useLicenseRestrictions` is
+  **modified**, `useFeatureList` and the size note are **new**. The update queue is **unchanged**.
+- **Application services and ports**: `IFeatureListService` is a **new** driving port; `ForecastUpdater` and
+  `ForecastService` are **modified** (the round hops onto the lane; the gather reads headers, not histograms);
+  `TeamMetricsService` is **modified** (in-progress by reference id); the dependency decision is **unchanged**.
+- **Domain (Models)**: `PortfolioSize` is **new**; `Feature`, `Portfolio` and the forecast types are **unchanged**.
+- **Driven adapters**: `IPortfolioRepository` / `IFeatureRepository` and their EF adapters are **modified** with
+  readers that leave histograms out; `ForecastLane` is a **new** in-process adapter for threads. Trackers, Redis and
+  PostHog are **unchanged** (one closed property on two existing usage events).
+- **Unchanged on purpose**: every existing response body, `FeatureDto`, `GET /features`, Lighthouse-Clients, the
+  simulation, the fingerprint, Stop and Cancel all, RBAC rules, the database schema.
+
+**Patterns weighed.**
+
+| Pattern | Verdict | Why, in one line |
+|---|---|---|
+| Bulkhead (a separate thread pool for one kind of work) | **Chosen** (ForecastLane) | The forecast can no longer eat the threads pages need. |
+| Raise the shared pool's minimum | Rejected as the fix, kept as an experiment | Hides starvation for everyone instead of isolating the cause. |
+| Separate worker process | Rejected | Strongest isolation, but a new deployable that breaks the standalone install. |
+| Single Responsibility / Interface Segregation (narrow readers named for what they read) | **Chosen** | Each caller states what it needs, so it stops paying for histograms it never shows; it is Epic 6264's direction. |
+| Projection value objects (read models) instead of partly loaded entities | Rejected for now | Safer, but every unchanged body would need a second mapping; Epic 6264's S13 removes the risk later. |
+| CQRS read model of stored percentiles | Deferred | The largest win for the list, but a schema and write path; waits for 6264's data ownership. |
+| Functional core / imperative shell | **Kept** | `ForecastService` stays the decision core, `ForecastUpdater` the shell, now also the one place that chooses threads. |
+| Plan-value / dependency inversion for threads (a scheduler parameter on the port) | Rejected | Would leak threading into `IForecastService`; the round's scheduler flows from the one hop. |
+| Unit of work with cascade delete | **Chosen** for the save | Old histograms go by the database's cascade instead of one delete per row. |
+| Bulk insert library | Rejected | Commercial-tier licence or PostgreSQL only. |
+| Strategy (owner kind for the list) | Rejected | Two routes with two guards are simpler than a discriminator. |
+| DRY of knowledge (one dependency rendering for both endpoints) | **Chosen** | Two endpoints must never disagree on a verdict. |
+| Domain events for the nudge | Rejected | One log line at the end of an update needs no subscriber; the domain value `PortfolioSize` keeps the rule in one place. |
+| Shared client cache (TanStack Query) | **Chosen** | One request per page for the licence and one keyed request per list, and a late answer cannot land. |
+| Fail-closed versus fail-open gating | Fail-closed **for creation only** chosen, asked (Q-M1) | A new Team or Portfolio is never offered when the instance cannot tell; edits stay open, and the server still guards both. |
+| Index on `Features.ReferenceId` | Deferred | Small table; added expand-only only if measured. |
+
+## Wave: DESIGN / [REF] Handoff
+
+To DISTILL (`nw-acceptance-designer`): these DESIGN sections, ADR-257..ADR-262, `design/upstream-changes.md`. Start
+DISTILL with the sketch walk-through: slice 04's six looks and S-1, slice 06's note, slice 02's two new gate states
+(OQ-2). Pin per slice: identity goldens (G1–G4), the lane probe, list parity, and the `data-widget-status` wait.
+To DEVOPS: Hand-off Notes above. Questions Q-M1..Q-M4 carry defaults and do not block. DISTILL pins, for the new routes,
+the RBAC behaviour for an unreadable owner: the guard refuses (as `PortfolioController` and the metrics controllers do),
+where `/features/ids` and `/features/references` today answer with the readable subset; both behaviours get a scenario.
+
+## Wave: DESIGN / [REF] Wave Decisions Summary
+
+- **Key decisions**: DDD-1..DDD-4 (harness in a Playwright perf folder; config-only readings; Q_r, S_q and control
+  experiment C; a log-only timing split), DDD-5..DDD-8 (forecast lane, one hop, sized by the existing bound; size bucket
+  from data on screen), DDD-9..DDD-11 (one Portfolio read in the database; catalogue readers; shared licence queries
+  that refuse only creation while unknown), DDD-12..DDD-13 (graph and in-progress without histograms), DDD-14..DDD-16 (owner-keyed list endpoint,
+  shared dependency rendering, keyed hook and looks), DDD-17..DDD-18 (round reads and saves without histograms),
+  DDD-19 (size note), DDD-20 (no index unless measured), DDD-21..DDD-22 (6264 fit, enforcement), DDD-23 (lane
+  lifecycle), DDD-24 (Overview looks).
+- **ADRs**: 257 (lane), 258 (histogram-free reads), 259 (licence queries), 260 (list endpoint), 261 (round reads and
+  save), 262 (size note).
+- **Upstream changes**: UC-1..UC-5 in `design/upstream-changes.md`; no story removed.
+- **Revision 1 (2026-10-23, after the architecture review, NEEDS_REVISION iteration 1)**: write-back resolves against a
+  fresh full read after the save (B1, DDD-17/18); the one-hop mechanism and the probe over round frames are stated
+  (DDD-6); the heartbeat thread is a hypothesis with fixed classification thresholds and a page-only control (CF-2,
+  DDD-3); the list read keeps every per-Team completion histogram, which `Feature.Forecast` needs (CF-11, DDD-15); slice
+  06 shows a failed count and labels the count as of the last update (DDD-19); the duplicate reference-id rule is a
+  maintainer question (DDD-13); licence refusal covers creation only (DDD-11); the lane's lifecycle (DDD-23) and the
+  Overview's looks (DDD-24) are added; ADR-260's RBAC text and DDD-21's ratchet arithmetic are corrected.

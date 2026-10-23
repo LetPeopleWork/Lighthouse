@@ -10661,3 +10661,97 @@ Full design: `docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md`
 - [ADR-256](./adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md): an
   unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked. **Proposed 2026-10-23.**
 - Relied on, unchanged: ADR-197, ADR-248, ADR-249.
+
+## Application Architecture — epic-6400-fast-with-many-features (Lighthouse stays fast with many Features)
+
+Feature: epic-6400-fast-with-many-features (ADO Epic #6400, Stories #6404–#6410) · Wave: DESIGN · 2026-10-23 · Morgan,
+PROPOSE mode, autonomous; revised after the architecture review (iteration 1). Full design:
+`docs/feature/epic-6400-fast-with-many-features/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-24, loading and failure
+looks). **C4 diagrams** (System Context L1, Container L2, and Component L3 for the forecast round and its isolation)
+live in that file's `Wave: DESIGN / [REF] C4` sections, not here. Upstream changes: `design/upstream-changes.md`
+(UC-1..UC-5).
+
+### Key invariants introduced
+
+- **A forecast round's own frames run on the lane, not the request thread pool.** `ForecastUpdater.Update` hops once,
+  `Task.Factory.StartNew(…, DenyChildAttach, lane.Scheduler).Unwrap()`, onto `ForecastLane`, a `TaskScheduler` over
+  `MostRunsAtOnce` dedicated threads; its awaits resume on the lane, so round code uses no `ConfigureAwait(false)`.
+  `ForecastService.Simulate` starts on `TaskScheduler.Current` and is awaited, so a background round's simulation
+  workers are lane threads and a manual `When` forecast keeps the pool and its own half (ADR-248). The queue loop stays
+  on the pool (suspended in an `await` during a round); EF and driver I/O continuations stay on the pool, accepted. The
+  lane is disposed after the hosted services stop, joining its threads with a timeout. Whether the heartbeat stalls are
+  pool starvation, GC or CPU throttling is measured in Task 01a against fixed thresholds; the D27 order follows the
+  branch.
+- **The answer never changes, only the work behind it.** Forecast outputs, Story 6354 fingerprints, dependency
+  verdicts, positions, RBAC readability and every existing response body stay identical, on SQLite and PostgreSQL.
+  One deliberate exception: two stored Features sharing a reference id no longer make the in-progress lookup throw;
+  the first in forecast order answers, with a warning (maintainer question).
+- **Reads that show no forecast dates load no histograms.** `PortfolioRepository.GetById` filters in the database;
+  catalogue readers (no forecasts, no tracking with identity resolution) serve `/portfolios`, `/teams`, `/teams/{id}`,
+  `/portfolios/{id}` and its settings; the dependency graph is read with forecast headers but no histograms and fed to
+  the unchanged `DependencyFacts`; in-progress Features are reference ids from the WIP snapshot. Reader names say what
+  they leave out; no `IQueryable`, `Expression` or `Func` in their signatures (Epic 6264's direction).
+- **Licence gates share one query per answer and refuse only creation while they cannot be told**
+  (`["licenseStatus"]`, shared list queries only when not Premium; `loading` / `failed` refuse the two create answers;
+  edit and update answers stay as today in every state). The server's `LicenseGuard` stays the enforcement.
+- **The Features list reads one owner-keyed response** (`/portfolios/{id}/feature-list`, `/teams/{id}/feature-list`,
+  guarded `PortfolioRead` / `TeamRead`: an unreadable owner answers 403, everything inside a readable owner is filtered
+  as today): rows are a field subset of `FeatureDto` with the same names, without per-Team forecasts, plus readable
+  parents and in-progress references. The list keeps every completion histogram (`Feature.Forecast` aggregates the
+  per-Team completions) and drops only per-Team start histograms. `GET /features`, `/features/ids`,
+  `/features/references` and `FeatureDto` are unchanged for Lighthouse-Clients.
+- **A round reads forecast headers, not histograms**; a computed round replaces forecasts and the database cascade
+  removes old histogram rows. The forecast write-back resolves against one named read: a fresh, no-tracking read of
+  the Portfolio's Features with forecasts and histograms, taken after the save and confirm stamp, only when a forecast
+  write-back mapping applies.
+- **A Portfolio's size is a domain rule** (`PortfolioSize`, over 100 Features), read by a `COUNT` endpoint for the edit
+  page's note and by `PortfolioUpdater`'s log line. The note says "(as of its last update)" and shows a one-line
+  "couldn't check" look on failure (maintainer question).
+
+### Component changes
+
+- NEW: `ForecastLane`; `FeatureListController` + `IFeatureListService` + `FeatureListService` + list DTOs; one shared
+  dependency-rendering collaborator (moved out of `FeaturesController`); `PortfolioSize` and `GET /portfolios/{id}/size`;
+  frontend `useFeatureList`; the dev-only harness in `Lighthouse.EndToEndTests/perf/` (never in CI or a build).
+- MODIFIED, backend: `ForecastUpdater`, `ForecastService`, `IPortfolioRepository` / `PortfolioRepository`,
+  `IFeatureRepository` / `FeatureRepository`, `TeamMetricsService`, `FeaturesController`, `PortfoliosController`,
+  `TeamsController`, `TeamController`, `PortfolioController`, `PortfolioUpdater`, the write-back stage's caller, the
+  startup banner.
+- MODIFIED, frontend: `useLicenseRestrictions` and its five count consumers, `PortfolioFeatureList`, `TeamFeatureList`,
+  `FeatureListDataGrid`, `PortfolioDetail`, `TeamDetail`, the Portfolio edit page, the Overview's loading and failure
+  looks, the usage reporter of the two tab-opened events (closed size bucket, designed in DEVOPS).
+- UNCHANGED: `UpdateQueueService`, the simulation, the fingerprint, `DependencyFacts` / `DependencyDecision`,
+  connectors, Redis substrate, PostHog forwarder, every existing HTTP body, the schema (no migration unless a measured
+  `Features.ReferenceId` index is needed, expand-only). L1/L2 C4 unchanged apart from the dev-only harness actor.
+
+### Architectural Enforcement (this feature)
+
+- Lane: a behavioural probe over round frames (gather, simulation workers, save call site, publish record
+  `IsThreadPoolThread == false`; a manual `When` stays on the pool), a `Simulate` scheduler test, a host-stop lifecycle
+  test, ArchUnitNET (`ForecastService` does not call `Task.Run`; only `ForecastUpdater` depends on `ForecastLane`; no
+  `ConfigureAwait(false)` in either), identity goldens on both providers.
+- Golden bodies for every unchanged endpoint; generated-graph verdict identity; list parity with `/features/ids`,
+  `/features/references` and `featuresInProgress`; RBAC 403-versus-filtered scenarios on the new routes; SQL captured
+  for in-database filters; no orphaned histogram rows, with `PRAGMA foreign_keys` asserted on SQLite; staged write-back
+  values equal before and after on both providers; the duplicate-reference-id rule.
+- ArchUnitNET: `FeatureListController` depends on no repository; `GetAllByPredicate` call counts only shrink, per file,
+  in touched files until Epic 6264's S05a guard lands.
+- Frontend: hook tests for shared queries and states (create refused, updates allowed while loading or failed); only
+  the shared licence query calls `getLicenseStatus`; the Features-tab page object waits on
+  `data-widget-status="ready"`.
+
+### ADR References (this feature)
+
+- [ADR-257](./adr-257-a-forecast-round-runs-on-its-own-threads-off-the-request-thread-pool.md): a forecast round runs
+  on its own threads, off the request thread pool. **Proposed 2026-10-23.**
+- [ADR-258](./adr-258-reads-that-show-no-forecast-dates-never-load-forecast-histograms.md): reads that show no forecast
+  dates never load forecast histograms. **Proposed 2026-10-23.**
+- [ADR-259](./adr-259-licence-restrictions-are-one-shared-query-and-refuse-while-they-cannot-be-told.md): licence
+  restrictions are one shared query, and refuse creation while they cannot be told. **Proposed 2026-10-23.**
+- [ADR-260](./adr-260-the-features-list-reads-its-rows-from-one-endpoint-keyed-by-portfolio-or-team.md): the Features
+  list reads its rows from one endpoint keyed by Portfolio or Team. **Proposed 2026-10-23.**
+- [ADR-261](./adr-261-a-forecast-round-reads-without-histograms-and-loads-them-only-when-it-must.md): a forecast round
+  reads without histograms, and loads them only when it must. **Proposed 2026-10-23.**
+- [ADR-262](./adr-262-a-portfolio-s-size-note-is-decided-on-the-server-from-its-stored-features.md): a Portfolio's size
+  note is decided on the server, from its stored Features. **Proposed 2026-10-23.**
+- Relied on, unchanged: ADR-135, ADR-154, ADR-163, ADR-248, ADR-249, ADR-256.
