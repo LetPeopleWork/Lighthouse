@@ -1370,3 +1370,21 @@ DISCOVER and DIVERGE sections are not edited; these supersede them from DESIGN o
 To DESIGN (`nw-solution-architect`): these DISCUSS sections, `slices/slice-01..06`, the journey SSOT. To DEVOPS:
 the Outcome KPIs and D24 (the size bucket). Open for DESIGN: the questions under "DESIGN must answer", each slice's
 loading and failure look or its N/A, and the architecture summary CLAUDE.md asks for at the end of DESIGN.
+
+---
+
+## Wave: DISCUSS / [REF] Maintainer answers and ADO mirror — 2026-10-23
+
+The maintainer accepted every default in "Questions for the maintainer" (K3 is an exit criterion; the measurement
+is a Task under Story 01; the size note on the edit page only, above 100 Features, with the drafted copy; the size
+bucket emitted in slice 01; the list messages settled at DISTILL's sketch; the provisional K4 and during-forecast
+figures; no website claim).
+
+| Slice | ADO |
+|---|---|
+| 01 Pages keep answering while Lighthouse forecasts | User Story #6404 (Task #6405: Measure with a scaled data set, dev-only) |
+| 02 The Overview and Settings open without waiting on every Feature | User Story #6406 |
+| 03 Large Features lists open sooner, with the same dependencies | User Story #6407 |
+| 04 The Features list opens fast and says when it cannot load | User Story #6408 |
+| 05 Forecast rounds finish sooner | User Story #6409 |
+| 06 Lighthouse says when a Portfolio grows past 100 Features | User Story #6410 |
