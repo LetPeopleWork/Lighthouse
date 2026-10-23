@@ -168,6 +168,31 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task GetPortfolioIdsForTeam_TeamSharesAFeatureWithAnotherTeam_ReturnsPortfolio()
+        {
+            var subject = CreateSubject();
+
+            var connection = CreateConnection();
+            var team = new Team { Name = "Team1", WorkTrackingSystemConnection = connection };
+            var otherTeam = new Team { Name = "Team2", WorkTrackingSystemConnection = connection };
+            DatabaseContext.Teams.AddRange(team, otherTeam);
+            await DatabaseContext.SaveChangesAsync();
+
+            var portfolio = new Portfolio { Name = "Portfolio", WorkTrackingSystemConnection = connection };
+            var feature = new Feature { Name = "Feature", Order = "12" };
+            feature.FeatureWork.Add(new FeatureWork(team, 5, 10, feature));
+            feature.FeatureWork.Add(new FeatureWork(otherTeam, 7, 10, feature));
+            portfolio.Features.Add(feature);
+
+            subject.Add(portfolio);
+            await subject.Save();
+
+            var portfolioIds = subject.GetPortfolioIdsForTeam(team.Id);
+
+            Assert.That(portfolioIds, Is.EquivalentTo([portfolio.Id]));
+        }
+
+        [Test]
         public async Task GetPortfolioIdsForTeam_TeamWorksOnNoneOfThePortfoliosFeatures_ReturnsNothing()
         {
             var subject = CreateSubject();
