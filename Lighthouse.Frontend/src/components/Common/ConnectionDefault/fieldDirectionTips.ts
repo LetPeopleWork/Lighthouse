@@ -3,6 +3,7 @@ import type {
 	ConnectionDefaultName,
 	WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type { FieldInfo } from "../FormSelectField/FormSelectField";
 
 /** The settings whose field is read off one end of a link, so the tip has to say which end. */
 type DirectionTipField = Extract<
@@ -25,10 +26,8 @@ export const directionTipTermsFrom = (
 	workItem: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
 });
 
-export interface DirectionTip {
-	text: string;
-	learnMoreUrl: string;
-}
+/** The field list's own info, with the docs link a direction tip always carries. */
+type DirectionTip = Required<FieldInfo>;
 
 const DOCS = "https://docs.lighthouse.letpeople.work";
 
@@ -79,7 +78,7 @@ const directions: Record<DirectionTipField, FieldDirection> = {
 
 const readsOneEndOfALink = (
 	setting: ConnectionDefaultName,
-): setting is DirectionTipField => setting in directions;
+): setting is DirectionTipField => Object.keys(directions).includes(setting);
 
 /**
  * Which end of a link the setting's field reads, with the tracker's own example where the tracker is known, and
