@@ -976,6 +976,12 @@ get re-applied.
 - **Fix**: host built in `[OneTimeSetUp]`, disposed in `[OneTimeTearDown]`; `[SetUp]` resets clock and licence answer on fixture-owned objects, takes a fresh database path (`UseFreshDatabase`), clears the metrics cache, and the sizing-votes base makes each scenario's callers new to the limiter (own address, minted keys presented per scenario). Reports reads only the problems raised since its scenario started. Summed in-scope test time fell by about a quarter, not half: creating and seeding each scenario's database is now the main set-up cost.
 - **Rule going forward**: a test host may outlive a test only when every piece of per-test state lives in an object the fixture owns and resets in `[SetUp]` — never a DI registration closing over a per-test field. Before sharing a host, list its singletons and say for each one how it is reset or why no scenario can observe it. A test that passes alone and fails in the shared host is such a leak: reset the state, never skip or serialise the test.
 
+### 2026-10-23 — a test read the host's services after asking the host to stop
+- **Symptom**: `Verify Backend` (run 39971120284), 1 failure: `ShutdownIntegrationTest.Shutdown_ApplicationStopping_ReadinessFlipsNotReadyBeforeDrain` with `ObjectDisposedException: Cannot access a disposed object. Object name: 'IServiceProvider'` at `HealthCheckTestHost.get_ReadinessState()`. Green on the run before and locally.
+- **Root cause**: `StopApplication()` runs the `ApplicationStopping` callbacks synchronously, then the host stops and disposes its `IServiceProvider` in the background. The test resolved `IReadinessState` from `factory.Services` only after the stop, so it won or lost a race against that disposal. A `Task.Delay(3000)` after the stop made it fail every time.
+- **Fix**: `HealthCheckTestHost` resolves `IReadinessState` once in its constructor and exposes that instance, so a read after a stop never goes back to the provider. Proven with the delay in place (red before, green after), delay then removed.
+- **Rule going forward**: in a `WebApplicationFactory` test that stops the application, resolve every service you will assert on before calling `StopApplication()`, and never touch `factory.Services` afterwards. A test that fails only sometimes after a stop is this race: prove it by delaying the read, then fix it, never re-run or quarantine it.
+
 ## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
 
 ### 2026-10-21 — Biome mirrors the Sonar TS profile
