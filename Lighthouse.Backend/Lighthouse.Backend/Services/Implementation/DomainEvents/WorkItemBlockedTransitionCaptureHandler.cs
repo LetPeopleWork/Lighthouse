@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 {
     public class WorkItemBlockedTransitionCaptureHandler(
         IWorkItemBlockedTransitionRepository transitionRepository,
+        TimeProvider timeProvider,
         ILogger<WorkItemBlockedTransitionCaptureHandler> logger)
         : IDomainEventHandler<WorkItemBlocked>
     {
@@ -26,7 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             var transition = new WorkItemBlockedTransition
             {
                 WorkItemId = domainEvent.WorkItemId,
-                EnteredAt = DateTime.UtcNow,
+                EnteredAt = timeProvider.GetUtcNow().UtcDateTime,
                 LeftAt = null,
             };
 

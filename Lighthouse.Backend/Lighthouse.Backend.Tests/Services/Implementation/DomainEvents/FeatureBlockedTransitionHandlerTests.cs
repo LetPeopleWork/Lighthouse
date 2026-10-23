@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using NUnit.Framework;
 
@@ -16,9 +17,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private Mock<ILogger<FeatureBlockedTransitionCaptureHandler>> captureLoggerMock = null!;
         private Mock<ILogger<FeatureBlockedTransitionCloseHandler>> closeLoggerMock = null!;
 
+        private static readonly DateTimeOffset TheInstantTheClockReads = new(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+
+        private FakeTimeProvider time = null!;
+
         [SetUp]
         public void SetUp()
         {
+            time = new FakeTimeProvider(TheInstantTheClockReads);
             transitionRepositoryMock = new Mock<IFeatureBlockedTransitionRepository>();
             captureLoggerMock = new Mock<ILogger<FeatureBlockedTransitionCaptureHandler>>();
             closeLoggerMock = new Mock<ILogger<FeatureBlockedTransitionCloseHandler>>();
@@ -29,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var handler = new FeatureBlockedTransitionCaptureHandler(
                 transitionRepositoryMock.Object,
+                time,
                 captureLoggerMock.Object);
 
             var blockedEvent = new FeatureBlocked(42, 7, "Blocked");
@@ -44,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                     t.FeatureId == blockedEvent.FeatureId &&
                     t.PortfolioId == blockedEvent.PortfolioId &&
                     t.LeftAt == null &&
-                    t.EnteredAt != default)),
+                    t.EnteredAt == TheInstantTheClockReads.UtcDateTime)),
                 Times.Once);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Once);
         }
@@ -54,6 +61,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var handler = new FeatureBlockedTransitionCaptureHandler(
                 transitionRepositoryMock.Object,
+                time,
                 captureLoggerMock.Object);
 
             var blockedEvent = new FeatureBlocked(42, 7, "Blocked");
@@ -61,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             {
                 FeatureId = 42,
                 PortfolioId = 7,
-                EnteredAt = DateTime.UtcNow,
+                EnteredAt = TheInstantTheClockReads.UtcDateTime,
                 LeftAt = null,
             };
 
@@ -81,6 +89,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var closeHandler = new FeatureBlockedTransitionCloseHandler(
                 transitionRepositoryMock.Object,
+                time,
                 closeLoggerMock.Object);
 
             var unblockedEvent = new FeatureUnblocked(42, 7);
@@ -89,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Id = 1,
                 FeatureId = 42,
                 PortfolioId = 7,
-                EnteredAt = DateTime.UtcNow.AddHours(-3),
+                EnteredAt = TheInstantTheClockReads.UtcDateTime.AddHours(-3),
                 LeftAt = null,
             };
 
@@ -99,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
             await closeHandler.HandleAsync(unblockedEvent, CancellationToken.None);
 
-            Assert.That(openSpell.LeftAt, Is.Not.Null,
+            Assert.That(openSpell.LeftAt, Is.EqualTo(TheInstantTheClockReads.UtcDateTime),
                 "the close handler must set LeftAt on the open spell");
             transitionRepositoryMock.Verify(r => r.Update(openSpell), Times.Once);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Once);
@@ -110,6 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var closeHandler = new FeatureBlockedTransitionCloseHandler(
                 transitionRepositoryMock.Object,
+                time,
                 closeLoggerMock.Object);
 
             var unblockedEvent = new FeatureUnblocked(42, 7);
@@ -130,9 +140,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         {
             var captureHandler = new FeatureBlockedTransitionCaptureHandler(
                 transitionRepositoryMock.Object,
+                time,
                 captureLoggerMock.Object);
             var closeHandler = new FeatureBlockedTransitionCloseHandler(
                 transitionRepositoryMock.Object,
+                time,
                 closeLoggerMock.Object);
 
             var blockedEvent = new FeatureBlocked(42, 7, "Blocked");
@@ -150,7 +162,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                 Id = 1,
                 FeatureId = 42,
                 PortfolioId = 7,
-                EnteredAt = DateTime.UtcNow.AddHours(-2),
+                EnteredAt = TheInstantTheClockReads.UtcDateTime.AddHours(-2),
                 LeftAt = null,
             };
             transitionRepositoryMock

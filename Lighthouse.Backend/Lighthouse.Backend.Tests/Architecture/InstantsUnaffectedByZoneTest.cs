@@ -10,12 +10,12 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Bug #5567 - T3 (RCA section 8-T3): the migration must not OVER-REACH into RCA section 5(b).
+    /// Moving the calendar days onto the instance time zone must not reach the instants as well.
     ///
     /// An instant has no timezone. Moving one onto the instance calendar would not be a partial fix,
     /// it would be a NEW bug - an audit stamp, a refresh cursor or a blocked-interval endpoint that
     /// silently records a wall-clock reading instead of the moment something happened, corrupting
-    /// data no existing test looks at. This fixture pins one site from each category-(b) family:
+    /// data no existing test looks at. This fixture pins one site from each family of instants:
     /// an audit/lifecycle stamp, a sync/refresh bookkeeping field, and a blocked-transition endpoint.
     ///
     /// Each test first proves the configured zone really does move a calendar day, so the "it did
@@ -118,6 +118,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var subject = new WorkItemBlockedTransitionCaptureHandler(
                 repository.Object,
+                TimeProvider.System,
                 Mock.Of<ILogger<WorkItemBlockedTransitionCaptureHandler>>());
 
             var before = DateTime.UtcNow;

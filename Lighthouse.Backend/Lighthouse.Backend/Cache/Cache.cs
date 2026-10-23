@@ -7,11 +7,22 @@ namespace Lighthouse.Backend.Cache
     {
         private readonly ConcurrentDictionary<TKey, CacheItem<TValue>> cache = new();
 
+        private readonly TimeProvider timeProvider;
+
+        public Cache() : this(TimeProvider.System)
+        {
+        }
+
+        public Cache(TimeProvider timeProvider)
+        {
+            this.timeProvider = timeProvider;
+        }
+
         public IEnumerable<TKey> Keys { get => cache.Keys; }
 
         public void Store(TKey key, TValue value, TimeSpan expiresAfter)
         {
-            cache[key] = new CacheItem<TValue>(value, expiresAfter);
+            cache[key] = new CacheItem<TValue>(value, expiresAfter, timeProvider.GetUtcNow());
         }
 
         public void Remove(TKey key)
@@ -26,7 +37,7 @@ namespace Lighthouse.Backend.Cache
                 return default;
             }
 
-            if (DateTimeOffset.Now - cached.Created >= cached.ExpiresAfter)
+            if (timeProvider.GetUtcNow() - cached.Created >= cached.ExpiresAfter)
             {
                 cache.TryRemove(key, out _);
                 return default;

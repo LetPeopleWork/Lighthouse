@@ -16,8 +16,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         IUpdateQueueService updateQueueService,
         IDomainEventDispatcher domainEventDispatcher,
         IUpdateStatusStore updateStatusStore,
-        UpdateCancellationContext cancellationContext)
-        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Forecasts),
+        UpdateCancellationContext cancellationContext,
+        TimeProvider timeProvider)
+        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, timeProvider, UpdateType.Forecasts),
             IForecastUpdater
     {
         private readonly IServiceScopeFactory scopeFactory = serviceScopeFactory;
@@ -202,7 +203,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// Forecasting reads what an earlier refresh already fetched, so it never contacts the work
         /// tracking system - there is nothing scanned or downloaded to record.
         /// </summary>
-        private static Task LogForecastRefresh(
+        private Task LogForecastRefresh(
             IRefreshLogService refreshLogService, Portfolio portfolio, int itemCount, long durationMs, bool success, bool cancelled)
         {
             var nothingFetched = SyncOutcome.None;
@@ -217,7 +218,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                 RecordsScanned = nothingFetched.RecordsScanned,
                 RecordsFetched = nothingFetched.RecordsFetched,
                 DurationMs = durationMs,
-                ExecutedAt = DateTime.UtcNow,
+                ExecutedAt = CurrentInstant,
                 Success = success,
                 Cancelled = cancelled
             });

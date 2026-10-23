@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             // Stryker disable once all: one of three copies of an announcement the operator only ever sees once; the scenario counts it by level, not by wording.
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var syncTime = DateTime.UtcNow;
+            var syncTime = clock.Now.UtcDateTime;
             var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();

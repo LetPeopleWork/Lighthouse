@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 using NUnit.Framework;
 using System.Linq.Expressions;
@@ -21,9 +22,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private Mock<ILogger<WorkItemBlockedTransitionCaptureHandler>> captureLoggerMock = null!;
         private Mock<ILogger<WorkItemBlockedTransitionCloseHandler>> closeLoggerMock = null!;
 
+        private static readonly DateTimeOffset TheInstantTheClockReads = new(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+
+        private FakeTimeProvider time = null!;
+
         [SetUp]
         public void SetUp()
         {
+            time = new FakeTimeProvider(TheInstantTheClockReads);
             transitionRepositoryMock = new Mock<IWorkItemBlockedTransitionRepository>();
             captureLoggerMock = new Mock<ILogger<WorkItemBlockedTransitionCaptureHandler>>();
             closeLoggerMock = new Mock<ILogger<WorkItemBlockedTransitionCloseHandler>>();
@@ -34,6 +40,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var handler = new WorkItemBlockedTransitionCaptureHandler(
                 transitionRepositoryMock.Object,
+                time,
                 captureLoggerMock.Object);
 
             var blockedEvent = new WorkItemBlocked(42, "Blocked");
@@ -48,7 +55,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 r => r.Add(It.Is<WorkItemBlockedTransition>(t =>
                     t.WorkItemId == blockedEvent.WorkItemId &&
                     t.LeftAt == null &&
-                    t.EnteredAt != default)),
+                    t.EnteredAt == TheInstantTheClockReads.UtcDateTime)),
                 Times.Once);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Once);
         }
@@ -58,13 +65,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var handler = new WorkItemBlockedTransitionCaptureHandler(
                 transitionRepositoryMock.Object,
+                time,
                 captureLoggerMock.Object);
 
             var blockedEvent = new WorkItemBlocked(42, "Blocked");
             var existingOpenTransition = new WorkItemBlockedTransition
             {
                 WorkItemId = 42,
-                EnteredAt = DateTime.UtcNow,
+                EnteredAt = TheInstantTheClockReads.UtcDateTime,
                 LeftAt = null,
             };
 
@@ -84,6 +92,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var closeHandler = new WorkItemBlockedTransitionCloseHandler(
                 transitionRepositoryMock.Object,
+                time,
                 closeLoggerMock.Object);
 
             var unblockedEvent = new WorkItemUnblocked(42);
@@ -91,7 +100,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             {
                 Id = 1,
                 WorkItemId = 42,
-                EnteredAt = DateTime.UtcNow.AddHours(-3),
+                EnteredAt = TheInstantTheClockReads.UtcDateTime.AddHours(-3),
                 LeftAt = null,
             };
 
@@ -101,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             await closeHandler.HandleAsync(unblockedEvent, CancellationToken.None);
 
-            Assert.That(openTransition.LeftAt, Is.Not.Null,
+            Assert.That(openTransition.LeftAt, Is.EqualTo(TheInstantTheClockReads.UtcDateTime),
                 "the close handler must set LeftAt on the open transition");
             transitionRepositoryMock.Verify(r => r.Update(openTransition), Times.Once);
             transitionRepositoryMock.Verify(r => r.Save(), Times.Once);
@@ -112,6 +121,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         {
             var closeHandler = new WorkItemBlockedTransitionCloseHandler(
                 transitionRepositoryMock.Object,
+                time,
                 closeLoggerMock.Object);
 
             var unblockedEvent = new WorkItemUnblocked(42);

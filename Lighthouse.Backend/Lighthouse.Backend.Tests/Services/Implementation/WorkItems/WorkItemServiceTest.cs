@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -2606,6 +2607,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return incoming;
         }
 
+        [Test]
+        public async Task UpdateWorkItemsForTeam_TrackerKeepsNoHistory_RecordsTheStateChangeAtTheClocksInstant()
+        {
+            var theRefreshInstant = new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var team = CreateTeam();
+            var stored = CreateWorkItemWithTransitions(team, "To Do");
+            workItems.Add(stored);
+            var incoming = CreateIncomingFor(stored, "Doing", StateCategories.Doing);
+
+            workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateWorkItemsForTeam(team);
+
+            Assert.That(
+                TransitionsStoredFor(stored).Select(t => (t.FromState, t.ToState, t.TransitionedAt)),
+                Is.EqualTo(new[] { ("To Do", "Doing", theRefreshInstant.UtcDateTime) }));
+        }
+
         private async Task RefreshTheTeamWith(Team team, WorkItem incoming)
         {
             workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
@@ -2828,7 +2848,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private WorkItemService CreateSubject()
         {
+            return CreateSubject(new FakeLighthouseClock(DateTimeOffset.UtcNow));
+        }
+
+        private WorkItemService CreateSubject(ILighthouseClock clock)
+        {
             return new WorkItemServiceTestBuilder()
+                .WithClock(clock)
                 .WithConnector(workTrackingConnectorMock.Object)
                 .WithFeatureRepository(featureRepositoryMock.Object)
                 .WithWorkItemRepository(workItemRepositoryMock.Object)

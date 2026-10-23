@@ -39,6 +39,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private IFeatureStateTransitionRepository featureStateTransitionRepository = Mock.Of<IFeatureStateTransitionRepository>();
         private IDomainEventDispatcher domainEventDispatcher = Mock.Of<IDomainEventDispatcher>();
         private ILogger<WorkItemService> logger = Mock.Of<ILogger<WorkItemService>>();
+        private ILighthouseClock clock = new FakeLighthouseClock(DateTimeOffset.UtcNow);
 
         /// <summary>
         /// The connector the service is to talk to. Wrapping it in a factory is what every call site did by
@@ -109,6 +110,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return this;
         }
 
+        public WorkItemServiceTestBuilder WithClock(ILighthouseClock lighthouseClock)
+        {
+            clock = lighthouseClock;
+            return this;
+        }
+
         public WorkItemServiceTestBuilder WithLogger(ILogger<WorkItemService> serviceLogger)
         {
             logger = serviceLogger;
@@ -137,7 +144,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     new DependencyDecision(new DependencyHonourPolicy(), ALicensedInstance()),
                     Mock.Of<ILogger<DependencyRefreshReporter>>()),
                 new UpdateCancellationContext(),
-                new FakeLighthouseClock(DateTimeOffset.UtcNow));
+                clock);
 
         /// <summary>
         /// Licensed, because these fixtures are about what a refresh stores and none of them is about what

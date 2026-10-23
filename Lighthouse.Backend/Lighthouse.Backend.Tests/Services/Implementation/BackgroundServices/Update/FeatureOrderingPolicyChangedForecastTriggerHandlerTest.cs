@@ -150,7 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 UpdateQueueService,
                 domainEventDispatcherMock.Object,
                 updateStatusStoreMock.Object,
-                new UpdateCancellationContext());
+                new UpdateCancellationContext(),
+                Time);
         }
 
         private Task WhenTheOrderChangesTo(FeatureOrderingPolicy policy)

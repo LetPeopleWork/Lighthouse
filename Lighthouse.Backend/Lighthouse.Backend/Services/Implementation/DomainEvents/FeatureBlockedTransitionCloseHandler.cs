@@ -6,6 +6,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 {
     public class FeatureBlockedTransitionCloseHandler(
         IFeatureBlockedTransitionRepository transitionRepository,
+        TimeProvider timeProvider,
         ILogger<FeatureBlockedTransitionCloseHandler> logger)
         : IDomainEventHandler<FeatureUnblocked>
     {
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return;
             }
 
-            openSpell.LeftAt = DateTime.UtcNow;
+            openSpell.LeftAt = timeProvider.GetUtcNow().UtcDateTime;
             transitionRepository.Update(openSpell);
             await transitionRepository.Save();
         }

@@ -421,6 +421,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             contoso.RefusesToListItsRelationTypes = true;
             var requestsBefore = contoso.Requests.Count;
             await SomethingMakesTheNextRefreshDownloadEverything(RetailRollout);
+            AMinutePasses();
             await RefreshesNow(RetailRollout);
 
             var sentWhileStopped = contoso.Requests.Skip(requestsBefore).ToList();
