@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreateFeatureDto_GivenForecastCreationTime_ReturnsDateAsUTC()
         {
-            var forecastCreationTime = DateTime.Now;
+            var forecastCreationTime = TestToday.FrozenNow.DateTime;
 
             var forecast = new WhenForecast()
             {

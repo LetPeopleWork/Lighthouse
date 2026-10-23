@@ -169,7 +169,7 @@ And a hundred percent reason to remember the name (Mike!)
             ;
         }
 
-        // Bug #6020. Following the log means asking again every few seconds, so the caller can ask for
+        // Following the log means asking again every few seconds, so the caller can ask for
         // the end of the file rather than all of it.
         [Test]
         public void GetLogs_TailAsked_AsksTheLogConfigurationForThatTail()
@@ -221,7 +221,7 @@ And a hundred percent reason to remember the name (Mike!)
             Five percent pleasure, fifty percent pain
             And a hundred percent reason to remember the name (Mike!)
             ";
-            var expectedFileName = $"Lighthouse_Log_{DateTime.Now:yyyy.MM.dd}.txt";
+            var expectedFileName = $"Lighthouse_Log_{DateTime.UtcNow:yyyy.MM.dd}.txt";
 
             logConfigurationMock.Setup(x => x.GetLogs()).Returns(expectedLogs);
 

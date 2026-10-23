@@ -20,9 +20,9 @@ namespace Lighthouse.Backend.Tests.API
                     {
                         Id = index * 10 + i,
                         Name = $"Item {index * 10 + i}",
-                        CreatedDate = DateTime.Now.AddDays(-index),
-                        StartedDate = DateTime.Now.AddDays(-index + 1),
-                        ClosedDate = DateTime.Now.AddDays(-index + 2)
+                        CreatedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-index),
+                        StartedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-index + 1),
+                        ClosedDate = TestToday.FrozenNow.UtcDateTime.AddDays(-index + 2)
                     });
                 }
             }

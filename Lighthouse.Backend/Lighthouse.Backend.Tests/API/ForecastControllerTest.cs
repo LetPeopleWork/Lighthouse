@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var manualForecastInput = new ForecastController.ManualForecastInputDto { TargetDate = DateTime.Now.AddDays(3) };
+            var manualForecastInput = new ForecastController.ManualForecastInputDto { TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
             using (Assert.EnterMultipleScope())
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = DateTime.Now.AddDays(3) };
+            var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
             using (Assert.EnterMultipleScope())
@@ -301,7 +301,7 @@ namespace Lighthouse.Backend.Tests.API
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
 
             // A team with no usable throughput produces a forecast with no trials - there is no
-            // distribution to read a likelihood off, so the honest answer is none (Bug #5586).
+            // distribution to read a likelihood off, so the honest answer is none.
             forecastServiceMock.Setup(x => x.When(expectedTeam, 42, It.IsAny<ThroughputFilterMode>())).Returns(Task.FromResult(new WhenForecast()));
             forecastServiceMock.Setup(x => x.HowMany(It.IsAny<RunChartData>(), 3)).Returns(new HowManyForecast());
             teamMetricsServiceMock
@@ -310,7 +310,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = DateTime.Now.AddDays(3) };
+            var manualForecastInput = new ForecastController.ManualForecastInputDto { RemainingItems = 42, TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, manualForecastInput);
 
             var okResult = result.Result as OkObjectResult;
@@ -374,8 +374,8 @@ namespace Lighthouse.Backend.Tests.API
             var itemCreationPredictionInput = new ForecastController.ItemCreationPredictionInputDto
             {
                 WorkItemTypes = ["Bug", "Task"],
-                StartDate = DateTime.Now.AddDays(-1),
-                EndDate = DateTime.Now.AddDays(30),
+                StartDate = TestToday.AmbientAsUtcMidnight.AddDays(-1),
+                EndDate = TestToday.AmbientAsUtcMidnight.AddDays(30),
                 TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(30),
             };
 
@@ -698,7 +698,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var input = new ForecastController.ManualForecastInputDto { TargetDate = DateTime.Now.AddDays(3) };
+            var input = new ForecastController.ManualForecastInputDto { TargetDate = TestToday.AmbientAsUtcMidnight.AddDays(3) };
             var result = await subject.RunManualForecastAsync(12, input);
 
             var okResult = result.Result as OkObjectResult;

@@ -20,11 +20,10 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API
 {
     /// <summary>
-    /// Bug #5567 - the two <c>ForecastController</c> projection endpoints anchor "today" on two
-    /// different calendar days. <c>RunItemCreationPrediction</c> reads <c>DateTime.Today</c>
-    /// (server local) while <c>RunManualForecastAsync</c> reads <c>DateTime.UtcNow.Date</c>, in the
-    /// same file and the same request lifetime. They only agree while the process runs in UTC - the
-    /// container does, the standalone distribution inherits the host zone and does not.
+    /// The two <c>ForecastController</c> projection endpoints must anchor "today" on the same
+    /// calendar day, the instance's. They once disagreed: one took the server's local day, the other
+    /// the UTC day, so they only agreed while the process ran in UTC - the container does, the
+    /// standalone distribution inherits the host zone and does not.
     /// </summary>
     [TestFixture]
     public class ForecastControllerCalendarDayAnchorTest

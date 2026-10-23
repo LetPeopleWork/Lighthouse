@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetThroughput(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughput(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetThroughput(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetThroughput(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetThroughput(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivals(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetArrivals(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -190,7 +190,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivals(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivals(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetArrivals(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetArrivals(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivalsProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetArrivalsProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivalsProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivalsProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -279,7 +279,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetArrivalsProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetArrivalsProcessBehaviourChart(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -578,7 +578,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetCycleTimePercentilesForTeam(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -594,7 +594,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimePercentilesForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimePercentilesForTeam(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -621,7 +621,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimePercentilesForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetCycleTimePercentilesForTeam(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -638,7 +638,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetCycleTimeDataForTeam(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -654,7 +654,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeDataForTeam(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimeDataForTeam(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -692,7 +692,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeDataForTeam(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetCycleTimeDataForTeam(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -713,7 +713,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetWorkInProgressOverTime(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -729,7 +729,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetWorkInProgressOverTime(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetWorkInProgressOverTime(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -751,7 +751,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetWorkInProgressOverTime(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetWorkInProgressOverTime(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -772,7 +772,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -787,7 +787,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -810,7 +810,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Returns(expectedScore);
 
             var subject = CreateSubject();
-            var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -834,7 +834,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Returns(expectedScore);
 
             var subject = CreateSubject();
-            var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now, "filtered");
+            var response = subject.GetMultiItemForecastPredictabilityScore(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight, "filtered");
 
             var result = response.Result as OkObjectResult;
             Assert.That(result!.Value, Is.EqualTo(expectedScore));
@@ -852,7 +852,7 @@ namespace Lighthouse.Backend.Tests.API
                 .Returns(new ForecastPredictabilityScore(new HowManyForecast()));
 
             var subject = CreateSubject();
-            subject.GetMultiItemForecastPredictabilityScore(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            subject.GetMultiItemForecastPredictabilityScore(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             teamMetricsServiceMock.Verify(s => s.GetMultiItemForecastPredictabilityScoreForTeam(team, It.IsAny<DateTime>(), It.IsAny<DateTime>(), ThroughputFilterMode.SkipFilter), Times.Once);
         }
@@ -902,7 +902,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughputProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetThroughputProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -918,7 +918,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughputProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetThroughputProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -948,7 +948,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetThroughputProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetThroughputProcessBehaviourChart(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -965,7 +965,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetWipProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetWipProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -981,7 +981,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetWipProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetWipProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1003,7 +1003,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetWipProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetWipProcessBehaviourChart(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1020,7 +1020,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1036,7 +1036,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1058,7 +1058,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1075,7 +1075,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeProcessBehaviourChart(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetCycleTimeProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1091,7 +1091,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeProcessBehaviourChart(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimeProcessBehaviourChart(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1113,7 +1113,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetCycleTimeProcessBehaviourChart(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetCycleTimeProcessBehaviourChart(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1130,7 +1130,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetEstimationVsCycleTimeData(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetEstimationVsCycleTimeData(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1146,7 +1146,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetEstimationVsCycleTimeData(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetEstimationVsCycleTimeData(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1175,7 +1175,7 @@ namespace Lighthouse.Backend.Tests.API
 
             var subject = CreateSubject();
 
-            var response = subject.GetEstimationVsCycleTimeData(team.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetEstimationVsCycleTimeData(team.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1412,7 +1412,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughputInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetThroughputInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
@@ -1422,7 +1422,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetThroughputInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetThroughputInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -1433,8 +1433,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new ThroughputInfoDto(5, 0.5, new InfoWidgetComparisonDto("up", "Total Throughput", "curr", "5", "prev", "3", "+66.7%", null));
             teamMetricsServiceMock.Setup(s => s.GetThroughputInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1457,7 +1457,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivalsInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetArrivalsInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
@@ -1467,7 +1467,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var subject = CreateSubject();
 
-            var response = subject.GetArrivalsInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivalsInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -1478,8 +1478,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new ArrivalsInfoDto(3, 0.3, new InfoWidgetComparisonDto("down", "Total Arrivals", "curr", "3", "prev", "5", "-40.0%", null));
             teamMetricsServiceMock.Setup(s => s.GetArrivalsInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1501,7 +1501,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetWipOverviewInfo_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            var response = subject.GetWipOverviewInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetWipOverviewInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
@@ -1509,7 +1509,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetWipOverviewInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            var response = subject.GetWipOverviewInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetWipOverviewInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
@@ -1519,8 +1519,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new WipOverviewInfoDto(5, new InfoWidgetComparisonDto("up", "WIP", "2026-01-10", "5", "2026-01-01", "3", "+66.7%", null));
             teamMetricsServiceMock.Setup(s => s.GetWipOverviewInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1541,7 +1541,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetFeaturesWorkedOnInfo_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            var response = subject.GetFeaturesWorkedOnInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetFeaturesWorkedOnInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
@@ -1549,7 +1549,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetFeaturesWorkedOnInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            var response = subject.GetFeaturesWorkedOnInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetFeaturesWorkedOnInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
@@ -1559,8 +1559,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new FeaturesWorkedOnInfoDto(2, new InfoWidgetComparisonDto("down", "Features Being Worked On", "2026-01-10", "2", "2026-01-01", "3", "-33.3%", null));
             teamMetricsServiceMock.Setup(s => s.GetFeaturesWorkedOnInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1581,7 +1581,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetTotalWorkItemAgeInfo_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            var response = subject.GetTotalWorkItemAgeInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
@@ -1589,7 +1589,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetTotalWorkItemAgeInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            var response = subject.GetTotalWorkItemAgeInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetTotalWorkItemAgeInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
@@ -1599,8 +1599,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new TotalWorkItemAgeInfoDto(42, new InfoWidgetComparisonDto("up", "Total Work Item Age", "2026-01-10", "42", "2026-01-01", "30", "+40.0%", null));
             teamMetricsServiceMock.Setup(s => s.GetTotalWorkItemAgeInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1621,7 +1621,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetPredictabilityScoreInfo_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            var response = subject.GetPredictabilityScoreInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetPredictabilityScoreInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
@@ -1629,7 +1629,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetPredictabilityScoreInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            var response = subject.GetPredictabilityScoreInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetPredictabilityScoreInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
@@ -1639,8 +1639,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new PredictabilityScoreInfoDto(0.73, new InfoWidgetComparisonDto("up", "Predictability Score", "curr", "73%", "prev", "60%", "+13pp", null));
             teamMetricsServiceMock.Setup(s => s.GetPredictabilityScoreInfoForTeam(team, startDate, endDate)).Returns(expectedInfo);
 
@@ -1661,7 +1661,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetCycleTimePercentilesInfo_TeamIdDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
-            var response = subject.GetCycleTimePercentilesInfo(1337, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetCycleTimePercentilesInfo(1337, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
@@ -1669,7 +1669,7 @@ namespace Lighthouse.Backend.Tests.API
         public void GetCycleTimePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
             var subject = CreateSubject();
-            var response = subject.GetCycleTimePercentilesInfo(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimePercentilesInfo(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
@@ -1679,8 +1679,8 @@ namespace Lighthouse.Backend.Tests.API
             var team = new Team { Id = 1 };
             teamRepositoryMock.Setup(repo => repo.GetById(1)).Returns(team);
 
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new CycleTimePercentilesInfoDto(
                 [new PercentileValueDto(50, 5), new PercentileValueDto(85, 10)],
                 new InfoWidgetComparisonDto("up", "Cycle Time Percentiles", "curr", null, "prev", null, null,
