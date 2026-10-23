@@ -1,7 +1,8 @@
 # ADR-256: An unchanged Portfolio forecast is confirmed, not recomputed, unless a person asked
 
-**Status**: Proposed (DESIGN, 2026-10-23; recommendation taken in PROPOSE mode; revised after the review gate, which
-returned "approved with notes"; amended at the DISTILL review gate).
+**Status**: Accepted (2026-10-23); built with Story #6354, not yet released. Proposed at DESIGN the same day
+(recommendation taken in PROPOSE mode; revised after the review gate, which returned "approved with notes"; amended
+at the DISTILL review gate and at the DELIVER review).
 **Feature**: `story-6354-skip-unchanged-forecasts` (ADO Story #6354)
 **Relates to**: ADR-197 (forecasts have no periodic refresh of their own), ADR-249 (a cancelled forecast keeps its
 rows), the `FetchFingerprint` convention (a fingerprint stored on its owner; null means changed; a guard test lists
