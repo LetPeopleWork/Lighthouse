@@ -1,0 +1,643 @@
+{
+  "roadmap": {
+    "project_id": "story-6354-skip-unchanged-forecasts",
+    "created_at": "2026-10-23T12:00:00Z",
+    "total_steps": 12,
+    "total_phases": 2,
+    "goal": "ADO #6354 'Updates that change nothing skip the forecast'. Slice 01 (ships alone): a periodic or event-triggered forecast whose inputs match the fingerprint recorded by the Portfolio's last completed forecast runs no simulation; the round's summary line ends ' | forecast=skipped after {N}ms (inputs unchanged)', a Forecast row marked skipped lands in the refresh log, and Refresh History shows the skip and keeps its duration figures to computed runs. The fingerprint is a pure value over what the simulation is handed (instance day included), stored on the Portfolio and written only by set-based CAS / forget statements; failure, cancel, an unfingerprintable input, any of the six buttons and every app start make the next forecast compute. Slice 02: a skip stamps the in-scope Features' forecasts confirmed now. Done when all 89 pending DISTILL tests are un-skipped and green, every active guard stays green, no `__SCAFFOLD__` of this Story remains, `dotnet build` has zero warnings, the filtered `dotnet test` is green, and `pnpm test` and `pnpm build` are clean. Docs, screenshots, release notes and mutation runs belong to finalization and are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately: the backend is C# .NET 10 with NUnit 4 + Moq and no property-testing library (no FsCheck/CsCheck), the frontend is Vitest + React Testing Library without fast-check. DISTILL authored every acceptance and unit scenario, example-based, with finite axes as `[TestCase]` / `[TestCaseSource]` (the 13 input changes, the 6 presses, the 20 one-member-changed and 5 too-sensitive fingerprint cases). RED is removing `[Ignore(Pending)]` / `it.skip` and watching the test fail on its assertion or on the `__SCAFFOLD__` NotImplementedException, as distill/red-classification.md records; GREEN is production code. Unit tests DISTILL left to DELIVER (ForecastUpdaterTest, ForecastServiceTest, five controller tests, RefreshLogDto mapping, seeder, golden value, cross-provider fingerprint equality) are written with the code in the step that needs them. Contract shapes per component are the feature-delta's 'Contract shapes (crafter assertions)' table.",
+    "exit_gates": [
+      "End of every backend step: `dotnet build` zero warnings; the touched test classes green; the filtered `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green (environmental signatures per CLAUDE.md are not regressions). Docker must be running: the filtered suite includes the Postgres container cases (SharedPostgresContainer), and without Docker they fail rather than skip.",
+      "End of the frontend step: `pnpm test` green and `pnpm build` clean with zero warnings (prebuild runs `biome check --write`; run `pnpm exec biome check ./src` read-only first and mind the docs-symlink hazard).",
+      "No push before the button-forget step (01-08) and the start-up-forget step (01-09) are green: until both land, an 'Update forecast' press or the first round after a start could skip. Phase 01 is committed step by step locally and pushed once, at its end.",
+      "End of phase 01 (releasable alone): full filtered backend suite (Docker running) and full `pnpm test` + `pnpm build` green; ordered migration build pass done and the throwaway SQLite start's log has no `PendingModelChanges`; the generated migration files on BOTH providers (Lighthouse.Migrations.Sqlite and Lighthouse.Migrations.Postgres) carry `defaultValue: false` for `RefreshLogs.Skipped`, and LighthouseAppContext carries no HasDefaultValue for it; time each of the five `Slice01*` acceptance classes, `ForecastInputFingerprintTest`, `ForecastInputFingerprintAcrossProvidersTests`, `ForecastUpdaterTest`, `ForecastConfirmationRepositoryRelationalTest` and `RefreshLogSkippedColumnMigrationTests` against the 34 s per-class budget (warn-only in CI: speed up, or allowlist with a reason and a ceiling >= 2.1x CI time); the only `__SCAFFOLD__` left is `ConfirmForecastsAsOf`, called by nothing; the push touches Program.cs, so CI runs every live-connector category: budget the full run plus one flake re-run and say so when pushing; dogfood reading on the dev instance (:5169): a quiet round logs the skip and a skip costs at most a third of a computed run of the same Portfolio (else DDD-2's lighter read is owed, not built here).",
+      "End of phase 02: full filtered backend suite green (Docker running), ForecastUpdaterTest's stamp cases included; `Slice02ConfirmedNowScenarios` and `ForecastUpdaterTest` timed against the 34 s budget; `grep -rn \"__SCAFFOLD__\" Lighthouse.Backend/Lighthouse.Backend` lists nothing of this Story.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no MD-, D-, DDD-, AC-, OQ- or ADR- numbers).",
+      "Log copy names entities with the seeded defaults (Portfolio, Feature, Team); UI copy is the maintainer-approved wording pinned by the Vitest scenarios."
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6354-skip-unchanged-forecasts/feature-delta.md",
+    "red_classification": "docs/feature/story-6354-skip-unchanged-forecasts/distill/red-classification.md",
+    "slices": "docs/feature/story-6354-skip-unchanged-forecasts/slices/slice-01-automatic-rounds-skip-unchanged-forecasts.md, slice-02-user-refresh-forecasts-and-confirmed-now.md",
+    "environments": "docs/feature/story-6354-skip-unchanged-forecasts/environments.yaml",
+    "adr": "docs/product/architecture/adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md",
+    "acceptance_harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/SkipUnchangedForecastsAcceptanceTest.cs",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6354"
+  },
+  "user_decisions": [
+    "MD-1 - Skip rule is a fingerprint of everything a Portfolio's forecast reads; skip when it matches the last run's (FetchFingerprint pattern).",
+    "MD-2 - Manual 'Update forecast' and refresh buttons bypass the skip; only background and automatic rounds may skip.",
+    "MD-3 - A skipped run stamps the forecasts confirmed now; the summary line says the forecast was skipped.",
+    "MD-4 - Coalescing back-to-back Team refreshes' forecasts is a follow-up, out of scope.",
+    "MD-5 - Today's date (the instance day) is a fingerprint member, so the first refresh of each day forecasts.",
+    "MD-6 - Every refresh a user starts forecasts (both 'update forecast' buttons, Team/Portfolio refresh, refresh-all), as amended by MD-10.",
+    "MD-7 - A skipped forecast keeps its own refresh-log row, marked skipped; Refresh History duration figures count computed runs only.",
+    "MD-8 - Task Manager unchanged: a skipped forecast's row appears and leaves as today, only faster.",
+    "MD-9 - Refresh History: Last Run reads 'skipped (nothing changed)', line 'Skipped (nothing changed): N of the last M runs', durations over computed runs, gaps at skips; spinner and 'Could not load refresh history.' unchanged.",
+    "MD-10 - (autonomous, revisit) 'Update forecast' guarantees a recompute; the four refresh buttons forget best-effort (recompute unless a forecast of that Portfolio ran in between).",
+    "MD-11 - (autonomous, revisit) Avg, Min and Max Duration show '—' when every run of a Forecast entity was skipped.",
+    "MD-12 - (autonomous, revisit) Last Run of a skip reads '<time> · skipped (nothing changed)', with ' · ' as separator.",
+    "MD-13 - (autonomous, revisit) Every app start forgets every Portfolio's fingerprint, so the first forecast after a start computes."
+  ],
+  "out_of_scope": [
+    "Task Manager changes (MD-8); coalescing back-to-back forecasts (MD-4); seeding the simulation; partial forecasts; settings saves triggering a forecast themselves.",
+    "DDD-2's lighter read (Features without histograms) unless the phase-01 dogfood reading trips its trigger; then it is a follow-up, not a silent addition.",
+    "Usage-data event (N/A per DEVOPS: a skip is not a user action); Lighthouse-Clients (N/A, DDD-12 gate cleared, no version bump); website (N/A per DISCUSS, finalize greps); RBAC (N/A, no guard changes); new E2E (none, existing coverage is the sanity check).",
+    "Finalize items: docs/settings/taskmanager.md (MD-10 sentence: 'Update forecast always recomputes; a refresh you start recomputes unless a forecast of that Portfolio ran in between') and docs/settings/systeminfo.md (skip marker, count line, durations, dash); settings/systeminfo.png via the @screenshot run and settings/RefreshHistory.png by hand; ARCHITECTURE.md if the forecast trigger concept reads differently; Stryker.NET and StrykerJS on frozen code per the DEVOPS mutation scope (>= 80 %); release notes tag (maintainer); ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Automatic rounds that change nothing skip the forecast; every button and every start still recompute (#6354 slice 01)",
+      "description": "Releasable alone: schema, the pure fingerprint, the CAS/forget repository writes, the summary line's skip wording, the forecast port reshaped (refactor, behaviour unchanged), the compare inside ForecastService, the updater acting on the outcome (row, line, CAS last, forget on failure), the six button forgets, the start-up forget, the re-forecast theme and Refresh History's skip marker. Steps 01-01 to 01-06 are the walking skeleton's prerequisites in one straight run; 01-07 is the walking skeleton. Committed per step, pushed once at the end of the phase (never before 01-08 and 01-09 are green). No dependency on phase 02.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The refresh log can mark a skipped forecast and a Portfolio can hold its recorded forecast inputs",
+          "description": "One expand-only migration, generated only through Lighthouse.Backend/Create-Migration.ps1 for SQLite and Postgres: Portfolios.ForecastInputFingerprint (nullable text) and RefreshLogs.Skipped (bool, NOT NULL, database default false). Model properties on Portfolio and RefreshLog; the fingerprint mapped with PropertySaveBehavior.Ignore after insert; RefreshLogDto.Skipped serialised as `skipped` on every row; HistoricalSchemaPatch row for Portfolios in the same commit. The false default lives in the generated migration only, never as HasDefaultValue(false) in LighthouseAppContext.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/RefreshLogSkippedColumnMigrationTests.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/RefreshLogSkippedColumnMigrationTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/RefreshLogDtoTest.cs"
+          ],
+          "scenario_name": "On SQLite and on Postgres a row written by the previous release reads as a forecast that computed",
+          "unskips": [
+            "RefreshLogSkippedColumnMigrationTests.cs :: On_Sqlite_a_row_written_by_the_previous_release_reads_as_a_forecast_that_computed",
+            "RefreshLogSkippedColumnMigrationTests.cs :: On_Postgres_a_row_written_by_the_previous_release_reads_as_a_forecast_that_computed"
+          ],
+          "guards_kept_green": [
+            "Every Integration/Containers/*MigrationTests class that calls HistoricalSchemaPatch (BlockedRuleSetMigrationTests, ConnectionDefaultsUpgradeMigrationTests, DeliveryMetricSnapshotDayKeyMigrationTests)",
+            "RefreshLogServiceTest, RefreshLogFindingsPersistenceTest, RefreshLogSeederTests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Migrations.Sqlite/Migrations/<timestamp>_<Name>.cs + .Designer.cs + model snapshot (new - generated by Create-Migration.ps1; carries defaultValue: false for RefreshLogs.Skipped)",
+            "Lighthouse.Backend/Lighthouse.Migrations.Postgres/Migrations/<timestamp>_<Name>.cs + .Designer.cs + model snapshot (new - generated by Create-Migration.ps1; carries defaultValue: false for RefreshLogs.Skipped)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Portfolio.cs (edit - ForecastInputFingerprint, nullable)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/RefreshLog.cs (edit - Skipped)",
+            "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs (edit - fingerprint save behaviour Ignore after insert only; NO HasDefaultValue(false) for Skipped)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/RefreshLogDto.cs (edit - Skipped)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/HistoricalSchemaPatch.cs (edit - Portfolios ForecastInputFingerprint TEXT row with the migration suffix)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DTO/RefreshLogDtoTest.cs (new - Skipped maps to skipped, false present on a computed row)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/RefreshLogSkippedColumnMigrationTests.cs (edit - un-skip two cases)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A refresh-log row inserted without Skipped, as the previous release does, reads Skipped false on SQLite and on Postgres.",
+            "Every refresh-log row the API returns carries `skipped`, explicitly false for a computed run.",
+            "A whole-entity save of a Portfolio never writes ForecastInputFingerprint; a freshly migrated Portfolio holds null.",
+            "App start on a clean SQLite database logs no PendingModelChanges; the generated migration files of both providers carry `defaultValue: false` for RefreshLogs.Skipped and LighthouseAppContext declares no default for it.",
+            "dotnet build zero warnings; filtered dotnet test green; no comment cites an internal reference."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: schema and wiring, verified by example migration and mapping tests. Pre-apply docs/ci-learnings.md. Do NOT write HasDefaultValue(false) in LighthouseAppContext: EF warns that false is the CLR sentinel for bool (it could never tell 'not set' from 'false'), and TreatWarningsAsErrors turns that into a red build. EF already emits `defaultValue: false` when it adds a non-nullable bool column to an existing table, so the default lives in the generated migration only; check both generated files for it. Never `dotnet ef migrations add`: `dotnet restore && dotnet build` the solution, then `pwsh Lighthouse.Backend/Create-Migration.ps1 -MigrationName <Name>`. Ordered build pass before calling it done: `dotnet build --no-incremental` Lighthouse.Migrations.Sqlite, then Lighthouse.Migrations.Postgres, then the solution, then a throwaway SQLite start grepped for PendingModelChanges. Postgres case through SharedPostgresContainer, fresh database per case (Docker running). Commit via des-commit, `--owned-paths` written once with every path. `feat(forecast): ...`."
+        },
+        {
+          "id": "01-02",
+          "name": "A Portfolio's forecast inputs reduce to one stable fingerprint, and no input escapes it",
+          "description": "Replace the ForecastInputFingerprint scaffold: RegisteredMembers names the 13 members in order (format version, instance day, Trials, MostDaysOneSimulatedRunMayCover, Features in forecast order, Teams of those Features, rows, throughput as handed, chip status, Feature WIP, waits per reference id, …as DDD-1 lists); Of renders them in invariant culture with control-character separators, ordinal sort except Feature order, SHA-256 truncated to 128 bits, lower-case hex. Add the golden-value test.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastInputFingerprintTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastInputFingerprintTest.cs"
+          ],
+          "scenario_name": "Names every input and nothing else; every simulation limit registered except cores and runs at once; same inputs equal; 32 lower-case hex; order-insensitive where order carries no meaning; culture-proof; each input changed alone changes it; five things the simulation is not handed leave it alone",
+          "unskips": [
+            "ForecastInputFingerprintTest.cs :: Names_every_input_the_simulation_is_handed_and_nothing_else",
+            "ForecastInputFingerprintTest.cs :: Every_simulation_limit_is_one_of_its_inputs",
+            "ForecastInputFingerprintTest.cs :: The_same_inputs_built_twice_give_the_same_fingerprint",
+            "ForecastInputFingerprintTest.cs :: Is_a_short_lower_case_digest_however_many_Features_there_are",
+            "ForecastInputFingerprintTest.cs :: Teams_rows_and_throughput_handed_in_another_order_give_the_same_fingerprint",
+            "ForecastInputFingerprintTest.cs :: Reads_the_same_whatever_culture_the_instance_runs_under",
+            "ForecastInputFingerprintTest.cs :: One_input_changed_on_its_own_changes_the_fingerprint (20 cases from EachInputChangedOnItsOwn, incl. the premium licence)",
+            "ForecastInputFingerprintTest.cs :: Something_the_simulation_is_not_handed_leaves_the_fingerprint_alone (5 cases from ThingsTheSimulationIsNotHanded)",
+            "ForecastInputFingerprintTest.cs :: Every_input_has_a_case_above_that_changes_it_on_its_own"
+          ],
+          "guards_kept_green": [
+            "ForecastInputFingerprintTest.cs :: The_dependency_the_cases_start_from_is_one_the_forecast_waits_on",
+            "FetchFingerprintTest, FetchFingerprintPinnedDigestTest (the convention copied, the class untouched)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastInputFingerprint.cs (edit - real RegisteredMembers and Of replace the scaffold; __SCAFFOLD__ removed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastInputFingerprintTest.cs (edit - un-skip 9 methods / 32 cases; add the golden-value case)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The registered member list equals the 13 members the tests name; every ForecastSimulationLimits property is registered except CoresSeen and MostRunsAtOnce.",
+            "The same inputs give the same 32-character lower-case hex value twice, under tr-TR, and with Teams, rows and throughput handed in another order.",
+            "Changing any one registered member alone, the premium licence included, changes the value; Feature order changes it.",
+            "Cores, a renamed Feature or Portfolio, stored forecast dates and their computed time leave it unchanged.",
+            "A pinned golden value holds; dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure function pinned by DISTILL's example and TestCaseSource cases; the 20 + 5 swept cases are the property-style loop. Pure static, no I/O, no clock read (the day is handed in). Never GetHashCode or reference identity. Pre-apply docs/ci-learnings.md (CA1861 for constant arrays, NUnit2045 via Assert.EnterMultipleScope). Comments rare, plain why. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-03",
+          "name": "Recorded forecast inputs change only by compare-and-set, a forget token, or forget-all",
+          "description": "Replace the IPortfolioRepository / PortfolioRepository scaffolds: TryRecordForecastInputs is one ExecuteUpdateAsync whose WHERE requires the column to still hold the value read at gathering (IS NULL when null was read), answering with the affected-row count; ForgetForecastInputs writes a new 'forgotten:' + Guid token to exactly the named Portfolios; ForgetAllForecastInputs writes a token to every row in one statement.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs"
+          ],
+          "scenario_name": "First record then CAS; a forget wins over a running forecast; a forecast that read an earlier forget's token or nothing loses to the next forget; a forget clears exactly the named Portfolios; starting the app forgets all; a stale whole-entity save leaves the value; recording for a gone Portfolio records nothing",
+          "unskips": [
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_first_record_succeeds_and_the_next_one_has_to_start_from_it",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_forget_that_lands_while_a_forecast_runs_wins_over_that_forecast",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_forecast_that_read_what_an_earlier_forget_left_loses_to_the_next_forget",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_forecast_that_read_nothing_recorded_loses_to_a_forget",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_forget_clears_exactly_the_Portfolios_it_names",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: Starting_the_app_forgets_what_every_Portfolio_recorded",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: A_Portfolio_saved_whole_from_an_old_copy_leaves_the_recorded_inputs_alone",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: Recording_for_a_Portfolio_that_is_gone_records_nothing"
+          ],
+          "guards_kept_green": [
+            "Every existing PortfolioRepository test",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: Confirming_stamps_every_forecast_of_the_named_Features_and_changes_no_value stays [Ignore(Pending)] until 02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs (edit - three set-based methods replace the scaffolds)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPortfolioRepository.cs (edit only if the scaffold signatures need adjusting)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs (edit - un-skip eight cases)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "A record succeeds only while the stored value still equals what the run read (null-safe); otherwise it records nothing and says so.",
+            "Every forget writes a token never written before and never equal to a fingerprint, so any run that read before it loses its record.",
+            "A forget touches exactly the named Portfolios; forget-all touches every Portfolio and nothing else.",
+            "A whole-entity save from an old copy leaves the recorded value as it was; a record for a missing Portfolio changes nothing.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: relational example tests (SQLite in-memory connection, one disposed context per step) pin the CAS. Use the repo's CAS idiom (ExecuteUpdateAsync + affected-row count); never load-modify-save. If a scaffold signature changes, grep IPortfolioRepository by its short AND fully-qualified name in production and in Lighthouse.Backend.Tests (ci-learnings: widening an interface). Pre-apply docs/ci-learnings.md (S6608, CA1859). Comments rare, plain why: say why a forget writes a fresh token rather than null. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-04",
+          "name": "A round's summary line says a forecast was skipped, and how long the skip took",
+          "description": "RefreshRoundSummary.ForecastSkipped is set when the round's forecasts were all skipped; RefreshRoundSummaryLine ends ' | forecast=skipped after {N}ms (inputs unchanged)' in the shape of 'cancelled after'. Mixed rounds: one forecast computed and a later one skipped reads as computed with the computed run's time. UpdateServiceBase.ReportForecastSummary carries the skip into the round. Placed before the service steps so that 01-01..01-06 form one straight run of the walking skeleton's prerequisites.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RefreshRoundSummaryLineSkippedForecastTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RefreshRoundSummaryLineSkippedForecastTest.cs"
+          ],
+          "scenario_name": "Team line ends with the skip; forecast-only line; a skip folded into a round stays a skip; computed-then-skipped reads computed; all-skipped reads skipped",
+          "unskips": [
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_Team_round_whose_forecast_was_skipped_ends_with_the_skip_and_its_time",
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_round_that_only_forecast_names_the_skip_where_the_forecast_time_goes",
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_skip_reported_into_a_refresh_round_reaches_the_line_as_a_skip",
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_round_in_which_one_forecast_computed_and_a_later_one_was_skipped_reads_as_computed",
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_round_in_which_every_forecast_was_skipped_reads_as_skipped"
+          ],
+          "guards_kept_green": [
+            "RefreshRoundSummaryLineSkippedForecastTest.cs :: A_computed_forecast_still_reads_as_its_time_alone",
+            "Every existing RefreshRoundSummaryLine / WriteBackRound / UpdateServiceBase test (cancelled after, failed after)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshRoundSummary.cs (edit - ForecastSkipped read and set; scaffold marker removed)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshRoundSummaryLine.cs (edit - skipped-after wording branch)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs (edit - ReportForecastSummary carries the skip; mixed-round rule)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/RefreshRoundSummaryLineSkippedForecastTest.cs (edit - un-skip five cases)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A Team round whose only forecast was skipped ends exactly ' | forecast=skipped after 812ms (inputs unchanged)'.",
+            "A forecast-only round names the skip where the forecast time goes.",
+            "A round reads skipped only if every forecast in it was skipped; if one computed, it reads that computed run's time.",
+            "A computed forecast still reads as its time alone; cancelled and failed wording unchanged.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact log copy pinned word for word by example tests. Keep the wording branch in RefreshRoundSummaryLine (UpdateServiceBase is excluded from mutation). If ReportForecastSummary gains an overload rather than a parameter, place it directly beside its sibling (S4136 is error-severity here). Pre-apply docs/ci-learnings.md (S1192: one constant for the repeated literal). Comments rare, plain why. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`."
+        },
+        {
+          "id": "01-05",
+          "name": "The forecast port is told the instance day and answers with what the run did, behaviour unchanged",
+          "description": "Pure reshape of one port method, no behaviour change. IForecastService.UpdateForecastsForPortfolio becomes `Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateOnly instanceDay, CancellationToken cancellationToken = default)`. New ForecastRunOutcome value (Computed(read, fresh) / ConfirmedUnchanged(featureIds)); ForecastService always answers Computed with no fresh value and otherwise runs exactly as today; ForecastUpdater resolves ILighthouseClock from the run's scope (as it already resolves IForecastService), passes Today, and ignores the outcome. Every implementation, decorator, Moq Setup/Verify/Callback and direct caller in production and in Lighthouse.Backend.Tests is updated in this one commit, and every Moq double that ForecastUpdater can reach answers Computed by default through one shared test helper.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs"
+          ],
+          "scenario_name": "No new scenario: every existing test passes unchanged in what it asserts; ForecastServiceTest gains one case that a forecast answers Computed and saves as before; ForecastUpdaterTest gains one case that the resolved instance day is passed",
+          "unskips": [],
+          "guards_kept_green": [
+            "The whole filtered backend suite, unchanged in what it asserts; in particular ForecastServiceTest (36 s ceiling), ForecastUpdaterTest, FeatureOrderingPolicyChangedForecastTriggerHandlerTest, FeatureRankChangedForecastTriggerHandlerTest, PortfolioUpdaterTest, DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios, QuietWriteBack/*, ForecastRealityCheck/*, Refinement/RefinementNeedAcceptanceTest, TaskManager/*, FasterUpdates/*, Dependencies/*, ResponsiveDuringUpdates/*, ForecastedStartDates/*, ManualSorting/*, DependencySingleDecisionArchUnitTest, DependencyAwareForecastSeamArchUnitTest",
+            "Every one of the 89 pending tests stays [Ignore(Pending)] / it.skip"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/ForecastRunOutcome.cs (new - Computed / ConfirmedUnchanged value)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Forecast/IForecastService.cs (edit - instance day parameter, outcome return)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit - new signature; always returns Computed with no fresh value; constructor unchanged)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit - resolve ILighthouseClock from the run's scope, pass Today; outcome not acted on yet; constructor unchanged)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ForecastServiceDoubles.cs (new - one shared helper: a Mock<IForecastService> whose UpdateForecastsForPortfolio answers Computed for any Portfolio, day and token, plus an extension that adds that default to an existing mock)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs (edit - decorator ForecastWithScriptedChecks implements and forwards the new signature)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementNeedAcceptanceTest.cs (edit - decorator ForecastWithScriptedHorizons implements and forwards the new signature)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit - every Setup/Verify gains It.IsAny<DateOnly>(); Returns(Task.Delay(...)) answers Computed after the delay; default Computed via the helper; a fixed clock registered with SetupServiceProviderMock; one case that the resolved Today is passed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs (edit - Verify arity; default Computed via the helper; a clock registered for the real ForecastUpdater's mocked scope)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs (edit - Verify arity; default Computed via the helper; a clock registered for the real ForecastUpdater's mocked scope)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs (edit - Verify(Times.Never) arity only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs (edit - Setup/Verify arity; Callback takes the day; Returns(Task.CompletedTask) becomes a Computed answer)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs (edit - Setup arity; Callback takes the day; Returns(Task.CompletedTask) becomes a Computed answer; the cref keeps resolving)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs (edit - 12 direct calls pass a fixed day; one case: the run answers Computed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/MultiTeamJointForecastTest.cs (edit - direct calls pass a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastRunThatCannotEndTest.cs (edit - direct calls pass a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceDependencyTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceCrossTeamDependencyTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceStartDayTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastDrawCoordinatesTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/OnePortfolioForecast.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastedStartDates/ForecastedStartDateAcceptanceTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastedStartDates/StartForecastWallClockProbe.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ResponsiveDuringUpdates/Slice03BeyondTheHorizonScenarios.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/ForecastWallClockProbe.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DependencyAwareForecasting/SharedClockBaselineFixture.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DependencySingleDecisionArchUnitTest.cs (edit - direct call passes a fixed day)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/TaskManagerAcceptanceTest.cs (edit - ForecastServiceMock built through the helper, answers Computed by default)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs (edit - ForecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/DependenciesAcceptanceTest.cs (edit - ForecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlackoutForecastShiftTestBase.cs (edit - ForecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesTestBase.cs (edit - ForecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/InstanceDayForecastWindowIntegrationTest.cs (edit - forecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerCalendarDayAnchorTest.cs (edit - forecastServiceMock built through the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs (edit - `new Mock<IForecastService>().Object` replaced by the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs (edit - `Mock.Of<IForecastService>()` replaced by the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs (edit - `Mock.Of<IForecastService>()` replaced by the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs (edit - `Mock.Of<IForecastService>()` replaced by the helper)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs (edit - `Mock.Of<IForecastService>()` replaced by the helper)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "IForecastService has exactly one forecast-run method, taking the instance day and answering a ForecastRunOutcome; no overload, no optional day, no nullable outcome.",
+            "Every existing backend test is green with its assertions unchanged; no pending test is un-skipped; no stored forecast, refresh-log row or summary line differs from before.",
+            "ForecastUpdater passes the instance day it resolved from ILighthouseClock in its run's scope; its constructor and its three `new ForecastUpdater(` call sites are unchanged.",
+            "Every IForecastService double that ForecastUpdater can reach (the 12 host fixtures, ForecastUpdaterTest and the two trigger-handler tests) answers Computed by default through the one shared helper; Slice00 and QuietWriteBack answer Computed explicitly. Production code has no null check on the outcome.",
+            "dotnet build zero warnings; filtered dotnet test green; ForecastServiceTest within its ceiling."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: behaviour-preserving refactor; the existing suite is the guard. PORT SHAPE DECISION: change the one method (day in, outcome out) and update every caller in this commit. Rejected: (a) a second port method used only by ForecastUpdater - the two decorators and ForecastService must implement it anyway, every mock without a setup for it answers a null outcome (the same fixture sweep), and every existing Verify on the old method breaks silently the moment the updater stops calling it (`Times.Never` in PortfolioUpdaterTest would pass for the wrong reason; the `Times.Once` ones would go red), while leaving a near-duplicate method on the port; as an overload it would also trip S4136 (error-severity) in every implementing file. (b) default parameters - a return type cannot be defaulted, so every decorator and every `Returns(Task.CompletedTask)` breaks anyway, and an optional day makes every existing Moq expression fail with CS0854 (expression trees cannot omit optional arguments), so it saves nothing, and an optional day would need a production fallback only tests use. Changing the one method keeps one reading path, makes the compiler enumerate nearly every site, and the runtime-only breakages are named here. HOW TO FIND EVERY SITE: grep production AND Lighthouse.Backend.Tests for `IForecastService` (short and fully-qualified `Interfaces.Forecast.IForecastService`) and for `UpdateForecastsForPortfolio(` (ci-learnings: widening an interface). The compiler finds implementations (CS0535/CS0738), Setup/Verify arity and direct callers; it does NOT find (1) `.Callback((Portfolio portfolio, CancellationToken _) => ...)` with the old arity - Moq throws at setup time, at run time - in Slice00OneForecastPerBatchScenarios and QuietWriteBackAcceptanceTest, and (2) mocks with no setup, which answer a completed task holding null. Grep `.Callback((Portfolio`, `Mock<IForecastService>` and `Mock.Of<IForecastService>` and check each. Grepped and needing NO change (they never reach UpdateForecastsForPortfolio, or use the real ForecastService): ForecastController.cs, Program.cs, BaseMetricsService.cs, ForecastRealityCheckService.cs, RefinementNeedCalculator.cs; ForecastControllerTest, ForecastRealityCheckServiceTest, RefinementNeedCalculatorTest, RefinementViewQueryTest, PortfolioMetricsServiceTests, TeamMetricsServiceTests, TeamMetricsServiceSnapshotTests, WorkItemAgeAsOfDateTest, ClosedInRangeCharacterisationTest, InstanceDayItemBucketingTest, ForecastFilterFeatureForecastIntegrationTest, ForecastFilterBacktestIntegrationTest, ForecastFilterTeamForecastIntegrationTest, RealityCheckQueryCountTest, DependencyAwareForecastSeamArchUnitTest, Slice02StopEndsAForecastScenarios, ForecastWhileItUpdatesAcceptanceTest, SkipUnchangedForecastsAcceptanceTest. Direct callers pass any fixed day: the day only feeds the fingerprint, which nothing records before 01-07. The unused day in ForecastService is an interface implementation, so S1172 does not fire. Pre-apply docs/ci-learnings.md (S4136 does not apply: no overload is added; NUnit2045 in any test touched). Comments rare, plain why. Commit via des-commit, `--owned-paths` written ONCE listing all 40 paths (repeating the flag keeps only the last). `refactor(forecast): ...`, separate from the feat commits.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-06",
+          "name": "A forecast compares its gathered inputs with the recorded ones and simulates only when they differ",
+          "description": "ForecastService fingerprints the gathered inputs (the instance day it is handed included) between gathering and RunMonteCarloSimulation: on a match with the Portfolio's recorded value it answers ConfirmedUnchanged(featureIds) and writes nothing; otherwise it answers Computed(read, fresh) and saves forecasts as today. A throwing fingerprint logs a warning and computes with no fresh value. The Feature read is narrowed at query level to the Portfolio's Teams. ForecastUpdater is not touched here.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ForecastInputFingerprintAcrossProvidersTests.cs"
+          ],
+          "scenario_name": "ForecastServiceTest compare cases: stored equals fresh -> skip, writes nothing; differs, null or a forget token -> compute; fingerprint throws -> compute, no fresh value. Same Portfolio fingerprints the same after a fresh DbContext on SQLite and Postgres",
+          "unskips": [],
+          "guards_kept_green": [
+            "ForecastServiceTest, every existing case (manual When, multi-team and probe paths untouched); its 36 s ceiling",
+            "ForecastUpdaterTest, every existing case",
+            "DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios, ResponsiveDuringUpdates/*, FasterUpdates/*",
+            "Slice02ConfirmedNowScenarios.cs :: A_computed_forecast_reads_as_last_updated_at_its_round_with_its_new_dates"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit - fingerprint between gathering and simulation; narrowed Feature read; exception -> compute with a warning; constructor unchanged)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs + Services/Interfaces/Repositories/IFeatureRepository.cs (edit - only if the narrowed read needs a query method; if IFeatureRepository widens, grep it short and fully-qualified in production and tests first)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs (edit - compare cases)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ForecastInputFingerprintAcrossProvidersTests.cs (new - fresh-DbContext equality, SQLite and Postgres)"
+          ],
+          "dependencies": [
+            "01-01",
+            "01-02",
+            "01-05"
+          ],
+          "criteria": [
+            "When the stored value equals the fresh fingerprint, no simulation runs and every forecast row, histogram and the stored fingerprint are unchanged.",
+            "When it differs, is null or is a forget token, the forecast computes and saves as today; the fingerprint column is untouched.",
+            "A fingerprint that cannot be computed means a computed run with nothing to record, not a failed one, and a warning is logged.",
+            "The same Portfolio gives the same fingerprint read through a fresh DbContext on SQLite and on Postgres; a forecast reads only Features of the Portfolio's Teams.",
+            "dotnet build zero warnings; filtered dotnet test green; ForecastServiceTest stays within its ceiling."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example unit cases for a three-way decision; the cross-provider case is single-example wiring. BEHAVIOUR-NEUTRAL IN THE RUNNING APP: until 01-07 nothing records a fingerprint (every Portfolio holds null), so the compare always computes; only the unit cases, which seed a recorded value, reach the skip branch. Keep the comparison between gathering and RunMonteCarloSimulation so there is one reading path. The day arrives as the parameter introduced in 01-05, not as a new constructor dependency (S107). Postgres case via SharedPostgresContainer, fresh database per case, never StartFreshAsync per case (Docker running). Pre-apply docs/ci-learnings.md. Comments rare, plain why, no internal refs. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-07",
+          "name": "A quiet background round skips the forecast, records it as skipped, and still announces it",
+          "description": "Walking skeleton. ForecastUpdater acts on the outcome: on ConfirmedUnchanged writes the Forecast RefreshLog row with Skipped true and success, reports the skip to the round, stages write-back and publishes PortfolioForecastsUpdated as a computed run does; on Computed records the fingerprint by CAS last, after staging and publishing, and only with a fresh value; on failure or cancel forgets best-effort in its own scope with CancellationToken.None. One Debug line times gather and publish.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01QuietRoundsSkipScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01QuietRoundsSkipScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UnfinishedRunsAndRestartScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "scenario_name": "Walking skeleton: a background round that changed nothing skips the forecast and says so; nothing confirmed yet computes then the next quiet round skips; a skip is still announced without doubling the day's snapshot; the first round of a day forecasts; after a failed or stopped forecast the next quiet round computes",
+          "unskips": [
+            "Slice01QuietRoundsSkipScenarios.cs :: A_background_round_that_changed_nothing_skips_the_forecast_and_says_so",
+            "Slice01QuietRoundsSkipScenarios.cs :: A_Portfolio_with_nothing_confirmed_yet_is_forecast_in_full_and_the_next_quiet_round_skips",
+            "Slice01AnnouncedAndDailyScenarios.cs :: A_skipped_forecast_is_still_announced_and_the_days_snapshot_is_not_doubled",
+            "Slice01AnnouncedAndDailyScenarios.cs :: The_first_round_of_a_day_forecasts_in_full_and_records_that_days_snapshot",
+            "Slice01UnfinishedRunsAndRestartScenarios.cs :: After_a_forecast_that_failed_the_next_quiet_round_forecasts_in_full",
+            "Slice01UnfinishedRunsAndRestartScenarios.cs :: After_a_forecast_that_was_stopped_the_next_quiet_round_forecasts_in_full"
+          ],
+          "guards_kept_green": [
+            "Slice02ConfirmedNowScenarios.cs :: A_round_whose_forecast_failed_changes_no_Features_time_or_dates",
+            "Slice02ConfirmedNowScenarios.cs :: A_round_whose_forecast_was_stopped_changes_no_Features_time_or_dates",
+            "Slice02ConfirmedNowScenarios.cs :: A_computed_forecast_reads_as_last_updated_at_its_round_with_its_new_dates",
+            "ForecastUpdaterTest existing cases; FeatureOrderingPolicyChangedForecastTriggerHandlerTest; FeatureRankChangedForecastTriggerHandlerTest; TaskManager/TaskManagerAcceptanceTest; ResponsiveDuringUpdates/*; DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit - acts on the outcome: skipped row, round report, staging and publish on skip, CAS last, forget on failure or cancel, Debug timing line)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/RefreshLogService.cs + Services/Interfaces/IRefreshLogService.cs (edit - only if storing Skipped needs a parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit - IPortfolioRepository mock registered in the scope; outcome -> row, outcome -> line, CAS last and only after a computed run with a fresh value, forget on failure and on cancel, fingerprint exception -> compute with no CAS and not a failed round)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs (edit - register an IPortfolioRepository mock in the mocked scope the real ForecastUpdater resolves from)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureRankChangedForecastTriggerHandlerTest.cs (edit - register an IPortfolioRepository mock in the mocked scope the real ForecastUpdater resolves from)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01QuietRoundsSkipScenarios.cs (edit - un-skip two)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01AnnouncedAndDailyScenarios.cs (edit - un-skip two)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UnfinishedRunsAndRestartScenarios.cs (edit - un-skip the failed and stopped cases; the restart case waits for 01-09)"
+          ],
+          "dependencies": [
+            "01-03",
+            "01-04",
+            "01-06"
+          ],
+          "criteria": [
+            "A Delta round with fetched=0 and unchanged inputs draws no numbers, leaves stored forecasts unchanged, logs ' | forecast=skipped after Nms (inputs unchanged)', and writes a Forecast row skipped=true success=true cancelled=false.",
+            "The Task Manager reports that forecast Completed; PortfolioForecastsUpdated is still published and the day's snapshot is not doubled.",
+            "A Portfolio with nothing recorded, the first round of an instance day, and the round after a failed or stopped forecast all compute in full.",
+            "The fingerprint is recorded only after a computed run's staging and publish, never after a skip, failure or cancel.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example acceptance through the real host plus unit cases for each outcome branch. RED FIRST: un-skip the walking skeleton `A_background_round_that_changed_nothing_skips_the_forecast_and_says_so` before any production edit, run it and watch it fail on its assertion (a computed run, no skipped row); only then write the updater code, and un-skip the other five one at a time, each watched red. The updater resolves IPortfolioRepository from the run's scope (it may replace its IRepository<Portfolio> lookup); the two trigger-handler fixtures build a real ForecastUpdater over a mocked scope, so they need that mock registered or GetRequiredService throws. The forget after failure runs in its own scope with CancellationToken.None, is logged and never fails the round (RecordConnectionHealth precedent). The forecast= stopwatch keeps spanning the whole round, publish included. Do not push: buttons (01-08) and start-up (01-09) must forget first. Pre-apply docs/ci-learnings.md (S6667: a logging catch passes the exception first; a fixture mock asserting Times.Never must be reset per test). Comments rare, plain why, no internal refs. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-08",
+          "name": "Every button a person presses forgets what was confirmed before it queues",
+          "description": "The six user entry points call IPortfolioRepository.ForgetForecastInputs with exactly the Portfolios they touch, then trigger as today: ForecastController update/{id} and update-portfolios-for-team/{teamId}, TeamController.UpdateTeamData, TeamsController.UpdateAllTeams, PortfolioController.UpdateFeaturesForPortfolio, PortfoliosController.UpdateAllPortfolios. The last three change their IRepository<Portfolio> parameter to IPortfolioRepository; no controller is split.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UserPressScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UserPressScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/ForecastControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamsControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfoliosControllerTest.cs"
+          ],
+          "scenario_name": "A press forecasts in full even when nothing changed x6; Update forecast pressed while a forecast runs (alone, with another waiting); pressed again while the first press's forecast runs; refresh-all with forecasts under way computes the next forecast to start and may confirm the later ones",
+          "unskips": [
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(UpdateForecastOfThePortfolio)",
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(UpdateForecastsOfATeamsPortfolios)",
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(RefreshOfATeam)",
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(RefreshAllTeams)",
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(RefreshOfThePortfolio)",
+            "Slice01UserPressScenarios.cs :: A_press_forecasts_in_full_even_when_nothing_changed(RefreshAllPortfolios)",
+            "Slice01UserPressScenarios.cs :: Update_forecast_pressed_while_a_forecast_runs_still_ends_in_a_computed_forecast(False)",
+            "Slice01UserPressScenarios.cs :: Update_forecast_pressed_while_a_forecast_runs_still_ends_in_a_computed_forecast(True)",
+            "Slice01UserPressScenarios.cs :: Update_forecast_pressed_again_while_the_forecast_of_the_first_press_runs_ends_in_a_computed_forecast",
+            "Slice01UserPressScenarios.cs :: Refresh_all_with_forecasts_already_under_way_computes_the_next_forecast_to_start_and_may_confirm_the_later_ones"
+          ],
+          "guards_kept_green": [
+            "Every existing case in the five controller test classes and ForecastControllerCalendarDayAnchorTest",
+            "API/Integration/ForecastControllerAuthorizationTests, TeamsControllerAuthorizationTests, ProjectsControllerAuthorizationTests (write guards unchanged)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/ForecastController.cs (edit - forget before both triggers)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs (edit - forget the Team's Portfolios before queuing)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs (edit - IPortfolioRepository; forget the Portfolios of every Team it queues)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs (edit - IPortfolioRepository; forget that Portfolio)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs (edit - IPortfolioRepository; forget every Portfolio it queues)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/{Forecast,Team,Teams,Portfolio,Portfolios}ControllerTest.cs (edit - ForgetForecastInputs called with exactly the touched ids, before the trigger)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UserPressScenarios.cs (edit - un-skip four methods / ten cases)"
+          ],
+          "dependencies": [
+            "01-03",
+            "01-07"
+          ],
+          "criteria": [
+            "Each of the six buttons, pressed with nothing changed, ends in a forecast computed in full of every Portfolio it touches.",
+            "'Update forecast' pressed while a forecast of that Portfolio runs, with or without another waiting, or pressed twice, still ends in a computed forecast.",
+            "Refresh-all with forecasts under way computes the next forecast to start; later ones may confirm.",
+            "Each controller forgets exactly the Portfolios it touches, before it triggers; HTTP contracts, routes and guards unchanged.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one mechanism (forget then trigger) across six call sites, example-pinned; batched by the identical-pattern rule. Controllers are excluded from mutation, so the controller unit tests (Moq Verify with exact ids and call order) are the mutation-time guard and the press scenarios the CI guard; both are needed. DI already resolves IPortfolioRepository to PortfolioRepository. Before switching a controller's constructor parameter, grep its `new XController(` sites in Lighthouse.Backend.Tests. Pre-apply docs/ci-learnings.md (S107 means a new controller, never [FromServices]). Comments rare, plain why. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`. Not pushed yet: 01-09 must land first.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-09",
+          "name": "Every start of the app forgets what every Portfolio's forecast recorded",
+          "description": "New ForecastInputsForgottenAtStartSeeder (ISeeder) calls ForgetAllForecastInputs once; registered after the existing seeders in Program.cs, so it runs at every start and after a database restore.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UnfinishedRunsAndRestartScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UnfinishedRunsAndRestartScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeederTests.cs"
+          ],
+          "scenario_name": "After the instance starts again the next quiet round forecasts in full",
+          "unskips": [
+            "Slice01UnfinishedRunsAndRestartScenarios.cs :: After_the_instance_starts_again_the_next_quiet_round_forecasts_in_full"
+          ],
+          "guards_kept_green": [
+            "Every Services/Implementation/Seeding/*SeederTests class",
+            "DatabaseManagementService restore tests; every test starting the host through TestWebApplicationFactory"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs (new - ISeeder)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit - one registration after the existing seeders)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeederTests.cs (new - plural like its Seeding/*SeederTests siblings; calls ForgetAllForecastInputs once)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01UnfinishedRunsAndRestartScenarios.cs (edit - un-skip the restart case)"
+          ],
+          "dependencies": [
+            "01-03",
+            "01-07"
+          ],
+          "criteria": [
+            "After the seeders run again, the next quiet round of a Portfolio that had skipped forecasts in full.",
+            "The seeder forgets every Portfolio once per run and touches nothing else.",
+            "Host start and database restore still seed as before.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: wiring, one example acceptance and one unit case. Program.cs is touched: the push runs every live-connector category in CI (path-classifier SHARED_REGEX); budget the full run plus one flake re-run, and say so in the push note. Locally still run only the filtered suite. Pre-apply docs/ci-learnings.md. Comments rare, plain why (why every start forgets: another build may have computed in between). Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`."
+        },
+        {
+          "id": "01-10",
+          "name": "Every change to what the forecast reads makes the next background round compute",
+          "description": "Un-skip the re-forecast theme: 13 input changes, an item that left a Team's query in a Delta round that downloaded nothing, and a changed Feature of another Portfolio the Teams work on. Any case still skipping names a fingerprint gap: close it in the fingerprint or the gathering, add the member to the registered list, and add its one-member case to ForecastInputFingerprintTest.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01InputChangeScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01InputChangeScenarios.cs"
+          ],
+          "scenario_name": "A background round after an input changed forecasts in full x13; after an item left a Team's query though it downloaded nothing; after a Feature of another Portfolio its Teams work on changed",
+          "unskips": [
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(TheDayHasTurned)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ATeamsFeatureWipSettingMovedFromTwoToThree)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ATeamsThroughputWindowGrew)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ABlackoutTookADayOutOfATeamsThroughput)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(TheForecastFilterNowExcludesItems)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ATeamNoLongerHasEnoughData)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ThePortfoliosDefaultFeatureSizeChanged)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(AFeatureGainedADependency)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(TwoFeaturesSwappedOrder)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(AFeatureJoinedThePortfolio)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(AFeatureLeftThePortfolio)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ATeamJoinedThePortfolio)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_input_changed_forecasts_in_full(ATeamLeftThePortfolio)",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_an_item_left_a_Teams_query_forecasts_in_full_though_it_downloaded_nothing",
+            "Slice01InputChangeScenarios.cs :: A_background_round_after_a_Feature_of_another_Portfolio_its_Teams_work_on_changed_forecasts_in_full"
+          ],
+          "guards_kept_green": [
+            "Every Slice01* class un-skipped so far, ForecastInputFingerprintTest (member list and reflection guard)",
+            "TeamMetricsService suite (owns the real throughput derivation the fake stands in for)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice01InputChangeScenarios.cs (edit - un-skip three methods / fifteen cases)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastInputFingerprint.cs, ForecastService.cs (edit - only if a case exposes an input the fingerprint misses)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastInputFingerprintTest.cs (edit - only with a new member: its one-member case)"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "Each of the 13 listed input changes makes the next background round forecast in full.",
+            "A Delta round with fetched=0 in which an item left a Team's query forecasts in full.",
+            "A change to another Portfolio's Feature that a shared Team works on forecasts this Portfolio in full.",
+            "Any fingerprint gap found is closed as a registered member with its own one-member case; the member guard stays green.",
+            "dotnet build zero warnings; filtered dotnet test green; the class timed against the 34 s budget."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: the 13-row TestCase axis is the property-style sweep, one mechanism. This is the riskiest assumption's check (no stale forecast survives a change). RED PHASE: the fingerprint and the compare already exist, so cases are expected green the moment they are un-skipped; those are recorded as a characterization check (each proves no stale forecast survives that change), not as a missed RED. Any case that goes red on un-skip is the fix path: it names a fingerprint gap, closed in the fingerprint or the gathering. If every case goes green on un-skip, the commit is `test(forecast): ...` un-skip only; if a gap is closed, commit the production fix as `fix(forecast): ...` in the same step. The Team-left case runs Atlas's round and then the Portfolio's (observed behaviour, unchanged). Pre-apply docs/ci-learnings.md. Comments rare, plain why. Commit via des-commit, `--owned-paths` once.",
+          "sizing": "@sizing-review-needed"
+        },
+        {
+          "id": "01-11",
+          "name": "Refresh History tells a skipped forecast from a computed one",
+          "description": "RefreshLog.ts `skipped?: boolean` (already scaffolded, optional for an older server). RefreshHistorySection: Avg, Min, Max over computed runs only, '—' when none computed; Last Run '<time> · skipped (nothing changed)'; line 'Skipped (nothing changed): N of the last M runs' only when non-zero; durationS null at each skip so the line gaps; All view Avg, Max and the per-entity bar average over computed runs; a skip counts as success.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.skippedForecasts.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.skippedForecasts.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.test.tsx",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.findings.test.tsx"
+          ],
+          "scenario_name": "Averages, shortest and longest over computed forecasts; count line; last run skipped and when; dash when every run skipped; gap in the duration line; All view average and longest over computed runs; each entity's bar averages computed runs",
+          "unskips": [
+            "RefreshHistorySection.skippedForecasts.test.tsx :: averages, and finds the shortest and longest forecast, over the forecasts that computed",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: says how many of the runs were skipped because nothing changed",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: says the last run was skipped because nothing changed, and when it ran",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: shows a dash for the durations when every run of the forecast was skipped",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: leaves a gap in the duration line at each skipped forecast and still draws its items",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: averages and finds the longest run of the whole instance over the runs that computed",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: draws each entity's average duration over the runs that computed"
+          ],
+          "guards_kept_green": [
+            "RefreshHistorySection.skippedForecasts.test.tsx :: says nothing about skipped runs when every forecast computed",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: counts a skipped forecast as a run that succeeded",
+            "RefreshHistorySection.skippedForecasts.test.tsx :: reads the forecasts of a server too old to say whether they were skipped as computed ones",
+            "RefreshHistorySection.test.tsx :: shows a spinner while the history is on its way, and says it could not load the history (loading and failure looks unchanged)",
+            "RefreshHistorySection.findings.test.tsx and the RefreshHistoryChart suite"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.tsx (edit - figures over computed runs, dash, Last Run marker with ' · ', count line, null durations at skips)",
+            "Lighthouse.Frontend/src/components/Common/Charts/RefreshHistoryChart.tsx (edit - only if the gap or the bar series needs it there)",
+            "Lighthouse.Frontend/src/models/SystemInfo/RefreshLog.ts (keep - `skipped?: boolean` already present)",
+            "Lighthouse.Frontend/src/pages/Settings/SystemInfo/RefreshHistorySection.skippedForecasts.test.tsx (edit - remove it.skip from seven cases; rename the describe 'Story 6354 (pending): Refresh History tells a skipped forecast from a computed one' to 'Refresh History tells a skipped forecast from a computed one')"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "For one Forecast entity with 3 computed and 5 skipped runs, Avg/Min/Max read 271.40 s / 240.10 s / 305.90 s and the line reads exactly 'Skipped (nothing changed): 5 of the last 8 runs'.",
+            "A skipped last run reads '<time> · skipped (nothing changed)'; when every run was skipped, Avg, Min and Max each read '—'.",
+            "The duration line has a gap (null) at each skip and still draws items; the All view averages (169.64 s) and longest, and each entity's bar, count computed runs only.",
+            "With no skips the section reads as before; a skip counts as a success; rows without `skipped` read as computed; spinner and 'Could not load refresh history.' unchanged.",
+            "No it.skip and no 'pending' wording remain in the file; pnpm test green; pnpm build clean (tsc + Biome) with zero warnings; no comment cites an internal reference."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy and figures pinned by example scenarios. UI copy settled by MD-9, MD-11 and MD-12 (no further sketch owed). Reuse the Cancelled count line's style for the Skipped line. No it.skip may remain in the file, and the describe loses its 'Story 6354 (pending):' prefix. Commit via des-commit, `--owned-paths` once. `feat(systeminfo): ...`."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "A skipped forecast reads as confirmed now (#6354 slice 02)",
+      "description": "Builds on finished phase 01 (one-direction dependency): on a skip, every When and Start forecast of the in-scope Features gets CreationTime = now in one set-based statement; values and histograms untouched; failed or stopped rounds stamp nothing.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A skipped forecast stamps its Features' forecasts as confirmed at that round",
+          "description": "Replace the IFeatureRepository / FeatureRepository ConfirmForecastsAsOf scaffold with one ExecuteUpdateAsync setting CreationTime on every ForecastBase row (When and Start) of the named Features, per derived type as needed (FeatureRankingService precedent). ForecastUpdater calls it on ConfirmedUnchanged, in its scope, with the clock a computed forecast's CreationTime uses (DateTime.UtcNow), before staging and publishing.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice02ConfirmedNowScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice02ConfirmedNowScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "scenario_name": "A skipped forecast reads as confirmed at that round with its dates unchanged; it also confirms a Feature of another Portfolio its Teams work on; confirming stamps every forecast of the named Features and changes no value",
+          "unskips": [
+            "Slice02ConfirmedNowScenarios.cs :: A_skipped_forecast_reads_as_confirmed_at_that_round_with_its_dates_unchanged",
+            "Slice02ConfirmedNowScenarios.cs :: A_skipped_forecast_also_confirms_a_Feature_of_another_Portfolio_its_Teams_work_on",
+            "ForecastConfirmationRepositoryRelationalTest.cs :: Confirming_stamps_every_forecast_of_the_named_Features_and_changes_no_value"
+          ],
+          "guards_kept_green": [
+            "Slice02ConfirmedNowScenarios.cs :: A_round_whose_forecast_failed_changes_no_Features_time_or_dates",
+            "Slice02ConfirmedNowScenarios.cs :: A_round_whose_forecast_was_stopped_changes_no_Features_time_or_dates",
+            "Slice02ConfirmedNowScenarios.cs :: A_computed_forecast_reads_as_last_updated_at_its_round_with_its_new_dates",
+            "Every Slice01* acceptance class and every phase-01 unit class (ForecastUpdaterTest and the two trigger-handler tests included); existing FeatureRepository tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit - set-based confirm stamp replaces the scaffold; __SCAFFOLD__ removed)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs (edit only if the scaffold signature needs adjusting)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit - stamp on a skip)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit - stamp on a skip; none on compute, failure or cancel)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandlerTest.cs + FeatureRankChangedForecastTriggerHandlerTest.cs (edit - only if the stamp's repository is resolved from the mocked scope those fixtures build: register its mock)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastConfirmationRepositoryRelationalTest.cs (edit - un-skip the confirm case)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/SkipUnchangedForecasts/Slice02ConfirmedNowScenarios.cs (edit - un-skip two)"
+          ],
+          "dependencies": [
+            "01-07",
+            "01-08",
+            "01-09",
+            "01-10",
+            "01-11"
+          ],
+          "criteria": [
+            "After a skipped round every in-scope Feature's lastUpdated falls inside that round's window, with forecasts and histograms unchanged.",
+            "A Feature of another Portfolio that a shared Team works on is confirmed with them; a Feature with no shared Team is untouched.",
+            "A failed or stopped round changes no Feature's time or dates; a computed forecast still stamps its compute time.",
+            "The stamp is one set-based statement per forecast type, never a load-and-save of tracked rows.",
+            "dotnet build zero warnings; filtered dotnet test green (incl. ForecastUpdaterTest's stamp cases); no `__SCAFFOLD__` of this Story remains."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example acceptance and relational cases. Depends on the last phase-01 step: phase 02 starts only on a finished phase 01. A plain bulk update, not a CAS: a concurrent rewrite of a shared Feature is newer and 'confirmed now' is true of it. Lighthouse-Clients gate already cleared (no client reads a Feature forecast's lastUpdated). Pre-apply docs/ci-learnings.md. Comments rare, plain why, no internal refs. Commit via des-commit, `--owned-paths` once. `feat(forecast): ...`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (opus), iteration 2",
+    "approved_at": "2026-10-23T08:47:46Z",
+    "notes": "Iteration 1 NEEDS_REVISION (F1-F12) resolved; iteration 2 APPROVED with two non-blocking edits applied (01-03 sizing tag, 02-01 explicit phase-01 dependencies)."
+  }
+}

@@ -887,7 +887,7 @@ as named. Gate ≥ 80 % over the included set; read the per-file table in `mutat
 | `Services/Implementation/Forecast/ForecastService.cs` (357 lines) | 01 | whole file (mutated whole in Epic 6311; its unit suite is broad) | `ForecastServiceTest` + new compare cases |
 | `Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs` (226) | 01, 02 | whole file | updater unit tests (outcome → row, line, CAS, forget, stamp) |
 | `Services/Implementation/Repositories/PortfolioRepository.cs` (80) | 01 | whole file | relational tests of `TryRecordForecastInputs` / `ForgetForecastInputs` / `ForgetAllForecastInputs` (see note) |
-| `Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs` (new) | 01 | whole file | `ForecastInputsForgottenAtStartSeederTest` (calls the forget-all once) |
+| `Services/Implementation/Seeding/ForecastInputsForgottenAtStartSeeder.cs` (new) | 01 | whole file | `ForecastInputsForgottenAtStartSeederTests` (calls the forget-all once) |
 | `Services/Implementation/Repositories/FeatureRepository.cs` (70) | 02 | whole file | relational test of `ConfirmForecastsAsOf` |
 | `Services/Implementation/RefreshRoundSummary.cs` (30), `RefreshRoundSummaryLine.cs` (53) | 01 | whole file | summary-line tests (the `skipped after` branch) |
 | `API/DTO/RefreshLogDto.cs` (80) | 01 | whole file | DTO mapping test |
@@ -1146,7 +1146,7 @@ Not scaffolded, because no test imports them: `ForecastRunOutcome`, the new `IFo
     `PortfoliosControllerTest`: each verifies `ForgetForecastInputs` is called with exactly the touched Portfolio ids,
     and before the trigger.
   - a `RefreshLogDto` mapping test (`Skipped` → `skipped`).
-  - `ForecastInputsForgottenAtStartSeederTest`: calls `ForgetAllForecastInputs` once.
+  - `ForecastInputsForgottenAtStartSeederTests`: calls `ForgetAllForecastInputs` once.
   - the golden fingerprint value once `Of` exists, and the fresh-`DbContext` fingerprint equality on SQLite and on
     Postgres (`SharedPostgresContainer`, fresh database per case).
 - **Who guards the controller forgets.** In CI, the press scenarios in `Slice01UserPressScenarios` (an acceptance test
