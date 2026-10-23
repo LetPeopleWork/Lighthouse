@@ -116,8 +116,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void PredictWorkItemCreation_GivenWorkItemTypes_CreatesHowManyForecast()
         {
-            var startDate = DateTime.Now.AddDays(-30);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             const int daysToForecast = 10;
             var workItemTypes = new[] { "User Story" };

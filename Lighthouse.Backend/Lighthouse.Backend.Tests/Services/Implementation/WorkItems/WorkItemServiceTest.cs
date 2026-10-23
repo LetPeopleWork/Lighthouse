@@ -2805,7 +2805,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private Portfolio CreatePortfolio()
         {
-            return CreatePortfolio(DateTime.Now);
+            return CreatePortfolio(DateTime.UtcNow);
         }
 
         private Portfolio CreatePortfolio(DateTime lastUpdateTime)

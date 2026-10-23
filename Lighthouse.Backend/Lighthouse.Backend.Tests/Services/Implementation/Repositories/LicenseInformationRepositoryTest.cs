@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Email = "test@mail.com",
                 LicenseNumber = "1234567890",
                 Organization = "LetPeopleWork GmbH",
-                ExpiryDate = DateTime.Now.AddYears(1),
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
                 Signature = "wlkjsdalkjfasdlkfasd"
             };
 
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 Email = "test@mail.com",
                 LicenseNumber = "1234567890",
                 Organization = "LetPeopleWork GmbH",
-                ExpiryDate = DateTime.Now.AddYears(1),
+                ExpiryDate = DateTime.UtcNow.AddYears(1),
                 Signature = "VflBochumOle"
             };
 
@@ -64,8 +64,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             // Update License
             licenseInfo.Email = "newemail@test.com";
             licenseInfo.Organization = "LetPeopleWork AG";
-            licenseInfo.ExpiryDate = DateTime.Now.AddYears(2);
-            licenseInfo.ValidFrom = DateTime.Now.AddYears(20);
+            licenseInfo.ExpiryDate = DateTime.UtcNow.AddYears(2);
+            licenseInfo.ValidFrom = DateTime.UtcNow.AddYears(20);
             licenseInfo.LicenseNumber = "1886";
             licenseInfo.Signature = "HoppGC!";
             subject.Add(licenseInfo);

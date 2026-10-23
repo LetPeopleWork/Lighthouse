@@ -99,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllTeams()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
 
             var subject = CreateSubject();
@@ -112,8 +112,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_MultipleTeams_RefreshesAllTeams()
         {
-            var team1 = CreateTeam(DateTime.Now.AddDays(-1));
-            var team2 = CreateTeam(DateTime.Now.AddDays(-1));
+            var team1 = CreateTeam(DateTime.UtcNow.AddDays(-1));
+            var team2 = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team1, team2]);
             var subject = CreateSubject();
 
@@ -126,8 +126,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_MultipleTeams_RefreshesOnlyTeamsWhereLastRefreshIsOlderThanConfiguredSetting()
         {
-            var team1 = CreateTeam(DateTime.Now.AddDays(-1));
-            var team2 = CreateTeam(DateTime.Now);
+            var team1 = CreateTeam(DateTime.UtcNow.AddDays(-1));
+            var team2 = CreateTeam(DateTime.UtcNow);
 
             SetupRefreshSettings(10, 360);
 
@@ -144,11 +144,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ShouldBeRefreshed_NoPremiumLicense_MoreThanThreeTeams_DoesNotRefresh()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
 
             SetupRefreshSettings(10, 360);
 
-            SetupTeams([team, CreateTeam(DateTime.Now), CreateTeam(DateTime.Now), CreateTeam(DateTime.Now)]);
+            SetupTeams([team, CreateTeam(DateTime.UtcNow), CreateTeam(DateTime.UtcNow), CreateTeam(DateTime.UtcNow)]);
 
             var subject = CreateSubject();
 
@@ -160,9 +160,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ShouldBeRefreshed_PremiumLicense_MoreThanThreeTeams_Refreshes()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupRefreshSettings(10, 360);
-            SetupTeams([team, CreateTeam(DateTime.Now), CreateTeam(DateTime.Now), CreateTeam(DateTime.Now)]);
+            SetupTeams([team, CreateTeam(DateTime.UtcNow), CreateTeam(DateTime.UtcNow), CreateTeam(DateTime.UtcNow)]);
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
 
@@ -176,7 +176,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ReadyToRefresh_TriggersWriteBackForTeam()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
 
             var subject = CreateSubject();
@@ -219,7 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_TheWriteBackFlushThrows_LogsItAndStillFinishes()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
 
             WriteBackCollectorMock
@@ -305,7 +305,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_EveryCredentialReads_RecordsSuccessAndSaysNothingAboutEncryption()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
 
             CreateSubject().TriggerUpdate(team.Id);
@@ -329,7 +329,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_Cancelled_RecordsTheRefreshAsCancelledRatherThanFailed()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -356,7 +356,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_WorkTrackingSystemUnreachable_BlamesTheWorkTrackingSystemAndSaysNothingAboutACredential()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -418,7 +418,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_TheRefreshFoundSomethingWrongWithASetting_RecordsTheFindingOnItsRow()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -433,7 +433,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -449,7 +449,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_AWholeDownloadThatFailedPartWay_LeavesTheFindingsOfItsRowUnsaid()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -472,7 +472,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_ConnectorCouldNotReadWhatTheRefreshNeeds_TheFailureStillStopsTheRefresh()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             SetupTeams([team]);
             teamDataServiceMock
                 .Setup(x => x.UpdateTeamData(team))
@@ -490,7 +490,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Team SetupTeamWhoseQueryIsRefused()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             team.Name = RefusedTeamName;
 
             SetupTeams([team]);
@@ -504,7 +504,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Team SetupTeamWhoseCredentialCannotBeRead()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
             team.WorkTrackingSystemConnection.Name = ConnectionName;
             team.WorkTrackingSystemConnection.Options.Add(new WorkTrackingSystemConnectionOption
             {

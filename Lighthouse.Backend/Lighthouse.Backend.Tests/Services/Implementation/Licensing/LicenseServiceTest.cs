@@ -184,7 +184,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
                 Name = "Benjamin",
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
-                ExpiryDate = DateTime.Today,
+                ExpiryDate = TestToday.AmbientAsUtcMidnight,
             };
 
             var licenseVerifierMock = new Mock<ILicenseVerifier>();
@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
                 Organization = "Let People Work",
                 Email = "benjamin@letpeople.work",
                 ExpiryDate = DateTime.UtcNow.AddYears(1),
-                ValidFrom = DateTime.Today,
+                ValidFrom = TestToday.AmbientAsUtcMidnight,
             };
 
             var licenseVerifierMock = new Mock<ILicenseVerifier>();
@@ -379,7 +379,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Licensing
         }
 
         /// <summary>
-        /// Bug #5567, decision 1: 02:00 UTC on the 11th is still the 10th in Los Angeles. A licence
+        /// 02:00 UTC on the 11th is still the 10th in Los Angeles. A licence
         /// expiring on the 10th must survive the licensee's whole 10th, not lapse mid-afternoon.
         /// </summary>
         [Test]

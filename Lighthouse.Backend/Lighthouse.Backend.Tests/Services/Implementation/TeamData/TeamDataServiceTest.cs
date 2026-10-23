@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [Test]
         public async Task ExecuteAsync_UpdatesWorkItemsForTeam()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
 
             var subject = CreateSubject();
 
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.TeamData
         [Test]
         public async Task ExecuteAsync_PublishesTeamDataRefreshedForTeam()
         {
-            var team = CreateTeam(DateTime.Now.AddDays(-1));
+            var team = CreateTeam(DateTime.UtcNow.AddDays(-1));
 
             var subject = CreateSubject();
 
