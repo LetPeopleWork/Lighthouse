@@ -217,6 +217,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task GetPortfolioIdsForTeams_SeveralTeamsSharingAPortfolio_ReturnsEachOfTheirPortfoliosOnce()
+        {
+            var subject = CreateSubject();
+
+            var connection = CreateConnection();
+            var payments = new Team { Name = "Payments", WorkTrackingSystemConnection = connection };
+            var ledger = new Team { Name = "Ledger", WorkTrackingSystemConnection = connection };
+            var onboarding = new Team { Name = "Onboarding", WorkTrackingSystemConnection = connection };
+            var elsewhere = new Team { Name = "Elsewhere", WorkTrackingSystemConnection = connection };
+            DatabaseContext.Teams.AddRange(payments, ledger, onboarding, elsewhere);
+            await DatabaseContext.SaveChangesAsync();
+
+            var shared = APortfolioWorkedOnBy("Shared", connection, payments, ledger);
+            var ownedByOnboarding = APortfolioWorkedOnBy("Onboarding", connection, onboarding);
+            var unrelated = APortfolioWorkedOnBy("Unrelated", connection, elsewhere);
+            subject.Add(shared);
+            subject.Add(ownedByOnboarding);
+            subject.Add(unrelated);
+            await subject.Save();
+
+            DatabaseContext.ChangeTracker.Clear();
+
+            var portfolioIds = subject.GetPortfolioIdsForTeams([payments.Id, ledger.Id, onboarding.Id]);
+
+            Assert.That(portfolioIds, Is.EquivalentTo(new[] { shared.Id, ownedByOnboarding.Id }));
+        }
+
+        private static Portfolio APortfolioWorkedOnBy(string name, WorkTrackingSystemConnection connection, params Team[] teams)
+        {
+            var portfolio = new Portfolio { Name = name, WorkTrackingSystemConnection = connection };
+
+            foreach (var team in teams)
+            {
+                var feature = new Feature { Name = $"{name} for {team.Name}", Order = "12" };
+                feature.FeatureWork.Add(new FeatureWork(team, 1, 2, feature));
+                portfolio.Features.Add(feature);
+            }
+
+            return portfolio;
+        }
+
+        [Test]
         public void PortfolioRepository_ResolvedThroughEitherPort_IsTheSameScopedInstance()
         {
             var portfolioPort = ServiceProvider.GetRequiredService<IPortfolioRepository>();

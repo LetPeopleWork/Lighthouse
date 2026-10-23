@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Diagnostics;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
@@ -56,6 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 Mock.Of<ILogger<ForecastService>>(),
                 benchmark.TeamMetrics,
                 benchmark.FeatureRepository,
+                Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),
                 TimeProvider.System);

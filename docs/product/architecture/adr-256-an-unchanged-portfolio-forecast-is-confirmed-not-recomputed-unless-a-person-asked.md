@@ -23,6 +23,11 @@ forgets (6), the promise of a press is split between "Update forecast" and the r
 instance day as a `DateOnly` and an error while fingerprinting means compute (2, 4), the Feature read is narrowed
 (Consequences), and no controller gains a parameter (Consequences).*
 
+*Amended at the DELIVER review (2026-10-23): just before a computed run saves its forecasts, it swaps the recorded
+value, by compare-and-set from what it read, for a `"computing:"` mark of its own, and at the end it records the fresh
+fingerprint only by swapping that mark, so a failure, crash, cancel or forget anywhere between the save and the record
+leaves a value no round can match (2, 3, 4).*
+
 1. **Fingerprint at the simulation's input boundary.** A pure `ForecastInputFingerprint` renders exactly what the run
    is about to be handed:
    - today (the instance day) and the simulation limits;

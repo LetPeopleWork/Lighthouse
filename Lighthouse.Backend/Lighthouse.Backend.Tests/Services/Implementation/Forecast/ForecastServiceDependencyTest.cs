@@ -219,6 +219,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 logger.Object,
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
+                Mock.Of<IPortfolioRepository>(),
                 new WaitsHandedStraightToTheForecast(waits),
                 new ForecastSimulation(new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares), ForecastSimulationLimits.Default),
                 TimeProvider.System);

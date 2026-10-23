@@ -284,6 +284,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Mock.Of<ILogger<ForecastService>>(),
                 Mock.Of<ITeamMetricsService>(),
                 Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),
                 TimeProvider.System);

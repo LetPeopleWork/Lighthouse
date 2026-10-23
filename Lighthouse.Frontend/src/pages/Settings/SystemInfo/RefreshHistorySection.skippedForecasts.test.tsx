@@ -218,6 +218,23 @@ describe("Refresh History tells a skipped forecast from a computed one", () => {
 		);
 		expect(forecastBar?.avgDuration).toBe(271.4);
 	});
+
+	it("draws no duration bar for an entity whose every run was skipped, rather than a bar of zero", async () => {
+		getRefreshLogs.mockResolvedValue([
+			aForecastOfPaymentsPlatform("2026-10-23T06:15:01Z", 900, true),
+			aForecastOfPaymentsPlatform("2026-10-23T06:30:02Z", 1100, true),
+			aRefreshOfFss("2026-10-23T06:14:40Z", 16448),
+		]);
+		renderRefreshHistory();
+
+		await screen.findByText(/^Total Items Fetched$/);
+
+		const forecastBar = theLatestBars().find(
+			(bar) => bar.label === "Forecast: Payments Platform",
+		);
+		expect(forecastBar?.avgDuration).toBeNull();
+		expect(forecastBar?.avgItems).toBe(412);
+	});
 });
 
 describe("Story 6354: Refresh History reads as before wherever nothing was skipped", () => {
