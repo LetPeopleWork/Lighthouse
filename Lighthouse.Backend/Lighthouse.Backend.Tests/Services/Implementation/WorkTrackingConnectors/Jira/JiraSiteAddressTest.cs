@@ -12,6 +12,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("https://x.atlassian.net?selectedProject=PROJ", ExpectedResult = "https://x.atlassian.net")]
         [TestCase("https://x.atlassian.net:8443/jira/", ExpectedResult = "https://x.atlassian.net:8443")]
         [TestCase("  https://x.atlassian.net/jira/  ", ExpectedResult = "https://x.atlassian.net")]
+        [TestCase("https://x.atlassian.net./jira/", ExpectedResult = "https://x.atlassian.net.")]
         [TestCase("https://host/jira", ExpectedResult = "https://host/jira")]
         [TestCase("https://host/jira/", ExpectedResult = "https://host/jira")]
         [TestCase("https://host/", ExpectedResult = "https://host")]
@@ -20,7 +21,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("https://x.atlassian.net.example.invalid/jira/", ExpectedResult = "https://x.atlassian.net.example.invalid/jira")]
         [TestCase("not a url", ExpectedResult = "not a url")]
         [TestCase("", ExpectedResult = "")]
-        public string Of_ReducesACloudAddressToItsSiteRootAndKeepsAnyOtherPath(string entered)
+        [TestCase(null, ExpectedResult = null)]
+        public string? Of_ReducesACloudAddressToItsSiteRootAndKeepsAnyOtherPath(string? entered)
             => JiraSiteAddress.Of(entered);
     }
 }

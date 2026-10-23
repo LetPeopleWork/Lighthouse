@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     /// <summary>
@@ -17,15 +19,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// Anything that is not an absolute URL comes back exactly as given, so the check that tells a user
         /// their URL is invalid still sees what they typed.
         /// </summary>
-        public static string Of(string raw)
+        [return: NotNullIfNotNull(nameof(raw))]
+        public static string? Of(string? raw)
         {
-            var address = raw.Trim();
+            var address = raw?.Trim();
             if (!Uri.TryCreate(address, UriKind.Absolute, out var uri))
             {
                 return raw;
             }
 
-            if (uri.Host.EndsWith(AtlassianCloudHostSuffix, StringComparison.OrdinalIgnoreCase))
+            if (IsAtlassianCloud(uri.Host))
             {
                 return SchemeAndAuthorityAsTyped(address, uri);
             }
@@ -41,6 +44,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => workTrackingSystem == WorkTrackingSystems.Jira && optionKey == JiraWorkTrackingOptionNames.Url
                 ? Of(value)
                 : value;
+
+        // A host written with a trailing dot is the same fully qualified name as the one without it.
+        private static bool IsAtlassianCloud(string host)
+        {
+            var name = host.EndsWith('.') ? host[..^1] : host;
+            return name.EndsWith(AtlassianCloudHostSuffix, StringComparison.OrdinalIgnoreCase);
+        }
 
         private static string SchemeAndAuthorityAsTyped(string address, Uri uri)
         {

@@ -449,7 +449,7 @@ const OverviewDashboard: React.FC = () => {
 					</Alert>
 				)}
 
-				{rbac.isSystemAdmin && connectionsRefused && (
+				{!rbac.isLoading && rbac.isSystemAdmin && connectionsRefused && (
 					<Alert
 						severity="warning"
 						sx={{ mt: 2 }}

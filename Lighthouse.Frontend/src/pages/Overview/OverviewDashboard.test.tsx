@@ -864,6 +864,34 @@ describe("OverviewDashboard", () => {
 			).not.toBeInTheDocument();
 		});
 
+		it("says nothing about connections while the roles are still loading", async () => {
+			const mockRbacService = createMockRbacService();
+			mockRbacService.getAuthorizationSummary = vi
+				.fn()
+				.mockReturnValue(new Promise(() => {}));
+			const mockWorkTrackingSystemService =
+				createMockWorkTrackingSystemService();
+			mockWorkTrackingSystemService.getConfiguredWorkTrackingSystems = vi
+				.fn()
+				.mockRejectedValue(new ApiError(403, "Forbidden"));
+
+			renderWithProviders(
+				<OverviewDashboard />,
+				{
+					rbacService: mockRbacService,
+					workTrackingSystemService: mockWorkTrackingSystemService,
+				},
+				{ teams: [], portfolios: [] },
+			);
+
+			await waitFor(() => {
+				expect(screen.getByText("Portfolios")).toBeInTheDocument();
+			});
+			expect(
+				screen.queryByText(connectionsRefusedCopy),
+			).not.toBeInTheDocument();
+		});
+
 		it("still shows onboarding to a system admin who simply has no connections yet", async () => {
 			renderWithConnections(true, vi.fn().mockResolvedValue([]));
 

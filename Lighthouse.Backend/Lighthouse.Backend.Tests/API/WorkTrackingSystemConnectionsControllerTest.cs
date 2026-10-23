@@ -191,6 +191,27 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task ValidateConnection_JiraUrlSentAsNull_ReturnsTheConnectorsInvalidUrlVerdict()
+        {
+            var connectorMock = new Mock<IWorkTrackingConnector>();
+            connectorMock
+                .Setup(x => x.ValidateConnection(It.Is<WorkTrackingSystemConnection>(
+                    c => c.Options.Single(o => o.Key == JiraWorkTrackingOptionNames.Url).Value == null)))
+                .ReturnsAsync(ConnectionValidationResult.Failure("invalid_url", "The Jira URL appears to be invalid."));
+            workTrackingConnectorFactoryMock.Setup(x => x.GetWorkTrackingConnector(WorkTrackingSystems.Jira)).Returns(connectorMock.Object);
+
+            var connectionDto = new WorkTrackingSystemConnectionDto { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            connectionDto.Options.Add(new WorkTrackingSystemConnectionOptionDto { Key = JiraWorkTrackingOptionNames.Url, Value = null! });
+
+            var subject = CreateSubject();
+
+            var result = await subject.ValidateConnection(connectionDto);
+
+            var badRequest = result.Result as BadRequestObjectResult;
+            Assert.That((badRequest?.Value as ConnectionValidationResult)?.Code, Is.EqualTo("invalid_url"));
+        }
+
+        [Test]
         [TestCase(WorkTrackingSystems.AzureDevOps)]
         [TestCase(WorkTrackingSystems.Jira)]
         public async Task ValidateConnection_InvokesWorkItemService_ReturnsResult(WorkTrackingSystems workTrackingSystem)
