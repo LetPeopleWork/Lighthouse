@@ -516,19 +516,25 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateTeamData_GivenTeamId_TriggersTeamUpdate()
+        public async Task UpdateTeamData_GivenTeamId_ForgetsWhatWasConfirmedForItsPortfoliosThenTriggersTeamUpdate()
         {
-            var expectedTeam = new Team();
+            var expectedTeam = new Team { Id = 12 };
             teamRepositoryMock.Setup(x => x.GetById(12)).Returns(expectedTeam);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([7, 8]);
+            var calls = new List<string>();
+            portfolioRepositoryMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, CancellationToken>((ids, _) => calls.Add($"forget {string.Join(",", ids.Order())}"))
+                .Returns(Task.CompletedTask);
+            teamUpdateServiceMock.Setup(x => x.TriggerUpdate(It.IsAny<int>())).Callback<int>(id => calls.Add($"trigger {id}"));
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateTeamData(12);
-
-            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id));
+            var response = await subject.UpdateTeamData(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(calls, Is.EqualTo(new List<string> { "forget 7,8", "trigger 12" }));
                 Assert.That(response, Is.InstanceOf<OkResult>());
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
@@ -536,13 +542,14 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateTeamData_TeamDoesNotExist_ReturnsNotFound()
+        public async Task UpdateTeamData_TeamDoesNotExist_ReturnsNotFound()
         {
             var subject = CreateSubject();
 
-            var response = subject.UpdateTeamData(12);
+            var response = await subject.UpdateTeamData(12, CancellationToken.None);
 
             Assert.That(response, Is.InstanceOf<NotFoundObjectResult>());
+            portfolioRepositoryMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
             var notFoundObjectResult = response as NotFoundObjectResult;
             using (Assert.EnterMultipleScope())
             {

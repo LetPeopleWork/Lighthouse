@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.API
         [HttpPost]
         [LicenseGuard(CheckTeamConstraint = true)]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
-        public ActionResult UpdateTeamData(int teamId)
+        public async Task<ActionResult> UpdateTeamData(int teamId, CancellationToken cancellationToken)
         {
             var team = teamRepository.GetById(teamId);
 
@@ -84,6 +84,7 @@ namespace Lighthouse.Backend.API
                 return NotFound(null);
             }
 
+            await portfolioRepository.ForgetForecastInputs(portfolioRepository.GetPortfolioIdsForTeam(team.Id), cancellationToken);
             teamUpdateService.TriggerUpdate(team.Id);
 
             return Ok();

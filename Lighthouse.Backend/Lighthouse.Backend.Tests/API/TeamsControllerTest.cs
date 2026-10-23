@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API
     public class TeamsControllerTest
     {
         private Mock<IRepository<Team>> teamRepositoryMock;
-        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
+        private Mock<IPortfolioRepository> portfolioRepositoryMock;
         private Mock<IRepository<WorkTrackingSystemConnection>> workTrackingSystemConnectionRepositoryMock;
         private Mock<ITerminologyService> terminologyServiceMock;
 
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API
         public void Setup()
         {
             teamRepositoryMock = new Mock<IRepository<Team>>();
-            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            portfolioRepositoryMock = new Mock<IPortfolioRepository>();
             workTrackingSystemConnectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             terminologyServiceMock = new Mock<ITerminologyService>();
             licenseServiceMock = new Mock<ILicenseService>();
@@ -406,19 +406,26 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateAllTeamData_TriggersUpdateOfAllTeams()
+        public async Task UpdateAllTeamData_ForgetsWhatWasConfirmedForEveryPortfolioOfTheTeamsThenTriggersUpdateOfAllTeams()
         {
-            var expectedTeam = new Team { Id = 12 };
-            teamRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns(expectedTeam);
+            var teams = new[] { new Team { Id = 12 }, new Team { Id = 13 }, new Team { Id = 14 } };
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([4, 5]);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(13)).Returns([5, 6]);
+            portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(14)).Returns([]);
+            var calls = new List<string>();
+            portfolioRepositoryMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, CancellationToken>((ids, _) => calls.Add($"forget {string.Join(",", ids.Order())}"))
+                .Returns(Task.CompletedTask);
+            teamUpdateServiceMock.Setup(x => x.TriggerUpdate(It.IsAny<int>())).Callback<int>(id => calls.Add($"trigger {id}"));
 
-            var subject = CreateSubject([expectedTeam, expectedTeam, expectedTeam]);
+            var subject = CreateSubject(teams);
 
-            var response = subject.UpdateAllTeams();
-
-            teamUpdateServiceMock.Verify(x => x.TriggerUpdate(expectedTeam.Id), Times.Exactly(3));
+            var response = await subject.UpdateAllTeams(CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(calls, Is.EqualTo(new List<string> { "forget 4,5,6", "trigger 12", "trigger 13", "trigger 14" }));
                 Assert.That(response, Is.InstanceOf<OkResult>());
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));

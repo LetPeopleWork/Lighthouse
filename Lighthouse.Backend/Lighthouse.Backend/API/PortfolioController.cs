@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
     // allowed to construct their own.
 #pragma warning disable S107
     public class PortfolioController(
-        IRepository<Portfolio> portfolioRepository,
+        IPortfolioRepository portfolioRepository,
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
         IRbacAdministrationService rbacAdministrationService,
@@ -58,8 +58,9 @@ namespace Lighthouse.Backend.API
         [HttpPost("refresh")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
-        public ActionResult UpdateFeaturesForPortfolio(int portfolioId)
+        public async Task<ActionResult> UpdateFeaturesForPortfolio(int portfolioId, CancellationToken cancellationToken)
         {
+            await portfolioRepository.ForgetForecastInputs([portfolioId], cancellationToken);
             portfolioUpdater.TriggerUpdate(portfolioId);
 
             return Ok();

@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         [TestCase(UserPress.RefreshAllTeams)]
         [TestCase(UserPress.RefreshOfThePortfolio)]
         [TestCase(UserPress.RefreshAllPortfolios)]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task A_press_forecasts_in_full_even_when_nothing_changed(UserPress press)
@@ -47,7 +46,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// </summary>
         [TestCase(false)]
         [TestCase(true)]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -85,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// it read over the second press, however little the first press left.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -119,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// computed forecast after everything that was already under way.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("contract-shape:bounded-change")]

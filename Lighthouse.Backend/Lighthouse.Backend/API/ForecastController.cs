@@ -36,13 +36,14 @@ namespace Lighthouse.Backend.API
         /// </summary>
         [HttpPost("update/{id:int}")]
         [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "id")]
-        public ActionResult UpdateForecastForProject(int id)
+        public async Task<ActionResult> UpdateForecastForProject(int id, CancellationToken cancellationToken)
         {
             if (!portfolioRepository.Exists(id))
             {
                 return NotFound();
             }
 
+            await portfolioRepository.ForgetForecastInputs([id], cancellationToken);
             forecastUpdater.TriggerImmediateUpdate(id);
 
             return Accepted();
@@ -55,7 +56,7 @@ namespace Lighthouse.Backend.API
         /// </summary>
         [HttpPost("update-portfolios-for-team/{teamId:int}")]
         [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
-        public ActionResult<int> UpdateForecastsForTeamPortfolios(int teamId)
+        public async Task<ActionResult<int>> UpdateForecastsForTeamPortfolios(int teamId, CancellationToken cancellationToken)
         {
             if (!teamRepository.Exists(teamId))
             {
@@ -63,6 +64,7 @@ namespace Lighthouse.Backend.API
             }
 
             var portfolioIds = portfolioRepository.GetPortfolioIdsForTeam(teamId);
+            await portfolioRepository.ForgetForecastInputs(portfolioIds, cancellationToken);
 
             foreach (var portfolioId in portfolioIds)
             {

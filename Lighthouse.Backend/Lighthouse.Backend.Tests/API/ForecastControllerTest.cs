@@ -90,13 +90,19 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateForecast_PortfolioExists_ForecastsNowAndPromisesOnlyThatItWasAccepted()
+        public async Task UpdateForecast_PortfolioExists_ForgetsWhatWasConfirmedThenForecastsNowAndPromisesOnlyThatItWasAccepted()
         {
             portfolioRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
+            var calls = new List<string>();
+            portfolioRepositoryMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, CancellationToken>((ids, _) => calls.Add($"forget {string.Join(",", ids.Order())}"))
+                .Returns(Task.CompletedTask);
+            forecastUpdaterMock.Setup(x => x.TriggerImmediateUpdate(It.IsAny<int>())).Callback<int>(id => calls.Add($"trigger {id}"));
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateForecastForProject(12);
+            var response = await subject.UpdateForecastForProject(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -105,38 +111,45 @@ namespace Lighthouse.Backend.Tests.API
                 var acceptedResult = response as AcceptedResult;
                 Assert.That(acceptedResult.StatusCode, Is.EqualTo(202));
 
-                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(12), Times.Once);
+                Assert.That(calls, Is.EqualTo(new List<string> { "forget 12", "trigger 12" }));
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
 
         [Test]
-        public void UpdateForecast_PortfolioDoesNotExist_SaysSoInsteadOfClaimingAForecast()
+        public async Task UpdateForecast_PortfolioDoesNotExist_SaysSoInsteadOfClaimingAForecast()
         {
             portfolioRepositoryMock.Setup(x => x.Exists(12)).Returns(false);
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateForecastForProject(12);
+            var response = await subject.UpdateForecastForProject(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response, Is.InstanceOf<NotFoundResult>());
 
+                portfolioRepositoryMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamWorksFeaturesOfPortfolios_ForecastsEachNowAndSaysHowMany()
+        public async Task UpdateForecastsForTeamPortfolios_TeamWorksFeaturesOfPortfolios_ForgetsWhatWasConfirmedThenForecastsEachNowAndSaysHowMany()
         {
             teamRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
             portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([1, 2, 3]);
+            var calls = new List<string>();
+            portfolioRepositoryMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, CancellationToken>((ids, _) => calls.Add($"forget {string.Join(",", ids.Order())}"))
+                .Returns(Task.CompletedTask);
+            forecastUpdaterMock.Setup(x => x.TriggerImmediateUpdate(It.IsAny<int>())).Callback<int>(id => calls.Add($"trigger {id}"));
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateForecastsForTeamPortfolios(12);
+            var response = await subject.UpdateForecastsForTeamPortfolios(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -146,23 +159,20 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(acceptedResult.StatusCode, Is.EqualTo(202));
                 Assert.That(acceptedResult.Value, Is.EqualTo(3));
 
-                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(1), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(2), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(3), Times.Once);
-                forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Exactly(3));
+                Assert.That(calls, Is.EqualTo(new List<string> { "forget 1,2,3", "trigger 1", "trigger 2", "trigger 3" }));
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamWorksNoFeatureOfAnyPortfolio_SaysNoForecastWasQueued()
+        public async Task UpdateForecastsForTeamPortfolios_TeamWorksNoFeatureOfAnyPortfolio_SaysNoForecastWasQueued()
         {
             teamRepositoryMock.Setup(x => x.Exists(12)).Returns(true);
             portfolioRepositoryMock.Setup(x => x.GetPortfolioIdsForTeam(12)).Returns([]);
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateForecastsForTeamPortfolios(12);
+            var response = await subject.UpdateForecastsForTeamPortfolios(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -177,13 +187,13 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateForecastsForTeamPortfolios_TeamDoesNotExist_ReturnsNotFound()
+        public async Task UpdateForecastsForTeamPortfolios_TeamDoesNotExist_ReturnsNotFound()
         {
             teamRepositoryMock.Setup(x => x.Exists(12)).Returns(false);
 
             var subject = CreateSubject();
 
-            var response = subject.UpdateForecastsForTeamPortfolios(12);
+            var response = await subject.UpdateForecastsForTeamPortfolios(12, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -192,6 +202,7 @@ namespace Lighthouse.Backend.Tests.API
                 var notFoundResult = response.Result as NotFoundResult;
                 Assert.That(notFoundResult.StatusCode, Is.EqualTo(404));
 
+                portfolioRepositoryMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerImmediateUpdate(It.IsAny<int>()), Times.Never);
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(It.IsAny<int>()), Times.Never);
             }

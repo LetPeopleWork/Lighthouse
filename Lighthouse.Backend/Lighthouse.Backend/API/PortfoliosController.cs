@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.API
     // take one place - see PortfolioController.
 #pragma warning disable S107
     public class PortfoliosController(
-        IRepository<Portfolio> portfolioRepository,
+        IPortfolioRepository portfolioRepository,
         IRepository<Team> teamRepository,
         IPortfolioUpdater portfolioUpdater,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -63,9 +63,10 @@ namespace Lighthouse.Backend.API
         [HttpPost("refresh-all")]
         [LicenseGuard(RequirePremium = true)]
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
-        public ActionResult UpdateAllPortfolios()
+        public async Task<ActionResult> UpdateAllPortfolios(CancellationToken cancellationToken)
         {
-            var portfolios = portfolioRepository.GetAll();
+            var portfolios = portfolioRepository.GetAll().ToList();
+            await portfolioRepository.ForgetForecastInputs(portfolios.Select(portfolio => portfolio.Id).ToList(), cancellationToken);
 
             foreach (var portfolio in portfolios)
             {

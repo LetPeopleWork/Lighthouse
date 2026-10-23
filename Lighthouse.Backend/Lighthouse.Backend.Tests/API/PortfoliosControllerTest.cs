@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.API
 {
     public class PortfoliosControllerTest
     {
-        private Mock<IRepository<Portfolio>> portfolioRepoMock;
+        private Mock<IPortfolioRepository> portfolioRepoMock;
         private Mock<IRepository<Team>> teamRepoMock;
 
         private Mock<IPortfolioUpdater> portfolioUpdaterMock;
@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.API
         [SetUp]
         public void Setup()
         {
-            portfolioRepoMock = new Mock<IRepository<Portfolio>>();
+            portfolioRepoMock = new Mock<IPortfolioRepository>();
             teamRepoMock = new Mock<IRepository<Team>>();
             portfolioUpdaterMock = new Mock<IPortfolioUpdater>();
             workTrackingConnectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void UpdateAllPortfolioData_TriggersUpdateOfAllPortfolios()
+        public async Task UpdateAllPortfolioData_ForgetsWhatWasConfirmedForEveryPortfolioThenTriggersUpdateOfAllPortfolios()
         {
             var testPortfolios = GetTestPortfolios();
 
@@ -71,9 +71,16 @@ namespace Lighthouse.Backend.Tests.API
                 portfolioRepoMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             }
 
+            var calls = new List<string>();
+            portfolioRepoMock
+                .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
+                .Callback<IReadOnlyCollection<int>, CancellationToken>((ids, _) => calls.Add($"forget {string.Join(",", ids.Order())}"))
+                .Returns(Task.CompletedTask);
+            portfolioUpdaterMock.Setup(x => x.TriggerUpdate(It.IsAny<int>())).Callback<int>(id => calls.Add($"trigger {id}"));
+
             var subject = CreateSubject();
 
-            var response = subject.UpdateAllPortfolios();
+            var response = await subject.UpdateAllPortfolios(CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
@@ -81,10 +88,9 @@ namespace Lighthouse.Backend.Tests.API
                 var okResult = response as OkResult;
                 Assert.That(okResult.StatusCode, Is.EqualTo(200));
 
-                foreach (var portfolio in testPortfolios)
-                {
-                    portfolioUpdaterMock.Verify(x => x.TriggerUpdate(portfolio.Id), Times.Once);
-                }
+                var expectedCalls = new[] { $"forget {string.Join(",", testPortfolios.Select(p => p.Id).Order())}" }
+                    .Concat(testPortfolios.Select(p => $"trigger {p.Id}"));
+                Assert.That(calls, Is.EqualTo(expectedCalls));
             }
         }
 

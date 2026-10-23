@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class TeamsController(
         IRepository<Team> teamRepository,
-        IRepository<Portfolio> portfolioRepository,
+        IPortfolioRepository portfolioRepository,
         IRepository<WorkTrackingSystemConnection> workTrackingSystemConnectionRepository,
         ITeamUpdater teamUpdateService,
         IWorkTrackingConnectorFactory workTrackingConnectorFactory,
@@ -72,9 +72,11 @@ namespace Lighthouse.Backend.API
         [HttpPost("update-all")]
         [LicenseGuard(RequirePremium = true)]
         [RbacGuard(RbacGuardRequirement.SystemAdmin)]
-        public ActionResult UpdateAllTeams()
+        public async Task<ActionResult> UpdateAllTeams(CancellationToken cancellationToken)
         {
-            var teams = teamRepository.GetAll();
+            var teams = teamRepository.GetAll().ToList();
+            var portfolioIds = teams.SelectMany(team => portfolioRepository.GetPortfolioIdsForTeam(team.Id)).Distinct().ToList();
+            await portfolioRepository.ForgetForecastInputs(portfolioIds, cancellationToken);
 
             foreach (var team in teams)
             {
