@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -26,17 +25,23 @@ namespace Lighthouse.Backend.Tests
                 $"Test host is on '{TimeZoneInfo.Local.Id}', which does not keep the same time as {InstanceTimeZoneId}; run the tests with lighthouse.runsettings.");
         }
 
+        /// <summary>
+        /// The day is checked against the real clock rather than against the process start time the
+        /// frozen instant is built from, so the check cannot agree with itself. The day before is
+        /// accepted because a run that started before midnight UTC legitimately keeps that day.
+        /// </summary>
         [Test]
-        public void FrozenNow_IsHalfPastElevenUtc_OnTheDayTheTestProcessStarted()
+        public void FrozenNow_IsHalfPastElevenUtc_OnTheDayThisRunIsHappening()
         {
-            using var process = Process.GetCurrentProcess();
-            var processStartDay = DateOnly.FromDateTime(process.StartTime.ToUniversalTime());
+            var realUtcDay = DateOnly.FromDateTime(DateTime.UtcNow);
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(TestToday.FrozenNow.Offset, Is.EqualTo(TimeSpan.Zero));
                 Assert.That(TestToday.FrozenNow.UtcDateTime.TimeOfDay, Is.EqualTo(new TimeSpan(23, 30, 0)));
-                Assert.That(DateOnly.FromDateTime(TestToday.FrozenNow.UtcDateTime), Is.EqualTo(processStartDay));
+                Assert.That(
+                    DateOnly.FromDateTime(TestToday.FrozenNow.UtcDateTime),
+                    Is.InRange(realUtcDay.AddDays(-1), realUtcDay));
             }
         }
 
