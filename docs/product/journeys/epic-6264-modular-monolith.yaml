@@ -1,0 +1,149 @@
+schema_version: 1
+feature_id: epic-6264-modular-monolith
+updated: 2026-10-22
+note: >
+  Developer journey for Epic #6264 (Architecture Cleanup, Path to Modular Monolith). Every Story is
+  @infrastructure and behaviour-free, so the actor is the Lighthouse maintainer and the CI build, not
+  an end user. The catalogue, DDD vocabulary, KPIs and decisions live in
+  docs/feature/epic-6264-modular-monolith/feature-delta.md. The Story briefs are in its slices/ folder.
+
+journeys:
+
+  - name: find-and-respect-a-bounded-context
+    goal: >
+      A maintainer adding a change to one bounded context (e.g. a new Forecasting policy) finds the
+      context's folder, contract and glossary at once, and is stopped by CI, with the offending file
+      named, if the change crosses a boundary it should not.
+    persona: "lighthouse-maintainer"
+    job_id: infrastructure-only
+    infrastructure_rationale: >
+      Behaviour-free refactor. Value is developer- and CI-observable only: a folder tree that names
+      the nine contexts, rules that fail naming the file, ports shaped by role.
+
+    emotional_arc:
+      start: >
+        Wary. "Where does Forecasting live? Services/Interfaces, Services/Implementation, Models?
+        If I move anything, will the merge hurt?"
+      middle: >
+        Steady. Each Story is small, green and ratcheted, and the tree gets clearer one context at a
+        time without anything visible changing.
+      end: >
+        Confident. The structure explains itself, and the rules keep it that way.
+
+    steps:
+      - id: 1
+        name: Locate the context
+        command: "open the repo tree; read the bounded-context ADR (S01) and its glossary"
+        tui_mockup: |
+          +-- Lighthouse.Backend/Lighthouse.Backend/ ---------------------------+
+          | Modules/                                                             |
+          |   Forecasting/   Domain/  Application/  Adapters/   (per S01 ADR)    |
+          |   Metrics/ ...   (${packaged_contexts} of 9 packaged)                |
+          | Services/Interfaces + Implementation: ${layer_files_left} files left  |
+          +----------------------------------------------------------------------+
+        shared_artifacts:
+          - name: packaged_contexts
+            source: "the folder tree + ARCHITECTURE.md §4 (single source for the module map)"
+            displayed_as: "${packaged_contexts}"
+            consumers: ["feature-delta KPI 2", "ArchUnit namespace rules"]
+          - name: layer_files_left
+            source: "find Services/{Interfaces,Implementation} -name '*.cs' | wc -l (baseline 507 on 2026-10-22)"
+            displayed_as: "${layer_files_left}"
+            consumers: ["feature-delta KPI 1"]
+        emotional_state:
+          entry: "Wary: expects a grep hunt."
+          exit: "Oriented: the context has an address."
+        integration_checkpoint: |
+          ARCHITECTURE.md §4 and the folder tree agree on the nine contexts. Each S03* Story updates
+          §4 in the same change.
+        failure_modes:
+          - "§4 says a context is packaged but its files still sit in Services/* (doc drift)."
+        gherkin: |
+          Scenario: A packaged context has one address
+            Given the Forecasting context has been packaged
+            When the maintainer looks for the forecast data-sufficiency policy
+            Then it is under the Forecasting context folder
+            And no Forecasting file remains in Services/Interfaces or Services/Implementation
+
+      - id: 2
+        name: Make the change inside the boundary
+        command: "edit inside Modules/<Context>/; depend on another context only via its Contracts"
+        tui_mockup: |
+          +-- dotnet test --filter FullyQualifiedName~ArchitectureTests ---------+
+          | FAILED  Contracts-only rule                                          |
+          |   Modules/Refinement/Application/RefinementList.cs references        |
+          |   Modules/Forecasting/Domain/ForecastRunPlan (use Forecasting.Contracts)|
+          +----------------------------------------------------------------------+
+        shared_artifacts:
+          - name: ratchet_baselines
+            source: "inline file lists inside the ArchUnit guards and the FE1 allow-list"
+            displayed_as: "the file named in the failure"
+            consumers: ["S05a guard", "S09a contracts rule", "FE1 import rule", "feature-delta KPIs 4, 5, 8"]
+        emotional_state:
+          entry: "Focused."
+          exit: "Corrected early: the rule named the file, the fix is obvious."
+        integration_checkpoint: |
+          Rules fail by file name, never by count. A list only shrinks: a fixed file must be removed
+          from the list in the same PR.
+        failure_modes:
+          - "A rule is loosened to get green (forbidden: ratchet only)."
+          - "A baseline count drifts silently (prevented by inline file lists)."
+        gherkin: |
+          Scenario: Crossing a context boundary fails naming the file
+            Given the contracts-only rule is in place
+            When a Refinement class references a Forecasting domain type directly
+            Then the architecture tests fail naming that Refinement file
+
+          Scenario: A new GetAllByPredicate caller is stopped
+            Given the GetAllByPredicate guard lists today's 14 files
+            When a new service calls GetAllByPredicate
+            Then the architecture tests fail naming the new file
+
+          Scenario: A frontend layer leak is stopped
+            Given the import-boundary allow-list holds today's 16 leaks
+            When a component imports from pages/
+            Then pnpm build fails naming the component and the import
+
+      - id: 3
+        name: Ship behaviour-free
+        command: "pnpm test && pnpm build; dotnet test (filtered); Stryker on touched area; push to main"
+        tui_mockup: |
+          +-- per-Story checklist ----------------------------------------------+
+          | [x] ratchet tightened in this PR   [x] moves separate from edits     |
+          | [x] responses/pixels unchanged     [x] mutation score not lower      |
+          | [x] ARCHITECTURE.md updated        [x] one context at a time         |
+          +----------------------------------------------------------------------+
+        shared_artifacts:
+          - name: api_responses
+            source: "existing API/response tests, E2E and @screenshot tests (unchanged)"
+            displayed_as: "green, unmodified"
+            consumers: ["SPA", "Lighthouse-Clients CLI/MCP (published language)"]
+        emotional_state:
+          entry: "Careful: a big move."
+          exit: "Confident: green, smaller, clearer, nothing visible changed."
+        integration_checkpoint: |
+          No route, DTO shape, serialized response or pixel changes. Lighthouse-Clients needs no
+          release. Single binary and topologies unchanged.
+        failure_modes:
+          - "A DTO move changes JSON (prevented by S12c before S03* and response snapshots)."
+          - "Mutation score drops after a move (run Stryker last, on frozen code)."
+        gherkin: |
+          Scenario: A packaging Story changes no behaviour
+            Given a Story moved the Reports context into its folder
+            When the full quality gates run
+            Then every API, E2E and screenshot test passes unmodified
+            And the mutation score in the touched area is not lower
+
+integration_validation:
+  shared_artifact_consistency:
+    - artifact: packaged_contexts
+      must_match_across: [1, 2]
+      failure_message: "ARCHITECTURE.md §4, the folder tree and the namespace rules disagree on which contexts are packaged."
+    - artifact: ratchet_baselines
+      must_match_across: [2]
+      failure_message: "A ratchet list holds a file that no longer violates, or misses one that does."
+
+changelog:
+  - date: "2026-10-22"
+    feature: "epic-6264-modular-monolith"
+    change: "Initial developer journey (DISCUSS)."
