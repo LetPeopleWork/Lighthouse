@@ -54,6 +54,8 @@ journeys:
       - situation: Pages still hang with the bounded simulation
         recovery: Slice 01's learning hypothesis has failed. The incident has a second cause (for example
           a database lock across the save), investigated before the later slices build on the assumption.
+        observed: 2026-10-20 on v26.10.19.10 (nine heartbeat warnings, all during forecast rounds); followed
+          up by journey epic-6400-fast-with-many-features (its slice 01 runs the round off the request pool).
       - situation: Stop takes minutes because a single run is very long
         recovery: The check sits between runs; one run of a low-throughput Feature can be long until the
           5-year horizon lands. Measured as KPI-2. If still too slow, the check moves inside a run.

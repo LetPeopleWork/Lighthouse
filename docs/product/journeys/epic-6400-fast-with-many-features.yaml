@@ -1,0 +1,190 @@
+schema_version: 1
+feature_id: epic-6400-fast-with-many-features
+updated: 2026-10-23
+note: >
+  ADO Epic #6400 "Lighthouse stays fast with many Features" (replaces Story #6351). Seeded in DISCUSS,
+  2026-10-23. Evidence is one reporting instance with Portfolios of 400-920 Features across 8 Teams: a log
+  of 2026-10-20 on v26.10.19.10 with nine Kestrel heartbeat warnings (1.4-49.3 s), all during forecast
+  rounds of 264-483 s, and one second-hand reading of about 50 s to the 920-Feature Features list. The
+  release already carried Epic 6311's half-the-cores limit, so this is the situation the 6311 journey's
+  error path "Pages still hang with the bounded simulation" anticipated, observed (see linked_journeys).
+  Names below are fictional (scaled data set: Northwind Platform 920, Northwind Payments 400, Northwind
+  Mobile 100; Teams Atlas, Borealis, Cobalt, Delta Ops, Ember, Fjord, Granite, Harbour). Timings are read
+  on that dev-only scaled set (median of 5, 4 cores, SQLite and PostgreSQL); the dev DB backup is the
+  real-history regression check. See docs/feature/epic-6400-fast-with-many-features/.
+
+jobs:
+  - job-reach-and-read-what-i-came-for-on-a-large-instance
+  - job-operator-keep-lighthouse-usable-while-it-forecasts
+
+linked_journeys:
+  - journey: epic-6311-responsive-during-updates / use-and-steer-lighthouse-while-it-updates
+    error_path: Pages still hang with the bounded simulation
+    relation: >
+      Observed on 2026-10-20 on a release with the bound. Slice 01 of this Epic is the follow-up: the
+      forecast round runs off the request thread pool. If pages still stall after it, Dissent B applies
+      (async request paths) or the cause is GC or the database.
+
+journeys:
+
+  - name: reach-and-read-on-a-large-instance
+    goal: >
+      A delivery lead, a product owner or an operator on an instance with hundreds of Features per
+      Portfolio reaches the screen they came for and reads a large Features list at once, with no forecast
+      running and while one runs.
+    persona: "delivery-lead-rte (Martin Achterberg, primary); product-owner (Aisha Khan, Team tab);
+      platform-operator (Jonas Weber, the way to Settings)"
+
+    emotional_arc:
+      start: Resigned - "every visit is a wait; the Overview spins when I only want Settings, and the
+        920-Feature list takes about 50 seconds."
+      middle: Hopeful - "the navigation and the lists are just there; the Features rows come while I am
+        still looking."
+      end: Confident - "it is just there; when it cannot load or there is nothing, it says so."
+
+    steps:
+      - step: Reach the screen I came for
+        action: Open Lighthouse (Overview), click System Settings in the header
+        output: Navigation paints in under 1 s; the Overview lists Portfolios and Teams in under 1 s with
+          the same names and counts as before; Settings is usable in under 1 s (K1).
+        slices: [02]
+        failure_modes:
+          - The licence count cannot be loaded; a gated action must not read as allowed.
+          - The Overview's lists cannot be loaded; they read "could not load", never "no Portfolios".
+      - step: Open a large Portfolio or Team
+        action: Overview → Northwind Platform (or Team Borealis)
+        output: The page reads that one Portfolio, not every Portfolio of the instance.
+        slices: [02]
+      - step: Read its Features
+        action: Features tab
+        output: The first row in under 2 s at 920 Features on 4 cores (K2), with the same dates, progress,
+          dependency verdicts, parent and in-progress Teams as before; a failure reads "The Features
+          couldn't be loaded." with Retry; an empty Portfolio says it has no Features yet; a list whose
+          Features are all completed and hidden says so.
+        slices: [03, 04]
+        failure_modes:
+          - The list request fails (server restarting, network).
+          - The Portfolio is new and holds no Features.
+          - Hide completed hides every row.
+          - An update completes while the list is read; an older answer must never replace a newer one.
+
+    error_paths:
+      - situation: The idle 920-Feature list loads in under about 10 s on the scaled set (the falsifier)
+        recovery: The list half of the job fails G1; slice 04 moves to just before slice 06 and the job
+          narrows to the way to Settings.
+      - situation: The list cannot be loaded
+        recovery: A could-not-load message with Retry where the grid was; never endless placeholders.
+      - situation: A faster list shows a different dependency or order
+        recovery: A defect, never a trade-off. Verdicts stay computed over the whole graph and positions
+          stay global (C2, C3); every slice proves it on the dev backup.
+
+  - name: keep-working-while-it-forecasts
+    goal: >
+      The operator keeps using Lighthouse while an update's forecast round runs, sees the round end on its
+      own, and the round itself costs less, so hourly updates stay affordable.
+    persona: "platform-operator (Jonas Weber, primary); delivery-lead-rte (Martin, reading during a round)"
+
+    emotional_arc:
+      start: Wary - "a round has started; last time the pages hung and I pressed Cancel all."
+      middle: Reassured - "Settings opens at once and the Features list is as quick as when nothing runs."
+      end: In control - "the round ended by itself, Refresh History shows it took a fraction of what it
+        used to, and the dates did not change."
+
+    steps:
+      - step: A round starts
+        action: An hourly Team or Portfolio update (or a button) starts a forecast round over 8 Teams
+        output: Task Manager shows the Forecasting row for Northwind Platform.
+        slices: [01]
+      - step: Keep working
+        action: Open System Settings; open Northwind Platform's Features tab
+        output: Settings in under 1 s; the first row within 1.2 x its idle time; no heartbeat warning in the
+          round's log (K3).
+        slices: [01, 03, 04]
+      - step: See the round end
+        action: Settings → System Info → Refresh History
+        output: A skipped round takes at most 15% of the baseline computed round; a computed one at least
+          30% less (K4); every Feature's dates unchanged.
+        slices: [05]
+        failure_modes:
+          - Pages still stall during the round after slice 01 (Dissent B, or GC / database).
+          - Forecast outputs or the Story 6354 fingerprint differ after the change (a defect, C12).
+      - step: Stop it if needed
+        action: Task Manager, Stop or Cancel all
+        output: As in Epic 6311 - stops within seconds, previous forecasts kept.
+        slices: [01]
+
+    error_paths:
+      - situation: Heartbeat warnings remain after slice 01
+        recovery: Read S_q. Above 0.3, open the async-request-paths Epic (Dissent B); otherwise
+          troubleshoot GC and the database first.
+      - situation: A skipped round still costs nearly as much as a computed one
+        recovery: Slice 05's hypothesis failed; the gather is not the cost. Re-read the round split.
+
+  - name: learn-what-a-portfolios-size-costs
+    goal: >
+      The admin who wrote a Portfolio's query learns, where the query is written, that above 100 Features
+      every page and forecast for it gets slower, and decides knowingly whether to narrow it.
+    persona: "config-admin (Sofia Lindqvist)"
+
+    emotional_arc:
+      start: Unaware - "the query brings in what the tracker has."
+      middle: Informed - "the note says 920, and what that costs; nothing is blocked."
+      end: Deliberate - "I narrowed it, or I kept it on purpose."
+
+    steps:
+      - step: Open the Portfolio's edit page
+        action: Northwind Platform → Edit
+        output: Above the query, "This Portfolio holds 920 Features. Above 100, its pages and forecasts get
+          slower. If you don't plan with all of them, narrow the query." Save works as before.
+        slices: [06]
+        failure_modes:
+          - Count unknown (never updated, or could not be read) - no note at all.
+      - step: Read the log
+        action: Settings → System Info → Logs after an update
+        output: One line per update naming the count and the threshold.
+        slices: [06]
+
+    error_paths:
+      - situation: Exactly 100 Features
+        recovery: No note and no log line; the note starts at 101.
+
+shared_artifacts:
+  - artifact: features_count
+    source: the Features the Portfolio's last update stored (no new column planned)
+    consumers: [slice 06 note, slice 06 log line, the usage-data size bucket (D24)]
+    integration_risk: MEDIUM - a different count in note, log and bucket would contradict itself
+  - artifact: size_threshold
+    source: one constant (100), shared by the note and the log line
+    consumers: [slice 06 note, slice 06 log line]
+    integration_risk: LOW
+  - artifact: dependency_verdicts
+    source: computed over the whole Feature graph (C2), from a light projection after slice 03
+    consumers: [Portfolio Features tab, Team Features tab, Feature detail]
+    integration_risk: HIGH - two screens must never disagree
+  - artifact: feature_positions
+    source: the global order (FeaturePositionMap, ADR-135), numbered before RBAC filtering (C3)
+    consumers: [both Features tabs]
+    integration_risk: MEDIUM
+  - artifact: in_progress_ids
+    source: one query per Team (slice 03)
+    consumers: [both Features tabs, a Team update's WIP]
+    integration_risk: MEDIUM
+  - artifact: forecast_outputs
+    source: the simulation; identical before and after every slice for the same data and seed (C12)
+    consumers: [Features lists, Feature detail, Deliveries, write-back, clients]
+    integration_risk: HIGH
+  - artifact: forecast_input_fingerprint
+    source: Story 6354's fingerprint of the gathered inputs
+    consumers: [the skip decision of every automatic round]
+    integration_risk: HIGH - a changed gather must keep it identical (slice 05)
+  - artifact: terms
+    source: the tenant's Terminology (seeded defaults Feature, Work Item, Team, Portfolio from
+      TerminologySeeder)
+    consumers: [slice 04 messages, slice 06 note]
+    integration_risk: LOW
+
+changelog:
+  - date: 2026-10-23
+    feature: epic-6400-fast-with-many-features
+    change: Seeded in DISCUSS from DISCOVER, DIVERGE and the maintainer's answers; links the 6311 journey's
+      error path.

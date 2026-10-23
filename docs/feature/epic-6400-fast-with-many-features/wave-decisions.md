@@ -128,3 +128,20 @@ open questions, and one orchestrator decision.
 DIVERGE-G1 PASS · DIVERGE-G2 PASS (Nave not checked; Linear known from secondary sources) · DIVERGE-G3 PASS (all 15
 pairs; two differ only partly on one count) · DIVERGE-G4 PASS. Peer review: round 1 NEEDS_REVISION; revision 1 is
 applied and awaits re-review.
+
+## DISCUSS (2026-10-23)
+
+**Agent**: Luna (`nw-product-owner`), subagent mode, autonomous. Decisions D17–D31, the stories, KPIs, DoR and the
+checklist live in `feature-delta.md` (Wave: DISCUSS sections); briefs in `slices/slice-01..06`; journey SSOT
+`docs/product/journeys/epic-6400-fast-with-many-features.yaml`.
+
+## Scope Assessment: PASS by decision — 6 Stories + 1 precursor Task, 4 modules, estimated ~10½ days
+
+Two oversize signals fire (4 modules; outcomes that could ship apart). Kept as one Epic because every slice ships
+alone and the K's share one harness (D31).
+
+- Slice-composition gate: the measurement is Task 01a inside Story 01, not a slice (D17); slices renumbered 01–06
+  (D18).
+- K3 stays an exit criterion, flagged for the maintainer (D19).
+- No existing response shape changes; no clients release (D20).
+- DoR: PASSED, 9 of 9.
