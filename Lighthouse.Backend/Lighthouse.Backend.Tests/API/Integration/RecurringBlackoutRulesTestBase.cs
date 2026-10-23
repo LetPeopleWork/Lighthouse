@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         protected int SeededTeamId { get; private set; }
 
-        protected static DateTime Today => DateTime.UtcNow.Date;
+        protected DateTime Today => Factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         protected void StartApplicationWithDeterministicForecast()
         {
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[workingDays] = 100;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private int SeedTeam()

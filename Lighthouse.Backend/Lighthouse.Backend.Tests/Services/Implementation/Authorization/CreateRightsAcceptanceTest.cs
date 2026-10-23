@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using Microsoft.Extensions.Time.Testing;
 using System.Security.Claims;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
@@ -627,7 +628,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
                 config,
                 licenseService.Object,
                 currentUserProfileService.Object,
-                serviceLogger.Object);
+                serviceLogger.Object,
+                new FakeTimeProvider(TestToday.FrozenNow));
         }
 
         private static ClaimsPrincipal BuildPrincipal(params Claim[] claims)

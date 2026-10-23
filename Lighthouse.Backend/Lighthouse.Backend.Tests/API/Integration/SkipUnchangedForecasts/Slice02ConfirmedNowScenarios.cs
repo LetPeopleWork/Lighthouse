@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
+
 namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 {
     /// <summary>
@@ -30,9 +33,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             await GivenOnboardingWasForecastAt(TenOClock);
             var atTen = await TheFeaturesAsTheClientsReadThem([.. TheFeaturesOfPaymentsPlatform, "ONB-1"]);
 
-            var roundStarted = DateTime.UtcNow;
+            var theRound = TheHostClockMovesOnAQuarterOfAnHour();
             var quietRound = await TheTeamRoundAt(TenFifteen, FssId);
-            var roundEnded = DateTime.UtcNow;
 
             var afterTheRound = await TheFeaturesAsTheClientsReadThem([.. TheFeaturesOfPaymentsPlatform, "ONB-1"]);
 
@@ -41,13 +43,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             {
                 foreach (var feature in TheFeaturesOfPaymentsPlatform)
                 {
-                    Assert.That(afterTheRound[feature].LastUpdated, Is.InRange(roundStarted, roundEnded),
+                    Assert.That(afterTheRound[feature].LastUpdated, Is.EqualTo(theRound),
                         $"{feature}'s forecast still reads as last updated at {afterTheRound[feature].LastUpdated:O}, not at the round that confirmed it.");
                     Assert.That(afterTheRound[feature].Forecasts, Is.EqualTo(atTen[feature].Forecasts),
                         $"Confirming {feature}'s forecast changed its dates.");
                 }
 
-                Assert.That(TheStoredForecastsOf(PaymentsPlatformId).Select(row => row.CreationTime), Is.All.InRange(roundStarted, roundEnded),
+                Assert.That(TheStoredForecastsOf(PaymentsPlatformId).Select(row => row.CreationTime), Is.All.EqualTo(theRound),
                     "A completion or start forecast of Payments Platform was left with the time it was computed.");
                 Assert.That(afterTheRound["ONB-1"], Is.EqualTo(atTen["ONB-1"]),
                     "A Feature no Team of Payments Platform works on was stamped by its round.");
@@ -68,16 +70,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             await GivenPaymentsPlatformWasForecastAt(TenOClock);
             var atTen = await TheFeaturesAsTheClientsReadThem("LOY-1");
 
-            var roundStarted = DateTime.UtcNow;
+            var theRound = TheHostClockMovesOnAQuarterOfAnHour();
             var quietRound = await TheTeamRoundAt(TenFifteen, AtlasId);
-            var roundEnded = DateTime.UtcNow;
 
             var afterTheRound = await TheFeaturesAsTheClientsReadThem("LOY-1");
 
             ThenNothingWasSimulated(quietRound, "Nothing the forecast reads changed since 10:00");
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(afterTheRound["LOY-1"].LastUpdated, Is.InRange(roundStarted, roundEnded),
+                Assert.That(afterTheRound["LOY-1"].LastUpdated, Is.EqualTo(theRound),
                     "Loyalty's Feature, forecast and confirmed with Payments Platform, still reads the time it was computed.");
                 Assert.That(afterTheRound["LOY-1"].Forecasts, Is.EqualTo(atTen["LOY-1"].Forecasts),
                     "Confirming Loyalty's Feature changed its dates.");
@@ -131,18 +132,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             var atTen = await TheFeaturesAsTheClientsReadThem(TheFeaturesOfPaymentsPlatform);
 
             Tracker.NoLongerShowsTheTeam(Fss, "FSS-3");
-            var roundStarted = DateTime.UtcNow;
+            var theRound = TheHostClockMovesOnAQuarterOfAnHour();
             await TheTeamRoundAt(TenFifteen, FssId);
-            var roundEnded = DateTime.UtcNow;
 
             var afterTheRound = await TheFeaturesAsTheClientsReadThem(TheFeaturesOfPaymentsPlatform);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TheFeaturesOfPaymentsPlatform.Select(feature => afterTheRound[feature].LastUpdated), Is.All.InRange(roundStarted, roundEnded));
+                Assert.That(TheFeaturesOfPaymentsPlatform.Select(feature => afterTheRound[feature].LastUpdated), Is.All.EqualTo(theRound));
                 Assert.That(afterTheRound["PAY-88"].Forecasts, Is.Not.EqualTo(atTen["PAY-88"].Forecasts),
                     "Card Vault lost an item, yet its forecast dates did not move.");
             }
+        }
+
+        /// <summary>
+        /// The test host's clock stands still, so without this a round would stamp the same instant as the
+        /// forecast before it, and a Feature left with its old time would look confirmed.
+        /// </summary>
+        private DateTime TheHostClockMovesOnAQuarterOfAnHour()
+        {
+            var hostClock = (FakeTimeProvider)Factory.Services.GetRequiredService<TimeProvider>();
+            hostClock.Advance(AQuarterOfAnHour);
+
+            return hostClock.GetUtcNow().UtcDateTime;
         }
     }
 }

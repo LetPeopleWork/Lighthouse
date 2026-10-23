@@ -14,11 +14,11 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update
 {
     /// <summary>
-    /// DISTILL acceptance scenarios (Epic 5687 — Faster Updates), slice 01, AC-1.4: a cycle that decides
+    /// A cycle that decides
     /// an entity is not due says nothing about it at Information level, and keeps the check available at
     /// Debug.
     ///
-    /// This is the only slice-01 promise about the background loop rather than a single update, and the
+    /// This is the only promise here about the background loop rather than a single update, and the
     /// loop is what the integration host removes (<c>RemoveAll&lt;IHostedService&gt;</c>) — so it is
     /// driven here, through <c>StartAsync</c>, in the idiom the other updater tests already use.
     /// </summary>
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(refreshLogServiceMock.Object);
         }
 
-        // @AC-1.4 — a cycle over ten teams that updates none of them should read as one cycle, not ten.
+        // A cycle over ten teams that updates none of them should read as one cycle, not ten.
         [Test]
         public async Task A_cycle_that_skips_a_team_says_nothing_to_the_operator_about_that_team()
         {
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             await subject.StopAsync(CancellationToken.None);
         }
 
-        // @AC-1.4 — demoted, never dropped: the check is still there for whoever is debugging a stuck cycle.
+        // Demoted, never dropped: the check is still there for whoever is debugging a stuck cycle.
         [Test]
         public async Task The_skipped_check_is_still_available_to_whoever_asks_for_it()
         {
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Name = TeamName,
                 ThroughputHistory = 7,
                 WorkTrackingSystemConnection = new WorkTrackingSystemConnection { WorkTrackingSystem = WorkTrackingSystems.AzureDevOps },
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = Now,
             };
 
             teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private async Task<TeamUpdater> WhenTheBackgroundCycleRuns()
         {
-            var subject = new TeamUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService);
+            var subject = new TeamUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, Time);
 
             await subject.StartAsync(CancellationToken.None);
             await WaitUntilTheCycleHasLookedAtTheTeam();

@@ -2,6 +2,7 @@
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -44,7 +45,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     }
                 });
 
-            // Every enqueued update now ends in a write-back flush (ADR-144 §4). Registering the
+            // Every enqueued update now ends in a write-back flush. Registering the
             // collector here means an updater test exercises that terminal call instead of silently
             // hitting the resolution failure the flush's own catch would swallow.
             WriteBackCollectorMock = new Mock<IWriteBackCollector>();
@@ -59,6 +60,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         protected Exception? WhatTheRefreshThrew { get; private set; }
 
         protected Mock<IWriteBackCollector> WriteBackCollectorMock { get; }
+
+        /// <summary>
+        /// The clock the updater under test reads. It sits well away from the real date, so an updater that
+        /// read the wall clock instead would judge every entity stamped with <see cref="Now"/> as long overdue.
+        /// </summary>
+        protected FakeTimeProvider Time { get; } = new(new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero));
+
+        protected DateTime Now => Time.GetUtcNow().UtcDateTime;
 
         protected IServiceScopeFactory ServiceScopeFactory { get; }
 

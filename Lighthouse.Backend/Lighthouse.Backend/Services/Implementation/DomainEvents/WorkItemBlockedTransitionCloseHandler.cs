@@ -6,6 +6,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 {
     public class WorkItemBlockedTransitionCloseHandler(
         IWorkItemBlockedTransitionRepository transitionRepository,
+        TimeProvider timeProvider,
         ILogger<WorkItemBlockedTransitionCloseHandler> logger)
         : IDomainEventHandler<WorkItemUnblocked>
     {
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
                 return;
             }
 
-            openTransition.LeftAt = DateTime.UtcNow;
+            openTransition.LeftAt = timeProvider.GetUtcNow().UtcDateTime;
             transitionRepository.Update(openTransition);
             await transitionRepository.Save();
         }

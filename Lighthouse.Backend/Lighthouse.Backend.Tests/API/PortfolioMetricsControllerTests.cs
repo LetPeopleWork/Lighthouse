@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetStartedItems_TeamIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetStartedItems(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetStartedItems_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetStartedItems(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetStartedItems(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -173,7 +173,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedStartedItems = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
             projectMetricsService.Setup(service => service.GetStartedItemsForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedStartedItems);
 
-            var response = subject.GetStartedItems(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetStartedItems(portfolio.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -192,7 +192,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivals_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetArrivals(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetArrivals(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivals_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetArrivals(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivals(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedArrivals = new RunChartData(RunChartDataGenerator.GenerateRunChartData([1, 88, 6]));
             projectMetricsService.Setup(service => service.GetArrivalsForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedArrivals);
 
-            var response = subject.GetArrivals(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetArrivals(portfolio.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -245,7 +245,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivalsPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetArrivalsProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetArrivalsProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivalsPbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetArrivalsProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivalsProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -287,7 +287,7 @@ namespace Lighthouse.Backend.Tests.API
             };
             projectMetricsService.Setup(service => service.GetArrivalsProcessBehaviourChart(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetArrivalsProcessBehaviourChart(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetArrivalsProcessBehaviourChart(portfolio.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -437,8 +437,8 @@ namespace Lighthouse.Backend.Tests.API
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var data = new List<CycleTimeFeature>
             {
-                new CycleTimeFeature(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = DateTime.Now.AddDays(-2), ClosedDate = DateTime.Now }, []),
-                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = DateTime.Now.AddDays(-5), ClosedDate = DateTime.Now }, [new NamedCycleTimeValue(7, 5)])
+                new CycleTimeFeature(new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-2), ClosedDate = TestToday.AmbientAsUtcMidnight }, []),
+                new CycleTimeFeature(new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-5), ClosedDate = TestToday.AmbientAsUtcMidnight }, [new NamedCycleTimeValue(7, 5)])
             };
 
             projectMetricsService.Setup(x => x.GetNamedCycleTimeDataForPortfolio(project, startDate, endDate))
@@ -489,7 +489,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetMultiItemForecastPredictabilityScore_ProjectIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now);
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -502,7 +502,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetMultiItemForecastPredictabilityScore_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetMultiItemForecastPredictabilityScore(1337, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetMultiItemForecastPredictabilityScore(1337, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -522,7 +522,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedScore = new ForecastPredictabilityScore(howManyForecast);
             projectMetricsService.Setup(service => service.GetMultiItemForecastPredictabilityScoreForPortfolio(portfolio, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedScore);
 
-            var response = subject.GetMultiItemForecastPredictabilityScore(portfolio.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetMultiItemForecastPredictabilityScore(portfolio.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -573,8 +573,8 @@ namespace Lighthouse.Backend.Tests.API
             var endDate = new DateTime(2023, 1, 31, 0, 0, 0, DateTimeKind.Utc);
             var features = new List<Feature>
             {
-                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StateCategory = StateCategories.Done, StartedDate = DateTime.Now.AddDays(-5), ClosedDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
-                new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StateCategory = StateCategories.Doing, StartedDate = DateTime.Now.AddDays(-3) },
+                new Feature { Id = 1, Name = "Feature 1", ReferenceId = "F1", StateCategory = StateCategories.Done, StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-5), ClosedDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc) },
+                new Feature { Id = 2, Name = "Feature 2", ReferenceId = "F2", StateCategory = StateCategories.Doing, StartedDate = TestToday.AmbientAsUtcMidnight.AddDays(-3) },
                 new Feature { Id = 3, Name = "Feature 3", ReferenceId = "F3", StateCategory = StateCategories.ToDo }
             };
 
@@ -708,7 +708,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughputPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetThroughputProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetThroughputProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -722,7 +722,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughputPbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetThroughputProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetThroughputProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -747,7 +747,7 @@ namespace Lighthouse.Backend.Tests.API
             };
             projectMetricsService.Setup(service => service.GetThroughputProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetThroughputProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetThroughputProcessBehaviourChart(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -762,7 +762,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetWipPbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetWipProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetWipProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -776,7 +776,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetWipPbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetWipProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetWipProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -793,7 +793,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready };
             projectMetricsService.Setup(service => service.GetWipProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetWipProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetWipProcessBehaviourChart(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -808,7 +808,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTotalWorkItemAgePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -822,7 +822,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTotalWorkItemAgePbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -839,7 +839,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready };
             projectMetricsService.Setup(service => service.GetTotalWorkItemAgeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeProcessBehaviourChart(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -854,7 +854,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetCycleTimePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetCycleTimeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetCycleTimeProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -868,7 +868,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetCycleTimePbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetCycleTimeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimeProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -885,7 +885,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready, XAxisKind = XAxisKind.DateTime };
             projectMetricsService.Setup(service => service.GetCycleTimeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetCycleTimeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetCycleTimeProcessBehaviourChart(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -900,7 +900,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizePbc_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetFeatureSizeProcessBehaviourChart(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetFeatureSizeProcessBehaviourChart(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -914,7 +914,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizePbc_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetFeatureSizeProcessBehaviourChart(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetFeatureSizeProcessBehaviourChart(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -931,7 +931,7 @@ namespace Lighthouse.Backend.Tests.API
             var expectedPbc = new ProcessBehaviourChart { Status = BaselineStatus.Ready, XAxisKind = XAxisKind.DateTime };
             projectMetricsService.Setup(service => service.GetFeatureSizeProcessBehaviourChart(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedPbc);
 
-            var response = subject.GetFeatureSizeProcessBehaviourChart(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetFeatureSizeProcessBehaviourChart(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -946,7 +946,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetEstimationVsCycleTimeData_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetEstimationVsCycleTimeData(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetEstimationVsCycleTimeData(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -960,7 +960,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetEstimationVsCycleTimeData_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetEstimationVsCycleTimeData(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetEstimationVsCycleTimeData(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -984,7 +984,7 @@ namespace Lighthouse.Backend.Tests.API
 
             projectMetricsService.Setup(service => service.GetEstimationVsCycleTimeData(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedResponse);
 
-            var response = subject.GetEstimationVsCycleTimeData(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetEstimationVsCycleTimeData(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -999,7 +999,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizeEstimationData_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetFeatureSizeEstimationData(999, DateTime.Now, DateTime.Now);
+            var response = subject.GetFeatureSizeEstimationData(999, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1013,7 +1013,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizeEstimationData_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetFeatureSizeEstimationData(1, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetFeatureSizeEstimationData(1, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             using (Assert.EnterMultipleScope())
             {
@@ -1036,7 +1036,7 @@ namespace Lighthouse.Backend.Tests.API
 
             projectMetricsService.Setup(service => service.GetFeatureSizeEstimationData(project, It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns(expectedResponse);
 
-            var response = subject.GetFeatureSizeEstimationData(project.Id, DateTime.Now.AddDays(-1), DateTime.Now);
+            var response = subject.GetFeatureSizeEstimationData(project.Id, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1053,7 +1053,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughputInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetThroughputInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetThroughputInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
@@ -1061,7 +1061,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughputInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetThroughputInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetThroughputInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -1069,8 +1069,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetThroughputInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new ThroughputInfoDto(7, 0.7, new InfoWidgetComparisonDto("up", "Total Throughput", "curr", "7", "prev", "4", "+75.0%", null));
             projectMetricsService.Setup(s => s.GetThroughputInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
@@ -1089,7 +1089,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivalsInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetArrivalsInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetArrivalsInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
@@ -1097,7 +1097,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivalsInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetArrivalsInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetArrivalsInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -1105,8 +1105,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetArrivalsInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new ArrivalsInfoDto(2, 0.2, new InfoWidgetComparisonDto("flat", "Total Arrivals", "curr", "2", "prev", "2", "+0.0%", null));
             projectMetricsService.Setup(s => s.GetArrivalsInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
@@ -1125,7 +1125,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizePercentilesInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetFeatureSizePercentilesInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetFeatureSizePercentilesInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
 
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
@@ -1133,7 +1133,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetFeatureSizePercentilesInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetFeatureSizePercentilesInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
 
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
@@ -1141,8 +1141,8 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetFeatureSizePercentilesInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new FeatureSizePercentilesInfoDto(
                 [new PercentileValueDto(50, 5), new PercentileValueDto(85, 12)],
                 new InfoWidgetComparisonDto("up", "Feature Size Percentiles", "curr", null, "prev", null, null,
@@ -1164,22 +1164,22 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetWipOverviewInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetWipOverviewInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetWipOverviewInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
         public void GetWipOverviewInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetWipOverviewInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetWipOverviewInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
         [Test]
         public void GetWipOverviewInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new WipOverviewInfoDto(4, new InfoWidgetComparisonDto("up", "WIP", "2026-01-10", "4", "2026-01-01", "2", "+100.0%", null));
             projectMetricsService.Setup(s => s.GetWipOverviewInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
@@ -1198,22 +1198,22 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetTotalWorkItemAgeInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetTotalWorkItemAgeInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetTotalWorkItemAgeInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
         public void GetTotalWorkItemAgeInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetTotalWorkItemAgeInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetTotalWorkItemAgeInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
         [Test]
         public void GetTotalWorkItemAgeInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new TotalWorkItemAgeInfoDto(55, new InfoWidgetComparisonDto("down", "Total Work Item Age", "2026-01-10", "55", "2026-01-01", "70", "-21.4%", null));
             projectMetricsService.Setup(s => s.GetTotalWorkItemAgeInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
@@ -1232,22 +1232,22 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetPredictabilityScoreInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetPredictabilityScoreInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetPredictabilityScoreInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
         public void GetPredictabilityScoreInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetPredictabilityScoreInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetPredictabilityScoreInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
         [Test]
         public void GetPredictabilityScoreInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new PredictabilityScoreInfoDto(0.85, new InfoWidgetComparisonDto("flat", "Predictability Score", "curr", "85%", "prev", "82%", "+3pp", null));
             projectMetricsService.Setup(s => s.GetPredictabilityScoreInfoForPortfolio(project, startDate, endDate)).Returns(expectedInfo);
 
@@ -1266,22 +1266,22 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public void GetCycleTimePercentilesInfo_PortfolioIdDoesNotExist_ReturnsNotFound()
         {
-            var response = subject.GetCycleTimePercentilesInfo(999, DateTime.Now.AddDays(-10), DateTime.Now);
+            var response = subject.GetCycleTimePercentilesInfo(999, TestToday.AmbientAsUtcMidnight.AddDays(-10), TestToday.AmbientAsUtcMidnight);
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
         [Test]
         public void GetCycleTimePercentilesInfo_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            var response = subject.GetCycleTimePercentilesInfo(project.Id, DateTime.Now, DateTime.Now.AddDays(-1));
+            var response = subject.GetCycleTimePercentilesInfo(project.Id, TestToday.AmbientAsUtcMidnight, TestToday.AmbientAsUtcMidnight.AddDays(-1));
             Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>());
         }
 
         [Test]
         public void GetCycleTimePercentilesInfo_PortfolioExists_ReturnsInfoFromService()
         {
-            var startDate = DateTime.Now.AddDays(-10);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-10);
+            var endDate = TestToday.AmbientAsUtcMidnight;
             var expectedInfo = new CycleTimePercentilesInfoDto(
                 [new PercentileValueDto(50, 8), new PercentileValueDto(85, 15)],
                 new InfoWidgetComparisonDto("down", "Cycle Time Percentiles", "curr", null, "prev", null, null,

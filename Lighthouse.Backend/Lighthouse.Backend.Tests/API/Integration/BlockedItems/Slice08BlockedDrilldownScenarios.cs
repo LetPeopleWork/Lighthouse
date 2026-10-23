@@ -56,9 +56,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             GivenABlockedItemInStateCategory(team, "DOING-BLK", StateCategories.Doing);
             GivenABlockedItemInStateCategory(team, "DONE-BLK", StateCategories.Done);
 
-            // Drill at the real "today" (UtcNow.Date) so the endpoint takes the live latest-date branch —
+            // Drill at the host's own calendar day so the endpoint takes the live latest-date branch —
             // the fixed test SyncDay (2026-06-15) is in the past and would route to interval reconstruction.
-            var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, DateOnly.FromDateTime(DateTime.UtcNow.Date));
+            var response = await WhenTheCoachDrillsIntoTheBlockedTrendAt(team, InstanceClock.Today);
 
             ThenTheDialogListsExactly(response, "TODO-BLK", "DOING-BLK");
         }

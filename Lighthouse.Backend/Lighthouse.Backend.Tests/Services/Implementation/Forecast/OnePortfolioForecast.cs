@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetrics.Object,
                 features.Object,
                 waits,
-                draws,
-                limits);
+                new ForecastSimulation(draws, limits),
+                TimeProvider.System);
     }
 }

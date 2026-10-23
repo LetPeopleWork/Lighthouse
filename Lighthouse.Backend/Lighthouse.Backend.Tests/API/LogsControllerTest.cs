@@ -1,9 +1,11 @@
 ﻿using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using System.Globalization;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -12,6 +14,7 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<ILogConfiguration> logConfigurationMock;
         private Mock<IRecentProblemsReport> recentProblemsMock;
         private Mock<ILogger<LogsController>> loggerMock;
+        private FakeLighthouseClock clock;
 
         [SetUp]
         public void Setup()
@@ -19,6 +22,7 @@ namespace Lighthouse.Backend.Tests.API
             logConfigurationMock = new Mock<ILogConfiguration>();
             recentProblemsMock = new Mock<IRecentProblemsReport>();
             loggerMock = new Mock<ILogger<LogsController>>();
+            clock = new FakeLighthouseClock(new DateTimeOffset(2026, 7, 15, 12, 0, 0, TimeSpan.Zero));
         }
 
         [Test]
@@ -169,7 +173,7 @@ And a hundred percent reason to remember the name (Mike!)
             ;
         }
 
-        // Bug #6020. Following the log means asking again every few seconds, so the caller can ask for
+        // Following the log means asking again every few seconds, so the caller can ask for
         // the end of the file rather than all of it.
         [Test]
         public void GetLogs_TailAsked_AsksTheLogConfigurationForThatTail()
@@ -212,8 +216,10 @@ And a hundred percent reason to remember the name (Mike!)
             logConfigurationMock.Verify(x => x.GetLogs(It.Is<int?>(tail => tail >= 1)));
         }
 
-        [Test]
-        public void DownloadAllLogs_ReturnsFileContentResult()
+        [TestCase("2026-07-15T23:30:00Z", "Lighthouse_Log_2026.07.16.txt")]
+        [TestCase("2026-01-15T23:30:00Z", "Lighthouse_Log_2026.01.16.txt")]
+        [TestCase("2026-07-15T12:00:00Z", "Lighthouse_Log_2026.07.15.txt")]
+        public void DownloadAllLogs_AtTheUtcBoundary_IsNamedForTheInstanceDay(string instant, string expectedFileName)
         {
             var expectedLogs = @"
             This is ten percent luck, twenty percent skill
@@ -221,7 +227,9 @@ And a hundred percent reason to remember the name (Mike!)
             Five percent pleasure, fifty percent pain
             And a hundred percent reason to remember the name (Mike!)
             ";
-            var expectedFileName = $"Lighthouse_Log_{DateTime.Now:yyyy.MM.dd}.txt";
+            clock = new FakeLighthouseClock(
+                DateTimeOffset.Parse(instant, CultureInfo.InvariantCulture),
+                TimeZoneInfo.FindSystemTimeZoneById("Europe/Zurich"));
 
             logConfigurationMock.Setup(x => x.GetLogs()).Returns(expectedLogs);
 
@@ -240,12 +248,11 @@ And a hundred percent reason to remember the name (Mike!)
                 var logs = System.Text.Encoding.UTF8.GetString(fileResult.FileContents);
                 Assert.That(logs, Is.EqualTo(expectedLogs));
             }
-            ;
         }
 
         private LogsController CreateSubject()
         {
-            return new LogsController(logConfigurationMock.Object, recentProblemsMock.Object, loggerMock.Object);
+            return new LogsController(logConfigurationMock.Object, recentProblemsMock.Object, clock, loggerMock.Object);
         }
     }
 }

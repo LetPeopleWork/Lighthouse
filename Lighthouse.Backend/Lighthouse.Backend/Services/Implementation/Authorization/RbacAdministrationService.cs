@@ -18,7 +18,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         IOptions<AuthorizationConfiguration> configuration,
         ILicenseService licenseService,
         ICurrentUserProfileService currentUserProfileService,
-        ILogger<RbacAdministrationService> logger) : IRbacAdministrationService
+        ILogger<RbacAdministrationService> logger,
+        TimeProvider timeProvider) : IRbacAdministrationService
     {
 
         private const string UserProfileString = "User profile";
@@ -522,7 +523,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 ScopeType = PermissionScopeType.System,
                 ScopeId = null,
                 Role = UserRole.SystemAdmin,
-                GrantedAt = DateTime.UtcNow,
+                GrantedAt = timeProvider.GetUtcNow().UtcDateTime,
             });
 
             await context.SaveChangesAsync(cancellationToken);
@@ -745,7 +746,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     ScopeType = PermissionScopeType.Team,
                     ScopeId = teamId,
                     Role = role,
-                    GrantedAt = DateTime.UtcNow,
+                    GrantedAt = timeProvider.GetUtcNow().UtcDateTime,
                 });
             }
 
@@ -791,7 +792,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     ScopeType = PermissionScopeType.Portfolio,
                     ScopeId = portfolioId,
                     Role = role,
-                    GrantedAt = DateTime.UtcNow,
+                    GrantedAt = timeProvider.GetUtcNow().UtcDateTime,
                 });
             }
 
@@ -1423,7 +1424,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 ScopeType = scopeType,
                 ScopeId = scopeId,
                 Role = role,
-                GrantedAt = DateTime.UtcNow,
+                GrantedAt = timeProvider.GetUtcNow().UtcDateTime,
             });
 
             await context.SaveChangesAsync(cancellationToken);

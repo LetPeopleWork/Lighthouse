@@ -1136,6 +1136,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             services.AddSingleton(Mock.Of<ILogger<JiraWorkTrackingConnector>>());
             services.AddSingleton(AnAuthStrategyFactoryThatSignsNothing());
             services.AddSingleton<Cache<string, object>>();
+            services.AddSingleton(TimeProvider.System);
             services.AddScoped<IDeliveryForecastBlockRenderer, DeliveryForecastBlockRenderer>();
             services.AddScoped<JiraWorkTrackingConnector>();
 
@@ -1476,7 +1477,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 Mock.Of<IWorkTrackingAuthStrategyFactory>(),
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
-                new DeliveryForecastBlockRenderer());
+                new DeliveryForecastBlockRenderer(), TimeProvider.System);
         }
     }
 }

@@ -5,13 +5,11 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Slice 02 / US-02 — feature blocked-spell capture
-    /// and blocked duration on the portfolio wip read. Backend-observable contract: a feature whose
-    /// blocked verdict flips across two refreshes surfaces a non-null blockedSince (and clears it on
-    /// the leave edge), first observation stays "—", and the per-portfolio verdict no longer leaks
-    /// across portfolios (ADR-103). The "blocked Nd" badge copy, RAG chip and blocked->stale treatment
-    /// are rendered by the shared frontend components (US-02 AC5/AC6 — no portfolio branch); they are
-    /// FE concerns covered by the existing epic-5074 Vitest suite, not new backend behaviour.
+    /// Step definitions for feature blocked-spell capture and blocked duration on the portfolio wip
+    /// read: a feature whose blocked verdict flips across two refreshes surfaces a non-null
+    /// blockedSince (and clears it on the leave edge), first observation stays "—", and the
+    /// per-portfolio verdict does not leak across portfolios. The "blocked Nd" badge copy, RAG chip and
+    /// blocked->stale treatment are rendered by shared frontend components and tested there.
     /// </summary>
     public partial class Slice02FeatureBlockedCaptureTest : PortfolioBlockedHistoryAcceptanceTest
     {
@@ -108,12 +106,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         {
             var item = await GetFeatureFromWip(portfolio, referenceId);
             Assert.That(item.GetProperty("isBlocked").GetBoolean(), Is.False,
-                $"A feature blocked only by ANOTHER portfolio's rules must NOT render blocked here (ADR-103 per-portfolio semantics). Item: {item}");
+                $"A feature blocked only by ANOTHER portfolio's rules must NOT render blocked here (blocked is judged per portfolio). Item: {item}");
         }
 
         private async Task ThenTheTeamFeatureListReportsTheFeatureBlocked(SeededTeamForPortfolio team, string referenceId)
         {
-            var (status, body) = await GetTeamFeaturesInProgress(team.TeamId, DateTime.UtcNow);
+            var (status, body) = await GetTeamFeaturesInProgress(team.TeamId, InstanceToday);
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
 
             var item = ItemByReference(body, referenceId);
@@ -123,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private async Task<JsonElement> GetFeatureFromWip(SeededPortfolio portfolio, string referenceId)
         {
-            var (status, body) = await GetPortfolioWip(portfolio.PortfolioId, DateTime.UtcNow);
+            var (status, body) = await GetPortfolioWip(portfolio.PortfolioId, InstanceToday);
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
             return ItemByReference(body, referenceId);
         }

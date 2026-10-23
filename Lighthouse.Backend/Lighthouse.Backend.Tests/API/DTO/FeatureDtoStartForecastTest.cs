@@ -123,9 +123,9 @@ namespace Lighthouse.Backend.Tests.API.DTO
             feature.SetFeatureForecasts([ACompletionFor(first, 11), ACompletionFor(second, 14)]);
             feature.SetStartForecasts(
             [
-                new StartForecast(ADistributionOn(4), null),
-                new StartForecast(ADistributionOn(4), first),
-                new StartForecast(ADistributionOn(6), second),
+                new StartForecast(ADistributionOn(4), null, DateTime.UtcNow),
+                new StartForecast(ADistributionOn(4), first, DateTime.UtcNow),
+                new StartForecast(ADistributionOn(6), second, DateTime.UtcNow),
             ]);
 
             var dto = TheReadOf(feature);
@@ -201,7 +201,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             var simulation = new SimulationResult();
             simulation.SimulationResults[day] = 100;
 
-            return new WhenForecast(simulation) { TeamId = team.Id, Team = team };
+            return new WhenForecast(simulation, DateTime.UtcNow) { TeamId = team.Id, Team = team };
         }
 
         private static Feature AForecastableFeature(Team team, int startsOnDay, int finishesOnDay)
@@ -211,8 +211,8 @@ namespace Lighthouse.Backend.Tests.API.DTO
             feature.SetFeatureForecasts([ACompletionFor(team, finishesOnDay)]);
             feature.SetStartForecasts(
             [
-                new StartForecast(ADistributionOn(startsOnDay), null),
-                new StartForecast(ADistributionOn(startsOnDay), team),
+                new StartForecast(ADistributionOn(startsOnDay), null, DateTime.UtcNow),
+                new StartForecast(ADistributionOn(startsOnDay), team, DateTime.UtcNow),
             ]);
 
             return feature;

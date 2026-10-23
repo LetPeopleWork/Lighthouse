@@ -321,7 +321,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             completion.SimulationResults.Add(new IndividualSimulationResult { Key = days, Value = 200 });
             feature.Forecasts.Add(completion);
 
-            var start = new StartForecast(new Dictionary<int, int> { [days - 3] = 200 }, team, 200) { CreationTime = ComputedAtSix };
+            var start = new StartForecast(new Dictionary<int, int> { [days - 3] = 200 }, team, 200, ComputedAtSix);
             feature.StartForecasts.Add(start);
 
             return feature;

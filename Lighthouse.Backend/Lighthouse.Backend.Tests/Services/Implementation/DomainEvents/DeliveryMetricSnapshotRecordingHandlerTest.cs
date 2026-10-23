@@ -36,9 +36,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private const double CertainSingleBucketLikelihood = 100.0;
 
-        // Bug #5567 - the recorder's calendar day is pinned here and read back from the SAME clock
-        // the subject was handed. Re-deriving DateTime.UtcNow.Date in the assertions is root cause D:
-        // it makes them hold for every possible value of "today", so they cannot see the anchor move.
+        // The recorder's calendar day is pinned here and read back from the SAME clock the subject
+        // was handed. Taking it from the machine's clock in the assertions would make them hold for
+        // every possible value of "today", so they could not see the recorded day move.
         // Delivery's constructor validates its target date against the real wall clock, so seeded
         // delivery dates deliberately stay on DateTime.UtcNow. They are not the subject here: the
         // recorded DAY KEY is, and that is read from the clock on both sides of every assertion.
@@ -411,7 +411,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         /// <summary>
-        /// Bug #5567 - the blackout window the recorder asks for has to span the whole forecast
+        /// The blackout window the recorder asks for has to span the whole forecast
         /// horizon, and both of its ends now come from the clock. If it stops short, every projected
         /// date past the end of the window is computed as if the team worked through the blackout,
         /// so the snapshot records dates the team was never going to hit. The window is invisible in
@@ -747,7 +747,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var simulationResult = new SimulationResult();
             simulationResult.SimulationResults[days] = SingleBucketTrials;
 
-            return new WhenForecast(simulationResult) { TeamId = team.Id };
+            return new WhenForecast(simulationResult, DateTime.UtcNow) { TeamId = team.Id };
         }
 
         private static readonly JsonSerializerOptions WhenDistributionReadOptions = new() { PropertyNameCaseInsensitive = true };

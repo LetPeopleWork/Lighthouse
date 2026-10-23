@@ -252,9 +252,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             // The team's own row first and the Feature's own row second, which is the order a forecast
             // writes them in and therefore the order they come back in.
             DatabaseContext.Set<StartForecast>().Add(
-                new StartForecast(new Dictionary<int, int> { [theDayThatTeamWouldHaveStarted] = 10 }) { FeatureId = feature.Id, TeamId = team.Id });
+                new StartForecast(new Dictionary<int, int> { [theDayThatTeamWouldHaveStarted] = 10 }, DateTime.UtcNow) { FeatureId = feature.Id, TeamId = team.Id });
             DatabaseContext.Set<StartForecast>().Add(
-                new StartForecast(new Dictionary<int, int> { [theDayTheFeatureStarts] = 10 }) { FeatureId = feature.Id });
+                new StartForecast(new Dictionary<int, int> { [theDayTheFeatureStarts] = 10 }, DateTime.UtcNow) { FeatureId = feature.Id });
             await DatabaseContext.SaveChangesAsync();
 
             DatabaseContext.ChangeTracker.Clear();

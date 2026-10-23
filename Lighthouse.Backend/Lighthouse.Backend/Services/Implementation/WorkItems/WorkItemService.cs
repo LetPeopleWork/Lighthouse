@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             dependencyRefreshReporter.ReportOn(portfolio);
 
-            portfolio.RefreshUpdateTime();
+            portfolio.RefreshUpdateTime(clock.Now.UtcDateTime);
 
             // Recorded beside UpdateTime, and only once the fetch it describes actually completed.
             portfolio.FetchFingerprint = fetchShape.Fingerprint;
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             // Stryker disable once all: one of three copies of an announcement the operator only ever sees once; the scenario counts it by level, not by wording.
             logger.LogDebug("Updating Work Items for Team {TeamName}", team.Name);
 
-            var syncTime = DateTime.UtcNow;
+            var syncTime = clock.Now.UtcDateTime;
             var connector = workTrackingConnectorFactory.GetWorkTrackingConnector(team.WorkTrackingSystemConnection.WorkTrackingSystem);
 
             var storedWorkItems = workItemRepository.GetAllByPredicate(wi => wi.TeamId == team.Id).ToList();
@@ -831,13 +831,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 // Stryker disable once all: trace of the percentile branch; the UsePercentileToCalculateDefaultAmountOfWorkItems guard above is mutated on its own and killed.
                 logger.LogDebug("Using Percentile to Calculate Default Amount of Work Items for Project {Project}", project.Name);
 
-                /* Use ProjectMetricsService to Get Values */
-                // Bug #5567 decision 4: both stay UTC. A history window is an instant offset, not a
-                // calendar day; an off-by-one only widens the percentile's sample.
-                var endDate = DateTime.UtcNow;
+                // Bug #5567 decision 4: both stay UTC instants. A history window is an offset from now,
+                // not a calendar day; an off-by-one only widens the percentile's sample.
+                var endDate = clock.Now.UtcDateTime;
 
                 var historyInDays = project.PercentileHistoryInDays is int configuredDays and > 0 ? configuredDays : Portfolio.DefaultPercentileHistoryInDays;
-                var startDate = DateTime.UtcNow.AddDays(-historyInDays);
+                var startDate = endDate.AddDays(-historyInDays);
                 var closedFeatures = portfolioMetricsService.GetCycleTimeDataForPortfolio(project, startDate, endDate);
 
                 var historicalFeatureSize = closedFeatures.Where(f => f.Size > 0).Select(f => f.Size);

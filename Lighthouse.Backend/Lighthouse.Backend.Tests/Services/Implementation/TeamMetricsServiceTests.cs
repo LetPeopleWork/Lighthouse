@@ -778,8 +778,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void GetClosedItemsForTeam_ItemClosedAtStartDate_ReturnsItem()
         {
             var workItem = AddWorkItem(StateCategories.Done, 1, string.Empty);
-            workItem.StartedDate = DateTime.Now.AddDays(-1);
-            workItem.ClosedDate = DateTime.Now.AddDays(-1);
+            workItem.StartedDate = TestToday.Clock.Now.UtcDateTime.AddDays(-1);
+            workItem.ClosedDate = TestToday.Clock.Now.UtcDateTime.AddDays(-1);
 
             var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, TestToday.AmbientAsUtcMidnight.AddDays(-1), TestToday.AmbientAsUtcMidnight).ToList();
 
@@ -797,11 +797,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             for (var index = 0; index < 20; index++)
             {
                 AddWorkItem(StateCategories.Done, 1, string.Empty);
-                workItems[index].ClosedDate = DateTime.Now.AddDays(-index);
+                workItems[index].ClosedDate = TestToday.Clock.Now.UtcDateTime.AddDays(-index);
                 workItems[index].StartedDate = workItems[index].ClosedDate?.AddDays(-index);
             }
 
-            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, DateTime.Now.AddDays(-10), DateTime.Now).ToList();
+            var closedItemsInRange = subject.GetClosedItemsForTeam(testTeam, TestToday.Clock.Now.UtcDateTime.AddDays(-10), TestToday.Clock.Now.UtcDateTime).ToList();
 
             using (Assert.EnterMultipleScope())
             {
@@ -817,11 +817,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public async Task UpdateTeamMetrics_RefreshesUpdateTimeForTeam()
         {
-            testTeam.UpdateTime = DateTime.Now.AddDays(-1);
+            testTeam.UpdateTime = TestToday.FrozenNow.UtcDateTime.AddDays(-1);
 
             await subject.UpdateTeamMetrics(testTeam);
 
-            Assert.That(testTeam.UpdateTime, Is.GreaterThan(DateTime.UtcNow.AddMinutes(-1)));
+            Assert.That(testTeam.UpdateTime, Is.EqualTo(TestToday.FrozenNow.UtcDateTime));
         }
 
         [Test]

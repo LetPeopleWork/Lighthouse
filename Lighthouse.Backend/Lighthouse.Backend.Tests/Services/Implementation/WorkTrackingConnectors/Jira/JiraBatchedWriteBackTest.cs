@@ -318,6 +318,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 factoryMock.Object,
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
                 new DeliveryForecastBlockRenderer(),
+                TimeProvider.System,
                 handlerMock.Object);
         }
 

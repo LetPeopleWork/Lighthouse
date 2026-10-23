@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.ConnectionHealth;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -195,7 +196,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ReadyToRefresh_RefreshesAllProjectsAsync()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             var subject = CreateSubject();
@@ -209,7 +210,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_PublishesPortfolioFeaturesRefreshedAfterUpdate()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
             var subject = CreateSubject();
 
@@ -223,8 +224,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_MultipleProjects_RefreshesAllProjectsAsync()
         {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now.AddDays(-1));
+            var project1 = CreateProject(Now.AddDays(-1));
+            var project2 = CreateProject(Now.AddDays(-1));
             SetupProjects(project1, project2);
 
             var subject = CreateSubject();
@@ -240,8 +241,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_MultipleProjects_RefreshesOnlyProjectsWhereLastRefreshIsOlderThanConfiguredSetting()
         {
-            var project1 = CreateProject(DateTime.Now.AddDays(-1));
-            var project2 = CreateProject(DateTime.Now);
+            var project1 = CreateProject(Now.AddDays(-1));
+            var project2 = CreateProject(Now);
 
             SetupRefreshSettings(10, 360);
 
@@ -259,11 +260,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ShouldBeRefreshed_NoPremiumLicense_MoreThanOneProject_DoesNotRefresh()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
 
             SetupRefreshSettings(10, 360);
 
-            SetupProjects(project, CreateProject(DateTime.Now));
+            SetupProjects(project, CreateProject(Now));
 
             var subject = CreateSubject();
 
@@ -275,9 +276,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public async Task ExecuteAsync_ShouldBeRefreshed_PremiumLicense_MoreThanOneProject_Refreshes()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupRefreshSettings(10, 360);
-            SetupProjects(project, CreateProject(DateTime.Now));
+            SetupProjects(project, CreateProject(Now));
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
 
@@ -464,7 +465,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_Cancelled_RecordsTheRefreshAsCancelledRatherThanFailed()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
@@ -548,9 +549,77 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public async Task ExecuteAsync_PortfolioLastRefreshedExactlyTheConfiguredMinutesAgo_IsRefreshed()
+        {
+            SetupRefreshSettings(10, 360);
+            var project = CreateProject(Now.AddMinutes(-360));
+            SetupProjects(project);
+
+            await CreateSubject().StartAsync(CancellationToken.None);
+
+            await WaitForEnqueue(project.Id);
+        }
+
+        [Test]
+        public void TriggerUpdate_NoPremiumLicense_MoreThanOnePortfolio_RefreshesNothingAndReportsWhy()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project, CreateProject(Now));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var errors = loggerMock.Invocations.Count(i => i.Arguments[0] is LogLevel.Error);
+            using (Assert.EnterMultipleScope())
+            {
+                workItemServiceMock.Verify(x => x.UpdateFeaturesForPortfolio(It.IsAny<Portfolio>()), Times.Never);
+                Assert.That(recordedRefresh, Is.Null);
+                Assert.That(errors, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_PortfolioNoLongerExists_DoesNothingAndDoesNotFail()
+        {
+            SetupProjects(CreateProject(Now));
+
+            CreateSubject().TriggerUpdate(9999);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.Null);
+                Assert.That(recordedRefresh, Is.Null);
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefreshSucceeds_TellsConnectionHealthItSucceeded()
+        {
+            var health = new Mock<IConnectionHealthService>();
+            health.Setup(x => x.RecordRefreshSucceededAsync(It.IsAny<WorkTrackingSystemConnection>())).Returns(Task.CompletedTask);
+            SetupServiceProviderMock(health.Object);
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            health.Verify(x => x.RecordRefreshSucceededAsync(project.WorkTrackingSystemConnection), Times.Once);
+        }
+
+        [Test]
+        public void TriggerUpdate_RecordsTheRefreshAtTheClocksInstant()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(recordedRefresh?.ExecutedAt, Is.EqualTo(Now));
+        }
+
+        [Test]
         public void TriggerUpdate_EveryCredentialReads_RecordsSuccessAndSaysNothingAboutEncryption()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             CreateSubject().TriggerUpdate(project.Id);
@@ -573,7 +642,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_TheRefreshFoundSomethingWrongWithASetting_RecordsTheFindingOnItsRow()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
             var finding = new RefreshFinding(
                 RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", BothDependencyPhrases);
@@ -591,7 +660,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
@@ -608,7 +677,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_AWholeDownloadThatFailedPartWay_LeavesTheFindingsOfItsRowUnsaid()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
             var finding = new RefreshFinding(
                 RefreshFindingKind.NamedLinkPointsBothWays, RefreshFindingSetting.DependencyField, "Dependency", BothDependencyPhrases);
@@ -634,7 +703,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void TriggerUpdate_AWholeDownloadThatFoundNothingWrong_RecordsThatItFoundNothing()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
@@ -770,7 +839,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var project = SetupPortfolioWhoseReadFails();
             var team = CreateTeam();
-            team.UpdateTime = DateTime.Now.AddDays(-1);
+            team.UpdateTime = Now.AddDays(-1);
             teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
             teamRepoMock.Setup(x => x.GetById(team.Id)).Returns(team);
             teamDataServiceMock.Setup(x => x.UpdateTeamData(team)).ThrowsAsync(CreateReadFailure());
@@ -783,7 +852,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio SetupPortfolioWhoseReadFails()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
@@ -816,7 +885,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio SetupPortfolioWhoseQueryIsRefused(WorkTrackingRefusedException refusal)
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             SetupProjects(project);
 
             workItemServiceMock
@@ -829,7 +898,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Team SetupTeamWhoseQueryIsRefused()
         {
             var team = CreateTeam();
-            team.UpdateTime = DateTime.Now.AddDays(-1);
+            team.UpdateTime = Now.AddDays(-1);
 
             teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
             teamRepoMock.Setup(x => x.GetById(team.Id)).Returns(team);
@@ -848,7 +917,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio SetupPortfolioWhoseCredentialCannotBeRead()
         {
-            var project = CreateProject(DateTime.Now.AddDays(-1));
+            var project = CreateProject(Now.AddDays(-1));
             AddUnreadableCredential(project.WorkTrackingSystemConnection);
             SetupProjects(project);
 
@@ -862,7 +931,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Team SetupTeamWhoseCredentialCannotBeRead()
         {
             var team = CreateTeam();
-            team.UpdateTime = DateTime.Now.AddDays(-1);
+            team.UpdateTime = Now.AddDays(-1);
             AddUnreadableCredential(team.WorkTrackingSystemConnection);
 
             teamRepoMock.Setup(x => x.GetAll()).Returns([team]);
@@ -930,7 +999,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private TeamUpdater CreateTeamSubject()
         {
-            return new TeamUpdater(teamLoggerMock.Object, ServiceScopeFactory, UpdateQueueService);
+            return new TeamUpdater(teamLoggerMock.Object, ServiceScopeFactory, UpdateQueueService, Time);
         }
 
         private Task WaitForEnqueue(int projectId)
@@ -969,7 +1038,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio CreateProject(params Team[] teams)
         {
-            return CreateProject(DateTime.Now, teams);
+            return CreateProject(Now, teams);
         }
 
         private Portfolio CreateProject(DateTime lastUpdateTime, params Team[] teams)
@@ -998,7 +1067,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private PortfolioUpdater CreateSubject()
         {
-            return new PortfolioUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object, forecastUpdaterMock.Object);
+            return new PortfolioUpdater(loggerMock.Object, ServiceScopeFactory, UpdateQueueService, cleanupServiceMock.Object, domainEventDispatcherMock.Object, forecastUpdaterMock.Object, Time);
         }
     }
 }

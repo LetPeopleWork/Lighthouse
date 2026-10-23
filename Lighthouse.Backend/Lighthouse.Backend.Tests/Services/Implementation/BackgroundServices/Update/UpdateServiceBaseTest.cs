@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
     public sealed class ReasonProbe : UpdateServiceBase<Team>
     {
         public ReasonProbe()
-            : base(Mock.Of<ILogger<UpdateServiceBase<Team>>>(), Mock.Of<IServiceScopeFactory>(), Mock.Of<IUpdateQueueService>(), UpdateType.Team)
+            : base(Mock.Of<ILogger<UpdateServiceBase<Team>>>(), Mock.Of<IServiceScopeFactory>(), Mock.Of<IUpdateQueueService>(), TimeProvider.System, UpdateType.Team)
         {
         }
 

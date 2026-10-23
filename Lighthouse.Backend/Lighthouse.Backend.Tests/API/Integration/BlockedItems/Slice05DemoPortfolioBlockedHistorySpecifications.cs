@@ -4,10 +4,10 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Slice 05 / US-05 — demo portfolio blocked history.
-    /// Backend-observable contract: on a demo-gated portfolio refresh, backdated feature blocked spells
-    /// are synthesized into the FEATURE keyspace (never the team keyspace), idempotently, with the
-    /// StartedDate cap preserved, and the result is drillable through the slice-04 read port. Every
+    /// Step definitions for demo portfolio blocked history: on a demo-gated portfolio refresh, backdated
+    /// feature blocked spells are synthesized into the FEATURE keyspace (never the team keyspace),
+    /// idempotently, with the StartedDate cap preserved, and the result is drillable through the
+    /// portfolio blocked-items read. Every
     /// assertion is on ROWS or read surfaces, never on absence-of-throw — the dispatcher swallows
     /// handler exceptions.
     /// </summary>
@@ -43,15 +43,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             // Started 3 days ago: the 14-day spread would claim an EnteredAt before the feature existed —
             // the StartedDate cap must clamp it.
             SeedFeature(portfolio.PortfolioId, "F-DEMO-YOUNG", state: "Blocked",
-                startedDate: DateTime.UtcNow.Date.AddDays(-3));
+                startedDate: InstanceToday.AddDays(-3));
         }
 
         private void GivenBackdatedSnapshotsButNoFeatureSpells(SeededPortfolio portfolio)
         {
-            // The post-slice-01 state on a long-lived demo instance: snapshot backfill landed (slice 01
-            // retained it) but no feature spells exist yet. The legacy snapshot-based idempotency guard
+            // The state of a long-lived demo instance: the snapshot backfill landed but no feature
+            // spells exist yet. The legacy snapshot-based idempotency guard
             // sees "already backfilled" — the reconciled guard must still synthesize the spells.
-            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var today = DateOnly.FromDateTime(InstanceToday);
             for (var day = 14; day >= 1; day--)
             {
                 SeedBlockedCountSnapshot(portfolio.PortfolioId, Lighthouse.Backend.Models.OwnerType.Portfolio, today.AddDays(-day), blockedCount: 2);
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private void ThenTheFeatureKeyspaceHoldsBackdatedSpellsForBothFeatures(SeededPortfolio portfolio)
         {
             var spells = ReadFeatureSpells(portfolio.PortfolioId);
-            var today = DateTime.UtcNow.Date;
+            var today = InstanceToday;
 
             using (Assert.EnterMultipleScope())
             {
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         {
             var teamSpells = ReadAllWorkItemSpells();
             Assert.That(teamSpells, Is.Empty,
-                "The demo backfill must never write into the team keyspace (WorkItemBlockedTransition) — slice 01's invariant. " +
+                "The demo backfill must never write into the team keyspace (WorkItemBlockedTransition). " +
                 $"Found {teamSpells.Count} row(s).");
         }
 
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         private void ThenSpellsExistAndEverySpellStartsOnOrAfterItsFeatureStarted(SeededPortfolio portfolio)
         {
             var spells = ReadFeatureSpells(portfolio.PortfolioId);
-            var featureStarted = DateTime.UtcNow.Date.AddDays(-3);
+            var featureStarted = InstanceToday.AddDays(-3);
 
             using (Assert.EnterMultipleScope())
             {
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private async Task ThenYesterdaysBarListsTheBackfilledFeatures(SeededPortfolio portfolio)
         {
-            var yesterday = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays(-1));
+            var yesterday = DateOnly.FromDateTime(InstanceToday.AddDays(-1));
             var (status, body) = await GetPortfolioBlockedItemsAtDate(portfolio.PortfolioId, yesterday);
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
 

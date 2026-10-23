@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -298,6 +299,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(historyView!.DeliveryDate, Is.EqualTo(targetDate), body);
         }
 
+        private DateTime InstanceToday => factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
+
         private static string MetricsHistoryUrl(int deliveryId)
             => $"/api/latest/deliveries/{deliveryId}/metrics-history";
 
@@ -311,7 +314,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
-            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            var firstDay = InstanceToday.AddDays(-2);
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
@@ -350,13 +353,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var laterTarget = DateTime.UtcNow.Date.AddDays(30);
+            var laterTarget = InstanceToday.AddDays(30);
             var earlierTarget = laterTarget.AddDays(-14);
             var delivery = new Delivery("Release 6", laterTarget, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
-            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            var firstDay = InstanceToday.AddDays(-2);
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
@@ -415,7 +418,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
-            var firstDay = DateTime.UtcNow.Date.AddDays(-1);
+            var firstDay = InstanceToday.AddDays(-1);
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
@@ -451,17 +454,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var whenDistributionJson = JsonSerializer.Serialize(new[]
             {
-                new { Probability = 50.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(20) },
-                new { Probability = 70.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(24) },
-                new { Probability = 85.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(28) },
-                new { Probability = 95.0, ExpectedDate = DateTime.UtcNow.Date.AddDays(30) },
+                new { Probability = 50.0, ExpectedDate = InstanceToday.AddDays(20) },
+                new { Probability = 70.0, ExpectedDate = InstanceToday.AddDays(24) },
+                new { Probability = 85.0, ExpectedDate = InstanceToday.AddDays(28) },
+                new { Probability = 95.0, ExpectedDate = InstanceToday.AddDays(30) },
             });
 
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
-                RecordedAt = DateTime.UtcNow.Date,
-                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
+                RecordedAt = InstanceToday,
+                RecordedDay = DateOnly.FromDateTime(InstanceToday),
                 TotalWork = 12,
                 DoneWork = 4,
                 RemainingWork = 8,
@@ -493,8 +496,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
-                RecordedAt = DateTime.UtcNow.Date,
-                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
+                RecordedAt = InstanceToday,
+                RecordedDay = DateOnly.FromDateTime(InstanceToday),
                 TotalWork = 20,
                 DoneWork = 11,
                 RemainingWork = 9,
@@ -518,8 +521,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,
-                RecordedAt = DateTime.UtcNow.Date,
-                RecordedDay = DateOnly.FromDateTime(DateTime.UtcNow.Date),
+                RecordedAt = InstanceToday,
+                RecordedDay = DateOnly.FromDateTime(InstanceToday),
                 TotalWork = 20,
                 DoneWork = 11,
                 RemainingWork = 9,
@@ -536,12 +539,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var targetDate = DateTime.UtcNow.Date.AddDays(40);
+            var targetDate = InstanceToday.AddDays(40);
             var delivery = new Delivery("Improving Release", targetDate, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
-            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            var firstDay = InstanceToday.AddDays(-2);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay, 50.0, lowerOffset: 10, upperOffset: 38);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(1), 65.0, lowerOffset: 14, upperOffset: 32);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(2), 80.0, lowerOffset: 18, upperOffset: 24);
@@ -556,12 +559,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
 
             var portfolio = AddPortfolio(scope.ServiceProvider);
-            var targetDate = DateTime.UtcNow.Date.AddDays(40);
+            var targetDate = InstanceToday.AddDays(40);
             var delivery = new Delivery("Degrading Release", targetDate, portfolio.Id);
             dbContext.Deliveries.Add(delivery);
             dbContext.SaveChanges();
 
-            var firstDay = DateTime.UtcNow.Date.AddDays(-2);
+            var firstDay = InstanceToday.AddDays(-2);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay, 80.0, lowerOffset: 18, upperOffset: 24);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(1), 65.0, lowerOffset: 14, upperOffset: 32);
             AddWhenDistributionSnapshot(dbContext, delivery.Id, firstDay.AddDays(2), 50.0, lowerOffset: 10, upperOffset: 38);
@@ -570,7 +573,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return (portfolio.Id, delivery.Id, targetDate);
         }
 
-        private static void AddWhenDistributionSnapshot(
+        private void AddWhenDistributionSnapshot(
             Lighthouse.Backend.Data.LighthouseAppContext dbContext,
             int deliveryId,
             DateTime recordedAt,
@@ -580,8 +583,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var whenDistributionJson = JsonSerializer.Serialize(new[]
             {
-                new { Probability = LowerSpreadPercentile, ExpectedDate = DateTime.UtcNow.Date.AddDays(lowerOffset) },
-                new { Probability = UpperSpreadPercentile, ExpectedDate = DateTime.UtcNow.Date.AddDays(upperOffset) },
+                new { Probability = LowerSpreadPercentile, ExpectedDate = InstanceToday.AddDays(lowerOffset) },
+                new { Probability = UpperSpreadPercentile, ExpectedDate = InstanceToday.AddDays(upperOffset) },
             });
 
             dbContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot

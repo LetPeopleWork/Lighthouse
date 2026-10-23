@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Models.Forecast
         {
         }
 
-        public StartForecast(Dictionary<int, int> daysWorkBeganOn) : base(daysWorkBeganOn, EarliestDayFirst)
+        public StartForecast(Dictionary<int, int> daysWorkBeganOn, DateTime creationTime) : base(daysWorkBeganOn, EarliestDayFirst, creationTime)
         {
         }
 
@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Models.Forecast
         /// Null for the Feature's own start: no single Team owns the Feature-grain value, and null is
         /// the honest answer rather than a sentinel Team.
         /// </param>
-        public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team) : this(daysWorkBeganOn)
+        public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team, DateTime creationTime) : this(daysWorkBeganOn, creationTime)
         {
             TeamId = team?.Id;
             Team = team;
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Models.Forecast
         /// <param name="runsSimulated">
         /// Every run, including those in which work never began: those read as starting beyond the horizon.
         /// </param>
-        public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team, int runsSimulated) : this(daysWorkBeganOn, team)
+        public StartForecast(Dictionary<int, int> daysWorkBeganOn, Team? team, int runsSimulated, DateTime creationTime) : this(daysWorkBeganOn, team, creationTime)
         {
             TotalTrials = Math.Max(TotalTrials, runsSimulated);
         }

@@ -245,6 +245,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void Update_RecordsTheForecastAtTheClocksInstant()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            var recorded = CaptureRefreshLog();
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            Assert.That(recorded.Entry.ExecutedAt, Is.EqualTo(Now));
+        }
+
+        [Test]
         public void Update_ShouldRecordHowLongTheForecastRan()
         {
             var portfolio = CreatePortfolio();
@@ -733,15 +746,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Callback(() => sequence.Add("forecastsUpdatedEvent"))
                 .Returns(Task.CompletedTask);
 
-            var roundStarted = DateTime.UtcNow;
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
-            var roundEnded = DateTime.UtcNow;
 
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(confirmedFeatures, Is.EquivalentTo(TheFeaturesTheSkippedForecastRead));
-                Assert.That(confirmedAt, Is.InRange(roundStarted, roundEnded));
+                Assert.That(confirmedAt, Is.EqualTo(Now));
                 Assert.That(sequence, Is.EqualTo(ConfirmThenWriteBackThenEventDispatchOrder));
             }
         }
@@ -858,7 +869,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private ForecastUpdater CreateSubject(IUpdateStatusStore statusStore, IUpdateQueueService updateQueueService)
         {
-            return new ForecastUpdater(loggerMock.Object, ServiceScopeFactory, updateQueueService, domainEventDispatcherMock.Object, statusStore, cancellationContext);
+            return new ForecastUpdater(loggerMock.Object, ServiceScopeFactory, updateQueueService, domainEventDispatcherMock.Object, statusStore, cancellationContext, Time);
         }
 
         private UpdateQueueService CreateRealUpdateQueue()
@@ -891,7 +902,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private Portfolio CreatePortfolio(params Feature[] features)
         {
-            var portfolio = CreatePortfolio(DateTime.UtcNow, features);
+            var portfolio = CreatePortfolio(Now, features);
 
             return portfolio;
         }

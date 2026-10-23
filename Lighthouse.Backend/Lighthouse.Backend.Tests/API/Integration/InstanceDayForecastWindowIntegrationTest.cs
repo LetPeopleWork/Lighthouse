@@ -19,7 +19,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// Bug #5567 - the manual-forecast endpoint must project from the INSTANCE calendar day. The
+    /// The manual-forecast endpoint must project from the INSTANCE calendar day. The
     /// instant is supplied by the test, so both candidate days are fixed literals and the assertion
     /// discriminates between them on every date a run happens to fall on.
     /// </summary>
@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[workingDays] = 100;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private int SeedTeam()

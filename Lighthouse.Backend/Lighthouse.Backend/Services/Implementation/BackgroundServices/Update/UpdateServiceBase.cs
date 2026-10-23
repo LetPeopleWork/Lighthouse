@@ -13,11 +13,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         ILogger<UpdateServiceBase<TEntity>> logger,
         IServiceScopeFactory serviceScopeFactory,
         IUpdateQueueService updateQueueService,
+        TimeProvider timeProvider,
         UpdateType updateType)
         : BackgroundService, IUpdateService
         where TEntity : class, IEntity
     {
         protected ILogger<UpdateServiceBase<TEntity>> Logger { get; } = logger;
+
+        protected DateTime CurrentInstant => timeProvider.GetUtcNow().UtcDateTime;
 
         private static string EntityTypeName => typeof(TEntity).Name;
 

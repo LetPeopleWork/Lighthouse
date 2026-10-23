@@ -35,13 +35,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers.Health
 
             ApplyDatabaseState(databaseState);
 
+            // Stopping the application disposes the host's services, so a read made after a stop must not resolve them again.
+            ReadinessState = factory.Services.GetRequiredService<IReadinessState>();
+
             client = factory.CreateClient(new WebApplicationFactoryClientOptions
             {
                 AllowAutoRedirect = false,
             });
         }
 
-        public IReadinessState ReadinessState => factory.Services.GetRequiredService<IReadinessState>();
+        public IReadinessState ReadinessState { get; }
 
         public void TriggerApplicationStopping()
             => factory.Services.GetRequiredService<IHostApplicationLifetime>().StopApplication();

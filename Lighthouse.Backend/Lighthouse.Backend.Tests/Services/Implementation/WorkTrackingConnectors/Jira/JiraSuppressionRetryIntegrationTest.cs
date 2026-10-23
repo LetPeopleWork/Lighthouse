@@ -172,7 +172,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService()),
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
-                new DeliveryForecastBlockRenderer());
+                new DeliveryForecastBlockRenderer(),
+                TimeProvider.System);
 
         private WorkTrackingSystemConnection CreateRestrictedConnection()
         {

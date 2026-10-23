@@ -1,0 +1,43 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/API/DatabaseManagementController.cs",
+      "**/API/DeliveryNotesController.cs",
+      "**/API/LogsController.cs",
+      "**/Models/Auth/ApiKey.cs",
+      "**/Models/Auth/UserProfile.cs",
+      "**/Models/Forecast/ForecastBase.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/Services/Implementation/Auth/ApiKeyService.cs",
+      "**/Services/Implementation/Auth/OidcGroupSnapshotWriter.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs",
+      "**/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs",
+      "**/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs",
+      "**/Services/Implementation/Forecast/ForecastService.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Forecast.|FullyQualifiedName~Tests.Models.Forecast.|FullyQualifiedName~ApiKeyServiceTest|FullyQualifiedName~OidcGroupSnapshotWriterTest|FullyQualifiedName~F_BE_1_GroupSnapshotInheritanceTests|FullyQualifiedName~WorkItemBlockedTransitionCaptureTests|FullyQualifiedName~InstantsUnaffectedByZoneTest|FullyQualifiedName~DatabaseManagementControllerTest|FullyQualifiedName~DatabaseManagementServiceTest|FullyQualifiedName~LogsControllerTest|FullyQualifiedName~DeliveryNotesControllerTest|FullyQualifiedName~DeliveryNoteAuthorshipTest|FullyQualifiedName~Tests.Services.Implementation.BackgroundServices.Update.|FullyQualifiedName~WorkTrackingSystemOptionsOwnerTest|FullyQualifiedName~CurrentUserProfileServiceTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~IntegrationTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

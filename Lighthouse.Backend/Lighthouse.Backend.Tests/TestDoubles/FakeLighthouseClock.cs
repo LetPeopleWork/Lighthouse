@@ -5,9 +5,9 @@ using Microsoft.Extensions.Time.Testing;
 namespace Lighthouse.Backend.Tests.TestDoubles
 {
     /// <summary>
-    /// Bug #5567 - lets a test set the instant and the instance time zone independently, which is
-    /// the whole point: the two disagree for roughly two hours every night and that window is where
-    /// the bug lives. The day arithmetic is delegated to the real <see cref="LighthouseClock"/> so
+    /// Lets a test set the instant and the instance time zone independently, which is the whole
+    /// point: the two disagree about the calendar day for a few hours every night, and that window is
+    /// where a day computed in the wrong zone shows up. The day arithmetic is delegated to the real <see cref="LighthouseClock"/> so
     /// this double can never drift from production behaviour.
     /// </summary>
     public sealed class FakeLighthouseClock : ILighthouseClock

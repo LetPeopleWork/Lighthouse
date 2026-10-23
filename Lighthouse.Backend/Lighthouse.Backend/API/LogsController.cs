@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using System.Text;
 
 namespace Lighthouse.Backend.API
@@ -25,12 +26,14 @@ namespace Lighthouse.Backend.API
     {
         private readonly ILogConfiguration logConfiguration;
         private readonly IRecentProblemsReport recentProblems;
+        private readonly ILighthouseClock clock;
         private readonly ILogger<LogsController> logger;
 
-        public LogsController(ILogConfiguration logConfiguration, IRecentProblemsReport recentProblems, ILogger<LogsController> logger)
+        public LogsController(ILogConfiguration logConfiguration, IRecentProblemsReport recentProblems, ILighthouseClock clock, ILogger<LogsController> logger)
         {
             this.logConfiguration = logConfiguration;
             this.recentProblems = recentProblems;
+            this.clock = clock;
             this.logger = logger;
         }
 
@@ -100,7 +103,7 @@ namespace Lighthouse.Backend.API
         {
             var logsContent = logConfiguration.GetLogs();
             var fileBytes = Encoding.UTF8.GetBytes(logsContent);
-            var fileName = $"Lighthouse_Log_{DateTime.UtcNow:yyyy.MM.dd}.txt";
+            var fileName = string.Create(CultureInfo.InvariantCulture, $"Lighthouse_Log_{clock.Today:yyyy.MM.dd}.txt");
             return File(fileBytes, "text/plain", fileName);
         }
 

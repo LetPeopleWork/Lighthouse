@@ -11,6 +11,7 @@ using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -74,6 +75,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         }
 
         [Test]
+        [TestCase(7, 2026, 3, 21)]
+        [TestCase(30, 2026, 4, 13)]
+        public void HowMany_IsStampedWithTheClockInstant_AndItsTargetDateCountsFromThere(int days, int targetYear, int targetMonth, int targetDay)
+        {
+            var subject = CreateSubjectWithPersistentThroughput(new FakeTimeProvider(new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero)));
+
+            var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), days);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(forecast.CreationTime, Is.EqualTo(new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)));
+                Assert.That(forecast.TargetDate, Is.EqualTo(new DateTime(targetYear, targetMonth, targetDay, 23, 30, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        [Test]
+        public async Task When_IsStampedWithTheClockInstant()
+        {
+            var subject = CreateSubjectWithPersistentThroughput(new FakeTimeProvider(new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero)));
+
+            var forecast = await subject.When(CreateTeam(1, [1]), 12);
+
+            Assert.That(forecast.CreationTime, Is.EqualTo(new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)));
+        }
+
+        [Test]
         public async Task When_ReturnsWhenForecast()
         {
             var subject = CreateSubjectWithPersistentThroughput();
@@ -123,8 +150,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [Test]
         public void PredictWorkItemCreation_GivenWorkItemTypes_CreatesHowManyForecast()
         {
-            var startDate = DateTime.Now.AddDays(-30);
-            var endDate = DateTime.Now;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-30);
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             const int daysToForecast = 10;
             var workItemTypes = new[] { "User Story" };
@@ -697,6 +724,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [Test]
+        public void HowMany_SimulatesExactlyTheConfiguredNumberOfRuns()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+
+            var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), 7);
+
+            Assert.That(forecast.TotalTrials, Is.EqualTo(ForecastSimulationLimits.Default.Trials));
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_ForecastsAFeatureSharedWithATeamOutsideThePortfolio_AndSavesIt()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var portfolioTeam = CreateTeam(1, [1]);
+            var otherTeam = CreateTeam(1, [1]);
+            var ownFeature = SetupFeature(portfolioTeam, 5);
+            var sharedFeature = SetupFeature([(portfolioTeam, 3, 3), (otherTeam, 4, 4)]);
+            SetupFeatures(ownFeature, sharedFeature);
+
+            await subject.UpdateForecastsForPortfolio(CreatePortfolio(ownFeature), DateOnly.MinValue);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(sharedFeature.Forecasts, Is.Not.Empty);
+                featureRepositoryMock.Verify(x => x.Save(), Times.Once);
+            }
+        }
+
         private Feature SetupFeature(Team team, int remainingItems)
         {
             return SetupFeature([(team, remainingItems, remainingItems)]);
@@ -718,14 +774,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             featureRepositoryMock.Holds(features);
         }
 
-        private ForecastService CreateSubjectWithPersistentThroughput()
+        private ForecastService CreateSubjectWithPersistentThroughput() => CreateSubjectWithPersistentThroughput(TimeProvider.System);
+
+        private ForecastService CreateSubjectWithPersistentThroughput(TimeProvider timeProvider)
         {
-            return new ForecastService(new NotSoRandomNumberService(), loggerMock.Object, teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default);
+            return new ForecastService(new NotSoRandomNumberService(), loggerMock.Object, teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new ForecastSimulation(new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default), timeProvider);
         }
 
         private ForecastService CreateSubjectWithRealThroughput()
         {
-            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default);
+            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default), TimeProvider.System);
         }
 
         /// <summary>
@@ -742,8 +800,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
-                new DrawsFromAPinnedStartingNumber(TheSeedTheRealDataForecastsShare),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsFromAPinnedStartingNumber(TheSeedTheRealDataForecastsShare), ForecastSimulationLimits.Default),
+                TimeProvider.System);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

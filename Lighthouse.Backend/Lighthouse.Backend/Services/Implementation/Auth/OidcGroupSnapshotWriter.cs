@@ -8,7 +8,8 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
 {
     public sealed class OidcGroupSnapshotWriter(
         LighthouseAppContext context,
-        ILogger<OidcGroupSnapshotWriter> logger) : IOidcGroupSnapshotWriter
+        ILogger<OidcGroupSnapshotWriter> logger,
+        TimeProvider timeProvider) : IOidcGroupSnapshotWriter
     {
         public async Task WriteAsync(
             string stableSubject,
@@ -29,11 +30,14 @@ namespace Lighthouse.Backend.Services.Implementation.Auth
                     "Creating UserProfile during OIDC group-snapshot write for subject {Subject}",
                     stableSubject);
 
+                var now = timeProvider.GetUtcNow().UtcDateTime;
                 var created = new UserProfile
                 {
                     Subject = stableSubject,
                     SubjectClaimType = "sub",
                     LastKnownGroupClaimValues = serialised,
+                    CreatedAt = now,
+                    LastSeenAt = now,
                 };
                 context.UserProfiles.Add(created);
                 await context.SaveChangesAsync(cancellationToken);

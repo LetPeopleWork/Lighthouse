@@ -285,8 +285,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Mock.Of<ITeamMetricsService>(),
                 Mock.Of<IRepository<Feature>>(),
                 new NothingWaitsForAnything(),
-                new DrawsAfreshEveryTime(),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),
+                TimeProvider.System);
         }
 
         private static IBlackoutPeriodService NoBlackoutPeriods()

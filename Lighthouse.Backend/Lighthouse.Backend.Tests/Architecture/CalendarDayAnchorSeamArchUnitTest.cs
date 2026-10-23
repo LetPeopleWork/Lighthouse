@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,13 +8,15 @@ using Microsoft.EntityFrameworkCore;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Bug #5567 - the anchor seam guard (RCA section 8-T2), hard-fail since step 03-01.
+    /// Guards the one seam allowed to turn an instant into a calendar day.
     ///
     /// Three source-text rules and one type rule:
     /// <list type="number">
-    /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c> or <c>UtcNow.Date</c>
-    /// anywhere in the production project outside the clock adapter;</item>
-    /// <item>each decision-4 tracker cutoff still exists and still states why it stays UTC;</item>
+    /// <item>no <c>DateOnly.FromDateTime(DateTime.</c>, <c>DateTime.Today</c>, <c>UtcNow.Date</c>,
+    /// <c>GetUtcNow().Date</c> or <c>UtcDateTime.Date</c> anywhere in the production project outside
+    /// the clock adapter, nor a UTC instant from an injected clock handed to <c>DateOnly.FromDateTime</c>
+    /// or formatted as a date;</item>
+    /// <item>each tracker history cutoff that deliberately stays UTC still exists and still states why;</item>
     /// <item>no persisted snapshot entity keys its day with an instant.</item>
     /// </list>
     ///
@@ -22,9 +25,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// depends on, so no dependency rule can express it. The type rule is reflection over
     /// <see cref="LighthouseAppContext"/>'s <c>DbSet</c>s, because it is about persisted shape.
     ///
-    /// Root cause D was not "someone wrote the wrong expression", it was "nothing could tell them
-    /// they had". There is no warn-list any more: the migration is complete, so a new anchor is a
-    /// failure to fix at the source.
+    /// The defect this guards against was never "someone wrote the wrong expression", it was "nothing
+    /// could tell them they had". There is no warn-list: a new anchor is a failure to fix at the source.
     /// </summary>
     [TestFixture]
     public class CalendarDayAnchorSeamArchUnitTest
@@ -34,6 +36,20 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string DateTimeToday = "DateTime.Today";
 
         private const string UtcNowDate = "UtcNow.Date";
+
+        private const string TimeProviderUtcDate = "GetUtcNow().Date";
+
+        private const string InstantUtcDate = "UtcDateTime.Date";
+
+        private const string UtcInstantAsDateOnly = "DateOnly.FromDateTime(<UTC instant>)";
+
+        private const string UtcInstantInADateFormatHole = "{<UTC instant>:<date format>}";
+
+        /// <summary>
+        /// How a UTC instant is spelled once it comes from an injected clock: a time provider's reading,
+        /// any instant's UTC form, or the instance clock's moment.
+        /// </summary>
+        private const string UtcInstant = @"(?:GetUtcNow\(\)|\.UtcDateTime\b|\b[Cc]lock\.Now\b)";
 
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
@@ -45,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// A guard that silently scans nothing is worse than no guard. The production project held
-        /// 510 source files at step 03-01; the floor is slack enough that ordinary growth and
+        /// about 510 source files when this floor was set; it is slack enough that ordinary growth and
         /// deletion never touch it, and a broken root resolution fails loudly rather than passing
         /// vacuously.
         /// </summary>
@@ -66,25 +82,54 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const int ExemptedTrackerCutoffCount = 4;
 
         /// <summary>
-        /// Four snapshot tables at step 03-01. A floor rather than an equality: a fifth table is not
+        /// Four snapshot tables when this floor was set. A floor rather than an equality: a fifth table is not
         /// blocked, it is subjected to the day-key rule below, which is the point.
         /// </summary>
         private const int KnownSnapshotEntityCount = 4;
 
         /// <summary>
-        /// The three spellings of the defect. Scanned independently of one another, so a line such as
+        /// The spellings of the defect. Scanned independently of one another, so a line such as
         /// <c>DateOnly.FromDateTime(DateTime.UtcNow.Date)</c> reports both of the patterns it carries.
+        /// The last two are how a UTC day is written once the ambient clock cannot be read: taken
+        /// from an injected <see cref="TimeProvider"/>, or from any instant's UTC form. Both are the
+        /// UTC calendar day, which is not the instance's day for part of every night.
         /// </summary>
         private static readonly string[] AnchorPatterns =
         [
             DateOnlyFromDateTime,
             DateTimeToday,
             UtcNowDate,
+            TimeProviderUtcDate,
+            InstantUtcDate,
+        ];
+
+        /// <summary>
+        /// The same defect without the word <c>.Date</c>: a UTC instant from the injected clock handed
+        /// straight to <c>DateOnly.FromDateTime</c>, or formatted as a date inside an interpolation
+        /// hole, as in a download named after the day. Both give the UTC calendar day.
+        /// </summary>
+        private static readonly (string Name, Regex Pattern)[] UtcInstantDayPatterns =
+        [
+            (UtcInstantAsDateOnly, new Regex(@"DateOnly\.FromDateTime\([^;]*?" + UtcInstant, RegexOptions.None, TimeSpan.FromSeconds(1))),
+            (UtcInstantInADateFormatHole, new Regex(@"\{[^{}]*?" + UtcInstant + @"[^{}:]*:[^{}]*?(?:yyyy|dd)", RegexOptions.None, TimeSpan.FromSeconds(1))),
+        ];
+
+        /// <summary>
+        /// Places that format a UTC instant as a date on purpose, because the text is a timestamp label
+        /// rather than "today". Each must still exist, so the list cannot outlive the code it excuses.
+        /// </summary>
+        private static readonly UtcTimestampLabel[] UtcTimestampLabels =
+        [
+            new(
+                "API/DatabaseManagementController.cs",
+                "var fileName = $\"Lighthouse_Backup_{timeProvider.GetUtcNow().UtcDateTime:yyyy.MM.dd_HH.mm.ss}.zip\";",
+                "A backup file is named after the moment it was taken, down to the second. That is a UTC "
+                + "timestamp label, not a claim about which day it is on the instance."),
         ];
 
         /// <summary>
         /// Build output, mutation output, worktrees and the vendored GitHub-runner artifact. Without
-        /// these the scan double-counts generated copies and stops matching the RCA section 5 inventory.
+        /// these the scan double-counts generated copies.
         /// </summary>
         private static readonly string[] ExcludedPathSegments =
         [
@@ -96,9 +141,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         /// <summary>
-        /// Decision 4: a tracker's history window is an instant offset, not a calendar day, so these
-        /// four lines stay UTC. They spell it <c>DateTime.UtcNow[.AddDays(...)]</c>, which none of the
-        /// three scanned patterns match, so the scanner never sees them - which is exactly why they
+        /// A tracker's history window is an instant offset, not a calendar day, so these four lines
+        /// stay UTC instants, read from the injected clock. None of the scanned patterns match how they spell it, so the scanner never sees them - which is exactly why they
         /// are listed here. The rule below requires each one to still exist AND to still carry its
         /// stated reason, so the list cannot rot into a permanent unexplained allowlist.
         /// </summary>
@@ -106,19 +150,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             new(
                 "Services/Implementation/WorkItems/WorkItemService.cs",
-                "var endDate = DateTime.UtcNow;",
+                "var endDate = clock.Now.UtcDateTime;",
                 "percentile history window end"),
             new(
                 "Services/Implementation/WorkItems/WorkItemService.cs",
-                "var startDate = DateTime.UtcNow.AddDays(",
+                "var startDate = endDate.AddDays(",
                 "percentile history window start"),
             new(
                 "Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
-                "var cutoffDate = DateTime.UtcNow.AddDays(",
+                "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Azure DevOps history cutoff"),
             new(
                 "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
-                "var cutoffDate = DateTime.UtcNow.AddDays(",
+                "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Jira history cutoff"),
         ];
 
@@ -149,6 +193,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         private sealed record TrackerHistoryCutoff(string RelativePath, string Expression, string Reason);
 
         private sealed record LegacyInstantColumn(string EntityName, string PropertyName, string Reason);
+
+        private sealed record UtcTimestampLabel(string RelativePath, string Expression, string Reason);
 
         [Test]
         public void CalendarDayAnchors_OutsideTheClockAdapter_AreAbsentFromProduction()
@@ -204,9 +250,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// The fourth rule, and the only one about type rather than text. Root cause C was "the
-        /// recorded day was never modelled": a type rule closes that more completely than any source
-        /// rule can, because it catches a FIFTH snapshot table on the day it is added rather than on
+        /// The fourth rule, and the only one about type rather than text. A recorded day that is never
+        /// modelled as a day forces every writer to pick an anchor zone of its own; a type rule closes
+        /// that more completely than any source rule can, because it catches a FIFTH snapshot table on the day it is added rather than on
         /// the day someone writes UtcNow.Date next to it.
         ///
         /// It is deliberately silent about property NAMES - the four tables do not agree on one
@@ -262,11 +308,97 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
+        [TestCase("var today = timeProvider.GetUtcNow().Date;", TimeProviderUtcDate)]
+        [TestCase("var today = clock.Now.UtcDateTime.Date;", InstantUtcDate)]
+        [TestCase("var today = timeProvider.GetUtcNow().UtcDateTime.Date;", InstantUtcDate)]
+        public void Scanner_UtcDayFromAnInjectedClock_IsReported(string line, string expectedAnchor)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(expectedAnchor));
+            }
+        }
+
+        [TestCase("var today = DateOnly.FromDateTime(timeProvider.GetUtcNow().UtcDateTime);")]
+        [TestCase("var today = DateOnly.FromDateTime(stamp.UtcDateTime);")]
+        [TestCase("var today = DateOnly.FromDateTime(clock.Now.DateTime);")]
+        public void Scanner_UtcInstantHandedToDateOnly_IsReported(string line)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(UtcInstantAsDateOnly));
+            }
+        }
+
+        [TestCase("var fileName = $\"Lighthouse_Log_{timeProvider.GetUtcNow():yyyy.MM.dd}.txt\";")]
+        [TestCase("var fileName = $\"Lighthouse_Log_{stamp.UtcDateTime:yyyy.MM.dd}.txt\";")]
+        [TestCase("var fileName = string.Create(culture, $\"Log_{clock.Now:dd.MM.yyyy}.txt\");")]
+        public void Scanner_UtcInstantFormattedAsADateInAnInterpolationHole_IsReported(string line)
+        {
+            var findings = FindAnchors("API/BrandNewController.cs", line);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(findings, Has.Count.EqualTo(1));
+                Assert.That(findings[0].Anchors, Is.EqualTo(UtcInstantInADateFormatHole));
+            }
+        }
+
+        [TestCase("var fileName = $\"Lighthouse_Log_{clock.Today:yyyy.MM.dd}.txt\";")]
+        [TestCase("var day = DateOnly.FromDateTime(delivery.Date);")]
+        [TestCase("var stampedAt = $\"{timeProvider.GetUtcNow():O}\";")]
+        public void Scanner_InstanceDayOrAnInstantKeptWhole_IsNotReported(string line)
+        {
+            Assert.That(FindAnchors("API/BrandNewController.cs", line), Is.Empty);
+        }
+
+        [Test]
+        public void UtcTimestampLabels_StillExist()
+        {
+            Assert.That(
+                StaleUtcTimestampLabels(UtcTimestampLabels, ProductionSourceOf),
+                Is.Empty,
+                "A place excused for formatting a UTC instant as a date no longer exists. Remove its entry, "
+                + "otherwise the excuse outlives the code it was written for.");
+        }
+
+        [Test]
+        public void Scanner_ExcusedTimestampLabel_IsNotReported_ButADayAnchorOnItsLineStillIs()
+        {
+            UtcTimestampLabel[] labels = [new("API/Backups.cs", "{stamp.UtcDateTime:yyyy.MM.dd}", "a label")];
+
+            var excused = WithoutExcusedLabels(
+                "API/Backups.cs", "var name = $\"Backup_{stamp.UtcDateTime:yyyy.MM.dd}.zip\";", labels);
+            var notExcused = WithoutExcusedLabels(
+                "API/Backups.cs", "var name = $\"Backup_{stamp.UtcDateTime:yyyy.MM.dd}_{DateTime.Today}.zip\";", labels);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(excused, Is.Empty);
+                Assert.That(notExcused, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void UtcTimestampLabelCheck_LabelThatNoLongerExists_IsReportedAsStale()
+        {
+            UtcTimestampLabel[] labels = [new("API/Backups.cs", "{stamp.UtcDateTime:yyyy.MM.dd}", "a label")];
+
+            var stale = StaleUtcTimestampLabels(labels, _ => "var name = $\"Backup_{clock.Today:yyyy.MM.dd}.zip\";");
+
+            Assert.That(stale, Has.Count.EqualTo(1));
+        }
+
         /// <summary>
-        /// A guard that punishes documentation gets suppressed rather than obeyed. During step 01-02
-        /// the repo-wide count came back 50 instead of 49 because the XML doc on ILighthouseClock
-        /// QUOTED DateTime.UtcNow.Date while explaining the root cause. Comments and string literals
-        /// are stripped before matching so the next person to explain this bug in a comment does not
+        /// A guard that punishes documentation gets suppressed rather than obeyed: an XML doc that
+        /// QUOTED DateTime.UtcNow.Date while explaining the defect once tripped this scan. Comments and
+        /// string literals are stripped before matching so the next person to explain this bug in a comment does not
         /// re-break the guard.
         /// </summary>
         [Test]
@@ -427,7 +559,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 }
 
                 filesScanned++;
-                findings.AddRange(FindAnchors(relativePath, File.ReadAllText(file)));
+                findings.AddRange(WithoutExcusedLabels(relativePath, File.ReadAllText(file), UtcTimestampLabels));
             }
 
             return new ScanResult(findings, filesScanned);
@@ -450,6 +582,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 var line = lines[offset];
                 var anchors = AnchorPatterns
                     .Where(pattern => line.Contains(pattern, StringComparison.Ordinal))
+                    .Concat(UtcInstantDayPatterns
+                        .Where(pattern => pattern.Pattern.IsMatch(line))
+                        .Select(pattern => pattern.Name))
                     .ToList();
 
                 if (anchors.Count > 0)
@@ -459,6 +594,30 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             return findings;
+        }
+
+        /// <summary>
+        /// Drops a finding only when the excused label is the one thing wrong with its line, so an
+        /// excuse never covers a day anchor written next to it.
+        /// </summary>
+        private static List<AnchorFinding> WithoutExcusedLabels(string relativePath, string source, UtcTimestampLabel[] labels)
+        {
+            var lines = source.Split('\n');
+
+            return FindAnchors(relativePath, source)
+                .Where(finding => !(finding.Anchors == UtcInstantInADateFormatHole
+                    && labels.Any(label => label.RelativePath == relativePath
+                        && lines[finding.Line - 1].Contains(label.Expression, StringComparison.Ordinal))))
+                .ToList();
+        }
+
+        private static List<string> StaleUtcTimestampLabels(UtcTimestampLabel[] labels, Func<string, string?> sourceOf)
+        {
+            return labels
+                .Where(label => sourceOf(label.RelativePath) is not { } source
+                    || IndexOfCodeLineContaining(source.Split('\n'), label.Expression) < 0)
+                .Select(label => $"{label.RelativePath}: '{label.Expression}' no longer exists.")
+                .ToList();
         }
 
         private static List<string> Describe(List<AnchorFinding> findings)
@@ -814,7 +973,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return directory!.FullName;
         }
 
-        /// <summary>A fifth snapshot table as it would look if it repeated root cause C.</summary>
+        /// <summary>A fifth snapshot table as it would look if it keyed its day with an instant.</summary>
         private sealed class InstantKeyedSnapshotProbe
         {
             public int Id { get; set; }

@@ -12,7 +12,8 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         DatabaseMaintenanceGate gate,
         DatabaseOperationTracker tracker,
         ILogger<DatabaseManagementService> logger,
-        IServiceProvider serviceProvider)
+        IServiceProvider serviceProvider,
+        TimeProvider timeProvider)
         : IDatabaseManagementService
     {
         private readonly Dictionary<string, string> backupArtifacts = new();
@@ -228,7 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
             var manifest = new Dictionary<string, string>
             {
                 ["provider"] = provider.ProviderName,
-                ["createdAt"] = DateTime.UtcNow.ToString("O"),
+                ["createdAt"] = timeProvider.GetUtcNow().UtcDateTime.ToString("O"),
                 ["appVersion"] = GetAppVersion(),
             };
 

@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/database-management")]
     [ApiController]
     [RbacGuard]
-    public class DatabaseManagementController(IDatabaseManagementService databaseManagementService) : ControllerBase
+    public class DatabaseManagementController(IDatabaseManagementService databaseManagementService, TimeProvider timeProvider) : ControllerBase
     {
         private readonly IDatabaseManagementService databaseManagementService = databaseManagementService ?? throw new ArgumentNullException(nameof(databaseManagementService));
 
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API
             try
             {
                 var stream = databaseManagementService.GetBackupArtifact(operationId);
-                var fileName = $"Lighthouse_Backup_{DateTime.UtcNow:yyyy.MM.dd_HH.mm.ss}.zip";
+                var fileName = $"Lighthouse_Backup_{timeProvider.GetUtcNow().UtcDateTime:yyyy.MM.dd_HH.mm.ss}.zip";
                 return File(stream, "application/zip", fileName);
             }
             catch (KeyNotFoundException ex)

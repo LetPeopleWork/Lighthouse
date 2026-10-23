@@ -1,0 +1,54 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Forecast/ForecastSimulation.cs",
+      "**/Cache/CacheItem.cs",
+      "**/Cache/Cache.cs",
+      "**/Models/Authorization/ApiKeyPermission.cs",
+      "**/Models/Authorization/UserPermission.cs",
+      "**/Models/Forecast/HowManyForecast.cs",
+      "**/Models/Auth/UserProfile.cs",
+      "**/Models/Auth/ApiKey.cs",
+      "**/Services/Implementation/DomainEvents/FeatureBlockedTransitionCloseHandler.cs",
+      "**/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCloseHandler.cs",
+      "**/Services/Implementation/DomainEvents/WorkItemBlockedTransitionCaptureHandler.cs",
+      "**/Services/Implementation/DomainEvents/FeatureBlockedTransitionCaptureHandler.cs",
+      "**/Services/Implementation/Auth/OidcGroupSnapshotWriter.cs",
+      "**/Models/Forecast/StartForecast.cs",
+      "**/Models/Forecast/WhenForecast.cs",
+      "**/Services/Implementation/Auth/CurrentUserProfileService.cs",
+      "**/Models/Forecast/ForecastBase.cs",
+      "**/API/DatabaseManagementController.cs",
+      "**/API/LogsController.cs",
+      "**/Services/Implementation/BackgroundServices/Update/TeamUpdater.cs",
+      "**/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs",
+      "**/API/DeliveryNotesController.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/Services/Implementation/Auth/ApiKeyService.cs",
+      "**/Services/Implementation/BackgroundServices/Update/UpdateServiceBase.cs",
+      "**/Services/Implementation/Forecast/ForecastService.cs",
+      "**/Services/Implementation/DatabaseManagement/DatabaseManagementService.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Forecast.|FullyQualifiedName~Tests.Models.Forecast.|FullyQualifiedName~Tests.Cache.|FullyQualifiedName~CurrentUserProfileServiceTest|FullyQualifiedName~ApiKeyServiceTest|FullyQualifiedName~FeatureBlockedTransitionHandlerTests|FullyQualifiedName~WorkItemBlockedTransitionCaptureTests|FullyQualifiedName~F_BE_1_GroupSnapshotInheritanceTests|FullyQualifiedName~InstantsUnaffectedByZoneTest|FullyQualifiedName~FeatureDtoStartForecastTest|FullyQualifiedName~FeatureWhenWorkBeginsTest|FullyQualifiedName~DatabaseManagementControllerTest|FullyQualifiedName~DatabaseManagementServiceTest|FullyQualifiedName~LogsControllerTest|FullyQualifiedName~DeliveryNotesControllerTest|FullyQualifiedName~Tests.Services.Implementation.BackgroundServices.Update.|FullyQualifiedName~WorkTrackingSystemOptionsOwnerTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~IntegrationTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private Mock<ILicenseService> licenseServiceMock = null!;
         private List<WriteBackFieldUpdate> capturedUpdates = null!;
 
-        private static DateTime Today => DateTime.UtcNow.Date;
+        private DateTime Today => factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         [SetUp]
         public void Init()
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[workingDays] = 100;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private static Portfolio PortfolioWithForecastedFeature(int workingDays)

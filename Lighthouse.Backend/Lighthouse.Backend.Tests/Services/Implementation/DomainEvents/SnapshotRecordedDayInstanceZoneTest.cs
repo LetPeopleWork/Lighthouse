@@ -24,7 +24,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     /// <summary>
-    /// Bug #5567 - proves the four snapshot recorders key their rows on the INSTANCE calendar day,
+    /// Proves the four snapshot recorders key their rows on the INSTANCE calendar day,
     /// and proves it against the DATABASE rather than the change tracker.
     ///
     /// The read-back matters. The global EF value converter
@@ -36,7 +36,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     /// every other consumer. Only a fresh context - a real SELECT, no identity-map hit - can see it.
     ///
     /// Every day here is a LITERAL. Re-deriving the production expression would make these
-    /// assertions hold for every possible value of "today", which is root cause D of this bug.
+    /// assertions hold for every possible value of "today", and so prove nothing.
     /// </summary>
     [TestFixture]
     [Category("bug-5567-instance-day-anchor")]

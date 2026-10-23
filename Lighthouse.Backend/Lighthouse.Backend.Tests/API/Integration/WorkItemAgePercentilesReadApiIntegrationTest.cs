@@ -51,9 +51,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [SetUp]
         public void Init()
         {
-            // WorkItemAge is measured against DateTime.UtcNow (not endDate), so the golden ages must be
+            // WorkItemAge is measured against the instance's today (not endDate), so the golden ages must be
             // anchored to today; endDate = today selects the in-progress snapshot that carries those ages.
-            today = DateTime.UtcNow.Date;
+            today = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
             windowEnd = today;
             var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset);
             windowStart = today.AddDays(-180 - offsetDays);
@@ -382,7 +382,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private WorkItem InProgressItemAged(Team team, string referenceId, int ageDays)
         {
-            // WorkItemAge = (UtcNow.Date - StartedDate.Date).Days + 1 for a Doing item, so StartedDate = today - (ageDays - 1).
+            // A Doing item's age counts both its start day and today, so StartedDate = today - (ageDays - 1).
             var startedDate = today.AddDays(-(ageDays - 1));
             return new WorkItem
             {

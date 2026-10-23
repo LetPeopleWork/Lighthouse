@@ -91,8 +91,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                 teamMetrics.Object,
                 featureRepository.Object,
                 new NothingWaitsForAnything(),
-                new DrawsAfreshEveryTime(),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),
+                TimeProvider.System);
 
             var stopwatch = Stopwatch.StartNew();
             await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);

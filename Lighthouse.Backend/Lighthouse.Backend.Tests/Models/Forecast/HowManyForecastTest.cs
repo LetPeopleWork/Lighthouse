@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 {4, 2 },
             };
 
-            var subject = new HowManyForecast(simulationResult, 1);
+            var subject = new HowManyForecast(simulationResult, 1, DateTime.UtcNow);
 
             var forecast = subject.GetProbability(percentile);
 
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
                 {8, 70 },
             };
 
-            var subject = new HowManyForecast(simulationResult, 1);
+            var subject = new HowManyForecast(simulationResult, 1, DateTime.UtcNow);
 
             var forecast = subject.GetLikelihood(targetItems);
 

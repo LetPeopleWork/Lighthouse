@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
-            windowEnd = DateTime.UtcNow.Date.AddHours(12);
+            windowEnd = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight.AddHours(12);
             windowStart = windowEnd.AddDays(-WindowLengthInDays);
 
             SeedTwoTeamsAndTwoPortfolios();
@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private async Task AssertEveryPlottedItemListsItsPointsEstimate(string metricsPath)
         {
-            var chartBody = await GetBody($"{metricsPath}/estimationVsCycleTime?startDate={windowStart:O}&endDate={windowEnd:O}");
+            var chartBody = await GetBody($"{metricsPath}/estimationVsCycleTime?startDate={windowStart:yyyy-MM-dd}&endDate={windowEnd:yyyy-MM-dd}");
             using var chart = JsonDocument.Parse(chartBody);
             var points = chart.RootElement.GetProperty("dataPoints").EnumerateArray().ToList();
 
@@ -334,9 +334,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var query = endpoint switch
             {
-                Wip or FeaturesInProgress => $"asOfDate={windowEnd:O}",
-                BlockedItemsAtDate => $"date={windowEnd:O}",
-                _ => $"startDate={windowStart:O}&endDate={windowEnd:O}",
+                Wip or FeaturesInProgress => $"asOfDate={windowEnd:yyyy-MM-dd}",
+                BlockedItemsAtDate => $"date={windowEnd:yyyy-MM-dd}",
+                _ => $"startDate={windowStart:yyyy-MM-dd}&endDate={windowEnd:yyyy-MM-dd}",
             };
             var body = await GetBody($"{metricsPath}/{endpoint}?{query}");
             using var document = JsonDocument.Parse(body);

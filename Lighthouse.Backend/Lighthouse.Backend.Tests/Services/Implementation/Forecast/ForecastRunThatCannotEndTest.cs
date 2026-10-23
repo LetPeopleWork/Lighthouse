@@ -168,8 +168,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
-                new DrawsFromAPinnedStartingNumber(4242),
-                new ForecastSimulationLimits(Trials: TheRunsAForecastMakes, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover));
+                new ForecastSimulation(
+                    new DrawsFromAPinnedStartingNumber(4242),
+                    new ForecastSimulationLimits(Trials: TheRunsAForecastMakes, MostDaysOneSimulatedRunMayCover: TheMostDaysOneRunMayCover)),
+                TimeProvider.System);
 
         /// <summary>Works every other Team's rows down to nothing, so only the one named still has work.</summary>
         private static void LeaveOnly(int teamIndex, TrialState state, ForecastRunPlan plan)

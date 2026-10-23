@@ -28,9 +28,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private static readonly int[] ExpectedHorizons = [30, 60, 90];
 
-        // Bug #5567 root cause D - the subject is handed a clock parked on a fixed day and the
-        // day-dependent expectations below are literals anchored to it. Re-deriving DateTime.Today
-        // here would agree with the subject by construction, whatever day the subject picked.
+        // The subject is handed a clock parked on a fixed day and the day-dependent expectations
+        // below are literals anchored to it. Taking the day from the machine's clock here would agree
+        // with the subject by construction, whatever day the subject picked.
         private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
 
         private static readonly DateOnly FixedToday = new(2026, 3, 10);

@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 { 3, 2 }   // 85th and 95th percentile (cumulative: 10 out of 10 = 100%)
             };
 
-            return new HowManyForecast(simulationResult, 30);
+            return new HowManyForecast(simulationResult, 30, DateTime.UtcNow);
         }
 
         private static HowManyForecast CreateForecastWithZero50thPercentile()
@@ -140,7 +140,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 { 2, 2 }
             };
 
-            return new HowManyForecast(simulationResult, 30);
+            return new HowManyForecast(simulationResult, 30, DateTime.UtcNow);
         }
 
         private static HowManyForecast CreateForecastWithSamePercentiles()
@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 { 5, 10 }  // All simulations result in 5, so all percentiles are the same
             };
 
-            return new HowManyForecast(simulationResult, 30);
+            return new HowManyForecast(simulationResult, 30, DateTime.UtcNow);
         }
 
         private static HowManyForecast CreateHighPredictabilityForecast()
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
                 { 1, 1 }    // 95th percentile - lowest value, highest confidence
             };
 
-            return new HowManyForecast(simulationResult, 30);
+            return new HowManyForecast(simulationResult, 30, DateTime.UtcNow);
         }
     }
 }

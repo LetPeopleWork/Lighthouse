@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreatePortfolioDto_GivenLastUpdatedTime_ReturnsDateAsUTC()
         {
-            var projectUpdateTime = DateTime.Now;
+            var projectUpdateTime = TestToday.FrozenNow.DateTime;
             var project = new Portfolio
             {
                 UpdateTime = projectUpdateTime

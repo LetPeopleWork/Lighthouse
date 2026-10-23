@@ -7,6 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 {
     public class FeatureBlockedTransitionCaptureHandler(
         IFeatureBlockedTransitionRepository transitionRepository,
+        TimeProvider timeProvider,
         ILogger<FeatureBlockedTransitionCaptureHandler> logger)
         : IDomainEventHandler<FeatureBlocked>
     {
@@ -27,7 +28,7 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
             {
                 FeatureId = domainEvent.FeatureId,
                 PortfolioId = domainEvent.PortfolioId,
-                EnteredAt = DateTime.UtcNow,
+                EnteredAt = timeProvider.GetUtcNow().UtcDateTime,
                 LeftAt = null,
             };
 

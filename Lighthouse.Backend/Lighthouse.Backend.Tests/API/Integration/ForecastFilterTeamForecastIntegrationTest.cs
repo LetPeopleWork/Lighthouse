@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             forecastServiceMock
                 .Setup(s => s.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
-                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 7));
+                .Returns(new HowManyForecast(new Dictionary<int, int> { { 10, 1 } }, 7, DateTime.UtcNow));
 
             forecastServiceMock
                 .Setup(s => s.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()))

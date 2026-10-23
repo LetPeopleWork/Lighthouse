@@ -19,9 +19,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     [Category("epic-5074-blocked-items")]
     public class DemoBlockedHistoryBackfillHandlerTests
     {
-        // Bug #5567 root cause D - the subject is handed a clock parked on a fixed day, and every
-        // day-dependent expectation below is a literal built from that day. Re-deriving
-        // DateTime.Today here would agree with the subject by construction.
+        // The subject is handed a clock parked on a fixed day, and every day-dependent expectation
+        // below is a literal built from that day. Taking the day from the machine's clock here would
+        // agree with the subject by construction.
         private static readonly DateTimeOffset FixedInstant = new(2026, 3, 10, 9, 0, 0, TimeSpan.Zero);
 
         private static readonly DateTime FixedToday = new(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc);

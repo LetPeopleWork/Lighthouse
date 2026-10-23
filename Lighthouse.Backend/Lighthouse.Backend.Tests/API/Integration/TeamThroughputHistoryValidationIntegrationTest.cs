@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -29,6 +30,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private HttpClient client = null!;
         private int seededTeamId;
         private int seededConnectionId;
+
+        private DateTime InstanceToday => factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         [SetUp]
         public void Init()
@@ -161,8 +164,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             teamSetting.Id = seededTeamId;
             teamSetting.ThroughputHistory = 0;
             teamSetting.UseFixedDatesForThroughput = true;
-            teamSetting.ThroughputHistoryStartDate = DateTime.UtcNow.Date.AddDays(-60);
-            teamSetting.ThroughputHistoryEndDate = DateTime.UtcNow.Date.AddDays(-1);
+            teamSetting.ThroughputHistoryStartDate = InstanceToday.AddDays(-60);
+            teamSetting.ThroughputHistoryEndDate = InstanceToday.AddDays(-1);
 
             client.AsTeamAdmin(seededTeamId);
             var response = await client.PutAsJsonAsync($"/api/latest/teams/{seededTeamId}", teamSetting);

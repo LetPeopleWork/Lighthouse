@@ -342,12 +342,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeDataForProject_FeatureClosedAtEndDate_ReturnsFeature()
         {
-            var startDate = DateTime.UtcNow.AddDays(-1);
-            var endDate = DateTime.UtcNow;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-1);
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
 
-            closedFeatures.First().ClosedDate = DateTime.Now;
+            closedFeatures.First().ClosedDate = TestToday.Clock.Now.UtcDateTime;
 
             var result = subject.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
 
@@ -363,12 +363,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [Test]
         public void GetCycleTimeDataForProject_FeatureClosedAtStartDate_ReturnsFeature()
         {
-            var startDate = DateTime.Today.AddDays(-1);
-            var endDate = DateTime.Today;
+            var startDate = TestToday.AmbientAsUtcMidnight.AddDays(-1);
+            var endDate = TestToday.AmbientAsUtcMidnight;
 
             var closedFeatures = features.Where(f => f.StateCategory == StateCategories.Done).AsQueryable();
 
-            closedFeatures.First().ClosedDate = DateTime.Now.AddDays(-1);
+            closedFeatures.First().ClosedDate = TestToday.Clock.Now.UtcDateTime.AddDays(-1);
 
             var result = subject.GetCycleTimeDataForPortfolio(portfolio, startDate, endDate).ToList();
 

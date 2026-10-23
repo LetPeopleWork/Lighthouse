@@ -9,7 +9,7 @@
         }
 
 
-        public HowManyForecast(Dictionary<int, int> simulationResult, int days) : base(simulationResult, Comparer<int>.Create((x, y) => y.CompareTo(x)))
+        public HowManyForecast(Dictionary<int, int> simulationResult, int days, DateTime creationTime) : base(simulationResult, Comparer<int>.Create((x, y) => y.CompareTo(x)), creationTime)
         {
             this.days = days;
         }

@@ -61,8 +61,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 benchmark.TeamMetrics,
                 benchmark.FeatureRepository,
                 whatWaitsForWhat(benchmark.Features),
-                draws,
-                BenchmarkPortfolio.Limits);
+                new ForecastSimulation(draws, BenchmarkPortfolio.Limits),
+                TimeProvider.System);
 
             await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio, DateOnly.MinValue);
 

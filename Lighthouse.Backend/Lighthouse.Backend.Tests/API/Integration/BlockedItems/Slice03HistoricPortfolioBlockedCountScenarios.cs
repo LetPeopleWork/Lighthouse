@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var featureId = GivenAFeatureBlockedToday(portfolio, "F-LIVE");
             GivenAnOpenBlockedSpellThatBegan(featureId, portfolio, SyncDay.AddDays(-1));
 
-            var item = await WhenTheLeadReadsThePortfolioWipAt(portfolio, DateTime.UtcNow);
+            var item = await WhenTheLeadReadsThePortfolioWipAt(portfolio, InstanceToday);
 
             ThenTheFeatureReadsBlocked(item);
         }

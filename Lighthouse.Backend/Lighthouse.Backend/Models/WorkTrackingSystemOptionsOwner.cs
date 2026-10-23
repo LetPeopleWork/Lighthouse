@@ -251,9 +251,9 @@ namespace Lighthouse.Backend.Models
             UpdateTime = DateTime.MinValue;
         }
 
-        public void RefreshUpdateTime()
+        public void RefreshUpdateTime(DateTime now)
         {
-            UpdateTime = DateTime.UtcNow;
+            UpdateTime = now;
         }
     }
 }

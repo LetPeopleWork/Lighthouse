@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             GivenAFeatureInState(portfolio, "F-LIVE-BLOCKED", "Blocked");
             GivenAFeatureInState(portfolio, "F-LIVE-CLEAR", "In Progress");
 
-            var response = await WhenTheCoachDrillsIntoThePortfolioBlockedTrendAt(portfolio, DateOnly.FromDateTime(DateTime.UtcNow.Date));
+            var response = await WhenTheCoachDrillsIntoThePortfolioBlockedTrendAt(portfolio, InstanceClock.Today);
 
             ThenTheDialogListsExactly(response, "F-LIVE-BLOCKED");
         }

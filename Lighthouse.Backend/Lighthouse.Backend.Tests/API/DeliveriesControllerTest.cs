@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
-        /// Bug #5567, decision 2: the check is a day comparison, so the instance's own tomorrow is
+        /// The check is a day comparison, so the instance's own tomorrow is
         /// accepted even once UTC has already rolled past it. 02:00 UTC on the 11th is still the
         /// 10th in Los Angeles, which makes the 11th a future day for that instance.
         /// </summary>
@@ -311,8 +311,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         /// <summary>
-        /// Bug #5567, decision 2 - the deliberate behaviour change, UTC instances included: the
-        /// check compares days, so a date that merely has a later CLOCK TIME today is no longer
+        /// A deliberate behaviour change, UTC instances included: the check compares days, so a date that merely has a later CLOCK TIME today is no longer
         /// "in the future". It used to slip through purely because of its time component.
         /// </summary>
         [Test]

@@ -635,7 +635,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 }
 
                 return held is null
-                    ? new HowManyForecast([], days)
+                    ? new HowManyForecast([], days, DateTime.UtcNow)
                     : AForecastWhere(held.Value, days);
             }
 
@@ -659,7 +659,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 AddTrials(trials, at95, 10);
                 AddTrials(trials, Math.Max(0, at95 - 1), 5);
 
-                return new HowManyForecast(trials, days);
+                return new HowManyForecast(trials, days, DateTime.UtcNow);
             }
 
             private static void AddTrials(Dictionary<int, int> trials, int itemsCompleted, int count)

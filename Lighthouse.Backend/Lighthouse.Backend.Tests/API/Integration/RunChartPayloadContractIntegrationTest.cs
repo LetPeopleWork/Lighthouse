@@ -117,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             // Midday rather than midnight: the seeded instants are reduced to calendar days in the
             // instance time zone, and midday lands on the same day in every zone the product supports.
-            windowEnd = DateTime.UtcNow.Date.AddDays(-1).AddHours(12);
+            windowEnd = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight.AddDays(-1).AddHours(12);
             windowStart = windowEnd.AddDays(-WindowLengthInDays);
 
             SeedTeamWithOneClosedAndOneInProgressItem();

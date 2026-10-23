@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.API
             {
                 DeliveryId = deliveryId,
                 Text = text,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = clock.Now.UtcDateTime,
                 AuthorUserProfileId = author?.Id,
                 AuthorDisplayName = author?.DisplayName,
             };
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.API
             }
 
             note.Text = text;
-            note.LastEditedAt = DateTime.UtcNow;
+            note.LastEditedAt = clock.Now.UtcDateTime;
             await context.SaveChangesAsync(HttpContext?.RequestAborted ?? default);
 
             return Ok(ToDto(note, author));

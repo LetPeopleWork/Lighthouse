@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Time.Testing;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
 
@@ -125,6 +126,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             builder.ConfigureServices(services =>
             {
                 RemoveServices(services);
+
+                services.RemoveAll<TimeProvider>();
+                services.AddSingleton<TimeProvider>(new FakeTimeProvider(TestToday.FrozenNow));
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {

@@ -14,8 +14,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     public class TeamUpdater(
         ILogger<TeamUpdater> logger,
         IServiceScopeFactory serviceScopeFactory,
-        IUpdateQueueService updateQueueService)
-        : UpdateServiceBase<Team>(logger, serviceScopeFactory, updateQueueService, UpdateType.Team), ITeamUpdater
+        IUpdateQueueService updateQueueService,
+        TimeProvider timeProvider)
+        : UpdateServiceBase<Team>(logger, serviceScopeFactory, updateQueueService, timeProvider, UpdateType.Team), ITeamUpdater
     {
         protected override RefreshSettings GetRefreshSettings()
         {
@@ -104,7 +105,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                     RecordsScanned = outcome.RecordsScanned,
                     RecordsFetched = outcome.RecordsFetched,
                     DurationMs = stopwatch.ElapsedMilliseconds,
-                    ExecutedAt = DateTime.UtcNow,
+                    ExecutedAt = CurrentInstant,
                     Success = success,
                     Cancelled = cancelled,
                     RecordsWhoseLinksNamedMoreThanOneParent = outcome.RecordsWhoseLinksNamedMoreThanOneParent,
@@ -120,7 +121,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override bool ShouldUpdateEntity(Team entity, RefreshSettings refreshSettings)
         {
-            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
+            var minutesSinceLastUpdate = (CurrentInstant - entity.UpdateTime).TotalMinutes;
 
             // Stryker disable once all: what the tests pin about a skipped team is that nothing at Information level names it. That is a claim about the level, not about this wording, so a mutant that rewrites the message kills nothing.
             Logger.LogDebug("Last Refresh of team {TeamName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);

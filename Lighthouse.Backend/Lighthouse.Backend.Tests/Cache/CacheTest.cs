@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Cache;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.Cache
 {
@@ -309,6 +310,20 @@ namespace Lighthouse.Backend.Tests.Cache
                     Is.Empty,
                     "After invalidation + background settle, no entityPrefix keys may remain");
             }
+        }
+
+        [TestCase(-1, "value")]
+        [TestCase(0, null)]
+        [TestCase(1, null)]
+        public void Get_ServesAnEntryUntilItExpires_AsMeasuredByTheTimeProviderItWasGiven(int ticksPastExpiry, string? expected)
+        {
+            var time = new FakeTimeProvider(new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero));
+            var cache = new Cache<string, string>(time);
+            cache.Store("key", "value", LongExpiry);
+
+            time.Advance(LongExpiry + TimeSpan.FromTicks(ticksPastExpiry));
+
+            Assert.That(cache.Get("key"), Is.EqualTo(expected));
         }
 
         [Test]

@@ -28,13 +28,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Converters = { new JsonStringEnumConverter() },
         };
 
-        private static DateTime Today => DateTime.UtcNow.Date;
-
         [Test]
         public async Task GetDelivery_MultiTeamFeature_LikelihoodIsTheJointProbabilityNotTheWorstTeams()
         {
             var portfolio = await SeedPortfolioWithTwoEquallyForecastedTeams();
-            await CreateDelivery(portfolio, Today.AddDays(MedianDays));
+            await CreateDelivery(portfolio, InstanceToday.AddDays(MedianDays));
 
             var delivery = await GetSingleDelivery(portfolio.Id);
 
@@ -53,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             simulation.SimulationResults[MedianDays] = 5000;
             simulation.SimulationResults[TailDays] = 5000;
 
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private async Task<Portfolio> SeedPortfolioWithTwoEquallyForecastedTeams()

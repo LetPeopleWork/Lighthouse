@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
         [Test]
         public void CreateTeamDto_GivenLastUpdatedTime_ReturnsDateAsUTC()
         {
-            var teamUpdateTime = DateTime.Now;
+            var teamUpdateTime = TestToday.FrozenNow.DateTime;
             var team = new Team
             {
                 UpdateTime = teamUpdateTime

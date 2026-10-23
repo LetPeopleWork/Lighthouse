@@ -114,8 +114,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
-                recording,
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(recording, ForecastSimulationLimits.Default),
+                TimeProvider.System);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 

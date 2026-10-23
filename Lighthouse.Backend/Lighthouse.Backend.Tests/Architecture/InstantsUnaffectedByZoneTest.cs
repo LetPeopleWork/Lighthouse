@@ -1,21 +1,27 @@
+using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// Bug #5567 - T3 (RCA section 8-T3): the migration must not OVER-REACH into RCA section 5(b).
+    /// Moving the calendar days onto the instance time zone must not reach the instants as well.
     ///
     /// An instant has no timezone. Moving one onto the instance calendar would not be a partial fix,
     /// it would be a NEW bug - an audit stamp, a refresh cursor or a blocked-interval endpoint that
     /// silently records a wall-clock reading instead of the moment something happened, corrupting
-    /// data no existing test looks at. This fixture pins one site from each category-(b) family:
+    /// data no existing test looks at. This fixture pins one site from each family of instants:
     /// an audit/lifecycle stamp, a sync/refresh bookkeeping field, and a blocked-transition endpoint.
     ///
     /// Each test first proves the configured zone really does move a calendar day, so the "it did
@@ -24,15 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class InstantsUnaffectedByZoneTest
     {
-        /// <summary>
-        /// A custom zone rather than an IANA id: it needs no tzdata on the host, and its offset is
-        /// far larger than any daylight-saving wobble, so "did the value move" is unambiguous.
-        /// </summary>
-        private static readonly TimeZoneInfo InstanceZoneAheadOfUtc = TimeZoneInfo.CreateCustomTimeZone(
-            "Bug5567-Probe-Plus14",
-            TimeSpan.FromHours(14),
-            "Bug #5567 probe (UTC+14)",
-            "Bug #5567 probe (UTC+14)");
+        private static readonly TimeZoneInfo InstanceZoneAheadOfUtc = TestZones.FarAheadOfUtc;
 
         /// <summary>23:30 UTC is inside the window where the instance day and the UTC day disagree.</summary>
         private static readonly DateTimeOffset DayBoundaryInstant = new(2026, 7, 27, 23, 30, 0, TimeSpan.Zero);
@@ -60,40 +58,24 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Audit/lifecycle stamps - <c>Models/Auth/UserProfile.cs:19,21</c> and
-        /// <c>Models/Auth/ApiKey.cs:25</c> in the RCA section 5(b) inventory.
+        /// Sync/refresh bookkeeping: the last-update time every updater compares its refresh interval
+        /// against, stamped by the team refresh. Both the instance zone and the host's local zone are
+        /// moved off UTC, so a stamp taken from either wall clock lands somewhere else.
         /// </summary>
         [Test]
-        public void AuditStamps_UnderANonUtcInstanceZone_StayAtTheUtcInstant()
+        public async Task SyncBookkeeping_UnderANonUtcInstanceZone_StaysAtTheUtcInstant()
         {
             GivenAnInstanceZoneThatMovesTheCalendarDay();
 
-            var before = DateTime.UtcNow;
-            var profile = new UserProfile();
-            var apiKey = new ApiKey();
-            var after = DateTime.UtcNow;
+            var timeProvider = new FakeTimeProvider(DayBoundaryInstant);
+            timeProvider.SetLocalTimeZone(InstanceZoneAheadOfUtc);
+            var subject = TeamMetricsServiceReading(new LighthouseClock(InstanceZoneAheadOfUtc, timeProvider));
+            var team = new Team { AutomaticallyAdjustFeatureWIP = false };
 
-            AssertStillAnInstant(profile.CreatedAt, before, after, "UserProfile.CreatedAt");
-            AssertStillAnInstant(profile.LastSeenAt, before, after, "UserProfile.LastSeenAt");
-            AssertStillAnInstant(apiKey.CreatedAt, before, after, "ApiKey.CreatedAt");
-        }
+            await subject.UpdateTeamMetrics(team);
 
-        /// <summary>
-        /// Sync/refresh bookkeeping - <c>Models/WorkTrackingSystemOptionsOwner.cs:138</c>, the cursor
-        /// every updater compares its refresh interval against.
-        /// </summary>
-        [Test]
-        public void SyncBookkeeping_UnderANonUtcInstanceZone_StaysAtTheUtcInstant()
-        {
-            GivenAnInstanceZoneThatMovesTheCalendarDay();
-
-            var team = new Team();
-
-            var before = DateTime.UtcNow;
-            team.RefreshUpdateTime();
-            var after = DateTime.UtcNow;
-
-            AssertStillAnInstant(team.UpdateTime, before, after, "WorkTrackingSystemOptionsOwner.UpdateTime");
+            var instant = DayBoundaryInstant.UtcDateTime;
+            AssertStillAnInstant(team.UpdateTime, instant, instant, "Team.UpdateTime after a team refresh");
         }
 
         /// <summary>
@@ -118,6 +100,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var subject = new WorkItemBlockedTransitionCaptureHandler(
                 repository.Object,
+                TimeProvider.System,
                 Mock.Of<ILogger<WorkItemBlockedTransitionCaptureHandler>>());
 
             var before = DateTime.UtcNow;
@@ -153,6 +136,31 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.Not.EqualTo(utcClock.Today),
                 "The legacy DeliveryMetricSnapshot.RecordedAt is written at this day key's midnight, so it "
                 + "moves with the zone. That is expected and is why it is not pinned as an instant.");
+        }
+
+        private static TeamMetricsService TeamMetricsServiceReading(ILighthouseClock clock)
+        {
+            var appSettingService = new Mock<IAppSettingService>();
+            appSettingService.Setup(service => service.GetTeamDataRefreshSettings()).Returns(new RefreshSettings { Interval = 1 });
+
+            var serviceProvider = new Mock<IServiceProvider>();
+            serviceProvider
+                .Setup(provider => provider.GetService(typeof(Cache<string, object>)))
+                .Returns(new Cache<string, object>());
+
+            var workItemRepository = new Mock<IWorkItemRepository>();
+            workItemRepository.Setup(repository => repository.Save()).Returns(Task.CompletedTask);
+
+            return new TeamMetricsService(
+                Mock.Of<ILogger<TeamMetricsService>>(),
+                workItemRepository.Object,
+                Mock.Of<IRepository<Feature>>(),
+                appSettingService.Object,
+                serviceProvider.Object,
+                Mock.Of<IBlackoutPeriodService>(),
+                Mock.Of<IForecastFilterRuleService>(),
+                Mock.Of<IWorkItemStateTransitionRepository>(),
+                clock);
         }
 
         private static void GivenAnInstanceZoneThatMovesTheCalendarDay()

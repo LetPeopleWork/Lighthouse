@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             DatabaseContext.Deliveries.Add(delivery);
             await DatabaseContext.SaveChangesAsync();
 
-            var recordedDay = DateTime.UtcNow.Date;
+            var recordedDay = InstanceToday;
             DatabaseContext.DeliveryMetricSnapshots.Add(new DeliveryMetricSnapshot
             {
                 DeliveryId = delivery.Id,

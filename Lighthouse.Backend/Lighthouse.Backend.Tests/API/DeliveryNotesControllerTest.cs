@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -61,6 +62,24 @@ namespace Lighthouse.Backend.Tests.API
             currentUserProfileService
                 .Setup(x => x.GetOrCreateFromPrincipalAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserProfile?)null);
+        }
+
+        [Test]
+        public async Task AddingAndEditingANote_StampsBothWithTheClockInstant()
+        {
+            var created = new DateTimeOffset(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var edited = created.AddHours(2);
+
+            var noteId = ResultOf(await CreateSubject(new FakeLighthouseClock(created)).AddNote(DeliveryId, new DeliveryNoteRequest { Text = "first" })).Id;
+            await CreateSubject(new FakeLighthouseClock(edited)).UpdateNote(DeliveryId, noteId, new DeliveryNoteRequest { Text = "second" });
+
+            using var context = CreateContext();
+            var stored = context.DeliveryNotes.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.CreatedAt, Is.EqualTo(created.UtcDateTime));
+                Assert.That(stored.LastEditedAt, Is.EqualTo(edited.UtcDateTime));
+            }
         }
 
         [Test]
@@ -217,6 +236,58 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(ResultOf(response).Text, Is.EqualTo(markup));
         }
 
+        [Test]
+        public async Task GetNotes_OrdersByWhenANoteWasWritten_NotByWhenItWasStored()
+        {
+            var morning = new DateTimeOffset(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            await CreateSubject(new FakeLighthouseClock(morning.AddHours(2))).AddNote(DeliveryId, new DeliveryNoteRequest { Text = "written later" });
+            await CreateSubject(new FakeLighthouseClock(morning)).AddNote(DeliveryId, new DeliveryNoteRequest { Text = "written earlier" });
+
+            var notes = ResultOf(await CreateSubject().GetNotes(DeliveryId));
+
+            Assert.That(notes.Select(n => n.Text), Is.EqualTo(LaterNoteFirst));
+        }
+
+        [Test]
+        public async Task AddNote_WithoutAnyText_IsRefusedSayingWhy()
+        {
+            var response = await CreateSubject().AddNote(DeliveryId, new DeliveryNoteRequest());
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("A note needs some text."));
+        }
+
+        [Test]
+        public async Task UpdateNote_EmptyingTheText_IsRefusedSayingWhy()
+        {
+            var noteId = ResultOf(await CreateSubject().AddNote(DeliveryId, new DeliveryNoteRequest { Text = "first" })).Id;
+
+            var response = await CreateSubject().UpdateNote(DeliveryId, noteId, new DeliveryNoteRequest { Text = "  " });
+
+            Assert.That(response.Result, Is.InstanceOf<BadRequestObjectResult>().With.Property(nameof(BadRequestObjectResult.Value)).EqualTo("A note needs some text."));
+        }
+
+        [Test]
+        public async Task NotesOfAnArchivedDelivery_CannotBeAddedCorrectedOrWithdrawn()
+        {
+            var noteId = ResultOf(await CreateSubject().AddNote(DeliveryId, new DeliveryNoteRequest { Text = "before archiving" })).Id;
+            deliveryRepository.Setup(x => x.IsArchived(DeliveryId)).Returns(true);
+            var subject = CreateSubject();
+
+            using (Assert.EnterMultipleScope())
+            {
+                await Assert.ThatAsync(() => subject.AddNote(DeliveryId, new DeliveryNoteRequest { Text = "after" }), Throws.TypeOf<DeliveryArchivedException>());
+                await Assert.ThatAsync(() => subject.UpdateNote(DeliveryId, noteId, new DeliveryNoteRequest { Text = "after" }), Throws.TypeOf<DeliveryArchivedException>());
+                await Assert.ThatAsync(() => subject.DeleteNote(DeliveryId, noteId), Throws.TypeOf<DeliveryArchivedException>());
+
+                using var context = CreateContext();
+                Assert.That(context.DeliveryNotes.Select(n => n.Text), Is.EqualTo(OnlyTheNoteFromBeforeArchiving));
+            }
+        }
+
+        private static readonly string[] LaterNoteFirst = ["written later", "written earlier"];
+
+        private static readonly string[] OnlyTheNoteFromBeforeArchiving = ["before archiving"];
+
         private void GivenSignedInAs(string displayName)
         {
             currentUserProfileService
@@ -252,12 +323,17 @@ namespace Lighthouse.Backend.Tests.API
 
         private DeliveryNotesController CreateSubject()
         {
+            return CreateSubject(TestToday.Clock);
+        }
+
+        private DeliveryNotesController CreateSubject(ILighthouseClock clock)
+        {
             return new DeliveryNotesController(
                 CreateContext(),
                 deliveryRepository.Object,
                 rbacAdministrationService.Object,
                 currentUserProfileService.Object,
-                TestToday.Clock);
+                clock);
         }
     }
 }

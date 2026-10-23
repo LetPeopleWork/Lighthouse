@@ -2,7 +2,9 @@ using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
@@ -14,10 +16,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         private Mock<IRepository<ApiKeyPermission>> apiKeyPermissionRepositoryMock;
         private Mock<ILogger<ApiKeyService>> loggerMock;
         private ApiKeyService subject;
+        private readonly FakeTimeProvider time = new(TheClocksInstant);
 
+        private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
+
+        /// <summary>
+        /// The clock's local zone is moved far off UTC, so a stamp taken from the local wall clock
+        /// instead of the UTC instant lands fourteen hours away and fails on its value, not only on its kind.
+        /// </summary>
         [SetUp]
         public void Setup()
         {
+            time.SetLocalTimeZone(TestZones.FarAheadOfUtc);
             repositoryMock = new Mock<IApiKeyRepository>();
             userProfileRepositoryMock = new Mock<IRepository<UserProfile>>();
             apiKeyPermissionRepositoryMock = new Mock<IRepository<ApiKeyPermission>>();
@@ -28,10 +38,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 repositoryMock.Object,
                 userProfileRepositoryMock.Object,
                 apiKeyPermissionRepositoryMock.Object,
-                loggerMock.Object);
+                loggerMock.Object,
+                time);
         }
 
         // --- CreateApiKey ---
+
+        [Test]
+        public async Task CreateApiKey_StampsCreatedAtAndGrantedAtWithTheClockInstant_NeverMinValue()
+        {
+            ApiKey? storedKey = null;
+            var storedGrants = new List<ApiKeyPermission>();
+            repositoryMock.Setup(r => r.Add(It.IsAny<ApiKey>())).Callback<ApiKey>(k => storedKey = k);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Add(It.IsAny<ApiKeyPermission>())).Callback<ApiKeyPermission>(storedGrants.Add);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            var scope = new List<ApiKeyScopeDto> { new() { Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 12 } };
+
+            var result = await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", scope);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedKey!.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(storedKey.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(result.CreatedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(result.CreatedAt.Kind, Is.EqualTo(DateTimeKind.Utc));
+                Assert.That(storedGrants.Select(g => g.GrantedAt), Is.EqualTo(new[] { TheClocksInstant.UtcDateTime }));
+                Assert.That(storedGrants.Select(g => g.GrantedAt.Kind), Is.All.EqualTo(DateTimeKind.Utc));
+            }
+        }
+
+        [Test]
+        public async Task ValidateApiKeyWithOwnerAsync_StampsLastUsedAtWithTheClockInstant()
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 78, KeyHash = hash, Salt = salt };
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.LastUsedAt, Is.EqualTo(TheClocksInstant.UtcDateTime));
+                Assert.That(key.LastUsedAt?.Kind, Is.EqualTo(DateTimeKind.Utc));
+            }
+        }
 
         [Test]
         public async Task CreateApiKey_ReturnsNonEmptyPlainTextKey()
@@ -116,18 +168,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
                 Assert.That(result.Name, Is.EqualTo("my-key"));
                 Assert.That(result.Description, Is.EqualTo("A description"));
             }
-        }
-
-        [Test]
-        public async Task CreateApiKey_CreatedAtIsApproximatelyNow()
-        {
-            SetupSave();
-
-            var before = DateTime.UtcNow;
-            var result = await subject.CreateApiKeyAsync("key", "desc", "alice", "alice-subject");
-            var after = DateTime.UtcNow;
-
-            Assert.That(result.CreatedAt, Is.InRange(before, after));
         }
 
         // --- GetApiKeysByOwnerSubject ---
@@ -405,6 +445,105 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Auth
         {
             repositoryMock.Setup(r => r.Add(It.IsAny<ApiKey>()));
             repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+        }
+
+        [Test]
+        public async Task CreateApiKey_EmptyScope_GrantsNothing()
+        {
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", []);
+
+            using (Assert.EnterMultipleScope())
+            {
+                apiKeyPermissionRepositoryMock.Verify(r => r.Add(It.IsAny<ApiKeyPermission>()), Times.Never);
+                apiKeyPermissionRepositoryMock.Verify(r => r.Save(), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task CreateApiKey_WithScope_SavesTheGrants()
+        {
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            apiKeyPermissionRepositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            var scope = new List<ApiKeyScopeDto> { new() { Role = UserRole.TeamAdmin, ScopeType = PermissionScopeType.Team, ScopeId = 12 } };
+
+            await subject.CreateApiKeyAsync("my-key", "desc", "alice", "alice-subject", scope);
+
+            apiKeyPermissionRepositoryMock.Verify(r => r.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task DeleteApiKey_OwnedByTheCaller_RemovesAndSavesIt()
+        {
+            repositoryMock.Setup(r => r.Exists(7)).Returns(true);
+            repositoryMock.Setup(r => r.GetById(7)).Returns(new ApiKey { Id = 7, OwnerSubject = "alice-subject" });
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+
+            await subject.DeleteApiKey(7, "alice-subject");
+
+            using (Assert.EnterMultipleScope())
+            {
+                repositoryMock.Verify(r => r.Remove(7), Times.Once);
+                repositoryMock.Verify(r => r.Save(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task DeleteApiKey_KeyVanishesBetweenTheExistenceCheckAndTheRead_ReturnsFalse()
+        {
+            repositoryMock.Setup(r => r.Exists(7)).Returns(true);
+            repositoryMock.Setup(r => r.GetById(7)).Returns((ApiKey?)null);
+
+            var result = await subject.DeleteApiKey(7, "alice-subject");
+
+            Assert.That(result, Is.False);
+        }
+
+        private static List<UserProfile> OwnerCandidates() =>
+        [
+            new UserProfile { Id = 5, Subject = "alice-subject", DisplayName = "Alice", Email = "alice@example.com" },
+            new UserProfile { Id = 6, Subject = "bob-subject", DisplayName = "Bob", Email = "bob@example.com" },
+            new UserProfile { Id = 7, Subject = "carol-subject", DisplayName = "Carol", Email = "" },
+        ];
+
+        [TestCase(5, "bob-subject", "", "alice-subject", TestName = "The linked profile wins over a stale subject")]
+        [TestCase(99, "bob-subject", "", "bob-subject", TestName = "A link to a deleted profile falls back to the subject")]
+        [TestCase(null, null, "Alice", "alice-subject", TestName = "A key with no owner is matched by its creator's display name")]
+        [TestCase(null, null, "BOB@example.com", "bob-subject", TestName = "A key with no owner is matched by its creator's email, ignoring case")]
+        [TestCase(null, null, "", null, TestName = "A key with no owner and no creator stays unlinked")]
+        public async Task ValidateApiKeyWithOwnerAsync_ResolvesTheOwnerFromWhatTheKeyRecords(
+            int? ownerProfileId, string? ownerSubject, string createdByUser, string? expectedSubject)
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 1, KeyHash = hash, Salt = salt, OwnerUserProfileId = ownerProfileId, OwnerSubject = ownerSubject, CreatedByUser = createdByUser };
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            userProfileRepositoryMock.Setup(r => r.GetAll()).Returns(OwnerCandidates());
+
+            var result = await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            Assert.That(result.OwnerSubject, Is.EqualTo(expectedSubject));
+        }
+
+        [Test]
+        public async Task ValidateApiKeyWithOwnerAsync_OwnerFoundByCreator_LinksTheKeyToThatProfileAndSavesIt()
+        {
+            var (plainText, hash, salt) = GenerateTestKey();
+            var key = new ApiKey { Id = 1, KeyHash = hash, Salt = salt, CreatedByUser = "Alice" };
+            repositoryMock.Invocations.Clear();
+            repositoryMock.Setup(r => r.GetAll()).Returns([key]);
+            repositoryMock.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            userProfileRepositoryMock.Setup(r => r.GetAll()).Returns(OwnerCandidates());
+
+            await subject.ValidateApiKeyWithOwnerAsync(plainText);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.OwnerUserProfileId, Is.EqualTo(5));
+                Assert.That(key.OwnerSubject, Is.EqualTo("alice-subject"));
+                repositoryMock.Verify(r => r.Save(), Times.Once);
+            }
         }
 
         private (string plainText, string hash, string salt) GenerateTestKey()

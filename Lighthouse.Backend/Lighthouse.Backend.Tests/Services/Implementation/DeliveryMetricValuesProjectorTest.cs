@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             var simulationResult = new SimulationResult();
             simulationResult.SimulationResults[ForecastDays] = 100;
 
-            return new WhenForecast(simulationResult) { TeamId = team.Id, HasSufficientData = hasSufficientData };
+            return new WhenForecast(simulationResult, DateTime.UtcNow) { TeamId = team.Id, HasSufficientData = hasSufficientData };
         }
     }
 }

@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -109,6 +110,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 .Callback((WorkItemStateTransition transition) => storedTransitions.Add(transition));
             stateTransitionRepositoryMock.Setup(x => x.Remove(It.IsAny<WorkItemStateTransition?>()))
                 .Callback((WorkItemStateTransition? transition) => storedTransitions.Remove(transition!));
+        }
+
+        [Test]
+        public async Task UpdateFeaturesForPortfolio_StampsTheRefreshWithTheClockInstant()
+        {
+            var theRefreshInstant = new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var portfolio = CreatePortfolio();
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(portfolio.UpdateTime, Is.EqualTo(theRefreshInstant.UtcDateTime));
         }
 
         [Test]
@@ -391,6 +404,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             Assert.That(sampledWindows, Has.Count.EqualTo(1));
             Assert.That(sampledWindows[0], Is.EqualTo(TimeSpan.FromDays(Portfolio.DefaultPercentileHistoryInDays)).Within(TimeSpan.FromSeconds(5)));
+        }
+
+        [Test]
+        [TestCase(1, 2026, 3, 13)]
+        [TestCase(30, 2026, 2, 12)]
+        [TestCase(90, 2025, 12, 14)]
+        public async Task UpdateFeaturesForProject_UseCalculatedDefault_SamplesTheHistoryEndingAtTheClockInstant(int historyInDays, int startYear, int startMonth, int startDay)
+        {
+            var theRefreshInstant = new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero);
+            var team = CreateTeam();
+            var project = CreatePortfolio();
+
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
+            project.PercentileHistoryInDays = historyInDays;
+
+            var feature = new Feature(team, 0) { ReferenceId = "42" };
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+
+            var sampledWindows = new List<(DateTime Start, DateTime End)>();
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Callback<Portfolio, DateTime, DateTime>((_, startDate, endDate) => sampledWindows.Add((startDate, endDate)))
+                .Returns(new List<Feature>());
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateFeaturesForPortfolio(project);
+
+            Assert.That(sampledWindows, Is.EqualTo(new[]
+            {
+                (new DateTime(startYear, startMonth, startDay, 23, 30, 0, DateTimeKind.Utc), new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)),
+            }));
         }
 
         [Test]
@@ -2606,6 +2648,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             return incoming;
         }
 
+        [Test]
+        public async Task UpdateWorkItemsForTeam_TrackerKeepsNoHistory_RecordsTheStateChangeAtTheClocksInstant()
+        {
+            var theRefreshInstant = new DateTimeOffset(2025, 3, 14, 9, 30, 0, TimeSpan.Zero);
+            var team = CreateTeam();
+            var stored = CreateWorkItemWithTransitions(team, "To Do");
+            workItems.Add(stored);
+            var incoming = CreateIncomingFor(stored, "Doing", StateCategories.Doing);
+
+            workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>())).ReturnsAsync([incoming]);
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateWorkItemsForTeam(team);
+
+            Assert.That(
+                TransitionsStoredFor(stored).Select(t => (t.FromState, t.ToState, t.TransitionedAt)),
+                Is.EqualTo(new[] { ("To Do", "Doing", theRefreshInstant.UtcDateTime) }));
+        }
+
         private async Task RefreshTheTeamWith(Team team, WorkItem incoming)
         {
             workTrackingConnectorMock.Setup(x => x.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(true);
@@ -2805,7 +2866,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private Portfolio CreatePortfolio()
         {
-            return CreatePortfolio(DateTime.Now);
+            return CreatePortfolio(DateTime.UtcNow);
         }
 
         private Portfolio CreatePortfolio(DateTime lastUpdateTime)
@@ -2828,7 +2889,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private WorkItemService CreateSubject()
         {
+            return CreateSubject(new FakeLighthouseClock(DateTimeOffset.UtcNow));
+        }
+
+        private WorkItemService CreateSubject(ILighthouseClock clock)
+        {
             return new WorkItemServiceTestBuilder()
+                .WithClock(clock)
                 .WithConnector(workTrackingConnectorMock.Object)
                 .WithFeatureRepository(featureRepositoryMock.Object)
                 .WithWorkItemRepository(workItemRepositoryMock.Object)

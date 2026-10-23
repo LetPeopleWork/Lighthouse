@@ -5,8 +5,12 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
+using Moq.Protected;
 using NUnit.Framework.Constraints;
+using System.Net;
+using System.Text;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
@@ -882,7 +886,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var authStrategyFactory = TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService());
             return new JiraWorkTrackingConnector(
                 new IssueFactory(Mock.Of<ILogger<IssueFactory>>()), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), authStrategyFactory,
-                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer());
+                new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer(), TimeProvider.System);
         }
+    }
+
+    /// <summary>
+    /// How far back finished work is read is an offset from the instance's clock, in UTC. Asserted on the
+    /// JQL the connector sends to a stubbed Jira, so no real tracker is involved.
+    /// </summary>
+    public class JiraHistoryCutoffTest
+    {
+        private static readonly DateTimeOffset TheRefreshInstant = new(2026, 3, 14, 23, 30, 0, TimeSpan.Zero);
+
+        [Test]
+        [TestCase(1, "2026-03-13")]
+        [TestCase(30, "2026-02-12")]
+        [TestCase(90, "2025-12-14")]
+        public async Task HistoryCutoff_IsTheClockInstantMinusHistoryDays(int historyInDays, string expectedCutoffDay)
+        {
+            var searches = new List<string>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJiraCloudRecording(searches), new FakeTimeProvider(TheRefreshInstant));
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud(doneItemsCutoffDays: historyInDays);
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(searches, Has.Some.Contains($"resolved >= '{expectedCutoffDay}'"));
+        }
+
+        private static HttpMessageHandler AJiraCloudRecording(List<string> searches)
+        {
+            var handler = new Mock<HttpMessageHandler>();
+            handler.Protected()
+                .Setup<Task<HttpResponseMessage>>("SendAsync", ItExpr.IsAny<HttpRequestMessage>(), ItExpr.IsAny<CancellationToken>())
+                .Returns<HttpRequestMessage, CancellationToken>((request, _) =>
+                {
+                    var path = request.RequestUri?.AbsolutePath ?? string.Empty;
+
+                    if (path.EndsWith("rest/api/2/serverInfo", StringComparison.Ordinal))
+                    {
+                        return Task.FromResult(Ok("{\"deploymentType\":\"Cloud\"}"));
+                    }
+
+                    if (path.EndsWith("rest/api/latest/field", StringComparison.Ordinal))
+                    {
+                        return Task.FromResult(Ok("[]"));
+                    }
+
+                    if (path.Contains("search", StringComparison.Ordinal))
+                    {
+                        searches.Add(JiraConnectorTestSetup.JqlOf(request));
+                        return Task.FromResult(Ok("{\"issues\":[]}"));
+                    }
+
+                    return Task.FromResult(Ok("{}"));
+                });
+
+            return handler.Object;
+        }
+
+        private static HttpResponseMessage Ok(string body)
+            => new(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") };
     }
 }

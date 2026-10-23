@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 .Returns((RunChartData _, int days) =>
                 {
                     var simulation = new Dictionary<int, int> { [days] = 100 };
-                    return new HowManyForecast(simulation, days);
+                    return new HowManyForecast(simulation, days, DateTime.UtcNow);
                 });
         }
 

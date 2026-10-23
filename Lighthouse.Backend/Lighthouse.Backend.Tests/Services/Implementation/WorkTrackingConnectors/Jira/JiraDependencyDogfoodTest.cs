@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 authStrategyFactory,
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
-                new DeliveryForecastBlockRenderer());
+                new DeliveryForecastBlockRenderer(), TimeProvider.System);
 
             return await subject.GetFeaturesForProject(TheDemoPortfolio(), CancellationToken.None);
         }

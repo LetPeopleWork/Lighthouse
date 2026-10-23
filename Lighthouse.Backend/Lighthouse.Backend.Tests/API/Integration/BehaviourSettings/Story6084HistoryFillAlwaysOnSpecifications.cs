@@ -303,7 +303,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                 Factory.Services.GetRequiredService<DatabaseMaintenanceGate>(),
                 Factory.Services.GetRequiredService<DatabaseOperationTracker>(),
                 Factory.Services.GetRequiredService<ILogger<DatabaseManagementService>>(),
-                Factory.Services);
+                Factory.Services,
+                Factory.Services.GetRequiredService<TimeProvider>());
 
         private void TheBackupsDatabaseIsPutInPlace()
         {

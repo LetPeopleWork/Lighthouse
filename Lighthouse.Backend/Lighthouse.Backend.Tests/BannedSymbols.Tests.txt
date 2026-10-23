@@ -1,0 +1,3 @@
+P:System.DateTime.Now;Reads the machine's local clock and zone, which the subject under test does not see. Use TestToday.Clock.Now for an instant or TestToday.AmbientAsUtcMidnight for a day, or the host's ILighthouseClock in an integration test.
+P:System.DateTime.Today;Reads the machine's local day, which the subject under test does not see. Use TestToday.AmbientAsUtcMidnight or TestToday.Ambient, or the host's ILighthouseClock in an integration test.
+P:System.DateTimeOffset.Now;Reads the machine's local clock and zone, which the subject under test does not see. Use TestToday.Clock.Now or TestToday.FrozenNow, or the host's ILighthouseClock in an integration test.

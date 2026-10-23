@@ -21,11 +21,11 @@ namespace Lighthouse.Backend.Tests.Factories
             serviceProviderMock = new Mock<IServiceProvider>();
             serviceProviderMock
             .Setup(x => x.GetService(typeof(IAzureDevOpsWorkTrackingConnector)))
-            .Returns(new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService())));
+            .Returns(new AzureDevOpsWorkTrackingConnector(Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), TestAuthStrategyFactory.CreateRealFactory(new FakeCryptoService()), TimeProvider.System));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(IJiraWorkTrackingConnector)))
-            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>(), new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer()));
+            .Returns(new JiraWorkTrackingConnector(Mock.Of<IIssueFactory>(), Mock.Of<ILogger<JiraWorkTrackingConnector>>(), Mock.Of<IWorkTrackingAuthStrategyFactory>(), new Lighthouse.Backend.Cache.Cache<string, object>(), new DeliveryForecastBlockRenderer(), TimeProvider.System));
 
             serviceProviderMock
             .Setup(x => x.GetService(typeof(CsvWorkTrackingConnector)))

@@ -16,10 +16,16 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         ITeamMetricsService teamMetricsService,
         IRepository<Feature> featureRepository,
         IWhatTheForecastWaitsFor whatTheForecastWaitsFor,
-        IDrawStreamFactory drawStreamFactory,
-        ForecastSimulationLimits limits)
+        ForecastSimulation simulation,
+        TimeProvider timeProvider)
         : IForecastService
     {
+        private readonly IDrawStreamFactory drawStreamFactory = simulation.Draws;
+
+        private readonly ForecastSimulationLimits limits = simulation.Limits;
+
+        private DateTime CreationInstant() => timeProvider.GetUtcNow().UtcDateTime;
+
         public HowManyForecast PredictWorkItemCreation(Team team, string[] workItemTypes, DateTime startDate, DateTime endDate, int daysToForecast)
         {
             logger.LogDebug("Predicting Work Item Creation for team {TeamName} in the next {Days} days for Work Items {WorkItems} based on the time from {Start} to {End}",
@@ -49,7 +55,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             logger.LogDebug("Finished running Monte Carlo How Many for {Days} days.", days);
 
-            return new HowManyForecast(simulationResults, days);
+            return new HowManyForecast(simulationResults, days, CreationInstant());
         }
 
         public async Task<WhenForecast> When(Team team, int remainingItems, ThroughputFilterMode mode = ThroughputFilterMode.RespectTeamSetting)
@@ -144,7 +150,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var startForecasts = await Task.Run(
                 () => RunMonteCarloSimulation(simulationResults, gathered.ThroughputByTeam, gathered.Waits, draws, cancellationToken), cancellationToken);
 
-            UpdateFeatureForecasts(gathered.Features, simulationResults, gathered.ChipStatusByTeam, startForecasts);
+            UpdateFeatureForecasts(gathered.Features, simulationResults, gathered.ChipStatusByTeam, startForecasts, CreationInstant());
         }
 
         private sealed record GatheredInputs(
@@ -223,7 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             ReportTheRunsThatCouldNotFinish(whatWentWrong);
             ReportTheRunsThatReachedTheHorizon(whatWentWrong);
 
-            return TheDaysWorkBeganOn(plan, shares, limits.Trials);
+            return TheDaysWorkBeganOn(plan, shares, limits.Trials, CreationInstant());
         }
 
         /// <summary>
@@ -238,7 +244,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// Every run counts towards a start, including the ones in which work never began, so a Feature
         /// stuck behind one that never finishes reads as starting beyond the horizon in those runs.
         /// </summary>
-        private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares, int runs)
+        private static Dictionary<Feature, List<StartForecast>> TheDaysWorkBeganOn(ForecastRunPlan plan, List<OneWorkersShareOfTheRuns> shares, int runs, DateTime creationTime)
         {
             var byRow = DayCounts.EmptyPer(plan.RowCount);
             var byFeature = DayCounts.EmptyPer(plan.FeatureCount);
@@ -255,14 +261,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 if (plan.RowAt(row).Feature is { } feature)
                 {
-                    TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byRow[row]), plan.RowAt(row).Team, runs));
+                    TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byRow[row]), plan.RowAt(row).Team, runs, creationTime));
                 }
             }
 
             for (var featureIndex = 0; featureIndex < plan.FeatureCount; featureIndex++)
             {
                 var feature = plan.FeatureAt(featureIndex);
-                TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byFeature[featureIndex]), null, runs));
+                TheStartForecastsOf(startForecasts, feature).Add(new StartForecast(InDayOrder(byFeature[featureIndex]), null, runs, creationTime));
             }
 
             return startForecasts;
@@ -348,7 +354,8 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             IEnumerable<Feature> features,
             List<SimulationResult> simulationResults,
             Dictionary<int, ForecastThroughputStatus> chipStatusByTeam,
-            Dictionary<Feature, List<StartForecast>> startForecasts)
+            Dictionary<Feature, List<StartForecast>> startForecasts,
+            DateTime creationTime)
         {
             foreach (var feature in features)
             {
@@ -367,14 +374,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                     simulationResultsForFeature.Add(simulationResult);
                 }
 
-                var featureForecasts = simulationResultsForFeature.Select(r => CreateWhenForecastForSimulationResult(r, chipStatusByTeam));
+                var featureForecasts = simulationResultsForFeature.Select(r => CreateWhenForecastForSimulationResult(r, chipStatusByTeam, creationTime));
                 feature.SetFeatureForecasts(featureForecasts);
             }
         }
 
-        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam)
+        private static WhenForecast CreateWhenForecastForSimulationResult(SimulationResult simulationResult, Dictionary<int, ForecastThroughputStatus> chipStatusByTeam, DateTime creationTime)
         {
-            var forecast = new WhenForecast(simulationResult);
+            var forecast = new WhenForecast(simulationResult, creationTime);
             if (simulationResult.Team is { } team && chipStatusByTeam.TryGetValue(team.Id, out var status))
             {
                 forecast.FilterApplied = status.FilterApplied;

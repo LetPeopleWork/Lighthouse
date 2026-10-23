@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task Callback_WithValidState_Redirects302ToSuccessPageAndPersistsValidCredential()
         {
-            var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
+            var expiresAt = HostNow.AddHours(1);
             providerMock
                 .Setup(p => p.ExchangeCodeAsync("auth-code-123", It.IsAny<OAuthFlowContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new OAuthTokens("at", "rt", expiresAt));
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task Callback_WithoutProviderQueryParam_Redirects302ToSuccess()
         {
-            var expiresAt = DateTimeOffset.UtcNow.AddHours(1);
+            var expiresAt = HostNow.AddHours(1);
             providerMock
                 .Setup(p => p.ExchangeCodeAsync("auth-code-456", It.IsAny<OAuthFlowContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new OAuthTokens("at", "rt", expiresAt));
@@ -308,9 +308,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 WorkTrackingSystemConnectionId = SeededConnectionId,
                 AccessToken = "duplicate-at",
                 RefreshToken = "duplicate-rt",
-                ExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                ExpiresAt = HostNow.AddHours(1),
                 Status = OAuthCredentialStatus.Valid,
-                UpdatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = HostNow,
             });
 
             Assert.That(() => dbContext.SaveChanges(), Throws.Exception);
@@ -341,6 +341,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         private int SeededConnectionId { get; set; }
+
+        /// <summary>
+        /// The test host's clock is frozen, so an expiry seeded from the real clock would sit a different
+        /// distance from the host's "now" depending on the hour the run happens.
+        /// </summary>
+        private DateTimeOffset HostNow => factory.Services.GetRequiredService<TimeProvider>().GetUtcNow();
 
         private string IssueStateToken(int connectionId, string providerKey)
         {
@@ -392,9 +398,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 WorkTrackingSystemConnectionId = connectionId,
                 AccessToken = "existing-at",
                 RefreshToken = "existing-rt",
-                ExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                ExpiresAt = HostNow.AddHours(1),
                 Status = OAuthCredentialStatus.Valid,
-                UpdatedAt = DateTimeOffset.UtcNow.AddDays(-1),
+                UpdatedAt = HostNow.AddDays(-1),
             });
             dbContext.SaveChanges();
         }

@@ -25,6 +25,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -568,7 +569,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             TheRunningLighthouse();
             using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
-            var today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var today = theRunningLighthouse.Services.GetRequiredService<ILighthouseClock>().Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             using var response = await client.GetAsync(new Uri($"/api/latest/teams/{adoTeams[adoTeam].Id}/metrics/wip?asOfDate={today}", UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
 
@@ -780,6 +781,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         private Task ThePortfolioRefreshes(Portfolio portfolio)
             => TheRefreshOf(services => services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id));
+
+        /// <summary>
+        /// The host's clock stands still, so two refreshes in one scenario would otherwise carry the same
+        /// moment and could not be told apart in the refresh history.
+        /// </summary>
+        protected void AMinutePasses()
+            => ((FakeTimeProvider)TheRunningLighthouse().GetRequiredService<TimeProvider>()).Advance(TimeSpan.FromMinutes(1));
 
         private async Task TheRefreshOf(Action<IServiceProvider> trigger)
         {
@@ -1224,7 +1232,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         private sealed class AzureDevOpsOverEveryOrganisation(
             Dictionary<string, AnAzureDevOpsOrganisation> organisations, ILogger<AzureDevOpsWorkTrackingConnector> logger)
-            : AzureDevOpsWorkTrackingConnector(logger, Mock.Of<IWorkTrackingAuthStrategyFactory>())
+            : AzureDevOpsWorkTrackingConnector(logger, Mock.Of<IWorkTrackingAuthStrategyFactory>(), TimeProvider.System)
         {
             internal override Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
             {

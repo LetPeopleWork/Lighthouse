@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
             forecastServiceMock = new Mock<IForecastService>();
             forecastServiceMock
                 .Setup(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
-                .Returns((RunChartData _, int days) => new HowManyForecast(FiveToEight, days));
+                .Returns((RunChartData _, int days) => new HowManyForecast(FiveToEight, days, DateTime.UtcNow));
 
             subject = new RefinementNeedCalculator(
                 calendarMock.Object,

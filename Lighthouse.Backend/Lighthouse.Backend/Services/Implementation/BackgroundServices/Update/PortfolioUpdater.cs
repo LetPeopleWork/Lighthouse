@@ -21,8 +21,9 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         IUpdateQueueService updateQueueService,
         IOrphanedFeatureCleanupService cleanupService,
         IDomainEventDispatcher domainEventDispatcher,
-        IForecastUpdater forecastUpdater)
-        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, UpdateType.Features),
+        IForecastUpdater forecastUpdater,
+        TimeProvider timeProvider)
+        : UpdateServiceBase<Portfolio>(logger, serviceScopeFactory, updateQueueService, timeProvider, UpdateType.Features),
             IPortfolioUpdater
     {
         protected override RefreshSettings GetRefreshSettings()
@@ -33,7 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         protected override bool ShouldUpdateEntity(Portfolio entity, RefreshSettings refreshSettings)
         {
-            var minutesSinceLastUpdate = (DateTime.UtcNow - entity.UpdateTime).TotalMinutes;
+            var minutesSinceLastUpdate = (CurrentInstant - entity.UpdateTime).TotalMinutes;
 
             // Stryker disable once all: what the tests pin about a skipped portfolio is that nothing naming it reaches an operator-visible log level. That is a claim about the level, not about this wording, so a mutant that rewrites the message kills nothing.
             Logger.LogDebug("Last Refresh of Work Items for Project {ProjectName} was {MinutesSinceLastUpdate} Minutes ago - Update should happen after {RefreshAfter} Minutes", entity.Name, minutesSinceLastUpdate, refreshSettings.RefreshAfter);
@@ -167,7 +168,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
                         RecordsScanned = outcome.RecordsScanned,
                         RecordsFetched = outcome.RecordsFetched,
                         DurationMs = stopwatch.ElapsedMilliseconds,
-                        ExecutedAt = DateTime.UtcNow,
+                        ExecutedAt = CurrentInstant,
                         Success = success,
                         Cancelled = cancelled,
                         RecordsPlacedFromLinksNamingMoreThanOneParent = outcome.RecordsPlacedFromLinksNamingMoreThanOneParent,

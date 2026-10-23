@@ -147,8 +147,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 teamMetrics.Object,
                 features,
                 new NothingWaitsForAnything(),
-                new DrawsTheSameNumberEveryTime(),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default),
+                TimeProvider.System);
         }
 
         private static Feature AFeature(string referenceId, string order, params (Team Team, int Remaining)[] work)

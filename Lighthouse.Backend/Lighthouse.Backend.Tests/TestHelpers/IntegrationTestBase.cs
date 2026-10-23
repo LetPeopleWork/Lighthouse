@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         protected HttpClient Client { get; }
 
         protected LighthouseAppContext DatabaseContext { get; private set; }
+
+        protected ILighthouseClock InstanceClock => webApplicationFactory.Services.GetRequiredService<ILighthouseClock>();
+
+        protected DateTime InstanceToday => InstanceClock.TodayAsUtcMidnight;
 
         [OneTimeTearDown]
         public void GlobalTearDown()
