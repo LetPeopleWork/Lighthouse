@@ -401,15 +401,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             using var scope = Factory.Services.CreateScope();
             var credentials = scope.ServiceProvider.GetRequiredService<IRepository<OAuthCredential>>();
+            var hostNow = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow();
 
             credentials.Add(new OAuthCredential
             {
                 WorkTrackingSystemConnectionId = connection.Id,
                 AccessToken = "token",
                 RefreshToken = "refresh",
-                ExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+                ExpiresAt = hostNow.AddHours(1),
                 Status = status,
-                UpdatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = hostNow,
             });
             credentials.Save().GetAwaiter().GetResult();
 

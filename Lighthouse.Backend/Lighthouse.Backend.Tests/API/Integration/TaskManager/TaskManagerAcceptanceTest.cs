@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
                 ThroughputHistory = 30,
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Team>>();
@@ -281,7 +281,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Portfolio>>();

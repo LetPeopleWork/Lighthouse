@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = serviceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();

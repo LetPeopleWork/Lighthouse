@@ -272,7 +272,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                 DoneStates = ["Done"],
                 // The refresh is driven explicitly by every scenario; a stale update time would only
                 // matter to the background loop, which the test host does not run.
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Portfolio>>();
@@ -297,7 +297,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Team>>();

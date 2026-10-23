@@ -224,7 +224,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 ToDoStates = ["New"],
                 DoingStates = ["In Progress"],
                 DoneStates = ["Done"],
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Portfolio>>();
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 DoneStates = ["Done"],
                 ThroughputHistory = 30,
                 StalenessThresholdDays = stalenessThresholdDays,
-                UpdateTime = DateTime.UtcNow,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
             };
 
             var repository = sp.GetRequiredService<IRepository<Team>>();
