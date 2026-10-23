@@ -14,7 +14,7 @@
             SetSimulationResult(simulationResult);
         }
 
-        public WhenForecast(SimulationResult simulationResult) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)))
+        public WhenForecast(SimulationResult simulationResult, DateTime creationTime) : base(simulationResult.SimulationResults, Comparer<int>.Create((x, y) => x.CompareTo(y)), creationTime)
         {
             TotalTrials = Math.Max(TotalTrials, simulationResult.RunsSimulated);
             NumberOfItems = simulationResult.InitialRemainingItems;

@@ -130,7 +130,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Dependencies
             // that rather than as anything about a licence. The trials are what make this a forecast.
             var simulated = new SimulationResult(team, feature, 0);
             simulated.SimulationResults.Add(5, 10);
-            feature.Forecasts.Add(new Backend.Models.Forecast.WhenForecast(simulated));
+            feature.Forecasts.Add(new Backend.Models.Forecast.WhenForecast(simulated, DateTime.UtcNow));
 
             return feature;
         }

@@ -97,8 +97,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// Decision 4: a tracker's history window is an instant offset, not a calendar day, so these
-        /// four lines stay UTC. They spell it <c>DateTime.UtcNow[.AddDays(...)]</c>, which none of the
-        /// three scanned patterns match, so the scanner never sees them - which is exactly why they
+        /// four lines stay UTC instants, read from the injected clock. None of the three scanned
+        /// patterns match how they spell it, so the scanner never sees them - which is exactly why they
         /// are listed here. The rule below requires each one to still exist AND to still carry its
         /// stated reason, so the list cannot rot into a permanent unexplained allowlist.
         /// </summary>
@@ -106,19 +106,19 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             new(
                 "Services/Implementation/WorkItems/WorkItemService.cs",
-                "var endDate = DateTime.UtcNow;",
+                "var endDate = clock.Now.UtcDateTime;",
                 "percentile history window end"),
             new(
                 "Services/Implementation/WorkItems/WorkItemService.cs",
-                "var startDate = DateTime.UtcNow.AddDays(",
+                "var startDate = endDate.AddDays(",
                 "percentile history window start"),
             new(
                 "Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
-                "var cutoffDate = DateTime.UtcNow.AddDays(",
+                "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Azure DevOps history cutoff"),
             new(
                 "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
-                "var cutoffDate = DateTime.UtcNow.AddDays(",
+                "var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(",
                 "Jira history cutoff"),
         ];
 

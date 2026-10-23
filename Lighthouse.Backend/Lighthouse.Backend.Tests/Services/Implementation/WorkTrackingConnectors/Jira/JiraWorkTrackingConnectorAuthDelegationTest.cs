@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Mock.Of<ILogger<JiraWorkTrackingConnector>>(),
                 factory,
                 new Lighthouse.Backend.Cache.Cache<string, object>(),
-                new DeliveryForecastBlockRenderer());
+                new DeliveryForecastBlockRenderer(), TimeProvider.System);
         }
     }
 }

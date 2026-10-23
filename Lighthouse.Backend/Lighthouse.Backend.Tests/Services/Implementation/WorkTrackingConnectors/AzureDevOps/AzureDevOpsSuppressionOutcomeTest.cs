@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             factoryMock.Setup(f => f.Resolve(It.IsAny<string>())).Returns(Mock.Of<IWorkTrackingAuthStrategy>());
 
             return new AzureDevOpsWorkTrackingConnector(
-                Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), factoryMock.Object);
+                Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(), factoryMock.Object, TimeProvider.System);
         }
 
         private static WriteBackFieldUpdate Update(string workItemId, string fieldReference, string value)

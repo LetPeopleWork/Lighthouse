@@ -139,14 +139,14 @@ namespace Lighthouse.Backend.Tests.API.DTO
             }
         }
 
-        private static StartForecast AStartOn(int day) => new(new Dictionary<int, int> { [day] = 100 });
+        private static StartForecast AStartOn(int day) => new(new Dictionary<int, int> { [day] = 100 }, DateTime.UtcNow);
 
         private static WhenForecast ACompletionOn(int day)
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[day] = 100;
 
-            return new WhenForecast(simulation);
+            return new WhenForecast(simulation, DateTime.UtcNow);
         }
     }
 }

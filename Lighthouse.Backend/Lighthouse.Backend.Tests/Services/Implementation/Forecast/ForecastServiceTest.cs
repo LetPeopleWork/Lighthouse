@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
@@ -64,6 +65,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(forecast.GetProbability(85), Is.EqualTo(timespan));
                 Assert.That(forecast.GetProbability(95), Is.EqualTo(timespan));
             }
+        }
+
+        [Test]
+        [TestCase(7, 2026, 3, 21)]
+        [TestCase(30, 2026, 4, 13)]
+        public void HowMany_IsStampedWithTheClockInstant_AndItsTargetDateCountsFromThere(int days, int targetYear, int targetMonth, int targetDay)
+        {
+            var subject = CreateSubjectWithPersistentThroughput(new FakeTimeProvider(new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero)));
+
+            var forecast = subject.HowMany(new RunChartData(RunChartDataGenerator.GenerateRunChartData([1])), days);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(forecast.CreationTime, Is.EqualTo(new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)));
+                Assert.That(forecast.TargetDate, Is.EqualTo(new DateTime(targetYear, targetMonth, targetDay, 23, 30, 0, DateTimeKind.Utc)));
+            }
+        }
+
+        [Test]
+        public async Task When_IsStampedWithTheClockInstant()
+        {
+            var subject = CreateSubjectWithPersistentThroughput(new FakeTimeProvider(new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero)));
+
+            var forecast = await subject.When(CreateTeam(1, [1]), 12);
+
+            Assert.That(forecast.CreationTime, Is.EqualTo(new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)));
         }
 
         [Test]
@@ -571,14 +598,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             featureRepositoryMock.Setup(x => x.GetAll()).Returns(features);
         }
 
-        private ForecastService CreateSubjectWithPersistentThroughput()
+        private ForecastService CreateSubjectWithPersistentThroughput() => CreateSubjectWithPersistentThroughput(TimeProvider.System);
+
+        private ForecastService CreateSubjectWithPersistentThroughput(TimeProvider timeProvider)
         {
-            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default);
+            return new ForecastService(new NotSoRandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new ForecastSimulation(new DrawsTheSameNumberEveryTime(), ForecastSimulationLimits.Default), timeProvider);
         }
 
         private ForecastService CreateSubjectWithRealThroughput()
         {
-            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default);
+            return new ForecastService(new RandomNumberService(), Mock.Of<ILogger<ForecastService>>(), teamMetricsServiceMock.Object, featureRepositoryMock.Object, new NothingWaitsForAnything(), new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default), TimeProvider.System);
         }
 
         /// <summary>
@@ -595,8 +624,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new NothingWaitsForAnything(),
-                new DrawsFromAPinnedStartingNumber(TheSeedTheRealDataForecastsShare),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsFromAPinnedStartingNumber(TheSeedTheRealDataForecastsShare), ForecastSimulationLimits.Default),
+                TimeProvider.System);
         }
 
         private Team CreateTeam(int featureWip, int[] throughput)

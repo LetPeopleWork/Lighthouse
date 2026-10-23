@@ -747,7 +747,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var simulationResult = new SimulationResult();
             simulationResult.SimulationResults[days] = SingleBucketTrials;
 
-            return new WhenForecast(simulationResult) { TeamId = team.Id };
+            return new WhenForecast(simulationResult, DateTime.UtcNow) { TeamId = team.Id };
         }
 
         private static readonly JsonSerializerOptions WhenDistributionReadOptions = new() { PropertyNameCaseInsensitive = true };

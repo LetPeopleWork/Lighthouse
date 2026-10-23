@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             var feature = new Feature([(measured, 5, 5), (silent, 3, 3)]);
             feature.SetFeatureForecasts([AsJustForecast(measured, 10)]);
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, null)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, null, DateTime.UtcNow)]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -230,7 +230,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void AStartDistributionWithNoRunsBehindIt_IsNotAnAnswer()
         {
             var feature = AForecastableFeature();
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), null)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), null, DateTime.UtcNow)]);
 
             Assert.That(feature.WhenWorkBegins.Source, Is.EqualTo(StartDateSource.Unknown));
         }
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Models
         public void AFeatureWithOnlyPerTeamRows_HasNoAnswerOfItsOwn()
         {
             var feature = AForecastableFeature();
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }) { TeamId = 1 }]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, DateTime.UtcNow) { TeamId = 1 }]);
 
             Assert.That(feature.WhenWorkBegins.Source, Is.EqualTo(StartDateSource.Unknown));
         }
@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var feature = AForecastableFeature();
 
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [9] = 10 }, null)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [9] = 10 }, null, DateTime.UtcNow)]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.Models
             var feature = AForecastableFeature();
             feature.Id = 42;
 
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [1] = 1 }, null)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [1] = 1 }, null, DateTime.UtcNow)]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -286,8 +286,8 @@ namespace Lighthouse.Backend.Tests.Models
             var team = new Team { Id = 7, Name = "Never delivered" };
             var feature = new Feature(team, 5);
 
-            feature.SetFeatureForecasts([new WhenForecast(new SimulationResult(team, feature, 5))]);
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), team)]);
+            feature.SetFeatureForecasts([new WhenForecast(new SimulationResult(team, feature, 5), DateTime.UtcNow)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), team, DateTime.UtcNow)]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -304,7 +304,7 @@ namespace Lighthouse.Backend.Tests.Models
             var other = new Team { Id = 8, Name = "Other" };
 
             var feature = new Feature(team, 5);
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [3] = 10 }, team)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [3] = 10 }, team, DateTime.UtcNow)]);
 
             using (Assert.EnterMultipleScope())
             {
@@ -332,11 +332,11 @@ namespace Lighthouse.Backend.Tests.Models
 
         /// <summary>A row as it comes back from the store, where only the team's id survives.</summary>
         private static WhenForecast AsReadBackFromTheStore(int teamId, int day)
-            => new(ASimulationFinishingOn(day)) { TeamId = teamId, Team = null };
+            => new(ASimulationFinishingOn(day), DateTime.UtcNow) { TeamId = teamId, Team = null };
 
         /// <summary>A row as it is the moment a forecast has just run, carrying the team itself.</summary>
         private static WhenForecast AsJustForecast(Team team, int day)
-            => new(ASimulationFinishingOn(day)) { TeamId = team.Id, Team = team };
+            => new(ASimulationFinishingOn(day), DateTime.UtcNow) { TeamId = team.Id, Team = team };
 
         private static SimulationResult ASimulationFinishingOn(int day)
         {
@@ -356,7 +356,7 @@ namespace Lighthouse.Backend.Tests.Models
             var feature = new Feature(team, 5);
 
             feature.SetFeatureForecasts([AsJustForecast(team, 10)]);
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, null)]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [4] = 10 }, null, DateTime.UtcNow)]);
 
             return feature;
         }

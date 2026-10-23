@@ -18,9 +18,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// The real connector over a recording client. Only the client is substituted: the queries, the field
     /// lists, the chunking and the conversion are all the production code path.
     /// </summary>
-    internal sealed class RecordedAzureDevOpsConnector(WorkItemTrackingHttpClient client, ILogger<AzureDevOpsWorkTrackingConnector>? logger = null) : AzureDevOpsWorkTrackingConnector(
+    internal sealed class RecordedAzureDevOpsConnector(WorkItemTrackingHttpClient client, ILogger<AzureDevOpsWorkTrackingConnector>? logger = null, TimeProvider? timeProvider = null) : AzureDevOpsWorkTrackingConnector(
         logger ?? Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
-        Mock.Of<IWorkTrackingAuthStrategyFactory>())
+        Mock.Of<IWorkTrackingAuthStrategyFactory>(),
+        timeProvider ?? TimeProvider.System)
     {
         internal override Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
             => Task.FromResult(client);
@@ -208,6 +209,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             var ado = new AzureDevOpsOrganisation(itemIds);
 
             return (new RecordedAzureDevOpsConnector(ado.Client, ado.Log), ATeamOnAzureDevOps(), ado);
+        }
+
+        internal static (AzureDevOpsWorkTrackingConnector Subject, Team Team, AzureDevOpsOrganisation Ado) AnAzureDevOpsReadingTheTimeFrom(TimeProvider timeProvider)
+        {
+            var ado = new AzureDevOpsOrganisation([]);
+
+            return (new RecordedAzureDevOpsConnector(ado.Client, ado.Log, timeProvider), ATeamOnAzureDevOps(), ado);
         }
 
         internal static (AzureDevOpsWorkTrackingConnector Subject, Portfolio Portfolio, AzureDevOpsOrganisation Ado) AnAzureDevOpsPortfolioThatHolds(params int[] itemIds)

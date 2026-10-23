@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[workingDays] = 100;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private static Portfolio PortfolioWithForecastedFeature(int workingDays)

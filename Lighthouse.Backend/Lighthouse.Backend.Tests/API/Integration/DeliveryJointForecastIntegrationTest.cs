@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             simulation.SimulationResults[TargetDays] = 9000;
             simulation.SimulationResults[TailDays] = 1000;
 
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private async Task<Portfolio> SeedPortfolioWithTwoSingleTeamFeatures()

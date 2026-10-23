@@ -1561,6 +1561,7 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IRandomNumberService, RandomNumberService>();
             builder.Services.AddSingleton<IDrawStreamFactory, DrawStreamFactory>();
             builder.Services.AddSingleton(ForecastSimulationLimits.Default);
+            builder.Services.AddSingleton<ForecastSimulation>();
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();

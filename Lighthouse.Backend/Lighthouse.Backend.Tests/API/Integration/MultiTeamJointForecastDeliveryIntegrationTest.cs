@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             simulation.SimulationResults[MedianDays] = 5000;
             simulation.SimulationResults[TailDays] = 5000;
 
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private async Task<Portfolio> SeedPortfolioWithTwoEquallyForecastedTeams()

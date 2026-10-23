@@ -680,7 +680,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     runs[count] = runs.GetValueOrDefault(count) + 1;
                 }
 
-                return new HowManyForecast(runs, days);
+                return new HowManyForecast(runs, days, DateTime.UtcNow);
             }
 
             private static int CountAt(List<(int Percentile, int Count)> likelihoods, int percentile)

@@ -14,9 +14,9 @@
             this.comparer = comparer;
         }
 
-        public ForecastBase(Dictionary<int, int> simulationResult, IComparer<int> comparer)
+        public ForecastBase(Dictionary<int, int> simulationResult, IComparer<int> comparer, DateTime creationTime)
         {
-            CreationTime = DateTime.UtcNow;
+            CreationTime = creationTime;
             this.comparer = comparer;
             SetSimulationResult(simulationResult);
         }

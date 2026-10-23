@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             // Start rows that exist and were never run - an empty histogram, whose every percentile is day
             // zero, which projects to today.
             var neverRun = CreateFeatureWithForecast("F-38", StateCategories.ToDo, team, daysAt85: 20);
-            neverRun.SetStartForecasts([new StartForecast(new Dictionary<int, int>())]);
+            neverRun.SetStartForecasts([new StartForecast(new Dictionary<int, int>(), DateTime.UtcNow)]);
             portfolio.Features.Add(neverRun);
 
             // A Feature that does have an answer, so neither of the above can pass by nothing resolving.
@@ -288,7 +288,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             // Every trial began work on the same day, so the answer is that day at every percentile and
             // the test does not depend on which one the mapping happens to name.
-            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { { workingDaysUntilStart, 100 } })]);
+            feature.SetStartForecasts([new StartForecast(new Dictionary<int, int> { { workingDaysUntilStart, 100 } }, DateTime.UtcNow)]);
 
             return feature;
         }

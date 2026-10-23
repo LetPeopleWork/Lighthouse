@@ -21,6 +21,10 @@
 	</PropertyGroup>
 
     <ItemGroup>
+	  <AdditionalFiles Include="BannedSymbols.txt" />
+	</ItemGroup>
+
+    <ItemGroup>
 	  <None Remove="certs\LighthouseDefaultCert.pfx" />
 	  <None Remove="Services\Implementation\Licensing\public_key.pem" />
 	</ItemGroup>
@@ -29,6 +33,10 @@
 		<PackageReference Include="CsvHelper" Version="33.1.0" />
 		<PackageReference Include="GraphQL.Client" Version="6.1.0" />
 		<PackageReference Include="GraphQL.Client.Serializer.Newtonsoft" Version="6.1.0" />
+		<PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.13" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.13" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.13" />

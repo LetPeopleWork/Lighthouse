@@ -208,13 +208,13 @@ namespace Lighthouse.Backend.Tests.API
         {
             var simulation = new SimulationResult();
             simulation.SimulationResults[workingDays] = 100;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private static HowManyForecast ForecastEchoingTheDayCount(int daysToForecast)
         {
             var simulation = new Dictionary<int, int> { [daysToForecast] = 100 };
-            return new HowManyForecast(simulation, daysToForecast);
+            return new HowManyForecast(simulation, daysToForecast, DateTime.UtcNow);
         }
 
         private int SeedTeam()

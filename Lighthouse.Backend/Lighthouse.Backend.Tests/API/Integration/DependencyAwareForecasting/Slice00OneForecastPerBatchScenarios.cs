@@ -456,7 +456,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                     {
                         var simulation = new SimulationResult();
                         simulation.SimulationResults[workingDays] = 100;
-                        feature.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true }]);
+                        feature.SetFeatureForecasts([new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true }]);
                     }
                 })
                 .Returns(Task.CompletedTask);

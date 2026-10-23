@@ -73,7 +73,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 gate,
                 tracker,
                 loggerMock.Object,
-                serviceProviderMock.Object);
+                serviceProviderMock.Object,
+                TimeProvider.System);
         }
 
         [Test]

@@ -194,7 +194,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         {
             var silent = ATeamDelivering(9, NothingMeasured, featureWip: 1);
             var alpha = AFeature(1, Alpha, (silent, 5));
-            alpha.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [7] = 1 }, null)]);
+            alpha.SetStartForecasts([new StartForecast(new Dictionary<int, int> { [7] = 1 }, null, DateTime.UtcNow)]);
 
             await TheForecastRunsOver(alpha);
 
@@ -311,8 +311,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetrics.Object,
                 featureRepository.Object,
                 new NothingWaitsForAnything(),
-                new DrawsTheSameNumberEveryTime(),
-                new ForecastSimulationLimits(Trials, ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
+                new ForecastSimulation(new DrawsTheSameNumberEveryTime(), new ForecastSimulationLimits(Trials, ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover)),
+                TimeProvider.System);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
         }

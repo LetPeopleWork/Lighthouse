@@ -27,6 +27,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         IWorkTrackingAuthStrategyFactory authStrategyFactory,
         Backend.Cache.Cache<string, object> processWideCache,
         IDeliveryForecastBlockRenderer forecastBlockRenderer,
+        TimeProvider timeProvider,
         HttpMessageHandler? httpMessageHandlerForTesting = null)
         : IJiraWorkTrackingConnector
     {
@@ -2697,7 +2698,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// only bounds how far back finished work is read, so a query made of nothing else still asks for the
         /// whole instance.
         /// </summary>
-        private static string PrepareQuery(IWorkItemQueryOwner owner)
+        private string PrepareQuery(IWorkItemQueryOwner owner)
         {
             var workItemsQuery = PrepareGenericQuery(owner.WorkItemTypes, JiraFieldNames.IssueTypeFieldName, "OR", "=");
             var stateQuery = PrepareGenericQuery(owner.AllStates, JiraFieldNames.StatusFieldName, "OR", "=");
@@ -2739,7 +2740,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 : withoutLeadingSpace;
         }
 
-        private static string PrepareCutoffDateFilter(int cutOffDays)
+        private string PrepareCutoffDateFilter(int cutOffDays)
         {
             if (cutOffDays <= 0)
             {
@@ -2748,7 +2749,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             // Bug #5567 decision 4: a tracker's history window is an instant offset, not a calendar day, and
             // the remote system has its own zone - so this stays UTC. An off-by-one here only over-fetches.
-            var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
+            var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(-cutOffDays);
             var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
 
             return $"AND (resolved IS EMPTY OR resolved >= '{cutoffDateString}') ";

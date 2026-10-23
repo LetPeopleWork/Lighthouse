@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
             simulationResult.SimulationResults.Add(9, 1);
             simulationResult.SimulationResults.Add(8, 0);
 
-            var subject = new WhenForecast(simulationResult);
+            var subject = new WhenForecast(simulationResult, DateTime.UtcNow);
 
             var forecast = subject.GetProbability(percentile);
 
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
             simulationResult.SimulationResults.Add(3, 1);
             simulationResult.SimulationResults.Add(6, 2);
 
-            var subject = new WhenForecast(simulationResult);
+            var subject = new WhenForecast(simulationResult, DateTime.UtcNow);
 
             var forecast = subject.GetLikelihood(daysToTargetDate);
 

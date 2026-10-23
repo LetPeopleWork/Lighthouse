@@ -220,8 +220,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 teamMetricsServiceMock.Object,
                 featureRepositoryMock.Object,
                 new WaitsHandedStraightToTheForecast(waits),
-                new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares),
-                ForecastSimulationLimits.Default);
+                new ForecastSimulation(new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares), ForecastSimulationLimits.Default),
+                TimeProvider.System);
 
             await forecastService.UpdateForecastsForPortfolio(portfolio);
 

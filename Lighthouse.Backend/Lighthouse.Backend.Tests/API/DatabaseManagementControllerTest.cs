@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API
         public void SetUp()
         {
             serviceMock = new Mock<IDatabaseManagementService>();
-            subject = new DatabaseManagementController(serviceMock.Object);
+            subject = new DatabaseManagementController(serviceMock.Object, TimeProvider.System);
         }
 
         [Test]

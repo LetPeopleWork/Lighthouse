@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDev
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Time.Testing;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -1103,14 +1104,37 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var cryptoService = new FakeCryptoService();
             return new AzureDevOpsWorkTrackingConnector(
                 Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
-                TestAuthStrategyFactory.CreateRealFactory(cryptoService));
+                TestAuthStrategyFactory.CreateRealFactory(cryptoService), TimeProvider.System);
         }
 
         private static AzureDevOpsWorkTrackingConnector CreateSubjectWithFactory(IWorkTrackingAuthStrategyFactory factory)
         {
             return new AzureDevOpsWorkTrackingConnector(
                 Mock.Of<ILogger<AzureDevOpsWorkTrackingConnector>>(),
-                factory);
+                factory, TimeProvider.System);
+        }
+    }
+
+    /// <summary>
+    /// How far back finished work is read is an offset from the instance's clock, in UTC. Asserted on the
+    /// WIQL the connector hands a recording client, so no real organisation is involved.
+    /// </summary>
+    public class AzureDevOpsHistoryCutoffTest
+    {
+        private static readonly DateTimeOffset TheRefreshInstant = new(2026, 3, 14, 23, 30, 0, TimeSpan.Zero);
+
+        [Test]
+        [TestCase(1, "2026-03-13")]
+        [TestCase(30, "2026-02-12")]
+        [TestCase(90, "2025-12-14")]
+        public async Task HistoryCutoff_IsTheClockInstantMinusHistoryDays(int historyInDays, string expectedCutoffDay)
+        {
+            var (subject, team, ado) = AzureDevOpsOrganisation.AnAzureDevOpsReadingTheTimeFrom(new FakeTimeProvider(TheRefreshInstant));
+            team.DoneItemsCutoffDays = historyInDays;
+
+            await subject.GetWorkItemsForTeam(team, CancellationToken.None);
+
+            Assert.That(ado.WiqlQueries, Has.Some.Contains($"[{AzureDevOpsFieldNames.ClosedDate}] >= '{expectedCutoffDay}'"));
         }
     }
 

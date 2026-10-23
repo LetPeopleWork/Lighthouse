@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(30, 3)]
         public void A_likelihood_reads_the_count_that_share_of_runs_reaches(int percentile, int expected)
         {
-            var forecast = new HowManyForecast(Distributions[0], 6);
+            var forecast = new HowManyForecast(Distributions[0], 6, DateTime.UtcNow);
 
             Assert.That(NeedBand.ValueAt(forecast, percentile), Is.EqualTo(expected));
         }
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCase(1, 85, 12)]
         public void A_zero_forecast_reads_zero_and_a_large_one_is_read_in_full(int distribution, int percentile, int expected)
         {
-            var forecast = new HowManyForecast(Distributions[distribution], 6);
+            var forecast = new HowManyForecast(Distributions[distribution], 6, DateTime.UtcNow);
 
             Assert.That(NeedBand.ValueAt(forecast, percentile), Is.EqualTo(expected));
         }
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement
         [TestCaseSource(nameof(DistributionIndices))]
         public void A_likelier_end_is_never_higher(int distribution)
         {
-            var forecast = new HowManyForecast(Distributions[distribution], 6);
+            var forecast = new HowManyForecast(Distributions[distribution], 6, DateTime.UtcNow);
             var misreadings = new List<string>();
 
             for (var low = 1; low < 99; low++)

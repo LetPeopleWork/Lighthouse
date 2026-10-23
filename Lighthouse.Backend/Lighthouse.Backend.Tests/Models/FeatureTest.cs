@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Models
             simulationResult.SimulationResults[2] = 5;
             simulationResult.SimulationResults[60] = 95;
 
-            return new WhenForecast(simulationResult);
+            return new WhenForecast(simulationResult, DateTime.UtcNow);
         }
 
         [Test]

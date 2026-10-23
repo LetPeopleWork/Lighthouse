@@ -407,6 +407,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
+        [TestCase(1, 2026, 3, 13)]
+        [TestCase(30, 2026, 2, 12)]
+        [TestCase(90, 2025, 12, 14)]
+        public async Task UpdateFeaturesForProject_UseCalculatedDefault_SamplesTheHistoryEndingAtTheClockInstant(int historyInDays, int startYear, int startMonth, int startDay)
+        {
+            var theRefreshInstant = new DateTimeOffset(2026, 3, 14, 23, 30, 0, TimeSpan.Zero);
+            var team = CreateTeam();
+            var project = CreatePortfolio();
+
+            project.UsePercentileToCalculateDefaultAmountOfWorkItems = true;
+            project.PercentileHistoryInDays = historyInDays;
+
+            var feature = new Feature(team, 0) { ReferenceId = "42" };
+            workTrackingConnectorMock.Setup(x => x.GetFeaturesForProject(project, CancellationToken.None)).Returns(Task.FromResult(new List<Feature> { feature }));
+
+            var sampledWindows = new List<(DateTime Start, DateTime End)>();
+            projectMetricsServiceMock.Setup(x => x.GetCycleTimeDataForPortfolio(project, It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Callback<Portfolio, DateTime, DateTime>((_, startDate, endDate) => sampledWindows.Add((startDate, endDate)))
+                .Returns(new List<Feature>());
+
+            await CreateSubject(new FakeLighthouseClock(theRefreshInstant)).UpdateFeaturesForPortfolio(project);
+
+            Assert.That(sampledWindows, Is.EqualTo(new[]
+            {
+                (new DateTime(startYear, startMonth, startDay, 23, 30, 0, DateTimeKind.Utc), new DateTime(2026, 3, 14, 23, 30, 0, DateTimeKind.Utc)),
+            }));
+        }
+
+        [Test]
         public async Task UpdateFeaturesForProject_UseCalculatedDefault_QueryHasNoMatches_AddsDefaultRemainingWork()
         {
             var team = CreateTeam();

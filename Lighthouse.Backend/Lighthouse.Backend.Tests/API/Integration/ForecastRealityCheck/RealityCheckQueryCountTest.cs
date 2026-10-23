@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             var forecasts = new Mock<IForecastService>();
             forecasts
                 .Setup(service => service.HowMany(It.IsAny<RunChartData>(), It.IsAny<int>()))
-                .Returns((RunChartData _, int days) => new HowManyForecast(new Dictionary<int, int> { [1] = 100 }, days));
+                .Returns((RunChartData _, int days) => new HowManyForecast(new Dictionary<int, int> { [1] = 100 }, days, DateTime.UtcNow));
             return forecasts.Object;
         }
 

@@ -30,7 +30,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 {
     public class AzureDevOpsWorkTrackingConnector(
         ILogger<AzureDevOpsWorkTrackingConnector> logger,
-        IWorkTrackingAuthStrategyFactory authStrategyFactory)
+        IWorkTrackingAuthStrategyFactory authStrategyFactory,
+        TimeProvider timeProvider)
         : IAzureDevOpsWorkTrackingConnector
     {
         private const int MaxChunkSize = 200;
@@ -1537,10 +1538,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         // One place builds each query, because the sweep and the download have to ask the same question:
         // removal is "stored minus swept", so anything the two disagree about is deleted.
-        private static string TheQueryATeamIsFetchedBy(Team team)
+        private string TheQueryATeamIsFetchedBy(Team team)
             => PrepareQuery(team.WorkItemTypes, team.AllStates, team.DataRetrievalValue, team.DoneItemsCutoffDays);
 
-        private static string TheQueryAPortfolioIsFetchedBy(Portfolio portfolio)
+        private string TheQueryAPortfolioIsFetchedBy(Portfolio portfolio)
             => PrepareQuery(portfolio.WorkItemTypes, portfolio.AllStates, portfolio.DataRetrievalValue, portfolio.DoneItemsCutoffDays);
 
         private static string TheQueryParentFeaturesAreFetchedBy(IEnumerable<string> parentFeatureIds)
@@ -1550,7 +1551,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return $"SELECT [{AzureDevOpsFieldNames.Id}], [{AzureDevOpsFieldNames.State}], [{AzureDevOpsFieldNames.Title}], [{AzureDevOpsFieldNames.StackRank}], [{AzureDevOpsFieldNames.BacklogPriority}] FROM WorkItems WHERE {whereClause}";
         }
 
-        private static string PrepareQuery(
+        private string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
             string query,
@@ -1566,7 +1567,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// as narrowing: it only bounds how far back finished work is read, so a query made of nothing else
         /// still asks for the whole organisation.
         /// </summary>
-        private static string PrepareQuery(
+        private string PrepareQuery(
             IEnumerable<string> includedWorkItemTypes,
             IEnumerable<string> includedStates,
             string query,
@@ -1619,7 +1620,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 && string.IsNullOrWhiteSpace(workItemsQuery)
                 && string.IsNullOrWhiteSpace(stateQuery);
 
-        private static string PrepareCutoffDateFilter(int cutOffDays)
+        private string PrepareCutoffDateFilter(int cutOffDays)
         {
             if (cutOffDays <= 0)
             {
@@ -1628,7 +1629,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             // Bug #5567 decision 4: stays UTC. A tracker's history window is an instant offset, not
             // a calendar day, and the remote system has its own zone; an off-by-one only over-fetches.
-            var cutoffDate = DateTime.UtcNow.AddDays(-cutOffDays);
+            var cutoffDate = timeProvider.GetUtcNow().UtcDateTime.AddDays(-cutOffDays);
 
             var cutoffDateString = cutoffDate.ToString("yyyy-MM-dd");
 

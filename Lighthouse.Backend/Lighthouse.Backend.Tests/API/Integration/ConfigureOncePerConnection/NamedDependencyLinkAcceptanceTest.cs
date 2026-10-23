@@ -1232,7 +1232,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         private sealed class AzureDevOpsOverEveryOrganisation(
             Dictionary<string, AnAzureDevOpsOrganisation> organisations, ILogger<AzureDevOpsWorkTrackingConnector> logger)
-            : AzureDevOpsWorkTrackingConnector(logger, Mock.Of<IWorkTrackingAuthStrategyFactory>())
+            : AzureDevOpsWorkTrackingConnector(logger, Mock.Of<IWorkTrackingAuthStrategyFactory>(), TimeProvider.System)
         {
             internal override Task<WorkItemTrackingHttpClient> GetWorkItemTrackingHttpClientAsync(WorkTrackingSystemConnection workTrackingSystemConnection)
             {

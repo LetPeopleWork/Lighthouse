@@ -343,7 +343,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var simulation = new SimulationResult();
             simulation.SimulationResults[10] = 9000;
             simulation.SimulationResults[20] = 1000;
-            feature.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true, TeamId = team.Id }]);
+            feature.SetFeatureForecasts([new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true, TeamId = team.Id }]);
 
             var portfolio = new Portfolio { Name = "Test Portfolio", WorkTrackingSystemConnection = connection };
             portfolio.UpdateFeatures([feature]);
@@ -394,7 +394,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var simulation = new SimulationResult();
             simulation.SimulationResults[10] = 9000;
             simulation.SimulationResults[20] = 1000;
-            arrival.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true, TeamId = team.Id }]);
+            arrival.SetFeatureForecasts([new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true, TeamId = team.Id }]);
 
             portfolio.Features.Add(arrival);
             await portfolioRepository.Save();

@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var simulation = new SimulationResult();
             simulation.SimulationResults[9] = 50;
             simulation.SimulationResults[11] = 50;
-            return new WhenForecast(simulation) { HasSufficientData = true };
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private async Task CreateDelivery(int portfolioId, int dueDateDaysOut = 30)
