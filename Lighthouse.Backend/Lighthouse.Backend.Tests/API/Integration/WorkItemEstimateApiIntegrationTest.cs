@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private async Task AssertEveryPlottedItemListsItsPointsEstimate(string metricsPath)
         {
-            var chartBody = await GetBody($"{metricsPath}/estimationVsCycleTime?startDate={windowStart:O}&endDate={windowEnd:O}");
+            var chartBody = await GetBody($"{metricsPath}/estimationVsCycleTime?startDate={windowStart:yyyy-MM-dd}&endDate={windowEnd:yyyy-MM-dd}");
             using var chart = JsonDocument.Parse(chartBody);
             var points = chart.RootElement.GetProperty("dataPoints").EnumerateArray().ToList();
 
@@ -336,7 +336,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Wip or FeaturesInProgress => $"asOfDate={windowEnd:yyyy-MM-dd}",
                 BlockedItemsAtDate => $"date={windowEnd:yyyy-MM-dd}",
-                _ => $"startDate={windowStart:O}&endDate={windowEnd:O}",
+                _ => $"startDate={windowStart:yyyy-MM-dd}&endDate={windowEnd:yyyy-MM-dd}",
             };
             var body = await GetBody($"{metricsPath}/{endpoint}?{query}");
             using var document = JsonDocument.Parse(body);

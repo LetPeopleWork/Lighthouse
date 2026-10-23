@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -67,10 +68,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }
             }
 
+            var today = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
             var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset) * 60;
-            baselineEnd = DateTime.UtcNow.Date.AddDays(-1 - offsetDays);
+            baselineEnd = today.AddDays(-1 - offsetDays);
             baselineStart = baselineEnd.AddDays(-29);
-            displayEnd = DateTime.UtcNow.Date.AddDays(-offsetDays);
+            displayEnd = today.AddDays(-offsetDays);
             displayStart = displayEnd.AddDays(-29);
 
             SeedTeamWithThroughput();

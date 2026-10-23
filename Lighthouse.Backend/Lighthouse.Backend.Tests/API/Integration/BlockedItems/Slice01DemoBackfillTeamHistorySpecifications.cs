@@ -5,15 +5,14 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Slice 01 / US-01 — demo backfill keyspace purity.
-    /// Backend-observable contract: after a demo portfolio refresh, the team blocked-spell table holds
+    /// Step definitions for demo backfill keyspace purity: after a demo portfolio refresh, the team blocked-spell table holds
     /// no portfolio-owner rows, the team historic reads answer only from genuine team history, and the
     /// portfolio snapshot backfill still lands (on a real FK-enforcing database — see the FK-bite
     /// scenario; EF InMemory cannot distinguish broken from fixed here).
     /// </summary>
     public partial class Slice01DemoBackfillTeamHistoryTest : PortfolioBlockedHistoryAcceptanceTest
     {
-        private static readonly DateTime PastRangeDate = DateTime.UtcNow.Date.AddDays(-1);
+        private DateTime PastRangeDate => InstanceToday.AddDays(-1);
 
         // --- Given ---
 
@@ -90,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private void ThenThePortfolioHasBackdatedSnapshots(SeededPortfolio portfolio)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var today = DateOnly.FromDateTime(InstanceToday);
             var snapshots = ReadBlockedCountSnapshots(portfolio.PortfolioId, Lighthouse.Backend.Models.OwnerType.Portfolio);
             Assert.That(
                 snapshots.Exists(s => s.RecordedAt < today), Is.True,
@@ -101,7 +100,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 
         private async Task ThenThePortfolioTrendShowsBackdatedBlockedCounts(SeededPortfolio portfolio)
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow.Date);
+            var today = DateOnly.FromDateTime(InstanceToday);
             var (status, body) = await GetPortfolioBlockedCountHistory(
                 portfolio.PortfolioId, today.AddDays(-15), today);
             Assert.That(status, Is.EqualTo(HttpStatusCode.OK), body);
@@ -113,7 +112,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
                 if (point.TryGetProperty("blockedCount", out var count)
                     && point.TryGetProperty("recordedAt", out var recordedAt)
                     && count.GetInt32() > 0
-                    && recordedAt.GetDateTime().Date < DateTime.UtcNow.Date)
+                    && recordedAt.GetDateTime().Date < InstanceToday)
                 {
                     sawBackdatedPositiveCount = true;
                 }

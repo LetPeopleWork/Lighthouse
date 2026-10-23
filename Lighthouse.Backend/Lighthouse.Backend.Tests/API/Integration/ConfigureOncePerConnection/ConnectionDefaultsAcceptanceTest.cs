@@ -706,7 +706,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             var item = TheItemOf(owner);
             var route = teamIds.TryGetValue(owner, out var teamId)
-                ? $"/api/latest/teams/{teamId}/metrics/wip?asOfDate={DateTime.UtcNow:yyyy-MM-dd}"
+                ? $"/api/latest/teams/{teamId}/metrics/wip?asOfDate={Factory.Services.GetRequiredService<ILighthouseClock>().Today:yyyy-MM-dd}"
                 : $"/api/latest/features/references?featureReferences={Uri.EscapeDataString(item)}";
 
             using var response = await Client.GetAsync(new Uri(route, UriKind.Relative));

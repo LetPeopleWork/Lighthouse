@@ -568,7 +568,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             TheRunningLighthouse();
             using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
-            var today = DateTime.Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            var today = theRunningLighthouse.Services.GetRequiredService<ILighthouseClock>().Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             using var response = await client.GetAsync(new Uri($"/api/latest/teams/{adoTeams[adoTeam].Id}/metrics/wip?asOfDate={today}", UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
 

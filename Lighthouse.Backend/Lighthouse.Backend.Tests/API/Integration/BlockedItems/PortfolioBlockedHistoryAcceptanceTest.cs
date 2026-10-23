@@ -8,6 +8,7 @@ using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -24,17 +25,14 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
 {
     /// <summary>
-    /// DISTILL (portfolio-blocked-history, ADO #5524). Shared production-composition harness for the
-    /// portfolio blocked-history acceptance suite — the portfolio twin of <see cref="BlockedItemsAcceptanceTest"/>.
-    /// This is the single source of truth (Mandate-12) for HOW scenarios reach the system: through the
-    /// real ASP.NET host on real SQLite (Pillar 3 — <see cref="WebApplicationFactory{TEntryPoint}"/>),
-    /// via the portfolio metrics read ports, the portfolio refresh service port
-    /// (<see cref="IWorkItemService.UpdateFeaturesForPortfolio"/>) and the domain-event dispatch port
-    /// (<see cref="IDomainEventDispatcher"/>). Only external/non-deterministic ports are substituted:
-    /// <see cref="ILicenseService"/> and the work-tracking connector boundary (per
-    /// docs/architecture/atdd-infrastructure-policy.md — service-seam ATs drive the REAL WorkItemService
-    /// + real EF; only the connector is faked). SQLite is mandatory: FK-dependent assertions pass
-    /// identically for broken and fixed code on EF InMemory (ADR-102, ci-learnings candidate OQ-5).
+    /// Shared harness for the portfolio blocked-history acceptance suite, the portfolio twin of
+    /// <see cref="BlockedItemsAcceptanceTest"/>. Scenarios reach the system through the real ASP.NET host
+    /// on real SQLite (<see cref="WebApplicationFactory{TEntryPoint}"/>), via the portfolio metrics reads,
+    /// the portfolio refresh (<see cref="IWorkItemService.UpdateFeaturesForPortfolio"/>) and the
+    /// domain-event dispatcher (<see cref="IDomainEventDispatcher"/>). Only the licence check
+    /// (<see cref="ILicenseService"/>) and the work-tracking connector are faked. SQLite rather than EF
+    /// InMemory, because InMemory does not enforce foreign keys and the foreign-key assertions would pass
+    /// on broken code too.
     /// </summary>
     public abstract class PortfolioBlockedHistoryAcceptanceTest
     {
@@ -46,6 +44,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
         protected DateTime SyncDay;
+
+        protected DateTime InstanceToday => Factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
         [SetUp]
         public void Init()
@@ -426,7 +426,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected async Task<(HttpStatusCode Status, string Body)> GetPortfolioWip(int portfolioId, DateTime asOfDate)
         {
             Client.AsPortfolioAdmin(portfolioId);
-            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/wip?asOfDate={asOfDate:O}");
+            var response = await Client.GetAsync($"/api/latest/portfolios/{portfolioId}/metrics/wip?asOfDate={asOfDate:yyyy-MM-dd}");
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
@@ -447,7 +447,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected async Task<(HttpStatusCode Status, string Body)> GetTeamWip(int teamId, DateTime asOfDate)
         {
             Client.AsTeamAdmin(teamId);
-            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/wip?asOfDate={asOfDate:O}");
+            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/wip?asOfDate={asOfDate:yyyy-MM-dd}");
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 
@@ -461,7 +461,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
         protected async Task<(HttpStatusCode Status, string Body)> GetTeamFeaturesInProgress(int teamId, DateTime asOfDate)
         {
             Client.AsTeamAdmin(teamId);
-            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/featuresInProgress?asOfDate={asOfDate:O}");
+            var response = await Client.GetAsync($"/api/latest/teams/{teamId}/metrics/featuresInProgress?asOfDate={asOfDate:yyyy-MM-dd}");
             return (response.StatusCode, await response.Content.ReadAsStringAsync());
         }
 

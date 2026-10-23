@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [SetUp]
         public void Init()
         {
-            today = DateTime.UtcNow.Date;
+            today = factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
             windowEnd = today;
             var offsetDays = System.Threading.Interlocked.Increment(ref testDateOffset);
             windowStart = today.AddDays(-180 - offsetDays);
