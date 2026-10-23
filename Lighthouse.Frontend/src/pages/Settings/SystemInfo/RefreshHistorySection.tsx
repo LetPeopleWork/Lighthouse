@@ -41,7 +41,7 @@ const computedOnly = (refreshes: RefreshLog[]) =>
 const averageSeconds = (refreshes: RefreshLog[]) =>
 	refreshes.length > 0
 		? Math.round(
-				(refreshes.reduce((sum, l) => sum + l.durationMs, 0) /
+				(refreshes.reduce((sum, refresh) => sum + refresh.durationMs, 0) /
 					refreshes.length /
 					1000) *
 					100,
@@ -50,12 +50,12 @@ const averageSeconds = (refreshes: RefreshLog[]) =>
 
 const longestSeconds = (refreshes: RefreshLog[]) =>
 	refreshes.length > 0
-		? Math.max(...refreshes.map((l) => l.durationMs)) / 1000
+		? Math.max(...refreshes.map((refresh) => refresh.durationMs)) / 1000
 		: null;
 
 const shortestSeconds = (refreshes: RefreshLog[]) =>
 	refreshes.length > 0
-		? Math.min(...refreshes.map((l) => l.durationMs)) / 1000
+		? Math.min(...refreshes.map((refresh) => refresh.durationMs)) / 1000
 		: null;
 
 const asSeconds = (seconds: number | null) =>
