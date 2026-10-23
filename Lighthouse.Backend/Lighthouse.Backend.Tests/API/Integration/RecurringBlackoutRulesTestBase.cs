@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             rootFactory = new TestWebApplicationFactory<Program>();
 
-            ForecastServiceMock = new Mock<IForecastService>();
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
             ForecastServiceMock
                 .Setup(s => s.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()))
                 .ReturnsAsync(ForecastCompletingInWorkingDays(WorkingDaysAtAllPercentiles));

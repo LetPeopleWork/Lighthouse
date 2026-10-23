@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 services.AddScoped(_ => licensed.Object);
 
                 services.RemoveAll<IForecastService>();
-                services.AddScoped(_ => Mock.Of<IForecastService>());
+                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
             }));
 
             using var setupScope = theRunningLighthouse.Services.CreateScope();

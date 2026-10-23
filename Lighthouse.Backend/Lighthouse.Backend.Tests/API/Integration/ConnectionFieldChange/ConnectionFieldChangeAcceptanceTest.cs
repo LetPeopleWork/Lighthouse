@@ -180,7 +180,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                     services.AddScoped(_ => connectorFactory.Object);
 
                     services.RemoveAll<IForecastService>();
-                    services.AddScoped(_ => new Mock<IForecastService>().Object);
+                    services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
                 });
             });
 

@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             var stored = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolio.Id);
             Assert.That(stored, Is.Not.Null);
 
-            await scope.ServiceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(stored!);
+            await scope.ServiceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(stored!, DateOnly.MinValue);
         }
 
         private static bool? BeyondTheHorizon(JsonElement percentile)

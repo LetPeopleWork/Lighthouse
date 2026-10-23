@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 draws,
                 BenchmarkPortfolio.Limits);
 
-            await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio);
+            await forecastService.UpdateForecastsForPortfolio(benchmark.Portfolio, DateOnly.MinValue);
 
             return benchmark.Features
                 .Select(feature => new BaselinePercentiles(

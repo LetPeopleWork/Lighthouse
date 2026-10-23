@@ -247,7 +247,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         protected async Task WhenTheForecastRuns(Portfolio portfolio)
         {
             var forecast = ServiceProvider.GetRequiredService<IForecastService>();
-            await forecast.UpdateForecastsForPortfolio(portfolio);
+            await forecast.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
         }
 
         // --- Then (the read every screen makes) ---

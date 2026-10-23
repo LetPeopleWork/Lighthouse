@@ -186,7 +186,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task<int> ForecastPortfolio(Portfolio portfolio, IServiceProvider serviceProvider)
         {
-            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, cancellationContext.Current);
+            var instanceDay = serviceProvider.GetRequiredService<ILighthouseClock>().Today;
+            await serviceProvider.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationContext.Current);
 
             var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(

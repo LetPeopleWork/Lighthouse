@@ -487,7 +487,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                 services.AddScoped(_ => licensed.Object);
 
                 services.RemoveAll<IForecastService>();
-                services.AddScoped(_ => Mock.Of<IForecastService>());
+                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
 
                 services.AddSingleton<ILogger<WorkItemService>>(serviceLog);
             }));

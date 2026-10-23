@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);
 
-            await AForecastService().UpdateForecastsForPortfolio(portfolio);
+            await AForecastService().UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             Assert.That(WhatWasLoggedAt(LogLevel.Debug).Where(reported => reported.Contains("reached the horizon", StringComparison.Ordinal)), Is.Empty,
                 "A forecast in which every run finished still reported runs reaching the horizon.");
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(features);
 
-            await AForecastService().UpdateForecastsForPortfolio(portfolio);
+            await AForecastService().UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             return (theSlowOne, theOrdinaryOne);
         }

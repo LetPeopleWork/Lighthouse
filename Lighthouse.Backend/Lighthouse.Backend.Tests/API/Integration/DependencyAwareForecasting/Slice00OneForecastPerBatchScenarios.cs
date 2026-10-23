@@ -449,8 +449,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         private void GivenTheForecastRunCompletesIn(int workingDays)
         {
             forecastServiceMock
-                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .Callback((Portfolio portfolio, CancellationToken _) =>
+                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .Callback((Portfolio portfolio, DateOnly _, CancellationToken _) =>
                 {
                     foreach (var feature in portfolio.Features)
                     {
@@ -459,7 +459,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                         feature.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true }]);
                     }
                 })
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(ForecastServiceDoubles.Computed);
         }
 
         /// <summary>
@@ -589,7 +589,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
         private void ThenThePortfolioWasForecastExactlyOnce(int portfolioId)
             => forecastServiceMock.Verify(
-                s => s.UpdateForecastsForPortfolio(It.Is<Portfolio>(p => p.Id == portfolioId), It.IsAny<CancellationToken>()),
+                s => s.UpdateForecastsForPortfolio(It.Is<Portfolio>(p => p.Id == portfolioId), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()),
                 Times.Once,
                 "The simulation is not seeded, so a second run for the same portfolio moves the delivery date the first one just showed.");
 

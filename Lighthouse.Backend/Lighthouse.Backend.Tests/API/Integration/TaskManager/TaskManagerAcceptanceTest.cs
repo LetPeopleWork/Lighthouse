@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .ReturnsAsync(new WriteBackResult());
 
-            ForecastServiceMock = new Mock<IForecastService>();
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock

@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 recording,
                 ForecastSimulationLimits.Default);
 
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             return recording.Recorded;
         }

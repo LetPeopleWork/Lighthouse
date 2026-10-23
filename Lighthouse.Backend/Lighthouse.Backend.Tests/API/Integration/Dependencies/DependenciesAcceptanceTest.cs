@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             // A Monte Carlo run over seeded throughput would make every scenario here time against a
             // simulation it says nothing about.
-            ForecastServiceMock = new Mock<IForecastService>();
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock

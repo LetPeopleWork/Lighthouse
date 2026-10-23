@@ -846,7 +846,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 services.AddScoped(_ => licensed.Object);
 
                 services.RemoveAll<IForecastService>();
-                services.AddScoped(_ => Mock.Of<IForecastService>());
+                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
 
                 services.RemoveAll<ILoggerFactory>();
                 services.AddSingleton<ILoggerFactory>(log);

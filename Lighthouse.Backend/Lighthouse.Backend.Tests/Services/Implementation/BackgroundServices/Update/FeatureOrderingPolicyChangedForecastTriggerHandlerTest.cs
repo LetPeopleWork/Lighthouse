@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             forecastUpdaterMock = new Mock<IForecastUpdater>();
-            forecastServiceMock = new Mock<IForecastService>();
+            forecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
             updateStatusStoreMock = new Mock<IUpdateStatusStore>();
 
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
@@ -49,6 +49,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(refreshLogServiceMock.Object);
             SetupServiceProviderMock(Mock.Of<IWriteBackTriggerService>());
             SetupServiceProviderMock(Mock.Of<IAppSettingService>());
+            SetupServiceProviderMock(Clocks.SystemUtc);
         }
 
         [Test]
@@ -108,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             await WhenTheOrderChangesTo(FeatureOrderingPolicy.ManualOrder, ARealForecastUpdater());
 
-            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(f => f.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         private void GivenThePortfolios(params int[] portfolioIds)

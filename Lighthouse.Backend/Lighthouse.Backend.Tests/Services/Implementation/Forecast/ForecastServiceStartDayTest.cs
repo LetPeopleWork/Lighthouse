@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 new DrawsTheSameNumberEveryTime(),
                 new ForecastSimulationLimits(Trials, ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
 
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
         }
 
         private ForecastRunPlan APlanOver(params Feature[] features)

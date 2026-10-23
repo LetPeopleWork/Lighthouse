@@ -672,8 +672,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         private sealed class ForecastWithScriptedChecks(IForecastService shipped, ForecastScript script) : IForecastService
         {
-            public Task UpdateForecastsForPortfolio(Portfolio portfolio, CancellationToken cancellationToken = default)
-                => shipped.UpdateForecastsForPortfolio(portfolio, cancellationToken);
+            public Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateOnly instanceDay, CancellationToken cancellationToken = default)
+                => shipped.UpdateForecastsForPortfolio(portfolio, instanceDay, cancellationToken);
 
             public HowManyForecast HowMany(RunChartData throughput, int days)
                 => script.ForecastFor(throughput, days) ?? shipped.HowMany(throughput, days);

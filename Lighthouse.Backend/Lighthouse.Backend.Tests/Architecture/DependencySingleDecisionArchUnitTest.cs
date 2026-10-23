@@ -653,7 +653,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 new Lighthouse.Backend.Tests.TestDoubles.DrawsFromAPinnedStartingNumber(TheSeedBothRunsShare),
                 Lighthouse.Backend.Models.Forecast.ForecastSimulationLimits.Default);
 
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             return features
                 .SelectMany(feature => ThePercentilesLighthouseShows.Select(feature.Forecast.GetProbability))

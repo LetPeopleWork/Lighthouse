@@ -434,7 +434,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             var portfolio = sp.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)
                 ?? throw new InvalidOperationException($"Portfolio {portfolioId} not found");
 
-            await sp.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio);
+            await sp.GetRequiredService<IForecastService>().UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
         }
 
         /// <summary>

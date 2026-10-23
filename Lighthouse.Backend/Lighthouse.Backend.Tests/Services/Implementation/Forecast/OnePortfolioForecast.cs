@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };
             portfolio.UpdateFeatures(all);
 
-            await TheSimulation(draws, limits, waits).UpdateForecastsForPortfolio(portfolio);
+            await TheSimulation(draws, limits, waits).UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             return all;
         }

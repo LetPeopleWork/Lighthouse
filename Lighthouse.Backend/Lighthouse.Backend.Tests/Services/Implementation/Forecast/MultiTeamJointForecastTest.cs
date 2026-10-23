@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var subject = CreateSubject(new DrawsAfreshEveryTime());
             var feature = SetupFeature(CreateTeam([1, 3]), CreateTeam([1, 3]));
 
-            await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature));
+            await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature), DateOnly.MinValue);
 
             using (Assert.EnterMultipleScope())
             {
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var subject = CreateSubject(new DrawsTheSameNumberEveryTime());
             var feature = SetupFeature((CreateTeam([1]), 6), (CreateTeam([1]), 3));
 
-            await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature));
+            await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature), DateOnly.MinValue);
 
             Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(6));
         }

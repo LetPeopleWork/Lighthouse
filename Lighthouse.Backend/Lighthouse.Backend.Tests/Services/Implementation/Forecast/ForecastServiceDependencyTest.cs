@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 new DrawsFromAPinnedStartingNumber(TheSeedEveryComparisonShares),
                 ForecastSimulationLimits.Default);
 
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
 
             return features.ToDictionary(
                 feature => feature.ReferenceId,

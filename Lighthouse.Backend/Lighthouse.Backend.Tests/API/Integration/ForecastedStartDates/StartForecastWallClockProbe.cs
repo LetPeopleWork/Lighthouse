@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
                 ForecastSimulationLimits.Default);
 
             var stopwatch = Stopwatch.StartNew();
-            await forecastService.UpdateForecastsForPortfolio(portfolio);
+            await forecastService.UpdateForecastsForPortfolio(portfolio, DateOnly.MinValue);
             stopwatch.Stop();
 
             return stopwatch.ElapsedMilliseconds;

@@ -69,9 +69,11 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// leaves before anything is saved, so the Features keep the forecast they already had rather than
         /// one built from part of the runs.
         /// </summary>
-        public async Task UpdateForecastsForPortfolio(Portfolio portfolio, CancellationToken cancellationToken = default)
+        public async Task<ForecastRunOutcome> UpdateForecastsForPortfolio(Portfolio portfolio, DateOnly instanceDay, CancellationToken cancellationToken = default)
         {
             await UpdateForecastsForTeams(portfolio.Teams, cancellationToken);
+
+            return new ForecastRunOutcome.Computed(portfolio.ForecastInputFingerprint, null);
         }
 
         private async Task UpdateForecastsForTeams(IEnumerable<Team> teams, CancellationToken cancellationToken)

@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
@@ -41,12 +42,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private const int PortfolioRefreshedElsewhereId = 99;
 
+        private static readonly DateOnly InstanceDay = new(2026, 3, 9);
+
         [SetUp]
         public void Setup()
         {
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
             appSettingServiceMock = new Mock<IAppSettingService>();
-            forecastServiceMock = new Mock<IForecastService>();
+            forecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
             domainEventDispatcherMock = new Mock<IDomainEventDispatcher>();
             domainEventDispatcherMock
@@ -68,6 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(writeBackTriggerServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
+            SetupServiceProviderMock<ILighthouseClock>(new FakeLighthouseClock(new DateTimeOffset(InstanceDay, new TimeOnly(10, 0), TimeSpan.Zero)));
         }
 
         [Test]
@@ -84,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             // Assert
             portfolioRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.AtLeastOnce);
             portfolioRepositoryMock.VerifyNoOtherCalls();
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()), Times.Never);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]
@@ -101,9 +105,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(project.Id);
 
             // Assert
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(project, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
         
+        [Test]
+        public void Update_ShouldForecastForTheInstanceDayTheClockReports()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, InstanceDay, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         [Test]
         public void Update_ShouldTriggerForecastWriteBackForPortfolio_WhenProjectIsFound()
         {
@@ -137,13 +153,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
 
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
-            forecastServiceMock.Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Test exception"));
+            forecastServiceMock.Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Test exception"));
 
             var subject = CreateSubject();
 
             // Act & Assert
             Assert.DoesNotThrow(() => subject.TriggerUpdate(portfolio.Id));
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -211,8 +227,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
-                .Setup(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()))
-                .Returns(Task.Delay(SlowForecastMilliseconds, CancellationToken.None));
+                .Setup(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .Returns(async () =>
+                {
+                    await Task.Delay(SlowForecastMilliseconds, CancellationToken.None);
+                    return ForecastServiceDoubles.Computed;
+                });
 
             var recorded = CaptureRefreshLog();
 
@@ -228,7 +248,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
-                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Test exception"));
 
             var recorded = CaptureRefreshLog();
@@ -277,7 +297,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
-                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new TaskCanceledException("A call inside the forecast timed out."));
 
             var recorded = CaptureRefreshLog();
@@ -323,7 +343,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()), Times.Never);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Test]
@@ -341,7 +361,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -355,7 +375,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // A team announces that it finished refreshing from inside its own update run, so at the moment the
@@ -374,7 +394,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -392,7 +412,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -411,8 +431,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(firstPortfolio.Id);
             subject.TriggerUpdate(secondPortfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(firstPortfolio, It.IsAny<CancellationToken>()), Times.Once);
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(secondPortfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(firstPortfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(secondPortfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -429,7 +449,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -449,11 +469,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject(inProcessUpdateStatusStore, updateQueue);
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Never);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
 
             firstTeamHasFinished.SetResult();
 
-            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once));
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once));
         }
 
         [Test]
@@ -471,7 +491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerImmediateUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -491,7 +511,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             subject.TriggerImmediateUpdate(portfolio.Id);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Once);
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Test]
@@ -515,11 +535,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             runningTeamHasFinished.SetResult();
 
-            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Exactly(2)));
+            await WaitUntilVerified(() => forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Exactly(2)));
 
             await updateQueue.DrainAsync(CancellationToken.None);
 
-            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<CancellationToken>()), Times.Exactly(2));
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         private void RecordUpdate(UpdateType updateType, int id, UpdateProgress progress)
@@ -535,7 +555,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             cancellationContext.Current = stopped;
 
             forecastServiceMock
-                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException(stopped));
         }
 

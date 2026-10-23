@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
             // Monte Carlo is non-deterministic and this slice asserts nothing about a forecast; faking it
             // keeps the portfolio refresh's duration and log shape reproducible.
-            ForecastServiceMock = new Mock<IForecastService>();
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock

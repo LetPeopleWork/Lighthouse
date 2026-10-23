@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             using (Assert.EnterMultipleScope())
             {
                 forecastUpdaterMock.Verify(x => x.TriggerUpdate(project.Id), Times.Once);
-                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()), Times.Never,
+                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never,
                     "Forecasting inside the feature refresh is invisible to the check that collapses a bulk refresh into one run, so the portfolio ends up forecast several times over.");
             }
         }

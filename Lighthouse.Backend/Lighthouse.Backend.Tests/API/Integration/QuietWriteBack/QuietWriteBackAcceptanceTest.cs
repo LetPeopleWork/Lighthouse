@@ -382,8 +382,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         protected void TheForecastRunProduces(int workingDaysToCompletion)
         {
             ForecastServiceMock
-                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .Callback((Portfolio portfolio, CancellationToken _) =>
+                .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .Callback((Portfolio portfolio, DateOnly _, CancellationToken _) =>
                 {
                     foreach (var feature in portfolio.Features)
                     {
@@ -392,7 +392,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                         feature.SetFeatureForecasts([new WhenForecast(simulation) { HasSufficientData = true }]);
                     }
                 })
-                .Returns(Task.CompletedTask);
+                .ReturnsAsync(ForecastServiceDoubles.Computed);
         }
 
         protected void TheTrackerRejects(Func<WriteBackFieldUpdate, bool> predicate, string errorMessage)
