@@ -223,6 +223,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         }
 
         /// <summary>
+        /// Loyalty is first forecast before Payments Platform's Features have loaded, so its forecast covers fewer
+        /// Features than FSS now works on. Another refresh of FSS forecasts it over the Features as they now stand,
+        /// which a quiet round needs before it can draw nothing anywhere.
+        /// </summary>
+        protected Task GivenLoyaltyWasForecastOverTheFeaturesFssNowWorksOnAt(DateTimeOffset at) => TheTeamRoundAt(at, FssId);
+
+        /// <summary>
         /// The work tracking system answers the cheap identity scan, as Jira Cloud and Azure DevOps do, so a
         /// refresh after the first downloads only what moved: the reporter's "mode=Delta | fetched=0" rounds.
         /// </summary>

@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         [TestCase(InputChange.AFeatureLeftThePortfolio)]
         [TestCase(InputChange.ATeamJoinedThePortfolio)]
         [TestCase(InputChange.ATeamLeftThePortfolio)]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("kpi-OUT-6354-no-stale-forecast")]
         [Category("error")]
@@ -69,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// downloaded" cannot be read as "nothing changed".
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("kpi-OUT-6354-no-stale-forecast")]
         [Category("error")]
@@ -95,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// change to Loyalty's Feature is a change to what Payments Platform's forecast reads.
         /// </summary>
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         [Category("kpi-OUT-6354-no-stale-forecast")]
         [Category("error")]
@@ -105,6 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             GivenPaymentsPlatformAsTheTrackerHoldsIt();
             await GivenLoyaltyWhichFssAlsoWorksOn();
             await GivenPaymentsPlatformWasForecastAt(TenOClock);
+            await GivenLoyaltyWasForecastOverTheFeaturesFssNowWorksOnAt(TenOClock + TimeSpan.FromMinutes(5));
             await GivenAQuietRoundSkippedTheForecastAt(TenFifteen);
 
             Tracker.NoLongerShowsTheTeam(Fss, "FSS-21");
