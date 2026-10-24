@@ -887,6 +887,16 @@ Recommended option first; the design proceeds on it unless the maintainer says o
   scope, not its look). (a) show the small `CircularProgress` under the picker while the preview is pending, in slice
   01 · (b) leave as today.
 
+### Maintainer decisions — 2026-10-24, end of DESIGN
+
+| ID | Decision | Answers |
+|---|---|---|
+| MD-16 | **OQ-4 / S4: no extra hint.** The Release-list failure reads "The list of {sourceName} entries could not be loaded. Close this dialog and open it again to retry." and nothing more: no connection hint. | OQ-4, option (b) |
+| MD-17 | **The rest as recommended:** OQ-1 S1 (a) busy tab; OQ-2 (a) notice with Try again, Save disabled; OQ-3 (a) the refresh sweep logs the same line with `SweepPurpose = Refresh`; OQ-5 S2 (a) caption "Getting the {sourceName}s…"; OQ-6 (a) accept the second sweep, F2 decides single-flight; OQ-7 (a) small spinner while the preview loads, in slice 01. | OQ-1..OQ-3, OQ-5..OQ-7 |
+
+S3 (the sources notice severity) and S5 (the two failure looks differ on purpose) stay open for the sketch walk-through at
+the start of DISTILL.
+
 ## Wave: DESIGN / [REF] Changed Assumptions
 
 - **CA-1 (AC-1.5, AC-2.5)**: "today's cache clear on close" is replaced by a fresh query key per opening (DDD-3). The
