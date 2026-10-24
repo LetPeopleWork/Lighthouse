@@ -4,6 +4,7 @@ using Lighthouse.Backend.Services.Implementation.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -180,6 +181,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                         && references.Contains(TheRelease)
                         && references.Contains(ASecondRelease))),
                 Times.Once);
+        }
+
+        [Test]
+        [Ignore("The resolver cannot be told the sweep's purpose yet")]
+        public async Task The_refresh_tells_the_resolver_its_sweep_is_for_a_refresh()
+        {
+            var portfolio = APortfolio();
+            GivenTheReleaseResolvesTo(TheRelease, ARelease(TheNameItHasNow, TheDateItHasNow));
+
+            await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([ADeliveryFollowing(ReleaseSourceKey, TheRelease)]));
+
+            resolverMock.VerifyThePurposeIn(resolver => resolver.ResolveForPortfolio(
+                portfolio, ReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Refresh));
         }
 
         [Test]

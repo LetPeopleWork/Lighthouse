@@ -14,6 +14,7 @@ using Lighthouse.Backend.Services.Interfaces.DeliverySources;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -392,6 +393,22 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(MessageIn(result), Is.EqualTo("'Release 3.0' carries no date, so there is no date to preview"),
                     "the Release is there and only its date is missing, so the sentence names the Release the reader has to go and date - a bare 400 sends them looking for a fault instead.");
             }
+        }
+
+        /// <summary>
+        /// Every pick in the picker sends a preview, and each preview sweeps the connection's Releases again, so the
+        /// operator reading the sweep lines has to be able to tell those sweeps from the picker's own list.
+        /// </summary>
+        [Test]
+        [Ignore("The resolver cannot be told the sweep's purpose yet")]
+        public async Task A_preview_tells_the_resolver_its_sweep_is_for_a_preview()
+        {
+            GivenTheResolverAnswers(new DeliverySourceResolution.NoDate("Release 3.0"), [], taggedItemCount: 0);
+
+            await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
+
+            deliverySourceResolverMock.VerifyThePurposeIn(r => r.ResolveForPortfolio(
+                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Preview));
         }
 
         [Test]

@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Security.Claims;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -1521,6 +1522,35 @@ namespace Lighthouse.Backend.Tests.API
             yield return new TestCaseData((Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>>)(
                     (controller, request) => controller.UpdateDelivery(TheDeliveryBeingEdited, request)))
                 .SetName("Pointing an existing Delivery at a source");
+        }
+
+        private static IEnumerable<TestCaseData> EveryWayADeliveryIsSavedFollowingASource()
+        {
+            yield return new TestCaseData((Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>>)(
+                    (controller, request) => controller.CreateDelivery(ThePortfolioItLivesIn, request)))
+                .SetName("Creating a Delivery that follows a source tells the resolver its sweep is for a save");
+            yield return new TestCaseData((Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>>)(
+                    (controller, request) => controller.UpdateDelivery(TheDeliveryBeingEdited, request)))
+                .SetName("Updating a Delivery that follows a source tells the resolver its sweep is for a save");
+        }
+
+        /// <summary>
+        /// Creating and updating a Delivery that follows a source read the source through one code path, so both name
+        /// their sweep the same way: the operator's question is "a save swept Jira", whichever of the two it was.
+        /// </summary>
+        [TestCaseSource(nameof(EveryWayADeliveryIsSavedFollowingASource))]
+        [Ignore("The resolver cannot be told the sweep's purpose yet")]
+        public async Task A_Delivery_saved_following_a_source_tells_the_resolver_its_sweep_is_for_a_save(
+            Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>> saveIt)
+        {
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            GivenTheDeliveryBeingEditedIs(ADeliveryChosenByHand());
+            GivenTheReleaseResolvesTo(AResolvedRelease(), AFeature(1));
+
+            await saveIt(CreateSubject(), ADeliveryFollowingTheRelease());
+
+            deliverySourceResolverMock.VerifyThePurposeIn(x => x.ResolveForPortfolio(
+                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Save));
         }
 
         /// <summary>
