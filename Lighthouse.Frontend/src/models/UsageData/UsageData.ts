@@ -168,6 +168,22 @@ export const UsageDataUpdates = {
 export type UsageDataUpdates =
 	(typeof UsageDataUpdates)[keyof typeof UsageDataUpdates];
 
+/**
+ * How many Features the page a tab opening came from holds, said as a band from this list. The count
+ * itself never travels: a band is coarse enough that it cannot tell one instance from another.
+ */
+export const UsageDataFeaturesHeld = {
+	UpTo20: "UpTo20",
+	From21To50: "From21To50",
+	From51To100: "From51To100",
+	From101To399: "From101To399",
+	From400: "From400",
+	Unknown: "Unknown",
+} as const;
+
+export type UsageDataFeaturesHeld =
+	(typeof UsageDataFeaturesHeld)[keyof typeof UsageDataFeaturesHeld];
+
 export const USAGE_DATA_DOCS_URL =
 	"https://docs.lighthouse.letpeople.work/settings/usagedata.html";
 

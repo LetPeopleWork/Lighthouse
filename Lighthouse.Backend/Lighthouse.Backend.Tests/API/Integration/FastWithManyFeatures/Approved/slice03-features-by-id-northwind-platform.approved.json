@@ -1,0 +1,481 @@
+[
+  {
+    "isUsingDefaultFeatureSize": false,
+    "size": 16,
+    "owningTeam": "",
+    "projects": [
+      {
+        "id": 2,
+        "name": "Northwind Platform"
+      }
+    ],
+    "lastUpdated": "2026-10-24T09:00:00Z",
+    "remainingWork": {
+      "1": 5,
+      "3": 5
+    },
+    "totalWork": {
+      "1": 8,
+      "3": 8
+    },
+    "forecasts": [
+      {
+        "probability": 50,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 70,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 85,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 95,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      }
+    ],
+    "startForecast": {
+      "source": "Observed",
+      "observedDate": "2026-10-14T09:00:00Z",
+      "percentiles": []
+    },
+    "teamForecasts": [
+      {
+        "teamId": 1,
+        "startPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-10-26T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ],
+        "completionPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ]
+      },
+      {
+        "teamId": 3,
+        "startPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-10-26T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ],
+        "completionPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ]
+      }
+    ],
+    "teamsWithoutForecast": [],
+    "position": 4,
+    "canMove": true,
+    "moveBlockReason": null,
+    "blockingPortfolios": [],
+    "dependsOn": [
+      {
+        "referenceId": "NP-1",
+        "name": "Payment provider switch",
+        "url": "https://tracker.northwind.example/browse/NP-1",
+        "source": "TrackerLink",
+        "notHonouredReason": "OutsideThisPortfolio",
+        "blockerPositionedBelow": false,
+        "isWithheld": false
+      }
+    ],
+    "name": "Checkout redesign",
+    "id": 4,
+    "referenceId": "NW-1",
+    "parentWorkItemReference": "ST-1",
+    "url": "https://tracker.northwind.example/browse/NW-1",
+    "type": "Epic",
+    "state": "In Progress",
+    "isBlocked": false,
+    "blockedSince": null,
+    "stateCategory": "Doing",
+    "cycleTime": 0,
+    "namedCycleTimes": [],
+    "workItemAge": 11,
+    "startedDate": "2026-10-14T09:00:00Z",
+    "closedDate": null,
+    "currentStateEnteredAt": null,
+    "approximate": false,
+    "estimate": null
+  },
+  {
+    "isUsingDefaultFeatureSize": false,
+    "size": 8,
+    "owningTeam": "",
+    "projects": [
+      {
+        "id": 2,
+        "name": "Northwind Platform"
+      }
+    ],
+    "lastUpdated": "2026-10-24T09:00:00Z",
+    "remainingWork": {
+      "2": 5
+    },
+    "totalWork": {
+      "2": 8
+    },
+    "forecasts": [
+      {
+        "probability": 50,
+        "expectedDate": "2026-11-13T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 70,
+        "expectedDate": "2026-11-13T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 85,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 95,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      }
+    ],
+    "startForecast": {
+      "source": "Observed",
+      "observedDate": "2026-10-14T09:00:00Z",
+      "percentiles": []
+    },
+    "teamForecasts": [
+      {
+        "teamId": 2,
+        "startPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-10-26T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ],
+        "completionPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ]
+      }
+    ],
+    "teamsWithoutForecast": [],
+    "position": 5,
+    "canMove": true,
+    "moveBlockReason": null,
+    "blockingPortfolios": [],
+    "dependsOn": [],
+    "name": "Search revamp",
+    "id": 5,
+    "referenceId": "NW-2",
+    "parentWorkItemReference": "",
+    "url": "https://tracker.northwind.example/browse/NW-2",
+    "type": "Epic",
+    "state": "In Progress",
+    "isBlocked": false,
+    "blockedSince": null,
+    "stateCategory": "Doing",
+    "cycleTime": 0,
+    "namedCycleTimes": [],
+    "workItemAge": 11,
+    "startedDate": "2026-10-14T09:00:00Z",
+    "closedDate": null,
+    "currentStateEnteredAt": null,
+    "approximate": false,
+    "estimate": null
+  },
+  {
+    "isUsingDefaultFeatureSize": false,
+    "size": 8,
+    "owningTeam": "",
+    "projects": [
+      {
+        "id": 2,
+        "name": "Northwind Platform"
+      }
+    ],
+    "lastUpdated": "0001-01-01T00:00:00Z",
+    "remainingWork": {
+      "1": 0
+    },
+    "totalWork": {
+      "1": 8
+    },
+    "forecasts": [
+      {
+        "probability": 50,
+        "expectedDate": "2026-10-24T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 70,
+        "expectedDate": "2026-10-24T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 85,
+        "expectedDate": "2026-10-24T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 95,
+        "expectedDate": "2026-10-24T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      }
+    ],
+    "startForecast": {
+      "source": "Observed",
+      "observedDate": "2026-09-24T09:00:00Z",
+      "percentiles": []
+    },
+    "teamForecasts": [
+      {
+        "teamId": 1,
+        "startPercentiles": [],
+        "completionPercentiles": []
+      }
+    ],
+    "teamsWithoutForecast": [],
+    "position": 6,
+    "canMove": true,
+    "moveBlockReason": null,
+    "blockingPortfolios": [],
+    "dependsOn": [],
+    "name": "Legacy cleanup",
+    "id": 6,
+    "referenceId": "NW-3",
+    "parentWorkItemReference": "",
+    "url": "https://tracker.northwind.example/browse/NW-3",
+    "type": "Epic",
+    "state": "Done",
+    "isBlocked": false,
+    "blockedSince": null,
+    "stateCategory": "Done",
+    "cycleTime": 29,
+    "namedCycleTimes": [],
+    "workItemAge": 0,
+    "startedDate": "2026-09-24T09:00:00Z",
+    "closedDate": "2026-10-22T09:00:00Z",
+    "currentStateEnteredAt": null,
+    "approximate": false,
+    "estimate": null
+  }
+]

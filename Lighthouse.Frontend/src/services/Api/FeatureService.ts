@@ -1,4 +1,5 @@
 import type { IFeature } from "../../models/Feature";
+import type { FeatureListOwner, IFeatureList } from "../../models/FeatureList";
 import type { FeatureMoveTarget } from "../../models/FeatureOrdering";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
@@ -10,6 +11,8 @@ export interface IFeatureService {
 	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]>;
 	/** Every gesture in D18 reduces to this one call (US-03, US-04). */
 	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void>;
+	/** Everything one Features tab shows, in one answer. */
+	getFeatureList(owner: FeatureListOwner): Promise<IFeatureList>;
 }
 
 export class FeatureService extends BaseApiService implements IFeatureService {
@@ -57,6 +60,11 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 
 			return BaseApiService.deserializeFeatures(response.data);
 		});
+	}
+
+	// SCAFFOLD: replaced in DELIVER by the read of the owner's feature-list endpoint.
+	getFeatureList(_owner: FeatureListOwner): Promise<IFeatureList> {
+		return Promise.reject(new Error("Not yet implemented: getFeatureList"));
 	}
 
 	// Every gesture reduces to this one call; they differ only in which row is named as the target (D18).

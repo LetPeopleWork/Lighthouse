@@ -1,6 +1,7 @@
 import { parseBlockedStalenessThreshold } from "../../models/Common/BaseSettings";
 import type { IPortfolio, Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IPortfolioSettings } from "../../models/Portfolio/PortfolioSettings";
+import type { IPortfolioSize } from "../../models/Portfolio/PortfolioSize";
 import { ApiError } from "./ApiError";
 import { BaseApiService } from "./BaseApiService";
 
@@ -21,6 +22,8 @@ export interface IPortfolioService {
 	validatePortfolioSettings(
 		portfolioSettings: IPortfolioSettings,
 	): Promise<boolean>;
+	/** How many Features the Portfolio held after its last update. */
+	getSize(id: number): Promise<IPortfolioSize>;
 }
 
 export class PortfolioService
@@ -51,6 +54,11 @@ export class PortfolioService
 
 			throw error;
 		}
+	}
+
+	// SCAFFOLD: replaced in DELIVER by the read of the Portfolio's size endpoint.
+	getSize(_id: number): Promise<IPortfolioSize> {
+		return Promise.reject(new Error("Not yet implemented: getSize"));
 	}
 
 	deletePortfolio(id: number): Promise<void> {

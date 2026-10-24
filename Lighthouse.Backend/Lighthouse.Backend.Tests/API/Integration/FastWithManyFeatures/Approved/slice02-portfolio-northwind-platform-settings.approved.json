@@ -1,0 +1,81 @@
+{
+  "overrideRealChildCountStates": [],
+  "usePercentileToCalculateDefaultAmountOfWorkItems": false,
+  "defaultWorkItemPercentile": 85,
+  "percentileHistoryInDays": 90,
+  "defaultAmountOfWorkItemsPerFeature": 25,
+  "sizeEstimateAdditionalFieldDefinitionId": null,
+  "sizeEstimateSource": "ConnectionDefault",
+  "sizeEstimateDefaultName": null,
+  "doneItemsCutoffDays": 365,
+  "involvedTeams": [
+    {
+      "id": 1,
+      "name": "Atlas"
+    },
+    {
+      "id": 3,
+      "name": "Cobalt"
+    },
+    {
+      "id": 2,
+      "name": "Borealis"
+    }
+  ],
+  "owningTeam": null,
+  "featureOwnerAdditionalFieldDefinitionId": null,
+  "featureOwnerSource": "ConnectionDefault",
+  "featureOwnerDefaultName": null,
+  "dependencyOverrideAdditionalFieldDefinitionId": null,
+  "dependencyFieldSource": "ConnectionDefault",
+  "dependencyFieldDefaultName": null,
+  "ignoreDependencies": false,
+  "id": 2,
+  "name": "Northwind Platform",
+  "dataRetrievalValue": "project = NORTHWIND AND type = Epic",
+  "workItemTypes": [
+    "Epic"
+  ],
+  "toDoStates": [
+    "New"
+  ],
+  "doingStates": [
+    "In Progress"
+  ],
+  "doneStates": [
+    "Done"
+  ],
+  "blockedRuleSetJson": "{\"version\":1,\"mode\":\"or\",\"conditions\":[]}",
+  "waitStates": [],
+  "serviceLevelExpectationProbability": 0,
+  "serviceLevelExpectationRange": 0,
+  "workTrackingSystemConnectionId": 1,
+  "systemWIPLimit": 0,
+  "parentOverrideAdditionalFieldDefinitionId": null,
+  "parentOverrideSource": "ConnectionDefault",
+  "parentOverrideDefaultName": null,
+  "workTrackingSystem": "Jira",
+  "processBehaviourChartBaselineStartDate": null,
+  "processBehaviourChartBaselineEndDate": null,
+  "estimationAdditionalFieldDefinitionId": null,
+  "estimationUnit": null,
+  "useNonNumericEstimation": false,
+  "estimationCategoryValues": [],
+  "estimationSource": "ConnectionDefault",
+  "estimationDefaultName": null,
+  "stateMappings": [],
+  "cycleTimeDefinitions": [],
+  "concurrencyToken": "<differs on every run>",
+  "stalenessThresholdDays": 0,
+  "blockedStalenessThresholdDays": 0,
+  "dataRetrievalSchema": {
+    "key": "jira.jql",
+    "displayLabel": "JQL Query",
+    "inputKind": "freetext",
+    "isRequired": true,
+    "isWorkItemTypesRequired": true,
+    "wizardHint": "jira-portfolio-wizard",
+    "placeholder": null,
+    "helpText": null
+  }
+}

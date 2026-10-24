@@ -1,0 +1,156 @@
+[
+  {
+    "isUsingDefaultFeatureSize": false,
+    "size": 8,
+    "owningTeam": "",
+    "projects": [
+      {
+        "id": 1,
+        "name": "Northwind Strategy"
+      }
+    ],
+    "lastUpdated": "2026-10-24T09:00:00Z",
+    "remainingWork": {
+      "1": 5
+    },
+    "totalWork": {
+      "1": 8
+    },
+    "forecasts": [
+      {
+        "probability": 50,
+        "expectedDate": "2026-11-13T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 70,
+        "expectedDate": "2026-11-13T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 85,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      },
+      {
+        "probability": 95,
+        "expectedDate": "2026-11-23T00:00:00Z",
+        "beyondHorizon": false,
+        "horizonYears": 5,
+        "filterApplied": false,
+        "excludedSummary": null
+      }
+    ],
+    "startForecast": {
+      "source": "Observed",
+      "observedDate": "2026-10-14T09:00:00Z",
+      "percentiles": []
+    },
+    "teamForecasts": [
+      {
+        "teamId": 1,
+        "startPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-10-26T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-10-30T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ],
+        "completionPercentiles": [
+          {
+            "probability": 50,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 70,
+            "expectedDate": "2026-11-13T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 85,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          },
+          {
+            "probability": 95,
+            "expectedDate": "2026-11-23T00:00:00Z",
+            "beyondHorizon": false,
+            "horizonYears": 5,
+            "filterApplied": false,
+            "excludedSummary": null
+          }
+        ]
+      }
+    ],
+    "teamsWithoutForecast": [],
+    "position": 1,
+    "canMove": true,
+    "moveBlockReason": null,
+    "blockingPortfolios": [],
+    "dependsOn": [],
+    "name": "Platform 2027",
+    "id": 1,
+    "referenceId": "ST-1",
+    "parentWorkItemReference": "",
+    "url": "https://tracker.northwind.example/browse/ST-1",
+    "type": "Epic",
+    "state": "In Progress",
+    "isBlocked": false,
+    "blockedSince": null,
+    "stateCategory": "Doing",
+    "cycleTime": 0,
+    "namedCycleTimes": [],
+    "workItemAge": 11,
+    "startedDate": "2026-10-14T09:00:00Z",
+    "closedDate": null,
+    "currentStateEnteredAt": null,
+    "approximate": false,
+    "estimate": null
+  }
+]

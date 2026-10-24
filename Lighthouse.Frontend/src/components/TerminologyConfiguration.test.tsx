@@ -48,6 +48,7 @@ const mockPortfolioService = {
 	refreshForecastsForPortfolio: vi.fn(),
 	refreshFeaturesForAllPortfolios: vi.fn(),
 	refreshFeaturesForPortfolio: vi.fn(),
+	getSize: vi.fn(),
 };
 
 // Mock the API service context

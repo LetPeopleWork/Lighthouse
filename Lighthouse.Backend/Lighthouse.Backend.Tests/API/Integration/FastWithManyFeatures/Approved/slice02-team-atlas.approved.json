@@ -1,0 +1,42 @@
+{
+  "featureWip": 0,
+  "features": [
+    {
+      "id": 1,
+      "name": "Platform 2027"
+    },
+    {
+      "id": 4,
+      "name": "Checkout redesign"
+    },
+    {
+      "id": 6,
+      "name": "Legacy cleanup"
+    }
+  ],
+  "portfolios": [
+    {
+      "id": 1,
+      "name": "Northwind Strategy"
+    },
+    {
+      "id": 2,
+      "name": "Northwind Platform"
+    }
+  ],
+  "workItemTypes": [
+    "Story"
+  ],
+  "useFixedDatesForThroughput": false,
+  "throughputStartDate": "2026-09-25T00:00:00Z",
+  "throughputEndDate": "2026-10-24T00:00:00Z",
+  "hasThroughputBlackoutOverlap": false,
+  "hasForecastFilter": false,
+  "refinementConfigured": false,
+  "name": "Atlas",
+  "id": 1,
+  "lastUpdated": "2026-10-24T09:00:00Z",
+  "serviceLevelExpectationProbability": 0,
+  "serviceLevelExpectationRange": 0,
+  "systemWIPLimit": 0
+}

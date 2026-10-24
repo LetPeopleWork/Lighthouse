@@ -1,0 +1,38 @@
+{
+  "features": [
+    {
+      "id": 4,
+      "name": "Checkout redesign"
+    },
+    {
+      "id": 5,
+      "name": "Search revamp"
+    },
+    {
+      "id": 6,
+      "name": "Legacy cleanup"
+    }
+  ],
+  "involvedTeams": [
+    {
+      "id": 1,
+      "name": "Atlas"
+    },
+    {
+      "id": 3,
+      "name": "Cobalt"
+    },
+    {
+      "id": 2,
+      "name": "Borealis"
+    }
+  ],
+  "featureSizeTargetProbability": 0,
+  "featureSizeTargetRange": 0,
+  "name": "Northwind Platform",
+  "id": 2,
+  "lastUpdated": "2026-10-24T09:00:00Z",
+  "serviceLevelExpectationProbability": 0,
+  "serviceLevelExpectationRange": 0,
+  "systemWIPLimit": 0
+}

@@ -2,7 +2,11 @@ import { useContext, useEffect, useState } from "react";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 
+/** Whether the licence and the counts the create gates read have arrived. */
+export type LicenseCheckStatus = "loading" | "ready" | "failed";
+
 interface LicenseRestrictions {
+	status?: LicenseCheckStatus;
 	canCreateTeam: boolean;
 	canUpdateTeamData: boolean;
 	canCreatePortfolio: boolean;

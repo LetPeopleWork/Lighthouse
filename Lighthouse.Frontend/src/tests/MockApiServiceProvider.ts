@@ -203,6 +203,7 @@ export const createMockPortfolioService = (): IPortfolioService => {
 		refreshForecastsForPortfolio: vi.fn(),
 		refreshFeaturesForAllPortfolios: vi.fn(),
 		validatePortfolioSettings: vi.fn(),
+		getSize: vi.fn(),
 	};
 };
 
@@ -234,6 +235,7 @@ export const createMockFeatureService = (): IFeatureService => {
 		getFeaturesByIds: vi.fn(),
 		getFeatureWorkItems: vi.fn(),
 		moveFeature: vi.fn().mockResolvedValue(undefined),
+		getFeatureList: vi.fn(),
 	};
 };
 

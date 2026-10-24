@@ -40,6 +40,7 @@ const mockPortfolioService = {
 	refreshForecastsForPortfolio: vi.fn(),
 	refreshFeaturesForAllPortfolios: vi.fn(),
 	refreshFeaturesForPortfolio: vi.fn(),
+	getSize: vi.fn(),
 };
 
 const mockApiServiceContext = createMockApiServiceContext({
