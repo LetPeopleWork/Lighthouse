@@ -10,6 +10,10 @@ first records the baseline every slice of this Epic is judged against.
 ## Part A — Task 01a, precursor (`@infrastructure`, lands first, not released alone)
 
 IN:
+- **Step 01a-1, first commit (DELIVER)**: bring `Lighthouse.EndToEndTests/perf/` into the E2E `tsconfig.json`
+  `include` (with `playwright.perf.config.ts`) and the Biome path in `prebuild`, add `/perf/out/` to
+  `Lighthouse.EndToEndTests/.gitignore` (the one place the harness writes), and add the `perf` script; `pnpm build` in
+  `Lighthouse.EndToEndTests/` clean. Nothing of it runs in CI.
 - A dev-only generator for the scaled set (D29): 100 / 400 / 920 Features per Portfolio, 8 Teams, ~3,000 Features in
   the instance, child Work Items, dependency links, forecasts run. Written through the CSV connector path the demo
   data uses. Not reachable in a release build.
@@ -19,6 +23,8 @@ IN:
   during a computed and a skipped round; `main` and the v26.10.19.10 tag.
 - Calibration by ratio: a computed round lasts minutes and is several times the idle list time, else fix the set.
 - The baseline table and the D27 re-score (G2, Dissent A/B, order of 02, 03, 05) written into `feature-delta.md`.
+- **Hold point (maintainer decision 16, 2026-10-24)**: if the readings classify the stalls as GC pauses or CPU-quota
+  throttling (DESIGN DDD-3), DELIVER stops after Part A and brings the readings to the maintainer before Part B starts.
 
 OUT: shipping the generator, a demo scenario, CI budgets (maintainer).
 
@@ -28,7 +34,9 @@ IN:
 - The forecast round (gather, simulate, save) runs off the request thread pool, with bounded parallelism; where and
   how is DESIGN's (DV-10).
 - Epic 6311's half-the-cores bound, Stop and Cancel all keep working.
-- The closed size bucket on `PortfolioTabOpened` / `TeamTabOpened` (D24), listed in `docs/settings/usagedata.md`.
+- The closed size bucket on `PortfolioTabOpened` / `TeamTabOpened` (D24; bands `UpTo20`, `From21To50`,
+  `From51To100`, `From101To399`, `From400`, `Unknown` per maintainer decision 2), listed in
+  `docs/settings/usagedata.md`.
 
 OUT: async conversion of request paths (Dissent B); any change to what a round computes (C12); any screen change.
 

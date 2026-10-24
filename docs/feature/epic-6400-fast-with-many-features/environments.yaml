@@ -41,7 +41,8 @@ target_environments:
   - name: cores-1
     description: >
       One core (or DOTNET_PROCESSOR_COUNT=1). MostRunsAtOnce = max(1, 1/2) = 1: one lane thread, the simulation runs
-      on it alone. The banner says "1 dedicated thread; up to 1 of 1 cores". Pages and the round share the one core,
+      on it alone. The banner says "Forecast rounds run on 1 dedicated thread; each forecast uses up to 1 of 1 cores"
+      (singular for one thread). Pages and the round share the one core,
       so K3 is not claimed here; correctness is (probe on 1 lane thread).
     platform: [linux, docker]
     preconditions: []
@@ -98,7 +99,10 @@ target_environments:
       round, during a skipped round; SQLite and PostgreSQL (examples/postgres); main and the v26.10.19.10 tag;
       cores-4. Log levels raised by command-line arguments only (Serilog overrides for
       Microsoft.AspNetCore.Hosting.Diagnostics and Microsoft.EntityFrameworkCore.Database.Command at Information, the
-      ForecastUpdater category at Debug). Outputs to the gitignored perf/out/.
+      ForecastUpdater category at Debug). Every output (generated CSV, counters, traces, result tables) goes to one
+      path, Lighthouse.EndToEndTests/perf/out/, and nowhere else. That path is not ignored today: DELIVER step 01a-1
+      (slice 01, first commit of Task 01a) adds /perf/out/ to Lighthouse.EndToEndTests/.gitignore, together with the
+      perf/ tsconfig include and Biome path, before the harness first runs.
     platform: [linux, docker]
     preconditions:
       - "Premium licence fixture tests/fixtures/valid_premium_license.json copied from the main checkout (gitignored)"
@@ -120,7 +124,7 @@ coexistence_matrix:
     note: "Every existing body unchanged (D20); new routes additive; clients send no tab-opened events; no release"
   - tool: Web bundle open across the upgrade
     must_not_break: true
-    note: "Its tab-opened events arrive without featuresHeld and are accepted (maintainer question 1, default)"
+    note: "Its tab-opened events arrive without featuresHeld and are accepted (maintainer decision 1, 2026-10-24)"
   - tool: Update queue (Stop, Cancel all), Story 6354 skip and forget, forecast write-back
     must_not_break: true
     note: "Probe and host-stop tests, G1 goldens, DDD-17/18 write-back tests on both providers"

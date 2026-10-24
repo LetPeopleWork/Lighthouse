@@ -65,7 +65,8 @@ journeys:
         failure_modes:
           - The list request fails (server restarting, network).
           - The Portfolio is new and holds no Features.
-          - Hide completed hides every row.
+          - Hide Completed Features hides every row.
+          - A refresh after an update fails; the list takes the could-not-load look, never the old rows.
           - An update completes while the list is read; an older answer must never replace a newer one.
 
     error_paths:
@@ -134,14 +135,17 @@ journeys:
     steps:
       - step: Open the Portfolio's edit page
         action: Northwind Platform → Edit
-        output: Above the query, "This Portfolio holds 920 Features. Above 100, its pages and forecasts get
-          slower. If you don't plan with all of them, narrow the query." Save works as before.
+        output: Above the query, "This Portfolio holds 920 Features (as of its last update). Above 100, its
+          pages and forecasts get slower. If you don't plan with all of them, narrow the query." Save works
+          as before.
         slices: [06]
         failure_modes:
-          - Count unknown (never updated, or could not be read) - no note at all.
+          - Never updated, or the count is still loading - no note.
+          - The count could not be loaded - "Couldn't check this Portfolio's size." in the same info note.
       - step: Read the log
         action: Settings → System Info → Logs after an update
-        output: One line per update naming the count and the threshold.
+        output: One Warning line per update naming the count and the threshold; it also lands in Recent
+          Problems.
         slices: [06]
 
     error_paths:

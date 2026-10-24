@@ -9,9 +9,11 @@ verdict unchanged.
 ## IN scope
 
 - Dependency verdicts for `features/ids` and `features/references` built from a light projection of the **whole**
-  graph (ids, references, Portfolios), not the full Feature table with histograms (C2; maintainer, Q8).
+  graph (ids, references, Portfolios), not the full Feature table with histograms (C2; maintainer, DIVERGE Q8).
 - "In progress" answered from one query per Team, for the list and for a Team update's WIP step.
-- Response bodies unchanged (D20); RBAC readability unchanged (C1).
+- Response bodies unchanged (D20); RBAC readability unchanged (C1). One exception (maintainer decision 13,
+  2026-10-24): where two stored Features share one reference id, which today answers with a server error, the first in
+  forecast order answers, counted once, with one warning per refresh naming the id.
 
 ## OUT of scope
 

@@ -68,6 +68,12 @@ catalogue shows names and counts; the dependency decision reads `CanBeForecast`,
 - An entity loaded through these readers carries no forecast histograms (or none at all). Reading a percentile from
   it would silently answer "no answer". Mitigated by the names, by no-tracking (it can never be saved), and by the
   golden tests below; removed for good by Epic 6264 S13.
+- The readers sit on the existing write-capable ports (`IPortfolioRepository`, `IFeatureRepository`), and the existing
+  controllers and services that gain them keep holding those ports. That nothing they read can be written back rests
+  on a convention, no tracking, rather than on the type. Accepted: the house does have narrow reader interfaces
+  (`IReportReader`, `ISecretCustodyReader`), and the new read-only components of ADR-260 use one, but re-typing the
+  existing callers now would redraw constructors that Epic 6264's port Stories (S05c–e) are about to split anyway.
+  The no-tracking contract is asserted by tests, not left to review.
 
 ## Enforcement
 

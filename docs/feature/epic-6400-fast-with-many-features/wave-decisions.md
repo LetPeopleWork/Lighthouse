@@ -113,7 +113,9 @@ open questions, and one orchestrator decision.
 7. Journey: seed `epic-6400-fast-with-many-features.yaml` and link the 6311 journey's error path.
 8. Usage data, for DEVOPS: extend the existing "A Portfolio tab was opened" and "A Team tab was opened" events with
    a **closed size-bucket enum** of the Features count, for example `Under100` / `100To399` / `400Plus`; DEVOPS fixes
-   the buckets. Never the raw count, never which Portfolio or Team.
+   the buckets. Never the raw count, never which Portfolio or Team. *Band names superseded by maintainer decision 2
+   (2026-10-24, `feature-delta.md` DISTILL decisions)*: `UpTo20`, `From21To50`, `From51To100`, `From101To399`,
+   `From400`, `Unknown`.
 
 ### Still for DISCUSS
 
@@ -157,7 +159,12 @@ brief's `## Application Architecture — epic-6400-…` section.
   `StartNew(…, lane.Scheduler).Unwrap()`, no `ConfigureAwait(false)` in round code, the queue loop and driver
   continuations stay on the pool, the lane is disposed after the hosted services stop. Task 01a's harness lives in
   `Lighthouse.EndToEndTests/perf/`, builds the scaled set over the REST API, and adds controls C and C0 with fixed
-  thresholds that classify the stalls as pool, GC or CPU; the D27 order follows the branch.
+  thresholds that classify the stalls as pool, GC or CPU; the D27 order follows the branch. *GC or CPU branch
+  superseded by maintainer decision 16 (2026-10-24)*: DELIVER holds after 01a and brings the readings to the maintainer
+  before the lane is built. Revision 2 at the final review gate also names every create entry point of the licence
+  gate (decision 15), gives the slice-04 read-only components a narrow reader interface after the house's
+  `IReportReader` pattern, fixes one creation point for the lane (built at registration, read by the banner), and makes
+  the size line a Warning (decision 10).
 - Slices 02, 03, 05: readers that leave histograms out (ADR-258, ADR-261); licence gates share queries and refuse only
   the create actions while unknown, edits as today (ADR-259); the forecast write-back resolves against a fresh,
   no-tracking full read of the Portfolio's Features after the save, only with a write-back mapping (ADR-261).
@@ -185,8 +192,9 @@ mutation per-feature. Artifacts: `feature-delta.md` (Wave: DEVOPS sections), `en
 `docs/product/kpi-contracts.yaml` (`OUT-6400-*`).
 
 - **[DO-1] Usage data**: no new event; `featuresHeld` (`features_held`) on `TeamTabOpened` and `PortfolioTabOpened`,
-  closed enum `UpTo100 = 0`, `From101To399 = 1`, `From400 = 2`, `Unknown = 3`. Boundaries follow the nudge (> 100) and
-  the 100 / 400 / 920 points. Computed in the browser from the owner payload, sent at the existing 5 s dwell, `Unknown`
+  closed enum `UpTo20 = 0`, `From21To50 = 1`, `From51To100 = 2`, `From101To399 = 3`, `From400 = 4`, `Unknown = 5`
+  (maintainer, 2026-10-24: finer bands below the nudge). Boundaries follow the nudge (> 100) and the 100 / 400 / 920
+  points. Computed in the browser from the owner payload, sent at the existing 5 s dwell, `Unknown`
   only when the owner never arrived while the page was open. Server: refused on every other event, accepted absent on
   the two tab events (older bundles). Justified by K5 and the population claim, which the name alone cannot count.
 - **[DO-2] KPI instruments**: K1/K2 Playwright marks and server split in the dev-only harness; K3 harness log scan +
@@ -202,4 +210,12 @@ mutation per-feature. Artifacts: `feature-delta.md` (Wave: DEVOPS sections), `en
 - **[DO-6] Deployment**: calver release, no flag, no knob (the lane follows `MostRunsAtOnce`), no migration unless
   DDD-20's index; rollback = previous release; the banner's lane line is what operators see.
 - **Flags against DESIGN**: F1–F8 (feature-delta). **Maintainer questions**: (1) accept the band absent from older
-  bundles (default yes); (2) the three bands, no `From1000` (default as written).
+  bundles (default yes); (2) the three bands, no `From1000` (default as written). **Both answered 2026-10-24**:
+  maintainer decision 1 (accept absent on the two tab events only) and decision 2 (six bands, finer below the nudge,
+  no band above 400).
+- **Final review gate (2026-10-24)**: K3's production windows read from the real round summary line
+  (`UpdateServiceBase` / `UpdateQueueService` "Update completed … forecast="), and zero matched windows make the
+  reading void; the over-100 Warning landing in Recent Problems is recorded as accepted (decision 14); per-class
+  CI-time estimates with pre-allowlist calls; the Vitest heavy-render timeout rule pre-applied; one harness output
+  path, `Lighthouse.EndToEndTests/perf/out/`, gitignored in DELIVER step 01a-1, which also brings `perf/` into the
+  E2E type-check and Biome.

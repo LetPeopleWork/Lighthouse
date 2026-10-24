@@ -604,8 +604,8 @@ No DISCUSS decision contradicts DISCOVER evidence. Two DIVERGE wordings change (
 |---|---|---|---|
 | S1 | Header links render without waiting (W1) | `components/App/Header/Header.tsx` | K1's navigation half may already hold; slice 01a measures it before anything is credited. |
 | S2 | `GET /portfolios`, `GET /teams` read every Portfolio with every Feature and its histograms (W2); their bodies are read by the clients | `PortfoliosController.cs`, `TeamsController.cs`, `PortfolioRepository.cs` | Slice 02 reads less behind **unchanged** bodies (C6). |
-| S3 | 23 `useLicenseRestrictions()` mounts each fetch `/license`, `/teams`, `/portfolios` to count (W3) | `hooks/useLicenseRestrictions.ts` | Slice 02 asks once per page; the count keeps today's meaning. |
-| S4 | `PortfolioRepository.GetById` loads every Portfolio and filters in memory (W3b) | `PortfolioRepository.cs:60-66` | Slice 02 (detail pages), slice 05 (forecast gather). |
+| S3 | 22 `useLicenseRestrictions()` call sites (outside tests) each fetch `/license`, `/teams`, `/portfolios` to count (W3) | `hooks/useLicenseRestrictions.ts` | Slice 02 asks once per page; the count keeps today's meaning. |
+| S4 | `PortfolioRepository.GetById` loads every Portfolio and filters in memory (W3b) | `PortfolioRepository.cs:74-80` | Slice 02 (detail pages), slice 05 (forecast gather). |
 | S5 | Features list: `features/ids`, `features/references`, T × `featuresInProgress`; dependency verdicts and in-progress read the whole Feature table with histograms (W4–W6b) | `FeaturesController.cs`, `TeamMetricsService.cs`, `FeatureRepository.cs` | Slice 03 (same responses), slice 04 (lean endpoint). |
 | S6 | Features list shows loading placeholders forever on failure or when empty (W7); hide-completed and paging (100 rows) are client-side | `PortfolioFeatureList.tsx`, `TeamFeatureList.tsx`, `FeatureListDataGrid.tsx` | Slice 04 adds failure and empty looks. |
 | S7 | Forecast round: `Parallel.For` at half the cores inside `Task.Run`; synchronous gather and save on pool threads; Story 6354's skip decides after the gather (W8, W8b) | `ForecastService.cs`, `UpdateQueueService.cs`, `ForecastUpdater.cs` | Slice 01 moves the round off the request pool; slice 05 lightens the gather. |
@@ -670,16 +670,21 @@ maintainer".
   update the rows stay, dimmed under a small spinner, and a late answer for an older request never lands; failure:
   "The {Features} couldn't be loaded." with Retry; empty: "This {Portfolio} has no {Features} yet." (or {Team}); all
   hidden by hide-completed: "All {N} {Features} are completed. Turn off Hide completed to see them." Copy is a
-  default; DISTILL's sketch settles it.
+  default; DISTILL's sketch settles it. *Superseded by maintainer decisions 3–7 (2026-10-24)*: a refresh that fails
+  after rows were shown takes the could-not-load look (3); the all-hidden copy names the real toggle label, "Turn off
+  Hide Completed {Features} to see them." (6).
 - [D23] **The nudge** (slice 06): shown when a Portfolio holds **more than 100** Features (101 and up), counted from
   what its last update stored. Two places: one log line at the end of each such Portfolio update, and a non-blocking
   note on the Portfolio's **edit page**, above the query, for whoever can edit it. It never blocks Save or an update.
   Portfolio only; no Team nudge. Copy default: "This {Portfolio} holds {N} {Features}. Above 100, its pages and
   forecasts get slower. If you don't plan with all of them, narrow the query." The threshold is one constant shared
-  by the note and the log line.
+  by the note and the log line. *Superseded by maintainer decisions 8–10 (2026-10-24)*: the note reads "(as of its
+  last update)" as in DESIGN DDD-19 (8); a count that could not be loaded shows "Couldn't check this {Portfolio}'s
+  size." (9); the log line is at Warning (10).
 - [D24] **Usage data**: a closed size-bucket property on the existing `PortfolioTabOpened` and `TeamTabOpened` events
   (DEVOPS fixes the buckets, e.g. `Under100` / `100To399` / `400Plus`; never a raw count, never which Portfolio or
-  Team). Emitted in **slice 01**, the slice that first makes the Epic usable, and listed in
+  Team). *Band names superseded by maintainer decision 2 (2026-10-24)*: `UpTo20`, `From21To50`, `From51To100`,
+  `From101To399`, `From400`, `Unknown`. Emitted in **slice 01**, the slice that first makes the Epic usable, and listed in
   `docs/settings/usagedata.md` there.
 - [D25] **Production-data checks, since timings come only from synthetic data.** Every slice: the dev DB backup (S13,
   real history) gives identical screens, dependency verdicts, positions and forecast outputs before and after.
@@ -695,10 +700,14 @@ maintainer".
   no new `GetAllByPredicate` outside the adapters; no new controller dependency on a repository; S05a entries only
   shrink; S13's Feature → Forecast navigation stays.
 - [D29] **Fictional names** for personas and for the scaled data set (*Northwind Platform* 920, *Northwind Payments*
-  400, *Northwind Mobile* 100, Teams *Atlas*, *Borealis*, *Cobalt*, *Delta Ops*, *Ember*, *Fjord*, *Granite*,
+  400, *Northwind Mobile* 100, plus *Northwind Labs*, created and never updated, for the empty case; Teams *Atlas*, *Borealis*, *Cobalt*, *Delta Ops*, *Ember*, *Fjord*, *Granite*,
   *Harbour*).
 - [D30] **Licence counts keep today's meaning.** Whatever slice 02 shares, a gated action is allowed or refused
   exactly as today, with RBAC on and off. A count that failed to load never reads as "under the limit".
+  **"Gated action"** here and in AC-2.5 means a **create entry point** (maintainer decision 15, 2026-10-24): the
+  Overview's "+ Add Team" / "+ Add Portfolio", Save on a new Team's edit page, and the onboarding stepper's Add Team /
+  Add Portfolio. Edits and updates of existing Teams and Portfolios are not gated actions in this sense and keep
+  today's behaviour (DESIGN Q-M1).
 - [D31] **Scope: one Epic, by decision.** Two oversize signals fire (four modules touched; outcomes that could ship
   apart); see Scope Assessment.
 
@@ -806,6 +815,11 @@ D20) · expand-only schema (C7) · copy in the configured terms, seeded defaults
 instance, 4 cores, SQLite and PostgreSQL, median of 5 after one warm-up, idle and during a round (DISCOVER
 Measurement plan).
 
+**Harness gate** (every AC marked *harness gate* below): the AC passes or fails on the harness reading recorded in
+this delta, never in CI (D26). The baseline it is compared with is filled in by Task 01a; DELIVER records it in
+slice 01a (`Wave: DELIVER / [REF] Baseline (Task 01a)`), and records each slice's after-reading at the end of that
+slice.
+
 ### US-01 — Pages keep answering while Lighthouse forecasts (slice 01)
 
 `job_id: job-operator-keep-lighthouse-usable-while-it-forecasts` · persona `platform-operator` (Jonas Weber);
@@ -813,7 +827,7 @@ Measurement plan).
 
 **Problem**: Jonas runs Lighthouse on a 4-core VM with hourly Team and Portfolio updates. Each update starts a forecast
 round of 4–8 minutes over every Feature of the 8 Teams involved. On v26.10.19.10, which already caps the simulation at
-half the cores, the log shows nine Kestrel heartbeat warnings of 1.4–49.3 s, all during rounds. Pages wait meanwhile;
+half the cores, the log shows nine server heartbeat warnings of 1.4–49.3 s, all during rounds. Pages wait meanwhile;
 Jonas pressed Cancel all to get his instance back.
 
 #### Elevator Pitch
@@ -821,8 +835,8 @@ Jonas pressed Cancel all to get his instance back.
 Before: while a forecast round runs, a page can wait tens of seconds and the log fills with heartbeat warnings, so
 Jonas cancels the round.
 After: with Task Manager showing the Forecasting row for Northwind Platform, Jonas clicks **System Settings** in the
-header → sees the Settings page in **under 1 s** (measured), and the log of the whole round carries **no** "Heartbeat
-took longer than" warning; the Forecasting row leaves Task Manager when the round ends on its own.
+header → sees the Settings page in **under 1 s** (measured), and the log of the whole round carries **no** heartbeat
+warning; the Forecasting row leaves Task Manager when the round ends on its own.
 Decision enabled: let the round run instead of pressing Cancel all or restarting the container.
 
 **Precursor Task 01a** — `@infrastructure` · `job_id: infrastructure-only` · `infrastructure_rationale`: dev-only
@@ -879,10 +893,12 @@ Scenario: Forecasts read the same wherever the round runs
   any baseline counts. The harness records the Measurement plan's readings 1–7, Q_r and S_q, and the falsifier, on
   SQLite and PostgreSQL, on `main` and on the v26.10.19.10 tag. The baseline table and the D27 re-score are written
   into this delta before AC-1.1's change starts.
-- AC-1.1 During a computed and a skipped round, Overview → System Settings shows Settings in under 1 s (measured).
+- AC-1.1 During a computed and a skipped round, Overview → System Settings shows Settings in under 1 s (measured;
+  harness gate, baseline from 01a, recorded by DELIVER).
 - AC-1.2 During a round, the first Feature row of Northwind Platform and of Team Borealis comes within 1.2 × its
-  idle reading (measured).
-- AC-1.3 No heartbeat warning in the log across 5 computed and 5 skipped rounds at 920 Features, 8 Teams.
+  idle reading (measured; harness gate, baseline from 01a, recorded by DELIVER).
+- AC-1.3 No heartbeat warning in the log across 5 computed and 5 skipped rounds at 920 Features, 8 Teams (harness
+  gate, baseline from 01a, recorded by DELIVER).
 - AC-1.4 Cancel all and per-row Stop still stop the round within seconds and keep the previous forecasts.
 - AC-1.5 Forecast outputs and Story 6354's fingerprint are identical before and after, on the dev backup and the
   scaled set, on SQLite and PostgreSQL (C12).
@@ -891,7 +907,8 @@ Scenario: Forecasts read the same wherever the round runs
 - AC-1.7 Production reading (D25): the reporter's first log after the release is checked for heartbeat warnings
   during forecast rounds; the result is recorded here (not a release gate).
 
-**KPI**: K3, K1 and K2 during a round. **Tech**: where the round runs is DESIGN's (DV-10); no async conversion of
+**KPI**: K3, K1 and K2 during a round. **Tech**: the heartbeat warning is Kestrel's "Heartbeat took longer than" line;
+where the round runs is DESIGN's (DV-10); no async conversion of
 the request paths (Dissent B decides that later); Epic 6311's half-cores bound and Cancel-all token stay. Premium
 licence fixture in the worktree if the scaled set uses dependency-aware forecasting (P2). **Looks**: N/A, because no
 screen's fetch or response changes.
@@ -909,8 +926,8 @@ Portfolio detail page reads all Portfolios twice to show one.
 
 Before: the Overview and every detail page read every Feature of the instance to show names and counts.
 After: Jonas opens Lighthouse → the Overview lists Portfolios and Teams in **under 1 s** idle (measured) with the same
-names and counts as before → clicks **System Settings** → sees Settings in **under 1 s**; `GET /api/latest/portfolios`
-returns the same body as before.
+names and counts as before → clicks **System Settings** → sees Settings in **under 1 s**; every page and client that
+reads the Portfolio and Team lists gets exactly the answer it got before.
 Decision enabled: go straight to the setting he came for, instead of waiting the Overview out.
 
 **Examples**:
@@ -918,7 +935,8 @@ Decision enabled: go straight to the setting he came for, instead of waiting the
 2. Martin opens Northwind Payments (400 Features): `GET /portfolios/{id}` takes the same time with the other five
    Portfolios present as without them (± 15%).
 3. Community licence at its Team limit: "Add Team" is disabled with today's reason; the page asked for the count once.
-4. The count cannot be loaded: "Add Team" is not offered as allowed (DESIGN picks the look, D30).
+4. The licence cannot be checked: "+ Add Team" is disabled with "Couldn't check your license. Reload the page to
+   try again."; while it is still being checked, it is disabled with no tooltip (decisions 11 and 15).
 5. RBAC on, Aisha is a Viewer on Team Borealis only: the Overview names only what she can read, as today.
 
 ```gherkin
@@ -941,7 +959,7 @@ Scenario: A licence limit is enforced exactly as before
 Scenario: A count that could not be loaded never reads as room to spare
   Given the licence count cannot be loaded
   When Jonas opens the Teams overview
-  Then "Add Team" is not offered as allowed
+  Then "+ Add Team" is disabled with "Couldn't check your license. Reload the page to try again."
 
 Scenario: Readers see only what they may read
   Given RBAC is on and Aisha may read only Team Borealis
@@ -949,13 +967,20 @@ Scenario: Readers see only what they may read
   Then only Team Borealis and the Portfolios she may read are named
 ```
 
-**AC**: AC-2.1 Overview lists < 1 s idle at 920 (measured); same names and counts. AC-2.2 Overview → Settings < 1 s
-idle (measured); credited to K1's Settings half only if 01a showed the server held Settings back (A12). AC-2.3 One
-Portfolio's read scales with that Portfolio, not the instance (± 15%). AC-2.4 Licence decisions unchanged, RBAC on and
-off (D30); the count is requested once per page, not per mount. AC-2.5 A failed count never enables a gated action.
+**AC**: AC-2.1 Overview lists < 1 s idle at 920 (measured; harness gate, baseline from 01a, recorded by DELIVER);
+same names and counts. AC-2.2 Overview → Settings < 1 s idle (measured; harness gate, baseline from 01a, recorded by
+DELIVER); credited to K1's Settings half only if 01a showed the server held Settings back (A12). AC-2.3 One
+Portfolio's read scales with that Portfolio, not the instance (± 15%; harness gate, baseline from 01a, recorded by
+DELIVER). AC-2.4 Licence decisions unchanged, RBAC on and off (D30); the count is requested once per page, not per
+mount. AC-2.5 While the licence check is loading or has failed, no create entry point is enabled: the Overview's
+"+ Add Team" / "+ Add Portfolio", Save on a new Team's edit page, and the onboarding stepper's Add Team / Add
+Portfolio (maintainer decision 15, 2026-10-24); edits and updates of existing Teams and Portfolios behave as today.
 AC-2.6 Bodies of `/portfolios`, `/teams`, `/portfolios/{id}` unchanged (D20). AC-2.7 Dev backup: every page identical.
-**KPI**: K1. **Tech**: reader methods per D28; S05d stays 6264's. **Looks**: the Overview keeps its body spinner while
-its lists are on their way; DESIGN states the licence count's loading and failure looks (recommendation §3).
+**KPI**: K1. **Tech**: reader methods per D28; S05d stays 6264's; `GET /api/latest/portfolios`, `/teams` and
+`/portfolios/{id}` return the same bodies (D20). **Looks**: the Overview keeps its body spinner while its lists are on
+their way; DESIGN states the licence count's loading and failure looks (recommendation §3). Maintainer decision 11
+(2026-10-24) together with DESIGN's sketch of the gated create actions is slice 02's sketch; decision 15 extends it to
+every create entry point.
 
 ### US-03 — Large Features lists open sooner, with the same dependencies (slice 03)
 
@@ -972,7 +997,7 @@ Before: a 920-Feature list reads the whole instance's Features with their foreca
 in-progress columns.
 After: Martin opens Northwind Platform → **Features** → sees the first row **at least 40% sooner** than the 01a
 baseline (measured, idle), with the same "Waits on" verdicts, the same withheld blockers and the same in-progress
-Teams; `GET /api/latest/features/ids` and `/features/references` return the same bodies.
+Teams; every page and client reading the list's dependencies gets the same answer as before.
 Decision enabled: read dates and dependencies in the meeting instead of opening the tracker.
 
 **Examples**:
@@ -982,6 +1007,10 @@ Decision enabled: read dates and dependencies in the meeting instead of opening 
 3. RBAC on, Aisha may not read Northwind Payments: the blocker reads "withheld", as today (C1).
 4. Team Borealis's update runs: its in-progress refresh no longer reads the whole table per in-progress Feature.
 5. Dev backup: every dependency verdict and position identical.
+6. Two Features of Northwind Platform carry the same reference id, NP-412 (the tracker returned it twice). Martin
+   opens the Features tab while Team Atlas works on NP-412: the list and Team Atlas's in-progress answer show
+   the first of the two in forecast order, counted once, and the log carries one warning naming NP-412 per refresh.
+   Today the same request fails with a server error (maintainer decision 13, 2026-10-24).
 
 ```gherkin
 Scenario: A large list opens sooner and shows the same dependencies
@@ -1004,12 +1033,22 @@ Scenario: In-progress Teams are the same as before
   Given Team Atlas and Team Cobalt work on "Checkout redesign"
   When Martin opens Northwind Platform's Features tab
   Then both Teams are shown as working on it
+
+Scenario: A reference id stored on two Features answers with the first and says so once
+  Given two Features of Northwind Platform carry the reference id "NP-412" and Team Atlas works on it
+  When Martin opens Northwind Platform's Features tab
+  Then Team Atlas's in-progress answer shows the first of the two in forecast order, counted once
+  And the log carries one warning naming "NP-412" for that refresh
 ```
 
-**AC**: AC-3.1 First row ≥ 40% sooner, idle, 920 (measured). AC-3.2 Server time scale-invariant to instance size
-(≤ 15%). AC-3.3 Verdicts over the whole graph, withheld and unnamed rules unchanged (C1, C2). AC-3.4 In-progress
-answers unchanged, on the list and in a Team update. AC-3.5 Response bodies unchanged (D20). AC-3.6 Dev backup
-identical. **KPI**: K2, K3 in part. **Tech**: projection mechanism is DESIGN's (DV-10); `FeaturesController` and
+**AC**: AC-3.1 First row ≥ 40% sooner, idle, 920 (measured; harness gate, baseline from 01a, recorded by DELIVER).
+AC-3.2 Server time scale-invariant to instance size (≤ 15%; harness gate, baseline from 01a, recorded by DELIVER).
+AC-3.3 Verdicts over the whole graph, withheld and unnamed rules unchanged (C1, C2). AC-3.4 In-progress answers
+unchanged, on the list and in a Team update, except where two stored Features share one reference id: there the
+first in forecast order answers, counted once, with one warning per refresh naming the id (Example 6). *This case is
+superseded by maintainer decision 13 (2026-10-24)*; today it answers with a server error. AC-3.5 Response bodies
+unchanged (D20), with the same one exception. AC-3.6 Dev backup identical. **KPI**: K2, K3 in part. **Tech**:
+`GET /api/latest/features/ids` and `/features/references` keep their bodies; projection mechanism is DESIGN's (DV-10); `FeaturesController` and
 `TeamMetricsService` S05a entries only shrink. **Looks**: N/A, because the screen's requests and responses are
 unchanged.
 
@@ -1018,8 +1057,8 @@ unchanged.
 `job_id: job-reach-and-read-what-i-came-for-on-a-large-instance` · persona `delivery-lead-rte` (Martin),
 `product-owner` (Aisha)
 
-**Problem**: even with lighter server work, the list asks for every Feature's full forecast payload, ids travel in
-the URL, and parents arrive in a second round. When the request fails or the Portfolio is empty, the list shows
+**Problem**: even with lighter server work, the list asks for every Feature's full forecast payload, its request
+grows with every Feature it shows, and parents arrive in a second round. When the request fails or the Portfolio is empty, the list shows
 loading placeholders forever, so Martin cannot tell "slow" from "broken" from "nothing there".
 
 #### Elevator Pitch
@@ -1034,9 +1073,9 @@ Decision enabled: trust that the list is complete, or retry, instead of waiting 
 1. Northwind Platform, idle: first row 1.4 s; the same dates, progress, dependencies and parent as today.
 2. Team Borealis (310 Features across 3 Portfolios): first row 0.9 s.
 3. The server is restarting: "The Features couldn't be loaded." with Retry; Retry after it is back shows the rows.
-4. Northwind Mobile was just created and not yet updated: "This Portfolio has no Features yet."
-5. Northwind Mobile's 100 Features are all completed and Hide completed is on: "All 100 Features are completed. Turn
-   off Hide completed to see them."
+4. Northwind Labs was just created and not yet updated: "This Portfolio has no Features yet."
+5. Northwind Mobile's 100 Features are all completed and Hide Completed Features is on: "All 100 Features are
+   completed. Turn off Hide Completed Features to see them." (maintainer decision 6, 2026-10-24)
 6. A Features update completes while Martin reads: the rows stay, dimmed under a small spinner, then refresh; an
    older answer never replaces a newer one.
 7. The instance calls Features "Themes" in its terms: every message uses "Themes".
@@ -1060,14 +1099,14 @@ Scenario: A list that cannot be loaded says so and can be retried
   And once the server answers again, Retry shows the rows
 
 Scenario: An empty Portfolio says it is empty
-  Given Northwind Mobile has no Features yet
+  Given Northwind Labs has no Features yet
   When Martin opens its Features tab
   Then he sees "This Portfolio has no Features yet."
 
 Scenario: A list whose Features are all completed says why it looks empty
-  Given all 100 Features of Northwind Mobile are completed and Hide completed is on
+  Given all 100 Features of Northwind Mobile are completed and Hide Completed Features is on
   When Martin opens its Features tab
-  Then he sees "All 100 Features are completed. Turn off Hide completed to see them."
+  Then he sees "All 100 Features are completed. Turn off Hide Completed Features to see them."
 
 Scenario: A list refreshed by an update never shows an older answer
   Given Martin reads Northwind Platform's Features
@@ -1081,14 +1120,19 @@ Scenario: Messages use the instance's terms
   Then the message reads "This Portfolio has no Themes yet."
 ```
 
-**AC**: AC-4.1 First row < 2 s at 920, Portfolio and Team tab, idle and during a round (measured; K2). AC-4.2 Columns
-and values identical to today's list (dev backup and scaled set). AC-4.3 Failure look with Retry; empty look;
-all-hidden look; copy per D22, settled at DISTILL. AC-4.4 Refresh after a completed update keeps rows dimmed; a late
-answer never lands (keyed query). AC-4.5 The new endpoint is additive, guarded by Portfolio / Team read as today;
-`GET /features` and `FeatureDto` unchanged (D20). AC-4.6 Hide-completed stays client-side (maintainer). AC-4.7 The
-E2E page object waits for the list's ready state, not mere visibility. **KPI**: K2. **Tech**: endpoint shape is
-DESIGN's; reuse `WidgetShell` status and a keyed TanStack query (S10). **Looks**: DESIGN pins loading, failure, empty
-and all-hidden; **sketched at the start of DISTILL**.
+**AC**: AC-4.1 First row < 2 s at 920, Portfolio and Team tab, idle and during a round (measured; K2; harness gate,
+baseline from 01a, recorded by DELIVER). AC-4.2 Columns and values identical to today's list (dev backup and scaled
+set). AC-4.3 Failure look with Retry; empty look; all-hidden look; copy per maintainer decisions 4–6 (2026-10-24),
+which settle D22. AC-4.4 Refresh after a completed update keeps rows dimmed; a late answer never lands; a refresh
+that fails takes the could-not-load look (decision 3). AC-4.5 Whoever may read a Portfolio or Team sees its list as
+today, and whoever may not is refused, as on its detail page; `lh`, the MCP server and every other reader of the
+existing Features answers see no change. AC-4.6 Turning Hide Completed {Features} on or off changes the rows at once,
+with no new wait (maintainer). AC-4.7 The list tells an automated check when it is ready, so an end-to-end test never
+reads the placeholders as loaded rows. **KPI**: K2. **Tech**: endpoint shape is DESIGN's; the new endpoint is
+additive and guarded by Portfolio / Team read; `GET /features` and `FeatureDto` unchanged (D20); hide-completed stays
+client-side; the E2E page object waits on `data-widget-status="ready"`, not mere visibility; reuse `WidgetShell`
+status and a keyed TanStack query (S10). **Looks**: DESIGN pins loading, failure, empty
+and all-hidden; **sketched at the start of DISTILL** and settled there by maintainer decisions 3–7 (2026-10-24).
 
 ### US-05 — Forecast rounds finish sooner (slice 05)
 
@@ -1107,8 +1151,9 @@ while every Feature's dates are unchanged.
 Decision enabled: keep hourly updates instead of spacing them out to protect the instance.
 
 **Examples**:
-1. 11:00, nothing changed: the skipped round's Forecast row reads 28 s against a 240 s baseline round.
-2. 12:00, Team Atlas closed 3 Work Items: the computed round reads 160 s against 240 s.
+1. 11:00, nothing changed: the skipped round's Forecast row reads 28 s against a 300 s baseline round (inside the
+   reporter's 264–483 s range).
+2. 12:00, Team Atlas closed 3 Work Items: the computed round reads 200 s against 300 s.
 3. SQLite and PostgreSQL: identical percentiles and histogram rows before and after, same seed.
 4. Dev backup: the same rounds skip and compute as before (fingerprint unchanged).
 
@@ -1129,7 +1174,8 @@ Scenario: Forecasts and skip decisions are unchanged
   Then every percentile, histogram row and input fingerprint equals its value before the change
 ```
 
-**AC**: AC-5.1 Skipped round ≤ 15% of baseline computed round (measured). AC-5.2 Computed round ≥ 30% shorter.
+**AC**: AC-5.1 Skipped round ≤ 15% of baseline computed round (measured; harness gate, baseline from 01a, recorded by
+DELIVER). AC-5.2 Computed round ≥ 30% shorter (measured; harness gate, baseline from 01a, recorded by DELIVER).
 AC-5.3 Outputs and fingerprint identical on both providers (C12). AC-5.4 Dev backup: identical skip / compute
 decisions. AC-5.5 S13's Feature → Forecast navigation and cascade stay (D28). **KPI**: K4, K3 in part. **Tech**: how
 the save replaces histograms is DESIGN's. **Looks**: N/A, because no screen's fetch changes.
@@ -1144,17 +1190,18 @@ tells her that every page and forecast for that Portfolio pays for each one.
 #### Elevator Pitch
 
 Before: a Portfolio can grow to 920 Features without anyone being told what it costs.
-After: Sofia opens Northwind Platform → **Edit** → sees above the query "This Portfolio holds 920 Features. Above 100,
-its pages and forecasts get slower. If you don't plan with all of them, narrow the query." — and Save works as
+After: Sofia opens Northwind Platform → **Edit** → sees above the query "This Portfolio holds 920 Features (as of its
+last update). Above 100, its pages and forecasts get slower. If you don't plan with all of them, narrow the query." — and Save works as
 before; after each update the log carries one line with the count.
 Decision enabled: whether to narrow the query, knowingly.
 
 **Examples**:
 1. Northwind Platform, 920 Features: the note shows; Sofia saves unchanged; the update runs.
 2. Northwind Mobile, exactly 100 Features: no note, no log line.
-3. A new Portfolio never updated: no note (count unknown).
+3. Northwind Labs, created and never updated: no note (count unknown). If a size cannot be loaded, the note reads
+   "Couldn't check this Portfolio's size." and Save still works.
 4. Jonas reads the log after the 10:00 update: one line, Northwind Platform holds 920 Features, over 100.
-5. Terms: an instance that calls Features "Themes" reads "This Portfolio holds 920 Themes. …".
+5. Terms: an instance that calls Features "Themes" reads "This Portfolio holds 920 Themes (as of its last update). …".
 
 ```gherkin
 Scenario: An admin learns a Portfolio's size cost where the query is written
@@ -1176,14 +1223,26 @@ Scenario: No note before the first update
 Scenario: The log names an oversized Portfolio once per update
   Given Northwind Platform holds 920 Features
   When its update completes
-  Then the log carries one line with the count and the threshold
+  Then the log carries one Warning line with the count and the threshold
+
+Scenario: A size that could not be checked says so
+  Given Northwind Platform's size cannot be loaded
+  When Sofia opens its edit page
+  Then she sees "Couldn't check this Portfolio's size."
+  And Save works as before
 ```
 
-**AC**: AC-6.1 Note when > 100 stored Features; none at ≤ 100 or unknown. AC-6.2 Never blocks Save or an update.
-AC-6.3 One log line per update of such a Portfolio. AC-6.4 One threshold constant for note and log. AC-6.5 Copy in
-the configured terms, settled at DISTILL. AC-6.6 Shown to whoever can open the edit page; no new guard.
-**KPI**: OS6 (read from the size bucket after release, A10). **Looks**: no note while the count is unknown or failed
-to load — a missing nudge cannot be misread as data; **sketched at the start of DISTILL**.
+**AC**: AC-6.1 Note when > 100 stored Features; none at ≤ 100, never updated, or while the count loads; when the
+count cannot be loaded, the same info Alert reads "Couldn't check this {Portfolio}'s size." (*superseded by maintainer
+decision 9, 2026-10-24*; was "none … or unknown"). AC-6.2 Never blocks Save or an update. AC-6.3 One log line at
+**Warning** per successful Features update of such a Portfolio (maintainer decision 10, 2026-10-24). AC-6.4 The note
+and the log line always agree on whether a Portfolio is over the limit: at 101 stored Features both speak, at 100
+neither does. AC-6.5 Copy in the configured terms, settled at DISTILL (decisions 8–10). AC-6.6 Shown to whoever can
+open the edit page; no new guard.
+**KPI**: OS6 (read from the size bucket after release, A10). **Tech**: one threshold constant serves the note and the
+log line (`PortfolioSize`, DESIGN DDD-19). **Looks**: no note while the count loads; a failed count shows "Couldn't
+check this {Portfolio}'s size." (decision 9; this replaces DISCUSS's "no note when it failed to load", since a
+silent failure reads as "under 100"); **sketched at the start of DISTILL**.
 
 ---
 
@@ -1203,7 +1262,9 @@ baseline (D16, DIVERGE Q5).
 | K5 | Opted-in instances | open large Portfolios and Teams | descriptive, no target: share of tab openings per size bucket | none | size bucket on the tab-opened events (D24) | Descriptive |
 
 Guardrails: **G1** forecast outputs and Story 6354 fingerprints identical (C12); **G2** dependency verdicts, positions
-and RBAC readability identical (C1–C3); **G3** existing response bodies unchanged (D20); **G4** dev-backup screens
+and RBAC readability identical (C1–C3); **G3** existing response bodies unchanged (D20), except where two stored
+Features share one reference id, which today answers with a server error and now answers with the first in forecast
+order plus one warning (*superseded for that case by maintainer decision 13, 2026-10-24*); **G4** dev-backup screens
 identical; **G5** a Team or Portfolio update takes no longer than its baseline.
 
 Hypothesis: we believe that running the forecast round off the request pool and scoping every read to what the screen
@@ -1255,7 +1316,9 @@ Task Manager (Stop, Cancel all); Settings → System Info → Refresh History; t
 and save (05); the nudge's data source (06); new reader names fitted to 6264's S01 glossary.
 
 **DISTILL must sketch with the maintainer first**: slice 04's loading, failure, empty and all-hidden looks; slice 06's
-note; slice 02's count look only if DESIGN makes one.
+note; slice 02's count look only if DESIGN makes one. *Done 2026-10-24*: decisions 3–7 (slice 04), 8–10 (slice 06);
+for slice 02, decision 11 together with DESIGN's sketch of the gated create actions is the slice-02 sketch, widened
+to every create entry point by decision 15.
 
 **Pre-requisites**: P1 Task 01a before any other DELIVER step · P2 Premium licence fixture in the worktree · P4 the dev
 DB backup restored for regression (`Restore-DbBackup.ps1`) · P5 a PostgreSQL instance for the provider readings · P6
@@ -1272,12 +1335,12 @@ Story 6354 on `main` (it is).
 | **Website / marketing surface** | **N/A, because** no new capability or screen the website shows. The release notes carry the speed-up. Whether to claim "hundreds of Features per Portfolio" on the website once K1–K3 are met is a question for the maintainer (Q7). |
 | **Docs + screenshots** | **Owed at finalize, per feature**: `docs/portfolios/detail.md` and the Team docs (the list's failure, empty and all-hidden looks); `docs/portfolios/edit.md` (the size note and threshold); `docs/settings/usagedata.md` (size bucket, in slice 01); a short note on forecast rounds in the Task Manager / Refresh History docs if DESIGN changes what they show. **Screenshots**: none changed by default (the loaded list looks the same; demo Portfolios are under 100, so no note in demo screenshots); the note is described in text. Docs wait for the maintainer's confirmation. |
 | **Demo data** | **No change.** The generator is dev-only (Q10). Demo Portfolios stay under 100 Features, so the note does not show in demo; slice 06 is covered below E2E. |
-| **Terminology** | **No new key.** Messages use {Feature(s)}, {Portfolio}, {Team} (D22, D23). "Hide completed" keeps today's label. |
+| **Terminology** | **No new key.** Messages use {Feature(s)}, {Portfolio}, {Team} (D22, D23). The toggle keeps today's label, "Hide Completed {Features}" (`FeatureListDataGrid.tsx:133`), and the all-hidden message names it that way (maintainer decision 6). |
 | **Usage-data event** | **Wanted, designed in DEVOPS (D24)**: a closed size-bucket property on `PortfolioTabOpened` (1) and `TeamTabOpened` (0); no new event, no renumbering. Emitted in slice 01, listed in `docs/settings/usagedata.md` there. Never a raw count, never which Portfolio or Team. |
 | **EF migrations** | **N/A unless DESIGN adds an index** for the projections; if it does, expand-only through `CreateMigration` (C7). No new column is planned (the nudge reads the stored count). |
 | **Premium gating** | **None new.** Dependency verdicts keep their existing licence check. |
 | **Loading / failure looks** | 02 and 04 change fetches and get looks at DESIGN; 06 if its count needs a read; 01, 03, 05 **N/A, because** no screen's fetch changes. |
-| **UI sketch at DISTILL** | 04 and 06 yes; 02 only if DESIGN adds a look; 01, 03, 05 **N/A, because** nothing a user sees changes. |
+| **UI sketch at DISTILL** | 04 and 06 yes; 02 only if DESIGN adds a look (it did: decision 11 plus DESIGN's sketch is slice 02's sketch, widened by decision 15); 01, 03, 05 **N/A, because** nothing a user sees changes. |
 | **Epic split** | One Epic (D31); each slice ships alone; the only sibling dependency is 04 on a finished 03. |
 | **ADO** | Epic #6400 (Planned, no children). One Story per slice with the titles in the Story Map; Task 01a under Story 01. Creating them is `/ado-sync`'s, not this wave's. Epic state is the maintainer's. |
 | **Release notes** | The maintainer's. Proposed lead: the pain (pages that wait during forecasts, a 920-Feature list that takes about 50 s) and the win (answers while Lighthouse forecasts; large lists in about 2 s). |
@@ -1288,10 +1351,10 @@ Story 6354 on `main` (it is).
 
 | # | DoR item | Status | Evidence |
 |---|---|---|---|
-| 1 | Problem clear, domain language | PASS — clear; evidence is one reporting instance (DISCOVER G1: pass on stalls, conditional on the list) | Each story opens with Jonas's, Martin's, Aisha's or Sofia's situation in the product's words. |
+| 1 | Problem clear, domain language | **CONDITIONAL** — clear for the stalls (DISCOVER G1 pass); the list problem rests on one second-hand reading and holds only if 01a's falsifier does not fire (idle 920-Feature list under ~10 s), see D18 | Each story opens with Jonas's, Martin's, Aisha's or Sofia's situation in the product's words. |
 | 2 | Persona specific | PASS | Fictional but specific: 4-core Docker operator with hourly updates; Head of Delivery on a 920-Feature Portfolio; PO of a 310-Feature Team; the query's author. |
 | 3 | 3+ domain examples, real data | PASS | 4–7 per story, with Portfolio and Team names, sizes, times (10:00, 11:00), Feature names and readings. Names are fictional by rule C9. |
-| 4 | UAT G/W/T, 3–7 | PASS | US-01 5, US-02 5, US-03 4, US-04 7, US-05 3, US-06 4. Each has a failure or boundary path (Cancel all, failed count, RBAC withheld, failed list, exactly 100, never updated, identical outputs). |
+| 4 | UAT G/W/T, 3–7 | PASS | US-01 5, US-02 5, US-03 5, US-04 7, US-05 3, US-06 5 (US-03 and US-06 each gained one with the 2026-10-24 decisions 13 and 9). Each has a failure or boundary path (Cancel all, failed count, RBAC withheld, failed list, exactly 100, never updated, identical outputs). |
 | 5 | AC from UAT | PASS | AC-n.m per story trace to scenarios and D-decisions; timing ACs name the measured reading. |
 | 6 | Right-sized | PASS, two at the edge | 01 ~3 d (the gate puts the precursor inside it; the user-visible part is ~1.5 d), 04 ~2 d; others 1–1.5 d. All within 1–3 days. |
 | 7 | Technical notes | PASS | Inventory S1–S14; DESIGN questions; D28; looks per story. |
@@ -1301,7 +1364,7 @@ Story 6354 on `main` (it is).
 Elevator Pitch check: all six stories have Before / After (a UI action or endpoint with a measured or visible output) /
 Decision enabled. The only `@infrastructure` item, Task 01a, sits inside Story 01 (D17). Every story has a `job_id`.
 
-**DoR status: PASSED (9 of 9).**
+**DoR status: PASSED (8 of 9, item 1 conditional on 01a's falsifier).**
 
 ---
 
@@ -1316,7 +1379,7 @@ Decision enabled. The only `@infrastructure` item, Task 01a, sits inside Story 0
 | Slice 01 runs past 3 days | M | L | 01a is a Task with its own commits; the isolation step does not start before the baseline |
 | The shared licence count changes a gated action under RBAC | L | H | D30; scenarios with RBAC on and off |
 | Collision with Epic 6264's port Stories | L | M | D28; 6400 lands first |
-| Stalls come from GC or the database, not the pool | L | H | 01a records GC pauses and DB waits; troubleshoot before opening an Epic |
+| Stalls come from GC or the database, not the pool | L | H | 01a records GC pauses and DB waits; if its classification points at GC pauses or CPU-quota throttling, DELIVER stops after 01a and brings the readings to the maintainer before building the forecast lane (maintainer decision 16, 2026-10-24) |
 
 ---
 
@@ -1362,6 +1425,23 @@ DISCOVER and DIVERGE sections are not edited; these supersede them from DESIGN o
 | DISCOVER Handoff waiver: "It makes the measurement the Epic's **first slice**: the dev-only scaled data set (P1) and a before/after harness." | The measurement is **Task 01a, the first commits of Story 01**, not a slice (D17). | nWave's slice-composition gate: a slice of only `@infrastructure` work cannot be released. |
 | DIVERGE provisional order: "1. Measurement. An **internal enabler, not user value**. 2. The forecast round off the request pool." | Both are **slice 01**; the later slices are renumbered 02–06 (D18). | Same gate; the order is unchanged. |
 | DIVERGE: "Slices 3, 4 and 6 swap freely; 5 must follow 4; 1 and 2 are fixed first; 7 is last." | 02, 03, 05 swap freely; 04 follows 03; 01 first; 06 last. | Renumbering only. |
+
+The rows below supersede this wave's own text, by the maintainer decisions taken at the start of DISTILL and at the
+final review gate (`Wave: DISTILL / [REF] Maintainer Decisions — 2026-10-24`). The text above is amended in place or
+marked as superseded where it stood.
+
+| Was (source, verbatim) | Now | Why |
+|---|---|---|
+| AC-3.4: "In-progress answers unchanged, on the list and in a Team update." and G3: "existing response bodies unchanged (D20)" | Unchanged wherever today answers; where two stored Features share one reference id, the first in forecast order answers, counted once, plus one warning per refresh naming the id (US-03 Example 6). *Superseded by maintainer decision 13 (2026-10-24).* | Today that request answers with a server error; a crash on data the tracker produced is not an answer worth keeping. |
+| D22: "after a completed update the rows stay, dimmed under a small spinner" (silent on a refresh that fails) and DESIGN S-1's alternative "keeps the rows dimmed with an inline 'couldn't refresh' line" | A refresh that fails after rows were shown takes the could-not-load look; the previous answer is never kept on screen; `data-widget-status="error"`. *Superseded by maintainer decision 3 (2026-10-24).* | Rows from an earlier answer must never look current (CLAUDE.md, slow-connection rule). |
+| D22 and US-04 Example 5: "Turn off Hide completed to see them." | "All {N} {Features} are completed. Turn off Hide Completed {Features} to see them.", with N the number of completed Features held. *Superseded by maintainer decision 6 (2026-10-24).* | The toggle's real label is "Hide Completed {Features}" (`FeatureListDataGrid.tsx:133`); the message must name what the reader sees. |
+| D23: "Copy default: 'This {Portfolio} holds {N} {Features}. Above 100, …'" | Decision 8 says "as drafted". That means **as in DESIGN DDD-19**: "This {Portfolio} holds {N} {Features} (as of its last update). Above 100, its pages and forecasts get slower. If you don't plan with all of them, narrow the query." *Superseded by maintainer decision 8 (2026-10-24).* | "As drafted" does not name its draft; the wording the decision quotes, with "(as of its last update)", is DDD-19's, not D23's. Recorded here because the decisions block is not edited. |
+| AC-6.1: "none at ≤ 100 or unknown"; slice-06 IN: "No note while the count is unknown (never updated) or could not be read." | A count that could not be loaded shows "Couldn't check this {Portfolio}'s size." in the same info Alert; never silent. Never updated or still loading: no note. *Superseded by maintainer decision 9 (2026-10-24).* | A silent failure reads as "under 100" (CLAUDE.md: a failure must not look like "no data"). |
+| AC-6.3: "One log line per update of such a Portfolio." (level unstated; DESIGN DDD-19 said Information) | One line at **Warning** per successful Features update of a Portfolio over 100. *Superseded by maintainer decision 10 (2026-10-24).* | The maintainer wants it seen; K3's log scan counts Kestrel heartbeat warnings only, so it is untouched. |
+| D30 / AC-2.5: "a gated action" | A **create entry point**: the Overview's "+ Add Team" / "+ Add Portfolio", Save on a new Team's edit page, and the onboarding stepper's Add Team / Add Portfolio. Each is disabled while the licence loads and when it could not be checked. *Superseded by maintainer decision 15 (2026-10-24)*, extending DESIGN Q-M1 beyond the Overview's two buttons. | A new Team or Portfolio can be started from three places; gating one of them only would leave the others offering what the licence may refuse. |
+| D24: "e.g. `Under100` / `100To399` / `400Plus`" | `UpTo20`, `From21To50`, `From51To100`, `From101To399`, `From400`, `Unknown`. *Superseded by maintainer decision 2 (2026-10-24).* | Finer bands below the nudge, at the maintainer's request; exactly 100 is not nudged. |
+| DISCOVER W3: "23 call sites outside tests"; DISCUSS S3: "23 `useLicenseRestrictions()` mounts" | **22** call sites outside tests (`grep -rn "useLicenseRestrictions()" Lighthouse.Frontend/src --include=*.tsx --include=*.ts \| grep -v test`, 2026-10-24, same count at `HEAD`): 6 read count-based answers, 16 the licence status only (DESIGN CF-3). `FeatureListDataGrid` does not call the hook. | Recount at the final review gate; the slice-02 claim (one request per page instead of one per mount) is unchanged. |
+| Risks: "Stalls come from GC or the database, not the pool … troubleshoot before opening an Epic" | If 01a classifies the stalls as GC pauses or CPU-quota throttling, DELIVER stops after 01a and brings the readings to the maintainer before the forecast lane is built. *Superseded by maintainer decision 16 (2026-10-24).* | The lane only helps if the shared thread pool is the cause. |
 
 ---
 
@@ -1412,7 +1492,7 @@ relative to `Lighthouse.Backend/Lighthouse.Backend/` or `Lighthouse.Frontend/src
 | `docs/product/journeys/epic-6311-responsive-during-updates.yaml` | ⊘ not opened; its linked error path is quoted in the 6400 journey |
 | `docs/feature/epic-6264-modular-monolith/feature-delta.md` S05a–S05g, the S13 dependency lines | ✓. The S05a guard is **not yet in code** (no `GetAllByPredicate` rule under `Lighthouse.Backend.Tests/Architecture/`) |
 | Code: `Forecast/ForecastService.cs`, `BackgroundServices/Update/ForecastUpdater.cs`, `UpdateQueueService.cs` (constructor, loop `:792-812`, enqueue `:222-300`), `Models/Forecast/ForecastSimulationLimits.cs`, `ForecastBase.cs`, `Models/Feature.cs` (`CanBeForecast`, `TeamsWithoutForecast`), `Models/Portfolio.cs`, `Repositories/PortfolioRepository.cs`, `FeatureRepository.cs`, `TeamRepository.cs`, `IFeatureRepository.cs`, `IPortfolioRepository.cs`, `API/APIHelpers.cs`, `FeaturesController.cs`, `PortfoliosController.cs`, `TeamsController.cs`, route and guard attributes of `PortfolioController` / `TeamController` / the metrics controllers, `DTO/PortfolioDto.cs`, `DtoExtensions.cs`, `Helpers/TeamExtensions.cs`, `DTO/FeatureDto.cs`, `Dependencies/DependencyDecision.cs`, `DependencyFacts.cs`, `WhatTheForecastWaitsFor.cs`, `TeamMetricsService.cs:1-80`, `WriteBackTriggerService.cs:62-103`, `DomainEvents/DomainEventDispatcher.cs`, `Data/DatabaseConfigurator.cs` (WAL, `busy_timeout=10000`, split queries), `LighthouseAppContext.cs` (indexes, cascades), `Csv/CsvWorkTrackingConnector.cs`, `CsvWorkTrackingOptionNames.cs`, `Tests/Architecture/*` (ArchUnitNET in use) | ✓ |
-| Frontend: `hooks/useLicenseRestrictions.ts` and its 23 call sites, `components/Common/LicenseStatus/LicenseStatusIcon.tsx` (key `["licenseStatus"]`), `App.tsx` (QueryClient: stale 5 min, retry 2), `pages/Overview/OverviewDashboard.tsx:106-240`, `pages/Portfolios/Detail/PortfolioDetail.tsx:186-370`, `PortfolioFeatureList.tsx`, `pages/Teams/Detail/TeamFeatureList.tsx`, `hooks/useParentWorkItems.ts`, `FeatureListDataGrid.tsx`, `DataGridBase.tsx` (`loading`, `emptyStateMessage`), `pages/Common/MetricsView/WidgetShell.tsx` (`WidgetBody`) | ✓ |
+| Frontend: `hooks/useLicenseRestrictions.ts` and its 22 call sites outside tests, `components/Common/LicenseStatus/LicenseStatusIcon.tsx` (key `["licenseStatus"]`), `App.tsx` (QueryClient: stale 5 min, retry 2), `pages/Overview/OverviewDashboard.tsx:106-240`, `pages/Portfolios/Detail/PortfolioDetail.tsx:186-370`, `PortfolioFeatureList.tsx`, `pages/Teams/Detail/TeamFeatureList.tsx`, `hooks/useParentWorkItems.ts`, `FeatureListDataGrid.tsx`, `DataGridBase.tsx` (`loading`, `emptyStateMessage`), `pages/Common/MetricsView/WidgetShell.tsx` (`WidgetBody`) | ✓ |
 | `Lighthouse.EndToEndTests/playwright.config.ts` (`testDir: "./tests"`) | ✓ |
 | `nwave-ai outcomes check-delta` | ⊘ no shell in this wave; left to the orchestrator |
 | `lighthouse-clients` | ⊘ outside this checkout; nothing they read changes (D20) |
@@ -1434,9 +1514,9 @@ body (D20) are identical before and after, on the dev backup and on the scaled s
 
 | # | Fact | Where | Consequence |
 |---|---|---|---|
-| CF-1 | The update queue is one sequential reader that runs each update inline on whatever pool thread its loop resumes on (`UpdateQueueService.cs:796-804`; the loop itself stays on the pool after this Epic). `ForecastService.Simulate` calls `Task.Run`, which always schedules on the shared pool; `Parallel.For` inside it uses up to ⌊cores ÷ 2⌋ pool workers. The gather is a synchronous EF read on the loop's pool thread; the save is awaited (`ForecastService.cs:104`), but SQLite's provider does its work synchronously under the await, and the continuation resumes on a pool thread. | `UpdateQueueService.cs:792-812`; `ForecastService.cs:145-154, :205-221` | Slice 01 needs one hop at the edge of the round **and** `Simulate` must stop forcing the pool (DDD-5, DDD-6). |
+| CF-1 | The update queue is one sequential reader that runs each update inline on whatever pool thread its loop resumes on (`UpdateQueueService.cs:796-804`; the loop itself stays on the pool after this Epic). `ForecastService.Simulate` calls `Task.Run`, which always schedules on the shared pool; `Parallel.For` inside it uses up to ⌊cores ÷ 2⌋ pool workers. The gather is a synchronous EF read on the loop's pool thread (`GetAllByPredicate` at `ForecastService.cs:124`); the save is awaited (`ForecastService.cs:111`), but SQLite's provider does its work synchronously under the await, and the continuation resumes on a pool thread. | `UpdateQueueService.cs:792-812`; `ForecastService.cs:155-164` (`Task.Run` at `:160`), `:221` (`Parallel.For`) | Slice 01 needs one hop at the edge of the round **and** `Simulate` must stop forcing the pool (DDD-5, DDD-6). |
 | CF-2 | **Hypothesis, unverified (OQ-1)**: recent Kestrel versions may run the heartbeat on a dedicated thread rather than a timer on the pool. Neither can be checked offline for the .NET 10 Kestrel in use. On a pool timer, the warnings measure pool starvation; on a dedicated thread, they measure stop-the-world GC pauses, CPU throttling, or work the heartbeat itself waits on. | runtime behaviour | Task 01a keeps both branches open and classifies stalls by measurement, not by this assumption (DDD-3); `design/upstream-changes.md` UC-2. |
-| CF-3 | `useLicenseRestrictions` is **permissive** while loading and on any failure (`licenseStatus === null` → every count-based answer `true`). Only 5 of the 23 call sites read the counts (two create gates on the Overview, three edit/update gates); 18 read the licence status. `LicenseStatusIcon` already queries `["licenseStatus"]` through TanStack Query. | `hooks/useLicenseRestrictions.ts:61-73`; `LicenseStatusIcon.tsx:27-45` | D30's "exactly as today" and AC-2.5 cannot both hold; UC-1, Q-M1 (scope: create gates only). The shared query reuses the existing key (DDD-11). |
+| CF-3 | `useLicenseRestrictions` is **permissive** while loading and on any failure (`licenseStatus === null` → every count-based answer `true`). Of its 22 call sites outside tests, 6 read count-based answers and 16 read only the licence status. The 6: `OverviewDashboard` (`canCreateTeam`, `canCreatePortfolio` for its "+ Add Team" / "+ Add Portfolio", and passed on to `OnboardingStepper`, whose Add Team / Add Portfolio steps enable on them, `OnboardingStepper.tsx:95, :102`); `EditTeam` (`EditTeam.tsx:41-43`: `canCreateTeam` gates Save on a **new** Team, `canUpdateTeamData` on an existing one); `ModifyProjectSettings` (`canUpdatePortfolioData`); `PortfolioDetail` and `TeamDetail` (`canUpdatePortfolioData` / `canUpdateTeamData`). So the **create gates surface in three places** (the Overview's two buttons, the onboarding stepper's two steps, a new Team's Save) and the update gates in four components. `LicenseStatusIcon` already queries `["licenseStatus"]` through TanStack Query. | `hooks/useLicenseRestrictions.ts:61-73`; `LicenseStatusIcon.tsx:27-45`; `EditTeam.tsx:41-43`; `OnboardingStepper.tsx:95, :102` | D30's "exactly as today" and AC-2.5 cannot both hold; UC-1, Q-M1 (scope: create gates only, at every create entry point, maintainer decision 15). The shared query reuses the existing key (DDD-11). |
 | CF-4 | `Feature.CanBeForecast` reads forecast **headers** (`TeamId`, stored `TotalTrials`) and Team work, never histogram rows. Dependency facts read `ReferenceId`, Portfolio ids and `IgnoreDependencies`, `CanBeForecast`, dependency references, positions. | `Feature.cs:122, :189-227`; `DependencyFacts.cs`; `ForecastBase.cs:26` | The whole graph for verdicts, and the forecast gather and fingerprint, can be read without histograms (DDD-12, DDD-17). |
 | CF-5 | Every round, computed or skipped, stages forecast write-back by resolving `portfolio.Features` → `feature.Forecast` percentiles on the Portfolio object `ForecastUpdater` read (`WriteBackTriggerService.cs:92, :287-294`); a Feature whose value resolves to null is silently dropped (`:211`). Today that Portfolio is tracked in the round's context, so it sees the new forecasts after a compute. Domain-event handlers open a scope of their own. | `ForecastUpdater.cs` `StageTheWriteBackAndAnnounce`; `WriteBackTriggerService.cs`; `DomainEventDispatcher.cs:11` | Any lighter Portfolio read in the round must not be what write-back resolves against: untracked copies never receive a computed round's forecasts and carry no histograms on a skip. Write-back gets its own read after the save (DDD-17, DDD-18, ADR-261). Handlers are unaffected. |
 | CF-6 | A forecast's histogram rows cascade-delete with it in the model. | `LighthouseAppContext.cs:278-282` | A computed round can replace forecasts without loading old histograms (ADR-261). |
@@ -1493,27 +1573,27 @@ body (D20) are identical before and after, on the dev backup and on the scaled s
 |---|---|---|---|
 | DDD-1 | 01a | **The generator and harness live in `Lighthouse.EndToEndTests/perf/`**, a Playwright folder with its own `playwright.perf.config.ts`, outside `testDir: "./tests"`, so CI never runs it and nothing of it is in any build. The generator writes CSV text for 8 Teams and 6 Portfolios (D29 names) and builds the instance **through the public REST API**: connections, Teams and Portfolios whose CSV query carries the rows (CF-13), then Team and Portfolio updates and forecasts. It needs the Premium licence fixture (P2). | A dev-only seeder in the backend: production assembly, so "not reachable in a release build" becomes a claim to prove. An NUnit fixture: in-process, cannot observe a real Kestrel's pool or heartbeat, and could be swept into `dotnet test`. A `DemoDataService` scenario: ruled out by the maintainer (Q10). |
 | DDD-2 | 01a | **Readings and instruments.** Server: request durations from ASP.NET Core's request-finished log lines and Entity Framework command durations (`Database.Command` at Information), both switched on by configuration only; payload bytes from Playwright. Runtime: `dotnet-counters` on `System.Runtime` (pool queue length, pool thread count, GC pause time, gen 2 count) sampled each second, cgroup `cpu.stat` throttling when in a container, and a log scan for Kestrel heartbeat warnings. Client: Playwright request log (count, order, bytes per open), marks for first navigation paint, Settings usable after the Overview, and first Feature row; a long-task observer injected before load; one Chrome trace per open for scripting versus rendering. Median of 5 after one warm-up, min–max, cold start apart; idle, during a computed round and during a skipped round; 100 / 400 / 920; SQLite and PostgreSQL (`examples/postgres`); `main` and the v26.10.19.10 tag. | OpenTelemetry exporters or Prometheus: a new dependency for a one-off baseline. BenchmarkDotNet: micro-level, not end to end. Browser HAR only: no server split. |
-| DDD-3 | 01a | **Ratios and classification, thresholds fixed before reading.** Windows of 5 minutes each: **T** scripted page traffic only, **R** a round only, **RT** both; **C** = RT with only the pool's minimum worker threads raised (`System.Threading.ThreadPool.MinThreads`, or its `DOTNET_` environment form in a container); **C0** = T with the same raised minimum and no round (the page-only control: raising the minimum adds threads, context switches and allocation, so C0 shows what the knob costs on its own). *Q_r* = delay(R) ÷ delay(RT), for heartbeat delay (primary, K3's measure) and integrated pool queue length (secondary). *S_q* = Σ Entity Framework command time ÷ Σ request wall time over requests that finish inside RT's round (a floor: materialisation is not counted). **Classification of RT's stalls** (decided now, applied to the readings): **pool starvation** if C removes ≥ 80% of RT's heartbeat delay and C0 shows no new warnings; **GC** if GC pause time is ≥ 10% of wall time across RT, or ≥ 50% of the wall time inside the ±1 s around each warning; **CPU quota** if throttled periods are ≥ 20% of all periods (cgroup `cpu.stat`) across RT. More than one may hold; each is reported. **D27 ordering per branch**: pool starvation → 01's lane as planned, then 03 (instance-wide request reads), 02, 05; GC → 01 still ships (K3 is an exit criterion) but 05 and 03 (smaller tracked graphs) move ahead of 02; CPU quota → 01 ships, the finding goes to the maintainer as host sizing (nothing in the Epic adds CPU), and the order stays 03, 02, 05 by measured share. The heartbeat thread question (OQ-1) changes how Q_r is read, never these thresholds. **Calibration**: a computed round at 920 lasts ≥ 60 s and ≥ 3× the idle first-row time, else the set is reshaped first. **Falsifier**: idle 920 first row under ~10 s. All recorded before slice 01's isolation step (AC-1.0, D27). | Absolute seconds against the reporter's (unknown hardware). Q_r from one window (cannot separate round from traffic). Thresholds chosen after the readings (lets the data pick the story). |
+| DDD-3 | 01a | **Ratios and classification, thresholds fixed before reading.** Windows of 5 minutes each: **T** scripted page traffic only, **R** a round only, **RT** both; **C** = RT with only the pool's minimum worker threads raised (`System.Threading.ThreadPool.MinThreads`, or its `DOTNET_` environment form in a container); **C0** = T with the same raised minimum and no round (the page-only control: raising the minimum adds threads, context switches and allocation, so C0 shows what the knob costs on its own). *Q_r* = delay(R) ÷ delay(RT), for heartbeat delay (primary, K3's measure) and integrated pool queue length (secondary). *S_q* = Σ Entity Framework command time ÷ Σ request wall time over requests that finish inside RT's round (a floor: materialisation is not counted). **Classification of RT's stalls** (decided now, applied to the readings): **pool starvation** if C removes ≥ 80% of RT's heartbeat delay and C0 shows no new warnings; **GC** if GC pause time is ≥ 10% of wall time across RT, or ≥ 50% of the wall time inside the ±1 s around each warning; **CPU quota** if throttled periods are ≥ 20% of all periods (cgroup `cpu.stat`) across RT. More than one may hold; each is reported. **D27 ordering per branch**: pool starvation → 01's lane as planned, then 03 (instance-wide request reads), 02, 05; **GC or CPU quota → DELIVER holds after 01a** and brings the readings to the maintainer before the forecast lane is built (*superseded by maintainer decision 16, 2026-10-24*; this wave had written "GC → 01 still ships, 05 and 03 move ahead of 02" and "CPU quota → 01 ships, host sizing to the maintainer, order 03, 02, 05"). The maintainer then decides whether 01 ships and in what order 02, 03, 05 follow; the earlier branch orders stay on the table as the default proposal. The heartbeat thread question (OQ-1) changes how Q_r is read, never these thresholds. **Calibration**: a computed round at 920 lasts ≥ 60 s and ≥ 3× the idle first-row time, else the set is reshaped first. **Falsifier**: idle 920 first row under ~10 s. All recorded before slice 01's isolation step (AC-1.0, D27). | Absolute seconds against the reporter's (unknown hardware). Q_r from one window (cannot separate round from traffic). Thresholds chosen after the readings (lets the data pick the story). |
 | DDD-4 | 01a | **The only production change of Task 01a is log-only**: `ForecastUpdater`'s existing Debug line splits the round into gather, simulate, save and publish milliseconds. No behaviour, setting or endpoint changes. The v26.10.19.10 readings use the Refresh History round duration, which that tag already writes. | An `EventSource` or a `Meter`: more code for the same four numbers. |
 | DDD-5 | 01 | **The forecast round runs on a dedicated `ForecastLane`** (ADR-257): a singleton `TaskScheduler` over `MostRunsAtOnce` named background threads. | Raising the pool's minimum (kept as control experiment C). A separate forecast process or container (new deployable, breaks standalone). A hosted service with its own forecast queue (leaves 6311's holds, Stop, Cancel all). `ConcurrentExclusiveSchedulerPair` / `LongRunning` (still on the pool). Below-normal priority (ignored in Linux containers). Async request paths (Dissent B, a later Epic). |
-| DDD-6 | 01 | **One hop, in `ForecastUpdater.Update`, and what it does and does not cover.** Mechanism: `Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.DenyChildAttach, lane.Scheduler).Unwrap()`, awaited by the queue's update task (the loop's thread is released, not blocked; the loop itself stays on the pool, `UpdateQueueService.cs:796-804`). Inside the body, every `await` in Lighthouse's own round code resumes on `TaskScheduler.Current`, which is the lane, because ASP.NET Core has no synchronisation context; so round code must not use `ConfigureAwait(false)` on its own awaits (none does today on that path). EF Core and Npgsql internals do use `ConfigureAwait(false)`, so their internal continuations (I/O completions inside a query or save) run briefly on pool threads: **accepted and stated**, those are short and non-blocking. The lane is resolved from the scope's service provider (constructor stays at 7, CF-14). **`Simulate`** starts the simulation with `Task.Factory.StartNew(…, cancellationToken, DenyChildAttach, TaskScheduler.Current)` and awaits it, and sets `ParallelOptions.TaskScheduler = TaskScheduler.Current`: on the lane the workers are lane threads; for a manual `When` from a page the current scheduler is the pool, so the request thread is still released while the simulation runs and the forecast keeps its own half (ADR-248, NMD-14). The per-update cancellation token, the write-back round and `AsyncLocal` contexts flow to the lane with the execution context. | The lane injected into `ForecastService` (8th parameter, S107; manual forecasts would queue behind a background round). A scheduler parameter on `IForecastService` (leaks threading into the port). Hopping inside `ForecastService` (the shell's reads, confirm, staging, publish and record would stay on the pool). Running the simulation inline without `StartNew` (a manual `When` would block its request thread). |
-| DDD-7 | 01 | **Lane size = `MostRunsAtOnce`**, so CPU use is unchanged; the startup banner reads the lane: "Forecast rounds run on N dedicated threads; each forecast uses up to N of M cores". | A separate setting: `DOTNET_PROCESSOR_COUNT` already moves the bound (ADR-248). One thread for the round body plus N workers: an idle extra thread, since `Parallel.For` runs on its calling thread. |
+| DDD-6 | 01 | **One hop, in `ForecastUpdater.Update`, and what it does and does not cover.** Mechanism: `Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.DenyChildAttach, lane.Scheduler).Unwrap()`, awaited by the queue's update task (the loop's thread is released, not blocked; the loop itself stays on the pool, `UpdateQueueService.cs:796-804`). Inside the body, every `await` in Lighthouse's own round code resumes on `TaskScheduler.Current`, which is the lane, because ASP.NET Core has no synchronisation context; so round code must not use `ConfigureAwait(false)` on its own awaits (none does today on that path). EF Core and Npgsql internals do use `ConfigureAwait(false)`, so their internal continuations (I/O completions inside a query or save) run briefly on pool threads: **accepted and stated**, those are short and non-blocking. The lane is resolved from the scope's service provider (constructor stays at 7, CF-14). **S107 trade-off, accepted**: resolving the lane late through `Update(IServiceProvider)` hides one dependency from the constructor, which S107 would otherwise flag as an 8th parameter; this follows the pattern `ForecastUpdater` already uses for every collaborator it needs per update (the scoped repositories, the forecast service, the write-back service all come from the update's scope), so the lane is one more of the same kind, not a new style. A missing registration fails on the first round, and the lane probe test runs a real round, so it cannot reach a release unnoticed. **`Simulate`** starts the simulation with `Task.Factory.StartNew(…, cancellationToken, DenyChildAttach, TaskScheduler.Current)` and awaits it, and sets `ParallelOptions.TaskScheduler = TaskScheduler.Current`: on the lane the workers are lane threads; for a manual `When` from a page the current scheduler is the pool, so the request thread is still released while the simulation runs and the forecast keeps its own half (ADR-248, NMD-14). The per-update cancellation token, the write-back round and `AsyncLocal` contexts flow to the lane with the execution context. | The lane injected into `ForecastService` (8th parameter, S107; manual forecasts would queue behind a background round). A scheduler parameter on `IForecastService` (leaks threading into the port). Hopping inside `ForecastService` (the shell's reads, confirm, staging, publish and record would stay on the pool). Running the simulation inline without `StartNew` (a manual `When` would block its request thread). |
+| DDD-7 | 01 | **Lane size = `MostRunsAtOnce`**, so CPU use is unchanged; the startup banner reads the lane: "Forecast rounds run on N dedicated threads; each forecast uses up to N of M cores", and "on 1 dedicated thread" (singular) when N is 1. The banner reads the lane instance the composition root created (DDD-23), so it cannot claim a size the lane does not have. | A separate setting: `DOTNET_PROCESSOR_COUNT` already moves the bound (ADR-248). One thread for the round body plus N workers: an idle extra thread, since `Parallel.For` runs on its calling thread. |
 | DDD-8 | 01 (D24) | **The size bucket is computed in the browser from the owner payload the detail page already holds** (`portfolio.features.length`, `team.features.length`), and the tab-opened event carrying it is sent once that payload has arrived. DEVOPS fixes the closed enum and the backend's shape check gains it; never the count, never the id. No new read. | A server-side count per tab open: a request for telemetry. An `Unknown` bucket sent before the payload: a value nobody can read; DEVOPS may still add it. |
 | DDD-9 | 02 | **`PortfolioRepository.GetById` filters in the database** with unchanged includes, so every caller (detail pages, `ApiHelpers`, the forecast updater) reads one Portfolio. | Leaving it for Epic 6264's S05d: the forecast updater calls it on every trigger (CF-8), today. |
 | DDD-10 | 02 | **Catalogue readers** on `IPortfolioRepository` (provisional names `AllWithoutForecasts()`, `OneWithoutForecasts(id)`): root, connection and options, Features with Team work and Teams, **no forecasts**, no tracking with identity resolution. `GET /portfolios`, `GET /teams`, `GET /teams/{id}`, `GET /portfolios/{id}`, `GET /portfolios/{id}/settings` build their unchanged DTOs from them (ADR-258). | Projection records with new DTO constructors (a second mapping of every DTO; bodies must stay byte-identical). Caching the heavy read (stale, per replica, the same memory). |
-| DDD-11 | 02 | **Licence gating is one shared query per answer** (ADR-259): `["licenseStatus"]` (the key `LicenseStatusIcon` already uses) and the counts from shared `["teams"]` / `["portfolios"]` list queries, enabled only when the licence is known and not Premium, stale time 0. The hook adds `status: loading / ready / failed`. **Scope of the refusal (Q-M1)**: while `loading` or `failed`, only the count-gated **create** actions (new Team, new Portfolio) are refused, with "Couldn't check your licence" when failed and no reason while loading; edits and updates of existing Teams and Portfolios (`canUpdateTeamData`, `canUpdatePortfolioData` in `EditTeam`, `ModifyProjectSettings`, the detail pages) stay allowed as today. `ready` answers exactly as today. The server's `LicenseGuard` is unchanged. Count meaning unchanged (the served, RBAC-filtered list). | A new count endpoint (new contract; RBAC count re-implemented). A context provider (a second cache). Refusing edits too (a transient failure would block saving settings someone is mid-way through, for an instance already within its licence; the server still refuses anything over the limit). Keeping everything fail-open (contradicts AC-2.5 for creation). |
+| DDD-11 | 02 | **Licence gating is one shared query per answer** (ADR-259): `["licenseStatus"]` (the key `LicenseStatusIcon` already uses) and the counts from shared `["teams"]` / `["portfolios"]` list queries, enabled only when the licence is known and not Premium, stale time 0. The hook adds `status: loading / ready / failed`. **Scope of the refusal (Q-M1, widened by maintainer decision 15)**: while `loading` or `failed`, only the count-gated **create** actions are refused, at **every create entry point**: the Overview's "+ Add Team" / "+ Add Portfolio" (`OverviewDashboard`), the onboarding stepper's Add Team / Add Portfolio steps (`OnboardingStepper.tsx:95, :102`, fed by the Overview's `canCreateTeam` / `canCreatePortfolio`), and Save on a new Team's edit page (`EditTeam.tsx:41-43`, `canCreateTeam` when `isNewTeam`). Each is disabled with no reason while loading and with "Couldn't check your license. Reload the page to try again." when failed (UI spelling "license", decision 11); edits and updates of existing Teams and Portfolios (`canUpdateTeamData`, `canUpdatePortfolioData` in `EditTeam`, `ModifyProjectSettings`, the detail pages) stay allowed as today. `ready` answers exactly as today. The server's `LicenseGuard` is unchanged. Count meaning unchanged (the served, RBAC-filtered list). | A new count endpoint (new contract; RBAC count re-implemented). A context provider (a second cache). Refusing edits too (a transient failure would block saving settings someone is mid-way through, for an instance already within its licence; the server still refuses anything over the limit). Keeping everything fail-open (contradicts AC-2.5 for creation). |
 | DDD-12 | 03 | **The dependency graph is read without histograms** (ADR-258): `IFeatureRepository` reader (provisional `WholeGraphWithoutHistograms()`) with Portfolios, Team work and Teams, dependency references and completion-forecast headers; no histogram rows, no start forecasts; no tracking **with identity resolution** (so shared Teams and Portfolios stay one object, as in a tracked read). `FeaturesController` passes it to the unchanged `DependencyFacts` / `DependencyDecision`. Used for `features/ids` and `features/references`; `GET /features` keeps its own full list. | A projection record plus a second `DependencyFacts.About` (two projections, the class's own warning). Plain no-tracking (separate Team objects per row; harmless for `Any()` but not provably identical). Requested Features only (C2). |
 | DDD-13 | 03 | **In-progress by reference id, and a rule for a reference id stored twice (maintainer-visible, Q-M2).** `TeamMetricsService` derives a Team's in-progress Feature references from its WIP snapshot (it already does) and caches them under today's key and lifetime; Feature WIP and worked-on counts use them, with no Feature read. The `featuresInProgress` endpoint resolves them with one database-side read by reference id (provisional `WithReferenceIds(...)`, full includes), keeps first-seen order and the "not tracked by Lighthouse" placeholders. **Duplicates**: today `GetByPredicate`'s `SingleOrDefault` (`FeatureRepository.cs:52`) throws when two stored Features share a reference id, which breaks `featuresInProgress` and that Team's WIP counts. The new read takes **the first in forecast order**, the rule the dependency path already uses (`DependencyHonourPolicy.cs:180-181`), and logs one warning per refresh naming the reference id. Default: adopt (it turns a crash into an answer). Test: two Features with one reference id → the endpoint answers with the first in forecast order, the counts count it once, one warning. `TeamMetricsService` and `ForecastService` take `IFeatureRepository` instead of `IRepository<Feature>` (same parameter count). | Keep throwing (a crash on data the tracker produced). Return both (changes the endpoint's body and the counts). One `GetAllByPredicate` with `Contains` in `TeamMetricsService` (adds the call to the ratchet's biggest file). Per-reference reads (instance-wide per in-progress Feature, W5). |
 | DDD-14 | 04 | **Owner-keyed list endpoint** (ADR-260): `GET api/latest/portfolios/{portfolioId}/feature-list` (`PortfolioRead`) and `GET api/latest/teams/{teamId}/feature-list` (`TeamRead`), each also under `api/v1` as every controller is. Body `{ features, parents, activeWork }`; a row is a **field subset of `FeatureDto` with the same names and shapes**, without `teamForecasts`, parsed by the existing `Feature` model. Same order, same readability. | One endpoint with an owner discriminator (custom guarding). Full `FeatureDto` rows (per-Team start histograms and payload the grid ignores). A POST with an id body (the client still owns the id list). GraphQL (new technology). A precomputed percentile read model (the larger win; waits for 6264, recorded as the K2 follow-up). |
-| DDD-15 | 04 | **Server path**: thin `FeatureListController` (no repository dependency) → driving port `IFeatureListService` → the owner's Features read in the database by owner via `IFeatureRepository`, with **every per-Team completion forecast and its histogram** (`Feature.Forecast` folds all of them, `Feature.cs:53-57`; there is no Feature-level completion row to narrow to) and **only the Feature-level start forecast** (`TeamId` null) with its histogram; per-Team start forecasts are not read. Then the histogram-free graph (DDD-12), `IFeaturePositionMap`, `IFeatureMoveAuthorization`, the shared dependency collaborator extracted from `FeaturesController`, RBAC readability via `IRbacAdministrationService`, and `TeamMetricsService`'s in-progress references. Parents: a database-side read of reference, name, url and Portfolio ids, named only when readable, as `/features/references` does. Constructor ≤ 7. **K2 consequence**: the completion histograms of the owner's Features remain the largest part of the list read; the per-Team start histograms (about half of all start rows) and the payload go. K2-miss risk stays **M** (see Risks). | Growing `FeaturesController` (S107, S05a baseline). Copying the dependency rendering (two renderings of one verdict). Narrowing completion to one row (none exists; it would change `Feature.Forecast`). |
+| DDD-15 | 04 | **Server path**: thin `FeatureListController` (no repository dependency) → driving port `IFeatureListService` → the owner's Features read in the database by owner by `FeatureRepository` (through the narrow reader below), with **every per-Team completion forecast and its histogram** (`Feature.Forecast` folds all of them, `Feature.cs:53-57`; there is no Feature-level completion row to narrow to) and **only the Feature-level start forecast** (`TeamId` null) with its histogram; per-Team start forecasts are not read. Then the histogram-free graph (DDD-12), `IFeaturePositionMap`, `IFeatureMoveAuthorization`, the shared dependency collaborator extracted from `FeaturesController`, RBAC readability via `IRbacAdministrationService`, and `TeamMetricsService`'s in-progress references. Parents: a database-side read of reference, name, url and Portfolio ids, named only when readable, as `/features/references` does. Constructor ≤ 7. **Read-only port (house pattern)**: `FeatureListService` and the shared dependency-rendering collaborator only read, so they depend on a narrow reader interface (provisional `IFeatureListReader`: the owner read, the histogram-free graph, the reference-id read, the parent read) that `FeatureRepository` implements, registered as the same scoped instance, exactly as `ReportRepository` serves `IReportReader` beside `IReportWriter` (`Program.cs:1326`) and `ISecretCustodyReader` narrows `ISecretCustodyService` (`Program.cs:499`). They are never handed the write-capable `IFeatureRepository`. Existing components that already hold a write-capable port and gain a reader here (the four catalogue controllers, `FeaturesController`, `TeamMetricsService`, `ForecastUpdater`) keep it: their readers are **no-tracking by convention**, so nothing they return can reach a `SaveChanges`, and splitting those ports is Epic 6264's S05c–e. Accepted because it changes no constructor shape 6264 is about to redraw, and the no-tracking contract is asserted (Contract shapes). **K2 consequence**: the completion histograms of the owner's Features remain the largest part of the list read; the per-Team start histograms (about half of all start rows) and the payload go. K2-miss risk stays **M** (see Risks). | Growing `FeaturesController` (S107, S05a baseline). Copying the dependency rendering (two renderings of one verdict). Narrowing completion to one row (none exists; it would change `Feature.Forecast`). |
 | DDD-16 | 04 | **Frontend**: `useFeatureList(owner)` over a keyed TanStack query `["feature-list", "portfolio" \| "team", id]`; `PortfolioDetail` and `TeamDetail` invalidate that key on a completed Features or Forecasts update (the handler that refetches the owner today). Looks (below): first answer → `DataGridBase` loading placeholders (today's); refetch with rows → `WidgetBody` dimmed under a small spinner; failure → `WidgetBody` could-not-load with Retry; empty and all-hidden → `DataGridBase` `emptyStateMessage`. The container carries `data-widget-status` (`loading` / `ready` / `error`) for the E2E page object (AC-4.7). The two lists stop calling `features/ids`, `useParentWorkItems` and per-Team `featuresInProgress`. Hide completed stays client-side (maintainer). | Local `useState` + `useEffect` as today (no keyed cancellation; a late answer can land). A new list-status component (CLAUDE.md: reuse `WidgetShell`'s look). |
 | DDD-17 | 05 | **The gather reads forecast headers, not histograms** (ADR-261): Features of the involved Teams, tracked, with Portfolios, Team work and Teams, dependency references and completion-forecast headers. Fingerprint and skip are decided on that (CF-4). A computed round replaces forecasts as today; old histogram rows go by the database cascade (CF-6). **Write-back resolves against its own read (B1, option chosen: a fresh read after the save).** After the save and the confirm-stamp, and only when the Portfolio's connection has a forecast write-back mapping that the licence allows, `ForecastUpdater` reads the Portfolio's Features with their completion and start forecasts **and histograms**, no tracking, from the database, and passes that to write-back resolution. A computed round therefore resolves the forecasts just saved; a skipped round the stored ones with their histograms; both stage today's values. Without a mapping nothing extra is read. | (a) Pass the tracked gathered Features: they are the Features of the involved Teams, not the Portfolio's, so membership differs at the edges (a Portfolio Feature with no Team work), and on a skip they carry no histograms. (b) Keep the full tracked `GetById` read in the round: its histograms are identity-resolved into the gather and deleted row by row again, undoing slice 05. Set-based delete plus bulk insert (provider-specific; the general bulk library is dual-licensed commercial). Storing percentiles instead of histograms (C12). |
 | DDD-18 | 05 | **The round's other reads shrink**: `ForecastUpdater` reads its Portfolio through the catalogue reader (no forecasts) for what it needs of the root (name, id, fingerprint, connection and mappings, Teams, Feature count), and the trigger's collision check reads the Portfolio's Team ids only (provisional `TeamIdsOf(portfolioId)`). That Portfolio object is **never** what write-back resolves against (DDD-17). Tests (SQLite and PostgreSQL): a computed round and a skipped round, each with a forecast write-back mapping on a Premium licence, stage exactly the field values today's code stages for the same seed; a round without a mapping reads no histograms. | Keeping `GetById` there (re-imports histograms into the tracked gather). |
-| DDD-19 | 06 | **Size note** (ADR-262): `PortfolioSize` in `Models` (count, threshold 100, "over" = more than 100); `GET api/latest/portfolios/{portfolioId}/size` → `{ featureCount, threshold, isOverThreshold }`, `PortfolioRead`, one `COUNT` (provisional `FeatureCountOf(id)`); `PortfolioUpdater` logs one Information line after a successful Features update when over, from the count it holds. **Looks (decision, maintainer may overturn, Q-M3)**: loaded and over → the info note, worded as of the last update ("This {Portfolio} holds {N} {Features} (as of its last update). …"); loading → nothing yet; **failed → the same info Alert with one line, "Couldn't check this {Portfolio}'s size."**, never silent (CLAUDE.md: a failure must not look like "no data"); at or under 100, or never updated → nothing. Copy provisional, settled at DISTILL's sketch. Save never waits on the count. | A field on `PortfolioSettingDto` (an input DTO; clients read it). Counting on the client (two threshold constants). Blocking validation (maintainer: a nudge). Silent failure (DISCUSS's default; hides a failed read as "under 100"). |
+| DDD-19 | 06 | **Size note** (ADR-262): `PortfolioSize` in `Models` (count, threshold 100, "over" = more than 100); `GET api/latest/portfolios/{portfolioId}/size` → `{ featureCount, threshold, isOverThreshold }`, `PortfolioRead`, one `COUNT` (provisional `FeatureCountOf(id)`); `PortfolioUpdater` logs one **Warning** line after a successful Features update when over, from the count it holds (*Information superseded by maintainer decision 10, 2026-10-24*; the line also lands in Recent Problems, accepted by decision 14). **Looks (decision, maintainer may overturn, Q-M3)**: loaded and over → the info note, worded as of the last update ("This {Portfolio} holds {N} {Features} (as of its last update). …"); loading → nothing yet; **failed → the same info Alert with one line, "Couldn't check this {Portfolio}'s size."**, never silent (CLAUDE.md: a failure must not look like "no data"); at or under 100, or never updated → nothing. Copy provisional, settled at DISTILL's sketch. Save never waits on the count. | A field on `PortfolioSettingDto` (an input DTO; clients read it). Counting on the client (two threshold constants). Blocking validation (maintainer: a nudge). Silent failure (DISCUSS's default; hides a failed read as "under 100"). |
 | DDD-20 | all | **Indexes: none planned.** Every new filter is on a key or a foreign key that is already indexed (Portfolio id, Team id through `FeatureWork`), except `Features.ReferenceId` (the in-progress and parent lookups), a few thousand rows. **Condition**: if the slice-03 or slice-04 command log shows a reference-id lookup above 50 ms at 3,000 Features, add one index on `Features.ReferenceId`, expand-only, through `CreateMigration` for every provider. No column is added anywhere. | Adding the index up front: a migration for an unmeasured cost. |
-| DDD-21 | all | **Epic 6264 fit** (D28, DV-9): every new reader is a method on an existing repository port (`IPortfolioRepository`, `IFeatureRepository`), takes and returns no `IQueryable`, `Expression` or `Func`, and is named for what it reads and what it leaves out. The S05a ratchet is **per file** (a file is on the list or not), so the rule here is: no file that does not call `GetAllByPredicate` today starts to, and no touched file calls it more often. Effects: `FeaturesController` drops one of its three calls (stays on the list); `ForecastService` drops its only call (`ForecastService.cs:117`) in slice 05, so it leaves; `TeamMetricsService` drops its `GetByPredicate(Func)` call (S05b's concern, not S05a's). **Recorded for 6264's DESIGN, without editing its files**: its S05a baseline of 14 (its `feature-delta.md:215`) omits `ForecastService`, which calls `GetAllByPredicate` today; after slice 05 the omission is moot. The new controller depends on no repository. Names are provisional until 6264's S01 glossary; S05c–e and S13 adopt or rename them. | Waiting for 6264's ports (6400 lands first, maintainer). Role-specific reader interfaces now (6264's S05c–e own that split). |
+| DDD-21 | all | **Epic 6264 fit** (D28, DV-9): every new reader is a method on an existing repository port (`IPortfolioRepository`, `IFeatureRepository`), takes and returns no `IQueryable`, `Expression` or `Func`, and is named for what it reads and what it leaves out. The S05a ratchet is **per file** (a file is on the list or not), so the rule here is: no file that does not call `GetAllByPredicate` today starts to, and no touched file calls it more often. Effects: `FeaturesController` drops one of its three calls (stays on the list); `ForecastService` drops its only call (`ForecastService.cs:124`) in slice 05, so it leaves; `TeamMetricsService` drops its `GetByPredicate(Func)` call (S05b's concern, not S05a's). **Recorded for 6264's DESIGN, without editing its files**: its S05a baseline of 14 (its `feature-delta.md:215`) omits `ForecastService`, which calls `GetAllByPredicate` today; after slice 05 the omission is moot. The new controller depends on no repository. Names are provisional until 6264's S01 glossary; S05c–e and S13 adopt or rename them. | Waiting for 6264's ports (6400 lands first, maintainer). Role-specific reader interfaces for **existing** callers now (6264's S05c–e own that split). *Revised at the final review gate*: the **new** read-only components of slice 04 do get a narrow reader interface, following the house's `IReportReader` / `ISecretCustodyReader` pattern (DDD-15), because they have no existing port to keep. |
 | DDD-22 | all | **Enforcement**: see Architecture Enforcement; three layers for the lane (behavioural probe, ArchUnitNET structure, identity goldens), parity goldens for every unchanged body, property-based verdict identity. | Convention and review only (ADR rules without enforcement erode). |
-| DDD-23 | 01 | **`ForecastLane` lifecycle.** A singleton created at startup, disposed by the container after the hosted services have stopped. On host stop the update queue's existing drain (`UpdateQueueService.DrainAsync`: complete the channel, wait for the in-flight update up to the shutdown timeout, then abandon) runs first; an in-flight round is stopped through its existing cancellation token, which leaves between simulated runs before anything is saved (ADR-249), so nothing is half-saved. A save already in its transaction either commits or is rolled back by the database if the process ends; no fingerprint is recorded for an unfinished round, and every start forgets fingerprints anyway (Story 6354). Disposal stops accepting tasks, completes the lane's queue, and joins its threads with a short timeout; the threads are background threads, so they never hold the process open. | Foreground threads (could block shutdown). Disposing the lane before the queue drains (an in-flight round would fault instead of cancelling). |
+| DDD-23 | 01 | **`ForecastLane` lifecycle.** **One creation point**: the composition root constructs the lane once, during service registration, from `ForecastSimulationLimits.Default` (the instance the forecasts already use), and registers it as a singleton through a factory that returns that instance (`AddSingleton(_ => lane)`), so the container still disposes it (an instance passed directly to `AddSingleton` is never disposed by the container). The startup banner reads that same instance's thread count (DDD-7). Disposed by the container after the hosted services have stopped. On host stop the update queue's existing drain (`UpdateQueueService.DrainAsync`: complete the channel, wait for the in-flight update up to the shutdown timeout, then abandon) runs first; an in-flight round is stopped through its existing cancellation token, which leaves between simulated runs before anything is saved (ADR-249), so nothing is half-saved. A save already in its transaction either commits or is rolled back by the database if the process ends; no fingerprint is recorded for an unfinished round, and every start forgets fingerprints anyway (Story 6354). Disposal stops accepting tasks, completes the lane's queue, and joins its threads with a short timeout; the threads are background threads, so they never hold the process open. | Foreground threads (could block shutdown). Disposing the lane before the queue drains (an in-flight round would fault instead of cancelling). |
 | DDD-24 | 02 | **The Overview's looks are stated, unchanged in kind.** Slice 02 changes what its two list requests cost, not how the page waits: the header and its links render at once (W1); the page body shows `LoadingAnimation`'s spinner while the Portfolios, Teams and connections are on their way, and its existing "Error loading data. Please try again later." when one fails. **Reporter's "scaffold first" intent**: slice 02 serves it by making the lists themselves cheap (the server no longer reads histograms to name them), so the wait for the body becomes about one cheap request; it does not render the lists before the rest of the body, and it does not cache them across visits (client cache is a follow-up, Out of Scope). | A per-section skeleton on the Overview (a new look for a page whose wait this slice shortens; reconsider only if K1 is missed after 02). |
 
 ## Wave: DESIGN / [REF] Task 01a — the measurement harness (dev-only)
@@ -1548,10 +1628,10 @@ Lighthouse.EndToEndTests/
 | Slice | NEW | MODIFIED | UNCHANGED (named because a reader might expect a change) |
 |---|---|---|---|
 | 01a | `Lighthouse.EndToEndTests/perf/` (generator, harness, perf config) | `ForecastUpdater` (Debug timing split, log-only) | Everything else |
-| 01 | `ForecastLane` (+ registration, banner line) | `ForecastUpdater.Update` (one hop); `ForecastService.Simulate` (current scheduler); usage-data reporter of the two tab-opened events (bucket, with DEVOPS) | `UpdateQueueService`, `UpdateServiceBase`, the Team and Portfolio updaters, holds, Stop, Cancel all, `ForecastSimulationLimits`, the simulation, every HTTP contract |
-| 02 | — | `PortfolioRepository` (`GetById` in the database; catalogue readers), `IPortfolioRepository`; `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` (read through the catalogue); `useLicenseRestrictions` (shared queries, status); `OverviewDashboard` (the two create actions show the could-not-check reason on `failed`) | Response bodies; `LicenseGuard`; `useRbac`; the edit and update gates in `PortfolioDetail`, `ModifyProjectSettings`, `TeamDetail`, `EditTeam`; the Overview's `LoadingAnimation` spinner and error look |
+| 01 | `ForecastLane` (+ registration: created once by the composition root from `ForecastSimulationLimits.Default` and registered through a factory returning it; banner line reads that instance) | `ForecastUpdater.Update` (one hop); `ForecastService.Simulate` (current scheduler); usage-data reporter of the two tab-opened events (bucket, with DEVOPS) | `UpdateQueueService`, `UpdateServiceBase`, the Team and Portfolio updaters, holds, Stop, Cancel all, `ForecastSimulationLimits`, the simulation, every HTTP contract |
+| 02 | — | `PortfolioRepository` (`GetById` in the database; catalogue readers), `IPortfolioRepository`; `PortfoliosController`, `TeamsController`, `TeamController`, `PortfolioController` (read through the catalogue); `useLicenseRestrictions` (shared queries, status); every create entry point (maintainer decision 15): `OverviewDashboard` ("+ Add Team" / "+ Add Portfolio" show the could-not-check reason on `failed`), `OnboardingStepper` (its Add Team / Add Portfolio steps, `:95`, `:102`, disabled while `loading` or `failed`, with the reason on `failed`), `EditTeam` (Save on a **new** Team, `:41-43`, same two states) | Response bodies; `LicenseGuard`; `useRbac`; the edit and update gates in `PortfolioDetail`, `ModifyProjectSettings`, `TeamDetail`, and `EditTeam` for an existing Team; the Overview's `LoadingAnimation` spinner and error look |
 | 03 | — | `IFeatureRepository` / `FeatureRepository` (whole graph without histograms; by reference ids); `FeaturesController` (graph read); `TeamMetricsService` / `ITeamMetricsService` (in-progress references, batched read) | `DependencyFacts`, `DependencyDecision`, `FeaturePositionMap`, `FeatureMoveAuthorization`; all response bodies |
-| 04 | `FeatureListController`, `IFeatureListService`, `FeatureListService`, `FeatureListDto` / `FeatureListRowDto` / parent and active-work items; the shared dependency-rendering collaborator; `useFeatureList`; `FeatureService.getFeatureList` (frontend service method) | `FeaturesController` (uses the shared collaborator); `IFeatureRepository` (owner reads); `PortfolioFeatureList`, `TeamFeatureList`, `FeatureListDataGrid` (messages, status attribute); `PortfolioDetail`, `TeamDetail` (invalidate the key); the Features-tab E2E page object (waits on `data-widget-status="ready"`) | `GET /features`, `/features/ids`, `/features/references`, `FeatureDto`, `useParentWorkItems`, the Delivery timeline, the `Feature` model |
+| 04 | `FeatureListController`, `IFeatureListService`, `FeatureListService`, `FeatureListDto` / `FeatureListRowDto` / parent and active-work items; the shared dependency-rendering collaborator; `IFeatureListReader` (narrow read-only port, implemented by `FeatureRepository`, DDD-15); `useFeatureList`; `FeatureService.getFeatureList` (frontend service method) | `FeaturesController` (uses the shared collaborator); `IFeatureRepository` (owner reads); `PortfolioFeatureList`, `TeamFeatureList`, `FeatureListDataGrid` (messages, status attribute); `PortfolioDetail`, `TeamDetail` (invalidate the key); the Features-tab E2E page object (waits on `data-widget-status="ready"`) | `GET /features`, `/features/ids`, `/features/references`, `FeatureDto`, `useParentWorkItems`, the Delivery timeline, the `Feature` model |
 | 05 | — | `ForecastService` (gather without histograms), `IFeatureRepository` (team gather; the Portfolio's Features with full forecasts for write-back), `ForecastUpdater` (catalogue Portfolio read, Team-ids trigger check, write-back resolved against its own read after the save), `IPortfolioRepository` (`TeamIdsOf`) | The fingerprint and its members, `ForecastRunOutcome`, the CAS and forget writes, `WriteBackTriggerService`, domain-event handlers |
 | 06 | `PortfolioSize`; `GET /portfolios/{id}/size` (action on `PortfolioController`); the note in the edit page | `IPortfolioRepository` (`FeatureCountOf`); `PortfolioUpdater` (log line); `PortfolioService.ts` (`getSize`) | Save, validation, updates |
 
@@ -1559,7 +1639,7 @@ Lighthouse.EndToEndTests/
 
 | Component | Shape | Universe | How the crafter asserts it |
 |---|---|---|---|
-| Catalogue readers, whole-graph reader, reference-id reader, owner list read, `TeamIdsOf`, `FeatureCountOf` | pure read (no tracking) | the database rows they select | No `SaveChanges` path can reach them (no tracking); golden bodies equal |
+| Catalogue readers, whole-graph reader, reference-id reader, owner list read, `TeamIdsOf`, `FeatureCountOf` | pure read (no tracking) | the database rows they select | No `SaveChanges` path can reach them (no tracking); golden bodies equal. New read-only components see them only through `IFeatureListReader`; existing callers reach them on their write-capable port, by the no-tracking convention (DDD-15) |
 | Gather without histograms | read, tracked (the round writes these Features) | Features of the involved Teams | The computed round's stored rows equal the old code's for the same seed |
 | Write-back read after the save | pure read (no tracking), only with a forecast mapping | the Portfolio's Features with full forecasts | Staged values equal today's for a computed and a skipped round |
 | `ForecastService.UpdateForecastsForPortfolio` | bounded change | the forecasts of the gathered Features, nothing else | Row diff on SQLite and PostgreSQL limited to forecast and histogram tables of those Features |
@@ -1713,8 +1793,10 @@ before the rest of the body or keep them across visits (a client cache is a foll
 
 ### Slice 02 — the licence-gated create actions (reuses each control's existing disabled-with-tooltip style)
 
-Only creating a Team or a Portfolio changes (DDD-11, Q-M1). Edits and updates of existing Teams and Portfolios keep
-today's behaviour in every state.
+Only creating a Team or a Portfolio changes (DDD-11, Q-M1), at every create entry point (maintainer decision 15):
+the Overview's two buttons, the onboarding stepper's two steps, and Save on a new Team's edit page. Edits and updates
+of existing Teams and Portfolios keep today's behaviour in every state. Copy settled by maintainer decision 11 (UI
+spelling "license"); this sketch together with decision 11 is slice 02's DISTILL sketch.
 
 ```
 Loaded, under the limit (today)        Loaded, at the limit (today, today's reason)
@@ -1727,8 +1809,40 @@ Licence still loading (new)            Licence could not be checked (new)
 +------------------+                   +------------------+
 | + Add Team       |  (disabled,       | + Add Team       |  (disabled)
 +------------------+   no tooltip)     +------------------+
-                                         tooltip: "Couldn't check your licence. Reload the page to try again."
+                                         tooltip: "Couldn't check your license. Reload the page to try again."
 ```
+
+The onboarding stepper on the Overview (`OnboardingStepper`, shown until a Team and a Portfolio exist; reuses its
+existing disabled step action):
+
+```
+Loaded (today: enabled under the limit, disabled at it)
+  2  Add Team          Configure a Team to start ...        [ + Add Team ]
+  3  Add Portfolio     Group Teams into a Portfolio ...     [ + Add Portfolio ]
+
+Licence still loading (new)
+  2  Add Team          Configure a Team to start ...        [ + Add Team ]       (disabled, no tooltip)
+  3  Add Portfolio     Group Teams into a Portfolio ...     [ + Add Portfolio ]  (disabled, no tooltip)
+
+Licence could not be checked (new)
+  2  Add Team          Configure a Team to start ...        [ + Add Team ]       (disabled)
+  3  Add Portfolio     Group Teams into a Portfolio ...     [ + Add Portfolio ]  (disabled)
+     tooltip on both: "Couldn't check your license. Reload the page to try again."
+```
+
+Save on a new Team's edit page (`EditTeam` when creating; reuses the page's existing disabled Save):
+
+```
+Loaded (today)                 ... Team settings ...    [ Save ]   enabled under the limit, disabled at it
+Licence still loading (new)    ... Team settings ...    [ Save ]   (disabled, no tooltip)
+Licence could not be checked   ... Team settings ...    [ Save ]   (disabled)
+  (new)                          tooltip: "Couldn't check your license. Reload the page to try again."
+
+Editing an existing Team: Save follows today's rule in every state (unchanged).
+```
+
+The settings a person has typed on a new Team's page stay in the form while Save waits or is disabled; nothing is
+lost, and Save enables as soon as the licence check answers "ready" and under the limit.
 
 On a Premium instance the "loading" state lasts one `/license` request and no list is fetched for licensing.
 
@@ -1767,7 +1881,7 @@ Empty (loaded, nothing stored)                                    data-widget-st
 |                      This Portfolio has no Features yet.     (Team tab: "This Team …")      |
 +--------------------------------------------------------------------------------------------+
 
-All hidden by Hide completed (loaded, every row completed)        data-widget-status="ready"
+All hidden by Hide Completed Features (loaded, every row completed) data-widget-status="ready"
 +--------------------------------------------------------------------------------------------+
 |                                                     Hide Completed Features [x]            |
 |   All 100 Features are completed. Turn off Hide Completed Features to see them.            |
@@ -1776,7 +1890,8 @@ All hidden by Hide completed (loaded, every row completed)        data-widget-st
 
 Decision for DISTILL's sketch (S-1): a refresh that fails after rows were shown takes the could-not-load look (default;
 the previous answer is never shown as current), or keeps the rows dimmed with an inline "couldn't refresh" line. The
-default follows `WidgetShell`.
+default follows `WidgetShell`. **Settled by maintainer decision 3 (2026-10-24): the could-not-load look**, with
+"The {Features} couldn't be loaded." and [Retry] (decision 4); empty and all-hidden copy per decisions 5 and 6.
 
 ### Slice 06 — the size note on the Portfolio edit page (reuses MUI `Alert` severity `info`, as other settings notes)
 
@@ -1828,8 +1943,10 @@ Style: ports-and-adapters within the modular monolith. Language: C# and TypeScri
   (`IsThreadPoolThread == false` and named by the lane). Continuations inside EF Core or Npgsql are not frames and are
   not asserted (DDD-6). The probe runs on 1, 2 and 4 lane threads. A manual `When` forecast runs its workers on pool
   threads and **releases its request thread** while they run (the caller's continuation is not the worker thread).
-  Structural (ArchUnitNET): `ForecastService` does not call `Task.Run`; only `ForecastUpdater` and the composition root
-  depend on `ForecastLane`. Identity: seeded percentiles, histogram rows and fingerprints equal before and after, SQLite
+  Structural (ArchUnitNET plus a source scan of `ForecastService.cs`, since calls inside `async` bodies vanish from the
+  Release IL): `ForecastService` does not call `Task.Run`, `Task.Factory.StartNew` without an explicit scheduler
+  argument, or any `ThreadPool.*` member, and calls `Parallel.*` only with a `ParallelOptions` whose `TaskScheduler`
+  is set; only `ForecastUpdater` and the composition root depend on `ForecastLane`. Identity: seeded percentiles, histogram rows and fingerprints equal before and after, SQLite
   and PostgreSQL.
 - **Lane lifecycle** (DDD-23): host stop during a round cancels it with nothing saved; the lane's threads end after
   disposal.
@@ -1848,14 +1965,16 @@ Style: ports-and-adapters within the modular monolith. Language: C# and TypeScri
   stage the same values as today's code for the same seed.
 - **Duplicates** (DDD-13): two Features with one reference id give one in-progress answer (the first in forecast order),
   counts count it once, one warning.
-- **Frontend**: hook tests for shared queries and states; a source-tree test that only the shared licence query calls
+- **Frontend**: hook tests for shared queries and states; component tests for each create entry point (the Overview's
+  two buttons, the onboarding stepper's two steps, Save on a new Team) in the loading and failed states, and for Save
+  on an existing Team staying as today; a source-tree test that only the shared licence query calls
   `getLicenseStatus`; the Features-tab page object waits on `data-widget-status="ready"`.
 
 ## Wave: DESIGN / [REF] Risks
 
 | Risk | P | I | Mitigation |
 |---|---|---|---|
-| The stalls are GC or CPU throttling, not pool starvation (UC-2) | M | H | Control experiment C and GC/throttling readings in 01a; slices 03 and 05 shrink tracked graphs; D27 re-orders |
+| The stalls are GC or CPU throttling, not pool starvation (UC-2) | M | H | Control experiment C and GC/throttling readings in 01a; if DDD-3 classifies them as GC or CPU quota, DELIVER holds after 01a and brings the readings to the maintainer before the lane is built (maintainer decision 16, 2026-10-24); slices 03 and 05 shrink tracked graphs |
 | K2 still missed at 920 after slice 04: every per-Team completion histogram of the owner's Features must still be read, because `Feature.Forecast` folds them all (CF-11); only per-Team start histograms and the payload go | M | M | The 01a baseline shows the completion-histogram share of the list's server time; if it alone exceeds the K2 budget, the percentile read model is the named follow-up (ADR-260) |
 | K4's computed −30% unreachable if the simulation dominates (UC-3) | M | L | Target set at D27 from the measured split |
 | A lane task blocks on another lane task (deadlock) | L | H | `Parallel.For` runs on its caller; ADR-257 forbids blocking on lane work; probe test runs a full round on 1, 2 and 4 lane threads |
@@ -1869,7 +1988,9 @@ Style: ports-and-adapters within the modular monolith. Language: C# and TypeScri
 - **OQ-1** Hypothesis, unverified: does the .NET 10 Kestrel heartbeat run on a dedicated thread or on a timer on the
   pool? It changes how Q_r is read, not the thresholds of DDD-3. 01a answers it from the Kestrel source of the version
   in use or by experiment C0/C, and records it beside the baseline (UC-2).
-- **OQ-2** The licence "could not check" copy for the two create actions (DISTILL sketch, slice 02).
+- **OQ-2** The licence "could not check" copy for the two create actions (DISTILL sketch, slice 02). *Settled by
+  maintainer decisions 11 and 15 (2026-10-24)*: "Couldn't check your license. Reload the page to try again." at every
+  create entry point.
 - **OQ-3** Settled as DDD-13 (Q-M2); DELIVER records whether the dev backup holds any duplicated reference id.
 - **OQ-4** If the v26.10.19.10 tag's API differs for the seeder, a per-version map; otherwise one path.
 - **OQ-5** `WidgetBody` inside the grid's `TableContainer`: it assumes a sized flex parent; DELIVER may need a small
@@ -1884,8 +2005,8 @@ Each has the default this wave took; none blocks DISTILL.
 
 1. **Q-M1 Licence gate scope** (ADR-259, UC-1). Today every count-gated action is offered while the licence is loading
    and when it cannot be loaded; AC-2.5 asks the opposite. *Default: while loading or failed, refuse only creating a
-   Team or a Portfolio ("Couldn't check your licence" when failed); edits and updates stay allowed; the server's guard
-   is unchanged.* Cost of the alternative (refuse edits too): a transient failure blocks saving settings someone is
+   Team or a Portfolio ("Couldn't check your license" when failed); edits and updates stay allowed; the server's guard
+   is unchanged.* *Answered 2026-10-24: maintainer decisions 11 and 15 (every create entry point).* Cost of the alternative (refuse edits too): a transient failure blocks saving settings someone is
    mid-way through, on an instance that is within its licence.
 2. **Q-M2 A reference id stored twice** (DDD-13, UC-4). Today `featuresInProgress` and that Team's WIP counts throw.
    *Default: the first Feature in forecast order answers (the dependency path's rule), with a warning naming the id once
@@ -1906,6 +2027,17 @@ Full text with verbatim quotes: `design/upstream-changes.md`.
 | AC-5.2: "Computed round ≥ 30% shorter." | Provisional until the 01a split (UC-3, Q-M4). | Slice 05 cannot shorten the simulation (C12). |
 | AC-3.4: "In-progress answers unchanged, on the list and in a Team update." | Unchanged wherever today answers; where two stored Features share a reference id (today a thrown exception), the first in forecast order answers and a warning is logged (UC-4, Q-M2). | Today's answer in that case is a crash. |
 | US-06 Looks: "no note while the count is unknown or failed to load — a missing nudge cannot be misread as data" | Loading shows nothing; a failed count shows one line, "Couldn't check this {Portfolio}'s size.", in the same info note; the count is labelled "as of its last update" (UC-5, Q-M3). | CLAUDE.md: a failed load must not look like "no data"; a silent failure reads as "under 100". |
+
+Rows added after the maintainer decisions of 2026-10-24 (`Wave: DISTILL / [REF] Maintainer Decisions — 2026-10-24`),
+superseding this wave's own text:
+
+| Was (source, verbatim) | Now | Why |
+|---|---|---|
+| DDD-3: "GC → 01 still ships (K3 is an exit criterion) but 05 and 03 (smaller tracked graphs) move ahead of 02; CPU quota → 01 ships, the finding goes to the maintainer as host sizing" | GC or CPU quota → DELIVER holds after 01a and brings the readings to the maintainer before building the lane. *Superseded by maintainer decision 16.* | The lane helps only when the shared thread pool is the cause. |
+| DDD-19: "`PortfolioUpdater` logs one Information line" | One **Warning** line; it also lands in Recent Problems, accepted. *Superseded by maintainer decisions 10 and 14.* | The maintainer wants the size seen; no sink exclusion. |
+| DDD-11 / Q-M1: "only the count-gated **create** actions (new Team, new Portfolio)" on the Overview, with "Couldn't check your licence" | Every create entry point: the Overview's two buttons, the onboarding stepper's two steps, Save on a new Team; copy "Couldn't check your license. Reload the page to try again." *Superseded by maintainer decisions 11 and 15.* | The same create can start from three places; the UI spells it "license". |
+| DDD-23 / ADR-257 Decision 5: "A singleton created at startup" / "created at first resolve" (two creation points) | One creation point: the composition root builds the lane at registration and registers it through a factory returning that instance, so the banner reads it and the container disposes it. *Final review gate, 2026-10-24.* | The banner must read the lane's real size before any round runs. |
+| DDD-21: "Role-specific reader interfaces now (6264's S05c–e own that split)" rejected outright | New read-only components (slice 04) get a narrow reader interface, the house's `IReportReader` pattern; existing callers keep their ports with the no-tracking convention. *Final review gate, 2026-10-24.* | The codebase already has restricted reader interfaces; a new component has no port to keep. |
 
 ## Wave: DESIGN / [REF] Hand-off Notes for DEVOPS
 
@@ -1987,7 +2119,7 @@ Redis and PostHog as today.
 | Bulkhead (a separate thread pool for one kind of work) | **Chosen** (ForecastLane) | The forecast can no longer eat the threads pages need. |
 | Raise the shared pool's minimum | Rejected as the fix, kept as an experiment | Hides starvation for everyone instead of isolating the cause. |
 | Separate worker process | Rejected | Strongest isolation, but a new deployable that breaks the standalone install. |
-| Single Responsibility / Interface Segregation (narrow readers named for what they read) | **Chosen** | Each caller states what it needs, so it stops paying for histograms it never shows; it is Epic 6264's direction. |
+| Single Responsibility / Interface Segregation (narrow readers named for what they read) | **Chosen** | Each caller states what it needs, so it stops paying for histograms it never shows; it is Epic 6264's direction. The new slice-04 components also get a read-only interface (`IFeatureListReader`), as `IReportReader` does for reports; existing callers keep their ports until 6264 splits them. |
 | Projection value objects (read models) instead of partly loaded entities | Rejected for now | Safer, but every unchanged body would need a second mapping; Epic 6264's S13 removes the risk later. |
 | CQRS read model of stored percentiles | Deferred | The largest win for the list, but a schema and write path; waits for 6264's data ownership. |
 | Functional core / imperative shell | **Kept** | `ForecastService` stays the decision core, `ForecastUpdater` the shell, now also the one place that chooses threads. |
@@ -2029,6 +2161,12 @@ where `/features/ids` and `/features/references` today answer with the readable 
   06 shows a failed count and labels the count as of the last update (DDD-19); the duplicate reference-id rule is a
   maintainer question (DDD-13); licence refusal covers creation only (DDD-11); the lane's lifecycle (DDD-23) and the
   Overview's looks (DDD-24) are added; ADR-260's RBAC text and DDD-21's ratchet arithmetic are corrected.
+- **Revision 2 (2026-10-24, final review gate)**: the create-gate surfaces are named and counted against the code
+  (CF-3, DDD-11, the slice-02 looks, decision 15); 01a's GC or CPU-quota branch holds DELIVER for the maintainer
+  (DDD-3, decision 16); the slice-04 read-only components take a narrow reader interface after the house's
+  `IReportReader` pattern (DDD-15, DDD-21); one creation point for the lane (DDD-23, ADR-257); the S107 trade-off of
+  resolving the lane late is stated (DDD-6); the size line is a Warning (DDD-19); the banner's singular form (DDD-7);
+  the UI copy spells "license"; line references refreshed (CF-1, DDD-21); ADR-257's structural rule widened.
 
 ---
 
@@ -2061,7 +2199,7 @@ image change or external call; no migration unless DDD-20's measured index lands
 | CI/CD | Existing `ci.yml` "Build And Deploy Lighthouse" (`ci_changes`, `ci_backend`, `ci_frontend`, `ci_verifysqlite`, `ci_verifypostgres`, `ci_sonar_gates`). Extended by tests only; no new workflow, job or step. |
 | Branching | Trunk-based on `main`; one Story per slice, slices ordered and pushed one at a time. |
 | Release | Calver release through the existing pipeline; users upgrade. **No feature flag**: DESIGN needs none (every slice keeps bodies and outputs identical, G1–G4). Each slice can ship in its own release or together. |
-| Observability | Serilog structured logs (forecast summary line, Kestrel warnings, one new banner line, one Debug split, one Information nudge line) and Refresh History (`RefreshLog`). Usage data: one closed property on two existing events. No metric endpoint, trace, dashboard or alert added. |
+| Observability | Serilog structured logs (forecast summary line, Kestrel warnings, one new banner line, one Debug split, one Warning nudge line, per maintainer decision 10) and Refresh History (`RefreshLog`). Usage data: one closed property on two existing events. No metric endpoint, trace, dashboard or alert added. |
 | Configuration knob | **None.** The lane is sized by `ForecastSimulationLimits.MostRunsAtOnce` (DDD-7), which `DOTNET_PROCESSOR_COUNT` and the container's CPU limit already move (ADR-248). A lane-thread setting would be a second number for one bound; not needed. |
 | Mutation testing | per-feature (CLAUDE.md, unchanged): Stryker.NET + StrykerJS, ≥ 80 %, last on frozen code, per slice. Scope below. |
 | Environment matrix | `environments.yaml` (feature root, house location; the skill's `devops/` path is not used, as in Story 6354). |
@@ -2078,38 +2216,39 @@ per size bucket", descriptive) and D25's population claim (the maintainer expect
 a few hundred Features; today the evidence is one instance) cannot be counted from the name: both tab events already
 exist and are counted, and what this Epic needs to know is how many of those openings are of large Portfolios and
 Teams. Without the band, nothing in the catalogue tells a 30-Feature Portfolio from a 920-Feature one. It is a closed
-enum of four values, never a count and never an id, which is the narrowest shape that answers it.
+enum of six values (maintainer decision 2; the first draft had four), never a count and never an id, which is the
+narrowest shape that answers it.
 
 | Part | Decision |
 |---|---|
-| Backend enum | `Models/UsageData/UsageDataFeaturesHeld.cs`: `UpTo100 = 0`, `From101To399 = 1`, `From400 = 2`, `Unknown = 3`. Appended only; with the house's "zero is a real answer" comment. |
+| Backend enum | `Models/UsageData/UsageDataFeaturesHeld.cs`: `UpTo20 = 0`, `From21To50 = 1`, `From51To100 = 2`, `From101To399 = 3`, `From400 = 4`, `Unknown = 5` (maintainer, 2026-10-24). Appended only; with the house's "zero is a real answer" comment. |
 | Record / DTO field | `UsageDataEventReported.FeaturesHeld` and `UsageDataEventDto.FeaturesHeld` (`UsageDataFeaturesHeld?`, last optional parameter, as `Updates` was added). JSON from the browser: `featuresHeld`. |
 | PostHog property | `features_held`, written with `JsonIgnoreCondition.WhenWritingNull` (left out entirely on every other event), from `FeaturesHeld?.ToString()`. Added to the allowed property list in `Architecture/UsageDataEmitSeamArchUnitTest.cs`. |
 | Where the server allowlists it | `UsageDataController.AsTakenIn`: `reported.FeaturesHeld is { } held && !Enum.IsDefined(held)` refuses the batch. `UsageDataEventShapes`: a new declaration `EventsThatSayHowManyFeaturesTheirPageHolds = {TeamTabOpened, PortfolioTabOpened}`, judged **"carried only when declared"**: on any other event it is refused; on the two tab events it may be absent (see the next row and maintainer question 1). |
 | Unknown vs absent | **The browser always sends it on the two tab events.** `Unknown` means the browser did not know the size when the opening was counted (the owner failed to load, or the person left before it arrived). **Absent** therefore means only an older web bundle (a tab left open across the upgrade). The server accepts absent on these two events so such a tab does not lose its whole batch (`HandInEvents` refuses a batch on one unreadable event) and so the ~17 backend test classes that post tab events today keep passing without a band. |
-| Boundaries | Aligned with the nudge (D23: more than 100) and the measurement points (100 / 400 / 920): **`UpTo100`** = 0–100 Features (the nudge never shows; the 100 scale point), **`From101To399`** = 101–399 (nudged, below the reporter's range), **`From400`** = 400 and more (the reporter's range: both the 400 and the 920 scale points). DISCUSS's `Under100` / `100To399` would have put exactly 100, which the nudge leaves silent, among the nudged; corrected here. No higher band: no KPI needs to tell 920 from 2,000, and every extra band is one more distinguishing value. |
+| Boundaries | Aligned with the nudge (D23: more than 100) and the measurement points (100 / 400 / 920): **`UpTo20`** = 0–20, **`From21To50`** = 21–50, **`From51To100`** = 51–100 (together the range where the nudge never shows; finer below the nudge at the maintainer's request, 2026-10-24), **`From101To399`** = 101–399 (nudged, below the reporter's range), **`From400`** = 400 and more (the reporter's range: both the 400 and the 920 scale points). DISCUSS's `Under100` / `100To399` would have put exactly 100, which the nudge leaves silent, among the nudged; corrected here. No higher band: no KPI needs to tell 920 from 2,000, and every extra band is one more distinguishing value. |
 | What is counted | `portfolio.features.length` / `team.features.length` of the owner payload the detail page already holds (DDD-8). For a Team that is the Features it works on, the same list its Features tab shows. The same band rides on every tab of that owner (Features, Metrics, Settings, …). |
 | When it is sent | The opening counts after the existing 5 s dwell, as today, so a tab-opened count keeps its meaning. If the owner has arrived by then, the band goes with it. If not, the noticed opening waits for the owner while the person stays on that page, and goes with `Unknown` if they leave first or the owner fails to load. A tab opening is never dropped for want of a band. |
 | Frontend | `UsageDataFeaturesHeld` in `models/UsageData/UsageData.ts`; one pure function `featuresHeldOf(count: number \| undefined): UsageDataFeaturesHeld` (the length never leaves it); the event type carries the enum, not a number; `UsageDataService.ts` and `usageDataBuffer.ts` pass it through. The detail pages hand their owner's band to the detector (flag F1: the mechanism is DELIVER's). |
 | CLI / MCP | N/A: `lh` and the MCP server never send tab openings. No Lighthouse-Clients release (D20). |
 
 **Why it can never carry a raw count or an id.**
-1. The wire field is an enum: a number such as `920`, `-1` or `4` fails `Enum.IsDefined`, and a string that is not
-   one of the four names fails to read; either refuses the batch (`400`). Tests: `UsageDataControllerTests` cases for
-   `920`, `4`, `"920"`, and `featuresHeld` on `ReportCreated` (refused).
-2. What leaves the instance is `enum.ToString()` into `features_held`: four possible strings. Test:
+1. The wire field is an enum: a number such as `920`, `-1` or `6` fails `Enum.IsDefined`, and a string that is not
+   one of the six names fails to read; either refuses the batch (`400`). Tests: `UsageDataControllerTests` cases for
+   `920`, `6`, `"920"`, and `featuresHeld` on `ReportCreated` (refused).
+2. What leaves the instance is `enum.ToString()` into `features_held`: six possible strings. Test:
    `UsageDataPublishedMessageTests` (present on a tab event, absent on every other event).
 3. The browser computes the band in one pure function; the TypeScript event type has no numeric field for it. Vitest
-   at 0, 100, 101, 399, 400, 920 and `undefined` → `Unknown`.
+   at 0, 20, 21, 50, 51, 100, 101, 399, 400, 920 and `undefined` → `Unknown`.
 4. Which Team or Portfolio stays unsent, as today: the route is a label (`UsageDataRouteKey`), never an id.
 
 **`docs/settings/usagedata.md` rows to add (slice 01, at the commit that emits):**
 - The two rows "A Team tab was opened" / "A Portfolio tab was opened", column *What travels with it*, append: "and how
-  many Features it holds, as a band: `UpTo100`, `From101To399`, `From400`, or `Unknown` when your browser did not
+  many Features it holds, as a band: `UpTo20`, `From21To50`, `From51To100`, `From101To399`, `From400`, or `Unknown` when your browser did not
   know yet. **Never the number itself**".
 - The field table gains one row, after "When the updates run":
 
-  | How many Features it holds | **Only on the two tab openings.** A band, never the number: `UpTo100` (100 or fewer), `From101To399`, `From400` (400 or more), and `Unknown` when the page had not finished loading the Team or Portfolio before you left it. A browser from before this release leaves it out. **Never how many Features exactly, never which Team or Portfolio.** On the other nineteen events this field is not empty — it is not there at all | `From400` |
+  | How many Features it holds | **Only on the two tab openings.** A band, never the number: `UpTo20` (20 or fewer), `From21To50`, `From51To100`, `From101To399`, `From400` (400 or more), and `Unknown` when the page had not finished loading the Team or Portfolio before you left it. A browser from before this release leaves it out. **Never how many Features exactly, never which Team or Portfolio.** On the other nineteen events this field is not empty — it is not there at all | `From400` |
 
 - The page's count of name-only events is unchanged (both tab events already carried a page); re-read the sentence
   saying the two tab openings "are the only events that can name a page" and keep it true.
@@ -2128,7 +2267,7 @@ alert. Timing KPIs are **harness readings**, never CI budgets (D26, maintainer).
 |---|---|---|---|---|---|
 | K1 navigation and Settings < 1 s | Playwright marks (first navigation paint; Settings usable after the Overview) | `Lighthouse.EndToEndTests/perf/readings` | 920 scale, 4 cores, SQLite + PostgreSQL, idle and during a round; median of 5 after one warm-up | < 1 s each | `OUT-6400-navigation-and-settings-answer` |
 | K2 first Feature row < 2 s at 920 | Playwright first-row mark; server split from the request-finished lines (`Microsoft.AspNetCore.Hosting.Diagnostics`) and EF command lines (`Microsoft.EntityFrameworkCore.Database.Command`); bytes from the Playwright request log | `perf/readings`, `perf/collect` | as K1, Portfolio and Team tab | < 2 s | `OUT-6400-first-feature-row` |
-| K3 no heartbeat warning during rounds (north star) | (a) harness log scan for Kestrel `Heartbeat took longer than`, `dotnet-counters` `System.Runtime` (pool queue, threads, GC pause, gen 2), cgroup `cpu.stat`; (b) **CI precondition**: the lane probe test (every round frame on a lane thread, 1/2/4 lane threads) is a hard gate; (c) **production**: the reporter's first log after the release | `perf/collect`; `ForecastLane` probe tests; reporter's log | 5 computed + 5 skipped rounds at 920 / 8 Teams; during-round K1/K2 ≤ 1.2 × idle. Production: the banner line shows the lane ran; count the Kestrel warnings whose time falls inside a forecast window, from each `ForecastUpdater: Update completed … forecast={N}ms` line (window = its timestamp minus `{N}` ms) | 0 warnings | `OUT-6400-no-stall-during-rounds` |
+| K3 no heartbeat warning during rounds (north star) | (a) harness log scan for Kestrel `Heartbeat took longer than`, `dotnet-counters` `System.Runtime` (pool queue, threads, GC pause, gen 2), cgroup `cpu.stat`; (b) **CI precondition**: the lane probe test (every round frame on a lane thread, 1/2/4 lane threads) is a hard gate; (c) **production**: the reporter's first log after the release | `perf/collect`; `ForecastLane` probe tests; reporter's log | 5 computed + 5 skipped rounds at 920 / 8 Teams; during-round K1/K2 ≤ 1.2 × idle. Production: the banner line shows the lane ran; count the Kestrel warnings whose time falls inside a forecast window. The windows come from the refresh round's summary line (`RefreshRoundSummaryLine.Write`), written at Information by `UpdateServiceBase.cs:116, :143` (SourceContext `Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase`, the category of `ILogger<UpdateServiceBase<Portfolio>>`) or by `UpdateQueueService.cs:448` (SourceContext `…Update.UpdateQueueService`) when the queue lets the round's last execution go. The shipped file template prints only the last segment, so a line reads `HH:mm:ss - INFORMATION - UpdateServiceBase: Update completed \| Portfolio '{name}' \| … \| forecast={N}ms` (also `forecast=skipped after {N}ms (inputs unchanged)`, `cancelled after {N}ms`, `failed after {N}ms`; in a line with no refresh outcome the `forecast=` field comes before `duration=`). Window = [timestamp − max(N, the line's `duration=`) ms, timestamp]: the line is written when the round's last execution leaves, at or after the forecast ends, so the wider bound never misses a forecast. **Zero matched windows makes the reading void, not zero**: no forecast window means nothing was measured (no round ran, or the log was trimmed or filtered above Information) | 0 warnings inside ≥ 1 matched window | `OUT-6400-no-stall-during-rounds` |
 | K4 round duration (computed −30 %, skipped ≤ 15 % of baseline computed) | DDD-4's Debug split (`gather`, `simulate`, `save`, `publish` ms) in the harness; `RefreshLog` `Type = 2` `DurationMs` with `Skipped` for production | `ForecastUpdater` Debug line; Refresh History | Harness at 8 Teams; production: the 6354 query shape over `DurationMs`, computed vs skipped | Provisional, fixed at D27 (Q-M4) | `OUT-6400-shorter-rounds` |
 | K5 openings by size | `features_held` on `TeamTabOpened` / `PortfolioTabOpened` | PostHog (opt-in) | Share of openings and of consenting browsers per band, 90 days after release | Descriptive | `OUT-6400-openings-by-size` |
 | G1–G4 identity | Goldens (bodies, verdicts, positions, forecasts, fingerprints), SQLite + PostgreSQL | `ci_backend` | Every push | 0 differences (hard) | `OUT-6400-answers-unchanged` |
@@ -2146,8 +2285,12 @@ reporter's production log needs no change.
 
 **Production reading for K3 (the reporter's next log).** What the maintainer asks for: one working day's log after the
 upgrade, unedited, with periodic updates on. The banner's new line ("Forecast rounds run on N dedicated threads; each
-forecast uses up to N of M cores") proves the lane ran; the Kestrel warnings inside forecast windows are counted
-against the 2026-10-20 excerpt (9 warnings, 1.4–49.3 s, 4 rounds). Customer names, hosts and Portfolio names in that
+forecast uses up to N of M cores", or "on 1 dedicated thread" when N is 1) proves the lane ran; the Kestrel warnings
+inside forecast windows (taken from the `UpdateServiceBase` / `UpdateQueueService` "Update completed" lines, K3 row
+above) are counted against the 2026-10-20 excerpt (9 warnings, 1.4–49.3 s, 4 rounds). A log with no such line in it
+is a void reading, to be asked for again, never a pass. The file log's timestamps carry no date (`HH:mm:ss`, one file
+per day), so the day comes from the file name. The over-100 Warning line (slice 06) is not a heartbeat warning and is
+not counted. Customer names, hosts and Portfolio names in that
 log are never committed (memory: no customer identifiers in git).
 
 **The harness is dev-only and never in CI — checked.**
@@ -2156,12 +2299,17 @@ log are never committed (memory: no customer identifiers in git).
   named. DELIVER adds a separate script (`"perf": "playwright test --config playwright.perf.config.ts"`) and never
   widens `testDir`.
 - **Lint and type-check do not see `perf/` today** (flag F6): `tsconfig.json` includes only `tests/**/*.ts` and
-  `playwright.config.ts`, and `prebuild` runs Biome on `./tests` only. DELIVER adds `perf/**/*.ts` and
-  `playwright.perf.config.ts` to `include`, and `./perf` to the Biome path, so the harness is linted and type-checked
-  locally and still never runs in CI (no workflow runs the E2E `build`).
+  `playwright.config.ts`, and `prebuild` runs Biome on `./tests` only. **DELIVER step 01a-1 (slice 01, the first commit of Task 01a, before any
+  harness code)**: add `perf/**/*.ts` and `playwright.perf.config.ts` to the E2E `tsconfig.json` `include`, `./perf` to
+  the Biome path in `prebuild`, `/perf/out/` to `Lighthouse.EndToEndTests/.gitignore`, and the `perf` script; then
+  `pnpm build` in `Lighthouse.EndToEndTests/` must be clean. So the harness is linted and type-checked locally and still
+  never runs in CI (no workflow runs the E2E `build`).
 - Sonar: `Lighthouse.EndToEndTests/**` is in `sonar.exclusions` (`ci_backend.yml:102`). gitleaks (pre-commit) scans it.
-- Outputs (generated CSV, counters, traces, result tables) go to a gitignored `Lighthouse.EndToEndTests/perf/out/`;
-  only the summarised table is pasted into this delta. The harness reads the gitignored Premium fixture
+- Outputs (generated CSV, counters, traces, result tables) go to **one path, `Lighthouse.EndToEndTests/perf/out/`**
+  (the harness writes nowhere else; `environments.yaml` and `OUT-6400-*` name the same path). It is **not ignored
+  today** (`Lighthouse.EndToEndTests/.gitignore` lists `test-results`, `playwright-report`, `blob-report`, `dist`):
+  DELIVER adds `/perf/out/` to that file in slice 01 (step 01a-1, below), before the harness first runs. Only the
+  summarised table is pasted into this delta. The harness reads the gitignored Premium fixture
   `tests/fixtures/valid_premium_license.json`; it never copies it.
 
 ## Wave: DEVOPS / [REF] CI Impact
@@ -2170,7 +2318,7 @@ No new workflow, job or step. Per slice:
 
 | Slice | New tests (where they run) | Program.cs? | Watch |
 |---|---|---|---|
-| 01a | Line-format unit test of the Debug split (`ci_backend`); harness files (no CI) | No | Biome/tsc include for `perf/` (above) |
+| 01a | Line-format unit test of the Debug split (`ci_backend`); harness files (no CI) | No | DELIVER step 01a-1: Biome/tsc include, `.gitignore` and `perf` script for `perf/` (above) |
 | 01 | `ForecastLane` unit tests; the **lane probe** over round frames on 1, 2, 4 lane threads; host-stop test (cancel, nothing saved, threads end); banner line test; ArchUnitNET (`ForecastService` does not call `Task.Run`; only `ForecastUpdater` and the composition root depend on `ForecastLane`); identity goldens SQLite + PostgreSQL (`Integration.Containers`); usage-data shape, controller, publisher and seam tests (`ci_backend`); `featuresHeldOf` and the detector hand-off (`ci_frontend`) | **Yes** (lane registration) → `path-classifier.sh` sets `connector_shared`, **every live-connector suite runs** on that push | Budget the full run plus one flake re-run; a red backend job skips `sonar-gates` |
 | 02 | Golden JSON for `GET /portfolios`, `/teams`, `/teams/{id}`, `/portfolios/{id}`, `/portfolios/{id}/settings` (dev backup + seeded scaled set, SQLite + PostgreSQL); SQL-capture test for `GetById`; `useLicenseRestrictions` hook tests per state; source-tree test that only the shared query calls `getLicenseStatus` | No | Overview tests are already allowlisted at 77 s; add cases in a new file, not `OverviewDashboard.test.tsx` |
 | 03 | Verdict identity as `TestCaseSource` over seeded generated graphs; reference-id read SQL capture; duplicate-reference test; `features/ids`, `features/references`, `featuresInProgress` goldens | No (constructor parameter **types** change, DI resolves them) | Bound the generated case count so the class stays under 34 s |
@@ -2180,10 +2328,42 @@ No new workflow, job or step. Per slice:
 
 - **Postgres**: every provider-backed class reuses `SharedPostgresContainer` with a fresh database per case; never
   `StartFreshAsync` per case. Docker must be available locally (P3).
-- **Test-time budget** (backend 34 s per class, frontend 63 s per file, both `--warn-only` today): read each new
-  class's CI time on its slice's push. Over it: speed it up first; if the time is real (a container, a real round),
-  add an allowlist entry with a plain reason and a ceiling ≥ 2.1 × CI time. No wall-clock assertion anywhere; timings
-  are readings.
+- **Test-time budget** (backend 34 s per class, frontend 63 s per file, both `--warn-only` today,
+  `Scripts/test-timings/test-time-budget.json`): read each new class's CI time on its slice's push. Over it: speed it
+  up first; if the time is real (a container, a real round), add an allowlist entry with a plain reason and a ceiling
+  ≥ 2.1 × CI time. No wall-clock assertion anywhere; timings are readings.
+- **CI-time estimate per new class** (the DISTILL classes under
+  `Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/` and their siblings). Measured locally on 2026-10-24
+  with `dotnet test --no-build --filter "FullyQualifiedName~FastWithManyFeatures"` against a build that predates the
+  newest scaffolds, so only the already-active scenarios ran (14 passed, 41 skipped, 7 s wall): each active scenario
+  costs about **1.2–2.5 s locally** (it boots the app in a test host and seeds a database). CI runners have run such
+  classes about **2× slower** than a developer machine, so a class's CI time ≈ 2 × (scenarios × ~2 s). Every figure
+  below is to be replaced by the real CI time on the slice's push.
+
+  | Slice | Class | Scenarios | Local (measured or est.) | CI est. | Budget call |
+  |---|---|---|---|---|---|
+  | 01 | `Slice01WalkingSkeletonScenarios` | 2 | 4.7 s measured | ~10 s | Under 34 s |
+  | 01 | `Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios` (fixtures for 2, 4 and 8 cores) | 3 × 3 | ~25–35 s est. (9 real forecast rounds on seeded data) | ~50–70 s | **Pre-allowlist**, reason "runs a real forecast round on the forecast threads for each of three core counts", ceiling 150 s |
+  | 01 | `FastWithManyFeaturesArchUnitTest` | 4 | ~2 s est. (loads the assembly once) | ~4 s | Under |
+  | 01 | `StartupBannerForecastLaneLineTest` | 2 | < 1 s (pure function) | < 1 s | Under |
+  | 01 | `Story6404FeaturesHeldUsageEventTests` (`Integration/UsageData/`) | 18 cases | ~8–12 s est. (controller-level, one host) | ~20–25 s | Under; split by refused / accepted if it nears 34 s |
+  | 01 | Identity goldens on PostgreSQL (`Integration.Containers`) | per DISTILL | container start shared (`SharedPostgresContainer`) | ~30–60 s | **Pre-allowlist** if a real round runs per provider; reason "runs a real forecast round on PostgreSQL to compare stored forecasts" |
+  | 02 | `Slice02OverviewReadsNamesAndCountsScenarios` | 11 | 7.0 s for the 5 active; ~15 s est. in full | ~30 s | At the edge: watch; split the golden-body cases into their own class if over |
+  | 03 | `Slice03FeaturesListReadsScenarios` | 7 | 7.3 s for the 4 active; ~13 s est. | ~26 s | Under; bound the generated verdict graphs so it stays so |
+  | 04 | `Slice04OneListPerOwnerScenarios` | 10 | ~15–20 s est. (none active yet) | ~30–40 s | At the edge: split by owner (Portfolio / Team) if over, do not allowlist |
+  | 05 | `Slice05LighterRoundsScenarios` | 4 | 5.4 s for the 2 active (real rounds); ~11 s est. | ~22–25 s | **Pre-allowlist** only if DELIVER adds its PostgreSQL twin to the same class (real rounds on two providers); otherwise under |
+  | 06 | `Slice06PortfolioSizeScenarios` | 6 | ~8 s est. | ~16 s | Under |
+  | 06 | `Slice06SizeWarningInTheLogScenarios` | 2 | 4.9 s for the 1 active; ~7 s est. | ~14 s | Under |
+
+  Pre-allowlisting means adding the entry in the same commit that activates the class, with the reason above and a
+  ceiling ≥ 2.1 × the CI estimate, then correcting the ceiling from the first real CI time.
+- **Frontend pre-apply: the heavy-render timeout rule** (`docs/ci-learnings.md`, 2026-08-21 entry and its 2026-10-12
+  recurrence): any Vitest test that renders a list of a hundred rows or more, or mounts the real grid, gets an explicit
+  heavy-render timeout when it is written (the `RENDER_HEAVY = 20000` constant of
+  `RefinementView.paging.test.tsx`), because CI runs such tests more than twice as slow as a local run and Vitest's
+  5 s default then fails files the change never touched. In this Epic that covers `PortfolioFeatureList.oneList.test.tsx`,
+  `TeamFeatureList.oneList.test.tsx`, every slice-04 look file that renders `FeatureListDataGrid`, and
+  `OverviewDashboard.licenseCheck.test.tsx`. Local runtime under half the limit is not a margin.
 - **Sonar and analyzer rules likely to bite** (pre-apply):
   - `ForecastLane` owns threads and a blocking queue: **CA1001 / S3881** (owns disposables → `sealed`, plain
     `Dispose`, no finaliser); **CA2008** (every `StartNew` / `ContinueWith` names its scheduler, as DDD-6 already does);
@@ -2249,7 +2429,7 @@ Ships in ordinary calver releases through the existing pipeline; users upgrade. 
 
 **What operators see.** The startup banner's cores line becomes the lane line (DDD-7): "Forecast rounds run on N
 dedicated threads; each forecast uses up to N of M cores". On 1 or 2 cores N is 1 (`max(1, cores ÷ 2)`), as the
-forecast's bound is today. Slice 06 adds one Information line at the end of a Portfolio update over 100 Features.
+forecast's bound is today, and the line reads "Forecast rounds run on 1 dedicated thread; …" (singular). Slice 06 adds one Warning line at the end of a Portfolio update over 100 Features (Warning per the maintainer, 2026-10-24).
 
 **Production validation (per instance, advisory).** After the upgrade: the lane line is in the banner; during a
 forecast round the Overview, Settings and the Features tabs answer; the log has no Kestrel heartbeat warning inside a
@@ -2259,8 +2439,12 @@ round; Refresh History shows forecast rounds as before. Shutdown during a round 
 ## Wave: DEVOPS / [REF] Observability Stack
 
 Unchanged: Serilog console and file sinks, the Kestrel warnings, Refresh History, the backend-forwarded PostHog pipe
-(opt-in). Added: the lane banner line (01), the Debug round split (01a), the over-100 Information line (06), the
-duplicate-reference warning once per refresh (03, DDD-13), and `features_held` (01). The harness's instruments
+(opt-in). Added: the lane banner line (01), the Debug round split (01a), the over-100 Warning line (06), the
+duplicate-reference warning once per refresh (03, DDD-13), and `features_held` (01). **The over-100 Warning also
+lands in Recent Problems, accepted (maintainer decision 14, 2026-10-24)**: every successful Features update of a
+Portfolio over 100 adds one entry to the shared 200-entry Recent Problems list, and no sink exclusion is added. An
+instance with several oversized Portfolios updating hourly will see that list carry mostly these entries; that is the
+nudge being visible, by choice. The duplicate-reference warning lands there too, once per refresh. The harness's instruments
 (`dotnet-counters`, cgroup `cpu.stat`, Playwright traces, request and EF command logging by argument) are on the
 measuring machine only and never ship.
 
@@ -2327,13 +2511,16 @@ Each carries the default this wave took; none blocks DISTILL.
 
 1. **The band on an older bundle's tab events: accept absent, or require it?** *Default: accept absent on the two tab
    events (refuse it everywhere else); the browser always sends a value, `Unknown` included.* Requiring it would drop
-   whole batches from tabs left open across the upgrade and needs ~17 test classes edited.
+   whole batches from tabs left open across the upgrade and needs ~17 test classes edited. **Answered 2026-10-24:
+   accept, on the two tab events only (maintainer decision 1).**
 2. **The bands `UpTo100` / `From101To399` / `From400` (+ `Unknown`).** *Default: as written, aligned with the nudge
-   and the 100 / 400 / 920 points; no band above 400.* Say if a `From1000` band is wanted.
+   and the 100 / 400 / 920 points; no band above 400.* Say if a `From1000` band is wanted. **Answered 2026-10-24:
+   finer below the nudge, `UpTo20`, `From21To50`, `From51To100`, `From101To399`, `From400`, `Unknown`; no band above
+   400 (maintainer decision 2).**
 
 ## Wave: DEVOPS / [REF] Wave Decisions Summary
 
-- **Usage data**: `featuresHeld` (`features_held`), closed enum `UpTo100 / From101To399 / From400 / Unknown` on
+- **Usage data**: `featuresHeld` (`features_held`), closed enum `UpTo20 / From21To50 / From51To100 / From101To399 / From400 / Unknown` (maintainer, 2026-10-24) on
   `TeamTabOpened` and `PortfolioTabOpened`; no new event, no renumbering; emitted in slice 01; absent only from older
   bundles.
 - **KPIs**: `OUT-6400-*` in `kpi-contracts.yaml`; K1–K4 are harness readings (dev-only, never CI), K3's production
@@ -2341,4 +2528,418 @@ Each carries the default this wave took; none blocks DISTILL.
 - **CI**: no new workflow; Program.cs in 01 and 04 forces the live-connector suites; Postgres via
   `SharedPostgresContainer`; budget watch per slice; `perf/` added to E2E lint and type-check only.
 - **Deployment**: release-based, no flag, no knob, no migration (unless DDD-20's index); rollback = previous release.
-- **Flags**: F1–F8. **Questions**: two, with defaults.
+- **Flags**: F1–F8. **Questions**: two, both answered by maintainer decisions 1 and 2 (2026-10-24).
+- **Revised at the final review gate (2026-10-24)**: K3's production windows read from the real summary line
+  (`UpdateServiceBase` / `UpdateQueueService` "Update completed … forecast="), zero windows = void; the over-100
+  Warning in Recent Problems recorded (decision 14); per-class CI-time estimates and pre-allowlist calls; the Vitest
+  heavy-render timeout rule pre-applied; one harness output path, `Lighthouse.EndToEndTests/perf/out/`, gitignored by
+  DELIVER step 01a-1, which also brings `perf/` into the E2E type-check and Biome.
+
+---
+
+## Wave: DISTILL / [REF] Maintainer Decisions — 2026-10-24
+
+Taken with the maintainer at the start of DISTILL, before any scenario was written. DISTILL pins these in tests.
+
+**DEVOPS questions**
+
+1. **Band absent on an older bundle's tab events: accept.** Accepted absent on `TeamTabOpened` and
+   `PortfolioTabOpened`; a band on any other event is refused.
+2. **Bands: finer below the nudge.** `featuresHeld` travels as the band's name: `UpTo20`, `From21To50`,
+   `From51To100`, `From101To399`, `From400`, `Unknown`. Their internal enum values are 0–5 and never move once
+   released (supersedes the three-band default; no band above 400).
+
+**Slice 04 — the Features list (Portfolio and Team tab)**
+
+3. **S-1 settled: a refresh that fails after rows were shown takes the could-not-load look.** The previous answer is
+   never kept on screen; `data-widget-status="error"`.
+4. **Could-not-load copy: "The {Features} couldn't be loaded." with a [Retry] button** that refetches the list
+   without reloading the page. Same look for a failed first load and a failed refresh.
+5. **Empty: "This {Portfolio} has no {Features} yet."** (Team tab: "This {Team} has no {Features} yet.");
+   `data-widget-status="ready"`.
+6. **All hidden by Hide Completed: "All {N} {Features} are completed. Turn off Hide Completed {Features} to see them."**
+   N is the number of completed Features held, not the page size.
+7. **Waiting looks as sketched:** the first load shows today's placeholder under a spinner; a refresh after an update
+   keeps the last rows dimmed and not clickable under a small spinner (`WidgetShell`); keyed query, so a late answer for
+   an older request never lands.
+
+**Slice 06 — the size note and log line**
+
+8. **Over 100, note as drafted:** "This {Portfolio} holds {N} {Features} (as of its last update). Above 100, its pages
+   and forecasts get slower. If you don't plan with all of them, narrow the query." (info `Alert`).
+9. **Count could not be loaded: "Couldn't check this {Portfolio}'s size."** in the same info `Alert`; never silent.
+10. **Log line at Warning (changed from Information)**, once per successful Features update of a Portfolio holding more
+    than 100: "Portfolio '{name}' ({id}) holds {N} Features after its update, more than 100. Its pages and forecasts
+    get slower; narrowing its query keeps them fast." K3's log scan counts Kestrel heartbeat warnings only, so this
+    line does not touch it.
+
+**Slice 02 — the licence-gated create actions**
+
+11. **As drafted (OQ-2 settled):** while the licence loads, "+ Add Team" / "+ Add Portfolio" are disabled with no
+    tooltip; when it could not be checked, disabled with "Couldn't check your license. Reload the page to try again."
+    ("license", matching the existing UI spelling). Edits and updates keep today's behaviour; the server guard is
+    unchanged.
+12. **The Overview's looks need no decision:** components unchanged (DDD-24).
+
+**Raised by the final review gate (same day)**
+
+13. **A reference id stored on two Features: the first in forecast order answers, plus one warning naming the id per
+    refresh (Q-M2 settled).** Supersedes DISCUSS AC-3.4 and guardrail G3 for this one case only: today the request
+    answers 500; every other in-progress answer and body stays unchanged.
+14. **The over-100 Warning also lands in Recent Problems, accepted.** Every update of a Portfolio over 100 adds one
+    entry to the shared 200-entry Recent Problems list; no sink exclusion.
+15. **Every create entry point follows the licence gate**, not only the Overview's two buttons: the Overview's
+    "+ Add Team" / "+ Add Portfolio", Save on a new Team's edit page, and the onboarding stepper's Add Team / Add
+    Portfolio. Each one: disabled with no tooltip while the licence loads; disabled with "Couldn't check your license.
+    Reload the page to try again." when it could not be checked. Edits and updates of existing Teams and Portfolios are
+    unchanged.
+16. **Slice 01 holds after 01a unless the stalls come from the shared thread pool.** If 01a's classification points at
+    GC pauses or CPU-quota throttling, DELIVER stops after 01a and brings the readings to the maintainer before building
+    the forecast lane. Supersedes DDD-3's "GC -> 01 still ships".
+
+## Wave: DISTILL / [REF] Prior-Wave Reading Confirmation
+
+Read before any scenario was written:
+
+- DISCOVER, DIVERGE (`recommendation.md`), DISCUSS (the six slice files, stories and journey), DESIGN (DDD-1…DDD-24,
+  the ADRs it names, UC-1…UC-5, `design/upstream-changes.md`), DEVOPS (event design, CI impact, mutation scope,
+  coexistence, flags) and the Maintainer Decisions above.
+- The SSOT this Epic touches: `docs/product/architecture/brief.md`, `docs/product/kpi-contracts.yaml` (the six
+  OUT-6400 entries) and `docs/architecture/atdd-infrastructure-policy.md` (C# and TypeScript rows).
+- `docs/ci-learnings.md`, pre-applied to the new code:
+  - hoisted arrays (CA1861);
+  - `Assert.EnterMultipleScope`;
+  - disposed clients (NUnit1032);
+  - `GeneratedRegex`;
+  - no internal references in comments;
+  - the seeded terminology defaults in copy;
+  - no `describe.skip` around a scaffold call.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+**Passed: 0 contradictions** across DISCUSS, DESIGN, DEVOPS and the maintainer.
+
+- DESIGN's UC-1…UC-5 are recorded supersessions, and the maintainer confirmed Q-M1 and Q-M3.
+- Q-M2 (duplicate reference id) and Q-M4 (K4 target) keep their defaults and stay open (upstream issues 1–2).
+- The DEVOPS summary's three bands are stale text the maintainer superseded (upstream issue 7), not a contradiction.
+
+## Wave: DISTILL / [REF] Test placement
+
+| Layer | Where | Harness |
+|---|---|---|
+| Backend acceptance, read side (slices 02, 03, 04, 06 size) | `Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/` | `FastWithManyFeaturesAcceptanceTest`: the real host through `WebApplicationFactory` and test authentication. The clock is pinned at 2026-10-24 09:00Z. The "Northwind" instance is seeded in a fixed order, so bodies are byte-stable. Materialisations are counted, and logs are captured through Serilog |
+| Backend acceptance, forecast rounds (slices 01, 05) | same folder | Extends `ResponsiveDuringUpdates.ForecastWhileItUpdatesAcceptanceTest`: the real `ForecastService` and update queue, with draws counted and held |
+| Backend acceptance, update log line (slice 06) | same folder | Extends `TaskManager.TaskManagerAcceptanceTest`: the real Portfolio update with a mocked connector |
+| Usage-data contract (slice 01) | `Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs` | Extends `UsageDataCollectorObservationTest`: the browser hands a batch in, and the collector is observed |
+| Banner (slice 01) | `Lighthouse.Backend.Tests/StartupBannerForecastLaneLineTest.cs` | The banner as `StartupBanner` prints it |
+| Architecture rules (slices 01, 04) | `Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs` | Source scans with `GeneratedRegex`, and reflection on the production assembly |
+| Golden bodies | `…/FastWithManyFeatures/Approved/*.approved.json` (8 files) | `TestHelpers/ApprovedBodies` normalises JSON, masks `concurrencyToken`, and writes `*.received.json` on a mismatch |
+| Frontend | colocated `*.test.ts(x)` next to the component or hook | Vitest + RTL. Real components under `TerminologyProvider` and `QueryClientProvider`; answers held with `deferred()` |
+| E2E | none new | The Features-tab walking skeleton already exists. Its POM wait on `data-widget-status="ready"` moves in DELIVER slice 04 (upstream issue 8) |
+
+Slice and Story names are carried in NUnit `Category` attributes (`slice-NN`, `us-NN`, `story-64xx`) and in the
+Vitest `describe` names, never in comments. Pending scenarios use `[Ignore(PendingEpic6400.SliceNN)]` and `it.skip`.
+
+## Wave: DISTILL / [REF] Scenarios
+
+Status: P = pending, G = active guard (green today), WS = walking skeleton (green). E = error or edge.
+Every backend scenario also carries `acceptance`, `epic-6400-fast-with-many-features`, `driving_port` (except the
+banner, ArchUnit and the one `store-level` check), a `contract-shape:` tag and, where it measures one, a `kpi-OUT-6400-…` / `guardrail-Gn` category.
+
+### Slice 01 — forecast rounds on their own threads, and the band (Story 6404)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs_and_reads_their_dates_once_it_ends` | 1 | WS | | walking_skeleton, kpi-OUT-6400-no-stall-during-rounds, bounded-change |
+| `Slice01WalkingSkeletonScenarios.A_forecast_reads_the_same_wherever_its_round_runs` (histogram `400 runs [5:280]`) | 1 | G | | guardrail-G1, kpi-OUT-6400-answers-unchanged, unbounded-preservation |
+| `Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios` (2, 4, 8 cores) · `A_background_round_simulates_on_Lighthouses_own_forecast_threads_never_on_the_threads_that_answer_pages` (not the shared pool, background threads, at most cores/2) | 3 | P | | kpi-OUT-6400-no-stall-during-rounds, bounded-change |
+| · `A_background_round_saves_its_forecasts_from_the_forecast_threads_too` | 3 | P | | same |
+| · `A_round_stopped_from_the_Task_Manager_ends_and_every_Feature_keeps_the_forecast_it_had` (asserts the round had simulated before reading where) | 3 | P | E×3 | error, unbounded-preservation |
+| · `When_Lighthouse_stops_in_the_middle_of_a_round_the_round_ends_and_every_Feature_keeps_the_forecast_it_had` (host stop with the queue drain put back; restart on the same database reads yesterday's forecast) | 3 | P | E×3 | error, unbounded-preservation |
+| `Story6404FeaturesHeldUsageEventTests.A_tab_opening_travels_with_the_band_of_the_Features_its_page_holds` (6 bands on PortfolioTabOpened, From400 on TeamTabOpened) | 7 | P | | kpi-OUT-6400-openings-by-size |
+| · `A_tab_opening_from_a_browser_older_than_the_band_still_counts_and_travels_without_one` | 2 | G | E×2 | edge |
+| · `A_tab_opening_carrying_anything_but_one_of_the_six_bands_is_refused` (920, 6, -1, "920", "Lots", and the internal numbers 4 and 0, because a band travels by name) | 7 | P | E×7 | error |
+| · `Any_other_event_carrying_a_band_is_refused` (TeamCreated, WorkTrackingSystemConnected) | 2 | P | E×2 | error |
+| · `The_six_bands_travel_by_name_and_each_keeps_the_internal_number_it_was_released_with` (UpTo20=0 … Unknown=5) | 1 | P | | pure-function |
+| · `The_usage_data_page_names_every_band_and_says_the_number_itself_never_travels` | 1 | P | | |
+| `StartupBannerForecastLaneLineTest` (threads `max(1, cores ÷ 2)` worked out in the test; "1 dedicated thread" singular, "N dedicated threads" plural; under its own label) | 2 | P | | |
+| `FastWithManyFeaturesArchUnitTest`: in `ForecastService` no `Task.Run` or `ThreadPool.`; a `Task.Factory.StartNew` only when it names `TaskScheduler.Current` or the lane's scheduler (never `TaskScheduler.Default`); each `Parallel.` loop only when the options it is handed name one of those; no `ConfigureAwait(false)` in round code; only `ForecastUpdater`, `Program` and `ForecastLane` reach the lane (a supplement to the thread scenarios, see below) | 3 | P | | |
+| `models/UsageData/featuresHeldOf.test.ts`: 0, 20, 21, 50, 51, 100, 101, 399, 400, 920; undefined → Unknown; -1, 2.5, NaN → Unknown | 14 | P | E×4 | |
+
+### Slice 02 — names and counts without forecasts; one licence check (Story 6406)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice02OverviewReadsNamesAndCountsScenarios.Every_name_and_count_the_Overview_and_the_detail_pages_read_is_exactly_as_before` (`/portfolios`, `/teams`, `/teams/{atlas}`, `/portfolios/{platform}`, its settings) | 5 | G | | guardrail-G3, kpi-OUT-6400-answers-unchanged, unbounded-preservation |
+| · `Naming_and_counting_Portfolios_and_Teams_reads_no_forecast_at_all` (same 5 reads: 0 `IndividualSimulationResult`, 0 `WhenForecast`) | 5 | P | | kpi-OUT-6400-navigation-and-settings-answer, pure-function |
+| · `Opening_Northwind_Payments_reads_Northwind_Payments_and_its_Features_not_the_rest_of_the_instance` (1 Portfolio, 2 Features) | 1 | P | E | edge |
+| `hooks/useLicenseRestrictions.status.test.tsx`: loading refuses create and allows edits; failed licence; failed count; ready | 4 | P | E×3 | |
+| · free at the limit / Premium, as today | 2 | G | E | |
+| · free with room, as today, read once the check says `ready` (nothing today says the counts have arrived) | 1 | P | | |
+| · three askers share one read of each; Premium fetches no lists | 2 | P | | |
+| `hooks/licenseStatusOneAsker.enforcement.test.ts` (one module asks for the licence on behalf of every gate) | 1 | P | | |
+| `pages/Overview/OverviewDashboard.licenseCheck.test.tsx`: while checking, disabled with no tooltip; failed, disabled with "Couldn't check your license. Reload the page to try again." | 2 | P | E×2 | |
+| · at the free limit, the premium tooltip as today (also the control that a tooltip opens at once under the test theme); with room, enabled | 2 | G | E | |
+| · Get Started steps (decision 15): failed, the Add Team step and the Add Portfolio step disabled with the reason | 2 | P | E×2 | |
+| · Get Started: while checking, the Add Team step disabled with no tooltip; with room, enabled as today | 2 | G | E | |
+| `pages/Teams/Edit/EditTeam.licenseCheck.test.tsx` (decision 15, a copied Team: the one new-Team path on the settings page): failed, not saved and the page says why | 1 | P | E | |
+| · while checking, not saved and nothing said; with room, saves as today; an existing Team on a failed check saves as today | 3 | G | E×2 | |
+
+### Slice 03 — the Features tab reads only what it shows (Story 6407)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice03FeaturesListReadsScenarios.Every_row_dependency_and_Team_the_Features_tab_reads_is_exactly_as_before` (`features/ids` of Platform, `features/references` of ST-1, `featuresInProgress` of Atlas) | 3 | G | | guardrail-G2, guardrail-G3, unbounded-preservation |
+| · `Northwind_Platforms_list_reads_the_forecast_histograms_of_the_Features_it_shows_and_no_others` (exactly 19 rows) | 1 | P | | kpi-OUT-6400-first-feature-row, pure-function |
+| · `Asking_what_Atlas_works_on_reads_the_Feature_Atlas_works_on_and_no_others` (1 Feature) | 1 | P | E | edge |
+| · `A_Feature_stored_twice_under_one_id_answers_once_with_the_first_in_forecast_order_and_the_operator_is_warned_once_per_refresh` (decision 13: no 500; two reads, one Warning naming the id) | 1 | P | E | error, bounded-change |
+| · `After_the_Team_is_refreshed_a_Feature_stored_twice_under_one_id_is_warned_about_once_more` (read, refresh, read: exactly 2 Warnings naming the id) | 1 | P | E | error, bounded-change |
+| · `A_blocker_in_a_Portfolio_the_reader_may_not_read_stays_withheld` | 1 | G | E | error, guardrail-G2 |
+
+### Slice 04 — one list per owner, with its looks (Story 6408)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice04OneListPerOwnerScenarios.Martin_opens_Northwind_Platforms_Features_and_one_answer_carries_every_row_its_parents_and_who_works_on_them` | 1 | P | | kpi-OUT-6400-first-feature-row |
+| · `Aisha_opens_Team_Borealis_Features_and_gets_the_Features_Borealis_works_on_across_Portfolios` | 1 | P | | |
+| · `Every_row_reads_exactly_as_the_same_Feature_reads_today` (each row equals its `features/ids` row minus `teamForecasts`) | 1 | P | | guardrail-G2, unbounded-preservation |
+| · `The_parents_and_the_Teams_at_work_read_as_the_two_reads_they_replace` | 1 | P | | guardrail-G2 |
+| · `The_list_reads_its_own_Features_completion_histograms_and_leaves_the_per_Team_start_histograms_out` (13 rows) | 1 | P | | kpi-OUT-6400-first-feature-row |
+| · `A_Portfolio_that_holds_no_Features_yet_answers_with_an_empty_list` | 1 | P | E | edge |
+| · `A_reader_who_may_not_open_Northwind_Platform_is_refused_its_list` / `…Team_Borealis…` (403) | 2 | P | E×2 | error |
+| · `Inside_a_list_the_reader_may_open_a_blocker_they_may_not_read_is_withheld` | 1 | P | E | error, guardrail-G2 |
+| · `A_list_of_a_Portfolio_that_does_not_exist_is_not_found` (after proving one that exists answers) | 1 | P | E | error |
+| `FastWithManyFeaturesArchUnitTest.The_Features_list_endpoint_reads_through_its_service_and_never_from_a_repository` | 1 | P | | |
+| `PortfolioFeatureList.oneList.test.tsx`: one request (no `features/ids`, `features/references`, `featuresInProgress`); first load shows the spinner and no rows, then `ready`; parent named from the answer; Teams at work from the answer | 4 | P | | |
+| · "The Features couldn't be loaded." + Retry; Retry refetches; "This Portfolio has no Features yet." with status `ready`; "All {N} Features are completed…" with N = page size + 7, so it cannot be the page's count; renamed terms ×2 | 6 | P | E×5 | |
+| · a refresh keeps rows dimmed (opacity below 1) and refusing the pointer with status `loading`; a failed refresh takes the could-not-load look and the old rows are gone; a late answer for a Portfolio already left never lands | 3 | P | E×2 | |
+| `TeamFeatureList.oneList.test.tsx`: one request `{kind:"team"}`; "This Team has no Features yet." with status `ready`; could-not-load + Retry; "This Squad has no Bets yet." | 4 | P | E×2 | |
+| · a failed refresh takes the could-not-load look and the old rows are gone; a late answer for a Team already left never lands | 2 | P | E×2 | |
+
+### Slice 05 — lighter forecast rounds (Story 6409)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice05LighterRoundsScenarios.A_round_that_changes_nothing_on_a_Portfolio_that_writes_nothing_back_decides_to_skip_without_reading_a_single_forecast_histogram` (precondition: no write-back mapping) | 1 | P | | kpi-OUT-6400-shorter-rounds, pure-function |
+| · `A_skipped_round_on_a_Portfolio_that_writes_its_dates_back_still_reads_the_histograms_it_stages_from` | 1 | G | E | edge, guardrail-G1 |
+| · `A_computed_round_replaces_yesterdays_forecasts_without_reading_their_histograms` (preconditions: the round did not skip, and the stored forecast changed) | 1 | P | | kpi-OUT-6400-shorter-rounds, bounded-change |
+| · `At_the_store_a_computed_round_leaves_no_histogram_row_behind_that_belongs_to_no_forecast` (store-level, foreign keys on; precondition: the round did not skip) | 1 | G | E | store-level, edge, guardrail-G1 |
+| · `The_tracker_is_sent_the_same_date_after_a_computed_round_and_after_the_skipped_round_that_follows_it` | 1 | G | | guardrail-G1 |
+| · `A_computed_round_and_the_skipped_round_after_it_stage_the_same_values_for_every_Feature_including_one_no_Team_works_on` (a completion and a start mapping; the in-progress Feature no Team works on, `PAY-2`, must be staged by the computed round) | 1 | G | E | edge, guardrail-G1 |
+
+### Slice 06 — the Portfolio says when it grows past 100 (Story 6410)
+
+| Scenario | Cases | Status | E | Tags |
+|---|---|---|---|---|
+| `Slice06PortfolioSizeScenarios.A_Portfolio_whose_last_update_stored_101_Features_is_over_the_threshold_of_100` | 1 | P | | |
+| · `A_Portfolio_holding_exactly_100_Features_is_not_over_the_threshold`; `A_Portfolio_that_was_never_updated_holds_no_Features_and_is_not_over_the_threshold` | 2 | P | E×2 | edge |
+| · `Counting_a_Portfolios_Features_reads_none_of_them` | 1 | P | | pure-function |
+| · `A_reader_who_may_not_open_the_Portfolio_is_refused_its_size` (403); `The_size_of_a_Portfolio_that_does_not_exist_is_not_found` | 2 | P | E×2 | error |
+| `Slice06SizeWarningInTheLogScenarios.An_update_that_stores_101_Features_leaves_one_warning_naming_the_Portfolio_and_still_stores_them_all` (exact text, exactly Warning level, nothing at Error or Fatal) | 1 | P | | |
+| · `The_size_warning_is_listed_once_in_Recent_Problems` (decision 14, through `GET /api/latest/logs/problems`) | 1 | P | | |
+| · `An_update_that_fails_leaves_no_size_warning_even_for_a_Portfolio_that_held_101_Features` | 1 | P | E | error |
+| · `An_update_that_stores_exactly_100_Features_leaves_no_size_warning` | 1 | G | E | edge |
+| `ModifyProjectSettings.sizeNote.test.tsx`: 101 → the note with its count, in an info `Alert` (role `alert`, `MuiAlert-colorInfo`); asks the edited Portfolio's size; "Couldn't check this Portfolio's size." and the page stays usable; renamed terms ×2 | 5 | P | E×2 | |
+| · 100 → no note, read only after the size has been asked for and has arrived | 1 | P | E | |
+| · while loading → nothing, read once the size has been asked for | 1 | P | E | |
+| · a Portfolio being created is not asked | 1 | G | E | |
+
+### Slice 01a — measurement harness (Task)
+
+**No acceptance tests**, deliberately:
+
+- It is a dev-only measuring harness that never ships and never runs in CI.
+- Its output is a reading, not a behaviour a user meets.
+- Pinning it would test the instrument, not Lighthouse.
+- What it measures is pinned structurally by the slice tests above, in the KPI links in `kpi-contracts.yaml`.
+
+### Counts
+
+Cases are counted as the runners count them: one per `TestCase`, per fixture, per `it`. "Error + edge" counts every
+case marked E above; "error only" counts the cases where something fails (a refusal, an unreachable tracker, a stop, a
+read that cannot be answered) and leaves out boundaries and empty states.
+
+| Slice | Backend | Frontend | Total | Error + edge | Error only |
+|---|---|---|---|---|---|
+| 01 | 39 | 14 | 53 | 21 | 15 |
+| 02 | 11 | 22 | 33 | 14 | 7 |
+| 03 | 8 | 0 | 8 | 4 | 3 |
+| 04 | 11 | 19 | 30 | 16 | 10 |
+| 05 | 6 | 0 | 6 | 3 | 0 |
+| 06 | 10 | 8 | 18 | 11 | 5 |
+| **All** | **85** (18 green, 67 pending) | **63** (10 green, 53 pending) | **148** | **69 (47%)** | **40 (27%)** |
+
+## Wave: DISTILL / [REF] Walking-skeleton strategy
+
+One walking skeleton for the Epic is **green at hand-off**:
+`Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs_and_reads_their_dates_once_it_ends`.
+
+- It runs the production round through the production queue, with draws held part-way.
+- Martin reads `/portfolios/{id}` and `/features/ids` during the round; both answer 200 within 10 s, and the round
+  has not finished when they land.
+- After the round settles, the Feature carries its dates.
+
+Every slice changes the work behind these answers, never the answers, so it stays green from the first commit of the
+Epic to the last. Proof: `dotnet test --no-build --filter "FullyQualifiedName~Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs"`
+→ Passed 1/1.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter / port | Real or faked | Covered by |
+|---|---|---|
+| SQLite store (EF Core, `LighthouseAppContext`) | **real** | Every backend class. Materialisations counted at the store's edge (`CapturedMaterialisations`) |
+| PostgreSQL store | real in `Integration.Containers` (DEVOPS) | **Not in this DISTILL.** The golden and identity classes are written provider-neutral; their PostgreSQL run is DELIVER's (Known gaps) |
+| Work-tracking connector | faked (Moq) | Slice 06 log line (the update stores 100/101 Features); slice 01/05 write-back date (`GivenTheForecastIsWrittenBackToTheTracker`) |
+| Draw stream (randomness) | counted and held (`CountedDrawStream`, `ThreadsAForecastRoundRanOn`) | Slices 01, 05 |
+| Clock / `TimeProvider` | pinned | Every backend class |
+| Licence service | faked (Premium) | Read-side harness |
+| Usage-data collector (PostHog) | observed fake collector | `Story6404FeaturesHeldUsageEventTests` |
+| Logging (Serilog) | captured sink, plus the production Recent Problems sink | Slice 03 duplicate warning; slice 06 log line and its Recent Problems entry |
+| Frontend API services | `vi.fn` with `deferred()` answers | Every frontend file |
+
+## Wave: DISTILL / [REF] Driving-adapter coverage
+
+| Driving port | Scenarios |
+|---|---|
+| `GET /portfolios`, `/teams`, `/teams/{id}`, `/portfolios/{id}`, `/portfolios/{id}/settings` | Slice 02 goldens and reads; WS |
+| `GET /features/ids`, `/features/references`, `/teams/{id}/metrics/featuresInProgress` | Slice 03; WS; slice 04 parity |
+| `GET /portfolios/{id}/feature-list`, `GET /teams/{id}/feature-list` (**new**) | Slice 04 (10) |
+| `GET /portfolios/{id}/size` (**new**) | Slice 06 (6) |
+| Forecast update queue (`IForecastUpdater.TriggerUpdate`), Task Manager stop | Slices 01, 05; WS |
+| Portfolio update (`ThePortfolioRefreshRuns`) | Slice 06 log line, including a failed update |
+| `GET /logs/problems` (Recent Problems) | Slice 06 |
+| Host stop (the queue drain the test host otherwise drops, put back) | Slice 01 |
+| `POST /usagedata` batch from the browser | Slice 01 band |
+| Startup banner | Slice 01 |
+| Web components: `PortfolioFeatureList`, `TeamFeatureList`, `OverviewDashboard` (with `OnboardingStepper`), `EditTeam`, `ModifyProjectSettings`, `useLicenseRestrictions` | Slices 02, 04, 06 |
+
+## Wave: DISTILL / [REF] Scaffolds (RED-ready, zero warnings)
+
+**Backend: none.** Every pending backend scenario compiles against today's production code. New routes answer
+404, new types are found by reflection or source scan, and new behaviour is observed through existing ports. So no
+production C# was touched.
+
+**Frontend:** contract types plus three throwing stubs. Each stub carries a `SCAFFOLD:` comment, and
+`featuresHeldOf.ts` exports `__SCAFFOLD__`.
+
+- `models/UsageData/UsageData.ts`: `UsageDataFeaturesHeld` (the six bands).
+- `models/UsageData/featuresHeldOf.ts`: `featuresHeldOf(count)` throws.
+- `models/FeatureList.ts`: `FeatureListOwner`, `IFeatureList`, `IFeatureListParent`, `IFeatureListActiveWork`.
+- `models/Portfolio/PortfolioSize.ts`: `IPortfolioSize`.
+- `services/Api/FeatureService.ts`: `getFeatureList(owner)` rejects.
+- `services/Api/PortfolioService.ts`: `getSize(id)` rejects.
+- `hooks/useLicenseRestrictions.ts`: `LicenseCheckStatus` and an optional `status`. It stays unset until slice 02
+  sets it and makes it required.
+- Mocks: `getFeatureList`, `getSize` in `tests/MockApiServiceProvider.ts`, and `getSize` in two hand-written
+  portfolio-service mocks (`TerminologyConfiguration.test.tsx`, `useLicenseRestrictions.test.ts`).
+
+## Wave: DISTILL / [REF] RED classification
+
+All 67 backend and 53 frontend pending cases fail for MISSING_FUNCTIONALITY, MISSING_ENDPOINT or SCAFFOLD. None
+fails on setup. Re-run after revision rounds 1 and 2 for every new or changed case. Full table, and four harness defects
+found and fixed during the first run: `distill/red-classification.md`.
+
+## Wave: DISTILL / [REF] Pre-requisites and run notes
+
+- Backend:
+  `dotnet test --filter "(FullyQualifiedName~FastWithManyFeatures|FullyQualifiedName~Story6404FeaturesHeld|FullyQualifiedName~StartupBannerForecastLaneLineTest)&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"`
+  → 18 passed, 67 skipped.
+- Goldens:
+  - Approve a changed body only on purpose: read `*.received.json`, then rename it to `*.approved.json`.
+  - A slice that changes a golden has changed an answer, which this Epic promises not to do.
+- Un-skipping one scenario: delete its `[Ignore(PendingEpic6400.SliceNN)]`, or turn `it.skip` into `it`. Once
+  `PendingEpic6400` has no users left, delete the class.
+- `CapturedMaterialisations.CountInto(services, counter)` is the only supported way to count reads. A per-test
+  `IMaterializationInterceptor` instance exhausts Entity Framework's provider cache after twenty hosts.
+- Frontend: `pnpm vitest run <files>`; `pnpm build` (Biome `--write` runs first, so no `*/docs` symlinks).
+
+## Wave: DISTILL / [REF] Step-reuse and helper notes
+
+New shared helpers (domain vocabulary, reused across slices):
+
+- Backend:
+  - `FastWithManyFeaturesAcceptanceTest`: `GivenTheNorthwindInstance()`, `GivenThePortfolioHolds`,
+    `AViewerOfThePortfolio/Team`, `TheAnswerCountingWhatTheDatabaseHandsBack`, `TheNamesIn`, `TheFeatureNamed`.
+  - `TestHelpers/CapturedMaterialisations`, `TestHelpers/ApprovedBodies`, `TestDoubles/ThreadsAForecastRoundRanOn`.
+- Reused from earlier Epics: the 6311 round harness (`GivenAPortfolioWithOneFeatureOfFiveItems`,
+  `WhenThePortfolioForecastIsUnderWay`, `TheForecastIsLetGoAndSettles`, `TheStoredForecastOf`), the Task Manager
+  harness and the usage-data observation harness.
+- Frontend: `tests/FeatureListTestKit.tsx`:
+  - the Northwind fixtures;
+  - `aFeatureServiceAnswering(...answers)` and `renderAFeatureList`, which exposes the `QueryClient` for
+    invalidation;
+  - `theListStatus`;
+  - `DefaultTerms` / `RenamedTerms`.
+  Also reused: `renderWithTerms` (`FieldTipsTestKit`) and `deferred()` (`HeldMetricsService`).
+- Reuse ratio (informational, not a gate): not measured mechanically for C#/TS; the slice classes are thin over the two acceptance bases and the one frontend kit.
+
+## Wave: DISTILL / [REF] Known gaps (for DELIVER)
+
+1. **Band hand-off from the detail pages to the page-opening detector (F1).** Add a component test with the
+   mechanism.
+2. **`ForecastLane` stopping with the host (DDD-23):** the outcome is pinned by the acceptance scenario
+   `When_Lighthouse_stops_in_the_middle_of_a_round_…` (round ends, previous forecasts kept, the stop completes, which it
+   cannot if the lane is disposed before the queue drains). That its threads are joined stays a unit test on the lane.
+3. **PostgreSQL runs of the goldens and identity checks** (`Integration.Containers`, as DEVOPS planned).
+4. **The Features-tab E2E POM waits on `data-widget-status="ready"`.** Change it in slice 04.
+5. **Retire `StartupBannerForecastCoresLineTest` with slice 01, and rewrite the setup of `PortfolioFeatureList.test.tsx`
+   and `TeamFeatureList.test.tsx` with slice 04.** Upstream issues 9–11.
+6. **Usage-data docs** (`docs/settings/usagedata.md`). The page test is pending; DELIVER writes the page in slice 01.
+
+## Wave: DISTILL / [REF] Exit and hold criteria for slice 01
+
+- **Slice 01 holds after 01a unless the stalls come from the shared thread pool (decision 16).** If 01a's
+  classification points at GC pauses or CPU-quota throttling, DELIVER stops after 01a and brings the readings to the
+  maintainer before building the forecast lane. There is no test for this: it is a decision on a reading.
+- **Slice 01 does not close until a component test shows that the two tab openings carry `featuresHeld` taken from the
+  page** (the Portfolio or Team the page holds), not only that the collector accepts a band (Known gap 1). The backend
+  and `featuresHeldOf` tests cannot show the hand-off from the page.
+
+## Wave: DISTILL / [REF] The thread scenarios guard the round; the source scan supplements them
+
+The behavioural `Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios` are the primary guard that a round's work stays off
+the threads that answer pages: they read the thread each draw and each save ran on, however the code is written. The
+ArchUnit scan reads only `ForecastService.cs`, because that is where the simulation is started; it catches a
+`Task.Run`, a `TaskScheduler.Default` or an unscheduled loop at review time, before any scenario runs, and is not
+meant to cover every file a round passes through.
+
+## Wave: DISTILL / [REF] Why the orphan check is store-level
+
+`At_the_store_a_computed_round_leaves_no_histogram_row_behind_that_belongs_to_no_forecast` reads the histogram table
+with the database's foreign keys on, rather than through a page. No page or endpoint can show a histogram row whose
+forecast is gone, because every read reaches histograms through their forecast; a leftover row is invisible to the
+reader and only grows the database. So the claim is checked where it can fail, and tagged `store-level` rather than
+`driving_port`.
+
+## Wave: DISTILL / [REF] AT-completeness audit
+
+The 15-item check scores **13/15: COMPLETE**. The two gaps are documented:
+
+- C7b, concurrency: the duplicate-id and late-answer cases are covered, but there is no concurrent-writer case for
+  the size count. The count reads the stored set, and a race with an update only shifts which update it reflects.
+- C5b, mode flags: RBAC on and off is exercised only with RBAC on through test authentication. Auth-off shares one
+  subject and changes no read in this Epic.
+
+No SPECIFICATION_AMBIGUITY blockers remain for the scenarios written. One open question on decision 15 is routed to
+DESIGN (upstream issue 12): the new-Team path that most people take is the create wizard, whose Create button does not
+read the licence today, and the copied-Team settings page autosaves with no Save button to carry a tooltip.
+
+## Wave: DISTILL / [REF] Upstream issues
+
+Twelve items in `distill/upstream-issues.md`. Settled by the maintainer's decisions 13 and 2 and the banner wording:
+Q-M2, the band summary, the one-thread banner. Still open, none blocking the scenarios written:
+
+- Q-M4 default;
+- the `getLicenseStatus` exemptions;
+- the F1 gap (now a slice 01 close criterion);
+- the deferred POM wait;
+- three existing tests DELIVER rewrites;
+- decision 15's create wizard and the copied Team's missing Save (new, for DESIGN).
+
+## Wave: DISTILL / [REF] Handoff to DELIVER
+
+Order: 01 → 02 → 03 → 04 → 05 → 06, one scenario at a time.
+
+- Enable a scenario by deleting its skip.
+- The walking skeleton and the 27 active guards stay green throughout.
+- No commit, push or ADO change was made in DISTILL.

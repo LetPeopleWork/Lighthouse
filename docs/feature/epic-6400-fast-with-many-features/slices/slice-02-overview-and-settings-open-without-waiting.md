@@ -31,7 +31,9 @@ is asked once per page.
 ## Acceptance criteria
 
 US-02 AC-2.1 to AC-2.7 in `feature-delta.md`: lists < 1 s; Settings < 1 s; one-Portfolio read scale-invariant;
-licence decisions unchanged and asked once per page; a failed count never enables a gated action; bodies unchanged;
+licence decisions unchanged and asked once per page; while the licence check loads or has failed, no create entry
+point is enabled (the Overview's "+ Add Team" / "+ Add Portfolio", the onboarding stepper's Add Team / Add Portfolio,
+Save on a new Team; maintainer decision 15), edits as today; bodies unchanged;
 dev backup identical.
 
 ## Production data (D25)
@@ -43,7 +45,10 @@ Dev DB backup: Overview, Teams and Portfolio pages identical before and after; l
 - Changes a fetch: **yes**, the licence count. DESIGN states its loading look (the gated action waits, never shown
   as allowed early) and failure look (D30). The Overview keeps its body spinner while its lists are on their way.
 - UI sketch at DISTILL: **only if** DESIGN gives the count a look that does not exist today; else N/A, because the
-  pages look as they do now.
+  pages look as they do now. *Done*: DESIGN did give one (disabled while loading; disabled with a reason when the
+  check failed). Maintainer decision 11 (2026-10-24) together with DESIGN's sketch of the gated create actions is this
+  slice's sketch; decision 15 extends it to every create entry point, and the copy reads "Couldn't check your license.
+  Reload the page to try again." (the UI spells it "license").
 
 ## Dependencies
 

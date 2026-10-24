@@ -37,7 +37,12 @@ result to what the caller may read, so an unreadable owner yields fewer rows, ne
 5. **Server path**: controller → driving port `IFeatureListService` → the owner's Features read in the database by
    owner, the histogram-free dependency graph, the position map, move verdicts, and `TeamMetricsService`'s in-progress
    references. The dependency-reading code now private to `FeaturesController` moves to one collaborator both use. The
-   controller depends on no repository.
+   controller depends on no repository. `IFeatureListService` and that collaborator only read, so they take a narrow
+   read-only interface (provisional `IFeatureListReader`: the owner read, the histogram-free graph, the reference-id
+   read, the parent read) that `FeatureRepository` implements and the composition root registers as the same scoped
+   instance. This follows the house pattern of `ReportRepository` serving `IReportReader` beside `IReportWriter` and
+   `ISecretCustodyReader` narrowing `ISecretCustodyService`; the new components are never handed the write-capable
+   `IFeatureRepository`.
 6. **Which histograms the list still reads.** `Feature.Forecast` is the aggregate of **every per-Team completion
    forecast** (`AggregatedWhenForecast(Forecasts)`); there is no Feature-level completion row to read instead. So the
    list keeps all completion histograms. It drops only the per-Team **start** histograms: `WhenWorkBegins` reads the

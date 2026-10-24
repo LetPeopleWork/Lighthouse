@@ -8,11 +8,14 @@ shows).
 
 ## Context
 
-`useLicenseRestrictions()` is mounted at 23 call sites. Every mount keeps its own state and fires `/license`,
-`/teams` and `/portfolios`, only to count Teams and Portfolios. The first Overview load fires three of each. Eighteen
-call sites read only the licence status; five read the count-based answers: two create gates (`canCreateTeam`,
-`canCreatePortfolio`, on the Overview) and three edit or update gates (`canUpdateTeamData`, `canUpdatePortfolioData`,
-in `EditTeam`, `ModifyProjectSettings` and the detail pages).
+`useLicenseRestrictions()` is called at 22 sites outside tests (recounted 2026-10-24). Every mount keeps its own
+state and fires `/license`, `/teams` and `/portfolios`, only to count Teams and Portfolios. The first Overview load
+fires three of each. Sixteen call sites read only the licence status; six read the count-based answers:
+`OverviewDashboard` (`canCreateTeam`, `canCreatePortfolio`, which drive its "+ Add Team" / "+ Add Portfolio" and are
+passed on to `OnboardingStepper`, whose Add Team / Add Portfolio steps enable on them, `OnboardingStepper.tsx:95,
+:102`); `EditTeam` (`EditTeam.tsx:41-43`: `canCreateTeam` gates Save on a new Team, `canUpdateTeamData` on an
+existing one); and the update gates in `ModifyProjectSettings`, `PortfolioDetail` and `TeamDetail`. The create
+answers therefore reach users in three places: the Overview's buttons, the onboarding stepper, and a new Team's Save.
 
 Today the hook is **permissive** while it loads and when any of the three requests fails: the count-based answers are
 `true`. Premium gating is already closed in both states (`licenseStatus?.canUsePremiumFeatures` is falsy). D30 and
@@ -28,8 +31,10 @@ AC-2.5 require that "a count that failed to load never reads as under the limit"
    count queries use a stale time of zero, so a page mounted after a create or delete counts again; concurrent mounts
    share one request.
 3. **The hook reports a status** (`loading`, `ready`, `failed`) beside the answers. `ready` answers exactly as today.
-   While `loading` or `failed`, only the two **create** answers are refused (no reason while loading; "Couldn't check
-   your licence" when failed, copy settled at DISTILL's sketch). The edit and update answers stay allowed in every
+   While `loading` or `failed`, only the two **create** answers are refused, and every create entry point follows
+   them: the Overview's "+ Add Team" / "+ Add Portfolio", the onboarding stepper's Add Team / Add Portfolio, and Save
+   on a new Team's edit page (maintainer decision of 2026-10-24). Each is disabled with no reason while loading, and
+   with "Couldn't check your license. Reload the page to try again." when failed (the UI spells it "license"). The edit and update answers stay allowed in every
    state, as today: an existing Team or Portfolio is never locked out of its own settings because a count could not be
    read, and `LicenseGuard` still refuses an update over the limit on the server.
 4. **UI gating stays derived from hooks**: no component fetches `/license`, `/teams` or `/portfolios` for licensing on
@@ -52,20 +57,22 @@ AC-2.5 require that "a count that failed to load never reads as under the limit"
 ## Consequences
 
 **Positive**
-- One `/license` request per page instead of up to 23; no licence-driven `/teams` or `/portfolios` on Premium.
+- One `/license` request per page instead of up to 22; no licence-driven `/teams` or `/portfolios` on Premium.
 - A new Team or Portfolio is never offered when the instance cannot tell whether one more is allowed.
 - Edits behave exactly as today in every state.
 
 **Negative / accepted**
-- For the sub-second wait on a Community instance, the two create buttons render disabled before they enable.
-- If the API is down, Community users see the two create actions refused with a reason, where today they were offered
-  and then failed.
+- For the sub-second wait on a Community instance, the create entry points render disabled before they enable.
+- If the API is down, Community users see every create entry point refused with a reason, where today they were
+  offered and then failed. Someone filling in a new Team keeps what they typed; only Save waits.
 - AC-2.5 is narrowed from "a gated action" to "a gated create action" (upstream-changes UC-1).
 
 ## Enforcement
 
 - Hook tests: one request per key for N simultaneous mounts; Premium fires no list request; `loading` and `failed`
-  refuse both create answers and allow both update answers; `ready` answers equal today's for counts at, under and over
+  refuse both create answers and allow both update answers; component tests for each create entry point (the
+  Overview's two buttons, the onboarding stepper's two steps, Save on a new Team) in the loading and failed states,
+  and Save on an existing Team unchanged; `ready` answers equal today's for counts at, under and over
   each limit, RBAC on and off.
 - Frontend architecture rule (a test over the source tree): `getLicenseStatus` is called only from the one shared query
   function that the hook and `LicenseStatusIcon` both use, and no component calls `getTeams` / `getPortfolios` to count

@@ -2636,7 +2636,12 @@ outcomes:
     measurement_window: Task 01a baseline, then before/after each slice
     gate: soft
     alerting: []
-    acceptance_scenarios: []   # wall-clock reading only
+    acceptance_scenarios:   # the time itself is a harness reading; these pin what the reads no longer load
+      - "Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs_and_reads_their_dates_once_it_ends"
+      - "Slice02OverviewReadsNamesAndCountsScenarios.Naming_and_counting_Portfolios_and_Teams_reads_no_forecast_at_all (5 reads)"
+      - "Slice02OverviewReadsNamesAndCountsScenarios.Opening_Northwind_Payments_reads_Northwind_Payments_and_its_Features_not_the_rest_of_the_instance"
+      - "useLicenseRestrictions.status.test.tsx: three parts of one page asking at once share one licence read and one count of each list"
+      - "useLicenseRestrictions.status.test.tsx: on a Premium licence the Teams and Portfolios are never fetched just to be counted"
     status: designed-not-shipped
 
   - id: OUT-6400-first-feature-row
@@ -2657,7 +2662,12 @@ outcomes:
     alerting:
       - condition: "first row still >= 2 s at 920 after slice 04"
         action: "manual: read the completion-histogram share of the list's server time; if it alone exceeds the budget, the stored-percentile read model is the follow-up (ADR-260)"
-    acceptance_scenarios: []
+    acceptance_scenarios:   # the time itself is a harness reading; these pin what the list no longer loads or asks for
+      - "Slice03FeaturesListReadsScenarios.Northwind_Platforms_list_reads_the_forecast_histograms_of_the_Features_it_shows_and_no_others"
+      - "Slice03FeaturesListReadsScenarios.Asking_what_Atlas_works_on_reads_the_Feature_Atlas_works_on_and_no_others"
+      - "Slice04OneListPerOwnerScenarios.The_list_reads_its_own_Features_completion_histograms_and_leaves_the_per_Team_start_histograms_out"
+      - "PortfolioFeatureList.oneList.test.tsx: the list asks once, for the Portfolio's list, and reads nothing else"
+      - "TeamFeatureList.oneList.test.tsx: the list asks once, for the Team's list, and reads nothing else"
     status: designed-not-shipped
 
   - id: OUT-6400-no-stall-during-rounds
@@ -2671,14 +2681,24 @@ outcomes:
       length and thread count, GC pause time, gen 2 count); cgroup cpu.stat throttling; windows T, R, RT, C, C0 and
       the classification fixed in DDD-3. CI precondition (hard): the ForecastLane probe asserts every recorded round
       frame runs on a lane thread, on 1, 2 and 4 lane threads. Production: the reporter's first working-day log after
-      the release, at shipped log levels. The startup banner line 'Forecast rounds run on N dedicated threads' proves
-      the lane ran; a warning counts when its time falls inside a forecast window, taken from each
-      'ForecastUpdater: Update completed ... forecast={N}ms' line (its timestamp minus N ms). Customer names and hosts
-      from that log are never committed.
+      the release, at shipped log levels. The startup banner line 'Forecast rounds run on N dedicated threads' (or
+      'on 1 dedicated thread') proves the lane ran; a warning counts when its time falls inside a forecast window.
+      The windows come from the refresh round's summary line (RefreshRoundSummaryLine.Write), logged at Information
+      by UpdateServiceBase (UpdateServiceBase.cs:116, :143; SourceContext
+      Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase, the category of
+      ILogger<UpdateServiceBase<Portfolio>>) or by UpdateQueueService (UpdateQueueService.cs:448; SourceContext
+      Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateQueueService). The shipped file
+      template prints the last segment only: 'HH:mm:ss - INFORMATION - UpdateServiceBase: Update completed |
+      Portfolio '{name}' | ... | forecast={N}ms'. Window = [timestamp - max(N, the line's duration=) ms, timestamp],
+      because the line is written when the round's last execution leaves, at or after the forecast ends. Zero matched
+      windows makes the reading void, not zero: ask for the log again. File timestamps carry no date; the day comes
+      from the file name. Harness outputs go to Lighthouse.EndToEndTests/perf/out/ only (gitignored by DELIVER step
+      01a-1). Customer names and hosts from that log are never committed.
     log_fields:
       kestrel_warning: ["Heartbeat took longer than {interval} at {time}"]
-      refresh_summary_line: ["forecast={N}ms", "forecast=skipped after {N}ms (inputs unchanged)"]
-      startup_banner_line: ["Forecast rounds run on {N} dedicated threads; each forecast uses up to {N} of {M} cores"]
+      refresh_summary_line_source_context: ["Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateServiceBase", "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.UpdateQueueService"]
+      refresh_summary_line: ["Update completed | {EntityType} '{EntityName}'", "forecast={N}ms", "forecast=skipped after {N}ms (inputs unchanged)", "forecast=cancelled after {N}ms", "forecast=failed after {N}ms", "duration={DurationMs}ms"]
+      startup_banner_line: ["Forecast rounds run on {N} dedicated threads; each forecast uses up to {N} of {M} cores", "Forecast rounds run on 1 dedicated thread; each forecast uses up to 1 of {M} cores"]
     measurement_window: Task 01a baseline, after slice 01, after the last slice; the reporter's first log after the release of slice 01
     gate: hard   # the probe in CI; the readings are soft
     alerting:
@@ -2686,7 +2706,14 @@ outcomes:
         action: "backend build fails (red)"
       - condition: "heartbeat warnings remain after slice 01 on the scaled set or in the reporter's log"
         action: "manual: classify by DDD-3 (pool, GC, CPU quota) and follow its D27 branch; Dissent B if S_q > 0.3"
-    acceptance_scenarios: []   # DISTILL names the probe and host-stop classes
+    acceptance_scenarios:   # the heartbeat count is a harness and log reading; joining the lane's threads on stop is DELIVER's unit test
+      - "Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs_and_reads_their_dates_once_it_ends"
+      - "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (2, 4 and 8 cores): A_background_round_simulates_on_Lighthouses_own_forecast_threads_never_on_the_threads_that_answer_pages"
+      - "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (2, 4 and 8 cores): A_background_round_saves_its_forecasts_from_the_forecast_threads_too"
+      - "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (2, 4 and 8 cores): A_round_stopped_from_the_Task_Manager_ends_and_every_Feature_keeps_the_forecast_it_had"
+      - "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (2, 4 and 8 cores): When_Lighthouse_stops_in_the_middle_of_a_round_the_round_ends_and_every_Feature_keeps_the_forecast_it_had"
+      - "FastWithManyFeaturesArchUnitTest: the forecast service never hands a simulation to the shared pool; round code never resumes off the forecast threads; only the updater and the composition root reach them"
+      - "StartupBannerForecastLaneLineTest (2 tests)"
     status: designed-not-shipped
 
   - id: OUT-6400-shorter-rounds
@@ -2707,7 +2734,9 @@ outcomes:
     measurement_window: Task 01a baseline, after slice 05
     gate: soft
     alerting: []
-    acceptance_scenarios: []
+    acceptance_scenarios:   # the durations are harness readings; these pin what a round no longer reads
+      - "Slice05LighterRoundsScenarios.A_round_that_changes_nothing_on_a_Portfolio_that_writes_nothing_back_decides_to_skip_without_reading_a_single_forecast_histogram"
+      - "Slice05LighterRoundsScenarios.A_computed_round_replaces_yesterdays_forecasts_without_reading_their_histograms"
     status: designed-not-shipped
 
   - id: OUT-6400-openings-by-size
@@ -2721,15 +2750,23 @@ outcomes:
       hundred Features, and today the evidence is one instance. The identifier is per consent answer (a browser), not
       per instance, so this counts openings and browsers by size, never instances.
     measured_by: >
-      PostHog breakdown of the two tab-opened events by features_held: UpTo100 (0-100, the nudge never shows),
-      From101To399, From400 (the reporter's 400-920 range), Unknown (the owner had not loaded before the person left).
+      PostHog breakdown of the two tab-opened events by features_held: UpTo20, From21To50, From51To100 (together
+      0-100, the nudge never shows), From101To399, From400 (the reporter's 400-920 range), Unknown (the owner had not
+      loaded before the person left).
       An absent value means a web bundle from before the release.
     log_fields:
       usage_data_property: ["features_held"]
     measurement_window: 90 days after the release that carries slice 01
     gate: soft
     alerting: []
-    acceptance_scenarios: []   # DISTILL names the shape, controller, publisher and band tests
+    acceptance_scenarios:
+      - "Story6404FeaturesHeldUsageEventTests.A_tab_opening_travels_with_the_band_of_the_Features_its_page_holds (7 cases)"
+      - "Story6404FeaturesHeldUsageEventTests.A_tab_opening_from_a_browser_older_than_the_band_still_counts_and_travels_without_one (2 cases, active)"
+      - "Story6404FeaturesHeldUsageEventTests.A_tab_opening_carrying_anything_but_one_of_the_six_bands_is_refused (5 cases)"
+      - "Story6404FeaturesHeldUsageEventTests.Any_other_event_carrying_a_band_is_refused (2 cases)"
+      - "Story6404FeaturesHeldUsageEventTests.The_six_bands_travel_by_name_and_each_keeps_the_internal_number_it_was_released_with"
+      - "Story6404FeaturesHeldUsageEventTests.The_usage_data_page_names_every_band_and_says_the_number_itself_never_travels"
+      - "featuresHeldOf.test.ts (14 cases: the band boundaries and Unknown)"
     status: designed-not-shipped
 
   - id: OUT-6400-answers-unchanged
@@ -2748,7 +2785,18 @@ outcomes:
     alerting:
       - condition: "a golden or identity test fails"
         action: "backend build fails (red)"
-    acceptance_scenarios: []   # DISTILL names the golden and identity classes
+    acceptance_scenarios:   # G1-G4; tagged guardrail-Gn and kpi-OUT-6400-answers-unchanged in the test categories
+      - "Slice01WalkingSkeletonScenarios.A_forecast_reads_the_same_wherever_its_round_runs (G1, active)"
+      - "Slice05LighterRoundsScenarios.The_tracker_is_sent_the_same_date_after_a_computed_round_and_after_the_skipped_round_that_follows_it (G1, active)"
+      - "Slice05LighterRoundsScenarios.At_the_store_a_computed_round_leaves_no_histogram_row_behind_that_belongs_to_no_forecast (G1, store-level, active)"
+      - "Slice05LighterRoundsScenarios.A_skipped_round_on_a_Portfolio_that_writes_its_dates_back_still_reads_the_histograms_it_stages_from (G1, active)"
+      - "Slice05LighterRoundsScenarios.A_computed_round_and_the_skipped_round_after_it_stage_the_same_values_for_every_Feature_including_one_no_Team_works_on (G1, active)"
+      - "Slice02OverviewReadsNamesAndCountsScenarios.Every_name_and_count_the_Overview_and_the_detail_pages_read_is_exactly_as_before (5 goldens, active)"
+      - "Slice03FeaturesListReadsScenarios.Every_row_dependency_and_Team_the_Features_tab_reads_is_exactly_as_before (3 goldens, active)"
+      - "Slice03FeaturesListReadsScenarios.A_blocker_in_a_Portfolio_the_reader_may_not_read_stays_withheld (G2, active)"
+      - "Slice04OneListPerOwnerScenarios.Every_row_reads_exactly_as_the_same_Feature_reads_today"
+      - "Slice04OneListPerOwnerScenarios.The_parents_and_the_Teams_at_work_read_as_the_two_reads_they_replace"
+      - "Slice04OneListPerOwnerScenarios.Inside_a_list_the_reader_may_open_a_blocker_they_may_not_read_is_withheld"
     status: designed-not-shipped
 
   # story-6398-jira-release-loads-once (DEVOPS 2026-10-24). No usage-data event: the Story adds no action, it makes an

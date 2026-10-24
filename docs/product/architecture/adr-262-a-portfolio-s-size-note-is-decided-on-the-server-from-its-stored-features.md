@@ -27,8 +27,12 @@ failure look that never reads as "no data", and a silent failure reads exactly l
    - over 100: "This {Portfolio} holds {N} {Features} (as of its last update). …" with the D23 advice;
    - at or under 100, or never updated: nothing.
    Terms render through Terminology; copy is provisional and settled at DISTILL's sketch.
-4. **The log line** is written by `PortfolioUpdater` after a successful Features update, from the Feature count it
-   already holds, through the same `PortfolioSize`.
+4. **The log line** is written at **Warning** by `PortfolioUpdater` after a successful Features update, from the
+   Feature count it already holds, through the same `PortfolioSize` (maintainer decision of 2026-10-24; first drafted
+   at Information): "Portfolio '{name}' ({id}) holds {N} Features after its update, more than 100. Its pages and
+   forecasts get slower; narrowing its query keeps them fast." Being a Warning, it also lands in the shared 200-entry
+   Recent Problems list, one entry per such update; accepted by the maintainer, with no sink exclusion. It is not a
+   Kestrel heartbeat warning, so the stall reading (K3) does not count it.
 
 ## Alternatives considered
 

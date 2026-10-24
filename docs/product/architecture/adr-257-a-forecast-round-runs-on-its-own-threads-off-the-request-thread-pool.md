@@ -46,7 +46,11 @@ everything else. K3 (no heartbeat warning through a round, pages within 1.2 × i
    `MaxDegreeOfParallelism` unchanged. On the lane, the current scheduler is the lane. For a manual forecast asked from
    a page (`When`), it is the shared pool, and the request thread is released while the simulation runs, exactly as
    today, so a manual forecast never queues behind a background round (ADR-248's NMD-14 holds).
-5. **Lifecycle.** The lane is created at first resolve and lives for the process. On shutdown the update queue drains
+5. **Lifecycle.** The lane has **one creation point**: the composition root constructs it once, during service
+   registration, from `ForecastSimulationLimits.Default` (the instance the forecasts already use), and registers it as
+   a singleton through a factory that returns that instance, so the container still owns and disposes it (an
+   instance handed to the container directly would never be disposed). The startup banner reads that same instance,
+   so it states the lane's real size before any round runs. The lane lives for the process. On shutdown the update queue drains
    first (its hosted service stops before the container disposes singletons); an in-flight round is cancelled by its
    token before its save (ADR-249). The lane is disposed after the hosted services stop: it completes its queue, joins
    its background threads with a bounded timeout, and logs any thread that did not finish. Being background threads,
@@ -54,7 +58,7 @@ everything else. K3 (no heartbeat warning through a round, pages within 1.2 × i
 6. **Nothing else moves.** The queue stays one sequential reader; holds, Stop and Cancel all, the per-update
    cancellation token and the write-back round are unchanged. Domain-event handlers keep opening their own scope.
 7. **The startup banner reads the lane**: "Forecast rounds run on N dedicated threads; each forecast uses up to N of M
-   cores".
+   cores", with "on 1 dedicated thread" (singular) when the lane has one thread, as it does on one or two cores.
 
 ## Alternatives considered
 
@@ -86,7 +90,9 @@ everything else. K3 (no heartbeat warning through a round, pages within 1.2 × i
 - CPU is still shared: the lane's threads use up to half the cores, as today.
 - Whether the Kestrel heartbeat itself runs on the pool or on its own thread is unverified (OQ-1). A stop-the-world GC
   pause or a CPU-throttled container stalls every thread, the lane's included. Task 01a classifies the stalls with fixed
-  thresholds; if they are GC or throttling, this ADR helps less and the D27 order moves slices 05 and 03 ahead of 02.
+  thresholds; if they are GC or throttling, this ADR helps less, so delivery stops after the measurement and the
+  readings go to the maintainer before this ADR is built (maintainer decision of 2026-10-24, replacing the earlier
+  plan to build it anyway and move slices 05 and 03 ahead of 02).
 - A task that blocks on another lane task from a lane thread could deadlock once all lane threads are busy.
   `Parallel.For` runs its first share on the calling thread, so the round always progresses; no other code may block
   on lane work.
@@ -103,8 +109,14 @@ everything else. K3 (no heartbeat warning through a round, pages within 1.2 × i
   fire-and-forget).
 - Lifecycle test: stopping the host during a lane round cancels the round, leaves the previous forecasts, and disposes
   the lane with every thread joined within the timeout.
-- Structural (ArchUnitNET): `ForecastService` does not call `Task.Run`; only `ForecastUpdater` depends on `ForecastLane`;
-  no `ConfigureAwait(false)` in `ForecastUpdater` or `ForecastService`.
+- Structural (ArchUnitNET, plus a source scan of `ForecastService.cs` and `ForecastUpdater.cs`, because a call made
+  inside an `async` body can vanish from the Release build's IL and an IL-only rule would then pass vacuously):
+  `ForecastService` does not call `Task.Run`, does not call `Task.Factory.StartNew` without an explicit scheduler
+  argument, does not touch `ThreadPool.*` (`QueueUserWorkItem`, `UnsafeQueueUserWorkItem`, `RegisterWaitForSingleObject`
+  and the rest), and calls `Parallel.*` only with a `ParallelOptions` whose `TaskScheduler` is set; only
+  `ForecastUpdater` and the composition root depend on `ForecastLane`; no `ConfigureAwait(false)` in
+  `ForecastUpdater`, `ForecastService` or `ForecastLane`.
+- Banner: the line reads the registered lane's thread count, singular for one thread, plural otherwise.
 - Identity: seeded percentiles, histogram rows and the Story 6354 fingerprint are identical before and after, on
   SQLite and PostgreSQL (C12).
 - Cancel all and per-row Stop end a lane round within seconds, leaving the previous forecasts (ADR-249).

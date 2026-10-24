@@ -11,10 +11,13 @@ loading forever.
 - A new, additive list endpoint per Portfolio and per Team: only the shown columns, parents folded in, in-progress as
   ids (shape is DESIGN's). Guarded by Portfolio / Team read as today.
 - Both Features tabs read it (D21); hide-completed stays client-side (maintainer).
-- Looks (D22): loading placeholders until the first answer; after a completed update the rows stay, dimmed under a
-  small spinner, and an older answer never lands (keyed query); failure "The {Features} couldn't be loaded." with
-  Retry; empty "This {Portfolio} has no {Features} yet." (or {Team}); all hidden "All {N} {Features} are completed.
-  Turn off Hide completed to see them."
+- Looks (D22, settled by maintainer decisions 3–7, 2026-10-24): loading placeholders under a spinner until the first
+  answer; after a completed update the rows stay, dimmed and not clickable under a small spinner, and an older answer
+  never lands (keyed query); failure "The {Features} couldn't be loaded." with [Retry], the same look for a failed
+  first load and a failed refresh (the previous rows are never kept on screen); empty "This {Portfolio} has no
+  {Features} yet." (Team tab: "This {Team} has no {Features} yet."); all hidden "All {N} {Features} are completed.
+  Turn off Hide Completed {Features} to see them.", N being the number of completed Features held, and "Hide Completed
+  {Features}" the toggle's real label (`FeatureListDataGrid.tsx:133`).
 - The E2E page object waits for the list's ready state.
 
 ## OUT of scope
@@ -41,7 +44,7 @@ Dev DB backup: every column of every row identical to today's list on all three 
 - Changes a fetch: **yes**. DESIGN pins loading, failure, empty and all-hidden (reuse `WidgetShell` status and a keyed
   TanStack query). Check by hand with the browser throttled.
 - UI sketch at DISTILL: **yes** — the four looks and their copy, one decision at a time, reusing the existing
-  `FeatureListDataGrid` / `DataGridBase` grid.
+  `FeatureListDataGrid` / `DataGridBase` grid. *Done*: maintainer decisions 3–7 (2026-10-24).
 
 ## Dependencies
 
@@ -56,4 +59,4 @@ and `WidgetShell` status adoption.
 ## Dogfood
 
 Scaled instance: open Northwind Platform and Team Borealis with and without a round; stop the backend and press Retry;
-create an empty Portfolio; hide completed on a fully completed one.
+create an empty Portfolio; turn on Hide Completed Features on a fully completed one.
