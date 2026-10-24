@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 
 describe("the ways to pick a Portfolio's connection offers", () => {
-	it.skip("are asked for once however many readers there are on the page", async () => {
+	it("are asked for once however many readers there are on the page", async () => {
 		const observe = aPageAndItsDialog();
 
 		const page = observe(1);
@@ -56,7 +56,7 @@ describe("the ways to pick a Portfolio's connection offers", () => {
 		expect(requestsMade()).toBe(1);
 	});
 
-	it.skip("asking again asks exactly once more", async () => {
+	it("asking again asks exactly once more", async () => {
 		const observe = aPageAndItsDialog();
 		const dialog = observe(1);
 		await waitFor(() => expect(dialog.result.current.status).toBe("success"));
@@ -68,7 +68,7 @@ describe("the ways to pick a Portfolio's connection offers", () => {
 		expect(requestsMade()).toBe(2);
 	});
 
-	it.skip("a failed answer reads as failed, never as a connection that offers nothing", async () => {
+	it("a failed answer reads as failed, never as a connection that offers nothing", async () => {
 		vi.mocked(deliveryService.getDeliverySources).mockRejectedValue(
 			new Error("The server could not answer"),
 		);
@@ -81,7 +81,7 @@ describe("the ways to pick a Portfolio's connection offers", () => {
 		expect(requestsMade()).toBe(1);
 	});
 
-	it.skip("another Portfolio has an answer of its own", async () => {
+	it("another Portfolio has an answer of its own", async () => {
 		const observe = aPageAndItsDialog();
 
 		const paymentsPlatform = observe(1);

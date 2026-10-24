@@ -1,4 +1,6 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
@@ -72,6 +74,15 @@ vi.mock("react", async () => {
 	};
 });
 
+// A cache of its own per test, so no test reads an answer another one was given.
+const withQueryClient = () => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return ({ children }: { children: ReactNode }) =>
+		createElement(QueryClientProvider, { client: queryClient }, children);
+};
+
 const portfolioDeliveries = (
 	active: Delivery[] = [],
 	archived: ArchivedDelivery[] = [],
@@ -136,7 +147,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			expect(result.current.deliveries).toEqual([]);
 			// Read before the connection has been asked: the rows render against this, and anything
@@ -166,7 +180,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries(deliveries),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -184,7 +201,10 @@ describe("useDeliveryManagement", () => {
 				new Error("Network error"),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -202,7 +222,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -221,7 +244,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -245,7 +271,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -265,7 +294,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -291,7 +323,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -317,7 +352,10 @@ describe("useDeliveryManagement", () => {
 				.mockResolvedValueOnce(portfolioDeliveries(remainingDeliveries));
 			mockDeliveryService.delete.mockResolvedValue(null);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -352,7 +390,10 @@ describe("useDeliveryManagement", () => {
 			mockDeliveryService.delete.mockResolvedValue(null);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -390,7 +431,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -417,7 +461,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockDeliveryService.delete.mockRejectedValue(new Error("Delete failed"));
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -452,7 +499,10 @@ describe("useDeliveryManagement", () => {
 				.mockResolvedValueOnce(portfolioDeliveries([newDelivery]));
 			mockDeliveryService.create.mockResolvedValue(null);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -496,7 +546,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockDeliveryService.create.mockRejectedValue(new Error("Create failed"));
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -525,7 +578,10 @@ describe("useDeliveryManagement", () => {
 			);
 			const updateSpy = vi.fn().mockResolvedValue(undefined);
 			mockApiServiceContext.deliveryService.update = updateSpy;
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -566,7 +622,10 @@ describe("useDeliveryManagement", () => {
 			);
 			const updateSpy = vi.fn().mockResolvedValue(undefined);
 			mockApiServiceContext.deliveryService.update = updateSpy;
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -604,7 +663,10 @@ describe("useDeliveryManagement", () => {
 			mockDeliveryService.getByPortfolio.mockResolvedValue(
 				portfolioDeliveries([]),
 			);
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -648,7 +710,10 @@ describe("useDeliveryManagement", () => {
 			);
 			const updateSpy = vi.fn().mockRejectedValue(new Error("Update failed"));
 			mockApiServiceContext.deliveryService.update = updateSpy;
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -684,7 +749,10 @@ describe("useDeliveryManagement", () => {
 						"delivery-archived",
 					),
 				);
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -759,7 +827,10 @@ describe("useDeliveryManagement", () => {
 			const updateSpy = vi.fn().mockResolvedValue(undefined);
 			mockApiServiceContext.deliveryService.update = updateSpy;
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -832,8 +903,9 @@ describe("useDeliveryManagement", () => {
 				.fn()
 				.mockResolvedValue(undefined);
 
-			const { result } = renderHook(() =>
-				useDeliveryManagement({ portfolio: getMockPortfolio() }),
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio: getMockPortfolio() }),
+				{ wrapper: withQueryClient() },
 			);
 
 			await waitFor(() => {
@@ -877,7 +949,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -909,7 +984,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -943,7 +1021,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockGetFeaturesByIds.mockResolvedValue(features);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -980,7 +1061,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1006,7 +1090,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockGetFeaturesByIds.mockRejectedValue(new Error("Feature load failed"));
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1039,7 +1126,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockGetFeaturesByIds.mockReturnValue(featuresPromise);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1084,7 +1174,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([live], [retired]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1105,7 +1198,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1131,7 +1227,10 @@ describe("useDeliveryManagement", () => {
 				.mockResolvedValueOnce(portfolioDeliveries([], [retired]));
 			mockDeliveryService.archive.mockResolvedValue(undefined);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1164,7 +1263,10 @@ describe("useDeliveryManagement", () => {
 				portfolioDeliveries([delivery]),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1192,7 +1294,10 @@ describe("useDeliveryManagement", () => {
 				new ApiError(409, "Request failed with status code 409"),
 			);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1218,7 +1323,10 @@ describe("useDeliveryManagement", () => {
 			);
 			mockDeliveryService.unarchive.mockResolvedValue(undefined);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1253,7 +1361,10 @@ describe("useDeliveryManagement", () => {
 			const updateSpy = vi.fn().mockResolvedValue(undefined);
 			mockApiServiceContext.deliveryService.update = updateSpy;
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1293,7 +1404,10 @@ describe("useDeliveryManagement", () => {
 				.fn()
 				.mockResolvedValue(undefined);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1324,7 +1438,10 @@ describe("useDeliveryManagement", () => {
 				.fn()
 				.mockRejectedValue(new Error("nope"));
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1351,7 +1468,10 @@ describe("useDeliveryManagement", () => {
 					{ key: "jira-release", displayName: "Jira Release" },
 				]);
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.deliverySources).toEqual([
@@ -1370,7 +1490,10 @@ describe("useDeliveryManagement", () => {
 				.fn()
 				.mockRejectedValue(new Error("offline"));
 
-			const { result } = renderHook(() => useDeliveryManagement({ portfolio }));
+			const { result } = renderHook(
+				() => useDeliveryManagement({ portfolio }),
+				{ wrapper: withQueryClient() },
+			);
 
 			await waitFor(() => {
 				expect(result.current.isLoading).toBe(false);
@@ -1400,7 +1523,10 @@ describe("useDeliveryManagement", () => {
 			const { result, rerender } = renderHook(
 				({ portfolio }: { portfolio: Portfolio }) =>
 					useDeliveryManagement({ portfolio }),
-				{ initialProps: { portfolio: getMockPortfolio({ id: 1 }) } },
+				{
+					initialProps: { portfolio: getMockPortfolio({ id: 1 }) },
+					wrapper: withQueryClient(),
+				},
 			);
 
 			await waitFor(() => {

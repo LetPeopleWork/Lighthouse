@@ -3,7 +3,6 @@ import { useErrorSnackbar } from "../../../../../components/Common/SnackbarError
 import { useArchiveConfirmationPreference } from "../../../../../hooks/useArchiveConfirmationPreference";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { ArchivedDelivery } from "../../../../../models/Delivery/ArchivedDelivery";
-import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -20,6 +19,7 @@ import {
 	isNotArchivedRefusal,
 	notArchivedRefusalMessage,
 } from "../../../../../utils/deliveries/deliveryArchivedRefusal";
+import { useDeliverySources } from "./useDeliverySources";
 
 interface UseDeliveryManagementProps {
 	portfolio: Portfolio;
@@ -81,7 +81,6 @@ export const useDeliveryManagement = ({
 	const [archivedDeliveries, setArchivedDeliveries] = useState<
 		ArchivedDelivery[]
 	>([]);
-	const [deliverySources, setDeliverySources] = useState<IDeliverySource[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [showCreateModal, setShowCreateModal] = useState(false);
 	const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(
@@ -218,20 +217,6 @@ export const useDeliveryManagement = ({
 			setIsLoading(false);
 		}
 	}, [deliveryService, portfolio.id, showError, deliveriesTerm]);
-
-	// Asked once for the whole list rather than per row: it is what turns a stored source key into the
-	// name a reader recognises, and every row on the page would otherwise ask the same question again.
-	// A connection that cannot answer leaves the rows naming the key itself, which is worse to read but
-	// still true, so a failure here is not worth interrupting anyone over.
-	const fetchDeliverySources = useCallback(async () => {
-		try {
-			setDeliverySources(
-				await deliveryService.getDeliverySources(portfolio.id),
-			);
-		} catch {
-			setDeliverySources([]);
-		}
-	}, [deliveryService, portfolio.id]);
 
 	const handleAddDelivery = () => {
 		setShowCreateModal(true);
@@ -501,11 +486,10 @@ export const useDeliveryManagement = ({
 		});
 	}, [fetchDeliveries]);
 
-	useEffect(() => {
-		fetchDeliverySources().catch((error) => {
-			console.error("Error fetching delivery sources:", error);
-		});
-	}, [fetchDeliverySources]);
+	// What turns a stored source key into the name a reader recognises. A connection that cannot answer
+	// leaves the rows naming the key itself, which is worse to read but still true, so a failure here is
+	// not worth interrupting anyone over.
+	const deliverySources = useDeliverySources(portfolio.id).data ?? [];
 
 	return {
 		deliveries,
