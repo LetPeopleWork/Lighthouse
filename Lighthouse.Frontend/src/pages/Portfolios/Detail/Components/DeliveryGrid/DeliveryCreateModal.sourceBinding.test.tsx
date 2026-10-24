@@ -341,7 +341,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		renderEditModal(deliveryService, followingARelease());
 
 		expect(tabPressedState()).toEqual({
-			Manual: "true",
+			Manual: "false",
 			"Rule-Based": "false",
 			"Loading…": null,
 		});

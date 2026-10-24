@@ -309,22 +309,26 @@ interface SelectionBodyQuestion {
 
 /**
  * A delivery that follows an entry of the work tracking system belongs on a tab that only exists
- * once the server has listed it. Until then any other tab's body would be a guess, and the Manual
- * list in particular would read as what the delivery holds.
+ * once the server has listed it. Until then the form stands on no tab at all: any tab pressed, any
+ * body shown and any name typed would be a guess, and the Manual list in particular would read as
+ * what the delivery holds.
  */
-const selectionBodyOf = ({
+const awaitsBoundSourceTab = ({
 	tab,
-	verdict,
-	ruleSchemaIsLoading,
 	sourcesStatus,
 	followsTrackerEntry,
-}: SelectionBodyQuestion): SelectionBody => {
-	const awaitsSourceTab = followsTrackerEntry && tab.source === undefined;
-	if (awaitsSourceTab && sourcesStatus === "loading") {
-		return { kind: "loading" };
-	}
-	if (awaitsSourceTab && sourcesStatus === "error") {
-		return { kind: UNAVAILABLE };
+}: Pick<
+	SelectionBodyQuestion,
+	"tab" | "sourcesStatus" | "followsTrackerEntry"
+>): boolean =>
+	followsTrackerEntry && tab.source === undefined && sourcesStatus !== "ready";
+
+const selectionBodyOf = (question: SelectionBodyQuestion): SelectionBody => {
+	const { tab, verdict, ruleSchemaIsLoading, sourcesStatus } = question;
+	if (awaitsBoundSourceTab(question)) {
+		return sourcesStatus === "loading"
+			? { kind: "loading" }
+			: { kind: UNAVAILABLE };
 	}
 	const gate = tab.premiumGate;
 	if (gate !== undefined && verdict === "notPremium") {
@@ -418,7 +422,7 @@ const SelectionModeContent: React.FC<
 
 const SelectionTabButton: React.FC<{
 	tab: DeliverySelectionTab;
-	activeTabKey: string;
+	activeTabKey: string | null;
 	verdict: PremiumVerdict;
 	onSelect: (tab: DeliverySelectionTab) => void;
 }> = ({ tab, activeTabKey, verdict, onSelect }) => {
@@ -462,7 +466,7 @@ const BusySelectionTab: React.FC = () => (
 const SelectionTabRow: React.FC<
 	Readonly<{
 		tabs: DeliverySelectionTab[];
-		activeTabKey: string;
+		activeTabKey: string | null;
 		verdict: PremiumVerdict;
 		sourcesStatus: SourcesStatus;
 		portfolioTerm: string;
@@ -674,13 +678,16 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
 	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
-	const activeBody = selectionBodyOf({
+	const bodyQuestion: SelectionBodyQuestion = {
 		tab: activeTab,
 		verdict,
 		ruleSchemaIsLoading: loadingSchema,
 		sourcesStatus,
 		followsTrackerEntry: Boolean(editingDelivery?.sourceKey),
-	});
+	};
+	const activeBody = selectionBodyOf(bodyQuestion);
+	const standsOnNoTab = awaitsBoundSourceTab(bodyQuestion);
+	const fieldsBelongToSource = readsFromSource || standsOnNoTab;
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
@@ -977,7 +984,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						type="text"
 						fullWidth
 						variant="outlined"
-						disabled={readsFromSource}
+						disabled={fieldsBelongToSource}
 						value={name}
 						onChange={(e) => setName(e.target.value)}
 						error={!!errors.name}
@@ -991,7 +998,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						type="date"
 						fullWidth
 						variant="outlined"
-						disabled={readsFromSource}
+						disabled={fieldsBelongToSource}
 						value={date}
 						onChange={(e) => setDate(e.target.value)}
 						error={!!errors.date}
@@ -1002,7 +1009,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 					<SelectionTabRow
 						tabs={tabs}
-						activeTabKey={activeTab.key}
+						activeTabKey={standsOnNoTab ? null : activeTab.key}
 						verdict={verdict}
 						sourcesStatus={sourcesStatus}
 						portfolioTerm={portfolioTerm}

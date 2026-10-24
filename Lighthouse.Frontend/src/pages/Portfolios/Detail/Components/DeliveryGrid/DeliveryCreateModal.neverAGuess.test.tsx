@@ -193,8 +193,13 @@ describe("Lena opens a premium tab before the licence has answered", () => {
 		const ruleBased = theRuleBasedTab() as HTMLElement;
 		expect(ruleBased).toBeEnabled();
 
+		await user.type(screen.getByLabelText("Launch Name"), "Autumn launch");
+		await user.type(screen.getByLabelText("Launch Date"), "2099-10-15");
+
 		await user.click(ruleBased);
 
+		expect(screen.getByLabelText("Launch Name")).toHaveValue("Autumn launch");
+		expect(screen.getByLabelText("Launch Date")).toHaveValue("2099-10-15");
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 	});
 
@@ -297,6 +302,63 @@ describe("when the ways to pick could not be checked", () => {
 	});
 });
 
+describe("Lena closes the dialog before the ways to pick have answered, and opens it again", () => {
+	const withTwoAnswersStillOnTheirWay = () => {
+		const deliveryService = aConnectionOfferingJiraReleases();
+		const first = anAnswerNotGivenYet<IDeliverySource[]>();
+		const second = anAnswerNotGivenYet<IDeliverySource[]>();
+		vi.mocked(deliveryService.getDeliverySources)
+			.mockReturnValueOnce(first.promise)
+			.mockReturnValueOnce(second.promise);
+		return { deliveryService, first };
+	};
+
+	it("an answer to the first opening offers no Jira Release tab in the second", async () => {
+		const { deliveryService, first } = withTwoAnswersStillOnTheirWay();
+		const dialog = openTheDialog({ deliveryService });
+		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(1));
+		dialog.close();
+
+		await whenTheServerAnswers(first, [JIRA_RELEASE_SOURCE]);
+		dialog.reopen();
+
+		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
+		expect(theJiraReleaseTab()).toBeNull();
+		expect(theBusyTab()).not.toBeNull();
+	});
+
+	it("a failure of the first opening says nothing in the second", async () => {
+		const { deliveryService, first } = withTwoAnswersStillOnTheirWay();
+		const dialog = openTheDialog({ deliveryService });
+		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(1));
+		dialog.close();
+		dialog.reopen();
+		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
+
+		await whenTheServerFails(first);
+
+		expect(screen.queryByText(COPY.sourcesCouldNotBeChecked)).toBeNull();
+		expect(theBusyTab()).not.toBeNull();
+	});
+
+	it("the Jira Release tab the last opening was offered is gone until the new answer comes", async () => {
+		const deliveryService = aConnectionOfferingJiraReleases();
+		const dialog = openTheDialog({ deliveryService });
+		await untilTheJiraReleaseTabIsOffered();
+		dialog.close();
+		const later = anAnswerNotGivenYet<IDeliverySource[]>();
+		vi.mocked(deliveryService.getDeliverySources).mockReturnValue(
+			later.promise,
+		);
+
+		dialog.reopen();
+
+		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
+		expect(theJiraReleaseTab()).toBeNull();
+		expect(theBusyTab()).not.toBeNull();
+	});
+});
+
 describe("when the Release list could not be loaded", () => {
 	it("the tab says so and tells her to reopen the dialog, with no button", async () => {
 		const user = userEvent.setup();
@@ -361,6 +423,20 @@ describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", 
 		expect(theManualFeatureList()).toBeNull();
 		expect(screen.queryByText(COPY.selectDeliverables)).toBeNull();
 		expect(screen.getByRole("button", { name: "Update" })).toBeDisabled();
+	});
+
+	it("while the ways to pick load, no tab is pressed and neither the name nor the date can be typed into", async () => {
+		const { deliveryService } = withSourcesStillOnTheirWay();
+		openTheDialog({
+			deliveryService,
+			editingDelivery: aLaunchFollowingAJiraRelease(),
+		});
+
+		await waitFor(() => expect(theBusyTab()).not.toBeNull());
+		expect(theManualTab()).toHaveAttribute("aria-pressed", "false");
+		expect(theRuleBasedTab()).toHaveAttribute("aria-pressed", "false");
+		expect(screen.getByLabelText("Launch Name")).toBeDisabled();
+		expect(screen.getByLabelText("Launch Date")).toBeDisabled();
 	});
 
 	it("when the ways to pick could not be checked, the dialog shows the notice alone and Update stays off", async () => {
