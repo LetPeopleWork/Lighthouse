@@ -299,9 +299,9 @@ type SourcesStatus = "loading" | "error" | "ready";
 interface SelectionBodyQuestion {
 	tab: DeliverySelectionTab;
 	verdict: PremiumVerdict;
-	listIsLoading: boolean;
+	ruleSchemaIsLoading: boolean;
 	sourcesStatus: SourcesStatus;
-	awaitsSourceTab: boolean;
+	followsTrackerEntry: boolean;
 }
 
 /**
@@ -312,10 +312,11 @@ interface SelectionBodyQuestion {
 const selectionBodyOf = ({
 	tab,
 	verdict,
-	listIsLoading,
+	ruleSchemaIsLoading,
 	sourcesStatus,
-	awaitsSourceTab,
+	followsTrackerEntry,
 }: SelectionBodyQuestion): SelectionBody => {
+	const awaitsSourceTab = followsTrackerEntry && tab.source === undefined;
 	if (awaitsSourceTab && sourcesStatus === "loading") {
 		return { kind: "loading" };
 	}
@@ -329,7 +330,7 @@ const selectionBodyOf = ({
 	if (gate !== undefined && verdict === "unknown") {
 		return { kind: "loading" };
 	}
-	if (listIsLoading) {
+	if (tab.key === RULE_BASED_SELECTION_TAB_KEY && ruleSchemaIsLoading) {
 		return { kind: "loading" };
 	}
 	return { kind: "content" };
@@ -346,6 +347,13 @@ const dialogKnowsItsAnswer = (
 
 const bodyBlocksSaving = (body: SelectionBody): boolean =>
 	body.kind === "loading" || body.kind === "unavailable";
+
+const saveIsAllowed = (
+	knowsItsAnswer: boolean,
+	blockingError: string | null,
+	body: SelectionBody,
+): boolean =>
+	knowsItsAnswer && blockingError === null && !bodyBlocksSaving(body);
 
 const SelectionModeContent: React.FC<
 	SelectionContentProps & {
@@ -666,11 +674,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const activeBody = selectionBodyOf({
 		tab: activeTab,
 		verdict,
-		listIsLoading:
-			activeTab.key === RULE_BASED_SELECTION_TAB_KEY && loadingSchema,
+		ruleSchemaIsLoading: loadingSchema,
 		sourcesStatus,
-		awaitsSourceTab:
-			Boolean(editingDelivery?.sourceKey) && activeTab.source === undefined,
+		followsTrackerEntry: Boolean(editingDelivery?.sourceKey),
 	});
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
@@ -1053,11 +1059,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					<Button
 						onClick={handleSave}
 						variant="contained"
-						disabled={
-							!knowsItsAnswer ||
-							blockingError !== null ||
-							bodyBlocksSaving(activeBody)
-						}
+						disabled={!saveIsAllowed(knowsItsAnswer, blockingError, activeBody)}
 					>
 						{isEditMode ? "Update" : "Save"}
 					</Button>

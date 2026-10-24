@@ -1,5 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+const BODY_TEST_ID = "delivery-source-tab-body";
+
 /**
  * The tab that previews the delivery date a work tracking system already holds. Picking an entry
  * here fills the name and the date on the surrounding dialog, which is where saving lives - so this
@@ -19,7 +21,7 @@ export class DeliverySourceTab {
 	 * its `data-widget-status` does.
 	 */
 	get body(): Locator {
-		return this.page.getByTestId("delivery-source-tab-body");
+		return this.page.getByTestId(BODY_TEST_ID);
 	}
 
 	/**
@@ -27,7 +29,7 @@ export class DeliverySourceTab {
 	 * expect timeout runs out, never earlier, naming the entries that could not be loaded.
 	 */
 	async waitUntilLoaded(timeout = 60_000): Promise<void> {
-		const body = '[data-testid="delivery-source-tab-body"]';
+		const body = `[data-testid="${BODY_TEST_ID}"]`;
 		await this.page
 			.locator(
 				`${body}[data-widget-status="ready"], ${body}[data-widget-status="error"]`,
