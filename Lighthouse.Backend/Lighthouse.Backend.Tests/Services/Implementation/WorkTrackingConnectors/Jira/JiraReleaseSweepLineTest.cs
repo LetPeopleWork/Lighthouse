@@ -1,6 +1,10 @@
+using System.Collections.Concurrent;
+using System.Net;
+using System.Text;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -105,6 +109,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(Convert.ToInt64(line.Properties[Field.ElapsedMs], System.Globalization.CultureInfo.InvariantCulture),
                     Is.EqualTo(jira.Requests.Count * (long)EachRequestTakes.TotalMilliseconds),
                     "every request of the sweep is Jira's time, from asking what kind of Jira this is to the last page.");
+            }
+        }
+
+        [Test]
+        [Category("driving_port")]
+        public async Task A_picker_sweep_on_Cloud_counts_the_cloud_id_lookup_in_its_time()
+        {
+            var jira = new JiraCloudBehindTheGateway();
+            var connection = JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection;
+            connection.AuthenticationMethodKey = AuthenticationMethodKeys.JiraScopedToken;
+
+            await AConnectorOver(jira).GetOptions(connection, JiraReleaseSourceKey);
+
+            var line = TheOneSweepLine();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Properties[Field.Deployment]?.ToString(), Is.EqualTo("Cloud"));
+                Assert.That(line.Properties[Field.ReleasesKept], Is.EqualTo(1));
+                Assert.That(jira.Requests.Select(uri => uri.AbsolutePath), Has.Some.EndsWith(JiraCloudBehindTheGateway.CloudIdLookup));
+                Assert.That(Convert.ToInt64(line.Properties[Field.ElapsedMs], System.Globalization.CultureInfo.InvariantCulture),
+                    Is.EqualTo(jira.Requests.Count * (long)EachRequestTakes.TotalMilliseconds),
+                    "on Cloud the site has to be asked for its cloud id before any Release, and that wait is part of the sweep.");
             }
         }
 
@@ -311,6 +337,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 clock.Advance(step);
                 return await base.SendAsync(request, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// A Jira Cloud site reached through Atlassian's gateway, so the site is asked for its cloud id before
+        /// anything else. One project holding one Release still to ship.
+        /// </summary>
+        private sealed class JiraCloudBehindTheGateway : HttpMessageHandler
+        {
+            public const string CloudIdLookup = "/_edge/tenant_info";
+
+            public ConcurrentQueue<Uri> Requests { get; } = new();
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var uri = request.RequestUri!;
+                Requests.Enqueue(uri);
+
+                var path = uri.AbsolutePath;
+                var body = path switch
+                {
+                    _ when path.EndsWith(CloudIdLookup, StringComparison.Ordinal) => "{\"cloudId\":\"cloud-6398\"}",
+                    _ when path.EndsWith("/rest/api/3/project/search", StringComparison.Ordinal)
+                        => $"{{\"isLast\":true,\"values\":[{{\"key\":\"{ThePaymentsProject}\",\"name\":\"Payments\"}}]}}",
+                    _ when path.EndsWith($"/rest/api/3/project/{ThePaymentsProject}/version", StringComparison.Ordinal)
+                        => $"{{\"startAt\":0,\"total\":1,\"isLast\":true,\"values\":[{{\"id\":\"{TheDatedRelease}\",\"name\":\"PAY 2026.11\"," +
+                           "\"archived\":false,\"released\":false,\"releaseDate\":\"2026-11-20\"}]}",
+                    _ => null,
+                };
+
+                return Task.FromResult(body is null
+                    ? new HttpResponseMessage(HttpStatusCode.NotFound)
+                    : new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, Encoding.UTF8, "application/json") });
             }
         }
 

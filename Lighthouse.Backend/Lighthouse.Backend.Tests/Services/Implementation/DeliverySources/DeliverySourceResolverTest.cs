@@ -79,18 +79,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        [Test]
-        public async Task Resolving_asks_the_connector_once_for_the_whole_batch_and_nothing_else()
+        [TestCase(DeliverySourceSweepPurpose.Preview)]
+        [TestCase(DeliverySourceSweepPurpose.Save)]
+        [TestCase(DeliverySourceSweepPurpose.Refresh)]
+        public async Task Resolving_asks_the_connector_once_for_the_whole_batch_and_nothing_else(DeliverySourceSweepPurpose purpose)
         {
             var portfolio = GivenAPortfolioTracking(TrackedItem);
             GivenTheRemoteAnswers(new DeliverySourceResolution.Resolved(
                 new DeliverySourceSnapshot("Release 1.0", TheReleaseDate, BothItemsAreTagged)));
 
-            await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
+            await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, purpose);
 
             using (Assert.EnterMultipleScope())
             {
-                providerMock.Verify(p => p.ResolveMany(portfolio.WorkTrackingSystemConnection, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh), Times.Once);
+                providerMock.Verify(p => p.ResolveMany(portfolio.WorkTrackingSystemConnection, SourceKey, TheBoundReference, purpose), Times.Once,
+                    "the sweep line names the caller that asked, so the purpose has to reach the connector unchanged.");
                 providerMock.Verify(p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()), Times.Never,
                     "spelling the membership query a second time here would put a second copy of the remote query language in the codebase.");
             }
