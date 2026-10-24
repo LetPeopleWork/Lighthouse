@@ -364,8 +364,6 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		]);
 	});
 
-	// The list is kept between openings of one form, and the entry a Launch follows is not part of
-	// what the server said, so a cached answer must not be able to swallow it.
 	/**
 	 * The switch belongs to the binding, so reopening a Launch that broadcasts has to show it doing
 	 * so. Shown off, the reader is told a broadcast is not happening while it is - and the next save
