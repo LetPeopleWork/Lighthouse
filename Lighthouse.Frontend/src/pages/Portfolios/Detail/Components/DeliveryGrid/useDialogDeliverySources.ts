@@ -38,7 +38,7 @@ const useSourcesAskedAgainAfterAFailure = (
 		}
 		handledOpening.current = openingNumber;
 		if (status === "error") {
-			void refetch();
+			refetch().catch(() => undefined);
 		}
 	}, [open, openingNumber, status, refetch]);
 };

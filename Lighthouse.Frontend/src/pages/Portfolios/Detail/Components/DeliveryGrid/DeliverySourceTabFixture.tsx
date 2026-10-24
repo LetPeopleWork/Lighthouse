@@ -170,7 +170,7 @@ export interface TabOverrides {
  * so a suite about the tab sees the list asked for and answered the way the dialog does it.
  */
 export const DeliverySourceTabAsHosted = (
-	props: Omit<DeliverySourceTabProps, "optionList">,
+	props: Readonly<Omit<DeliverySourceTabProps, "optionList">>,
 ) => {
 	const { portfolioId, sourceKey, sourceName } = props;
 	const optionListOf = useDeliverySourceOptions({
