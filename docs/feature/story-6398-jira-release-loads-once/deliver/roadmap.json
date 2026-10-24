@@ -1,0 +1,737 @@
+{
+  "roadmap": {
+    "project_id": "story-6398-jira-release-loads-once",
+    "created_at": "2026-10-24T12:00:00Z",
+    "total_steps": 16,
+    "total_phases": 4,
+    "goal": "ADO #6398 'Choosing a Jira Release for a Delivery loads once, and never shows a guess as the answer'. Four slices, each releasable alone, delivered in the order 01 -> 02 -> 04 -> 03. Slice 01: the Delivery dialog (add and edit) never shows a guess: a busy 'Loading…' tab while the sources are unknown, a loading look in both premium tabs while the licence is unknown (Rule-Based enabled), the premium notice only on a licence known not premium, a sources failure notice and a reworded Release-list failure that both ask to reopen the dialog, and `data-widget-status` on the source tab body (with the held E2E fold). Slice 02: the dialog reads the sources from the page's shared keyed query and the Release list starts on opening as a keyed query per opening; the module-level Map and clearDeliverySourceOptionsCache go. Slice 04: the Manual Feature list and the Rule-Based schema are keyed queries per Portfolio and opening with loading and failure looks (optional `loading` prop on FeatureSelector and FeatureGrid; DataGridBase untouched). Slice 03: every Jira Release sweep writes one Information line of counts and time naming no customer, for its purpose (Picker, Preview, Save, Refresh) passed explicitly through IDeliverySourceResolver and IDeliverySourceProvider; documented in docs/settings/systeminfo.md. Done when all 88 pending DISTILL tests are un-skipped and green, the 18 active guards stay green, no `__SCAFFOLD__` remains, no file Epic 6400 changes is in the diff, `pnpm test` and `pnpm build` are clean, `dotnet build` has zero warnings and the filtered `dotnet test` is green. Release notes, screenshots, mutation runs and the reporter's post-release reading belong to finalization and are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately: the frontend is Vitest + React Testing Library without fast-check, the backend NUnit 4 + Moq without a property-testing library. DISTILL authored every scenario example-based, with finite axes as `it.each` / `[TestCase]` / `[TestCaseSource]` tables (premiumVerdictOf x8, dialogQueryStatusOf x8, the licence check x4, the four sweep purposes). RED is removing `it.skip` / `[Ignore]` and watching the test fail on its assertion or on the scaffold's throw, as the feature-delta's RED classification records; GREEN is production code. The only tests DELIVER writes are the one 'forwards loading' case per component in FeatureSelector.test.tsx and FeatureGrid.test.tsx (DEVOPS CI impact) and the purpose argument at existing test call sites. Contract shapes per component are the feature-delta's 'Contract shapes (crafter assertions)' table.",
+    "exit_gates": [
+      "End of every frontend step (all of phases 01, 02, 04): the touched Vitest suites green, then `pnpm test` green and `pnpm build` clean with zero errors and zero warnings in Lighthouse.Frontend (`tsc -b` + `vite build`; prebuild runs `biome check --write`, so run `pnpm exec biome check ./src` read-only first and mind the docs-symlink hazard).",
+      "End of every backend step (phase 03): `dotnet build` zero warnings; the touched test classes green; the filtered `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green (CLAUDE.md's environmental signatures are not regressions); `JiraDeliverySourceProviderTest` green unchanged. Before the phase-03 push run `TestCategory=JiraIntegration` once locally, because the path classifier makes CI run it.",
+      "Epic 6400 boundary (AC-2.6, AC-1.7, AC-4.6): no step lists, and no commit touches, `hooks/useLicenseRestrictions.ts`, `components/Common/LicenseStatus/LicenseStatusIcon.tsx`, `components/Common/DataGrid/DataGridBase.tsx`, `PortfolioRepository` / `IPortfolioRepository`, `PortfoliosController`, `PortfolioController`, `TeamsController`, `TeamController`, `OverviewDashboard.tsx`, `PortfolioDetail`, `TeamDetail`, `services/Api/FeatureService.ts` or `WidgetShell.tsx`; no `[\"licenseStatus\"]` key and no `getLicenseStatus` call is added. Checked at the end of each phase with `LEAN_CTX_DISABLED=1 git diff --stat` against that list. If 6400 has landed first, grep `DataGridBase.tsx` for its `loading` prop before the phase-04 push; if it was renamed or re-meant, stop and report.",
+      "End of phase 01 (releasable alone): full `pnpm test` + `pnpm build` green; the held E2E changes (DeliverySourceTab.ts, ModifyDeliveriesDialog.ts, DeliverySourcePicker.spec.ts) are committed in the same step as `data-widget-status`, never ahead of it; `DeliverySourcePicker.spec.ts` type-checks and is listed by `playwright test --list`, but it can NOT be run here without a running instance: the orchestrator runs it against an instance at the hand check, before the phase-01 push. Throttled 'Slow 4G' hand check on the dev instance (:5169) is the maintainer's.",
+      "End of phase 02: full `pnpm test` + `pnpm build` green; `grep -rn clearDeliverySourceOptionsCache Lighthouse.Frontend/src` and `grep -rn \"new Map\" .../DeliveryGrid/DeliverySourceTab.tsx` list nothing; no `__SCAFFOLD__` left in useDeliverySources.ts or useDeliverySourceOptions.ts; `DeliveryCreateModal.sourceBinding.test.tsx`'s exact one-call assertion still exact; the DeliveryGrid suites' CI time read against the 63 s per-file budget on the push.",
+      "End of phase 04: full `pnpm test` + `pnpm build` green; `FeatureGrid.test.tsx`, `FeatureSelector.test.tsx`, `ArchivedFeatureGrid.test.tsx` and every DeliverySourceTab suite green unchanged except the one added 'forwards loading' case per component; no `__SCAFFOLD__` in useDeliveryFormQueries.ts; `allFeatures`, `ruleSchema`, `loadingSchema` and their two effects gone from DeliveryCreateModal.tsx.",
+      "End of phase 03: `dotnet build` zero warnings, filtered `dotnet test` green, `TestCategory=JiraIntegration` run locally once; `ConnectorTakingASweepPurpose` and `ResolverTakingASweepPurpose` deleted; `grep -rn \"__SCAFFOLD__\" Lighthouse.Backend Lighthouse.Frontend/src` lists nothing of this Story; `docs/settings/systeminfo.md` has the `### Jira Release sweeps` subsection under `## Logs` (AC-3.4).",
+      "Sonar/analyzer rules pre-applied (docs/ci-learnings.md + DEVOPS list): frontend S3776, S3358, S4624, S6759, S6767, S6754, S7735, S7718, S4144; backend S6667, CA2254, S2139, CA1859, S107, S2325/S1144; tests NUnit2045/2056, NUnit4002, NUnit2046, NUnit1028, CA1861.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no MD-, D-, DDD-, AC-, OQ-, F- or ADR- numbers). UI copy uses the configurable terms (sourceName, Portfolio, Features) exactly as pinned by the scenarios; log copy names no customer."
+    ],
+    "sizing_convention": "Step size is counted in scenario rows, as the DISTILL scenario list counts them; a table row adds a test case, not a scenario. Steps unskipping 8 or more test cases carry an informational sizing_review note."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6398-jira-release-loads-once/feature-delta.md",
+    "slices": "docs/feature/story-6398-jira-release-loads-once/slices/slice-01-the-dialog-never-shows-a-guess.md, slice-02-the-release-list-loads-once.md, slice-03-the-release-list-says-what-it-cost.md, slice-04-feature-list-and-rule-fields-never-stale.md",
+    "environments": "docs/feature/story-6398-jira-release-loads-once/environments.yaml",
+    "mutation_configs": "docs/feature/story-6398-jira-release-loads-once/mutation/stryker.6398.backend.json, stryker.6398.frontend.json, vitest.stryker.6398.ts",
+    "adr": "docs/product/architecture/adr-263-the-delivery-dialog-reads-its-sources-from-the-page-s-shared-query-and-its-release-list-from-a-query-per-opening.md, docs/product/architecture/adr-264-every-jira-release-sweep-writes-one-information-line-of-counts-and-time-that-names-no-customer.md",
+    "test_kit": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogTestKit.tsx",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6398"
+  },
+  "user_decisions": [
+    "MD-6 - The edit-Delivery dialog is in scope (same component).",
+    "MD-7 / MD-27 - The Release list starts when the dialog opens (also when the user stays on Manual), not on page load or hover.",
+    "MD-11 / MD-12 - PortfolioRepository.GetById and the licence hook belong to Epic 6400; this Story reads useLicenseRestrictions() as today and treats a missing licence as 'not known yet'.",
+    "MD-13 / MD-16 - The Release-list failure keeps its Alert, no button, worded to ask the user to close and reopen the dialog.",
+    "MD-14 - Rule-Based stays enabled while the licence is unknown; its body shows a loading look.",
+    "MD-15 - The Release list waits until the licence is known premium.",
+    "MD-20 - Sweep line written once after the guarded sweep; data-widget-status values loading|error|ready typed WidgetStatus on data-testid=delivery-source-tab-body.",
+    "MD-22 / MD-23 - The sources failure is an amber warning notice with no Try again; reopening the dialog is the only retry, for every failure look.",
+    "MD-25 - Slice 03 stays a slice: the documented sweep line is operator value.",
+    "MD-26 - Slice 04 brings the Feature list and the rule schema into the Story, shippable alone; split 04a/04b if it overruns.",
+    "MD-28 - The Playwright walking skeleton is folded into DeliverySourcePicker.spec.ts, waiting on data-widget-status=ready.",
+    "MD-28a..e - The known licence limit covers all three hook calls; AC-1.7 narrowed to the source-tree rule; premiumVerdictOf reads anything but a boolean canUsePremiumFeatures as unknown; CA-6 cold-cache readings at the hand check; helper-only Jira test commits run JiraIntegration locally.",
+    "MD-29 / MD-30 - Feature list: the grid's own loading overlay via an optional loading prop, amber warning notice on failure; rule schema: today's LoadingSpinner and SchemaLoadError, asked once per opening."
+  ],
+  "out_of_scope": [
+    "Anything Epic 6400 changes (GetById speed, the licence hook, DataGridBase, LicenseStatusIcon, Portfolio/Team controllers); the licence failure look (follow-up F1).",
+    "Cache lifetime, warming or narrowing the sweep (follow-up F2, decided by the MD-9 gate after release); review of the existing per-project Jira log lines (F3); a Delivery-saved usage event (F4; DEVOPS answered N/A for this Story).",
+    "Keying the preview as a query (the ref guard stays, DDD-10); moving WidgetStatus to a neutral module.",
+    "Finalize items: docs/portfolios/detail.md prose and screenshots, release notes tag (MD-10), Lighthouse-Clients (N/A), website (N/A per DISCUSS checklist), StrykerJS and Stryker.NET on frozen code per the DEVOPS mutation scope (>= 80 %), the reporter's Data Center reading (DoD item 10), ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The Delivery dialog never shows a guess as the answer (#6398 slice 01)",
+      "description": "Releasable alone. The pure licence verdict; both premium tabs' loading look while the licence is unknown and the source tab body's data-widget-status (with the held E2E fold); the tab row's busy and failure looks, the edit-mode wait and no blocking message while unknown; the reworded Release-list failure, the 403 case and the preview spinner. Sources and Release list are still fetched as today (the dialog's own effect and the tab's useSourceOptions); slice 02 replaces those. Committed per step, pushed once at the end of the phase after the orchestrator has run DeliverySourcePicker.spec.ts against an instance.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The dialog reads the licence as premium, not premium or not known yet",
+          "description": "Replace the premiumVerdict.ts scaffold: premiumVerdictOf(licenseStatus) returns 'premium' or 'notPremium' only for an object whose canUsePremiumFeatures is a boolean, and 'unknown' for anything else (null, undefined, {}, a missing or non-boolean field, a status-only shape). Early returns, no nested ternary. Not yet wired into the dialog.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/premiumVerdict.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/premiumVerdict.test.ts"
+          ],
+          "scenario_name": "what the dialog may say about its premium tabs (8 rows)",
+          "unskips": [
+            "premiumVerdict.test.ts :: what the dialog may say about its premium tabs > %s (it.skip.each, 8 rows: a licence nobody has read yet is not known yet; a licence the hook has nothing for is not known yet; an answer that does not say whether premium features may be used is not known yet; an answer that says it with anything but true or false is not known yet; an empty answer is not known yet; a licence that allows premium features is premium; a licence that does not allow them is not premium; an expired licence that still names its holder is not premium)"
+          ],
+          "guards_kept_green": [
+            "deliveryGridServerState.enforcement.test.ts :: never asks for the licence itself and never spells the licence's query key"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/premiumVerdict.ts (edit - scaffold replaced, __SCAFFOLD__ export removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/premiumVerdict.test.ts (edit - un-skip)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Only a boolean canUsePremiumFeatures yields a known verdict; every other shape reads as not known yet.",
+            "premiumVerdict.test.ts green (8 rows); the enforcement guard stays green.",
+            "pnpm test green; pnpm build clean (tsc -b, Biome) with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a closed 8-row table over a pure function; no property library in the frontend. Pure-function contract shape: return-only. Signature takes ILicenseStatus | null | undefined | Partial<ILicenseStatus> as scaffolded. Pre-apply docs/ci-learnings.md (S3358). Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "01-02",
+          "name": "Both premium tabs show a loading look while the licence is unknown, and the source tab body says loading, error or ready",
+          "description": "DeliveryCreateModal reads premiumVerdictOf(licenseStatus) instead of `licenseStatus?.canUsePremiumFeatures ?? false`. On 'unknown': Rule-Based enabled with no lock and no premium tooltip, its body the existing LoadingSpinner, no getRuleSchema; the Jira Release body the existing centred CircularProgress with the caption 'Getting the {sourceName}s…'. Premium notice, lock and tooltip only on 'notPremium'; a premium tab chosen while unknown that resolves to notPremium stays selected and shows its notice. Save disabled while the active body shows a loading look. Introduce the pure 'which body' helper (active tab, verdict, list status). The source tab body carries data-testid='delivery-source-tab-body' and data-widget-status typed WidgetStatus (import the type from pages/Common/MetricsView/widgetStatus.ts, never queryStatusOf), also while the licence is unknown. Ships the held, uncommitted E2E changes in this same commit.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.licenceNeverKnown.test.tsx",
+            "Lighthouse.EndToEndTests/tests/specs/portfolios/DeliverySourcePicker.spec.ts"
+          ],
+          "scenario_name": "Lena opens a premium tab before the licence has answered; a premium licence shows the Release picker, ready; a licence check that never gives its answer (x4)",
+          "unskips": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens a premium tab before the licence has answered > the Jira Release tab says it is getting the Releases, never that they are premium",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens a premium tab before the licence has answered > Rule-Based stays open to her and shows a loading look, with no lock and no premium tooltip",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens a premium tab before the licence has answered > Save stays off while the Rule-Based body is still loading",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens a premium tab before the licence has answered > once the licence answers not premium, the tab she chose stays chosen and shows the premium notice, and Rule-Based locks",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens a premium tab before the licence has answered > a licence check that never answers keeps the loading look, and the Manual tab stays open to her",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: once the licence is known > a premium licence shows the Release picker, ready",
+            "DeliveryCreateModal.licenceNeverKnown.test.tsx :: a licence check that never gives its answer > when it %s, the premium tabs stay loading, no premium notice is shown and Manual stays usable (it.skip.each x4: never answers, fails on the licence, fails on the teams, fails on the portfolios)"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: once the licence is known > a Community licence shows today's premium notice, lock and tooltip",
+            "deliveryGridServerState.enforcement.test.ts :: never asks for the licence itself and never spells the licence's query key",
+            "Every other DeliveryCreateModal*.test.tsx and DeliverySourceTab*.test.tsx suite, DeliverySourceTab.preview.test.tsx's out-of-order preview test unchanged",
+            "@walking_skeleton DeliverySourcePicker.spec.ts (run by the orchestrator at the hand check, not here)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - reads the verdict; premium gates only on notPremium; loading bodies on unknown; pure which-body helper; Save rule)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx (edit - caption under the spinner; data-testid delivery-source-tab-body with data-widget-status loading|error|ready)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTabFixture.tsx (edit - only if renderModal needs the verdict-driven path; render inside a fresh QueryClientProvider is allowed now)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx (edit - un-skip 6)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.licenceNeverKnown.test.tsx (edit - un-skip the x4 table)",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/Deliveries/DeliverySourceTab.ts (held change, commit here - body, waitUntilLoaded(timeout), exact picker locator)",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/Deliveries/ModifyDeliveriesDialog.ts (held change, commit here - premiumNotice, exact sourceTab/name/date locators)",
+            "Lighthouse.EndToEndTests/tests/specs/portfolios/DeliverySourcePicker.spec.ts (held change, commit here - waits for data-widget-status=ready and asserts no premium notice)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "While the licence is unknown, neither premium tab shows the premium notice, Rule-Based is enabled with no premium tooltip, both bodies show a loading look and Save is off; no rule schema is asked.",
+            "A licence that resolves to not premium keeps the chosen tab selected and shows today's notice, lock and tooltip; a Community licence looks exactly as today.",
+            "The source tab body carries data-widget-status 'loading' while the licence or list is pending and 'ready' with the picker loaded.",
+            "A licence check that never answers or fails on /license, /teams or /portfolios leaves both premium tabs loading and Manual usable.",
+            "The three held E2E files are committed in this step's commit; the spec type-checks (tsc --noEmit in Lighthouse.EndToEndTests), passes Biome and is listed by `playwright test --list`.",
+            "The touched Vitest suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI flows with held answers; the verdict's table is in 01-01. useLicenseRestrictions is read exactly as today, never edited (Epic 6400). Keep DeliveryCreateModal under S3776 by moving the body choice into the pure helper with early returns; S4624 for the caption (no template literal inside another). The busy 'Loading…' tab comes in 01-03; do not let it match `sourceTab(\"Jira Release\")`. The Playwright skeleton CANNOT be run locally without an instance: do not try to start one; report 'not run, needs an instance' and the orchestrator runs it at the hand check before the phase-01 push. Commit via des-commit with --owned-paths written once listing every path (the des-commit nargs trap). `feat(deliveries): ...`.",
+          "sizing_review": "@sizing-review-needed (informational): 10 test cases from 7 scenario rows; one mechanism, the licence-unknown verdict wiring both premium tabs. Not split."
+        },
+        {
+          "id": "01-03",
+          "name": "The tab row shows a busy tab while the ways to pick load and a notice when they could not be checked, in add and edit mode",
+          "description": "Extract the private presentational SelectionTabRow inside DeliveryCreateModal.tsx. The dialog's existing sources effect keeps a status (loading/error/ready) instead of turning a failure into []. While loading: Manual, Rule-Based and one disabled aria-busy button named exactly 'Loading…' with ValidationButton's small CircularProgress, inside the Selection Mode group. When failed: Manual and Rule-Based, and under the row a warning Alert with no button: \"Couldn't check what this {Portfolio}'s connection offers. Close this dialog and open it again to retry.\" Editing a source-bound Delivery while the sources load shows the busy tab and LoadingSpinner body, never the Manual body; when they failed, the notice alone; Update off in both. While the sources or the licence are unknown, no blocking message under the form and Save off; once both are known the message is as today. All rules in the pure which-body helper.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx"
+          ],
+          "scenario_name": "busy tab; ways to pick could not be checked; editing PAY 2026.10 while loading and when failed; nothing under the form while unknown",
+          "unskips": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena opens Add Launch while the ways to pick are still loading > shows a busy tab in place of the ones still loading, and the Jira Release tab once they answer",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: when the ways to pick could not be checked > the dialog says so in an amber notice (the warning colour, which only its class carries) with no button, and Manual and Rule-Based still work",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena edits PAY 2026.10, which follows the Jira Release of that name > while the ways to pick load, the dialog shows a loading look, never the Manual tab's list, and Update stays off",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena edits PAY 2026.10, which follows the Jira Release of that name > when the ways to pick could not be checked, the dialog shows the notice alone and Update stays off",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: nothing under the form reads as the dialog's answer while it does not know yet > while the ways to pick are still loading, no 'name is required' stands under the form, and Save stays off",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: nothing under the form reads as the dialog's answer while it does not know yet > while the licence has not answered, no 'name is required' stands under the form, and Save stays off"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: when the ways to pick could not be checked > reopening the dialog asks again, and the Jira Release tab appears once they answer",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: nothing under the form reads as the dialog's answer while it does not know yet > once both have answered, the message stands under the form as it does today",
+            "DeliveryCreateModal.edit / .sourceBinding / .sourceValidation / .test suites unchanged"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - SelectionTabRow, sources status, failure notice, edit-mode wait, blocking message and Save rules in the which-body helper)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx (edit - un-skip 6)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "While the sources are unknown the row shows a disabled, aria-busy 'Loading…' button and the source tabs appear when they answer.",
+            "A failed sources call shows the amber warning notice with the exact pinned copy and no button; Manual and Rule-Based work; reopening asks again.",
+            "Editing a source-bound Delivery never shows the Manual body while the sources load; Update stays off while loading or failed.",
+            "No blocking message under the form while sources or licence are unknown; the message returns once both are known.",
+            "The touched Vitest suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI flows; the which-body helper is pure and may gain a small table test if the crafter needs one. Reuse ValidationButton's inline CircularProgress and MUI Alert; no Skeleton. S6759 Readonly props on SelectionTabRow; S3776 on the dialog. The sources fetch stays the dialog's own effect in this slice (slice 02 replaces it); only its failure must no longer read as []. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "01-04",
+          "name": "A Release list that could not be loaded says so and asks to reopen, and the preview shows it is on its way",
+          "description": "DeliverySourceTab's failure Alert reworded to \"The list of {sourceName} entries could not be loaded. Close this dialog and open it again to retry.\", no button; a 403 from the guards ends in the same look; data-widget-status 'error' on that body. A small spinner under the picker while the preview is on its way, read from the existing preview ref guard's state (the guard itself unchanged).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx"
+          ],
+          "scenario_name": "when the Release list could not be loaded; Lena picks a Release",
+          "unskips": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: when the Release list could not be loaded > the tab says so and tells her to reopen the dialog, with no button",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: when the Release list could not be loaded > a list the server refuses ends in the same look",
+            "DeliveryCreateModal.neverAGuess.test.tsx :: Lena picks a Release > a small spinner shows under the picker while the preview is on its way, and goes once it arrives"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.neverAGuess.test.tsx :: when the Release list could not be loaded > reopening the dialog asks for the list again and shows it",
+            "DeliverySourceTab.preview.test.tsx :: shows the Release that is selected when an earlier preview arrives after a later one (unchanged)",
+            "DeliverySourceTab.previewFailure / .optionList / .picker suites (update only the old failure copy where a suite pins it)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx (edit - reworded failure Alert, error status, preview spinner)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx (edit - un-skip 3)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "A failed or refused (403) Release list shows the exact pinned copy with no button and data-widget-status 'error'; reopening asks again.",
+            "While a preview is on its way a small spinner shows under the picker and goes once it arrives; an out-of-order preview is still dropped.",
+            "neverAGuess.test.tsx fully green (15 pending + 5 guards); every DeliverySourceTab suite green; pnpm test green; pnpm build clean with zero warnings.",
+            "End of phase 01: the Epic 6400 diff check is empty; the walking skeleton is handed to the orchestrator to run against an instance before the push."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI flows. DDD-10: the preview's ref guard is the one allowed hand-written late-answer guard; read its state, do not replace it. S6767: no declared-but-undrawn prop. Commit via des-commit. `feat(deliveries): ...`."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Choosing a Jira Release no longer waits in series (#6398 slice 02)",
+      "description": "Releasable alone, after phase 01 (sequencing preference). The sources become one shared keyed query read by the page and the dialog; the dialog asks again on opening only after a failed answer; the Release list becomes one keyed query per offered source and per opening, owned by the dialog and started once the licence is premium; the tab takes the list state as a prop; the module-level Map and clearDeliverySourceOptionsCache go with their 14 test imports. Committed per step, pushed once at the end of the phase.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "A Portfolio's delivery sources are one shared keyed query, and the Deliveries page reads it",
+          "description": "Replace the useDeliverySources.ts scaffold: useQuery keyed ['deliverySources', portfolioId], options staleTime 0, gcTime 0, retry false, no refetch on focus or reconnect; returns status ('pending'|'error'|'success'), data and refetch. useDeliveryManagement replaces fetchDeliverySources and its effect with the hook and keeps returning deliverySources as data ?? [] (the grid still names the key on failure).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySources.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySources.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.test.ts"
+          ],
+          "scenario_name": "the ways to pick a Portfolio's connection offers (4)",
+          "unskips": [
+            "useDeliverySources.test.tsx :: the ways to pick a Portfolio's connection offers > are asked for once however many readers there are on the page",
+            "useDeliverySources.test.tsx :: the ways to pick a Portfolio's connection offers > asking again asks exactly once more",
+            "useDeliverySources.test.tsx :: the ways to pick a Portfolio's connection offers > a failed answer reads as failed, never as a connection that offers nothing",
+            "useDeliverySources.test.tsx :: the ways to pick a Portfolio's connection offers > another Portfolio has an answer of its own"
+          ],
+          "guards_kept_green": [
+            "useDeliveryManagement.test.ts (renderHook now with a fresh QueryClientProvider wrapper; return shape unchanged)",
+            "Every DeliveryGrid suite that renders PortfolioDeliveryView / useDeliveryManagement"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySources.ts (edit - scaffold replaced, __SCAFFOLD__ removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.ts (edit - fetchDeliverySources and its effect replaced by useDeliverySources; return shape unchanged)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.test.ts (edit - QueryClientProvider wrapper)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySources.test.tsx (edit - un-skip 4)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "Any number of readers of one Portfolio share one getDeliverySources request; refetch issues exactly one more; another Portfolio has its own answer.",
+            "A failed answer reads as status 'error', never as an empty list of sources; the page's grid still shows the source key on failure.",
+            "useDeliverySources.test.tsx and useDeliveryManagement.test.ts green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: call-count contract tests on the mocked service. Copy useFeatureChildItems' options, do not import them (different data). Read-only query contract shape. The dialog still has its own sources effect until 02-02; keep both green in this step. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "02-02",
+          "name": "Opening the dialog reuses the page's sources and asks again only after a failed answer",
+          "description": "DeliveryCreateModal drops its own sources useEffect and reads useDeliverySources(portfolioId) (status, data, refetch) for the tab row of 01-03. The one retry mechanism: an effect on `open` keeps a ref of the opening number it last handled; when open and that opening is unhandled, it records it and, only if status is 'error', calls refetch() once (no loop). Rendering the dialog now needs a QueryClientProvider: the nine DeliveryCreateModal*.test.tsx suites render through renderWithQueryClient / the kit or fixture helpers, reopen = re-render with `open` toggled under the same client. This step introduces the dialog's opening counter, incremented in resetForm when the dialog closes; the refetch-after-error ref compares against it. 02-03 and 04-03 reuse this counter and never add a second one.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx"
+          ],
+          "scenario_name": "the dialog opens with the ways to pick the page already knows (4 pending)",
+          "unskips": [
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > opening Add Launch asks nothing more, and the Jira Release tab is there at once",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > opened before the page's answer arrived, it shows the busy tab and waits for that same answer",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > closing and opening it again still asks nothing more",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > with editing allowed only after the page's answer arrived, as with sign-in on, the sources are asked once more then and never on opening"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > after the page's answer failed, opening the dialog asks again and offers the Jira Release tab",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the dialog opens with the ways to pick the page already knows > while the server keeps failing, each opening asks exactly once more and never in a loop",
+            "DeliveryCreateModal.neverAGuess.test.tsx (all, incl. reopening the dialog asks again, and the Jira Release tab appears once they answer)",
+            "The other eight DeliveryCreateModal*.test.tsx suites"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - sources from useDeliverySources; own effect removed; opening counter incremented in resetForm; per-opening refetch-after-error ref)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTabFixture.tsx (edit - renderModal renders inside a fresh QueryClientProvider)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx, .edit.test.tsx, .rulebased.test.tsx, .sourceBinding.test.tsx, .sourceValidation.test.tsx (edit - only where a suite renders the dialog without a QueryClientProvider)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx (edit - un-skip 4)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "With a good page answer, opening, closing and reopening the dialog sends no getDeliverySources beyond the page's one, and the Jira Release tab is there at once.",
+            "Opened before the page's answer, the dialog shows the busy tab and uses that same answer.",
+            "After a failed page answer each opening asks exactly once more, never in a loop; a late canEdit mount asks once more then and never on opening.",
+            "All nine DeliveryCreateModal suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: call-count UI flows. The observer lives in the dialog's own body (never remounted on reopen), not inside the Dialog's children; do not use refetchOnMount. DeliveryModals.tsx and PortfolioDeliveryView.tsx stay unchanged. S6754 for the opening-number state. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "02-03",
+          "name": "The Release list starts as soon as the dialog opens on a premium licence, one keyed request per opening",
+          "description": "Replace the useDeliverySourceOptions.ts scaffold: one useQuery per offered source keyed ['deliverySourceOptions', portfolioId, sourceKey, opening], enabled when the dialog is open, the sources are loaded and offer that source, and the verdict is 'premium', whichever tab is on screen; options staleTime 0, gcTime 0, retry false, no refetch on focus or reconnect; state { status: WidgetStatus, options } derived with early returns where a not-yet-enabled query reads as loading (never queryStatusOf). The dialog owns the hook, keys it with the opening counter introduced in 02-02, and passes the list state to DeliverySourceTab as a prop. DeliverySourceTab drops useSourceOptions and no longer fetches; withCurrentSelection stays in the tab on the way out. The fixture's renderTab hosts the tab with the options hook so the tab suites keep calling it unchanged.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx"
+          ],
+          "scenario_name": "the Release list starts when the dialog opens, not when the tab is drawn (5); a failed answer for a closed opening",
+          "unskips": [
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the Release list starts when the dialog opens, not when the tab is drawn > with the licence premium, the Jira Releases are asked for while Lena is still on the Manual tab",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the Release list starts when the dialog opens, not when the tab is drawn > when she then opens the Jira Release tab, the picker is ready from that answer without asking again",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the Release list starts when the dialog opens, not when the tab is drawn > with the licence not known yet, nothing is asked until it answers premium, and then once",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the Release list starts when the dialog opens, not when the tab is drawn > moving between the tabs within one opening asks once",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: the Release list starts when the dialog opens, not when the tab is drawn > closing and opening the dialog again asks exactly once more, on opening",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: a late answer never lands in the wrong dialog > a failed answer for an opening Lena closed is not what the next opening shows"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.loadsOnce.test.tsx :: nothing is fetched that nobody asked for or the server would refuse > a visit to the Deliveries page without opening the dialog asks for no Release list",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: nothing is fetched that nobody asked for or the server would refuse > with a Community licence, opening the dialog and its Jira Release tab asks for no Release list",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: nothing is fetched that nobody asked for or the server would refuse > a Value Stream whose connection offers no source asks for no Release list",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: a late answer never lands in the wrong dialog > an answer for an opening Lena already closed never reaches the picker",
+            "DeliveryCreateModal.loadsOnce.test.tsx :: a late answer never lands in the wrong dialog > an answer for Payments Platform never lands in the dialog opened on Onboarding",
+            "DeliveryCreateModal.sourceBinding.test.tsx's exact one-getDeliverySourceOptions-call assertion (kept exact, not loosened)",
+            "The eight DeliverySourceTab*.test.tsx suites through the fixture; DeliveryCreateModal.neverAGuess.test.tsx (list failure, 403, reopen)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySourceOptions.ts (edit - scaffold replaced, __SCAFFOLD__ removed; signature may change from the proposal)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - owns the options hook, keyed with 02-02's opening counter; passes the list state down)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx (edit - takes the list state as a prop; useSourceOptions removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTabFixture.tsx (edit - renderTab hosts the tab with the options hook inside a fresh QueryClientProvider)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx (edit - un-skip 6)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "With a premium licence the Release list is asked once on opening while the user is still on Manual; opening the tab then shows the picker without asking again.",
+            "With the licence unknown nothing is asked until it answers premium, then once; Community, a page visit without the dialog, and a connection offering no source ask nothing.",
+            "Moving between tabs asks once per opening; closing and reopening asks exactly once more; an answer (or failure) for a closed opening or another Portfolio never reaches the picker.",
+            "loadsOnce.test.tsx fully green (10 pending + 7 guards); every DeliverySourceTab and DeliveryCreateModal suite green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: call-count and late-answer UI flows on deferred promises resolved by hand, never real timers (63 s per-file budget). No prefetchQuery: with gcTime 0 a prefetched answer without an observer is collected. The counter also ticks on the first, closed mount; the first open still sends exactly one request. Do not abort on close (deliveryService takes no signal). The status derivation here is temporary knowledge that 04-01 moves onto dialogQueryStatusOf. S6767 on the tab's new prop. Six scenarios: one TDD cycle per describe block if the crafter prefers. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "02-04",
+          "name": "No server answer outlives a render in the Deliveries folder: the module-level Map and clearDeliverySourceOptionsCache go",
+          "description": "Delete the module-level Map and the exported clearDeliverySourceOptionsCache from DeliverySourceTab.tsx, its import and call in DeliveryCreateModal.tsx (resetForm, around :728), and the import plus beforeEach call in all 14 suites (six dialog suites: featureListAndRuleFields, licenceNeverKnown, loadsOnce, neverAGuess, sourceBinding, sourceValidation; eight tab suites: DeliverySourceTab.test, nameAndDate, optionList, picker, preview, previewFailure, publishForecast, whyAndSearch). Removing the export without all fourteen fails tsc -b, which is the completeness check.",
+          "agent": "nw-software-crafter",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryGridServerState.enforcement.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryGridServerState.enforcement.test.ts"
+          ],
+          "scenario_name": "the Deliveries folder's server state: own hooks only; no store that outlives a render",
+          "unskips": [
+            "deliveryGridServerState.enforcement.test.ts :: the Deliveries folder's server state > asks for the ways to pick and for the Release lists from their own hooks only",
+            "deliveryGridServerState.enforcement.test.ts :: the Deliveries folder's server state > keeps no server answers in a store of its own that outlives a render"
+          ],
+          "guards_kept_green": [
+            "deliveryGridServerState.enforcement.test.ts :: never asks for the licence itself and never spells the licence's query key",
+            "All 14 suites that lose the import, unchanged otherwise; DeliverySourceTab.preview.test.tsx's out-of-order preview test"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx (edit - Map and clearDeliverySourceOptionsCache removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - import and resetForm call removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx, .licenceNeverKnown.test.tsx, .loadsOnce.test.tsx, .neverAGuess.test.tsx, .sourceBinding.test.tsx, .sourceValidation.test.tsx (edit - import and beforeEach call removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.test.tsx, .nameAndDate.test.tsx, .optionList.test.tsx, .picker.test.tsx, .preview.test.tsx, .previewFailure.test.tsx, .publishForecast.test.tsx, .whyAndSearch.test.tsx (edit - import and beforeEach call removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryGridServerState.enforcement.test.ts (edit - un-skip 2)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "Only useDeliverySources.ts names getDeliverySources and only useDeliverySourceOptions.ts names getDeliverySourceOptions in the Deliveries folder; no DeliveryGrid file declares a module-level store of server answers.",
+            "`grep -rn clearDeliverySourceOptionsCache Lighthouse.Frontend/src` lists nothing.",
+            "All DeliveryGrid suites green; pnpm test green; pnpm build clean with zero warnings (tsc -b proves no import is left).",
+            "End of phase 02: Epic 6400 diff check empty; DeliveryGrid suites' CI time read on the push."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: source-tree enforcement test (golden structural assertion) plus deletion of superseded code. A fresh QueryClient per render already starts empty, which is why the suites no longer need the clear. Refactor commit kept separate from feature commits. Commit via des-commit with --owned-paths written once listing all paths. `refactor(deliveries): ...`."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "The Manual Feature list and the rule fields never show a stale or empty answer (#6398 slice 04)",
+      "description": "Releasable alone; lands after phase 02 because it shares DeliveryCreateModal.tsx's resetForm region and the opening counter (rebase onto 02's version, never the old one). 04a = steps 04-01..04-03 (dialogQueryStatusOf, the optional loading prop, the Feature list); 04b = step 04-04 (the rule schema behind its latch). If the slice overruns its day, 04a ships alone first and 04b follows; each half is releasable. Committed per step; pushed at the end of 04a or of the phase.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "One rule says what a dialog body shows for one of its answers: loading, error or ready",
+          "description": "Replace the dialogQueryStatusOf scaffold in useDeliveryFormQueries.ts: 'error' when isError and not fetching; 'loading' when fetching, or when there is neither data nor error (a query not yet enabled); 'ready' only with data and not fetching. useDeliverySourceOptions switches its status derivation from 02-03 onto dialogQueryStatusOf, so the knowledge lives once. useDialogFeatureList and useDialogRuleSchema stay scaffolded (the file keeps its __SCAFFOLD__ marker until 04-04).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/dialogQueryStatus.test.ts",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/dialogQueryStatus.test.ts"
+          ],
+          "scenario_name": "what a body of the Delivery dialog says about one of its answers (8 rows)",
+          "unskips": [
+            "dialogQueryStatus.test.ts :: what a body of the Delivery dialog says about one of its answers > %s (it.skip.each, 8 rows: a query not sent yet, with nothing and no failure, is loading; a first request on its way is loading; an answer that has arrived is ready; an answer being asked for again is loading, never shown as current; a request that failed is an error; a failed request being asked again is loading; a failure after an earlier answer is an error, not the earlier answer; an empty list that has arrived is ready)"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.loadsOnce.test.tsx and DeliveryCreateModal.neverAGuess.test.tsx (the Release-list status now from dialogQueryStatusOf)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryFormQueries.ts (edit - dialogQueryStatusOf implemented)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySourceOptions.ts (edit - status from dialogQueryStatusOf)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/dialogQueryStatus.test.ts (edit - un-skip)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "The 8-row table holds; a not-yet-enabled query never reads as ready.",
+            "The Release-list body's data-widget-status is unchanged in every slice-01 and slice-02 scenario.",
+            "Touched suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: closed 8-row table over a pure function. Never queryStatusOf (reads a not-started query as ready). Early returns, no nested ternary (S3358). Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "04-02",
+          "name": "FeatureSelector and FeatureGrid can pass a loading state to the grid's own overlay",
+          "description": "Add an optional `loading?: boolean` (default false) to FeatureSelector's and FeatureGrid's props (types.ts) and pass it straight down to DataGridBase's existing `loading` prop. DataGridBase.tsx is NOT touched. Add one 'forwards loading' case to each component's existing suite; every other user (DeliverySourceTab, ArchivedDeliveriesSection) renders as today.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureSelector/FeatureSelector.test.tsx"
+          ],
+          "scenario_name": "forwards loading to the grid (one new case per component)",
+          "unskips": [],
+          "guards_kept_green": [
+            "FeatureGrid.test.tsx, FeatureSelector.test.tsx, ArchivedFeatureGrid.test.tsx unchanged otherwise",
+            "DeliveryCreateModal.rulebased / .sourceBinding / .sourceValidation and the DeliverySourceTab suites that import the real components"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/FeatureSelector/FeatureSelector.tsx (edit - forwards loading)",
+            "Lighthouse.Frontend/src/components/Common/FeatureSelector/types.ts (edit - optional loading prop)",
+            "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.tsx (edit - forwards loading to DataGridBase)",
+            "Lighthouse.Frontend/src/components/Common/FeatureGrid/types.ts (edit - optional loading prop)",
+            "Lighthouse.Frontend/src/components/Common/FeatureGrid/FeatureGrid.test.tsx (edit - one forwards-loading case)",
+            "Lighthouse.Frontend/src/components/Common/FeatureSelector/FeatureSelector.test.tsx (edit - one forwards-loading case)"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "criteria": [
+            "Given loading true, each component hands DataGridBase loading true; omitted, it hands false and renders exactly as today.",
+            "DataGridBase.tsx has no diff; every existing FeatureGrid/FeatureSelector user's suite green unchanged.",
+            "Touched suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: prop forwarding, verified by one example per component. Assert the grid's loading state by role or aria-busy, never by an overlay class, so either merge order with Epic 6400 (which extends DataGridBase) stays green. S6767: the prop must be drawn (passed on) in both components. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "04-03",
+          "name": "The Manual Feature list is asked once per opening, shows the grid's loading overlay and a failure notice, never an earlier list",
+          "description": "Implement useDialogFeatureList in useDeliveryFormQueries.ts: key ['deliveryDialogFeatures', portfolioId, opening], queryFn featureService.getFeaturesByIds(portfolio feature ids), enabled while the dialog is open and the Portfolio has Features, DDD-3 options; a Portfolio with no Features is an explicit ready, [] branch with no request. DeliveryCreateModal drops allFeatures and its effect; ManualSelectionContent passes loading to FeatureSelector while pending and shows, in the grid's place when failed, a warning Alert with no button: \"Couldn't load this {Portfolio}'s {Features}. Close this dialog and open it again to retry.\" The body helper and the Save rule read the list status (edit mode: Update off until the list and its ticks arrive).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx"
+          ],
+          "scenario_name": "Lena picks Deliverables by hand on Payments Platform (4 scenarios, one a x2 table: 6 tests)",
+          "unskips": [
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > while the list is on its way the grid says it is busy, and it fills once the list arrives",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > a list that could not be loaded is an amber notice (the warning colour, which only its class carries) in her words, with no button and no empty grid",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > reopening never shows the last opening's list, only the busy grid until this opening's list arrives",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > an answer for an opening she closed never fills the list when she reopens on %s (it.skip.each x2: Payments Platform again, Onboarding)",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > editing Autumn launch, Update stays off until the list arrives, and her ticks arrive with it"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > reopening the dialog after that asks again and shows the list",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena picks Deliverables by hand on Payments Platform > a Value Stream with no Deliverables asks for nothing and shows its empty grid at once",
+            "DeliveryCreateModal.test.tsx / .edit.test.tsx (Manual add and edit)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryFormQueries.ts (edit - useDialogFeatureList implemented)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - allFeatures and its effect removed; Manual body loading/failure; body helper and Save rule read the list status)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx (edit - un-skip 5 + the x2 table)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "criteria": [
+            "While this opening's list is on its way the grid is told it is loading from the first render; it fills once the list arrives.",
+            "A failed list shows the exact amber notice with no button and no empty grid; reopening asks again.",
+            "A reopen or another Portfolio never shows an earlier opening's list; a late answer for a closed opening is dropped; a Portfolio with no Features asks nothing and shows its empty grid at once.",
+            "Editing a Manual Delivery keeps Update off until the list (and its ticks) arrive.",
+            "Touched suites green; pnpm test green; pnpm build clean with zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: held-answer UI flows. Rebase onto 02's resetForm and opening counter; do not add a second counter. FeatureService.ts unchanged (Epic 6400 slice 04 owns it). S3776 on the body helper as it gains a status. This step ends 04a: 04a is releasable alone here. Commit via des-commit. `feat(deliveries): ...`."
+        },
+        {
+          "id": "04-04",
+          "name": "The rule fields are asked once per opening behind a latch, never loop after a failure and never flash the could-not-load notice",
+          "description": "Implement useDialogRuleSchema in useDeliveryFormQueries.ts: key ['deliveryRuleSchema', portfolioId, opening], queryFn deliveryService.getRuleSchema(portfolioId), enabled by a per-opening latch, DDD-3 options. The dialog sets the latch in one effect whenever the dialog is open, the verdict is premium and the active tab is Rule-Based (click, hydration of a Rule-Based Delivery, or a verdict arriving after the tab was chosen); the latch resets with the opening counter in resetForm. DeliveryCreateModal drops ruleSchema, loadingSchema and their effect (the N3 loop). Rule-Based body: today's LoadingSpinner while pending or not yet latched, today's SchemaLoadError (copy unchanged) only after a failure; Save off while pending. Remove the file's __SCAFFOLD__ marker.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryGridServerState.enforcement.test.ts"
+          ],
+          "scenario_name": "the rule fields behind the latch (latch pair 2), Lena chooses Rule-Based on a premium licence, own hooks only",
+          "unskips": [
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: the rule fields are asked for whenever Rule-Based is on screen with a premium licence, however it got there > chosen before the licence has answered, Rule-Based shows the spinner and asks nothing; once the licence answers premium, it asks once",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: the rule fields are asked for whenever Rule-Based is on screen with a premium licence, however it got there > chosen before the licence has answered, Rule-Based never asks when the licence then answers not premium, and shows the premium notice",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > the spinner shows from the first moment, never the could-not-load notice, until the fields arrive",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > fields that could not be loaded show today's notice and are not asked again in that opening, whichever tab she moves to",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > reopening the dialog is the retry: the next opening asks once more and shows the fields",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > an answer for an opening she closed never fills the rule builder when she reopens on %s (it.skip.each x2: Payments Platform again, Onboarding)",
+            "deliveryGridServerState.enforcement.test.ts :: the Deliveries folder's server state > asks for the dialog's Feature list and its rule fields from their own hooks only"
+          ],
+          "guards_kept_green": [
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: the rule fields are asked for ... > editing a Rule-Based Launch asks for its fields once without a click, and moving to Manual and back asks no more",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > nothing is asked while she stays on Manual, and once she has chosen Rule-Based, moving between the tabs never asks again",
+            "DeliveryCreateModal.featureListAndRuleFields.test.tsx :: Lena chooses Rule-Based on a premium licence > editing a Rule-Based Launch, the spinner shows while its fields load, never the notice, and Update stays off",
+            "DeliveryCreateModal.rulebased.test.tsx; DeliveryCreateModal.neverAGuess.test.tsx (Rule-Based while the licence is unknown, no getRuleSchema)",
+            "deliveryGridServerState.enforcement.test.ts (all four)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryFormQueries.ts (edit - useDialogRuleSchema implemented; __SCAFFOLD__ removed)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx (edit - ruleSchema, loadingSchema and their effect removed; latch effect reset in resetForm; Rule-Based body and Save rule read the schema status)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx (edit - un-skip 6 + the x2 table)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryGridServerState.enforcement.test.ts (edit - un-skip 1)"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "criteria": [
+            "getRuleSchema is never asked while closed, before the latch, or unless the verdict is premium; exactly once per opening after that, failure included, however often the tab is switched.",
+            "The spinner shows from the first render on Rule-Based; SchemaLoadError (copy unchanged) appears only after a failure; reopening is the retry; a late answer for a closed opening never fills the builder.",
+            "Chosen while the licence is unknown: no request and the spinner; premium then asks once; not premium then shows the premium notice and asks nothing.",
+            "Only useDeliveryFormQueries.ts names getRuleSchema and the dialog no longer names getFeaturesByIds.",
+            "featureListAndRuleFields.test.tsx fully green (13 pending + 5 guards); pnpm test green; pnpm build clean with zero warnings; no __SCAFFOLD__ in the frontend.",
+            "End of phase 04: Epic 6400 diff check empty (DataGridBase.tsx untouched)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: held-answer UI flows. FLAGGED BIG: 7 tests (6 it entries, one x2 table) plus one enforcement test; one coherent mechanism (the latch), so kept as one step; split latch pair 2 into its own cycle if the crafter prefers. The latch is derived from state, never set in a click handler. This step is 04b: releasable on its own after 04a. Commit via des-commit. `feat(deliveries): ...`.",
+          "sizing_review": "@sizing-review-needed: 8 test cases from 7 scenario rows across five behaviours sharing the latch. Split into 04-04a (latch pair 2 and the enforcement test) and 04-04b (spinner, no loop, retry, stale answers) if the crafter's cycle overruns; commit 04-04a first in that case."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Every Jira Release sweep says what it cost in one log line (#6398 slice 03)",
+      "description": "Releasable alone; backend only, last in order. The immutable JiraReleaseSweepCost value and its template; the JiraReleaseSweepTally the per-project reads update (Interlocked inside the parallel loop); the line written in a finally around the guarded sweep for every outcome; the purpose passed explicitly through IDeliverySourceResolver.ResolveForPortfolio and IDeliverySourceProvider.ResolveMany with the callers' constants; the two test-side extension classes deleted; the docs subsection. The path classifier runs the JiraIntegration live category in CI: run it once locally before the push.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "One sweep's counts and time read as one Information line that names no customer",
+          "description": "Replace the JiraReleaseSweepCost.cs scaffold: the internal immutable record (Purpose as the public DeliverySourceSweepPurpose, ElapsedMs, Deployment, ReleasesKept, VersionsRead, VersionPages, ProjectCount, ProjectsSkipped, Complete), the const Template and PropertyNames held once, and WriteTo(ILogger) logging at Information with the template's structured properties. Remove the __SCAFFOLD__ comment. Not yet called by the connector.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest.cs"
+          ],
+          "scenario_name": "JiraReleaseSweepCost: the sentence word for word; exactly the allowed names; a refresh that lost a project; Cloud named as Cloud; the line opens with its caller (x4)",
+          "unskips": [
+            "JiraReleaseSweepCostTest.cs :: A_picker_sweep_reads_as_one_Information_line_of_counts_and_time",
+            "JiraReleaseSweepCostTest.cs :: The_line_carries_exactly_the_allowed_names",
+            "JiraReleaseSweepCostTest.cs :: A_refresh_sweep_that_lost_a_project_says_it_is_incomplete_and_how_many_were_skipped",
+            "JiraReleaseSweepCostTest.cs :: The_line_opens_with_the_caller_it_was_swept_for (x4 TestCase: Picker, Preview, Save, Refresh)",
+            "JiraReleaseSweepCostTest.cs :: A_Cloud_connection_is_named_as_Cloud"
+          ],
+          "guards_kept_green": [
+            "JiraReleaseSweepCostTest.cs :: The_wording_asks_for_exactly_the_allowed_names"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCost.cs (edit - scaffold replaced, __SCAFFOLD__ removed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest.cs (edit - remove [Ignore(Pending)] from 5 methods)"
+          ],
+          "dependencies": [
+            "04-04"
+          ],
+          "criteria": [
+            "The rendered line matches the template word for word and carries exactly PropertyNames, opening with the purpose it was swept for.",
+            "An incomplete sweep says so with its skipped count; Cloud reads as Cloud.",
+            "JiraReleaseSweepCostTest green (8 pending + 1 guard); dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: golden template and closed-set cases; no property library in the backend. Keep the file inside Jira/ (outside it, every live connector suite runs in CI). CA2254: constant template; CA1861: hoist the allowlist into a static readonly. Commit via des-commit. `feat(jira): ...`."
+        },
+        {
+          "id": "03-02",
+          "name": "A picker sweep writes one line with what it read, and a list remembered from the last sweep writes none",
+          "description": "Add the internal JiraReleaseSweepTally beside JiraReleaseSweepCost (one per sweep): Deployment and ProjectCount set once before the parallel loop; VersionPages and VersionsRead as each version page is parsed (VersionsRead before the Data Center status filter); ReleasesKept and ProjectsSkipped as each project's read finishes or is skipped; every update inside Parallel.ForAsync is Interlocked. SweepReleasesWithoutThrowing(connection, statuses, purpose) creates the tally, times the sweep with the injected TimeProvider from before the client is acquired, and writes the line through JiraReleaseSweepCost; GetOptions passes Picker; ResolveMany passes a temporary internal constant until 03-04. A cache hit returns before the sweep and writes nothing. Fold the Debug 'Getting Releases of N projects' line (JiraWorkTrackingConnector.cs:3079) into the sweep line.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs"
+          ],
+          "scenario_name": "a picker sweep on Data Center writes one line; a remembered list writes none; names no customer; project count nowhere else",
+          "unskips": [
+            "JiraReleaseSweepLineTest.cs :: A_picker_sweep_on_Data_Center_writes_one_line_with_its_counts_and_time",
+            "JiraReleaseSweepLineTest.cs :: A_list_remembered_from_the_last_sweep_writes_no_second_line",
+            "JiraReleaseSweepLineTest.cs :: The_line_names_no_host_connection_project_or_Release_of_the_customer",
+            "JiraReleaseSweepLineTest.cs :: The_sweep_writes_its_project_count_in_its_line_and_nowhere_else"
+          ],
+          "guards_kept_green": [
+            "JiraDeliverySourceProviderTest (unchanged: reads, cache key, lifetime and complete-only rule untouched)",
+            "JiraReleaseSweepCostTest (all)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepTally.cs (new - internal per-sweep accumulator, Interlocked updates, ToCost)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - tally passed into SweepReleases and the per-project reads; timing; line written; GetOptions passes Picker; Debug line at :3079 folded)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs (edit - remove [Ignore(Pending)] from 4)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "criteria": [
+            "A picker sweep on Data Center writes exactly one Information line with ReleasesKept 3, VersionsRead 5, VersionPages 3, ProjectCount 2 and ElapsedMs = requests x 125 ms.",
+            "A picker request answered from the 5-minute cache writes no sweep line.",
+            "The line's property names equal PropertyNames and no value is a host, connection, user, token, project or Release of the fixture; no other entry at any level carries ProjectCount or speaks of projects' count.",
+            "dotnet build zero warnings; JiraReleaseSweepLineTest (4 un-skipped), JiraReleaseSweepCostTest and JiraDeliverySourceProviderTest green; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: captured-logger acceptance cases over a stubbed Jira with a FakeTimeProvider. No Stopwatch. S107: WalkReleasePages already has five parameters, so the tally travels with the per-project read rather than as more parameters where possible; CA1859 for concrete private types. The 3,640-line connector is excluded from whole-file mutation, so keep wording in JiraReleaseSweepCost. Commit via des-commit. `feat(jira): ...`."
+        },
+        {
+          "id": "03-03",
+          "name": "Every sweep that fails, or cannot reach Jira, still writes what it had counted, and an unexpected failure goes on to the caller",
+          "description": "Move the line into a finally around the guard's try/catch in SweepReleasesWithoutThrowing, so it is written on success, on the four caught exceptions (HttpRequestException, TaskCanceledException, JsonException, UriFormatException) and on any exception that escapes the filter, which still propagates. Deployment is Unknown until the kind is detected; a project whose read fails or is refused counts as skipped and the loop keeps the others' counts; nothing is invented.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs"
+          ],
+          "scenario_name": "refused project; unreachable Jira; Jira of unknown kind; unexpected failure on page 2",
+          "unskips": [
+            "JiraReleaseSweepLineTest.cs :: A_project_that_refuses_its_versions_makes_the_line_say_the_list_is_incomplete",
+            "JiraReleaseSweepLineTest.cs :: A_Jira_that_cannot_be_reached_still_gets_its_line_with_nothing_invented",
+            "JiraReleaseSweepLineTest.cs :: A_Jira_that_will_not_say_which_kind_it_is_is_named_as_unknown",
+            "JiraReleaseSweepLineTest.cs :: A_sweep_that_ends_in_an_unexpected_failure_still_writes_what_it_had_counted_before_the_failure_goes_on"
+          ],
+          "guards_kept_green": [
+            "JiraReleaseSweepLineTest (03-02's four)",
+            "JiraDeliverySourceProviderTest (unchanged)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - line in finally; skipped and Unknown paths)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepTally.cs (edit - only if a skipped/Unknown path needs it)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs (edit - remove [Ignore(Pending)] from 4)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "criteria": [
+            "A refused project makes the line say complete false with one project skipped.",
+            "An unreachable Jira still gets its line: Deployment Unknown, zero counts, no exception to the caller, no host in the line.",
+            "An InvalidOperationException on Data Center page 2 (one project, 3 versions on page 1) writes exactly one line: Picker, DataCenter, ProjectCount 1, VersionPages 1, VersionsRead 3, ReleasesKept 0, ProjectsSkipped 0, Complete false, and the exception reaches the caller.",
+            "dotnet build zero warnings; JiraReleaseSweepLineTest (8 of 11 un-skipped) and JiraDeliverySourceProviderTest green; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: failure-path acceptance cases with exact values. S6667: a logging catch passes the exception first; S2139: no log-and-rethrow (the finally writes the sweep line, the catch does not log-and-rethrow). The existing per-project and could-not-ask lines stay as they are (F3). Commit via des-commit. `feat(jira): ...`."
+        },
+        {
+          "id": "03-04",
+          "name": "Every caller names its sweep's purpose (Preview, Save, Refresh) through the resolver and the provider, and the sweep line is documented",
+          "description": "Add the required trailing `DeliverySourceSweepPurpose purpose` to IDeliverySourceResolver.ResolveForPortfolio, DeliverySourceResolver.ResolveForPortfolio (passes it through), IDeliverySourceProvider.ResolveMany and JiraWorkTrackingConnector.ResolveMany (replacing 03-02's temporary constant). Callers pass constants: DeliverySourcesController.Preview -> Preview, DeliveriesController.ResolveBoundSource -> Save (create and update), DeliverySourceSyncService -> Refresh; no action or HTTP contract changes. Add the argument at every test call site (DeliverySourceSyncServiceTest, DeliverySourceResolverTest, DeliverySourcesControllerTest, DeliveriesControllerTest, JiraDeliverySourceProviderTest, JiraReleaseSweepLineTest, DeliverySourcesAcceptanceTest :243/:250/:262). Delete ConnectorTakingASweepPurpose (in JiraReleaseSweepLineTest.cs) and TestHelpers/ResolverTakingASweepPurpose.cs; the four caller verifies keep their four-argument expression and switch from VerifyThePurposeIn to a plain `Verify(call, Times.Once())`, because that helper lives in the deleted class. Write the `### Jira Release sweeps` subsection under `## Logs` in docs/settings/systeminfo.md (AC-3.4): one sample sweep line, what each figure means, the four purposes, where to read it (Log Viewer with Search, or the downloaded log), and that it is written at Information (see `## Log Level`).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceSyncServiceTest.cs"
+          ],
+          "scenario_name": "every sweep to resolve bound Releases writes one line named for its caller (x3); each caller tells the resolver its purpose (x4)",
+          "unskips": [
+            "JiraReleaseSweepLineTest.cs :: Every_sweep_to_resolve_bound_Releases_writes_one_line_named_for_the_caller_that_asked (x3 TestCase: Preview, Save, Refresh)",
+            "DeliverySourcesControllerTest.cs :: A_preview_tells_the_resolver_its_sweep_is_for_a_preview",
+            "DeliveriesControllerTest.cs :: A_Delivery_saved_following_a_source_tells_the_resolver_its_sweep_is_for_a_save (x2 TestCaseSource: Creating a Delivery that follows a source tells the resolver its sweep is for a save; Updating a Delivery that follows a source tells the resolver its sweep is for a save)",
+            "DeliverySourceSyncServiceTest.cs :: The_refresh_tells_the_resolver_its_sweep_is_for_a_refresh"
+          ],
+          "guards_kept_green": [
+            "DeliverySourceResolverTest, DeliverySourcesAcceptanceTest, JiraDeliverySourceProviderTest, DeliveriesControllerArchiveTest, DeliveriesControllerUtcTest (Mock.Of unaffected)",
+            "JiraReleaseSweepLineTest and JiraReleaseSweepCostTest (all)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/DeliverySources/IDeliverySourceResolver.cs (edit - purpose parameter)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceResolver.cs (edit - passes purpose to ResolveMany)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/WorkTrackingConnectors/IDeliverySourceProvider.cs (edit - purpose parameter on ResolveMany)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - ResolveMany takes and passes the purpose)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliverySourcesController.cs (edit - Preview passes Preview)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs (edit - ResolveBoundSource passes Save)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliverySources/DeliverySourceSyncService.cs (edit - passes Refresh)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ResolverTakingASweepPurpose.cs (delete)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest.cs (edit - ConnectorTakingASweepPurpose deleted; remove [Ignore(Pending)])",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliverySourcesControllerTest.cs (edit - purpose argument; un-ignore; plain Verify)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs (edit - purpose argument; un-ignore; plain Verify)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceSyncServiceTest.cs (edit - purpose argument; un-ignore; plain Verify)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliverySources/DeliverySourceResolverTest.cs (edit - purpose argument)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraDeliverySourceProviderTest.cs (edit - purpose argument on direct ResolveMany calls only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs (edit - purpose argument in the ResolveMany setups)",
+            "docs/settings/systeminfo.md (edit - ### Jira Release sweeps subsection under ## Logs)"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "criteria": [
+            "ResolveMany with Preview, Save or Refresh writes exactly one sweep line per call naming that purpose (two calls, two lines); GetOptions still writes Picker.",
+            "A preview passes Preview, creating and updating a source-bound Delivery pass Save, and the refresh passes Refresh, each verified once on the mocked resolver; no action signature, payload or status code changes.",
+            "ConnectorTakingASweepPurpose and ResolverTakingASweepPurpose no longer exist; no test-side stand-in for the purpose remains.",
+            "docs/settings/systeminfo.md has `### Jira Release sweeps` under `## Logs` with one sample line, the four purposes and the Information level (AC-3.4).",
+            "dotnet build zero warnings; all 24 slice-03 tests green; filtered dotnet test green; `TestCategory=JiraIntegration` run once locally; `grep -rn __SCAFFOLD__` lists nothing of this Story.",
+            "End of phase 03: Epic 6400 diff check empty."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: signature change verified by Moq verifies and captured-logger cases. FLAGGED BIG: 7 test cases (one x3 TestCase, three caller methods, one x2 TestCaseSource) and ~16 files, but one mechanical change bounded by the compiler: a required parameter (not optional, Moq expression trees cannot omit it, CS0854), so a missed call site fails the build. Do it in the order interface -> implementations -> callers -> test call sites -> delete the two stand-ins; split the docs subsection into its own `docs(settings): ...` commit if preferred. The sample line in the docs uses invented, customer-free numbers. Comments: plain why, no internal refs. Commit via des-commit with --owned-paths written once. `feat(jira): ...`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "date": "2026-10-24",
+    "notes": "Conditionally approved; F-01 (opening counter moved to 02-02), F-02..F-05 applied."
+  }
+}
