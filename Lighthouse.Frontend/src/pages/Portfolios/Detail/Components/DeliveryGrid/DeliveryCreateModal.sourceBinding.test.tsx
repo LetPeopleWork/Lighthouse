@@ -1,5 +1,5 @@
 import { notifyManager } from "@tanstack/react-query";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
@@ -19,7 +19,6 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
-import { DeliverySourceTab } from "./DeliverySourceTab";
 import {
 	allOptions,
 	datedInJustATest,
@@ -422,31 +421,6 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 
 	it("the edit dialog shows the Release the Launch follows, and asks for the list exactly once", async () => {
 		const deliveryService = serviceOffering([datedInJustATest]);
-
-		const { unmount } = render(
-			<ApiServiceContext.Provider
-				value={createMockApiServiceContext({
-					deliveryService,
-					featureService: createMockFeatureService(),
-				})}
-			>
-				<DeliverySourceTab
-					portfolioId={1}
-					sourceKey={JIRA_RELEASE_SOURCE.key}
-					sourceName={JIRA_RELEASE_SOURCE.displayName}
-					featuresTerm="Deliverables"
-					portfolioTerm="Value Stream"
-					currentSelection={null}
-					onOptionPicked={vi.fn()}
-					publishForecast={false}
-					onPublishForecastChange={vi.fn()}
-					optionList={{ status: "ready", options: [datedInJustATest] }}
-				/>
-			</ApiServiceContext.Provider>,
-		);
-
-		await screen.findByRole("combobox", { name: "Jira Release" });
-		unmount();
 
 		renderEditModal(deliveryService, followingARelease());
 
