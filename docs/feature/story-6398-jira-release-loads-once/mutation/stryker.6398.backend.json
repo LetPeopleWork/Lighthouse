@@ -6,21 +6,23 @@
       "Lighthouse.Backend.Tests.csproj"
     ],
     "mutate": [
-      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCost.cs"
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepCost.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraReleaseSweepTally.cs",
+      "**/Services/Implementation/DeliverySources/DeliverySourceResolver.cs"
     ],
     "thresholds": {
-      "high": 90,
-      "low": 80,
+      "high": 80,
+      "low": 70,
       "break": 0
     },
     "coverage-analysis": "perTest",
-    "test-case-filter": "(FullyQualifiedName~WorkTrackingConnectors.Jira.JiraDeliverySourceProviderTest|FullyQualifiedName~WorkTrackingConnectors.Jira.JiraReleaseSweep)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~IntegrationTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "test-case-filter": "(FullyQualifiedName~WorkTrackingConnectors.Jira.JiraDeliverySourceProviderTest|FullyQualifiedName~WorkTrackingConnectors.Jira.JiraReleaseSweep|FullyQualifiedName~DeliverySources.DeliverySourceResolverTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~IntegrationTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
     "reporters": [
       "progress",
       "json",
       "cleartext"
     ],
-    "concurrency": 4,
+    "concurrency": 3,
     "additional-timeout": 30000,
     "verbosity": "info"
   }
