@@ -44,6 +44,7 @@ import {
 	clearDeliverySourceOptionsCache,
 	type DeliverySourceCurrentSelection,
 	DeliverySourceTab,
+	DeliverySourceTabLoading,
 } from "./DeliverySourceTab";
 import {
 	type DeliveryRuleMode,
@@ -58,6 +59,7 @@ import {
 	RULE_BASED_SELECTION_TAB_KEY,
 	ruleInputError,
 } from "./deliverySelectionTabs";
+import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
 
 interface DeliveryCreateModalProps {
 	open: boolean;
@@ -280,10 +282,38 @@ const selectionTabContent: Record<
 	[RULE_BASED_SELECTION_TAB_KEY]: RuleBasedContent,
 };
 
+/**
+ * What the body under the tabs shows. A premium tab says it is premium only once the licence has
+ * said so; until the licence answers it shows the same loading look as a list still on its way, so
+ * nobody is told to upgrade a licence they may well have.
+ */
+type SelectionBody =
+	| { kind: "premiumNotice"; notice: string }
+	| { kind: "loading" }
+	| { kind: "content" };
+
+const selectionBodyOf = (
+	tab: DeliverySelectionTab,
+	verdict: PremiumVerdict,
+	listIsLoading: boolean,
+): SelectionBody => {
+	const gate = tab.premiumGate;
+	if (gate !== undefined && verdict === "notPremium") {
+		return { kind: "premiumNotice", notice: gate.notice };
+	}
+	if (gate !== undefined && verdict === "unknown") {
+		return { kind: "loading" };
+	}
+	if (listIsLoading) {
+		return { kind: "loading" };
+	}
+	return { kind: "content" };
+};
+
 const SelectionModeContent: React.FC<
 	SelectionContentProps & {
 		tab: DeliverySelectionTab;
-		isPremium: boolean;
+		body: SelectionBody;
 		portfolioTerm: string;
 		currentSelection: DeliverySourceCurrentSelection | null;
 		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
@@ -292,7 +322,7 @@ const SelectionModeContent: React.FC<
 	}
 > = ({
 	tab,
-	isPremium,
+	body,
 	portfolioTerm,
 	currentSelection,
 	onSourceOptionPicked,
@@ -300,9 +330,16 @@ const SelectionModeContent: React.FC<
 	onPublishForecastChange,
 	...contentProps
 }) => {
-	const gate = tab.premiumGate;
-	if (gate && !isPremium) {
-		return <PremiumFeatureNotice message={gate.notice} />;
+	if (body.kind === "premiumNotice") {
+		return <PremiumFeatureNotice message={body.notice} />;
+	}
+
+	if (body.kind === "loading" && tab.source) {
+		return <DeliverySourceTabLoading sourceName={tab.source.displayName} />;
+	}
+
+	if (body.kind === "loading") {
+		return <LoadingSpinner />;
 	}
 
 	if (tab.source) {
@@ -330,11 +367,11 @@ const SelectionModeContent: React.FC<
 const SelectionTabButton: React.FC<{
 	tab: DeliverySelectionTab;
 	activeTabKey: string;
-	isPremium: boolean;
+	verdict: PremiumVerdict;
 	onSelect: (tab: DeliverySelectionTab) => void;
-}> = ({ tab, activeTabKey, isPremium, onSelect }) => {
+}> = ({ tab, activeTabKey, verdict, onSelect }) => {
 	const gate = tab.premiumGate;
-	const isLocked = !isPremium && gate?.whenLocked === "lockTab";
+	const isLocked = verdict === "notPremium" && gate?.whenLocked === "lockTab";
 	const isSelected = activeTabKey === tab.key;
 	const button = (
 		<Button
@@ -347,13 +384,14 @@ const SelectionTabButton: React.FC<{
 		</Button>
 	);
 
-	if (gate?.tooltipExtraInfo === undefined) {
+	// Until the licence answers there is nothing true to say about it, so no tooltip says anything.
+	if (gate?.tooltipExtraInfo === undefined || verdict === "unknown") {
 		return button;
 	}
 
 	return (
 		<LicenseTooltip
-			canUseFeature={isPremium}
+			canUseFeature={verdict === "premium"}
 			defaultTooltip=""
 			premiumExtraInfo={gate.tooltipExtraInfo}
 		>
@@ -479,7 +517,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const { featureService, deliveryService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const { licenseStatus } = useLicenseRestrictions();
-	const isPremium = licenseStatus?.canUsePremiumFeatures ?? false;
+	const verdict = premiumVerdictOf(licenseStatus);
+	const isPremium = verdict === "premium";
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
 	const isEditMode = !!editingDelivery;
@@ -533,6 +572,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
 	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
+	const activeBody = selectionBodyOf(
+		activeTab,
+		verdict,
+		activeTab.key === RULE_BASED_SELECTION_TAB_KEY && loadingSchema,
+	);
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
@@ -843,7 +887,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 									key={tab.key}
 									tab={tab}
 									activeTabKey={activeTab.key}
-									isPremium={isPremium}
+									verdict={verdict}
 									onSelect={handleSelectTab}
 								/>
 							))}
@@ -852,7 +896,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 
 					<SelectionModeContent
 						tab={activeTab}
-						isPremium={isPremium}
+						body={activeBody}
 						loadingSchema={loadingSchema}
 						ruleSchema={ruleSchema}
 						errors={errors}
@@ -903,7 +947,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					<Button
 						onClick={handleSave}
 						variant="contained"
-						disabled={blockingError !== null}
+						disabled={blockingError !== null || activeBody.kind === "loading"}
 					>
 						{isEditMode ? "Update" : "Save"}
 					</Button>

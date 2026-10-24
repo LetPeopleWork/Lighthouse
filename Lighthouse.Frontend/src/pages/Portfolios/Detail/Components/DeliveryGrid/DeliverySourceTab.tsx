@@ -20,6 +20,7 @@ import type {
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 
 /**
  * The entry a delivery already follows, as the delivery itself remembers it. It is remembered
@@ -328,6 +329,38 @@ const PublishForecastSwitch: React.FC<{
 	</Box>
 );
 
+/** The tab's body, naming whether its list is on screen yet so a reader waiting on it can tell. */
+const SourceTabBody: React.FC<{
+	status: WidgetStatus;
+	children: React.ReactNode;
+}> = ({ status, children }) => (
+	<Box data-testid="delivery-source-tab-body" data-widget-status={status}>
+		{children}
+	</Box>
+);
+
+/** What the tab shows while it cannot show the list yet, whatever it is still waiting for. */
+export const DeliverySourceTabLoading: React.FC<{ sourceName: string }> = ({
+	sourceName,
+}) => (
+	<SourceTabBody status="loading">
+		<Box
+			sx={{
+				display: "flex",
+				flexDirection: "column",
+				alignItems: "center",
+				gap: 1,
+				py: 4,
+			}}
+		>
+			<CircularProgress />
+			<Typography variant="body2" color="text.secondary">
+				{`Getting the ${sourceName}s…`}
+			</Typography>
+		</Box>
+	</SourceTabBody>
+);
+
 /**
  * Shows which entry of the work tracking system this Delivery takes its date from, and what that
  * means for it: the date it would land on and the work that would come along with it.
@@ -387,23 +420,21 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 
 	if (failed) {
 		return (
-			<Alert severity="error">
-				The list of {sourceName} entries could not be loaded. Check this{" "}
-				{portfolioTerm}'s connection and try again.
-			</Alert>
+			<SourceTabBody status="error">
+				<Alert severity="error">
+					The list of {sourceName} entries could not be loaded. Check this{" "}
+					{portfolioTerm}'s connection and try again.
+				</Alert>
+			</SourceTabBody>
 		);
 	}
 
 	if (options === null) {
-		return (
-			<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-				<CircularProgress />
-			</Box>
-		);
+		return <DeliverySourceTabLoading sourceName={sourceName} />;
 	}
 
 	return (
-		<Box>
+		<SourceTabBody status="ready">
 			<Typography variant="h6" sx={{ mb: 2 }}>
 				Preview a {sourceName}
 			</Typography>
@@ -434,6 +465,6 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 					portfolioId={portfolioId}
 				/>
 			)}
-		</Box>
+		</SourceTabBody>
 	);
 };

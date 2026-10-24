@@ -31,11 +31,17 @@ export class ModifyDeliveriesDialog {
 	 * handed over instead of writing the expected value down and going stale when someone changes it.
 	 */
 	get deliveryNameInput(): Locator {
-		return this.page.getByRole("textbox", { name: "Delivery Name" });
+		return this.page.getByRole("textbox", {
+			name: "Delivery Name",
+			exact: true,
+		});
 	}
 
 	get deliveryDateInput(): Locator {
-		return this.page.getByRole("textbox", { name: "Delivery Date" });
+		return this.page.getByRole("textbox", {
+			name: "Delivery Date",
+			exact: true,
+		});
 	}
 
 	async setDeliveryName(name: string): Promise<void> {
@@ -93,9 +99,14 @@ export class ModifyDeliveriesDialog {
 		await manualButton.click();
 	}
 
+	/** Shown in a premium tab's body only once the licence is known not to allow it. */
+	get premiumNotice(): Locator {
+		return this.page.getByTestId("premium-feature-notice");
+	}
+
 	/** The tab a connection adds when it can hand Lighthouse a delivery date of its own. */
 	sourceTab(sourceName: string): Locator {
-		return this.page.getByRole("button", { name: sourceName });
+		return this.page.getByRole("button", { name: sourceName, exact: true });
 	}
 
 	async switchToSource(sourceName: string): Promise<DeliverySourceTab> {

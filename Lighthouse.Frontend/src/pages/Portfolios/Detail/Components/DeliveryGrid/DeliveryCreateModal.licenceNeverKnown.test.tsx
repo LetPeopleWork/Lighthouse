@@ -103,7 +103,7 @@ const aLicenceCheckWhere = (failing: Failing): Partial<IApiServiceContext> => {
 };
 
 describe("a licence check that never gives its answer", () => {
-	it.skip.each<[string, Failing]>([
+	it.each<[string, Failing]>([
 		["never answers", "nothing"],
 		["fails on the licence", "licence"],
 		["fails on the teams", "teams"],

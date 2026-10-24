@@ -152,7 +152,7 @@ describe("Lena opens Add Launch while the ways to pick are still loading", () =>
 describe("Lena opens a premium tab before the licence has answered", () => {
 	beforeEach(() => theLicenceIs(null));
 
-	it.skip("the Jira Release tab says it is getting the Releases, never that they are premium", async () => {
+	it("the Jira Release tab says it is getting the Releases, never that they are premium", async () => {
 		const user = userEvent.setup();
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
 
@@ -168,7 +168,7 @@ describe("Lena opens a premium tab before the licence has answered", () => {
 		expect(screen.queryByText(COPY.jiraReleaseIsPremium)).toBeNull();
 	});
 
-	it.skip("Rule-Based stays open to her and shows a loading look, with no lock and no premium tooltip", async () => {
+	it("Rule-Based stays open to her and shows a loading look, with no lock and no premium tooltip", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		openTheDialog({ deliveryService });
@@ -187,7 +187,7 @@ describe("Lena opens a premium tab before the licence has answered", () => {
 		expect(deliveryService.getRuleSchema).not.toHaveBeenCalled();
 	});
 
-	it.skip("Save stays off while the Rule-Based body is still loading", async () => {
+	it("Save stays off while the Rule-Based body is still loading", async () => {
 		const user = userEvent.setup();
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
 		const ruleBased = theRuleBasedTab() as HTMLElement;
@@ -198,7 +198,7 @@ describe("Lena opens a premium tab before the licence has answered", () => {
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 	});
 
-	it.skip("once the licence answers not premium, the tab she chose stays chosen and shows the premium notice, and Rule-Based locks", async () => {
+	it("once the licence answers not premium, the tab she chose stays chosen and shows the premium notice, and Rule-Based locks", async () => {
 		const user = userEvent.setup();
 		const dialog = openTheDialog({
 			deliveryService: aConnectionOfferingJiraReleases(),
@@ -217,7 +217,7 @@ describe("Lena opens a premium tab before the licence has answered", () => {
 		expect(theRuleBasedTab()).toBeDisabled();
 	});
 
-	it.skip("a licence check that never answers keeps the loading look, and the Manual tab stays open to her", async () => {
+	it("a licence check that never answers keeps the loading look, and the Manual tab stays open to her", async () => {
 		const user = userEvent.setup();
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
 		const jiraReleaseTab = await untilTheJiraReleaseTabIsOffered();
@@ -252,7 +252,7 @@ describe("once the licence is known", () => {
 		);
 	});
 
-	it.skip("a premium licence shows the Release picker, ready", async () => {
+	it("a premium licence shows the Release picker, ready", async () => {
 		const user = userEvent.setup();
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
 

@@ -1,4 +1,4 @@
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 /**
  * The tab that previews the delivery date a work tracking system already holds. Picking an entry
@@ -14,8 +14,36 @@ export class DeliverySourceTab {
 		this.sourceName = sourceName;
 	}
 
+	/**
+	 * The tab's body. It is on screen before the entries are, so seeing it says nothing about them;
+	 * its `data-widget-status` does.
+	 */
+	get body(): Locator {
+		return this.page.getByTestId("delivery-source-tab-body");
+	}
+
+	/**
+	 * Waits until the body says it is ready or that its entries could not be loaded. On the second, it fails once the
+	 * expect timeout runs out, never earlier, naming the entries that could not be loaded.
+	 */
+	async waitUntilLoaded(timeout = 60_000): Promise<void> {
+		const body = '[data-testid="delivery-source-tab-body"]';
+		await this.page
+			.locator(
+				`${body}[data-widget-status="ready"], ${body}[data-widget-status="error"]`,
+			)
+			.waitFor({ timeout });
+		await expect(
+			this.body,
+			`the ${this.sourceName} entries could not be loaded`,
+		).toHaveAttribute("data-widget-status", "ready");
+	}
+
 	get picker(): Locator {
-		return this.page.getByRole("combobox", { name: this.sourceName });
+		return this.page.getByRole("combobox", {
+			name: this.sourceName,
+			exact: true,
+		});
 	}
 
 	async openList(): Promise<void> {

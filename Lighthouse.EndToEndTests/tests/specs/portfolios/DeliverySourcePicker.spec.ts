@@ -95,9 +95,11 @@ test("@walking_skeleton a dated Jira Release picked in the form becomes a Delive
 
 	await expect(dialog.sourceTab("Jira Release")).toBeVisible();
 	const jiraReleases = await dialog.switchToSource("Jira Release");
-	await expect(jiraReleases.picker).toBeVisible({
-		timeout: RELEASES_ARRIVE_FROM_JIRA,
-	});
+	// Ready, not merely visible: the tab says through its status when its list is on screen, and a
+	// premium reader must never meet the premium notice on the way there.
+	await jiraReleases.waitUntilLoaded(RELEASES_ARRIVE_FROM_JIRA);
+	await expect(jiraReleases.picker).toBeVisible();
+	await expect(dialog.premiumNotice).toHaveCount(0);
 
 	await jiraReleases.openList();
 
