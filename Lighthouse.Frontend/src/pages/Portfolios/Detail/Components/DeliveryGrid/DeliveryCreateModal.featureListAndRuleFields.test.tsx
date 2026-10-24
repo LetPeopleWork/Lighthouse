@@ -237,7 +237,7 @@ const chooseManual = async (user: ReturnType<typeof userEvent.setup>) => {
 };
 
 describe("Lena picks Deliverables by hand on Payments Platform", () => {
-	it.skip("while the list is on its way the grid says it is busy, and it fills once the list arrives", async () => {
+	it("while the list is on its way the grid says it is busy, and it fills once the list arrives", async () => {
 		const list = anAnswerNotGivenYet<IFeature[]>();
 		openTheDialog({
 			deliveryService: aConnectionOffering([]),
@@ -256,7 +256,7 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(theRowFor(REFUNDS)).not.toBeNull();
 	});
 
-	it.skip("a list that could not be loaded is an amber notice (the warning colour, which only its class carries) in her words, with no button and no empty grid", async () => {
+	it("a list that could not be loaded is an amber notice (the warning colour, which only its class carries) in her words, with no button and no empty grid", async () => {
 		const list = anAnswerNotGivenYet<IFeature[]>();
 		openTheDialog({
 			deliveryService: aConnectionOffering([]),
@@ -296,7 +296,7 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(featureListsAskedFor(featureService)).toBe(2);
 	});
 
-	it.skip("reopening never shows the last opening's list, only the busy grid until this opening's list arrives", async () => {
+	it("reopening never shows the last opening's list, only the busy grid until this opening's list arrives", async () => {
 		const first = anAnswerNotGivenYet<IFeature[]>();
 		const second = anAnswerNotGivenYet<IFeature[]>();
 		const dialog = openTheDialog({
@@ -315,7 +315,7 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(theRowFor(REFUNDS)).toBeNull();
 	});
 
-	it.skip.each<[string, Portfolio]>([
+	it.each<[string, Portfolio]>([
 		["Payments Platform again", PAYMENTS_PLATFORM],
 		[ONBOARDING.name, ONBOARDING],
 	])(
@@ -357,7 +357,7 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(featureListsAskedFor(featureService)).toBe(0);
 	});
 
-	it.skip("editing Autumn launch, Update stays off until the list arrives, and her ticks arrive with it", async () => {
+	it("editing Autumn launch, Update stays off until the list arrives, and her ticks arrive with it", async () => {
 		const list = anAnswerNotGivenYet<IFeature[]>();
 		openTheDialog({
 			deliveryService: aConnectionOffering([]),

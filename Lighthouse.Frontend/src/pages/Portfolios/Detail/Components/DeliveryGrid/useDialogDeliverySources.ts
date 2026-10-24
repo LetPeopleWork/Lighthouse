@@ -47,6 +47,8 @@ interface DialogDeliverySources {
 	sources: IDeliverySource[];
 	sourcesStatus: SourcesStatus;
 	sourceOptionsOf: (sourceKey: string) => DeliverySourceOptionsState;
+	/** Which opening of the dialog this is, so its other answers are asked for once per opening too. */
+	opening: number;
 	/** Called as the dialog closes, so its next opening asks the tracker afresh. */
 	startNewOpening: () => void;
 }
@@ -76,6 +78,7 @@ export const useDialogDeliverySources = (
 		sources,
 		sourcesStatus: sourcesStatusOf[sourcesQuery.status],
 		sourceOptionsOf,
+		opening: openingNumber,
 		startNewOpening,
 	};
 };

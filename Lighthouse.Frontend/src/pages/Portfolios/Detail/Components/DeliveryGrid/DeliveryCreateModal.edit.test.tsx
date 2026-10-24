@@ -293,7 +293,9 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 			expect(screen.getByLabelText("Milestone Name")).toBeDisabled();
 		});
 		expect(screen.getByLabelText("Milestone Date")).toBeDisabled();
-		expect(screen.getByTestId("premium-feature-notice")).toBeInTheDocument();
+		expect(
+			await screen.findByTestId("premium-feature-notice"),
+		).toBeInTheDocument();
 
 		fireEvent.click(screen.getByText("Update"));
 

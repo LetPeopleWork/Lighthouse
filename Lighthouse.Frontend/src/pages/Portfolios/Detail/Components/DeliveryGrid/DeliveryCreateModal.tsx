@@ -37,6 +37,7 @@ import type {
 } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import {
 	type DeliverySourceCurrentSelection,
 	DeliverySourceTab,
@@ -56,6 +57,7 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
+import { useDialogFeatureList } from "./useDeliveryFormQueries";
 import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
 import {
 	type SourcesStatus,
@@ -102,6 +104,15 @@ const LoadingSpinner: React.FC = () => (
 const SchemaLoadError: React.FC = () => (
 	<Alert severity="warning">
 		Failed to load rule schema. Please try again.
+	</Alert>
+);
+
+const FeatureListLoadError: React.FC<
+	Readonly<{ portfolioTerm: string; featuresTerm: string }>
+> = ({ portfolioTerm, featuresTerm }) => (
+	<Alert severity="warning">
+		Couldn't load this {portfolioTerm}'s {featuresTerm}. Close this dialog and
+		open it again to retry.
 	</Alert>
 );
 
@@ -159,7 +170,8 @@ interface CommonSelectionContentProps {
 }
 
 interface ManualSelectionContentProps extends CommonSelectionContentProps {
-	allFeatures: IFeature[];
+	listedFeatures: IFeature[];
+	listIsLoading: boolean;
 	selectedFeatureIds: number[];
 	onSelectedFeaturesChange: (ids: number[]) => void;
 }
@@ -186,7 +198,8 @@ type SelectionContentProps = ManualSelectionContentProps &
 
 const ManualSelectionContent: React.FC<ManualSelectionContentProps> = ({
 	errors,
-	allFeatures,
+	listedFeatures,
+	listIsLoading,
 	selectedFeatureIds,
 	featuresTerm,
 	portfolioId,
@@ -203,7 +216,8 @@ const ManualSelectionContent: React.FC<ManualSelectionContentProps> = ({
 		)}
 		<Box sx={{ height: 300 }}>
 			<FeatureSelector
-				features={allFeatures}
+				features={listedFeatures}
+				loading={listIsLoading}
 				selectedFeatureIds={selectedFeatureIds}
 				onChange={onSelectedFeaturesChange}
 				storageKey={`delivery-create-features-${portfolioId}`}
@@ -290,11 +304,15 @@ const selectionTabContent: Record<
  */
 const PREMIUM_NOTICE = "premiumNotice";
 const UNAVAILABLE = "unavailable";
+const FEATURE_LIST_LOADING = "featureListLoading";
+const FEATURE_LIST_FAILED = "featureListFailed";
 
 type SelectionBody =
 	| { kind: typeof PREMIUM_NOTICE; notice: string }
 	| { kind: "loading" }
 	| { kind: typeof UNAVAILABLE }
+	| { kind: typeof FEATURE_LIST_LOADING }
+	| { kind: typeof FEATURE_LIST_FAILED }
 	| { kind: "content" };
 
 interface SelectionBodyQuestion {
@@ -303,7 +321,35 @@ interface SelectionBodyQuestion {
 	ruleSchemaIsLoading: boolean;
 	sourcesStatus: SourcesStatus;
 	followsTrackerEntry: boolean;
+	featureListStatus: WidgetStatus;
 }
+
+/**
+ * The Manual list stays on screen while it loads, under the grid's own busy look, so the reader sees
+ * where the Features will appear; only a list that could not be loaded gives its place to a notice.
+ */
+const manualBodyOf: Record<WidgetStatus, SelectionBody> = {
+	loading: { kind: FEATURE_LIST_LOADING },
+	error: { kind: FEATURE_LIST_FAILED },
+	ready: { kind: "content" },
+};
+
+const contentBodyOf = ({
+	tab,
+	ruleSchemaIsLoading,
+	featureListStatus,
+}: Pick<
+	SelectionBodyQuestion,
+	"tab" | "ruleSchemaIsLoading" | "featureListStatus"
+>): SelectionBody => {
+	if (tab.key === MANUAL_SELECTION_TAB_KEY) {
+		return manualBodyOf[featureListStatus];
+	}
+	if (tab.key === RULE_BASED_SELECTION_TAB_KEY && ruleSchemaIsLoading) {
+		return { kind: "loading" };
+	}
+	return { kind: "content" };
+};
 
 /**
  * A delivery that follows an entry of the work tracking system belongs on a tab that only exists
@@ -322,7 +368,7 @@ const awaitsBoundSourceTab = ({
 	followsTrackerEntry && tab.source === undefined && sourcesStatus !== "ready";
 
 const selectionBodyOf = (question: SelectionBodyQuestion): SelectionBody => {
-	const { tab, verdict, ruleSchemaIsLoading, sourcesStatus } = question;
+	const { tab, verdict, sourcesStatus } = question;
 	if (awaitsBoundSourceTab(question)) {
 		return sourcesStatus === "loading"
 			? { kind: "loading" }
@@ -335,10 +381,7 @@ const selectionBodyOf = (question: SelectionBodyQuestion): SelectionBody => {
 	if (gate !== undefined && verdict === "unknown") {
 		return { kind: "loading" };
 	}
-	if (tab.key === RULE_BASED_SELECTION_TAB_KEY && ruleSchemaIsLoading) {
-		return { kind: "loading" };
-	}
-	return { kind: "content" };
+	return contentBodyOf(question);
 };
 
 /**
@@ -350,8 +393,15 @@ const dialogKnowsItsAnswer = (
 	verdict: PremiumVerdict,
 ): boolean => sourcesStatus !== "loading" && verdict !== "unknown";
 
+const BODIES_THAT_BLOCK_SAVING: ReadonlySet<SelectionBody["kind"]> = new Set([
+	"loading",
+	UNAVAILABLE,
+	FEATURE_LIST_LOADING,
+	FEATURE_LIST_FAILED,
+]);
+
 const bodyBlocksSaving = (body: SelectionBody): boolean =>
-	body.kind === "loading" || body.kind === UNAVAILABLE;
+	BODIES_THAT_BLOCK_SAVING.has(body.kind);
 
 const saveIsAllowed = (
 	knowsItsAnswer: boolean,
@@ -361,7 +411,7 @@ const saveIsAllowed = (
 	knowsItsAnswer && blockingError === null && !bodyBlocksSaving(body);
 
 const SelectionModeContent: React.FC<
-	SelectionContentProps & {
+	Omit<SelectionContentProps, "listIsLoading"> & {
 		tab: DeliverySelectionTab;
 		body: SelectionBody;
 		portfolioTerm: string;
@@ -398,6 +448,15 @@ const SelectionModeContent: React.FC<
 		return null;
 	}
 
+	if (body.kind === FEATURE_LIST_FAILED) {
+		return (
+			<FeatureListLoadError
+				portfolioTerm={portfolioTerm}
+				featuresTerm={contentProps.featuresTerm}
+			/>
+		);
+	}
+
 	if (tab.source) {
 		return (
 			<DeliverySourceTab
@@ -418,7 +477,12 @@ const SelectionModeContent: React.FC<
 	// A tab that neither saves a selection nor reads one from the work tracking system has no body
 	// registered here. Showing nothing keeps a tab added later from taking the whole form down.
 	const Content = selectionTabContent[tab.key];
-	return Content === undefined ? null : <Content {...contentProps} />;
+	return Content === undefined ? null : (
+		<Content
+			{...contentProps}
+			listIsLoading={body.kind === FEATURE_LIST_LOADING}
+		/>
+	);
 };
 
 const SelectionTabButton: React.FC<{
@@ -620,7 +684,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	onSave,
 	onUpdate,
 }) => {
-	const { featureService, deliveryService } = useContext(ApiServiceContext);
+	const { deliveryService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const { licenseStatus } = useLicenseRestrictions();
 	const verdict = premiumVerdictOf(licenseStatus);
@@ -634,12 +698,16 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [name, setName] = useState("");
 	const [date, setDate] = useState("");
 	const [selectedFeatureIds, setSelectedFeatureIds] = useState<number[]>([]);
-	const [allFeatures, setAllFeatures] = useState<IFeature[]>([]);
 	const [selectedTabKey, setSelectedTabKey] = useState(
 		defaultDeliverySelectionTab.key,
 	);
-	const { sources, sourcesStatus, sourceOptionsOf, startNewOpening } =
+	const { sources, sourcesStatus, sourceOptionsOf, opening, startNewOpening } =
 		useDialogDeliverySources(portfolio.id, open, verdict);
+	const featureList = useDialogFeatureList({
+		portfolio,
+		isOpen: open,
+		opening,
+	});
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -685,6 +753,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		ruleSchemaIsLoading: loadingSchema,
 		sourcesStatus,
 		followsTrackerEntry: Boolean(editingDelivery?.sourceKey),
+		featureListStatus: featureList.status,
 	};
 	const activeBody = selectionBodyOf(bodyQuestion);
 	const standsOnNoTab = awaitsBoundSourceTab(bodyQuestion);
@@ -698,16 +767,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
 	};
-
-	useEffect(() => {
-		if (open && portfolio.features.length > 0) {
-			const featureIds = portfolio.features.map((f) => f.id);
-			featureService
-				.getFeaturesByIds(featureIds)
-				.then((features) => setAllFeatures(features))
-				.catch((err) => console.error("Failed to load features:", err));
-		}
-	}, [open, portfolio.features, featureService]);
 
 	useEffect(() => {
 		if (
@@ -992,7 +1051,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						loadingSchema={loadingSchema}
 						ruleSchema={ruleSchema}
 						errors={errors}
-						allFeatures={allFeatures}
+						listedFeatures={featureList.data ?? []}
 						selectedFeatureIds={selectedFeatureIds}
 						rules={rules}
 						mode={mode}

@@ -1,10 +1,14 @@
+import { useQuery } from "@tanstack/react-query";
+import { useContext } from "react";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import type { IWorkItemRuleSchema } from "../../../../../models/WorkItemRules";
+import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
+import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
 import type { PremiumVerdict } from "./premiumVerdict";
 
-// The dialog's scenarios were written ahead of these; until they are built, every call throws.
+// The rule fields' scenarios were written ahead of their hook; until it is built, every call to it throws.
 export const __SCAFFOLD__ = true;
 
 /** What a body of the dialog needs to know of one of its queries to say what it is doing. */
@@ -49,11 +53,33 @@ export interface DialogFeatureListRequest {
  * The Features the Manual tab lists, asked for once per opening. A Portfolio with no Features asks for nothing and
  * is ready at once with an empty list.
  */
-export function useDialogFeatureList(
-	_request: DialogFeatureListRequest,
-): DeliveryFormAnswer<IFeature[]> {
-	throw new Error("useDialogFeatureList is not built yet");
+export function useDialogFeatureList({
+	portfolio,
+	isOpen,
+	opening,
+}: DialogFeatureListRequest): DeliveryFormAnswer<IFeature[]> {
+	const { featureService } = useContext(ApiServiceContext);
+	const featureIds = portfolio.features.map((feature) => feature.id);
+	const hasFeatures = featureIds.length > 0;
+
+	const query = useQuery({
+		...askedAfreshQueryOptions,
+		queryKey: ["deliveryDialogFeatures", portfolio.id, opening],
+		queryFn: () => featureService.getFeaturesByIds(featureIds),
+		enabled: isOpen && hasFeatures,
+	});
+
+	if (!hasFeatures) {
+		return NO_FEATURES_TO_ASK_FOR;
+	}
+	const status = dialogQueryStatusOf(query);
+	return { status, data: status === "ready" ? query.data : undefined };
 }
+
+const NO_FEATURES_TO_ASK_FOR: DeliveryFormAnswer<IFeature[]> = {
+	status: "ready",
+	data: [],
+};
 
 export interface DialogRuleSchemaRequest {
 	portfolioId: number;
