@@ -46,7 +46,7 @@ const filesCalling = (method: string): string[] =>
 		.map((file) => file.name);
 
 describe("the Deliveries folder's server state", () => {
-	it.skip("asks for the ways to pick and for the Release lists from their own hooks only", () => {
+	it("asks for the ways to pick and for the Release lists from their own hooks only", () => {
 		expect(filesCalling("getDeliverySources")).toEqual([
 			"useDeliverySources.ts",
 		]);
@@ -67,7 +67,7 @@ describe("the Deliveries folder's server state", () => {
 		);
 	});
 
-	it.skip("keeps no server answers in a store of its own that outlives a render", () => {
+	it("keeps no server answers in a store of its own that outlives a render", () => {
 		const moduleWideStores = sources
 			.filter((file) => /^(?:const|let)\s+\w+\s*=\s*new Map\b/m.test(file.text))
 			.map((file) => file.name);
