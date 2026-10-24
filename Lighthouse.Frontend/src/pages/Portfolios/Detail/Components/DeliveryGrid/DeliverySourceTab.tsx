@@ -422,8 +422,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 		return (
 			<SourceTabBody status="error">
 				<Alert severity="error">
-					The list of {sourceName} entries could not be loaded. Check this{" "}
-					{portfolioTerm}'s connection and try again.
+					{`The list of ${sourceName} entries could not be loaded. Close this dialog and open it again to retry.`}
 				</Alert>
 			</SourceTabBody>
 		);
@@ -432,6 +431,9 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	if (options === null) {
 		return <DeliverySourceTabLoading sourceName={sourceName} />;
 	}
+
+	const previewOnItsWay =
+		awaitedOptionId.current !== "" && preview === null && !previewFailed;
 
 	return (
 		<SourceTabBody status="ready">
@@ -451,6 +453,11 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 				publishForecast={publishForecast}
 				onChange={onPublishForecastChange}
 			/>
+			{previewOnItsWay && (
+				<Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+					<CircularProgress size={20} />
+				</Box>
+			)}
 			{previewFailed && (
 				<Alert severity="error" sx={{ mt: 2 }}>
 					This {sourceName} could not be previewed. Try again in a moment.

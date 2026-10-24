@@ -298,7 +298,7 @@ describe("when the ways to pick could not be checked", () => {
 });
 
 describe("when the Release list could not be loaded", () => {
-	it.skip("the tab says so and tells her to reopen the dialog, with no button", async () => {
+	it("the tab says so and tells her to reopen the dialog, with no button", async () => {
 		const user = userEvent.setup();
 		const { deliveryService, releases } = withTheReleaseListStillOnItsWay();
 		openTheDialog({ deliveryService });
@@ -314,7 +314,7 @@ describe("when the Release list could not be loaded", () => {
 		expect(theReleasePicker()).toBeNull();
 	});
 
-	it.skip("a list the server refuses ends in the same look", async () => {
+	it("a list the server refuses ends in the same look", async () => {
 		const user = userEvent.setup();
 		const { deliveryService, releases } = withTheReleaseListStillOnItsWay();
 		openTheDialog({ deliveryService });
@@ -411,7 +411,7 @@ describe("nothing under the form reads as the dialog's answer while it does not 
 });
 
 describe("Lena picks a Release", () => {
-	it.skip("a small spinner shows under the picker while the preview is on its way, and goes once it arrives", async () => {
+	it("a small spinner shows under the picker while the preview is on its way, and goes once it arrives", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		const preview = anAnswerNotGivenYet<IDeliverySourcePreview>();

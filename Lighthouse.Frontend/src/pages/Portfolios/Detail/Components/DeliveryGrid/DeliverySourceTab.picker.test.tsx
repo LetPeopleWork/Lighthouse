@@ -196,7 +196,7 @@ describe("DeliverySourceTab picker", () => {
 		const error = await screen.findByRole("alert");
 		expect(error).toHaveTextContent(/could not be loaded/i);
 		expect(error).not.toHaveTextContent(/no releases/i);
-		expect(error).toHaveTextContent(/Value Stream/);
+		expect(error).toHaveTextContent(/Close this dialog and open it again/);
 		expect(error).not.toHaveTextContent(/Portfolio/);
 	});
 });
