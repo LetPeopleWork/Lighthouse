@@ -1563,6 +1563,10 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton<IDrawStreamFactory, DrawStreamFactory>();
             builder.Services.AddSingleton(ForecastSimulationLimits.Default);
             builder.Services.AddSingleton<ForecastSimulation>();
+
+            // Handed over through a factory so the container disposes it, after the hosted services have stopped.
+            var forecastLane = new ForecastLane(ForecastSimulationLimits.Default);
+            builder.Services.AddSingleton(_ => forecastLane);
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();

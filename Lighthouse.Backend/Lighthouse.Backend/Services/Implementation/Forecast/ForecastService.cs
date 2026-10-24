@@ -165,8 +165,13 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             var simulationResults = InitializeSimulationResults(gathered.Features);
             var draws = drawStreamFactory.ForOneRun();
 
-            var startForecasts = await Task.Run(
-                () => RunMonteCarloSimulation(simulationResults, gathered.ThroughputByTeam, gathered.Waits, draws, cancellationToken), cancellationToken);
+            // The runs follow whoever started the forecast: a background round keeps them on its own threads, and
+            // a forecast asked for from a page hands them to the shared pool, so the request thread is let go.
+            var startForecasts = await Task.Factory.StartNew(
+                () => RunMonteCarloSimulation(simulationResults, gathered.ThroughputByTeam, gathered.Waits, draws, cancellationToken),
+                cancellationToken,
+                TaskCreationOptions.DenyChildAttach,
+                TaskScheduler.Current);
 
             UpdateFeatureForecasts(gathered.Features, simulationResults, gathered.ChipStatusByTeam, startForecasts, CreationInstant());
         }
@@ -224,6 +229,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
             {
                 MaxDegreeOfParallelism = limits.MostRunsAtOnce,
                 CancellationToken = cancellationToken,
+                TaskScheduler = TaskScheduler.Current,
             };
 
             Parallel.For(

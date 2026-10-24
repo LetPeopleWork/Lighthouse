@@ -1,5 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -27,6 +29,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IUpdateStatusStore> updateStatusStoreMock;
         private Mock<IDomainEventDispatcher> domainEventDispatcherMock;
+        private ForecastLane forecastLane;
+
+        [TearDown]
+        public void TearDown()
+        {
+            forecastLane.Dispose();
+        }
 
         [SetUp]
         public void SetUp()
@@ -51,6 +60,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             SetupServiceProviderMock(Mock.Of<IWriteBackTriggerService>());
             SetupServiceProviderMock(Mock.Of<IAppSettingService>());
             SetupServiceProviderMock(Clocks.SystemUtc);
+
+            forecastLane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 2 });
+            SetupServiceProviderMock(forecastLane);
         }
 
         [Test]

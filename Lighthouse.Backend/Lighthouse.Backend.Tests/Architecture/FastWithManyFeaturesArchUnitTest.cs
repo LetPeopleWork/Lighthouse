@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] ExcludedPathSegments = ["/obj/", "/bin/", "/StrykerOutput"];
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("slice-01")]
         [Category("story-6404")]
         [Category("kpi-OUT-6400-no-stall-during-rounds")]

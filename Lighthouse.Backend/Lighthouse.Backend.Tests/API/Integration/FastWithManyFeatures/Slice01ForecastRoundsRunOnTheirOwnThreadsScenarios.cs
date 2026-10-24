@@ -52,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-no-stall-during-rounds")]
         [Category("contract-shape:bounded-change")]
@@ -76,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-no-stall-during-rounds")]
         [Category("contract-shape:bounded-change")]

@@ -98,6 +98,11 @@
         "ceiling_seconds": 150
       },
       {
+        "unit": "Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures.Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios",
+        "reason": "runs a real forecast round on the forecast threads for each of three core counts",
+        "ceiling_seconds": 150
+      },
+      {
         "unit": "Lighthouse.Backend.Tests.Services.Implementation.Encryption.ReferencedKeyIdsTests",
         "reason": "works against a real SQLite database for every test, because what it checks lives in the stored values",
         "ceiling_seconds": 131

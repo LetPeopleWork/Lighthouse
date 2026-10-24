@@ -1,6 +1,7 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -151,7 +152,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             throw new NotSupportedException("Forecast Update Service does not support periodic refresh");
         }
 
+        /// <summary>
+        /// The round moves onto the forecast threads once, here, and stays there: everything it starts and every
+        /// await inside it follows the scheduler it runs on, so a long round never holds the threads that answer pages.
+        /// </summary>
         protected override async Task Update(int id, IServiceProvider serviceProvider)
+        {
+            var lane = serviceProvider.GetRequiredService<ForecastLane>();
+
+            await Task.Factory.StartNew(
+                () => ForecastOnTheLane(id, serviceProvider),
+                CancellationToken.None,
+                TaskCreationOptions.DenyChildAttach,
+                lane.Scheduler).Unwrap();
+        }
+
+        private async Task ForecastOnTheLane(int id, IServiceProvider serviceProvider)
         {
             var portfolio = serviceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(id);
 
