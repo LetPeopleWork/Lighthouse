@@ -826,7 +826,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        public void Update_ShouldTimeTheForecastAndThePublishingApart_AtDebug()
+        public void Update_ShouldTimeTheGatherTheSimulationTheSaveAndThePublishingApart_AtDebug()
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
@@ -834,15 +834,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            Assert.That(DebugLines(), Has.Some.Match($@"^Forecast round timings \| Portfolio '{portfolio.Name}' \| forecast=\d+ms \| publish=\d+ms$"));
+            Assert.That(DebugLines().Where(line => line.StartsWith("Forecast round timings", StringComparison.Ordinal)), Has.Exactly(1).Match(
+                $@"^Forecast round timings \| Portfolio '{portfolio.Name}' \| gather=\d+ms \| simulate=\d+ms \| save=\d+ms \| publish=\d+ms$"));
         }
 
         /// <summary>
-        /// The confirmation is part of what the forecast costs on a quiet round, so it has to land inside the
-        /// forecast figure rather than between the two figures, where nothing would show it.
+        /// Confirming the stored forecasts is the only write of a quiet round, so it has to land inside the
+        /// save figure rather than between the figures, where nothing would show it.
         /// </summary>
         [Test]
-        public void Update_ShouldCountTheConfirmationInTheForecastFigure_WhenTheInputsAreConfirmedUnchanged()
+        public void Update_ShouldCountTheConfirmationInTheSaveFigure_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
             portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
@@ -855,9 +856,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(portfolio.Id);
 
             var timings = DebugLines().Single(line => line.StartsWith("Forecast round timings", StringComparison.Ordinal));
-            var forecastMs = int.Parse(timings.Split("forecast=")[1].Split("ms")[0], System.Globalization.CultureInfo.InvariantCulture);
+            var saveMs = int.Parse(timings.Split("save=")[1].Split("ms")[0], System.Globalization.CultureInfo.InvariantCulture);
 
-            Assert.That(forecastMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+            Assert.That(saveMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
         }
 
         private List<string> DebugLines()

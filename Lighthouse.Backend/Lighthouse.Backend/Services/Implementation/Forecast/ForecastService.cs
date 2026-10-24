@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Forecast;
@@ -92,26 +93,33 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
             logger.LogInformation("Running Monte Carlo Forecast for all Features with involved of teams {Teams}", string.Join(',', teams.Select(t => t.Name)));
 
+            var gatherStart = Stopwatch.GetTimestamp();
             var features = TheFeaturesWorkedOnBy(teams);
 
             logger.LogDebug("Features that are being forecasted: {Features}", string.Join(",", features.Select(f => f.Name)));
 
             var gathered = Gather(features, ThroughputFilterMode.RespectTeamSetting);
             var fresh = FingerprintOf(gathered, instanceDay, portfolio);
+            var gatherMs = MillisecondsSince(gatherStart);
 
             if (IsUnchangedSinceRecorded(fresh, recorded))
             {
                 logger.LogInformation("Forecast inputs of Portfolio {Portfolio} are unchanged since its last forecast, so its forecasts stand", portfolio.Name);
-                return new ForecastRunOutcome.ConfirmedUnchanged(features.Select(f => f.Id).ToList());
+                return new ForecastRunOutcome.ConfirmedUnchanged(features.Select(f => f.Id).ToList()) { GatherMs = gatherMs };
             }
 
+            var simulateStart = Stopwatch.GetTimestamp();
             await Simulate(gathered, cancellationToken);
+            var simulateMs = MillisecondsSince(simulateStart);
 
+            var saveStart = Stopwatch.GetTimestamp();
             var runMark = await portfolioRepository.TryMarkForecastRunning(portfolio.Id, recorded, cancellationToken);
             await featureRepository.Save();
 
-            return new ForecastRunOutcome.Computed(runMark, fresh);
+            return new ForecastRunOutcome.Computed(runMark, fresh) { GatherMs = gatherMs, SimulateMs = simulateMs, SaveMs = MillisecondsSince(saveStart) };
         }
+
+        private static long MillisecondsSince(long start) => (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds;
 
         private static bool IsUnchangedSinceRecorded(string? fresh, string? recorded)
             => fresh is not null && string.Equals(fresh, recorded, StringComparison.Ordinal);

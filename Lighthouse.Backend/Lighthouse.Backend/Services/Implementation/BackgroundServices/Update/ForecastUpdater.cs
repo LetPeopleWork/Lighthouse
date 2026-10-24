@@ -170,10 +170,10 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
             try
             {
-                var forecastWatch = Stopwatch.StartNew();
                 outcome = await ForecastPortfolio(portfolio, serviceProvider);
+                var confirmWatch = Stopwatch.StartNew();
                 await ConfirmTheForecastsAreCurrent(outcome, serviceProvider);
-                await PassTheForecastOn(portfolio, forecastWatch.ElapsedMilliseconds, serviceProvider);
+                await PassTheForecastOn(portfolio, outcome, confirmWatch.ElapsedMilliseconds, serviceProvider);
                 await RecordWhatTheForecastWasComputedFrom(portfolio.Id, outcome, serviceProvider);
 
                 itemCount = portfolio.Features.Count;
@@ -211,15 +211,15 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// announcement (the day's snapshot, the write-back of forecast dates) does not care whether the
         /// numbers were drawn again, only that they are current.
         /// </summary>
-        /// <param name="forecastMs">How long the forecast took, from gathering its inputs to saving or confirming what it produced.</param>
-        private async Task PassTheForecastOn(Portfolio portfolio, long forecastMs, IServiceProvider serviceProvider)
+        /// <param name="confirmMs">How long confirming unchanged forecasts took; it is the only write of a quiet round, so it counts as its save.</param>
+        private async Task PassTheForecastOn(Portfolio portfolio, ForecastRunOutcome outcome, long confirmMs, IServiceProvider serviceProvider)
         {
             var publishWatch = Stopwatch.StartNew();
             await StageTheWriteBackAndAnnounce(portfolio, serviceProvider);
             var publishMs = publishWatch.ElapsedMilliseconds;
 
-            Logger.LogDebug("Forecast round timings | Portfolio '{Portfolio}' | forecast={ForecastMs}ms | publish={PublishMs}ms",
-                portfolio.Name, forecastMs, publishMs);
+            Logger.LogDebug("Forecast round timings | Portfolio '{Portfolio}' | gather={GatherMs}ms | simulate={SimulateMs}ms | save={SaveMs}ms | publish={PublishMs}ms",
+                portfolio.Name, outcome.GatherMs, outcome.SimulateMs, outcome.SaveMs + confirmMs, publishMs);
         }
 
         private static bool WasSkipped(ForecastRunOutcome outcome) => outcome is ForecastRunOutcome.ConfirmedUnchanged;
