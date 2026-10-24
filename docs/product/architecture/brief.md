@@ -10755,3 +10755,53 @@ live in that file's `Wave: DESIGN / [REF] C4` sections, not here. Upstream chang
 - [ADR-262](./adr-262-a-portfolio-s-size-note-is-decided-on-the-server-from-its-stored-features.md): a Portfolio's size
   note is decided on the server, from its stored Features. **Proposed 2026-10-23.**
 - Relied on, unchanged: ADR-135, ADR-154, ADR-163, ADR-248, ADR-249, ADR-256.
+
+## Application Architecture — story-6398-jira-release-loads-once (the Delivery dialog never guesses and waits once)
+
+Feature: story-6398-jira-release-loads-once (ADO Story #6398) · Wave: DESIGN · 2026-10-24 · Morgan, PROPOSE mode.
+Full design: `docs/feature/story-6398-jira-release-loads-once/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-8, the C4
+component view, loading and failure looks). Runs in parallel with Epic 6400 and touches none of its files.
+
+### Key invariants introduced
+
+- **The Delivery dialog derives what it shows from keyed query states, never from a stand-in default.** Sources
+  loading or failed is not "no Jira Release tab"; a `null` licence is "not known yet", never "not premium".
+- **The sources are one shared query** (`["deliverySources", portfolioId]`) read by the Deliveries page and the
+  dialog, so opening the dialog sends no request when the page has answered. Try again refetches it.
+- **The Release list is one query per offered source and per opening** (`["deliverySourceOptions", portfolioId,
+  sourceKey, opening]`, gc time 0, no retry), started by the dialog once the licence is known premium, not by the tab.
+  A late answer for a closed opening or another Portfolio is dropped; a failed list is never served on reopen, so
+  reopening is the retry.
+- **Every Jira Release sweep writes one Information line** of counts, elapsed ms, deployment kind and completeness, and
+  nothing that names the customer (no host, project, Release or connection name). A cache hit writes nothing.
+
+### Component changes
+
+- NEW, frontend: `useDeliverySources`, `useDeliverySourceOptions` (Deliveries folder), a pure licence verdict
+  (`unknown | premium | notPremium`), a private `SelectionTabRow`.
+- MODIFIED, frontend: `DeliveryCreateModal` (looks by status, busy tab, sources notice with Try again, edit-mode wait,
+  owns the Release-list queries), `DeliverySourceTab` (list state as a prop; module cache removed; reworded failure;
+  `data-widget-status`), `useDeliveryManagement` (sources through the shared query, return shape unchanged), the
+  Delivery dialog E2E page object (waits for `ready`).
+- NEW, backend: `JiraReleaseSweepCost` (internal value and log template). MODIFIED: `JiraWorkTrackingConnector` (counts
+  carried back from the per-project reads; the sweep timed through the injected `TimeProvider`).
+- UNCHANGED: `useLicenseRestrictions`, `DeliveryModals`, `PortfolioDeliveryView`, `deliverySelectionTabs`,
+  `DeliverySourcesController`, `LicenseGuard`, `RbacGuard`, the sweep's reads, cache and lifetime, every HTTP contract.
+  L1/L2 C4 unchanged; no new external call.
+
+### Architectural Enforcement (this feature)
+
+- Source-tree test in the Deliveries folder: only the two hooks call `getDeliverySources` / `getDeliverySourceOptions`;
+  no module-level cache of server answers; no `getLicenseStatus` and no `licenseStatus` key.
+- Call counts across open, close, reopen and Portfolio switch; a late-answer test; the sweep line's property allowlist
+  checked with a captured logger.
+
+### ADR References (this feature)
+
+- [ADR-263](./adr-263-the-delivery-dialog-reads-its-sources-from-the-page-s-shared-query-and-its-release-list-from-a-query-per-opening.md):
+  the Delivery dialog reads its sources from the page's shared query, and its Release list from a query per opening.
+  **Proposed 2026-10-24.**
+- [ADR-264](./adr-264-every-jira-release-sweep-writes-one-information-line-of-counts-and-time-that-names-no-customer.md):
+  every Jira Release sweep writes one Information line of counts and time that names no customer. **Proposed
+  2026-10-24.**
+- Relied on, unchanged: ADR-259 (Epic 6400's licence hook).

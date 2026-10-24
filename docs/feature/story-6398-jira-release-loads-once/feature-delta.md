@@ -611,3 +611,355 @@ DoR status: PASSED for all three. No open question (N1 answered by MD-15).
 - Handoff to DESIGN: how the page's sources reach the dialog and where the Release list request lives (keyed queries,
   inside the Deliveries folder), the dialog's reading of `null` as unknown, where the sweep line is written and
   whether the refresh's sweep logs too.
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+- ✓ This feature delta in full (MD-1..MD-15, D1..D9, US-01..US-03, AC-1.1..AC-3.3, K1..K5, Out of Scope, F1, F2) and the
+  three slice briefs.
+- ✓ `CLAUDE.md` (loading and failure look for every view that fetches; reuse `WidgetShell`'s status and keyed TanStack
+  queries; sketch before UI; comments for a stranger; the architecture summary at the end of DESIGN).
+- ✓ `docs/ci-learnings.md`, the frontend and logging rules that apply here: S3776 (cognitive complexity ≤ 15, with
+  `DeliveryCreateModal.tsx` named as a past offender), S3358 (no nested ternary, also inside `${…}`), S6759 (`Readonly<>`
+  props on every JSX-returning helper), S7770, S6667 (a logging `catch` passes the exception first), S2139.
+- ✓ `docs/product/architecture/brief.md` (the Epic 5565 delivery-date-sync section, the Epic 6400 section) and ADR-259
+  (Epic 6400's shared licence query; its hook keeps `licenseStatus: null` while loading or failed and adds a `status`).
+- ✓ Epic 6400 DESIGN component decomposition (slice 02 row, `feature-delta.md:1552`) and DEVOPS mutation scope (slice 02
+  row, `:2224`). Neither names any file this design changes (see Component Decomposition).
+- ✓ Code read 2026-10-24 (frontend under `Lighthouse.Frontend/src/`): `DeliveryGrid/DeliveryCreateModal.tsx` (whole),
+  `DeliverySourceTab.tsx` (whole), `deliverySelectionTabs.ts:160-267`, `useDeliveryManagement.ts` (whole),
+  `DeliveryModals.tsx` (whole), `DeliverySourceTabFixture.tsx` (whole), `pages/Portfolios/Detail/PortfolioDeliveryView.tsx`,
+  `App.tsx:72-83` (QueryClient defaults: stale 5 min, gc 30 min, retry 2), `tests/renderWithQueryClient.tsx`,
+  `components/Common/FeatureListDataGrid/useFeatureChildItems.ts` (the per-opening query precedent),
+  `components/Common/DataOverviewTable/DeliveriesChips.tsx:111-118`, `pages/Common/MetricsView/WidgetShell.tsx:564` and
+  `pages/Common/Reports/ReportsTab.tsx:100` (`data-widget-status`), the E2E walking skeleton
+  `Lighthouse.EndToEndTests/tests/specs/portfolios/DeliverySourcePicker.spec.ts`. Backend under
+  `Lighthouse.Backend/Lighthouse.Backend/`: `API/DeliverySourcesController.cs:1-100`,
+  `.../Jira/JiraWorkTrackingConnector.cs:20-45, :2975-3400` (`GetOptions`, `SweepReleases`, `ReadReleasesOf`,
+  `WalkReleasePages`, `ResolveMany`, `SweepReleasesWithoutThrowing`), `.../Jira/JiraRestRoutes.cs:3` (`JiraDeployment {
+  Unknown, Cloud, DataCenter }`). Tests: `JiraDeliverySourceProviderTest.cs:1-120` (the connector built from mocks with
+  a stubbed `HttpMessageHandler`), `TestHelpers/RecordingLogger.cs`, `Microsoft.Extensions.TimeProvider.Testing` in the
+  test project.
+- ✓ ADR numbering: highest in `docs/product/architecture/` is ADR-262 (Epic 6400). This wave takes **ADR-263 and
+  ADR-264**. Epic 6400 runs in parallel and may claim numbers too, so the numbers are re-checked at push and renamed if
+  taken.
+
+## Wave: DESIGN / [REF] Scope and Mode
+
+Application scope (`nw-solution-architect`), PROPOSE mode, autonomous: the recommended option is taken at every point,
+and every point that changes what a user sees is listed under Open Questions for the start of DISTILL. Ports-and-adapters
+as established; no new container, no new endpoint, no payload change, **no new external call** (the Release list
+request already exists; it only starts earlier). L1 and L2 are unchanged; an L3 of the dialog and of the sweep is below.
+
+The invariant this design rests on: **what the dialog shows is derived from the state of keyed queries, never from a
+default standing in for an answer**. `[]` is no longer "no sources", `null` is no longer "not premium", and a list
+fetched for one opening of the dialog is never shown in another.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+| Existing component | File | Overlap | Decision | Justification |
+|---|---|---|---|---|
+| TanStack Query + the app `QueryClient` | `App.tsx:72-83` | Keyed, de-duplicated server state | **REUSE** | The house pattern CLAUDE.md asks for; already provided at the root |
+| `useFeatureChildItems` options (`staleTime 0`, `gcTime 0`, `retry false`, no refetch on focus or reconnect) | `components/Common/FeatureListDataGrid/useFeatureChildItems.ts:10-16` | "Every open asks again, so a reopen after a failure is a retry" | **REUSE THE PATTERN** | Exactly MD-13's retry path; copied as options, not imported (a different question about different data) |
+| `fetchDeliverySources` in `useDeliveryManagement` | `useDeliveryManagement.ts:226-234, :504-508` | The page already fetches the sources | **EXTEND**: replaced by the shared query; the hook still returns `deliverySources` as `data ?? []` | The grid's behaviour (key shown when the call fails) stays; the dialog reads the same answer |
+| The dialog's own sources `useEffect` | `DeliveryCreateModal.tsx:558-567` | A second request for the same answer | **REPLACE** with the shared query | Removes wait 1 (AC-2.1) |
+| `useSourceOptions` + module `Map` + `clearDeliverySourceOptionsCache` | `DeliverySourceTab.tsx:51-60, :148-185`; `DeliveryCreateModal.tsx:728` | Fetch, cache, drop-late-answers by hand | **REPLACE** with a keyed query owned by the dialog | Keys make the late answer, the Portfolio switch and the reopen retry structural instead of hand-written |
+| `DeliverySourceTab` picker, preview, publish switch | `DeliverySourceTab.tsx:187-528` | Shows the list | **EXTEND**: receives the list's state as a prop; preview logic untouched | The tab no longer decides when the list is fetched |
+| `LoadingSpinner`, `ValidationButton`'s inline `CircularProgress`, `PremiumFeatureNotice`, MUI `Alert` | `DeliveryCreateModal.tsx:93-124` | Loading and failure looks already in this dialog | **REUSE** | No new look; the busy tab is a disabled `Button` with the same small spinner `ValidationButton` uses |
+| `data-widget-status` attribute | `WidgetShell.tsx:564`, `ReportsTab.tsx:100` | E2E waits on `ready` | **REUSE** on the source tab body | One waiting convention for page objects |
+| `deliverySelectionTabs.ts` (tab model, `deliveryTabForDelivery`, premium gates) | as named | Which tabs exist and their gates | **REUSE AS-IS** | The gates keep their copy; only *when* they apply changes, in the dialog |
+| `useLicenseRestrictions()` | `hooks/useLicenseRestrictions.ts` | The licence | **REUSE AS-IS, read only** (D9, MD-12) | Read exactly as today; `null` is interpreted, not changed |
+| The Jira sweep, its 5-minute process-wide cache | `JiraWorkTrackingConnector.cs:3040-3093, :3359-3376` | The thing to measure | **EXTEND**: counts travel back from the per-project reads; one line written per sweep | No change to what is read, cached or returned (F2 owns that) |
+| `TimeProvider` already injected into the connector | `JiraWorkTrackingConnector.cs:30` | A clock | **REUSE** for the elapsed time | Deterministic in tests through `FakeTimeProvider`; no `Stopwatch` |
+| `RecordingLogger<T>`, the connector-with-stubbed-handler test pattern | `TestHelpers/RecordingLogger.cs`, `JiraDeliverySourceProviderTest.cs` | Captured log lines, Jira HTTP stubbed | **REUSE** | The DISTILL seam for slice 03 |
+| Source-tree enforcement test pattern | `DeliveryGrid/timeline/ganttAdapterBoundary.enforcement.test.ts` | A Vitest test over source files | **REUSE THE PATTERN** | Enforcement below |
+
+CREATE NEW (each justified by "no existing alternative"):
+- `useDeliverySources(portfolioId)` (FE, `DeliveryGrid/useDeliverySources.ts`): the one keyed query both the page and the
+  dialog read. No shared query for this answer exists.
+- `useDeliverySourceOptions(...)` (FE, `DeliveryGrid/useDeliverySourceOptions.ts`): the keyed Release-list queries for
+  one opening of the dialog. Replaces `useSourceOptions` and its `Map`; a hook of its own so the tab fixture and the
+  dialog share it and Stryker can mutate it whole.
+- `premiumVerdictOf(licenseStatus)` (FE, pure, in or beside the dialog): `unknown | premium | notPremium`. Nothing
+  turns the hook's `null` into "not known yet" today.
+- `JiraReleaseSweepCost` (BE, `.../Jira/JiraReleaseSweepCost.cs`, internal): the counts and time of one sweep and the
+  one place its log template lives. The connector is 3,640 lines and excluded from whole-file mutation; a small file
+  keeps the line's wording mutation-covered.
+
+## Wave: DESIGN / [REF] Decisions
+
+| ID | Decision | Rejected |
+|---|---|---|
+| DDD-1 | **The dialog reads the licence as three answers.** A pure `premiumVerdictOf(licenseStatus)` returns `unknown` when the hook gives `null`, else `premium` or `notPremium` from `canUsePremiumFeatures`, with early returns (no nested ternary, S3358). The premium notice, the Rule-Based lock and its tooltip apply only on `notPremium`; on `unknown` both premium tabs' bodies show the loading look and Rule-Based stays enabled (MD-14); the rule schema and the Release list are requested only on `premium` (AC-1.2, MD-15). `useLicenseRestrictions` is read exactly as today (D9). After Epic 6400 slice 02 the hook still returns `null` while loading or failed (ADR-259), so this keeps working unchanged; F1 later splits `unknown` using the hook's new `status`. | A boolean `isPremium ?? false` (today: the guess). Reading 6400's new `status` now (MD-12 forbids depending on it). A licence request of the dialog's own (D9). |
+| DDD-2 | **The sources are one shared keyed query, `["deliverySources", portfolioId]`, read by the page and by the dialog** through `useDeliverySources(portfolioId)`. `useDeliveryManagement` keeps returning `deliverySources` (`data ?? []`, so the grid still names the key on failure, as today); the dialog reads `status`, `data` and `refetch`. Both observers mount with the page (the dialog component stays mounted while closed), so TanStack sends **one** request per page visit and opening the dialog sends none (AC-2.1). Options: `staleTime 0`, `gcTime 0` (one page visit = one answer, as today; nothing is carried across visits), `retry false` (the failure look shows at once and Try again is the retry; the App default would triple a failing call), no refetch on focus or reconnect. Try again = `refetch()`, which also repairs the grid's source names. The "one request" holds when both observers mount in one commit; `DeliveryModals` mounts under `canEdit`, so if `canEdit` turns true after the sources have settled, the dialog's late mount refetches once (staleTime 0). Accepted: at most one extra GET per page visit, and the call-count tests toggle `canEdit` to pin it. | **Props threaded down** (`PortfolioDeliveryView` → `DeliveryModals` → dialog, plus a status and a retry callback): two copies of one state, three files and a callback climbing back into the hook for what a shared key gives for free. **The dialog keeps its own request, seeded with the page's answer**: two requests whenever the page's is still in flight, and two failure paths. **App default stale time** (5 min across visits): a Portfolio whose connection just changed would show the old tabs as current. |
+| DDD-3 | **The Release list is one keyed query per offered source and per opening of the dialog, owned by the dialog** (`useDeliverySourceOptions`): key `["deliverySourceOptions", portfolioId, sourceKey, opening]`, enabled when the dialog is open, the sources are loaded and offer that source, and the verdict is `premium` (D5, MD-7, MD-15), whichever tab is on screen. `opening` is a counter the dialog increments **when it closes** (in `resetForm`), so the next opening starts on a fresh key and the closed opening's key loses its last observer and is collected (`gcTime 0`). Consequences, each by construction: a late answer for a closed opening or another Portfolio lands on a key nobody observes and is dropped (D6, AC-2.4); a failed list is never served on reopen, so reopening is the retry (MD-13, AC-1.5, AC-2.5); a reopen within five minutes is answered by the backend's existing cache. Options as in `useFeatureChildItems`: `staleTime 0`, `gcTime 0`, `retry false` (a `403` from the guards ends in the failure look at once, AC-1.8), no refetch on focus or reconnect. The tab receives the query's state as a prop and no longer fetches the list; the module `Map` and `clearDeliverySourceOptionsCache` go. The request is not aborted on close: `deliveryService` takes no signal, the server's sweep would run to its end anyway, and its complete answer lands in the backend cache for a reopen that comes **after** it finished. A close and reopen *while* the sweep is still running starts a second full sweep (the connector has no single-flight; it stores only on completion). Today's tab does the same (closing clears the `Map`), so this is not a regression; it is recorded as a consequence, made visible by the sweep line (two lines close together), and left to F2 with the cache decision (OQ-6). The bound-entry merge (`withCurrentSelection`) stays in `DeliverySourceTab`, applied on the way out of the query state, so a binding to a shipped Release is still offered. **Edit mode** works the same: `offeredTabs` restricts a bound Delivery to its own tab, whose list starts on open (MD-6). | **Lift the `useEffect` and the `Map` into the dialog**: re-implements keying, de-duplication and the "still mounted" flag by hand, the bug class CLAUDE.md's keyed-queries rule exists for. **`prefetchQuery` on open, `useQuery` in the tab**: two places must spell the key, and with `gcTime 0` a prefetched answer with no observer is collected before the tab mounts (a real loss, not a theory). **One key per Portfolio and `removeQueries` on close**: works, but imperative; kept as the fallback if the counter proves awkward. **Start on page load or hover**: MD-7. |
+| DDD-4 | **The tab row's loading and failure looks.** While the sources are loading the row shows Manual, Rule-Based and one disabled, `aria-busy` placeholder `Button` reading "Loading…" with the small `CircularProgress` `ValidationButton` already uses (sketch state A). When they failed, the row shows Manual and Rule-Based, and under it an `Alert` "Couldn't check what this {Portfolio}'s connection offers." with a **Try again** button in the Alert's `action` slot (MD-8, AC-1.4); pressing it shows the busy tab again until the answer. **Editing a bound Delivery** (stored as source-bound, with a `sourceKey`) while the sources are loading shows the busy tab and the `LoadingSpinner` body, never the Manual body (AC-1.6), **and Save stays disabled until the sources have answered**: while they are unknown, `deliveryTabForDelivery` falls back to Manual, whose payload carries no `sourceKey`, so a Save then would drop the binding. When they failed, the body shows nothing but the notice and Save stays disabled (OQ-2). **Save while a body shows a loading look** (licence unknown on a premium tab, or the list pending) is disabled by the same rule, so a Save can never meet `LicenseGuard`'s `403`. **A premium tab chosen while the licence was unknown that resolves to `notPremium`** stays selected and shows its premium notice (Rule-Based also locks), which is the honest answer to what was chosen. All three rules live in the pure "which body" helper. The tab row moves into its own small component (`SelectionTabRow`), and the "which body" choice into a pure helper, to keep `DeliveryCreateModal` under S3776. | An MUI `Skeleton` in place of the tab: no screen in the app uses `Skeleton` today (a new look). Hiding the row behind one spinner: hides Manual, which works without the sources. |
+| DDD-5 | **The source tab body's looks.** While the licence is `unknown` or the list is pending: the existing centred `CircularProgress` with the caption "Getting the {sourceName}s…" (sketch state B). Failed: the existing `Alert` reworded (MD-13, OQ-4). Loaded: as today. Rule-Based while `unknown`: the existing `LoadingSpinner`. The source tab body carries `data-widget-status="loading|ready|failed"` (the `WidgetShell`/`ReportsTab` convention) so the E2E page object's `switchToSource` waits for `ready`, not visibility. | A status attribute of its own name: a second waiting convention for page objects. |
+| DDD-6 | **One Information line per Jira Release sweep, written by the connector, naming no customer.** Emitted once from `SweepReleasesWithoutThrowing`, after the sweep ends or fails, so both the picker (`GetOptions`) and a refresh (`ResolveMany`) are measured, and a cache hit (which returns before the sweep) writes nothing (AC-3.2). Template, held in `JiraReleaseSweepCost`: `"Jira Release sweep for the {SweepPurpose} took {ElapsedMs} ms on this {Deployment} connection: kept {ReleasesKept} of {VersionsRead} versions read over {VersionPages} pages from {ProjectCount} projects; complete: {Complete}, projects skipped: {ProjectsSkipped}"`. Fields: `SweepPurpose` ∈ {`Picker`, `Refresh`}; `ElapsedMs` (integer, from the injected `TimeProvider`, spanning client acquisition, kind detection, the project list and every version page, which is "Jira's time" as the operator means it); `Deployment` ∈ {`Unknown`, `Cloud`, `DataCenter`} (`Unknown` when Jira could not be reached before the kind was known); `ReleasesKept`, `VersionsRead` (before the Data Center status filter, so the paging cost is visible), `VersionPages`, `ProjectCount`, `ProjectsSkipped` (projects whose read failed or was refused); `Complete` (bool: the existing "saw everything"). **Nothing that names the customer**: no URL or host, no connection name, no project key or name, no Release name or id, no credential (AC-3.1; the project rule "no customer identifiers"). Counts are carried back with each project's read and summed after `Parallel.ForAsync`, so no counter is shared between threads. The Debug "Getting Releases of N projects" line is folded into this one. **The failure path**: the deployment kind and the project count are held in locals set as soon as each is known, so the guard's `catch` writes the line with what was learned (`Deployment` as detected or `Unknown`, `ProjectCount` as listed or 0, the other counts 0, `Complete` false), never invented numbers; a per-project failure is already caught inside `ReadReleasesOf`, so the parallel loop does not lose the others' counts. **Scope of "names no customer"**: it holds for this line. The existing per-project Information lines (which name the project key) and the could-not-ask line (whose exception text may carry a host) stay as they are; reviewing them is follow-up F3, outside this Story. AC-3.1's "exactly one Information line" reads "exactly one sweep line" (CA-7). | Logging in `DeliverySourcesController` around `GetOptions`: mixes `GetById` into the number (6400's, MD-11) and cannot see pages or completeness. A metric (counter or histogram) instead of a line: no metrics pipe exists for an operator of a self-hosted instance; the log is what the reporter can send. A line per project: hundreds of lines per sweep. Including the connection id: not needed to read one reporter's log, and the line stays free of anything an operator might redact. |
+| DDD-7 | **The refresh's sweep writes the same line, with `SweepPurpose = Refresh`** (DISCUSS technical note, recommended): it is the same walk at the same cost, and on Data Center it reads every status, so it is the larger of the two. Volume: one line per refresh of a Portfolio with bound Deliveries, beside the round summary that refresh already writes. Listed as OQ-3 because it adds lines to every refresh. | Picker only: the refresh's cost, which an operator is as likely to ask about, stays invisible. |
+| DDD-8 | **Testing seams.** Frontend (Vitest + RTL): the driving ports are `DeliveryCreateModal` (through the fixture's `renderModal`) and the page's `useDeliveryManagement` + `DeliveryModals`; the driven ports faked are `deliveryService` (`getDeliverySources`, `getDeliverySourceOptions`, `getRuleSchema`, `previewDeliverySource`) through `createMockApiServiceContext`, and `useLicenseRestrictions` mocked at the module, as the five existing dialog suites already do. Mocking the hook (not `licensingService`) keeps the scenarios independent of 6400's rewrite of the hook's insides; its return contract (`licenseStatus`) is what this Story reads. Every render goes through a fresh `QueryClient` (`renderWithQueryClient`, or the fixture's helpers wrapping one), and closing then reopening is a re-render with `open` toggled under the **same** client, so the per-opening key is what is tested. Backend (NUnit): the connector built as `JiraDeliverySourceProviderTest` builds it (stubbed `HttpMessageHandler`, mocked auth), with a `RecordingLogger<JiraWorkTrackingConnector>` and a `FakeTimeProvider` the stub advances per request, driven through `GetOptions` and `ResolveMany`. | `WebApplicationFactory` through `DeliverySourcesController.GetOptions` (DISCUSS's note): the controller is not changed, and replacing the connector's HTTP handler inside the host is heavier than the existing pattern for the same assertion (Changed Assumptions CA-2). |
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+Paths under `Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/` unless marked `BE:`
+(`Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/`).
+
+| Component | Path | Change | Slice |
+|---|---|---|---|
+| `premiumVerdictOf` | `DeliveryCreateModal.tsx` or a sibling file (crafter's call) | NEW, pure | 01 |
+| `DeliveryCreateModal` | `DeliveryCreateModal.tsx` | MODIFIED: reads the verdict; tab row and body by status; sources failure notice with Try again; edit-mode wait (01). Reads `useDeliverySources`; owns `useDeliverySourceOptions` and the opening counter; passes the list state down; drops its sources `useEffect` and the cache clear (02). | 01, 02 |
+| `SelectionTabRow` | `DeliveryCreateModal.tsx` (private) | NEW, presentational: the row, the busy placeholder, the failure notice | 01 |
+| `DeliverySourceTab` | `DeliverySourceTab.tsx` | MODIFIED: reworded failure Alert, caption under the spinner, `data-widget-status` (01); takes the list state as a prop, `useSourceOptions`, the `Map` and `clearDeliverySourceOptionsCache` removed (02). Preview, picker, publish switch unchanged | 01, 02 |
+| `useDeliverySources` | `useDeliverySources.ts` | NEW, keyed query | 02 |
+| `useDeliverySourceOptions` | `useDeliverySourceOptions.ts` | NEW, keyed queries per source and opening | 02 |
+| `useDeliveryManagement` | `useDeliveryManagement.ts` | MODIFIED: `fetchDeliverySources` and its effect replaced by `useDeliverySources`; return shape unchanged | 02 |
+| Test fixture | `DeliverySourceTabFixture.tsx` | MODIFIED: `renderTab` and `renderModal` render inside a fresh `QueryClientProvider`; `renderTab` hosts the tab with the options hook so existing tab suites keep calling it unchanged | 01, 02 |
+| E2E page object | `Lighthouse.EndToEndTests` Delivery dialog page object used by `DeliverySourcePicker.spec.ts` | MODIFIED: `switchToSource` waits for `data-widget-status="ready"` | 01 |
+| `JiraReleaseSweepCost` | `BE: JiraReleaseSweepCost.cs` | NEW, internal immutable value + the template | 03 |
+| `JiraWorkTrackingConnector` | `BE: JiraWorkTrackingConnector.cs` | MODIFIED: per-project reads return their page and version counts; `SweepReleases` returns the sums; `SweepReleasesWithoutThrowing` times the sweep and writes the line; the Debug line goes | 03 |
+
+**Unchanged** (named because a reader might expect a change): `PortfolioDeliveryView.tsx`, `DeliveryModals.tsx`,
+`deliverySelectionTabs.ts`, `DeliverySection.tsx`, `hooks/useLicenseRestrictions.ts`, `LicenseTooltip`,
+`services/Api/DeliveryService.ts`, `DeliverySourcesController.cs`, `PortfolioRepository`, `LicenseGuard`, `RbacGuard`, the
+Jira sweep's reads, cache key, lifetime and "only a complete sweep is kept" rule, every HTTP contract.
+
+**Overlap with Epic 6400 (re-checked against its slice 02 rows):** none of the files above is on 6400's list
+(`PortfolioRepository`, `IPortfolioRepository`, the four Portfolio and Team controllers, `useLicenseRestrictions.ts`,
+`OverviewDashboard.tsx`; slice 04's `PortfolioDetail`, `TeamDetail`, `FeatureService`). No `["licenseStatus"]` key and no
+`getLicenseStatus` call are added, so 6400's source-tree rule holds. DISCUSS listed `DeliveryModals.tsx` as possibly
+touched; DDD-2 leaves it unchanged.
+
+**Test blast radius (bounded up front, per the shared-contract rule).** Rendering a component that now calls
+`useQuery` needs a `QueryClientProvider`: the five `DeliveryCreateModal*.test.tsx` suites, the eight
+`DeliverySourceTab*.test.tsx` suites (through the fixture where they use it, directly otherwise) and
+`useDeliveryManagement.test.ts` (`renderHook` with a wrapper). Six tab suites import `clearDeliverySourceOptionsCache` in
+`beforeEach`; the import goes, because a fresh client per render already starts empty. Extend the fixture first, then
+the suites. `DeliveryCreateModal.sourceBinding.test.tsx:451` asserts one `getDeliverySourceOptions` call: under
+DDD-3 it stays exactly one per opening (and zero before the licence is premium); keep the assertion exact, do not
+loosen it. The opening counter also ticks on the first, closed mount; the first open still sends exactly one request,
+which a test pins.
+
+### Contract shapes (crafter assertions)
+
+| Component | Shape | Universe and assertion |
+|---|---|---|
+| `premiumVerdictOf` | pure function | Return-only: `null` → `unknown`; `{canUsePremiumFeatures: true}` → `premium`; `false` → `notPremium`. Table test. |
+| "Which body does the dialog show" helper | pure function | Return-only over (active tab, verdict, sources status, list status, editing a bound Delivery). Table test per row of the sketch states. |
+| `useDeliverySources` | read (query), no writes | Issues at most one `getDeliverySources` per key per page visit for any number of observers; `refetch` issues exactly one more. Asserted by call counts on the mocked service. |
+| `useDeliverySourceOptions` | read (query), no writes | Issues no `getDeliverySourceOptions` while closed, while the verdict is not `premium`, or for a source not offered; exactly one per offered source per opening otherwise. Asserted by call counts across open, close, reopen and a Portfolio switch. |
+| `DeliveryCreateModal` | effect shell (UI) | Writes only its own form state and the opening counter; reads the licence through the unchanged hook. AC-1.7 (no licence request beyond the hook's existing one, none on dialog open) is held by the source-tree rule (no `getLicenseStatus`, no `licenseStatus` key in the folder) and by the `getLicenseStatus` count on a page render being equal before and after opening the dialog; a module-mocked hook cannot prove it. |
+| `DeliverySourceTab` | presentational over the list state | Merges the bound entry into the offered list on the way out (`withCurrentSelection`), never into the query's data; preview fetch unchanged. |
+| `JiraReleaseSweepCost` | pure value | Return-only; its rendered properties are exactly the allowlist of DDD-6 (asserted by name). |
+| `JiraWorkTrackingConnector` sweep | bounded change | Its only new effect is one log entry per sweep. What it reads from Jira, what it returns and what it caches are byte-equal to today (existing `JiraDeliverySourceProviderTest` stays green unchanged). |
+
+## Wave: DESIGN / [REF] Driving and Driven Ports
+
+- **Driving (unchanged contracts):** the Deliveries page (`PortfolioDeliveryView` → `useDeliveryManagement` →
+  `DeliveryModals` → `DeliveryCreateModal`), Add and Edit Delivery. Backend: `GET …/delivery-sources/{key}/options`
+  (`DeliverySourcesController.GetOptions`) and the delivery-source refresh (`ResolveMany`), both unchanged.
+- **Driven:** `deliveryService.getDeliverySources` and `getDeliverySourceOptions` (existing HTTP calls, now behind keyed
+  queries); `useLicenseRestrictions` (read only); the Jira REST API (unchanged requests); `ILogger` (one new line);
+  `TimeProvider` (already injected). **No new external call.**
+- **External integrations:** Jira Cloud and Jira Data Center REST, unchanged in this Story. Contract tests are not
+  newly recommended; the existing captured-payload tests in `JiraDeliverySourceProviderTest` remain the guard.
+- **Earned trust, what the environment can lie about:** the elapsed time is only as honest as its clock, so it comes
+  from the injected `TimeProvider` (the host's `System` provider in production, the fake in tests), never from
+  wall-clock subtraction; and Data Center ignores the status filter, which is why `VersionsRead` is counted before the
+  filter is applied in memory, so the line shows the real paging cost rather than the kept count.
+
+## Wave: DESIGN / [REF] C4 Component (the dialog and the sweep)
+
+L1 (System Context) and L2 (Container) are unchanged: same SPA, same API, same Jira. Changed components only.
+
+```mermaid
+C4Component
+  title Story 6398 — the Delivery dialog waits once, and the sweep says what it cost
+  Person(lena, "Delivery forecaster")
+  Person(operator, "Platform operator")
+  Container_Boundary(spa, "Lighthouse SPA (React 19, TanStack Query)") {
+    Component(page, "useDeliveryManagement", "Hook (modified)", "Deliveries grid state; sources via the shared query")
+    Component(srcQ, "useDeliverySources", "Keyed query (new)", "[deliverySources, portfolioId]")
+    Component(dialog, "DeliveryCreateModal", "Component (modified)", "Verdict, tab row, bodies by status; opening counter")
+    Component(optQ, "useDeliverySourceOptions", "Keyed query (new)", "[deliverySourceOptions, portfolioId, sourceKey, opening]")
+    Component(tab, "DeliverySourceTab", "Component (modified)", "Picker and preview; list state as a prop")
+    Component(lic, "useLicenseRestrictions", "Hook (unchanged, Epic 6400's)", "licenseStatus, null while unknown")
+  }
+  Container_Boundary(api, "Lighthouse API (ASP.NET Core 10)") {
+    Component(ctl, "DeliverySourcesController", "MVC (unchanged)", "Sources, options, preview; licence and RBAC guards")
+    Component(jira, "JiraWorkTrackingConnector", "Connector (modified)", "Sweep with counts; 5-minute cache unchanged")
+    Component(cost, "JiraReleaseSweepCost", "Value (new)", "Counts, ms, kind, completeness; the log template")
+  }
+  System_Ext(jiraExt, "Jira Cloud / Data Center", "REST")
+  System_Ext(log, "Instance log", "stdout / file")
+  Rel(lena, dialog, "Adds or edits a Delivery in")
+  Rel(page, srcQ, "Reads the sources through")
+  Rel(dialog, srcQ, "Reads the same sources through")
+  Rel(dialog, lic, "Reads the licence from")
+  Rel(dialog, optQ, "Starts the Release list through")
+  Rel(dialog, tab, "Hands the list state to")
+  Rel(srcQ, ctl, "Gets delivery sources from")
+  Rel(optQ, ctl, "Gets options from")
+  Rel(ctl, jira, "Asks for options from")
+  Rel(jira, jiraExt, "Sweeps projects and versions in")
+  Rel(jira, cost, "Totals the sweep into")
+  Rel(cost, log, "Writes one Information line to")
+  Rel(operator, log, "Reads the sweep cost in")
+```
+
+## Wave: DESIGN / [REF] Loading and Failure Looks, and Sketch Options for DISTILL
+
+Every surface that fetches, its three looks, and what is reused. Nothing shows a previous opening's answer, an empty
+area that reads as "none", or a guessed licence.
+
+| Surface | Loading | Failed | Reused |
+|---|---|---|---|
+| Tab row (sources) | Busy placeholder tab | Notice under the row + Try again; Manual and Rule-Based usable | `Button` + `CircularProgress size≈16` (as `ValidationButton`), `Alert` with `action` |
+| Jira Release body (licence unknown or list pending) | Spinner + caption | Reworded `Alert`, no button (MD-13) | `CircularProgress` (`DeliverySourceTab.tsx:398-402`), `Alert` |
+| Rule-Based body (licence unknown) | `LoadingSpinner` | Licence failure: stays loading (known limit, F1); schema failure: `SchemaLoadError` as today | `LoadingSpinner`, `SchemaLoadError` |
+| Edit, bound Delivery, sources pending | Busy tab + `LoadingSpinner` body, Save disabled | Notice + Try again, empty body, Save disabled (OQ-2) | as above |
+| Preview of a picked Release (unchanged fetch) | Today: nothing under the picker until it answers (OQ-7) | Existing "could not be previewed" `Alert` | `Alert`; OQ-7 proposes the small `CircularProgress` |
+| Licence itself | Loading look of the premium tabs | None of its own: stays the loading look while the dialog is open. Signed off by the maintainer as a known limit (MD-12), a deliberate deviation from the failure-look rule until F1 | — |
+
+```text
+A  sources loading                      B  premium tab chosen, licence or list pending
+[ Manual ] [ Rule-Based ] [ (o) Loading… ]   [ Manual ] [ Rule-Based ] [*Jira Release*]
+(Manual body as today)                              (o)
+                                              Getting the Jira Releases…
+
+C  loaded (as today)                    D  sources failed
+Preview a Jira Release                  [ Manual ] [ Rule-Based ]
+[ Type to search Jira Releases  v ]     (!) Couldn't check what this Portfolio's
+                                            connection offers.        [ Try again ]
+
+E  list failed (MD-13)                  F  edit, bound Delivery, sources pending
+(!) The list of Jira Release entries    [ (o) Loading… ]
+    could not be loaded. Close this               (o)
+    dialog and open it again to retry.  (no Manual body, no Feature grid)
+```
+
+Sketch options for the maintainer at the start of DISTILL (one decision at a time; recommended first):
+- **S1 busy tab**: (a) disabled tab "Loading…" with a small spinner, state A · (b) Manual and Rule-Based only, plus a
+  caption "Checking what this connection offers…" under the row · (c) the whole row replaced by one spinner (hides
+  Manual; not recommended).
+- **S2 caption in state B**: (a) "Getting the {sourceName}s…" under the spinner, which tells Lena the wait is the
+  Release list · (b) the spinner alone, as today.
+- **S3 sources notice severity**: (a) `warning` (Manual still works, nothing is lost) · (b) `error` (matches the list's
+  Alert).
+- **S4 list failure copy** (MD-13 left the connection hint to DISTILL): (a) "…could not be loaded. Close this dialog and
+  open it again to retry. If it keeps failing, check this {Portfolio}'s connection." · (b) without the second sentence.
+- **S5 the two failure looks differ on purpose** (Try again on D, reopen on E): confirm, as MD-13 asked.
+
+## Wave: DESIGN / [REF] Architecture Enforcement
+
+- **Frontend source-tree test** (Vitest, the `ganttAdapterBoundary.enforcement.test.ts` pattern), in the DeliveryGrid
+  folder: (1) `getDeliverySourceOptions` is called only from `useDeliverySourceOptions.ts`, and `getDeliverySources`
+  only from `useDeliverySources.ts`; (2) no DeliveryGrid file declares a module-level `Map` or object used as a cache of
+  server answers (the bug class this Story removes); (3) no DeliveryGrid file calls `getLicenseStatus` or spells the
+  `licenseStatus` query key (D9; complements 6400's own rule).
+- **Behavioural probes:** call-count assertions on the mocked `deliveryService` for every row of the contract-shape
+  table; a late-answer test (a deferred promise resolved after close and reopen, or after a Portfolio switch, never
+  reaches the picker).
+- **Backend:** a `RecordingLogger` test asserts the sweep entry's structured property names equal the DDD-6 allowlist,
+  and that no property value equals the stubbed host, a project key, a project name or a Release name used in the
+  fixture. The existing `JiraDeliverySourceProviderTest` stays green unchanged (the reads are untouched).
+- **Sonar pre-applied:** `Readonly<>` props on every new JSX helper (S6759); the verdict and the body choice as helpers
+  with early returns (S3358, S3776); a logging `catch` passes the exception first (S6667).
+- **Mutation (≥ 80 %, run last on frozen code):** whole files `useDeliverySources.ts`, `useDeliverySourceOptions.ts`,
+  `JiraReleaseSweepCost.cs`; `FE:` changed spans of `DeliveryCreateModal.tsx` and `DeliverySourceTab.tsx`;
+  `JiraWorkTrackingConnector.cs` excluded (3,640 lines; its changed lines covered by the sweep-line tests). DEVOPS
+  confirms.
+
+## Wave: DESIGN / [REF] Open Questions (maintainer, at DISTILL start)
+
+Recommended option first; the design proceeds on it unless the maintainer says otherwise.
+- **OQ-1 Busy tab look**: S1 (a). See the sketch options.
+- **OQ-2 Editing a bound Delivery when the sources failed**: (a) body shows only the notice with Try again, Save
+  disabled until the sources load, so the binding can never be lost by saving from another tab · (b) today's fall-back
+  to the Manual body (a save from there drops what the server would ignore, and reads as an edit that vanished).
+- **OQ-3 Does the refresh's sweep log too** (DDD-7): (a) yes, the same line with `SweepPurpose = Refresh` · (b) the
+  picker only.
+- **OQ-4 List failure copy**: S4 (a).
+- **OQ-5 Caption under the spinner**: S2 (a).
+- **OQ-6 Close and reopen during a running sweep starts a second sweep** (DDD-3): (a) accept for this Story (today's
+  behaviour too); the sweep line shows how often it happens and F2 decides single-flight together with the cache · (b)
+  add single-flight to `GetOptions` now (an in-flight task per connection and source; a bounded connector change
+  slice 03 otherwise avoids).
+- **OQ-7 The preview's loading look**: the preview fetch shows nothing while it runs (DISCUSS put its speed out of
+  scope, not its look). (a) show the small `CircularProgress` under the picker while the preview is pending, in slice
+  01 · (b) leave as today.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- **CA-1 (AC-1.5, AC-2.5)**: "today's cache clear on close" is replaced by a fresh query key per opening (DDD-3). The
+  behaviour the ACs describe is unchanged: reopening asks again; the mechanism moves from a module `Map` to the key.
+- **CA-2 (US-03 technical note)**: the driving port for slice 03's tests is the connector's public `GetOptions` and
+  `ResolveMany` with Jira's HTTP stubbed (the `JiraDeliverySourceProviderTest` pattern), not `WebApplicationFactory`
+  through `DeliverySourcesController`. The controller is unchanged, the line is written in the connector, and the
+  existing pattern already stubs Jira. AC-3.1/3.2 are unchanged.
+- **CA-3 (US-01 technical note)**: the licence is driven in Vitest by mocking `useLicenseRestrictions` at the module, as
+  the existing dialog suites do, not through a mocked `licensingService`; it is the hook's return contract this Story
+  reads, and mocking it keeps the scenarios independent of 6400's rewrite of the hook's insides. AC-1.7 ("no licence
+  request of its own") is asserted on a mocked `licensingService` seeing no call from the dialog.
+- **CA-4 (overlap list)**: `DeliveryModals.tsx` and `PortfolioDeliveryView.tsx` are not touched (DDD-2). New files:
+  `useDeliverySources.ts`, `useDeliverySourceOptions.ts`, `JiraReleaseSweepCost.cs`.
+- **CA-5 (AC-3.1 wording)**: "every sweep made for the picker" widens to every sweep, refresh included, if OQ-3 (a)
+  stands.
+- **CA-6 (the wait model, K1 baseline)**: the dialog is mounted with the page, so its `useLicenseRestrictions()`
+  instance asks for the licence when the Deliveries tab opens, not when Add Delivery is clicked. Wait 2 is paid only
+  when Lena clicks before the licence has answered (likely on the reporter's instance, where `/teams` and `/portfolios`
+  are slow, and the reason she saw the premium notice). The K1 baseline is restated from a measured trace: before
+  DISTILL scenarios are written, take a Slow 4G waterfall on the dev instance from opening the Deliveries tab with the
+  click at 1 s, 5 s and 15 s, and record it here. Slice 02's early list start matters exactly when the click comes
+  before the licence answers or when the list is the longest call; both hold on the reporter's instance.
+- **CA-7 (AC-1.7, AC-3.1 wording)**: AC-1.7 reads "no licence request beyond the hook's existing one, and none on
+  dialog open" (a module-mocked hook cannot show the original wording). AC-3.1's "exactly one Information line" reads
+  "exactly one sweep line"; the existing per-project and could-not-ask lines stay.
+- **CA-8 (follow-ups)**: F3 recorded: review the existing Jira Release Information lines that name project keys and the
+  could-not-ask line whose exception text may carry a host, against the no-customer-identifiers rule. Outside this
+  Story.
+
+## Wave: DESIGN / [REF] Review
+
+`nw-solution-architect-reviewer`, iteration 1 (2026-10-24): **conditionally approved**, 0 critical, 3 high, 5 medium,
+4 low. MD-12 confirmed met (no overlap with Epic 6400 slice 02; no licence key or call added). Probes: the per-opening
+key shows no previous answer or failure on reopen and drops late answers (TanStack v5 gives an enabled, empty key a
+fetching result on the first open render, so there is no "no Releases" frame); the shared sources query is one request
+per visit when both observers mount together; the log template carries no customer identifier and its emission point
+is right for both callers and the cache hit.
+
+Revisions, issue by issue:
+- **H-1 Save in edit mode while sources pending could drop the binding** → DDD-4: Save disabled until the sources have
+  answered, and while any body shows a loading look; rules in the pure body helper.
+- **H-2 Reopen during a running sweep starts a second sweep; the cache claim was too broad** → DDD-3 corrected (cache
+  answers only a reopen after completion), stated as a consequence (also today's behaviour), OQ-6 added; ADR-263
+  consequences updated.
+- **H-3 The licence is already requested at page mount, so wait 2 is not an on-open wait** → CA-6: the wait model and
+  K1 baseline are restated from a measured Slow 4G waterfall before DISTILL scenarios are written.
+- **M-1 AC-1.7's assertion was vacuous with the hook mocked** → contract-shape row and CA-7: source-tree rule plus an
+  unchanged `getLicenseStatus` count across opening the dialog.
+- **M-2 Late `canEdit` mount refetches once** → DDD-2 states and accepts it; tests toggle `canEdit`.
+- **M-3 Failure-path values of the sweep line** → DDD-6 specifies them; kind and project count held in locals.
+- **M-4 "Exactly one line" and "names no customer" overclaimed** → scoped to the sweep line (CA-7); existing lines are
+  follow-up F3 (CA-8); ADR-264 consequences updated.
+- **M-5 Looks gaps** → preview row and licence row added to the looks table, OQ-7 for the preview spinner; Save while
+  unknown and the tab staying on a `notPremium` verdict specified in DDD-4; the licence's missing failure look is
+  recorded as signed off by MD-12 (no new question: the maintainer already decided it).
+- **L-1** first-open request count pinned; **L-2** bound-entry merge named in DDD-3 and the contract shapes; **L-3**
+  ADR-259 dependency kept as a note; **L-4** `sourceBinding.test.tsx:451` named in the blast radius, kept exact.
+
+Iteration 2 not run: no critical issue, every high issue resolved in the text or turned into a maintainer question
+(OQ-6) or a measurement step (CA-6).
+
+## Wave: DESIGN / [REF] Handoff
+
+- **To DEVOPS**: no new container, configuration, migration or external call. One new Information log line (DDD-6),
+  for the operator docs if any list log lines. Usage-data event: expected "N/A" (DISCUSS). Mutation scope as above.
+  External integrations: Jira Cloud and Data Center REST, unchanged; no new contract test recommended.
+- **To DISTILL**: the Slow 4G waterfall of CA-6 first, then the sketch options S1..S5 and OQ-1..OQ-7; then scenarios through the seams of DDD-8. Pin the
+  per-opening behaviour (close and reopen under one `QueryClient`), the call counts of the contract-shape table, the
+  late answer, the `403` path, the edit-mode wait, the E2E page object's wait on `data-widget-status="ready"`, and the
+  sweep line's allowlist.
+- **ADRs**: ADR-263 (the dialog's server state is keyed queries: shared sources, a Release list per opening), ADR-264
+  (one sweep-cost line per Jira Release sweep, naming no customer). Both Proposed; numbers re-checked at push against
+  Epic 6400.
+- **Development paradigm**: OOP project; the frontend pieces are hooks and pure helpers, the backend piece a value type
+  and a log call in the existing connector.
