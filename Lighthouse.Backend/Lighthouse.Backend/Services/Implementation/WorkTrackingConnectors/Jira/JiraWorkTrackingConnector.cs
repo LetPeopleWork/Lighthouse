@@ -3066,11 +3066,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// Every Release the credential can see with the statuses asked for, each carrying the project it
         /// came from: one call to list the projects and then one per project, a few at a time.
         ///
-        /// Whether the sweep saw everything travels back with it, because the two callers want opposite
-        /// things from a sweep that did not. The picker would rather show most of the Releases than none,
-        /// so a project it may not read is simply left out. A refresh may not be so relaxed: a Release
-        /// missing because a page went unread looks exactly like a Release somebody deleted, and only
-        /// deletion may retire a binding.
+        /// Whether the sweep saw everything travels back with it, because the picker and the resolving of
+        /// bound Releases want opposite things from a sweep that did not. The picker would rather show most
+        /// of the Releases than none, so a project it may not read is simply left out. Resolving may not be
+        /// so relaxed: a Release missing because a page went unread looks exactly like a Release somebody
+        /// deleted, and only deletion may retire a binding.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepReleases(
             HttpClient client, JiraRestRoutes routes, string statuses, JiraReleaseSweepTally tally)
@@ -3197,10 +3197,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 route, deployment);
 
         /// <summary>
-        /// A project the credential can list but whose versions it may not read contributes nothing rather
-        /// than failing the whole list. On a large instance a single such project would otherwise take the
-        /// entire picker away from a reader who has perfectly good projects to choose from. The same goes for
-        /// a project whose answer never arrived or could not be read.
+        /// One project's Releases, counted into the tally once the read comes back, whole or not. A failure
+        /// the read does not expect escapes uncounted, because that project was never finished.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
             HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, JiraReleaseSweepTally tally)
@@ -3212,6 +3210,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return read;
         }
 
+        /// <summary>
+        /// A project the credential can list but whose versions it may not read contributes nothing rather
+        /// than failing the whole list. On a large instance a single such project would otherwise take the
+        /// entire picker away from a reader who has perfectly good projects to choose from. The same goes for
+        /// a project whose answer never arrived or could not be read.
+        /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesWithoutThrowing(
             HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, JiraReleaseSweepTally tally)
         {

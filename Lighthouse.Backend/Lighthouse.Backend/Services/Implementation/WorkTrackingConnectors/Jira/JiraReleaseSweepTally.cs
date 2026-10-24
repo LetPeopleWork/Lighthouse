@@ -4,7 +4,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
     /// <summary>
     /// The counts one Release sweep gathers while it runs. Projects are read in parallel, so every count that grows
-    /// during the reads is added to atomically.
+    /// during the reads is added to atomically. The counts are only turned into a cost once the sweep has ended,
+    /// and the parallel reads always finish before it does, even when one of them fails, so no read is still
+    /// adding while the cost is taken.
     /// </summary>
     internal sealed class JiraReleaseSweepTally
     {

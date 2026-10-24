@@ -19,9 +19,10 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
     /// Turns a set of bound source references into verdicts, and intersects the remote membership with
     /// the Features the Portfolio actually tracks.
     ///
-    /// One resolver with two callers - create and the refresh re-sync - so the two can never drift on
-    /// which verdicts are recoverable. Batched in one call per pass, because the cost of a refresh has
-    /// to stay constant in the number of bound Deliveries.
+    /// Every caller that needs a verdict goes through this one resolver, so none of them can drift from
+    /// the others on which verdicts are recoverable; the purpose it is handed only says who asked.
+    /// Batched in one call per pass, because the cost of a refresh has to stay constant in the number
+    /// of bound Deliveries.
     /// </summary>
     public interface IDeliverySourceResolver
     {
