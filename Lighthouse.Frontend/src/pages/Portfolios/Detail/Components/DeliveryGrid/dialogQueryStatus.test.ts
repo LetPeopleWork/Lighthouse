@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import {
 	type DialogQueryState,
+	dialogAnswerOf,
 	dialogQueryStatusOf,
 } from "./dialogQueryStatus";
 
@@ -53,5 +54,25 @@ const cases: [string, DialogQueryState, WidgetStatus][] = [
 describe("what a body of the Delivery dialog says about one of its answers", () => {
 	it.each(cases)("%s", (_case, query, status) => {
 		expect(dialogQueryStatusOf(query)).toBe(status);
+	});
+});
+
+describe("what a body of the Delivery dialog is handed of one of its answers", () => {
+	it("hands over the answer once it is ready", () => {
+		expect(
+			dialogAnswerOf({ data: AN_ANSWER, isError: false, isFetching: false }),
+		).toEqual({ status: "ready", data: AN_ANSWER });
+	});
+
+	it("withholds an earlier answer while it is asked for again, so it is never shown as current", () => {
+		expect(
+			dialogAnswerOf({ data: AN_ANSWER, isError: false, isFetching: true }),
+		).toEqual({ status: "loading", data: undefined });
+	});
+
+	it("withholds an earlier answer once asking again has failed", () => {
+		expect(
+			dialogAnswerOf({ data: AN_ANSWER, isError: true, isFetching: false }),
+		).toEqual({ status: "error", data: undefined });
 	});
 });

@@ -261,6 +261,36 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(theRowFor(REFUNDS)).not.toBeNull();
 	});
 
+	it("asks for exactly the Value Stream's own Deliverables", async () => {
+		const featureService = aFeatureServiceListingNothing();
+		openTheDialog({
+			deliveryService: aConnectionOffering([]),
+			featureService,
+			portfolio: PAYMENTS_PLATFORM,
+		});
+
+		await waitFor(() =>
+			expect(featureService.getFeaturesByIds).toHaveBeenCalledWith([
+				CHECKOUT.id,
+				REFUNDS.id,
+			]),
+		);
+	});
+
+	it("while the list is on its way the grid holds no row at all, not even an empty one", async () => {
+		const list = anAnswerNotGivenYet<IFeature[]>();
+		openTheDialog({
+			deliveryService: aConnectionOffering([]),
+			featureService: aFeatureServiceAnswering(list),
+			portfolio: PAYMENTS_PLATFORM,
+		});
+
+		await waitFor(theGridIsBusy);
+		expect(
+			within(theManualFeatureList() as HTMLElement).queryAllByRole("row"),
+		).toHaveLength(0);
+	});
+
 	it("a list that could not be loaded is an amber notice (the warning colour, which only its class carries) in her words, with no button and no empty grid", async () => {
 		const list = anAnswerNotGivenYet<IFeature[]>();
 		openTheDialog({

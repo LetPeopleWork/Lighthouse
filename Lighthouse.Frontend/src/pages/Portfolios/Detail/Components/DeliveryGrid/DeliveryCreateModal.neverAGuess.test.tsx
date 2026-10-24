@@ -12,6 +12,7 @@ import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiError } from "../../../../../services/Api/ApiError";
 import {
 	AMBER_NOTICE,
+	aConnectionOffering,
 	aConnectionOfferingJiraReleases,
 	aLaunchFollowingAJiraRelease,
 	anAnswerNotGivenYet,
@@ -253,6 +254,21 @@ describe("once the licence is known", () => {
 		);
 	});
 
+	it("a premium licence puts no premium tooltip on Rule-Based", async () => {
+		const user = userEvent.setup();
+		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
+		await untilTheJiraReleaseTabIsOffered();
+
+		const ruleBased = theRuleBasedTab() as HTMLElement;
+		expect(ruleBased).toBeEnabled();
+		await user.hover(ruleBased.parentElement as HTMLElement);
+
+		await expect(
+			screen.findByRole("tooltip", {}, { timeout: 300 }),
+		).rejects.toThrow();
+		expect(screen.queryByText(COPY.ruleBasedIsPremium)).toBeNull();
+	});
+
 	it("a premium licence shows the Release picker, ready", async () => {
 		const user = userEvent.setup();
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
@@ -383,6 +399,50 @@ describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", 
 		expect(theManualFeatureList()).toBeNull();
 		expect(screen.queryByText(COPY.selectDeliverables)).toBeNull();
 		expect(screen.getByRole("button", { name: "Update" })).toBeDisabled();
+	});
+
+	it("while the ways to pick load, the place under the tabs carries a loading look of its own, not only the busy tab", async () => {
+		const { deliveryService } = withSourcesStillOnTheirWay();
+		openTheDialog({
+			deliveryService,
+			editingDelivery: aLaunchFollowingAJiraRelease(),
+		});
+
+		const busyTab = await waitFor(() => {
+			const tab = theBusyTab();
+			expect(tab).not.toBeNull();
+			return tab as HTMLElement;
+		});
+		const spinnersBesidesTheBusyTab = screen
+			.getAllByRole(SPINNER_ROLE)
+			.filter((spinner) => !busyTab.contains(spinner));
+		expect(spinnersBesidesTheBusyTab).toHaveLength(1);
+	});
+
+	it("once the ways to pick could not be checked, nothing under the tabs keeps spinning", async () => {
+		const { deliveryService, sources } = withSourcesStillOnTheirWay();
+		openTheDialog({
+			deliveryService,
+			editingDelivery: aLaunchFollowingAJiraRelease(),
+		});
+
+		await whenTheServerFails(sources);
+
+		await waitFor(() => theNoticeSaying(COPY.sourcesCouldNotBeChecked));
+		expect(screen.queryAllByRole(SPINNER_ROLE)).toHaveLength(0);
+	});
+
+	it("a connection that no longer offers Jira Releases leaves the form open to her once it has answered, rather than waiting for ever", async () => {
+		openTheDialog({
+			deliveryService: aConnectionOffering([]),
+			editingDelivery: aLaunchFollowingAJiraRelease(),
+		});
+
+		await waitFor(() =>
+			expect(screen.getByLabelText("Launch Name")).toBeEnabled(),
+		);
+		expect(theBusyTab()).toBeNull();
+		expect(theManualTab()).toBeEnabled();
 	});
 
 	it("while the ways to pick load, no tab is pressed and neither the name nor the date can be typed into", async () => {

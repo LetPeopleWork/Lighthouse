@@ -6,6 +6,13 @@ import {
 	type IWorkItemRuleCondition,
 } from "../../../../../models/WorkItemRules";
 import {
+	awaitsBoundSourceTab,
+	type SelectionBodyQuestion,
+	saveIsAllowed,
+	selectionBodyOf,
+	UNAVAILABLE,
+} from "./deliverySelectionBody";
+import {
 	type DeliverySelectionState,
 	type DeliverySelectionTab,
 	type DeliverySelectionTerms,
@@ -537,5 +544,78 @@ describe("which tab a delivery that follows a source reopens on", () => {
 				bothSources(),
 			).key,
 		).toBe(RULE_BASED_SELECTION_TAB_KEY);
+	});
+});
+
+const bodyQuestion = (
+	overrides: Partial<SelectionBodyQuestion> = {},
+): SelectionBodyQuestion => ({
+	tab: manualTab(),
+	verdict: "premium",
+	ruleSchemaStatus: "ready",
+	sourcesStatus: "ready",
+	followsTrackerEntry: false,
+	featureListStatus: "ready",
+	...overrides,
+});
+
+describe("what stands under the tabs", () => {
+	it("is the Manual list itself once the list has arrived", () => {
+		expect(selectionBodyOf(bodyQuestion())).toEqual({ kind: "content" });
+	});
+
+	it("is the rule builder once the rule fields have arrived on a premium licence", () => {
+		expect(selectionBodyOf(bodyQuestion({ tab: ruleBasedTab() }))).toEqual({
+			kind: "content",
+		});
+	});
+
+	it("is a loading look on a source tab while the licence has not answered, never the tab's own body", () => {
+		expect(
+			selectionBodyOf(
+				bodyQuestion({ tab: jiraReleaseTab(), verdict: "unknown" }),
+			),
+		).toEqual({ kind: "loading" });
+	});
+});
+
+describe("what stands under the tabs while a delivery that follows a tracker entry is edited", () => {
+	const following = (overrides: Partial<SelectionBodyQuestion> = {}) =>
+		bodyQuestion({ followsTrackerEntry: true, ...overrides });
+
+	it("is a loading look while the ways to pick are on their way", () => {
+		expect(selectionBodyOf(following({ sourcesStatus: "loading" }))).toEqual({
+			kind: "loading",
+		});
+	});
+
+	it("is no loading look once the ways to pick could not be checked, since nothing is on its way any more", () => {
+		expect(selectionBodyOf(following({ sourcesStatus: "error" }))).toEqual({
+			kind: UNAVAILABLE,
+		});
+	});
+
+	it("stops waiting once the ways to pick have answered, even when the entry's source is not among them", () => {
+		expect(awaitsBoundSourceTab(following({ sourcesStatus: "ready" }))).toBe(
+			false,
+		);
+	});
+
+	it("keeps the source tab the form already stands on, even when a later check of the ways to pick fails", () => {
+		expect(
+			awaitsBoundSourceTab(
+				following({ tab: jiraReleaseTab(), sourcesStatus: "error" }),
+			),
+		).toBe(false);
+	});
+});
+
+describe("whether Save may be pressed", () => {
+	it("stays off while the body is still loading, even when the dialog knows its answer and nothing else blocks", () => {
+		expect(saveIsAllowed(true, null, { kind: "loading" })).toBe(false);
+	});
+
+	it("comes on once the body stands ready and nothing blocks", () => {
+		expect(saveIsAllowed(true, null, { kind: "content" })).toBe(true);
 	});
 });
