@@ -17,14 +17,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("kpi-OUT-6398-sweep-cost-visible")]
     public partial class JiraReleaseSweepCostTest
     {
-        private const string Pending = "The sweep does not write its cost yet";
-
         private static readonly JiraReleaseSweepCost TheReportersMorning = new(
             DeliverySourceSweepPurpose.Picker, ElapsedMs: 3912, JiraDeployment.DataCenter,
             ReleasesKept: 37, VersionsRead: 1480, VersionPages: 260, ProjectCount: 212, ProjectsSkipped: 0, Complete: true);
 
         [Test]
-        [Ignore(Pending)]
         public void A_picker_sweep_reads_as_one_Information_line_of_counts_and_time()
         {
             var entry = TheLineWrittenFor(TheReportersMorning);
@@ -40,7 +37,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public void The_line_carries_exactly_the_allowed_names()
         {
             var entry = TheLineWrittenFor(TheReportersMorning);
@@ -49,7 +45,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_refresh_sweep_that_lost_a_project_says_it_is_incomplete_and_how_many_were_skipped()
         {
             var entry = TheLineWrittenFor(TheReportersMorning with
@@ -70,7 +65,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(DeliverySourceSweepPurpose.Preview)]
         [TestCase(DeliverySourceSweepPurpose.Save)]
         [TestCase(DeliverySourceSweepPurpose.Refresh)]
-        [Ignore(Pending)]
         public void The_line_opens_with_the_caller_it_was_swept_for(DeliverySourceSweepPurpose purpose)
         {
             var entry = TheLineWrittenFor(TheReportersMorning with { Purpose = purpose });
@@ -83,7 +77,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public void A_Cloud_connection_is_named_as_Cloud()
         {
             var entry = TheLineWrittenFor(TheReportersMorning with { Deployment = JiraDeployment.Cloud });

@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 {
-    // __SCAFFOLD__: the acceptance tests were written ahead of this; its body and the connector's call to it are still to come.
     /// <summary>
     /// What one sweep of a connection's Jira Releases cost: how long it took and how much it read. An operator
     /// may copy the line from a customer's instance, so it carries counts and closed values only, never a
@@ -36,7 +35,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public void WriteTo(ILogger logger)
         {
-            throw new NotImplementedException($"Writing the cost of a {Purpose} sweep to {logger} is not written yet");
+            logger.LogInformation(
+                Template, Purpose, ElapsedMs, Deployment, ReleasesKept, VersionsRead, VersionPages, ProjectCount, Complete, ProjectsSkipped);
         }
     }
 }
