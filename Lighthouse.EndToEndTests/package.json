@@ -8,7 +8,8 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc",
-    "prebuild": "pnpm dlx @biomejs/biome check --write ./tests",
+    "prebuild": "pnpm dlx @biomejs/biome check --write ./tests ./perf",
+    "perf": "playwright test --config playwright.perf.config.ts",
     "test": "cross-env TZ=Europe/Zurich playwright test --grep-invert \"@screenshot|@auth|@rbac|@proxyauth\"",
     "test:auth": "cross-env TZ=Europe/Zurich playwright test --grep @auth",
     "test:rbac": "cross-env TZ=Europe/Zurich playwright test --grep @rbac",

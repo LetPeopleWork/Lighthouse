@@ -6,3 +6,4 @@ node_modules/
 /dist/
 
 !tests/models/settings/Logs/*
+/perf/out/
