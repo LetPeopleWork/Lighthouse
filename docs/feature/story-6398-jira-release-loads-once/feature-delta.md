@@ -1293,3 +1293,13 @@ feature's `mutation/` folder, as in prior features.
 - Rollback: revert the commit or the release; no flag, no stored state.
 - Flags against DESIGN: seven, none silently fixed.
 - Files: this section, `environments.yaml`, `docs/product/kpi-contracts.yaml` (`OUT-6398-*`).
+
+## Wave: DISTILL / [REF] Maintainer Decisions — 2026-10-24, before scenarios
+
+| ID | Decision | Answers |
+|---|---|---|
+| MD-21 | **Sketches A–F approved as shown** (with S1, S2, S4 as already decided by MD-16/MD-17, and the preview spinner of OQ-7). Scenarios pin this copy and layout. | Sketch walk-through |
+| MD-22 | **S3: the sources notice is a `warning` Alert** (amber): Manual and Rule-Based still work and nothing is lost. | S3 (a) |
+| MD-23 | **S5: the failure looks are made consistent, with no Try again button anywhere.** The sources notice (look D) loses its Try again and reads like the list's: "Couldn't check what this Portfolio's connection offers. Close this dialog and open it again to retry." This supersedes the Try again of MD-8 (Q4); the Story now adds no new control. Reopening the dialog is the one retry path for both failures, so opening the dialog must ask again for the sources when their last answer failed: the dialog is always mounted (`DeliveryModals.tsx:90`) and reads the page's shared sources query, so a reopen alone does not refetch it. | S5, the maintainer's words: "Make consistent, no try again buttons" |
+| MD-24 | **The CA-6 Slow 4G waterfall runs on the maintainer's own `:5169`** (premium licence, a Jira Cloud Portfolio offering Releases); its readings restate K1's baseline. | Dev instance |
+
