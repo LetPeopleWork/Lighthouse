@@ -143,6 +143,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                 "an answer that simply omits a reference says nothing about whether it exists, so it must not read as deleted.");
         }
 
+        [Test]
+        public void Resolving_for_no_Portfolio_is_refused_naming_the_missing_Portfolio()
+        {
+            Assert.That(
+                async () => await subject.ResolveForPortfolio(null!, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh),
+                Throws.ArgumentNullException.With.Property(nameof(ArgumentNullException.ParamName)).EqualTo("portfolio"));
+        }
+
+        [Test]
+        public void Resolving_no_list_of_references_is_refused_before_the_remote_is_asked()
+        {
+            var portfolio = GivenAPortfolioTracking(TrackedItem);
+            GivenTheRemoteAnswers(new DeliverySourceResolution.NotFound());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    async () => await subject.ResolveForPortfolio(portfolio, SourceKey, null!, DeliverySourceSweepPurpose.Refresh),
+                    Throws.ArgumentNullException.With.Property(nameof(ArgumentNullException.ParamName)).EqualTo("sourceReferences"));
+                providerMock.Verify(
+                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
+                    Times.Never);
+            }
+        }
+
+        [Test]
+        public void Asking_whether_no_Portfolio_offers_a_source_is_refused_naming_the_missing_Portfolio()
+        {
+            Assert.That(
+                () => subject.OffersSource(null!, SourceKey),
+                Throws.ArgumentNullException.With.Property(nameof(ArgumentNullException.ParamName)).EqualTo("portfolio"));
+        }
+
         /// <summary>
         /// The Jira connector throws on a source key it does not offer, so a key that arrived in a
         /// hand-written request has to be settled here, against what the connection says it has, before
