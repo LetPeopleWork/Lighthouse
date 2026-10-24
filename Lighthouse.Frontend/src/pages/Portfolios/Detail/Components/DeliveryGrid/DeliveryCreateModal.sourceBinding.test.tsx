@@ -1,3 +1,4 @@
+import { notifyManager } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -16,6 +17,7 @@ import {
 	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 import {
 	clearDeliverySourceOptionsCache,
@@ -98,6 +100,10 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
+// The query cache tells the dialog of an answer on a timer of its own unless told otherwise, and an
+// answer this suite settles by hand would then land after the screen was already read.
+notifyManager.setScheduler(queueMicrotask);
+
 describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 	// The server answers with the mode's NAME, never with the number the browser posts back, so a
 	// fixture built from the enum would agree with a comparison that disagrees with every real
@@ -138,7 +144,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 			featureService: createMockFeatureService(),
 		});
 
-		render(
+		renderWithQueryClient(
 			<ApiServiceContext.Provider value={context}>
 				<DeliveryCreateModal
 					open={true}

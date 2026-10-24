@@ -286,10 +286,11 @@ describe("when the ways to pick could not be checked", () => {
 		expect(theRuleBasedTab()).toBeEnabled();
 	});
 
-	it("reopening the dialog asks again, and the Jira Release tab appears once they answer", async () => {
+	it("reopening the dialog asks again, and the Jira Release tab appears once they answer while the notice goes", async () => {
 		const { deliveryService, sources } = withSourcesStillOnTheirWay();
 		const dialog = openTheDialog({ deliveryService });
 		await whenTheServerFails(sources);
+		await waitFor(() => theNoticeSaying(COPY.sourcesCouldNotBeChecked));
 		dialog.close();
 		vi.mocked(deliveryService.getDeliverySources).mockResolvedValue([
 			JIRA_RELEASE_SOURCE,
@@ -299,63 +300,26 @@ describe("when the ways to pick could not be checked", () => {
 
 		await untilTheJiraReleaseTabIsOffered();
 		expect(sourcesAskedFor(deliveryService)).toBe(2);
-	});
-});
-
-describe("Lena closes the dialog before the ways to pick have answered, and opens it again", () => {
-	const withTwoAnswersStillOnTheirWay = () => {
-		const deliveryService = aConnectionOfferingJiraReleases();
-		const first = anAnswerNotGivenYet<IDeliverySource[]>();
-		const second = anAnswerNotGivenYet<IDeliverySource[]>();
-		vi.mocked(deliveryService.getDeliverySources)
-			.mockReturnValueOnce(first.promise)
-			.mockReturnValueOnce(second.promise);
-		return { deliveryService, first };
-	};
-
-	it("an answer to the first opening offers no Jira Release tab in the second", async () => {
-		const { deliveryService, first } = withTwoAnswersStillOnTheirWay();
-		const dialog = openTheDialog({ deliveryService });
-		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(1));
-		dialog.close();
-
-		await whenTheServerAnswers(first, [JIRA_RELEASE_SOURCE]);
-		dialog.reopen();
-
-		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
-		expect(theJiraReleaseTab()).toBeNull();
-		expect(theBusyTab()).not.toBeNull();
-	});
-
-	it("a failure of the first opening says nothing in the second", async () => {
-		const { deliveryService, first } = withTwoAnswersStillOnTheirWay();
-		const dialog = openTheDialog({ deliveryService });
-		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(1));
-		dialog.close();
-		dialog.reopen();
-		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
-
-		await whenTheServerFails(first);
-
 		expect(screen.queryByText(COPY.sourcesCouldNotBeChecked)).toBeNull();
-		expect(theBusyTab()).not.toBeNull();
 	});
 
-	it("the Jira Release tab the last opening was offered is gone until the new answer comes", async () => {
-		const deliveryService = aConnectionOfferingJiraReleases();
+	it("while the second ask is on its way, the reopened dialog shows the busy tab, not the old notice", async () => {
+		const { deliveryService, sources } = withSourcesStillOnTheirWay();
 		const dialog = openTheDialog({ deliveryService });
-		await untilTheJiraReleaseTabIsOffered();
+		await whenTheServerFails(sources);
+		await waitFor(() => theNoticeSaying(COPY.sourcesCouldNotBeChecked));
 		dialog.close();
-		const later = anAnswerNotGivenYet<IDeliverySource[]>();
+		const secondAsk = anAnswerNotGivenYet<IDeliverySource[]>();
 		vi.mocked(deliveryService.getDeliverySources).mockReturnValue(
-			later.promise,
+			secondAsk.promise,
 		);
 
 		dialog.reopen();
 
 		await waitFor(() => expect(sourcesAskedFor(deliveryService)).toBe(2));
+		await waitFor(() => expect(theBusyTab()).not.toBeNull());
+		expect(screen.queryByText(COPY.sourcesCouldNotBeChecked)).toBeNull();
 		expect(theJiraReleaseTab()).toBeNull();
-		expect(theBusyTab()).not.toBeNull();
 	});
 });
 

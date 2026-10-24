@@ -26,10 +26,7 @@ import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { IDelivery } from "../../../../../models/Delivery";
-import type {
-	IDeliverySource,
-	IDeliverySourceOption,
-} from "../../../../../models/Delivery/DeliverySource";
+import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
@@ -60,6 +57,10 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
+import {
+	type DeliverySourcesQuery,
+	useDeliverySources,
+} from "./useDeliverySources";
 
 interface DeliveryCreateModalProps {
 	open: boolean;
@@ -298,6 +299,36 @@ type SelectionBody =
 
 /** Whether the server has said which ways to pick this Portfolio's connection offers. */
 type SourcesStatus = "loading" | "error" | "ready";
+
+const sourcesStatusOf: Record<DeliverySourcesQuery["status"], SourcesStatus> = {
+	pending: "loading",
+	error: "error",
+	success: "ready",
+};
+
+/**
+ * The ways to pick are the page's answer, read here rather than asked for again. A failed answer is
+ * the one exception: the notice tells the reader to reopen the dialog to retry, so each opening that
+ * finds it failed asks once more, and only once, however often the answer fails again.
+ */
+const useSourcesAskedAgainAfterAFailure = (
+	sources: DeliverySourcesQuery,
+	open: boolean,
+	openingNumber: number,
+): void => {
+	const handledOpening = useRef<number | null>(null);
+	const { status, refetch } = sources;
+
+	useEffect(() => {
+		if (!open || handledOpening.current === openingNumber) {
+			return;
+		}
+		handledOpening.current = openingNumber;
+		if (status === "error") {
+			void refetch();
+		}
+	}, [open, openingNumber, status, refetch]);
+};
 
 interface SelectionBodyQuestion {
 	tab: DeliverySelectionTab;
@@ -637,8 +668,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [selectedTabKey, setSelectedTabKey] = useState(
 		defaultDeliverySelectionTab.key,
 	);
-	const [sources, setSources] = useState<IDeliverySource[]>([]);
-	const [sourcesStatus, setSourcesStatus] = useState<SourcesStatus>("loading");
+	const sourcesQuery = useDeliverySources(portfolio.id);
+	const sources = useMemo(() => sourcesQuery.data ?? [], [sourcesQuery.data]);
+	const sourcesStatus = sourcesStatusOf[sourcesQuery.status];
+	const [openingNumber, setOpeningNumber] = useState(0);
+	useSourcesAskedAgainAfterAFailure(sourcesQuery, open, openingNumber);
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -707,35 +741,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 				.catch((err) => console.error("Failed to load features:", err));
 		}
 	}, [open, portfolio.features, featureService]);
-
-	// Which of these a connection offers is the server's answer, so a connection that grows another
-	// one grows another tab here without a line changing.
-	useEffect(() => {
-		if (!open) {
-			return;
-		}
-
-		// An answer that arrives after the dialog closed belongs to a question nobody is asking any more.
-		let asked = true;
-		setSourcesStatus("loading");
-		deliveryService
-			.getDeliverySources(portfolio.id)
-			.then((offered) => {
-				if (!asked) {
-					return;
-				}
-				setSources(offered);
-				setSourcesStatus("ready");
-			})
-			.catch(() => {
-				if (asked) {
-					setSourcesStatus("error");
-				}
-			});
-		return () => {
-			asked = false;
-		};
-	}, [open, deliveryService, portfolio.id]);
 
 	useEffect(() => {
 		if (
@@ -895,8 +900,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSourceReference(values.sourceReference);
 		setPublishForecastToSource(values.publishForecastToSource);
 		hydratedDeliveryId.current = null;
-		setSources([]);
-		setSourcesStatus("loading");
+		setOpeningNumber((previous) => previous + 1);
 		setErrors({});
 		clearDeliverySourceOptionsCache();
 	}, []);

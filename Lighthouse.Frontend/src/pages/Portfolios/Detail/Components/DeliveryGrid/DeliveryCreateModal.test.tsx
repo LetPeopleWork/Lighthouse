@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../../../models/Feature";
@@ -9,6 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { formatLocalDate } from "../../../../../utils/date/localDate";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
@@ -132,7 +133,7 @@ describe("DeliveryCreateModal", () => {
 			featureService: mockFeatureService,
 		});
 
-		return render(
+		return renderWithQueryClient(
 			<ApiServiceContext.Provider value={mockApiContext}>
 				<DeliveryCreateModal
 					open={open}

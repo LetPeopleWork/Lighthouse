@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type { IFeature } from "../../../../../models/Feature";
@@ -9,6 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
 // Mock the TerminologyContext to avoid dependency issues
@@ -129,7 +130,7 @@ describe("DeliveryCreateModal - Edit Mode", () => {
 		onSave = vi.fn(),
 		onUpdate = vi.fn(),
 	) => {
-		return render(
+		return renderWithQueryClient(
 			<ApiServiceContext.Provider value={mockApiContext}>
 				<DeliveryCreateModal
 					open={true}

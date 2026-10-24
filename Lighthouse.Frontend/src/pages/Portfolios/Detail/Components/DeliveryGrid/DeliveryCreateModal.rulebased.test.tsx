@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDelivery } from "../../../../../models/Delivery";
@@ -21,6 +15,7 @@ import {
 	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 
 // Mock the useTerminology hook
@@ -170,7 +165,7 @@ describe("DeliveryCreateModal - Rule-Based Mode", () => {
 			deliveryService: mockDeliveryService,
 		});
 
-		return render(
+		return renderWithQueryClient(
 			<ApiServiceContext.Provider value={mockApiContext}>
 				<DeliveryCreateModal
 					open={true}

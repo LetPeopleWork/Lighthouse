@@ -3,6 +3,7 @@
  * them: the source tab on its own, and the create form that hosts it. Every suite here starts from
  * the same board, so a Release that changes shape has one place to change rather than eight.
  */
+import { notifyManager } from "@tanstack/react-query";
 import type { RenderResult } from "@testing-library/react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
@@ -16,6 +17,7 @@ import {
 	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 import { DeliverySourceTab } from "./DeliverySourceTab";
 
@@ -186,12 +188,15 @@ export const publishSwitch = () =>
 export const renderModal = (
 	deliveryService: MockDeliveryService = createMockDeliveryService(),
 ): RenderResult & { deliveryService: MockDeliveryService } => {
+	// The query cache reports an answer on a timer of its own unless told otherwise, so a suite that
+	// waits only for the request to be sent would read the form before the answer reached it.
+	notifyManager.setScheduler(queueMicrotask);
 	const context = createMockApiServiceContext({
 		deliveryService,
 		featureService: createMockFeatureService(),
 	});
 
-	const result = render(
+	const result = renderWithQueryClient(
 		<ApiServiceContext.Provider value={context}>
 			<DeliveryCreateModal
 				open={true}

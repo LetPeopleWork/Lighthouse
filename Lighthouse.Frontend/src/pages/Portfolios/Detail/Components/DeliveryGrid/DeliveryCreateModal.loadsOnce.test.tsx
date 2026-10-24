@@ -119,7 +119,7 @@ const untilThePageHasItsSources = async (
 };
 
 describe("the dialog opens with the ways to pick the page already knows", () => {
-	it.skip("opening Add Launch asks nothing more, and the Jira Release tab is there at once", async () => {
+	it("opening Add Launch asks nothing more, and the Jira Release tab is there at once", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		visitTheDeliveriesPage({ deliveryService });
@@ -132,7 +132,7 @@ describe("the dialog opens with the ways to pick the page already knows", () => 
 		expect(sourcesAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("opened before the page's answer arrived, it shows the busy tab and waits for that same answer", async () => {
+	it("opened before the page's answer arrived, it shows the busy tab and waits for that same answer", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		const sources = anAnswerNotGivenYet<IDeliverySource[]>();
@@ -150,7 +150,7 @@ describe("the dialog opens with the ways to pick the page already knows", () => 
 		expect(sourcesAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("closing and opening it again still asks nothing more", async () => {
+	it("closing and opening it again still asks nothing more", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		visitTheDeliveriesPage({ deliveryService });
@@ -164,7 +164,7 @@ describe("the dialog opens with the ways to pick the page already knows", () => 
 		expect(sourcesAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("with editing allowed only after the page's answer arrived, as with sign-in on, the sources are asked once more then and never on opening", async () => {
+	it("with editing allowed only after the page's answer arrived, as with sign-in on, the sources are asked once more then and never on opening", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		const page = visitTheDeliveriesPage({ deliveryService, canEdit: false });

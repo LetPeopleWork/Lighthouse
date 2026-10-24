@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
@@ -17,6 +11,7 @@ import {
 	createMockDeliveryService,
 	createMockFeatureService,
 } from "../../../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 import {
@@ -288,7 +283,7 @@ describe("DeliveryCreateModal and the one thing it asks for next", () => {
 			},
 		]);
 
-		render(
+		renderWithQueryClient(
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
 					deliveryService,
