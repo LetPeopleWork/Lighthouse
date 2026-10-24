@@ -12,4 +12,7 @@ export interface FeatureSelectorProps {
 
 	/** Storage key for persisting DataGrid state */
 	storageKey: string;
+
+	/** Shows the grid's own loading overlay while the features are on their way */
+	loading?: boolean;
 }

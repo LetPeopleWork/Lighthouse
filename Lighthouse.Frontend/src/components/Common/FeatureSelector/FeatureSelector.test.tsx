@@ -454,6 +454,21 @@ describe("FeatureSelector", () => {
 		expect(completedIndex).toBeLessThan(inProgressIndex);
 	});
 
+	it("shows the grid busy while its features load, and not busy when loading is not set", () => {
+		const features = createMockFeatures([
+			{ stateCategory: "ToDo", id: 1, name: "Feature 1", referenceId: "FTR-1" },
+		]);
+		const { rerender } = render(
+			<FeatureSelector {...defaultProps} features={features} loading />,
+		);
+
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
+
+		rerender(<FeatureSelector {...defaultProps} features={features} />);
+
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+	});
+
 	describe("Select All and Clear Selection", () => {
 		it("should have a 'Select All' button in the toolbar", () => {
 			const features = createMockFeatures([

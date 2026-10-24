@@ -238,6 +238,33 @@ describe("FeatureGrid", () => {
 		});
 	});
 
+	describe("loading", () => {
+		it("shows the grid busy while its features load, and not busy when loading is not set", () => {
+			const { rerender } = render(
+				<FeatureGrid
+					features={mockFeatures}
+					selectedFeatureIds={[]}
+					onChange={vi.fn()}
+					storageKey="test-grid"
+					loading
+				/>,
+			);
+
+			expect(screen.getByRole("progressbar")).toBeInTheDocument();
+
+			rerender(
+				<FeatureGrid
+					features={mockFeatures}
+					selectedFeatureIds={[]}
+					onChange={vi.fn()}
+					storageKey="test-grid"
+				/>,
+			);
+
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+		});
+	});
+
 	describe("feature filtering", () => {
 		it("should filter out features with invalid state categories", () => {
 			const featuresWithRemoved = [

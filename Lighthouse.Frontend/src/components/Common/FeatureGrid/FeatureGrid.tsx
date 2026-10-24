@@ -107,12 +107,13 @@ const ClearSelectionButton: React.FC<{ onChange: (ids: number[]) => void }> = ({
  * - "selectable": User can toggle checkboxes to select/deselect features
  * - "readonly": All features are shown as selected with disabled (dimmed) checkboxes
  */
-export const FeatureGrid: React.FC<FeatureGridProps> = ({
+export const FeatureGrid: React.FC<Readonly<FeatureGridProps>> = ({
 	features,
 	selectedFeatureIds,
 	onChange,
 	storageKey,
 	mode = "selectable",
+	loading = false,
 }) => {
 	const isReadonly = mode === "readonly";
 
@@ -240,6 +241,7 @@ export const FeatureGrid: React.FC<FeatureGridProps> = ({
 			idField="id"
 			emptyStateMessage="No rows to display"
 			toolbarActions={toolbarActions}
+			loading={loading}
 		/>
 	);
 };

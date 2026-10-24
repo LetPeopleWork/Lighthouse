@@ -8,11 +8,12 @@ import type { FeatureSelectorProps } from "./types";
  * This is a thin wrapper around FeatureGrid that provides the "selectable" mode
  * for manual feature selection in deliveries.
  */
-export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
+export const FeatureSelector: React.FC<Readonly<FeatureSelectorProps>> = ({
 	features,
 	selectedFeatureIds,
 	onChange,
 	storageKey,
+	loading = false,
 }) => {
 	return (
 		<FeatureGrid
@@ -21,6 +22,7 @@ export const FeatureSelector: React.FC<FeatureSelectorProps> = ({
 			onChange={onChange}
 			storageKey={storageKey}
 			mode="selectable"
+			loading={loading}
 		/>
 	);
 };

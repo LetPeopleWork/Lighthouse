@@ -32,6 +32,9 @@ export interface FeatureGridProps {
 	 * - "readonly": checkboxes are always checked and disabled
 	 */
 	mode?: FeatureGridMode;
+
+	/** Shows the grid's own loading overlay while the features are on their way */
+	loading?: boolean;
 }
 
 /**
