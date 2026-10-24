@@ -10819,8 +10819,8 @@ component view, loading and failure looks). Runs in parallel with Epic 6400 and 
 
 - [ADR-263](./adr-263-the-delivery-dialog-reads-its-sources-from-the-page-s-shared-query-and-its-release-list-from-a-query-per-opening.md):
   the Delivery dialog reads its sources from the page's shared query, and its Release list from a query per opening.
-  **Proposed 2026-10-24.**
+  **Accepted 2026-10-24.**
 - [ADR-264](./adr-264-every-jira-release-sweep-writes-one-information-line-of-counts-and-time-that-names-no-customer.md):
-  every Jira Release sweep writes one Information line of counts and time that names no customer. **Proposed
+  every Jira Release sweep writes one Information line of counts and time that names no customer. **Accepted
   2026-10-24.**
 - Relied on, unchanged: ADR-259 (Epic 6400's licence hook).

@@ -1,7 +1,7 @@
 # ADR-264: Every Jira Release sweep writes one Information line of counts and time that names no customer
 
-**Status**: Proposed (DESIGN, 2026-10-24, PROPOSE mode). Number taken while Epic 6400 runs in parallel; re-checked at
-push and renamed if taken. Whether the refresh's sweep logs too is listed for the maintainer (OQ-3).
+**Status**: Accepted (2026-10-24); built with Story #6398, not yet released. Proposed at DESIGN the same day (PROPOSE
+mode). The refresh's sweep logs too, as do the preview's and the save's, each naming its purpose (OQ-3 answered (a)).
 **Feature**: `story-6398-jira-release-loads-once` (ADO Story #6398, slice 03)
 **Relies on**: the connector's injected `TimeProvider`; the existing sweep, its 5-minute cache and its "only a complete
 sweep is kept" rule, all unchanged.

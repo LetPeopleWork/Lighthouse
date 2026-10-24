@@ -1,6 +1,7 @@
 # ADR-263: The Delivery dialog reads its sources from the page's shared query, and its Release list from a query per opening
 
-**Status**: Proposed (DESIGN, 2026-10-24, PROPOSE mode; extended after the final-wave review with slice 04, decision 4).
+**Status**: Accepted (2026-10-24); built with Story #6398, not yet released. Proposed at DESIGN the same day (PROPOSE
+mode; extended after the final-wave review with slice 04, decision 4).
 Number taken while Epic 6400 runs in parallel; re-checked at push and renamed if taken.
 **Feature**: `story-6398-jira-release-loads-once` (ADO Story #6398, slices 01, 02 and 04)
 **Relies on**: the server-side `LicenseGuard` and `RbacGuard` on the options and preview routes (unchanged); the Jira
