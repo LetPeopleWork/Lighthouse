@@ -19,10 +19,7 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
-import {
-	clearDeliverySourceOptionsCache,
-	DeliverySourceTab,
-} from "./DeliverySourceTab";
+import { DeliverySourceTab } from "./DeliverySourceTab";
 import {
 	allOptions,
 	datedInJustATest,
@@ -89,7 +86,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.isPremium = true;
-	clearDeliverySourceOptionsCache();
 	// The Launches below are dated 15 October 2026 and the modal refuses a date that is not in the
 	// future, so the clock is held before that day or every save is refused once it arrives.
 	vi.useFakeTimers({ toFake: ["Date"] });
@@ -444,6 +440,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 					onOptionPicked={vi.fn()}
 					publishForecast={false}
 					onPublishForecastChange={vi.fn()}
+					optionList={{ status: "ready", options: [datedInJustATest] }}
 				/>
 			</ApiServiceContext.Provider>,
 		);

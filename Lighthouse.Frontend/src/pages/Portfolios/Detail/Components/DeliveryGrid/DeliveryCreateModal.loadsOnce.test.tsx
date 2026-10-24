@@ -29,7 +29,6 @@ import {
 	whenTheServerAnswers,
 	whenTheServerFails,
 } from "./DeliveryDialogTestKit";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 import {
 	datedInJustATest,
 	datedInProject,
@@ -91,9 +90,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.status = PREMIUM;
-	// The Jira Release tab keeps the lists it fetched in a store shared by every test in this file,
-	// so a list one scenario fetched would otherwise be what the next scenario sees.
-	clearDeliverySourceOptionsCache();
 });
 
 const theLicenceIs = (status: ILicenseStatus | null) => {
@@ -215,7 +211,7 @@ describe("the dialog opens with the ways to pick the page already knows", () => 
 });
 
 describe("the Release list starts when the dialog opens, not when the tab is drawn", () => {
-	it.skip("with the licence premium, the Jira Releases are asked for while Lena is still on the Manual tab", async () => {
+	it("with the licence premium, the Jira Releases are asked for while Lena is still on the Manual tab", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		visitTheDeliveriesPage({ deliveryService });
@@ -231,7 +227,7 @@ describe("the Release list starts when the dialog opens, not when the tab is dra
 		expect(theManualTab()).toHaveAttribute("aria-pressed", "true");
 	});
 
-	it.skip("when she then opens the Jira Release tab, the picker is ready from that answer without asking again", async () => {
+	it("when she then opens the Jira Release tab, the picker is ready from that answer without asking again", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		const releases = anAnswerNotGivenYet<IDeliverySourceOption[]>();
@@ -250,7 +246,7 @@ describe("the Release list starts when the dialog opens, not when the tab is dra
 		expect(releaseListsAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("with the licence not known yet, nothing is asked until it answers premium, and then once", async () => {
+	it("with the licence not known yet, nothing is asked until it answers premium, and then once", async () => {
 		theLicenceIs(null);
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
@@ -266,7 +262,7 @@ describe("the Release list starts when the dialog opens, not when the tab is dra
 		await waitFor(() => expect(releaseListsAskedFor(deliveryService)).toBe(1));
 	});
 
-	it.skip("moving between the tabs within one opening asks once", async () => {
+	it("moving between the tabs within one opening asks once", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		visitTheDeliveriesPage({ deliveryService });
@@ -284,7 +280,7 @@ describe("the Release list starts when the dialog opens, not when the tab is dra
 		expect(releaseListsAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("closing and opening the dialog again asks exactly once more, on opening", async () => {
+	it("closing and opening the dialog again asks exactly once more, on opening", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		visitTheDeliveriesPage({ deliveryService });
@@ -413,7 +409,7 @@ describe("a late answer never lands in the wrong dialog", () => {
 		).toBeNull();
 	});
 
-	it.skip("a failed answer for an opening Lena closed is not what the next opening shows", async () => {
+	it("a failed answer for an opening Lena closed is not what the next opening shows", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOfferingJiraReleases();
 		const forTheClosedOpening = anAnswerNotGivenYet<IDeliverySourceOption[]>();

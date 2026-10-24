@@ -9,7 +9,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
 import type {
 	DeliverySourcePreviewEmptyReason,
@@ -21,6 +21,7 @@ import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
+import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
 
 /**
  * The entry a delivery already follows, as the delivery itself remembers it. It is remembered
@@ -46,18 +47,9 @@ export interface DeliverySourceTabProps {
 	/** Whether the Lighthouse forecast is written back onto the entry this Delivery follows. */
 	publishForecast: boolean;
 	onPublishForecastChange: (publish: boolean) => void;
+	/** Where the list of entries the tracker offers stands, asked for by whoever hosts the tab. */
+	optionList: DeliverySourceOptionsState;
 }
-
-const optionCache = new Map<string, IDeliverySourceOption[]>();
-
-/**
- * Forget what the work tracking system said last time. The list is worth keeping while one form is
- * open — it takes a second or two to fetch — but it goes stale the moment the form closes, and a
- * user who reopens it after giving a Release a date in Jira expects to see that date.
- */
-export const clearDeliverySourceOptionsCache = (): void => {
-	optionCache.clear();
-};
 
 /**
  * The tracker a source lives in, named as the tracker names itself, so the reader is sent to the
@@ -145,45 +137,6 @@ const sourceOptionLabel = (option: IDeliverySourceOption): string =>
  */
 const trackerDay = (date: Date): string =>
 	date.toLocaleDateString(undefined, { timeZone: "UTC" });
-
-const useSourceOptions = (portfolioId: number, sourceKey: string) => {
-	const { deliveryService } = useContext(ApiServiceContext);
-	const cacheKey = `${portfolioId}:${sourceKey}`;
-	const [options, setOptions] = useState<IDeliverySourceOption[] | null>(null);
-	const [failed, setFailed] = useState(false);
-
-	useEffect(() => {
-		const cached = optionCache.get(cacheKey);
-		if (cached === undefined) {
-			let stillMounted = true;
-			setOptions(null);
-			setFailed(false);
-
-			deliveryService
-				.getDeliverySourceOptions(portfolioId, sourceKey)
-				.then((fetched) => {
-					optionCache.set(cacheKey, fetched);
-					if (stillMounted) {
-						setOptions(fetched);
-					}
-				})
-				.catch(() => {
-					if (stillMounted) {
-						setFailed(true);
-					}
-				});
-
-			return () => {
-				stillMounted = false;
-			};
-		}
-
-		setOptions(cached);
-		setFailed(false);
-	}, [cacheKey, portfolioId, sourceKey, deliveryService]);
-
-	return { options, failed };
-};
 
 const SourceOptionRow: React.FC<{
 	liProps: React.HTMLAttributes<HTMLLIElement>;
@@ -375,17 +328,13 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	onOptionPicked,
 	publishForecast,
 	onPublishForecastChange,
+	optionList,
 }) => {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const trackerWord =
 		trackerWordBySourceKey[sourceKey] ??
 		getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
-	const { options: offered, failed } = useSourceOptions(portfolioId, sourceKey);
-	// Merged on the way out of the cache rather than into it, so what the server said stays what the
-	// server said and a second form opened on a different Delivery gets its own entry offered.
-	const options =
-		offered === null ? null : withCurrentSelection(offered, currentSelection);
 	const [selectedId, setSelectedId] = useState(currentSelection?.id ?? "");
 	const [preview, setPreview] = useState<IDeliverySourcePreview | null>(null);
 	const [previewFailed, setPreviewFailed] = useState(false);
@@ -418,7 +367,7 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 			});
 	};
 
-	if (failed) {
+	if (optionList.status === "error") {
 		return (
 			<SourceTabBody status="error">
 				<Alert severity="error">
@@ -428,9 +377,13 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 		);
 	}
 
-	if (options === null) {
+	if (optionList.status === "loading" || optionList.options === undefined) {
 		return <DeliverySourceTabLoading sourceName={sourceName} />;
 	}
+
+	// Merged on the way out rather than into the answer, so what the server said stays what the
+	// server said and a form opened on a different Delivery gets its own entry offered.
+	const options = withCurrentSelection(optionList.options, currentSelection);
 
 	const previewOnItsWay =
 		awaitedOptionId.current !== "" && preview === null && !previewFailed;

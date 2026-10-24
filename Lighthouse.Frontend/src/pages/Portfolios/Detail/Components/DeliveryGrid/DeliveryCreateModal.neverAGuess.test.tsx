@@ -37,7 +37,6 @@ import {
 	whenTheServerAnswers,
 	whenTheServerFails,
 } from "./DeliveryDialogTestKit";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 import {
 	datedInProject,
 	JIRA_RELEASE_SOURCE,
@@ -97,9 +96,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.status = PREMIUM;
-	// The Jira Release tab keeps the lists it fetched in a store shared by every test in this file,
-	// so a list one scenario fetched would otherwise be what the next scenario sees.
-	clearDeliverySourceOptionsCache();
 });
 
 const theLicenceIs = (status: ILicenseStatus | null) => {

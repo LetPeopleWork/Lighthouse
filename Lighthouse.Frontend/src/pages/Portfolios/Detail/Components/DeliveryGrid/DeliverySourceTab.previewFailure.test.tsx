@@ -4,7 +4,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IFeature } from "../../../../../models/Feature";
 import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { createMockDeliveryService } from "../../../../../tests/MockApiServiceProvider";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 import {
 	allOptions,
 	createFeature,
@@ -69,7 +68,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.isPremium = true;
-	clearDeliverySourceOptionsCache();
 });
 
 describe("DeliverySourceTab when a preview does not arrive", () => {

@@ -1,11 +1,23 @@
+import { useQueries } from "@tanstack/react-query";
+import { useContext } from "react";
 import type {
 	IDeliverySource,
 	IDeliverySourceOption,
 } from "../../../../../models/Delivery/DeliverySource";
+import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import type { PremiumVerdict } from "./premiumVerdict";
 
-export const __SCAFFOLD__ = true;
+// Each opening of the dialog asks afresh, because a reader who gave a Release a date in the tracker
+// and reopens the dialog expects to see that date. Nothing outlives the opening, and a failure is not
+// retried behind the reader's back: the notice tells them to reopen instead.
+const deliverySourceOptionsQueryOptions = {
+	staleTime: 0,
+	gcTime: 0,
+	retry: false,
+	refetchOnWindowFocus: false,
+	refetchOnReconnect: false,
+} as const;
 
 export interface DeliverySourceOptionsRequest {
 	portfolioId: number;
@@ -21,9 +33,53 @@ export interface DeliverySourceOptionsState {
 	options: IDeliverySourceOption[] | undefined;
 }
 
+const STILL_LOADING: DeliverySourceOptionsState = {
+	status: "loading",
+	options: undefined,
+};
+
+const COULD_NOT_LOAD: DeliverySourceOptionsState = {
+	status: "error",
+	options: undefined,
+};
+
 /** The entries every offered source holds, asked for once per opening of the dialog. */
-export function useDeliverySourceOptions(
-	_request: DeliverySourceOptionsRequest,
-): (sourceKey: string) => DeliverySourceOptionsState {
-	throw new Error("useDeliverySourceOptions is not built yet");
+export function useDeliverySourceOptions({
+	portfolioId,
+	isOpen,
+	opening,
+	offeredSources,
+	verdict,
+}: DeliverySourceOptionsRequest): (
+	sourceKey: string,
+) => DeliverySourceOptionsState {
+	const { deliveryService } = useContext(ApiServiceContext);
+	const sourceKeys = (offeredSources ?? []).map((source) => source.key);
+	// Asked for while the reader is still on another tab, so the list is there by the time they open
+	// its tab. Only a licence known to be premium may ask: the server refuses everyone else.
+	const enabled = isOpen && verdict === "premium";
+
+	const results = useQueries({
+		queries: sourceKeys.map((sourceKey) => ({
+			...deliverySourceOptionsQueryOptions,
+			queryKey: ["deliverySourceOptions", portfolioId, sourceKey, opening],
+			queryFn: () =>
+				deliveryService.getDeliverySourceOptions(portfolioId, sourceKey),
+			enabled,
+		})),
+	});
+
+	return (sourceKey) => {
+		const result = results[sourceKeys.indexOf(sourceKey)];
+		if (!enabled || result === undefined) {
+			return STILL_LOADING;
+		}
+		if (result.status === "error") {
+			return COULD_NOT_LOAD;
+		}
+		if (result.status === "pending") {
+			return STILL_LOADING;
+		}
+		return { status: "ready", options: result.data };
+	};
 }

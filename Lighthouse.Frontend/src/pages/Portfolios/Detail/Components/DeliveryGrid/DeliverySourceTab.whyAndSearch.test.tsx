@@ -12,11 +12,8 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
 import {
-	clearDeliverySourceOptionsCache,
-	DeliverySourceTab,
-} from "./DeliverySourceTab";
-import {
 	allOptions,
+	DeliverySourceTabAsHosted,
 	datelessOption,
 	JIRA_RELEASE_SOURCE,
 	mockPortfolio,
@@ -68,7 +65,7 @@ const givenDanaOpensTheSourceTab = async (
 	const onOptionPicked = vi.fn();
 	const deliveryService = aBoardListing(options);
 	await renderWithTerms(
-		<DeliverySourceTab
+		<DeliverySourceTabAsHosted
 			portfolioId={1}
 			sourceKey={source.key}
 			sourceName={source.displayName}
@@ -90,7 +87,6 @@ const thePicker = (name = JIRA_RELEASE_SOURCE.displayName) =>
 
 beforeEach(() => {
 	vi.clearAllMocks();
-	clearDeliverySourceOptionsCache();
 });
 
 describe("Story 6355: the Release picker says why and invites searching", () => {

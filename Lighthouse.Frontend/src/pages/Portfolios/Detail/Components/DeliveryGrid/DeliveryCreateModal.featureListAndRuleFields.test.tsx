@@ -36,7 +36,6 @@ import {
 	whenTheServerAnswers,
 	whenTheServerFails,
 } from "./DeliveryDialogTestKit";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 
 /**
  * The Manual tab's list of Features and the Rule-Based tab's fields are the dialog's two other answers
@@ -122,7 +121,6 @@ vi.mock("../../../../../components/Common/DeliveryRuleBuilder", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.status = PREMIUM;
-	clearDeliverySourceOptionsCache();
 });
 
 const CHECKOUT = aFeature(1, "Checkout redesign");

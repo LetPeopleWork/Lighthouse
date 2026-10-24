@@ -38,7 +38,6 @@ import type {
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import {
-	clearDeliverySourceOptionsCache,
 	type DeliverySourceCurrentSelection,
 	DeliverySourceTab,
 	DeliverySourceTabLoading,
@@ -57,6 +56,10 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
+import {
+	type DeliverySourceOptionsState,
+	useDeliverySourceOptions,
+} from "./useDeliverySourceOptions";
 import {
 	type DeliverySourcesQuery,
 	useDeliverySources,
@@ -402,6 +405,7 @@ const SelectionModeContent: React.FC<
 		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
 		publishForecastToSource: boolean;
 		onPublishForecastChange: (publish: boolean) => void;
+		sourceOptionsOf: (sourceKey: string) => DeliverySourceOptionsState;
 	}
 > = ({
 	tab,
@@ -411,6 +415,7 @@ const SelectionModeContent: React.FC<
 	onSourceOptionPicked,
 	publishForecastToSource,
 	onPublishForecastChange,
+	sourceOptionsOf,
 	...contentProps
 }) => {
 	if (body.kind === PREMIUM_NOTICE) {
@@ -441,6 +446,7 @@ const SelectionModeContent: React.FC<
 				onOptionPicked={onSourceOptionPicked}
 				publishForecast={publishForecastToSource}
 				onPublishForecastChange={onPublishForecastChange}
+				optionList={sourceOptionsOf(tab.source.key)}
 			/>
 		);
 	}
@@ -673,6 +679,13 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const sourcesStatus = sourcesStatusOf[sourcesQuery.status];
 	const [openingNumber, setOpeningNumber] = useState(0);
 	useSourcesAskedAgainAfterAFailure(sourcesQuery, open, openingNumber);
+	const sourceOptionsOf = useDeliverySourceOptions({
+		portfolioId: portfolio.id,
+		isOpen: open,
+		opening: openingNumber,
+		offeredSources: sourcesQuery.data,
+		verdict,
+	});
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -902,7 +915,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		hydratedDeliveryId.current = null;
 		setOpeningNumber((previous) => previous + 1);
 		setErrors({});
-		clearDeliverySourceOptionsCache();
 	}, []);
 
 	useEffect(() => {
@@ -1048,6 +1060,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						onSourceOptionPicked={handleSourceOptionPicked}
 						publishForecastToSource={publishForecastToSource}
 						onPublishForecastChange={setPublishForecastToSource}
+						sourceOptionsOf={sourceOptionsOf}
 					/>
 				</Box>
 			</DialogContent>

@@ -13,7 +13,6 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 import {
 	allOptions,
 	createFeature,
@@ -81,7 +80,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	licence.isPremium = true;
-	clearDeliverySourceOptionsCache();
 });
 
 describe("DeliveryCreateModal and the one thing it asks for next", () => {

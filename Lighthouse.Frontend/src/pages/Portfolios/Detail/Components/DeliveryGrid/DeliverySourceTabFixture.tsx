@@ -3,7 +3,11 @@
  * them: the source tab on its own, and the create form that hosts it. Every suite here starts from
  * the same board, so a Release that changes shape has one place to change rather than eight.
  */
-import { notifyManager } from "@tanstack/react-query";
+import {
+	notifyManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import type { RenderResult } from "@testing-library/react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
@@ -19,7 +23,11 @@ import {
 } from "../../../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient } from "../../../../../tests/renderWithQueryClient";
 import { DeliveryCreateModal } from "./DeliveryCreateModal";
-import { DeliverySourceTab } from "./DeliverySourceTab";
+import {
+	DeliverySourceTab,
+	type DeliverySourceTabProps,
+} from "./DeliverySourceTab";
+import { useDeliverySourceOptions } from "./useDeliverySourceOptions";
 
 export const createFeature = (id: number, name: string): IFeature =>
 	({
@@ -157,26 +165,49 @@ export interface TabOverrides {
 	onPublishForecastChange?: (publish: boolean) => void;
 }
 
+/**
+ * The tab as the dialog hosts it, open on a premium licence whose connection offers this one source,
+ * so a suite about the tab sees the list asked for and answered the way the dialog does it.
+ */
+export const DeliverySourceTabAsHosted = (
+	props: Omit<DeliverySourceTabProps, "optionList">,
+) => {
+	const { portfolioId, sourceKey, sourceName } = props;
+	const optionListOf = useDeliverySourceOptions({
+		portfolioId,
+		isOpen: true,
+		opening: 0,
+		offeredSources: [{ key: sourceKey, displayName: sourceName }],
+		verdict: "premium",
+	});
+
+	return <DeliverySourceTab {...props} optionList={optionListOf(sourceKey)} />;
+};
+
 export const renderTab = (
 	deliveryService: MockDeliveryService = createMockDeliveryService(),
 	overrides: TabOverrides = {},
 ): RenderResult & { deliveryService: MockDeliveryService } => {
+	notifyManager.setScheduler(queueMicrotask);
 	const context = createMockApiServiceContext({ deliveryService });
+	const queryClient = new QueryClient();
 
 	const result = render(
-		<ApiServiceContext.Provider value={context}>
-			<DeliverySourceTab
-				portfolioId={1}
-				sourceKey={JIRA_RELEASE_SOURCE.key}
-				sourceName={JIRA_RELEASE_SOURCE.displayName}
-				featuresTerm="Deliverables"
-				portfolioTerm="Value Stream"
-				currentSelection={null}
-				onOptionPicked={vi.fn()}
-				publishForecast={overrides.publishForecast ?? false}
-				onPublishForecastChange={overrides.onPublishForecastChange ?? vi.fn()}
-			/>
-		</ApiServiceContext.Provider>,
+		<QueryClientProvider client={queryClient}>
+			<ApiServiceContext.Provider value={context}>
+				<DeliverySourceTabAsHosted
+					portfolioId={1}
+					sourceKey={JIRA_RELEASE_SOURCE.key}
+					sourceName={JIRA_RELEASE_SOURCE.displayName}
+					featuresTerm="Deliverables"
+					portfolioTerm="Value Stream"
+					currentSelection={null}
+					onOptionPicked={vi.fn()}
+					publishForecast={overrides.publishForecast ?? false}
+					onPublishForecastChange={overrides.onPublishForecastChange ?? vi.fn()}
+				/>
+			</ApiServiceContext.Provider>
+		</QueryClientProvider>,
 	);
 
 	return { ...result, deliveryService };

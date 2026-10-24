@@ -25,7 +25,6 @@ import {
 	theSourceTabBodyStatus,
 	untilTheJiraReleaseTabIsOffered,
 } from "./DeliveryDialogTestKit";
-import { clearDeliverySourceOptionsCache } from "./DeliverySourceTab";
 
 /**
  * The licence as the app really reads it: three requests at once, for the licence, the teams and the
@@ -65,7 +64,6 @@ vi.mock("../../../../../components/Common/FeatureGrid", () => ({
 beforeEach(() => {
 	vi.clearAllMocks();
 	vi.spyOn(console, "error").mockImplementation(() => undefined);
-	clearDeliverySourceOptionsCache();
 });
 
 type Failing = "nothing" | "licence" | "teams" | "portfolio";
