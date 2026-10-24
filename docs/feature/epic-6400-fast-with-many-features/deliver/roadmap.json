@@ -1,0 +1,1611 @@
+{
+  "roadmap": {
+    "project_id": "epic-6400-fast-with-many-features",
+    "created_at": "2026-10-24T12:00:00Z",
+    "total_steps": 36,
+    "total_phases": 6,
+    "goal": "ADO Epic 6400 'Fast with many Features'. Six Stories, delivered one at a time, each releasable alone. The phases array holds DESIGN DDD-3's default order for pool starvation alone (01, 03, 04, 02, 05, 06); the D27 re-score in step 01-05 fixes the order of 02, 03 and 05, and DELIVER follows it. 01 (#6404, with Task #6405): a dev-only measuring harness first records the baseline and classifies the stalls; only if they come from the shared thread pool does a background forecast round then run on a dedicated ForecastLane, with the size band `featuresHeld` on the two tab-opened events. 03 (#6407): the Features tab's existing reads leave out the histograms they do not show, and a reference id stored twice answers rather than 500s. 04 (#6408): one owner-keyed Features list per Portfolio and Team, with loading, failure, empty and all-hidden looks. 02 (#6406): the Overview, the detail pages and Settings read names and counts without forecasts, and the licence gates share one query and refuse creation while the licence cannot be told. 05 (#6409): forecast rounds gather without histograms and write back from their own read. 06 (#6410): a Portfolio over 100 Features says so on its edit page and in the log. The invariant every step keeps: the answer does not change, only the work behind it. Every golden body, verdict, position, forecast and fingerprint stays identical. Done when all 67 pending backend cases and all 53 pending frontend cases are un-skipped and green, the walking skeleton and the 27 active guards stay green, PendingEpic6400 is deleted, no SCAFFOLD stub is left in the frontend, `dotnet build` has zero warnings, the filtered `dotnet test` is green, and `pnpm test` and `pnpm build` are clean. Docs, screenshots, release notes and mutation runs belong to finalization. They are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately. The backend is C# .NET 10 with NUnit 4 + Moq and no property-testing library (no FsCheck/CsCheck), and the frontend is Vitest + React Testing Library without fast-check. DISTILL wrote every acceptance scenario example-based, with finite axes as `[TestCase]` / `[TestCaseSource]` / `it.each`: the 2/4/8-core fixtures, the six bands, the seven refused values, the 0..920 band boundaries. RED means removing `[Ignore(PendingEpic6400.SliceNN)]` or turning `it.skip` into `it`, then watching the test fail on its assertion or on the frontend SCAFFOLD stub, as distill/red-classification.md records. GREEN is production code. DELIVER writes the unit and repository tests DISTILL left to it in the step that needs them: ForecastLaneTest, the Simulate scheduler test, the Debug-split line test, relational SQLite classes for every new reader, PortfolioSize at 100/101, the PortfolioUpdater line test, and the verdict-identity TestCaseSource. Contract shapes per component are in the feature-delta's 'Contract shapes (effects)' table. Measurement steps (Task 01a and the post-lane reading) produce readings, not behaviour, so they carry no TDD test: they use only the DES phases PREPARE, GREEN (the harness or the reading) and COMMIT, and each step says why.",
+    "exit_gates": [
+      "End of every backend step: `dotnet build` from Lighthouse.Backend has zero warnings (TreatWarningsAsErrors); the touched test classes are green; the filtered suite `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` is green. The environmental signatures in CLAUDE.md are not regressions. Docker must be running, because the filtered suite includes the SharedPostgresContainer cases, which fail rather than skip without it. Never run the live-connector categories locally.",
+      "End of every frontend step: `pnpm test` is green and `pnpm build` is clean with zero warnings in Lighthouse.Frontend. prebuild runs `biome check --write`, so remove any `*/docs` symlink first. Run `pnpm exec biome check ./src` read-only before it.",
+      "Slice tests run alone first: `dotnet test --filter \"(FullyQualifiedName~FastWithManyFeatures|FullyQualifiedName~Story6404FeaturesHeld|FullyQualifiedName~StartupBannerForecastLaneLineTest)&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`, and `pnpm vitest run <files>` for the frontend.",
+      "The walking skeleton `Slice01WalkingSkeletonScenarios.Martin_opens_a_Portfolio_and_its_Features_while_its_forecast_round_runs_and_reads_their_dates_once_it_ends` and every active guard stay green after every step. A golden that changes means an answer changed, which this Epic promises never to do: read `*.received.json`, find the cause, and never re-approve to make a step green.",
+      "Program.cs is edited in phase 01 (the lane registration) and phase 04 (the Features list service and reader registrations). Each of those pushes makes path-classifier.sh set `connector_shared`, so CI runs every live-connector suite. Budget the full run plus one flake re-run, and say so when pushing. A red backend job skips `sonar-gates`.",
+      "End of every phase, before its push: read each newly activated class's CI time against the budget (34 s per backend class, 63 s per frontend file, warn-only, `Scripts/test-timings/test-time-budget.json`). If a class is over, speed it up first. If the time is real, allowlist it with a plain reason and a ceiling >= 2.1x its CI time. No wall-clock assertion anywhere.",
+      "ArchUnit and source-scan rules: run `dotnet build -c Release && dotnet test -c Release --filter FullyQualifiedName~Architecture` before pushing, because an edge that exists only inside an `async` body vanishes in Release.",
+      "Comments in new code are rare and give a plain-language why. They never cite an internal reference: no DDD-, D-, AC-, OQ-, UC-, F- or ADR- numbers and no decision numbers. Log and UI copy use the seeded Terminology defaults (Feature/Features, Portfolio, Team), and UI copy is exactly the maintainer-approved wording the Vitest scenarios pin.",
+      "Pre-apply docs/ci-learnings.md before writing code. The rules most likely to bite here: CA1001/S3881 (ForecastLane owns threads: sealed, plain Dispose, no finaliser), CA2008 (every StartNew names its scheduler), S2925 (no Thread.Sleep in tests; use ManualResetEventSlim/SemaphoreSlim with a timeout), S8733 (two or more collection Includes: suppress at the call site naming DatabaseConfigurator, never `.AsSplitQuery()`), S107 at 7 (ForecastUpdater, ForecastService and FeatureListService stay at or under 7), NUnit1028/CA1859 (private static TestCaseSource providers, concrete types), NUnit2045/2056 (`Assert.EnterMultipleScope`), CA1861 (hoisted arrays), SYSLIB1045 (`GeneratedRegex`), and the Vitest heavy-render timeout (RENDER_HEAVY = 20000) on every test that mounts the real grid or 100+ rows.",
+      "Commit through des-commit, one focused commit per step, with `--owned-paths` written once listing every path. Conventional scopes: feat(forecast), feat(usage-data), feat(portfolio), feat(features), feat(license), test(...), chore(e2e-perf), refactor(...). Trunk-based on main: never push red, never rebase autonomously, and push once per phase at its end."
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/epic-6400-fast-with-many-features/feature-delta.md (DESIGN DDD-1..DDD-24, Component Decomposition, Contract shapes; DEVOPS Usage-Data Event Design, CI Impact, Mutation Scope, Flags F1-F8; DISTILL Maintainer Decisions 1-16, Scenarios, Test placement, Known gaps, Exit and hold criteria for slice 01)",
+    "red_classification": "docs/feature/epic-6400-fast-with-many-features/distill/red-classification.md",
+    "upstream_issues": "docs/feature/epic-6400-fast-with-many-features/distill/upstream-issues.md (items 3, 4, 5, 8, 9, 10, 11, 12 land in DELIVER steps)",
+    "slices": "docs/feature/epic-6400-fast-with-many-features/slices/slice-01..slice-06",
+    "environments": "docs/feature/epic-6400-fast-with-many-features/environments.yaml",
+    "wave_decisions": "docs/feature/epic-6400-fast-with-many-features/wave-decisions.md",
+    "adrs": "docs/product/architecture/adr-257 (forecast lane), adr-258 (reads without histograms), adr-259 (shared licence query), adr-260 (owner-keyed Features list), adr-261 (round reads without histograms, write-back from its own read), adr-262 (size note decided on the server)",
+    "acceptance_harness": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs; Lighthouse.Frontend/src/tests/FeatureListTestKit.tsx",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado": "Epic https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6400; Stories 6404 (Task 6405), 6406, 6407, 6408, 6409, 6410"
+  },
+  "user_decisions": [
+    "1 - The band may be absent on TeamTabOpened and PortfolioTabOpened, because an older bundle sends none. A band on any other event is refused.",
+    "2 - Bands travel by name: UpTo20, From21To50, From51To100, From101To399, From400, Unknown. Their internal values 0-5 never move once released. There is no band above 400.",
+    "3 - A refresh that fails after rows were shown takes the could-not-load look. The previous answer is never kept on screen, and the status is data-widget-status=\"error\".",
+    "4 - Could-not-load copy: \"The {Features} couldn't be loaded.\" with [Retry], which refetches without reloading the page. The look is the same for a failed first load and a failed refresh.",
+    "5 - Empty: \"This {Portfolio} has no {Features} yet.\" (Team tab: \"This {Team} has no {Features} yet.\"), with data-widget-status=\"ready\".",
+    "6 - All hidden: \"All {N} {Features} are completed. Turn off Hide Completed {Features} to see them.\" N counts the completed Features held, not the page size.",
+    "7 - Waiting looks as sketched: the first load shows today's placeholder under a spinner; a refresh keeps the rows dimmed and not clickable under a small spinner (WidgetShell); a keyed query keeps a late answer from landing.",
+    "8 - Over 100, the note reads as drafted: \"This {Portfolio} holds {N} {Features} (as of its last update). Above 100, its pages and forecasts get slower. If you don't plan with all of them, narrow the query.\" It is an info Alert.",
+    "9 - When the count cannot be loaded: \"Couldn't check this {Portfolio}'s size.\" in the same info Alert. Never silent.",
+    "10 - The size line is logged at Warning, once per successful Features update of a Portfolio over 100, with the exact text pinned by Slice06SizeWarningInTheLogScenarios.",
+    "11 - While the licence loads, the create actions are disabled with no tooltip. When it could not be checked, they are disabled with \"Couldn't check your license. Reload the page to try again.\" Edits are unchanged, and so is the server guard.",
+    "12 - The Overview's looks need no decision: its components are unchanged.",
+    "13 - A reference id stored on two Features: the first in forecast order answers, and one Warning naming the id is logged per refresh. This replaces today's 500.",
+    "14 - The over-100 Warning also lands in Recent Problems. Accepted.",
+    "15 - Every create entry point follows the licence gate: the Overview's + Add Team / + Add Portfolio, the Get Started steps, and the new-Team path. Edits are unchanged. Still open for the wizard and the copied-Team page (upstream issue 12), so that work is blocked in step 02-05.",
+    "16 - Slice 01 holds after Task 01a unless the stalls come from the shared thread pool. If 01a classifies them as GC or CPU quota, DELIVER stops and brings the readings to the maintainer before the forecast lane is built (step 01-05 is the hold point)."
+  ],
+  "out_of_scope": [
+    "Finalize items, not steps. Docs prose: docs/settings/systeminfo.md (banner line), the Features-tab looks and the Portfolio edit page size note pages, and the Overview licence-check copy. Note that docs/settings/usagedata.md is the exception: CLAUDE.md makes listing the emitted usage event part of the emitting DELIVER step, so step 01-11 writes it. Also: @screenshot regeneration per theme, release-notes text and the maintainer's tag, ARCHITECTURE.md when the forecast-lane or reader concepts read differently, the website asset freshness check, and ADO Story state transitions (Stories only; the Epic's state is the maintainer's).",
+    "Mutation testing: Stryker.NET and StrykerJS run last, on frozen code, per the DEVOPS Mutation Scope (>= 80 %, whole files on the backend, one span per entry on the frontend, acceptance suite excluded). Configs go under docs/feature/epic-6400-fast-with-many-features/mutation/. TeamMetricsService (996 lines) is excluded unless step 03-02 extracts the in-progress resolution into a small class.",
+    "Async conversion of request paths (Dissent B), a precomputed percentile read model (the K2 follow-up after Epic 6264), paging or server-side sort/filter of the Features list, and removing or changing GET /features, /features/ids, /features/references or FeatureDto (the clients stay on them).",
+    "Role-specific reader ports for EXISTING callers (Epic 6264 S05c-e). Only the new slice-04 read-only components get IFeatureListReader.",
+    "An index on Features.ReferenceId. It is added only if the slice-03 or slice-04 command log shows a reference-id lookup above 50 ms at 3,000 Features. Then it is a separate expand-only step through Create-Migration.ps1, raised with the maintainer, not a silent addition.",
+    "New E2E specs: none. Step 04-08 only moves page-object waits; no spec covers the Team Features tab today, which is accepted (E2E is a thin sanity check).",
+    "Lighthouse-Clients (lh, MCP): N/A, because every body is unchanged and no client sends tab openings. No release.",
+    "A demo-data scenario for the scaled set (ruled out by the maintainer), shipping the generator, and any CI budget for the harness readings.",
+    "K4's final computed-round target (Q-M4 stays provisional). It is a harness reading that no test pins."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Pages keep answering while Lighthouse forecasts (Story #6404, Task #6405)",
+      "description": "Task 01a first: the dev-only harness under Lighthouse.EndToEndTests/perf/, the log-only Debug split, the baseline readings and the stall classification. Step 01-05 is the HOLD POINT (maintainer decision 16) and also fixes the order of phases 02, 03 and 05 through the D27 re-score. Only on pool starvation alone does Part B follow: the ForecastLane and its one hop, stop and host-stop behaviour, the banner and the round's source-scan rules, the featuresHeld wire contract, the detail-page hand-off with the usagedata.md row, the forecast identity check on PostgreSQL, and the post-lane K3 reading. Releasable alone. Committed per step, pushed once at the end of the phase. Program.cs changes here.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-01 step's own gates are green.",
+        "No Slice01 [Ignore] is left. The PendingEpic6400.Slice01 constant is deleted. featuresHeldOf.ts exports no `__SCAFFOLD__`. StartupBannerForecastCoresLineTest is retired.",
+        "Close criterion: a component test shows that both tab openings carry `featuresHeld` taken from the Portfolio or Team the page holds (step 01-11).",
+        "Program.cs changed (ForecastLane registration): this push runs every live-connector suite in CI. Budget the full run plus one flake re-run, and say so when pushing.",
+        "Time Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (pre-allowlisted, ceiling 150 s), Story6404FeaturesHeldUsageEventTests, StartupBannerForecastLaneLineTest, FastWithManyFeaturesArchUnitTest, ForecastLaneTest and the PostgreSQL identity class against the budget on the push.",
+        "The full filtered backend suite (Docker running) and the full `pnpm test` + `pnpm build` are green. Run the Architecture namespace in Release."
+      ],
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The perf harness folder is type-checked and linted locally and never runs in CI (DELIVER step 01a-1)",
+          "description": "The first commit of Task 01a, before any harness code. Add `perf/**/*.ts` and `playwright.perf.config.ts` to the `include` of Lighthouse.EndToEndTests/tsconfig.json. Extend prebuild's Biome path from `./tests` to `./tests ./perf`. Add `/perf/out/` to Lighthouse.EndToEndTests/.gitignore, the one place the harness writes. Add the script `\"perf\": \"playwright test --config playwright.perf.config.ts\"`. Create `playwright.perf.config.ts` with `testDir: \"./perf\"`. `testDir: \"./tests\"` in playwright.config.ts stays untouched.",
+          "criteria": [
+            "`pnpm build` in Lighthouse.EndToEndTests/ (tsc plus Biome over ./tests and ./perf) is clean with zero warnings.",
+            "`git check-ignore Lighthouse.EndToEndTests/perf/out/anything.csv` reports the path as ignored.",
+            "`pnpm run test` (the CI command) still collects only specs under ./tests, so its list output names no perf file.",
+            "No workflow file changes, and playwright.config.ts is unchanged."
+          ],
+          "test_file": "N/A (measurement infrastructure, no behaviour)",
+          "scenario_name": "N/A: no TDD test. Verified by a clean `pnpm build` in Lighthouse.EndToEndTests and by git check-ignore.",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tsconfig.json (edit: include perf/**/*.ts and playwright.perf.config.ts)",
+            "Lighthouse.EndToEndTests/package.json (edit: prebuild Biome path ./tests ./perf; new script perf)",
+            "Lighthouse.EndToEndTests/.gitignore (edit: /perf/out/)",
+            "Lighthouse.EndToEndTests/playwright.perf.config.ts (new: testDir ./perf, no webServer, generous timeouts)"
+          ],
+          "dependencies": [],
+          "estimated_hours": 1,
+          "exit_gates": [
+            "`pnpm build` in Lighthouse.EndToEndTests clean",
+            "`pnpm run test --list` shows no perf spec"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: config only, no production code. DES phases used: PREPARE, GREEN (the config edits) and COMMIT. RED is skipped because no behaviour exists to fail on: the 'test' is the clean E2E build plus the ignore check, which are recorded in the commit body. The Premium fixture tests/fixtures/valid_premium_license.json is read by the harness, never copied (gitleaks). pnpm 10+ settings belong in pnpm-workspace.yaml, never package.json, but this step adds a script only. `chore(e2e-perf): ...`."
+        },
+        {
+          "id": "01-02",
+          "name": "A scaled Northwind instance is built over the public REST API by the dev-only seeder",
+          "description": "`perf/scaled-set`: generate CSV text for 8 Teams (Atlas, Borealis, Cobalt, Delta Ops, Ember, Fjord, Granite, Harbour) and 6 Portfolios (Northwind Platform 920, Northwind Payments 400, Northwind Mobile 100, and three fillers up to about 3,000 Features). Shape: 0-15 remaining child Work Items per Feature over 1-3 Teams, about 90 days of closed history per Team, about 10% Depends-On links (some across Portfolios), about half the Features with a parent. Build the instance through the public REST API with the CSV connector: connection, Teams, then Portfolios, then Team and Portfolio updates and forecasts. Add `perf/rounds`, which starts a computed round (Update forecast, which forgets the fingerprint) or a skipped round (an update that changes nothing) and waits on the Task Manager status. A small per-version API map applies if the v26.10.19.10 tag's shapes differ (OQ-4). All output goes under perf/out/.",
+          "criteria": [
+            "Against a fresh SQLite instance and against examples/postgres, one run of the seeder leaves 6 Portfolios holding 920 / 400 / 100 Features plus fillers, and 8 Teams with history, all forecast.",
+            "`perf/rounds` can start a computed round and a skipped round on Northwind Platform and returns once Task Manager shows it finished; the Refresh History row says computed or skipped accordingly.",
+            "The seeder runs against main and against a worktree at v26.10.19.10.",
+            "Nothing is written outside Lighthouse.EndToEndTests/perf/out/, and no production code changes.",
+            "`pnpm build` in Lighthouse.EndToEndTests is clean."
+          ],
+          "test_file": "N/A (dev-only measuring instrument; pinning it would test the instrument, not Lighthouse)",
+          "scenario_name": "N/A: no TDD test. Verified by a seeding dry run on SQLite and PostgreSQL, with the resulting counts recorded in the commit body.",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/perf/scaled-set.spec.ts (new: generator + REST seeding; name as fits playwright.perf.config.ts)",
+            "Lighthouse.EndToEndTests/perf/helpers/csvScaledSet.ts (new: CSV text generator, D29 names)",
+            "Lighthouse.EndToEndTests/perf/helpers/rounds.ts (new: start computed/skipped round, wait on Task Manager)",
+            "Lighthouse.EndToEndTests/perf/helpers/apiVersionMap.ts (new, only if the v26.10.19.10 API shape differs)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "`pnpm build` in Lighthouse.EndToEndTests clean",
+            "Seeder dry run on SQLite and PostgreSQL leaves the expected counts"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a dev-only instrument that never ships or runs in CI (DISTILL: 'no acceptance tests, deliberately'). DES phases used: PREPARE, GREEN (the seeder runs) and COMMIT. RED is skipped because the instrument's correctness is checked by its own output (counts, forecasts present). Reuse tests/helpers/api/* (portfolios.ts, teams.ts, workTrackingSystemConnections.ts) and tests/helpers/csv/csvTestData.ts rather than re-implementing REST calls. Prerequisites P2 (Premium fixture copied from the main checkout, never committed), P3 (Docker for examples/postgres) and P6 (worktree at the v26.10.19.10 tag). `chore(e2e-perf): ...`."
+        },
+        {
+          "id": "01-03",
+          "name": "The forecast round's Debug line splits its time into gather, simulate, save and publish",
+          "description": "The only production change of Task 01a is log-only. ForecastUpdater's existing Debug line splits the round into gather, simulate, save and publish milliseconds. No behaviour, setting or endpoint changes. The harness switches it on with `--Serilog:MinimumLevel:Override:Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.ForecastUpdater=Debug`.",
+          "criteria": [
+            "At Debug, one line per round names the Portfolio and four integer millisecond figures labelled gather, simulate, save and publish, in that order.",
+            "At Information and above nothing new is logged, and every existing ForecastUpdaterTest case stays green.",
+            "ForecastUpdater keeps 7 constructor parameters."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs",
+          "scenario_name": "New DELIVER unit case in ForecastUpdaterTest: a round's Debug line carries gather, simulate, save and publish milliseconds (line-format test, DEVOPS CI impact 01a)",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit: Stopwatch split in the existing Debug line)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit: one line-format case)"
+          ],
+          "dependencies": [],
+          "estimated_hours": 1.5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "ForecastUpdaterTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: an exact log-line format, verified by one example. Full DES cycle (RED: the line-format case fails on today's single figure). Assert the message structure through the captured logger, never wall-clock values: figures are integers >= 0. Mutation excludes ForecastUpdater in 01a; it is mutated whole in 01 and 05. `feat(forecast): ...`."
+        },
+        {
+          "id": "01-04",
+          "name": "The harness takes every reading the baseline needs, idle and during computed and skipped rounds",
+          "description": "`perf/readings` opens the Overview, Overview to Settings, the Portfolio Features tab and the Team Features tab. It records the Playwright request log (count, order, bytes), marks for first navigation paint, Settings usable after the Overview, and first Feature row, a long-task observer injected before load, and one Chrome trace per open. The median of 5 is taken after one warm-up, with min-max and the cold start kept apart. Readings are taken idle, during a computed round and during a skipped round, at 100 / 400 / 920, on SQLite and PostgreSQL, against main and the v26.10.19.10 tag. `perf/collect` reads the ASP.NET Core request-finished lines, the EF `Database.Command` lines and ForecastUpdater's Debug split (Serilog overrides passed as command-line arguments), a 1 s `dotnet-counters` CSV of System.Runtime (pool queue length, thread count, GC pause, gen 2), cgroup v2 `cpu.stat` throttling, and the Kestrel `Heartbeat took longer than` lines. It writes one results table per run under perf/out/. The windows are T, R, RT, C (RT with only ThreadPool.MinThreads raised) and C0 (T with the same minimum), 5 minutes each, so Q_r, S_q and the classification can be computed.",
+          "criteria": [
+            "One harness run on a 4-core host (docker --cpus=4 on cgroup v2, or DOTNET_PROCESSOR_COUNT=4) writes a results table with every DDD-2 reading for each open, scale point, state and provider.",
+            "The table carries, per window, the heartbeat delay, the integrated pool queue length, the GC pause share and the throttled-period share, so the DDD-3 thresholds can be applied without re-running.",
+            "Only `Lighthouse.EndToEndTests/perf/out/` receives output.",
+            "`pnpm build` in Lighthouse.EndToEndTests is clean."
+          ],
+          "test_file": "N/A (dev-only measuring instrument)",
+          "scenario_name": "N/A: no TDD test. Verified by one complete harness run whose table has every column filled.",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/perf/readings.spec.ts (new: opens, marks, long tasks, traces)",
+            "Lighthouse.EndToEndTests/perf/helpers/collect.ts (new: log, counters, cpu.stat and heartbeat parsing, results table)",
+            "Lighthouse.EndToEndTests/perf/helpers/windows.ts (new: T, R, RT, C, C0 windows and the Q_r / S_q arithmetic)",
+            "Lighthouse.EndToEndTests/perf/README.md (new, only if a run recipe is needed beside the code; keep it short)"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-03"
+          ],
+          "estimated_hours": 6,
+          "exit_gates": [
+            "`pnpm build` in Lighthouse.EndToEndTests clean",
+            "One full harness run completes"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: dev-only instrument, never in CI. DES phases used: PREPARE, GREEN and COMMIT. RED is skipped because there is no Lighthouse behaviour under test. Prerequisite P5 (dotnet-counters installed) and P7 (a 4-core host). Bash cannot export dotted variable names: pass the Serilog overrides as `--Serilog:MinimumLevel:Override:<category>=<level>` arguments, or as `docker run -e \"Serilog__MinimumLevel__Override__...\"`. No new npm dependency: Playwright and node builtins only. `chore(e2e-perf): ...`."
+        },
+        {
+          "id": "01-05",
+          "name": "The baseline is recorded, the stalls are classified, and the order of 02, 03 and 05 is fixed (HOLD POINT)",
+          "description": "Run the harness for the baseline. Check the calibration first: a computed round at 920 must last >= 60 s and >= 3x the idle first-row time, else reshape the set and re-run. Check the falsifier: idle 920 first row under ~10 s. Apply the DDD-3 thresholds fixed before reading. Pool starvation holds if C removes >= 80% of RT's heartbeat delay and C0 shows no new warnings. GC holds if GC pause time is >= 10% of RT's wall time, or >= 50% inside the +/-1 s around each warning. CPU quota holds if throttled periods are >= 20% across RT. More than one may hold, and each is reported. Write the results into feature-delta.md as `## Wave: DELIVER / [REF] Baseline (Task 01a)`: the summarised table, Q_r, S_q, C and C0, the classification, the branch taken, and the D27 re-score (G2, Dissent A/B, and the order of 02, 03, 05). No customer identifiers.",
+          "hold_point": true,
+          "criteria": [
+            "feature-delta.md carries the Baseline (Task 01a) section with the calibration verdict, the falsifier verdict, the per-window table, Q_r (heartbeat delay primary, pool queue secondary), S_q, and the classification of RT's stalls with each threshold's measured value beside it.",
+            "The section names the branch taken: 'pool starvation alone' continues; anything else (GC, CPU quota, or pool starvation mixed with either) stops.",
+            "The D27 re-score in the Baseline section fixes the order of phases 02, 03 and 05, and DELIVER follows it. The default for pool starvation alone is DESIGN DDD-3's order, 01, 03, 04, 02, 05, 06, which is the order of the phases array.",
+            "On the GC/CPU branch, or the mixed case: the reading is committed, DELIVER stops the run, the readings are reported to the maintainer, and no step after 01-05 starts until the maintainer's go is recorded in the Baseline section.",
+            "On pool starvation alone: step 01-06 may start."
+          ],
+          "test_file": "N/A (a decision on a reading; DISTILL: 'There is no test for this')",
+          "scenario_name": "N/A: no TDD test. The classification is applied to the readings with the thresholds DESIGN fixed in advance.",
+          "unskips": [],
+          "files_to_modify": [
+            "docs/feature/epic-6400-fast-with-many-features/feature-delta.md (edit: new section 'Wave: DELIVER / [REF] Baseline (Task 01a)')"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "Baseline section written, with the classification, the branch taken and the order of 02, 03, 05",
+            "HOLD unless the classification is pool starvation alone"
+          ],
+          "implementation_notes": "HOLD POINT, per maintainer decision 16. If the classification is GC or CPU quota, DELIVER STOPS HERE: it commits the reading, then stops the run and reports to the maintainer with the readings, before the forecast lane is built. Only pool starvation alone continues to the forecast-lane steps (01-06 onwards). The mixed case (pool starvation plus GC or CPU quota) also stops: that is this roadmap's conservative reading of decision 16, which names no mixed case. The maintainer then decides whether slice 01 Part B ships and in what order 02, 03, 05 follow. Order: the phases array holds DDD-3's default for pool starvation alone (01, 03, 04, 02, 05, 06). If the D27 re-score fixes another order of 02, 03 and 05, DELIVER follows the Baseline section, not the array. Dependencies are true edges only: 04 needs a finished 03; 05 needs 01a's readings and 02-02's catalogue reader; 02, 03 and 06 need only a finished phase 01. So any order the re-score picks that keeps 04 after 03 and 05 after 02-02 is buildable as written. EXEMPT FROM PARADIGM: a measurement, not behaviour. DES phases used: PREPARE, GREEN (the reading and the written section) and COMMIT. Commit the delta section with `docs(feature): ...`. Copy no customer names, hosts or Portfolio names from any production log into git."
+        },
+        {
+          "id": "01-06",
+          "name": "A background round simulates and saves on Lighthouse's own forecast threads, never on the threads that answer pages",
+          "description": "Add `ForecastLane`: a sealed singleton TaskScheduler over `ForecastSimulationLimits.MostRunsAtOnce` named background threads. The composition root constructs it once from `ForecastSimulationLimits.Default` and registers it through `AddSingleton(_ => lane)`, so the container disposes it. Add one hop in `ForecastUpdater.Update`: `Task.Factory.StartNew(body, CancellationToken.None, TaskCreationOptions.DenyChildAttach, lane.Scheduler).Unwrap()`, awaited, with the lane resolved from the update's scope (the constructor stays at 7). In `ForecastService.Simulate`, replace `Task.Run` with `Task.Factory.StartNew(..., cancellationToken, DenyChildAttach, TaskScheduler.Current)` and set `ParallelOptions.TaskScheduler = TaskScheduler.Current`; MaxDegreeOfParallelism is unchanged. Round code gets no `ConfigureAwait(false)`. This is the walking skeleton of Part B.",
+          "criteria": [
+            "feature-delta.md's Baseline (Task 01a) section names pool starvation alone as the branch taken, or records the maintainer's go.",
+            "On 2, 4 and 8 cores, every draw of a background round runs on a non-pool, background, lane-named thread, at most max(1, cores/2) distinct threads.",
+            "The round's save runs from a lane thread too.",
+            "ForecastService contains no Task.Run or ThreadPool call; every StartNew names TaskScheduler.Current or the lane; every Parallel loop gets options naming one of those.",
+            "A manual forecast started from a page (When) still simulates on the shared pool and releases its request thread.",
+            "ForecastLane unit tests: thread count equals MostRunsAtOnce, threads are named and background, tasks run on them.",
+            "A new Simulate scheduler test: under a custom scheduler every Parallel body runs on it; under the default scheduler they run on the pool; the returned task is awaited.",
+            "The walking skeleton and the G1 forecast golden (`400 runs [5:280]`) stay green, so the forecasts are unchanged."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastLaneTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceSchedulerTest.cs"
+          ],
+          "scenario_name": "A_background_round_simulates_on_Lighthouses_own_forecast_threads_never_on_the_threads_that_answer_pages | A_background_round_saves_its_forecasts_from_the_forecast_threads_too | The_forecast_service_never_hands_a_simulation_to_the_shared_pool",
+          "unskips": [
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs :: A_background_round_simulates_on_Lighthouses_own_forecast_threads_never_on_the_threads_that_answer_pages (3 cases: 2, 4, 8 cores)",
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs :: A_background_round_saves_its_forecasts_from_the_forecast_threads_too (3 cases)",
+            "FastWithManyFeaturesArchUnitTest.cs :: The_forecast_service_never_hands_a_simulation_to_the_shared_pool (1)"
+          ],
+          "guards_kept_green": [
+            "Slice01WalkingSkeletonScenarios (both: the walking skeleton and A_forecast_reads_the_same_wherever_its_round_runs)",
+            "ForecastServiceTest, ForecastUpdaterTest, the ResponsiveDuringUpdates and SkipUnchangedForecasts acceptance classes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastLane.cs (new: sealed, IDisposable, MostRunsAtOnce named background threads, TaskScheduler)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit: one hop onto the lane, lane resolved from the update scope)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit: Simulate follows TaskScheduler.Current; ParallelOptions.TaskScheduler)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit: construct the lane once from ForecastSimulationLimits.Default; AddSingleton(_ => lane))",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastLaneTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceSchedulerTest.cs (new: ForecastServiceTest sits at its 36 s ceiling, so the new cases go in a new class)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit only if its mocked scope must now resolve ForecastLane)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs (edit: un-skip two methods)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs (edit: un-skip one)",
+            "Scripts/test-timings/test-time-budget.json (edit: pre-allowlist Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios, reason 'runs a real forecast round on the forecast threads for each of three core counts', ceiling 150 s)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "estimated_hours": 6,
+          "exit_gates": [
+            "dotnet build zero warnings (Debug and Release)",
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios, ForecastLaneTest, ForecastServiceSchedulerTest, FastWithManyFeaturesArchUnitTest, Slice01WalkingSkeletonScenarios green",
+            "filtered dotnet test green (Docker running)",
+            "Program.cs changed: the phase-01 push runs every live-connector suite"
+          ],
+          "implementation_notes": "Starts only if 01-05 classified pool starvation alone, or the maintainer's go is recorded. EXEMPT FROM PARADIGM: threading behaviour is verified by recorded thread facts per draw and save (examples over 2/4/8 cores), not properties. Full DES cycle. Analyzer pre-apply: CA1001/S3881 (sealed, plain Dispose, no finaliser), CA2008 (every StartNew names its scheduler), threads `IsBackground = true` and named, and the `Thread.Join(timeout)` result used. Tests: latch participants get their own threads (ci-learnings: never park pool threads on a barrier), no Thread.Sleep (S2925). Keep `ForecastLane` referenced by name only in ForecastUpdater.cs, Program.cs and ForecastLane.cs, because the source scan in 01-08 forbids any other file. Use `TaskScheduler.Current` in ForecastService, never the lane type there. The S107 trade-off is accepted: the lane comes from the update's scope, as ForecastUpdater already resolves its other collaborators. A missing registration fails on the first round, which these scenarios run. Add the time-budget pre-allowlist in this same commit. `feat(forecast): ...`."
+        },
+        {
+          "id": "01-07",
+          "name": "A round on the forecast threads still stops from the Task Manager and when Lighthouse stops, keeping every previous forecast",
+          "description": "Lifecycle. A Task Manager Stop cancels a lane round through its existing per-update token, between simulated runs and before anything is saved. On host stop, UpdateQueueService.DrainAsync runs first, the in-flight round is cancelled by its token, and the container then disposes the lane: it stops accepting tasks, completes its queue and joins its threads with a short timeout, logging any thread that did not finish. The disposal-order and join cases go in ForecastLaneTest (Known gap 2).",
+          "criteria": [
+            "On 2, 4 and 8 cores, a round stopped from the Task Manager after it had simulated on the lane ends, and every Feature keeps the forecast it had.",
+            "When the host stops mid-round, the stop completes in time, nothing new is saved (the restart on the same database reads yesterday's `400 runs [5:280]`), and no 7-in-10 histogram exists.",
+            "ForecastLaneTest: Dispose completes the queue and joins every thread within the timeout; a task scheduled after Dispose is refused; the threads never hold the process open (background)."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastLaneTest.cs"
+          ],
+          "scenario_name": "A_round_stopped_from_the_Task_Manager_ends_and_every_Feature_keeps_the_forecast_it_had | When_Lighthouse_stops_in_the_middle_of_a_round_the_round_ends_and_every_Feature_keeps_the_forecast_it_had",
+          "unskips": [
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs :: A_round_stopped_from_the_Task_Manager_ends_and_every_Feature_keeps_the_forecast_it_had (3 cases)",
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs :: When_Lighthouse_stops_in_the_middle_of_a_round_the_round_ends_and_every_Feature_keeps_the_forecast_it_had (3 cases)"
+          ],
+          "guards_kept_green": [
+            "Epic 6311 Task Manager Stop / Cancel all acceptance classes",
+            "Story 6354 SkipUnchangedForecasts classes (every start still forgets)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastLane.cs (edit: Dispose completes the queue, joins with timeout, logs stragglers)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit only if the registration order must change so the lane is disposed after the hosted services stop)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit only if the token does not already reach the lane body)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastLaneTest.cs (edit: disposal and join cases)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs (edit: un-skip two methods)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios (all 12 cases), ForecastLaneTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: lifecycle examples. Full DES cycle. RED today: the queue drain lets the held round finish and save (`400 runs [5:400]`), so the cancellation must reach a lane round before its save. ci-learnings 2026-10-23: a test must not read the host's services after asking the host to stop. Never block a lane thread on another lane task (deadlock once all lane threads are busy). `feat(forecast): ...`."
+        },
+        {
+          "id": "01-08",
+          "name": "The banner says how many threads forecast rounds run on, and only the updater and the composition root reach those threads",
+          "description": "StartupBanner's cores line becomes \"Forecast rounds run on N dedicated threads; each forecast uses up to N of M cores\" (\"1 dedicated thread\" in the singular), under the existing `Cores` label. The thread count comes from the lane instance the composition root created, passed as a number: StartupBanner.cs must not name the ForecastLane type, because the source scan allows only ForecastUpdater.cs, Program.cs and ForecastLane.cs. Retire StartupBannerForecastCoresLineTest (upstream issue 9). Un-skip the two remaining slice-01 source scans: no ConfigureAwait(false) in round code, and only the updater and the composition root reach the lane. Once the banner takes the thread count as an input, add one-thread and several-thread cases so both forms are checked on any host (upstream issue 3).",
+          "criteria": [
+            "The banner prints `Cores : Forecast rounds run on {max(1, cores/2)} dedicated thread(s); each forecast uses up to N of M cores`, singular for one thread.",
+            "The line sits under its own label, formatted like every other banner line.",
+            "No ConfigureAwait(false) appears in ForecastUpdater.cs, ForecastService.cs or ForecastLane.cs.",
+            "No production file other than ForecastUpdater.cs, Program.cs and ForecastLane.cs names ForecastLane.",
+            "StartupBannerForecastCoresLineTest is deleted and no test pins the old 'Forecasts use up to' line."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastLaneLineTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastLaneLineTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs"
+          ],
+          "scenario_name": "The_banner_says_how_many_threads_forecast_rounds_run_on_and_how_many_cores_each_forecast_may_use | The_forecast_line_sits_in_the_banner_under_its_own_label_like_every_other_line | Forecast_round_code_never_resumes_off_the_forecast_threads | Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads",
+          "unskips": [
+            "StartupBannerForecastLaneLineTest.cs :: The_banner_says_how_many_threads_forecast_rounds_run_on_and_how_many_cores_each_forecast_may_use (1)",
+            "StartupBannerForecastLaneLineTest.cs :: The_forecast_line_sits_in_the_banner_under_its_own_label_like_every_other_line (1)",
+            "FastWithManyFeaturesArchUnitTest.cs :: Forecast_round_code_never_resumes_off_the_forecast_threads (1)",
+            "FastWithManyFeaturesArchUnitTest.cs :: Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads (1)"
+          ],
+          "guards_kept_green": [
+            "Every other StartupBanner* test class"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Startup/StartupBanner.cs (edit: lane line; reads a thread count from StartupBannerFacts, never the ForecastLane type)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit: hand the lane's thread count to the banner facts)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastLaneLineTest.cs (edit: un-skip two; add one-thread and several-thread cases once the count is an input)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/StartupBannerForecastCoresLineTest.cs (delete)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs (edit: un-skip two)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "estimated_hours": 2.5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "StartupBannerForecastLaneLineTest, FastWithManyFeaturesArchUnitTest green in Debug AND Release",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact banner text and source-scan rules. Full DES cycle. StartupBannerFacts is constructed positionally by the DISTILL test (8 arguments), so give the new thread-count member a default (or an overload that keeps those 8 arguments compiling). The default comes from `ForecastSimulationLimits.Default.MostRunsAtOnce`, the same value the lane is built from; Program.cs passes the lane's real count. The source scan strips comments before matching, so a comment naming the lane does not trip it, but do not write one. Mutation: StartupBanner.cs is excluded (one line, covered by this test). `feat(forecast): ...`."
+        },
+        {
+          "id": "01-09",
+          "name": "A page's Features count becomes one of six bands in the browser, never a number",
+          "description": "Replace the `featuresHeldOf` scaffold with a pure function. 0-20 gives UpTo20, 21-50 From21To50, 51-100 From51To100, 101-399 From101To399, 400 and above From400. undefined, negative, non-integer or NaN gives Unknown. Remove the `__SCAFFOLD__` export and the SCAFFOLD comment.",
+          "criteria": [
+            "feature-delta.md's Baseline (Task 01a) section names pool starvation alone as the branch taken, or records the maintainer's go.",
+            "0, 20, 21, 50, 51, 100, 101, 399, 400 and 920 map to their bands exactly at the boundaries.",
+            "undefined gives Unknown.",
+            "-1, 2.5 and NaN give Unknown, never a number.",
+            "featuresHeldOf.ts exports no `__SCAFFOLD__`."
+          ],
+          "test_file": "Lighthouse.Frontend/src/models/UsageData/featuresHeldOf.test.ts",
+          "scenario_name": "a page holding %i Features travels as %s (it.each, 10 cases) | a page that has not counted its Features yet travels as Unknown | a count no page can hold (%s) travels as Unknown, never as a number (it.each, 3 cases)",
+          "unskips": [
+            "featuresHeldOf.test.ts :: a page holding %i Features travels as %s (10 cases)",
+            "featuresHeldOf.test.ts :: a page that has not counted its Features yet travels as Unknown (1)",
+            "featuresHeldOf.test.ts :: a count no page can hold (%s) travels as Unknown, never as a number (3 cases)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/UsageData/featuresHeldOf.ts (edit: implementation; drop __SCAFFOLD__)",
+            "Lighthouse.Frontend/src/models/UsageData/featuresHeldOf.test.ts (edit: it.skip/it.skip.each to it/it.each)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "estimated_hours": 1,
+          "exit_gates": [
+            "pnpm vitest run src/models/UsageData/featuresHeldOf.test.ts green",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: boundary table over a finite domain (it.each), with no fast-check in the project. Full DES cycle (RED: the scaffold throws 'Not yet implemented'). It depends on 01-05 only because decision 16 holds the whole of slice 01 Part B, not because of code. Pure function, no React. `feat(usage-data): ...`."
+        },
+        {
+          "id": "01-10",
+          "name": "The server takes a tab opening's band by name only, forwards it as features_held, and refuses every other value and every other event",
+          "description": "Backend wire contract for featuresHeld. `Models/UsageData/UsageDataFeaturesHeld.cs` (UpTo20=0 ... Unknown=5, appended only, with the house's 'zero is a real answer' comment). `UsageDataEventReported.FeaturesHeld` and `UsageDataEventDto.FeaturesHeld` (`UsageDataFeaturesHeld?`, last optional parameter). A converter on that one property that refuses integers, so 4 and 0 are refused (the default string-enum converter accepts integers). A declaration in `UsageDataEventShapes`, `EventsThatSayHowManyFeaturesTheirPageHolds = {TeamTabOpened, PortfolioTabOpened}`, read as 'carried only when declared, may be absent there'. `UsageDataController.AsTakenIn` refuses an undefined value. `PostHogUsageDataPublisher` writes `features_held` from `ToString()` with WhenWritingNull. `features_held` goes on the allowed list in UsageDataEmitSeamArchUnitTest.",
+          "criteria": [
+            "feature-delta.md's Baseline (Task 01a) section names pool starvation alone as the branch taken, or records the maintainer's go.",
+            "A PortfolioTabOpened carrying each of the six bands, and a TeamTabOpened carrying From400, reach the collector with `features_held` equal to the band's name.",
+            "A tab opening carrying 920, 6, -1, \"920\", \"Lots\", 4 or 0 is refused with 400 and nothing is forwarded.",
+            "TeamCreated or WorkTrackingSystemConnected carrying a band is refused with 400.",
+            "The six bands exist as a closed enum with internal numbers 0-5 in the released order.",
+            "The two older-bundle tab openings without a band are still accepted (active guards).",
+            "No other event's PostHog message carries features_held (UsageDataPublishedMessageTests).",
+            "Every other enum's JSON binding is unchanged."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataPublishedMessageTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs"
+          ],
+          "scenario_name": "A_tab_opening_travels_with_the_band_of_the_Features_its_page_holds | A_tab_opening_carrying_anything_but_one_of_the_six_bands_is_refused | Any_other_event_carrying_a_band_is_refused | The_six_bands_travel_by_name_and_each_keeps_the_internal_number_it_was_released_with",
+          "unskips": [
+            "Story6404FeaturesHeldUsageEventTests.cs :: A_tab_opening_travels_with_the_band_of_the_Features_its_page_holds (7 cases)",
+            "Story6404FeaturesHeldUsageEventTests.cs :: A_tab_opening_carrying_anything_but_one_of_the_six_bands_is_refused (7 cases)",
+            "Story6404FeaturesHeldUsageEventTests.cs :: Any_other_event_carrying_a_band_is_refused (2 cases)",
+            "Story6404FeaturesHeldUsageEventTests.cs :: The_six_bands_travel_by_name_and_each_keeps_the_internal_number_it_was_released_with (1)"
+          ],
+          "guards_kept_green": [
+            "Story6404FeaturesHeldUsageEventTests.cs :: A_tab_opening_from_a_browser_older_than_the_band_still_counts_and_travels_without_one (2)",
+            "The ~17 backend classes that post tab events without a band"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataFeaturesHeld.cs (new enum)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventReported.cs (edit: FeaturesHeld, last optional)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/UsageDataEventBatchDto.cs (edit: UsageDataEventDto.FeaturesHeld; per-property converter that refuses integers)",
+            "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventShapes.cs (edit: EventsThatSayHowManyFeaturesTheirPageHolds, carried only when declared)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/UsageDataController.cs (edit: AsTakenIn refuses an undefined band)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/UsageData/PostHogUsageDataPublisher.cs (edit: features_held, WhenWritingNull)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/UsageDataEmitSeamArchUnitTest.cs (edit: features_held allowed)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/UsageDataControllerTests.cs (edit: 920, 6, \"920\", band on ReportCreated refused)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/UsageData/UsageDataPublishedMessageTests.cs (edit: present on a tab event, absent elsewhere)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs (edit: un-skip four methods)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Story6404FeaturesHeldUsageEventTests (19 of 20 cases; the docs case lands in 01-11), UsageDataControllerTests, UsageDataPublishedMessageTests, UsageDataEmitSeamArchUnitTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: wire-contract examples (closed enum, refused values). Full DES cycle. The integer refusal matters (red-classification revision 2): an enum bound with the default JsonStringEnumConverter also accepts integers, so 4 and 0 would go green for the wrong reason. Give this property a converter with allowIntegerValues: false (or an equivalent per-property read) and leave every other enum's binding untouched. Never require the band on the two tab events (decision 1); it is absent only from older bundles. Usage data is never personal: no count, no id, no free text. UsageDataEventName is NOT touched (no new event, no renumbering). The fifth Story6404 method (the usagedata.md page) moves to 01-11, because it reads the docs page that step writes. Until 01-11 ships, the server accepts the band but no browser sends it, which changes nothing a user sees. `feat(usage-data): ...`."
+        },
+        {
+          "id": "01-11",
+          "name": "Both tab openings carry the band of the Features their page holds, taken from the page, and the usage-data page lists it (slice-01 close criterion)",
+          "description": "The step that first makes the tab events carry featuresHeld from the browser. Flag F1: each detail page hands its owner's band (from `portfolio.features.length` / `team.features.length` through featuresHeldOf) keyed by owner kind and id into a holder that `useUsageDataEventDetector` reads when the 5 s dwell ends. There is one emitter and one dwell clock. If the owner has not arrived, the opening waits while the person stays and goes as Unknown if they leave or the owner fails to load. A tab opening is never dropped. `usageDataBuffer.ts` / `UsageDataService.ts` pass the band through. New component test: a Portfolio detail page and a Team detail page each hand their band to the event (DISTILL exit criterion, Known gap 1). docs/settings/usagedata.md gains the two row appendices and the field row DEVOPS drafted (CLAUDE.md: emitting the event lists it in usagedata.md).",
+          "criteria": [
+            "Component test: opening a Portfolio detail page holding N Features and dwelling emits PortfolioTabOpened with featuresHeldOf(N); the same for a Team detail page with TeamTabOpened.",
+            "Leaving before the owner arrives, or an owner that fails to load, emits the opening with Unknown; no opening is dropped.",
+            "The count itself never leaves the page: only the band is in the event.",
+            "docs/settings/usagedata.md names every band and says the number itself never travels (the Story6404 page test passes).",
+            "usageDataEvents.test.ts and usageDataBuffer.test.ts stay green."
+          ],
+          "test_file": "Lighthouse.Frontend/src/services/UsageData/usageDataEvents.featuresHeld.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/services/UsageData/usageDataEvents.featuresHeld.test.tsx (new component test for the detail-page hand-off)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs"
+          ],
+          "scenario_name": "(new) a detail page hands its Portfolio's / Team's band to the tab-opened event | The_usage_data_page_names_every_band_and_says_the_number_itself_never_travels",
+          "unskips": [
+            "Story6404FeaturesHeldUsageEventTests.cs :: The_usage_data_page_names_every_band_and_says_the_number_itself_never_travels (1)"
+          ],
+          "guards_kept_green": [
+            "usageDataEvents.test.ts; usageDataBuffer.test.ts; usageDataReporter.test.ts; PortfolioDetail and TeamDetail tests",
+            "Story6404FeaturesHeldUsageEventTests (every case from 01-10)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/UsageData/UsageData.ts (edit only if the event type must carry UsageDataFeaturesHeld)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataEvents.ts (edit: the detector reads the band holder at the end of the dwell; waits while on the page; Unknown on leave/failure)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataBuffer.ts (edit: pass featuresHeld through)",
+            "Lighthouse.Frontend/src/services/Api/UsageDataService.ts (edit: pass featuresHeld through)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx (edit: hand the owner's band to the holder)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx (edit: hand the owner's band to the holder)",
+            "Lighthouse.Frontend/src/services/UsageData/usageDataEvents.featuresHeld.test.tsx (new: detail-page hand-off component test)",
+            "docs/settings/usagedata.md (edit: two row appendices + the 'How many Features it holds' field row, seeded terms)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/UsageData/Story6404FeaturesHeldUsageEventTests.cs (edit: un-skip the page method)"
+          ],
+          "dependencies": [
+            "01-09",
+            "01-10"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "pnpm test green; pnpm build clean",
+            "dotnet build zero warnings; Story6404FeaturesHeldUsageEventTests (all 20 cases) green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: one component hand-off and a docs check. Full DES cycle. This step is slice 01's close criterion: slice 01 does not close until this component test shows both tab openings carry featuresHeld taken from the page. If the hand-off needs a small React context or module holder, keep it in services/UsageData and give it no fetch of its own. The docs row uses the seeded Terminology (Features, Team, Portfolio) and keeps the sentence saying the two tab openings 'are the only events that can name a page' true. Usage data is never personal: only `featuresHeldOf`'s output leaves the page. `feat(usage-data): ...`."
+        },
+        {
+          "id": "01-12",
+          "name": "A forecast reads the same on PostgreSQL whichever threads its round runs on",
+          "description": "Known gap 3, slice-01 part: a provider-backed identity check in Integration.Containers. A seeded computed round on PostgreSQL, run on the lane, stores the same percentiles, histogram rows and Story 6354 fingerprint as the recorded golden (`400 runs [5:280]`). It reuses SharedPostgresContainer with a fresh database per case. It is written provider-neutral beside the SQLite G1 golden.",
+          "criteria": [
+            "On PostgreSQL, a round on the lane stores the same forecast golden and the same fingerprint as on SQLite.",
+            "The class starts no container per case (SharedPostgresContainer, fresh DB per case).",
+            "Its CI time is read on the push and pre-allowlisted if a real round per provider makes it slow (reason 'runs a real forecast round on PostgreSQL to compare stored forecasts')."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ForecastOnTheLaneIdentityOnPostgresTests.cs",
+          "scenario_name": "(new DELIVER test) A forecast reads the same on PostgreSQL wherever its round runs",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/ForecastOnTheLaneIdentityOnPostgresTests.cs (new)",
+            "Scripts/test-timings/test-time-budget.json (edit only if the class's CI time needs it)"
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "estimated_hours": 2.5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "the new class green with Docker running",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: golden identity on a second provider. A characterisation test that is green on arrival: the lane must not change the answer. Prove it can fail by temporarily changing the expected golden locally, and say so in the commit body. EF returns collections in provider-dependent order, so compare through a fresh DbContext, ordered. ci-learnings 2026-10-19: never StartFreshAsync per case. `test(forecast): ...`."
+        },
+        {
+          "id": "01-13",
+          "name": "The scaled instance is read again with the forecast lane in place (K3 reading)",
+          "description": "Re-run the harness on the lane build. Use 5 computed and 5 skipped rounds at 920 over 8 Teams, during-round K1/K2 against idle, and heartbeat warnings inside the matched forecast windows. Zero matched windows makes the reading void, not zero. Record the result next to the baseline in feature-delta.md (`Wave: DELIVER / [REF] Slice 01 reading`), with the learning-hypothesis verdict. If during-round readings stay above 1.2x idle or warnings remain, read S_q: above 0.3 points to Dissent B, otherwise to GC or the database. That verdict is reported to the maintainer, not acted on.",
+          "criteria": [
+            "feature-delta.md records the post-lane readings on SQLite and PostgreSQL at 4 cores, the count of Kestrel heartbeat warnings inside forecast windows (with the window count), during-round over idle for Settings and the first Feature row, and the hypothesis verdict.",
+            "The startup banner line shown in the run's log proves the lane ran.",
+            "No customer identifiers are committed."
+          ],
+          "test_file": "N/A (harness reading; K3 is a reading, never a CI budget)",
+          "scenario_name": "N/A: no TDD test. The lane's CI precondition is the thread scenarios of 01-06 and 01-07.",
+          "unskips": [],
+          "files_to_modify": [
+            "docs/feature/epic-6400-fast-with-many-features/feature-delta.md (edit: 'Wave: DELIVER / [REF] Slice 01 reading')"
+          ],
+          "dependencies": [
+            "01-07",
+            "01-08",
+            "01-11",
+            "01-12"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "Reading section written",
+            "Phase-01 exit gates (above) green before the phase push"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: a measurement. DES phases used: PREPARE, GREEN (the reading) and COMMIT. The reporter's production log after the release is the production K3 reading. That is the maintainer's, outside this roadmap. The phase push follows this step, and it touches Program.cs: CI runs every live-connector suite. `docs(feature): ...`."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Large Features lists open sooner, with the same dependencies (Story #6407)",
+      "description": "Releasable alone; needs only a finished phase 01. The dependency graph for /features/ids and /features/references is read without histograms. TeamMetricsService derives in-progress Features as reference ids, with one batched read by reference id for featuresInProgress. A reference id stored twice answers with the first in forecast order plus one Warning per refresh (decision 13). TeamMetricsService and ForecastService take IFeatureRepository instead of IRepository<Feature>, with the same parameter count. No Program.cs change (DI resolves the new parameter types).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-03 step's own gates are green.",
+        "The three slice-03 goldens and the withheld-blocker guard are unchanged.",
+        "Time Slice03FeaturesListReadsScenarios and the verdict-identity class against the budget (bound the generated graph count so each stays under 34 s).",
+        "FeaturesController drops one GetAllByPredicate call, and no touched file gains one.",
+        "Check DDD-20's condition in the command log: a reference-id lookup above 50 ms at 3,000 Features is raised with the maintainer (index), never added silently."
+      ],
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The Features tab's dependency reads load the histograms of the Features it shows and no others",
+          "description": "Add an IFeatureRepository reader (provisional `WholeGraphWithoutHistograms()`): Features with Portfolios, Team work and Teams, dependency references and completion-forecast headers; no histogram rows, no start forecasts; AsNoTrackingWithIdentityResolution. FeaturesController passes it to the unchanged DependencyFacts / DependencyDecision for features/ids and features/references; GET /features keeps its own full list. Add a relational SQLite reader class and a verdict-identity TestCaseSource over seeded generated graphs, with verdicts and positions equal through the old and the new read.",
+          "criteria": [
+            "Northwind Platform's features/ids reads the forecast histograms of exactly its 19 rows, never the whole instance's.",
+            "The features/ids, features/references and featuresInProgress goldens are unchanged.",
+            "Over a bounded set of generated graphs, every dependency verdict and position is identical to the full read's.",
+            "A blocker in a Portfolio the reader may not read stays withheld."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureGraphReaderRelationalTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencyVerdictIdentityTest.cs"
+          ],
+          "scenario_name": "Northwind_Platforms_list_reads_the_forecast_histograms_of_the_Features_it_shows_and_no_others",
+          "unskips": [
+            "Slice03FeaturesListReadsScenarios.cs :: Northwind_Platforms_list_reads_the_forecast_histograms_of_the_Features_it_shows_and_no_others (1)"
+          ],
+          "guards_kept_green": [
+            "Slice03FeaturesListReadsScenarios.cs :: Every_row_dependency_and_Team_the_Features_tab_reads_is_exactly_as_before (3)",
+            "Slice03FeaturesListReadsScenarios.cs :: A_blocker_in_a_Portfolio_the_reader_may_not_read_stays_withheld (1)",
+            "FeaturesControllerTest; FeatureDependencies acceptance classes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs (edit: whole graph without histograms)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit: implement)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs (edit: graph read swap for ids and references)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureGraphReaderRelationalTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Dependencies/DependencyVerdictIdentityTest.cs (new: TestCaseSource over seeded generated graphs, bounded count)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "01-13"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice03FeaturesListReadsScenarios, the new relational and identity classes, FeaturesControllerTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM at the acceptance level. The adjacent identity test is the property-style compensation: a TestCaseSource over generated graphs (private static provider, NUnit1028/CA1859), seeded and bounded so the class stays under 34 s. Full DES cycle. Plain AsNoTracking is NOT enough: shared Teams and Portfolios must stay one object (identity resolution). No new GetAllByPredicate caller (Epic 6264 ratchet). The only true edge into this phase is a finished phase 01. `feat(features): ...`."
+        },
+        {
+          "id": "03-02",
+          "name": "Asking what a Team works on reads only the Features it works on",
+          "description": "TeamMetricsService derives a Team's in-progress Feature references from its WIP snapshot and caches them under today's key and lifetime. Feature WIP and worked-on counts use them with no Feature read. The featuresInProgress endpoint resolves them with one database-side read by reference id (provisional `WithReferenceIds(...)`, full includes), keeping first-seen order and the 'not tracked by Lighthouse' placeholders. TeamMetricsService and ForecastService take IFeatureRepository instead of IRepository<Feature> (same parameter count). Optionally extract the in-progress resolution into a small class so it can be mutated whole (flag F7).",
+          "criteria": [
+            "GET /teams/{Atlas}/metrics/featuresInProgress materialises exactly the 1 Feature Atlas works on.",
+            "The featuresInProgress golden is unchanged, including order and placeholders.",
+            "Feature WIP and worked-on counts are unchanged and read no Feature.",
+            "A relational SQLite case shows the reference-id read is one database-side statement."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureRepositoryTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs"
+          ],
+          "scenario_name": "Asking_what_Atlas_works_on_reads_the_Feature_Atlas_works_on_and_no_others",
+          "unskips": [
+            "Slice03FeaturesListReadsScenarios.cs :: Asking_what_Atlas_works_on_reads_the_Feature_Atlas_works_on_and_no_others (1)"
+          ],
+          "guards_kept_green": [
+            "Slice03 goldens (3); TeamMetricsServiceTests; TeamMetricsServiceSnapshotTests; ForecastServiceTest (the parameter type change)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs (edit: by reference ids)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit: implement)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit: in-progress references; IFeatureRepository)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/ITeamMetricsService.cs (edit: in-progress references)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit: IFeatureRepository parameter type)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/InProgressFeatureResolution.cs (new, optional: extracted resolution class for whole-file mutation)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureRepositoryTest.cs (edit: reference-id read)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs (edit: mocks follow the new port)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastServiceTest.cs (edit only for the parameter type)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice03FeaturesListReadsScenarios, FeatureRepositoryTest, TeamMetricsServiceTests, ForecastServiceTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example read counts and goldens. Full DES cycle. Before editing the shared ports, grep every usage and extend the test builders first (CLAUDE.md shared-contract rule). No `GetAllByPredicate` with Contains in TeamMetricsService (it is already the ratchet's biggest file). Drop its `GetByPredicate(Func)` call. ForecastService is at its 36 s test ceiling: no new cases in ForecastServiceTest. `feat(features): ...`."
+        },
+        {
+          "id": "03-03",
+          "name": "A Feature stored twice under one reference id answers once, and the operator is warned once per refresh",
+          "description": "Decision 13. The batched reference-id read takes the first in forecast order (the dependency path's precedent, DependencyHonourPolicy) and logs one Warning naming the reference id per refresh, never per request. The endpoint answers 200 instead of today's 500, and the counts count the Feature once.",
+          "criteria": [
+            "With two stored Features sharing one reference id, featuresInProgress answers 200 with the first in forecast order, and the counts count it once.",
+            "Two reads with no refresh between them leave exactly one Warning naming the id.",
+            "Read, Team refresh, read leaves exactly two Warnings naming the id.",
+            "Every other in-progress answer and body is unchanged."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs",
+          "scenario_name": "A_Feature_stored_twice_under_one_id_answers_once_with_the_first_in_forecast_order_and_the_operator_is_warned_once_per_refresh | After_the_Team_is_refreshed_a_Feature_stored_twice_under_one_id_is_warned_about_once_more",
+          "unskips": [
+            "Slice03FeaturesListReadsScenarios.cs :: A_Feature_stored_twice_under_one_id_answers_once_with_the_first_in_forecast_order_and_the_operator_is_warned_once_per_refresh (1)",
+            "Slice03FeaturesListReadsScenarios.cs :: After_the_Team_is_refreshed_a_Feature_stored_twice_under_one_id_is_warned_about_once_more (1)"
+          ],
+          "guards_kept_green": [
+            "Slice03 goldens (3); the withheld blocker (1)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs (edit, or the extracted resolution class: first in forecast order; one Warning per refresh, tied to the cached in-progress set)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs (edit: duplicate case at unit level)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice03FeaturesListReadsScenarios.cs (edit: un-skip two)"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice03FeaturesListReadsScenarios (all 8), TeamMetricsServiceTests green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: an error case with exact warning counts. Full DES cycle. 'Once per refresh' ties the warning to the moment the cached in-progress references are computed (cache key and lifetime unchanged), not to each request. The 'per refresh' sibling exists precisely to stop a once-ever implementation. Log copy names the Team and the reference id with seeded terms, no internal refs. `fix(features): ...` or `feat(features): ...`."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "The Features list opens fast and says when it cannot load (Story #6408)",
+      "description": "Releasable alone; depends one-way on the finished phase 03 (histogram-free graph, in-progress references). A new owner-keyed list endpoint (`GET api/latest|v1/portfolios/{id}/feature-list`, `teams/{id}/feature-list`) is served by a thin FeatureListController. Behind it: driving port IFeatureListService, then FeatureListService, then the narrow read-only port IFeatureListReader (the F3 design change: implemented by FeatureRepository and resolved to the same scoped instance as IFeatureRepository, after the IReportReader pattern), then the shared dependency-rendering collaborator extracted from FeaturesController. Frontend: useFeatureList over a keyed TanStack query, both Features tabs on one request, and the four looks. The owner-specific copy and the status attribute come into FeatureListDataGrid as props with defaults, so FeaturesView and DeliverySection are unchanged. The E2E page objects wait on data-widget-status=\"ready\". Program.cs changes (service and reader registrations).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-04 step's own gates are green.",
+        "No Slice04 [Ignore] is left, and no frontend it.skip of slice 04. FeatureService.getFeatureList is no longer a rejecting stub.",
+        "Program.cs changed (list service and reader registrations): this push runs every live-connector suite in CI. Budget the full run plus one flake re-run, and say so when pushing.",
+        "Time Slice04OneListPerOwnerScenarios (at the edge: split by owner if over 34 s, do not allowlist) and each oneList/look Vitest file (under 63 s; DataGrid renders flake under load) on the push.",
+        "Run Playwright locally for MultiTeamForecast.spec.ts (and csv.spec.ts) on SQLite after 04-08, before the push.",
+        "GET /features, /features/ids, /features/references and FeatureDto are unchanged. FeaturesView and DeliverySection render as before."
+      ],
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Martin opens Northwind Platform's Features and one answer carries every row, its parents and who works on them (walking skeleton)",
+          "description": "The thinnest end-to-end slice of the list. Add FeatureListController with the Portfolio route (PortfolioRead guard; api/latest and api/v1), the driving port IFeatureListService, FeatureListService, IFeatureListReader (owner read, histogram-free graph, reference-id read, parent read), implemented by FeatureRepository, and FeatureListDto / FeatureListRowDto / parent and active-work items. A row is a field subset of FeatureDto with the same names and shapes, minus teamForecasts. Register the reader as `AddScoped<IFeatureListReader>(sp => (IFeatureListReader)sp.GetRequiredService<IFeatureRepository>())`, following the forwarding at Program.cs:1350 (`IRepository<Feature>` to `IFeatureRepository`), or register the concrete FeatureRepository first and forward both interfaces to it. Extract FeaturesController's private WhatTheseFeaturesWaitOn / DependenciesAsRead into one shared dependency-rendering collaborator that both endpoints use. The controller takes no repository.",
+          "criteria": [
+            "GET /portfolios/{Northwind Platform}/feature-list answers 200 with every row in today's order, its parents named and the Teams at work, in one response.",
+            "FeatureListController's constructor takes no repository type.",
+            "FeatureListService and the shared collaborator depend on IFeatureListReader, never on IFeatureRepository; FeatureListService has at most 7 constructor parameters.",
+            "Within one scope, IFeatureListReader and IFeatureRepository resolve to the same instance (a registration test asserts Is.SameAs); across scopes they differ.",
+            "FeaturesController's goldens (slice 03) are unchanged after it delegates to the shared collaborator."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRegistrationTest.cs"
+          ],
+          "scenario_name": "Martin_opens_Northwind_Platforms_Features_and_one_answer_carries_every_row_its_parents_and_who_works_on_them | The_Features_list_endpoint_reads_through_its_service_and_never_from_a_repository",
+          "unskips": [
+            "Slice04OneListPerOwnerScenarios.cs :: Martin_opens_Northwind_Platforms_Features_and_one_answer_carries_every_row_its_parents_and_who_works_on_them (1)",
+            "FastWithManyFeaturesArchUnitTest.cs :: The_Features_list_endpoint_reads_through_its_service_and_never_from_a_repository (1)"
+          ],
+          "guards_kept_green": [
+            "Slice03 goldens and withheld blocker; FeaturesControllerTest; Slice01WalkingSkeletonScenarios"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs (new: Portfolio route, thin)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IFeatureListService.cs (new driving port)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListService.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureListReader.cs (new narrow read-only port)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit: implements IFeatureListReader; owner read with every per-Team completion forecast + histogram and only the Feature-level start forecast; parent read)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs (edit: owner reads)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Dependencies/FeatureDependencyRendering.cs (new: shared collaborator extracted from FeaturesController)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs (edit: delegate to the shared collaborator)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/FeatureListDto.cs (new: FeatureListDto, FeatureListRowDto, parent and active-work items)",
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs (edit: IFeatureListService; AddScoped<IFeatureListReader>(sp => (IFeatureListReader)sp.GetRequiredService<IFeatureRepository>()) beside line 1350; shared collaborator)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/FeatureListServiceTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRegistrationTest.cs (new: same instance within a scope)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs (edit: un-skip one)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FastWithManyFeaturesArchUnitTest.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "estimated_hours": 6,
+          "exit_gates": [
+            "dotnet build zero warnings (Debug and Release)",
+            "Slice04OneListPerOwnerScenarios touched cases, FastWithManyFeaturesArchUnitTest, FeatureListServiceTest, FeatureListReaderRegistrationTest, FeaturesControllerTest, Slice03 classes green",
+            "filtered dotnet test green",
+            "Program.cs changed: the phase-04 push runs every live-connector suite"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: endpoint wiring by example. Full DES cycle. F3 design change carried here: the new read-only components (FeatureListService, the shared collaborator) get IFeatureListReader and are never handed the write-capable IFeatureRepository. The cast-forwarding registration keeps one FeatureRepository (one DbContext usage) per scope; a plain `AddScoped<IFeatureListReader, FeatureRepository>()` would build a second instance, which the registration test catches. Existing callers keep their ports. RBAC readability only through IRbacAdministrationService. Add a relational SQLite class for the owner read in 04-02. S8733 suppressions at the call site. Grep usages before extracting the collaborator, and keep FeaturesController's constructor shape (existing S107 suppression, no new parameter). `feat(features): ...`."
+        },
+        {
+          "id": "04-02",
+          "name": "The Team's list, and every row, parent and Team at work, read exactly as the reads they replace, with the per-Team start histograms left out",
+          "description": "Add the Team route (TeamRead guard): the Features a Team works on, across Portfolios. Prove parity: each row equals its features/ids row minus teamForecasts; parents and Teams at work equal /features/references and featuresInProgress. Prove the histogram budget: the owner's completion histograms are read, the per-Team start histograms are not. An empty Portfolio answers an empty list. Add a relational SQLite class for the owner read, and a PostgreSQL run of the list-parity goldens in Integration.Containers (Known gap 3, slice-04 part).",
+          "criteria": [
+            "GET /teams/{Borealis}/feature-list answers with the Features Borealis works on across Portfolios.",
+            "Every row equals its features/ids row minus teamForecasts.",
+            "Parents and Teams at work equal the two reads they replace.",
+            "The list reads its 13 rows' completion histograms and no per-Team start histogram.",
+            "A Portfolio that holds no Features answers 200 with an empty list.",
+            "Parity holds on SQLite and PostgreSQL."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRelationalTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/FeatureListParityOnPostgresTests.cs"
+          ],
+          "scenario_name": "Aisha_opens_Team_Borealis_Features_and_gets_the_Features_Borealis_works_on_across_Portfolios | Every_row_reads_exactly_as_the_same_Feature_reads_today | The_parents_and_the_Teams_at_work_read_as_the_two_reads_they_replace | The_list_reads_its_own_Features_completion_histograms_and_leaves_the_per_Team_start_histograms_out | A_Portfolio_that_holds_no_Features_yet_answers_with_an_empty_list",
+          "unskips": [
+            "Slice04OneListPerOwnerScenarios.cs :: Aisha_opens_Team_Borealis_Features_and_gets_the_Features_Borealis_works_on_across_Portfolios (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: Every_row_reads_exactly_as_the_same_Feature_reads_today (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: The_parents_and_the_Teams_at_work_read_as_the_two_reads_they_replace (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: The_list_reads_its_own_Features_completion_histograms_and_leaves_the_per_Team_start_histograms_out (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: A_Portfolio_that_holds_no_Features_yet_answers_with_an_empty_list (1)"
+          ],
+          "guards_kept_green": [
+            "04-01's cases; Slice03 classes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs (edit: Team route)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListService.cs (edit: Team owner)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit: Team owner read)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/FeatureListReaderRelationalTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/FeatureListParityOnPostgresTests.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs (edit: un-skip five)"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice04OneListPerOwnerScenarios touched cases, new relational and PostgreSQL classes green",
+            "filtered dotnet test green (Docker running)"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: parity examples against the reads being replaced. Full DES cycle. Per-Team completion histograms must still be read: Feature.Forecast folds every per-Team completion forecast, and no Feature-level completion row exists. Only the Feature-level start forecast (TeamId null) with its histogram is read. Bodies stay in the same order as features/ids. `feat(features): ...`."
+        },
+        {
+          "id": "04-03",
+          "name": "A reader who may not open the owner is refused its list, an unreadable blocker inside is withheld, and a missing Portfolio is not found",
+          "description": "The list's refusals: 403 for an unreadable Portfolio or Team (the PortfolioRead / TeamRead guard); inside a readable list, a blocker in a Portfolio the reader may not read is withheld, as /features/references does; 404 for a Portfolio that does not exist, after proving one that exists answers.",
+          "criteria": [
+            "A reader who may not open Northwind Platform gets 403 for its list; likewise for Team Borealis.",
+            "Inside a list the reader may open, a blocker they may not read is withheld.",
+            "A list of a Portfolio that does not exist answers 404, while an existing one answers 200."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs",
+          "scenario_name": "A_reader_who_may_not_open_Northwind_Platform_is_refused_its_list | A_reader_who_may_not_open_Team_Borealis_is_refused_its_list | Inside_a_list_the_reader_may_open_a_blocker_they_may_not_read_is_withheld | A_list_of_a_Portfolio_that_does_not_exist_is_not_found",
+          "unskips": [
+            "Slice04OneListPerOwnerScenarios.cs :: A_reader_who_may_not_open_Northwind_Platform_is_refused_its_list (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: A_reader_who_may_not_open_Team_Borealis_is_refused_its_list (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: Inside_a_list_the_reader_may_open_a_blocker_they_may_not_read_is_withheld (1)",
+            "Slice04OneListPerOwnerScenarios.cs :: A_list_of_a_Portfolio_that_does_not_exist_is_not_found (1)"
+          ],
+          "guards_kept_green": [
+            "RBAC acceptance classes; Slice03 withheld blocker"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeatureListController.cs (edit: guard attributes, not-found mapping)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/FeatureListService.cs (edit: readability via IRbacAdministrationService, owner-not-found outcome)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice04OneListPerOwnerScenarios.cs (edit: un-skip four)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice04OneListPerOwnerScenarios (all 10) green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: refusal examples. Full DES cycle. Reuse the route and guard attributes of PortfolioController / TeamController rather than custom guarding. Auth-off shares one subject and changes no read here. `feat(features): ...`."
+        },
+        {
+          "id": "04-04",
+          "name": "The Portfolio's Features tab asks once for its list and fills from that one answer",
+          "description": "Replace the `FeatureService.getFeatureList(owner)` stub. Add `useFeatureList(owner)` over the keyed query `[\"feature-list\", \"portfolio\" | \"team\", id]`. PortfolioFeatureList reads only through it, and stops calling features/ids, useParentWorkItems and per-Team featuresInProgress. The first load shows the spinner and no rows, then `data-widget-status=\"ready\"`. The status attribute reaches FeatureListDataGrid as a PROP passed by PortfolioFeatureList/TeamFeatureList; its default renders no attribute, so FeaturesView.tsx and DeliverySection.tsx, which also mount the grid, are unchanged. Parents and Teams at work come from the answer. Rewrite PortfolioFeatureList.test.tsx's service setup onto getFeatureList through tests/FeatureListTestKit.tsx; its row, column and dialog claims stay (upstream issue 10).",
+          "criteria": [
+            "Opening the tab makes one getFeatureList({kind:\"portfolio\", id}) call and no features/ids, features/references or featuresInProgress call.",
+            "While the first answer is on its way: a spinner, no rows, data-widget-status=\"loading\"; once it lands: rows and \"ready\".",
+            "A row's parent is named and its Teams at work are shown from the same answer.",
+            "The status reaches the grid as a prop from the owner list; FeaturesView and DeliverySection pass nothing and render exactly as before.",
+            "PortfolioFeatureList.test.tsx keeps every row/column/dialog claim on the new setup."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx",
+            "Lighthouse.Frontend/src/hooks/useFeatureList.test.tsx"
+          ],
+          "scenario_name": "the list asks once, for the Portfolio's list, and reads nothing else | while the first answer is on its way the list shows a spinner and no rows, and once it lands it says it is ready | a row's parent is named from the same answer | a row shows the Teams working on it, from the same answer",
+          "unskips": [
+            "PortfolioFeatureList.oneList.test.tsx :: the list asks once, for the Portfolio's list, and reads nothing else",
+            "PortfolioFeatureList.oneList.test.tsx :: while the first answer is on its way the list shows a spinner and no rows, and once it lands it says it is ready",
+            "PortfolioFeatureList.oneList.test.tsx :: a row's parent is named from the same answer",
+            "PortfolioFeatureList.oneList.test.tsx :: a row shows the Teams working on it, from the same answer"
+          ],
+          "guards_kept_green": [
+            "PortfolioFeatureList.test.tsx row/column/dialog claims (rewritten setup)",
+            "pages/Features/FeaturesView.test.tsx",
+            "pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.archive.test.tsx, DeliverySection.beyondTheHorizon.test.tsx, DeliverySection.likelihoodCopy.test.tsx; components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx",
+            "FeatureListDataGrid.test.tsx, FeatureListDataGrid.moveActions.test.tsx, columns.dependsOn.test.tsx",
+            "useParentWorkItems' other callers' tests; Delivery timeline tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/FeatureService.ts (edit: getFeatureList implemented)",
+            "Lighthouse.Frontend/src/models/FeatureList.ts (edit only if the contract types need adjusting to the backend body)",
+            "Lighthouse.Frontend/src/hooks/useFeatureList.ts (new: keyed TanStack query)",
+            "Lighthouse.Frontend/src/hooks/useFeatureList.test.tsx (new)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx (edit: one request; passes the status prop)",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx (edit: optional status prop rendered as data-widget-status on the container; default renders none)",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/types.ts (edit: the optional prop)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx (edit: setup onto getFeatureList via FeatureListTestKit)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx (edit: un-skip four)"
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "pnpm vitest run the three files and the FeaturesView/DeliverySection tests green (RENDER_HEAVY timeout)",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: UI flow examples. Full DES cycle. Remove the SCAFFOLD comment from getFeatureList. Hide Completed stays client-side. FeaturesView.tsx and DeliverySection.tsx are not edited: every new grid behaviour is opt-in through a prop whose default is today's behaviour. ci-learnings 2026-10-14: prefer test ids or text over role queries used only to find a click target in DataGrid tests. Parse rows with the existing Feature model (same field names). `feat(features): ...`."
+        },
+        {
+          "id": "04-05",
+          "name": "The Portfolio's list says when it cannot load, when it is empty and when Hide Completed hides everything, in the instance's own words",
+          "description": "Failure: WidgetBody's could-not-load look with \"The {Features} couldn't be loaded.\" and [Retry], which refetches the list without reloading the page. Empty: \"This {Portfolio} has no {Features} yet.\" with status ready. All hidden: \"All {N} {Features} are completed. Turn off Hide Completed {Features} to see them.\", where N is the completed Features held. The owner-specific empty and all-hidden copy come into FeatureListDataGrid as PROPS from PortfolioFeatureList (and TeamFeatureList in 04-07), forwarded to DataGridBase's `emptyStateMessage`. Their defaults keep today's messages, so FeaturesView.tsx and DeliverySection.tsx are unchanged. Every message uses the configured Terminology.",
+          "criteria": [
+            "A failed list shows \"The Features couldn't be loaded.\" with a Retry button and data-widget-status=\"error\".",
+            "Retry asks again and shows the list once it arrives.",
+            "An empty Portfolio shows \"This Portfolio has no Features yet.\" with status ready.",
+            "With Hide Completed hiding every Feature, the message names N = page size + 7 completed Features, so it cannot be the page's count.",
+            "Renamed terms appear in every message and in the could-not-load message.",
+            "The empty and all-hidden copy are props with defaults; FeaturesView and DeliverySection show exactly today's messages."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx",
+          "scenario_name": "when the list cannot be loaded it says so and offers to try again | Retry asks again and shows the list once it arrives | a Portfolio with no Features yet says so, as an answer that has arrived | when Hide Completed hides every Feature the list says how many there are and how to see them | every message uses the instance's own words for Features and Portfolios | the could-not-load message uses the instance's own word for Features",
+          "unskips": [
+            "PortfolioFeatureList.oneList.test.tsx :: when the list cannot be loaded it says so and offers to try again",
+            "PortfolioFeatureList.oneList.test.tsx :: Retry asks again and shows the list once it arrives",
+            "PortfolioFeatureList.oneList.test.tsx :: a Portfolio with no Features yet says so, as an answer that has arrived",
+            "PortfolioFeatureList.oneList.test.tsx :: when Hide Completed hides every Feature the list says how many there are and how to see them",
+            "PortfolioFeatureList.oneList.test.tsx :: every message uses the instance's own words for Features and Portfolios",
+            "PortfolioFeatureList.oneList.test.tsx :: the could-not-load message uses the instance's own word for Features"
+          ],
+          "guards_kept_green": [
+            "04-04's cases; FeatureListDataGrid and DataGridBase tests; WidgetShell.status.test.tsx",
+            "pages/Features/FeaturesView.test.tsx",
+            "pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.archive.test.tsx, DeliverySection.beyondTheHorizon.test.tsx, DeliverySection.likelihoodCopy.test.tsx; components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx (edit: optional empty and all-hidden message props, forwarded to DataGridBase; defaults are today's)",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/types.ts (edit: the optional props)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx (edit: passes the Portfolio copy; WidgetBody failure look with Retry)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx (edit: un-skip six)"
+          ],
+          "dependencies": [
+            "04-04"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "pnpm vitest run PortfolioFeatureList.oneList.test.tsx and the FeaturesView/DeliverySection tests green (RENDER_HEAVY)",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy and looks (decisions 4-6). Full DES cycle. Reuse WidgetBody (`status`, `failureMessage`, `onRetry`) and DataGridBase's `emptyStateMessage`; build no new status component. The grid itself stays owner-agnostic: the owner list decides the copy. Copy comes from the Terminology provider, never hard-coded 'Epic' or 'Initiative'. RTL name matchers are unanchored, so anchor the copy regexes. `feat(features): ...`."
+        },
+        {
+          "id": "04-06",
+          "name": "After an update the Portfolio's list refreshes without hiding what it shows, and never shows an old answer as current",
+          "description": "A refresh with rows keeps them dimmed (opacity below 1) and refusing the pointer under WidgetBody's small spinner, with status loading. A refresh that fails takes the could-not-load look and the old rows are gone (decision 3). An answer for a Portfolio already left never lands (keyed query). PortfolioDetail and TeamDetail invalidate the `[\"feature-list\", kind, id]` key on a completed Features or Forecasts update, in the handler that refetches the owner today.",
+          "criteria": [
+            "While a refresh is on its way, the rows stay visible, dimmed, with pointer-events none, and data-widget-status=\"loading\".",
+            "A failed refresh shows the could-not-load look and no old row.",
+            "A late answer for a Portfolio the reader has left never replaces the one they are on.",
+            "A completed Features or Forecasts update on the detail page invalidates the list key."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx",
+          "scenario_name": "while a refresh is on its way the rows stay, dimmed and out of the pointer's reach, and the list says it is loading | a refresh that fails takes the could-not-load look rather than showing the old rows as current | an answer for the Portfolio the reader has already left never replaces the one they are on",
+          "unskips": [
+            "PortfolioFeatureList.oneList.test.tsx :: while a refresh is on its way the rows stay, dimmed and out of the pointer's reach, and the list says it is loading",
+            "PortfolioFeatureList.oneList.test.tsx :: a refresh that fails takes the could-not-load look rather than showing the old rows as current",
+            "PortfolioFeatureList.oneList.test.tsx :: an answer for the Portfolio the reader has already left never replaces the one they are on"
+          ],
+          "guards_kept_green": [
+            "PortfolioDetail and TeamDetail tests; 04-04/04-05 cases; FeaturesView and DeliverySection tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.tsx (edit: refetch with rows uses hasContentToDim; failed refresh drops rows)",
+            "Lighthouse.Frontend/src/hooks/useFeatureList.ts (edit only if the status mapping lives there)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx (edit: invalidate the list key on a completed update)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx (edit: invalidate the list key on a completed update)",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx (edit: un-skip three)"
+          ],
+          "dependencies": [
+            "04-05"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "pnpm vitest run PortfolioFeatureList.oneList.test.tsx (all 13) green",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: UI state transitions with held answers (deferred()). Full DES cycle. ci-learnings 2026-10-09 (story 6249): a keyed query must ask again once the owner has updated, which is why the invalidation in the detail pages' existing update handler matters. `feat(features): ...`."
+        },
+        {
+          "id": "04-07",
+          "name": "The Team's Features tab reads the same one list, with the same looks in the Team's words",
+          "description": "TeamFeatureList reads through useFeatureList({kind:\"team\", id}) and stops calling features/ids, useParentWorkItems and featuresInProgress. It passes the Team's empty copy (\"This {Team} has no {Features} yet.\") and the status to FeatureListDataGrid as props. Failure with Retry. A failed refresh drops the old rows. A late answer for a Team already left never lands. Rewrite TeamFeatureList.test.tsx's setup onto getFeatureList via FeatureListTestKit (upstream issue 10).",
+          "criteria": [
+            "Opening the Team tab makes one getFeatureList({kind:\"team\"}) call and nothing else.",
+            "\"This Team has no Features yet.\" with status ready; \"This Squad has no Bets yet.\" under renamed terms.",
+            "The could-not-load message with Retry, which asks again.",
+            "A failed refresh takes the could-not-load look and the old rows are gone; a late answer for a Team already left never lands.",
+            "TeamFeatureList.test.tsx keeps its row/column/dialog claims on the new setup."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.oneList.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.oneList.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.test.tsx"
+          ],
+          "scenario_name": "the list asks once, for the Team's list, and reads nothing else | a Team that works on no Features yet says so, as an answer that has arrived | when the list cannot be loaded it says so, and Retry asks again | the messages use the instance's own words for Features and Teams | a refresh that fails takes the could-not-load look rather than showing the old rows as current | an answer for the Team the reader has already left never replaces the one they are on",
+          "unskips": [
+            "TeamFeatureList.oneList.test.tsx :: the list asks once, for the Team's list, and reads nothing else",
+            "TeamFeatureList.oneList.test.tsx :: a Team that works on no Features yet says so, as an answer that has arrived",
+            "TeamFeatureList.oneList.test.tsx :: when the list cannot be loaded it says so, and Retry asks again",
+            "TeamFeatureList.oneList.test.tsx :: the messages use the instance's own words for Features and Teams",
+            "TeamFeatureList.oneList.test.tsx :: a refresh that fails takes the could-not-load look rather than showing the old rows as current",
+            "TeamFeatureList.oneList.test.tsx :: an answer for the Team the reader has already left never replaces the one they are on"
+          ],
+          "guards_kept_green": [
+            "TeamFeatureList.test.tsx claims (rewritten setup); TeamDetail tests; FeaturesView and DeliverySection tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.tsx (edit: one request, looks, passes the Team copy and status props)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.test.tsx (edit: setup onto getFeatureList via FeatureListTestKit)",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamFeatureList.oneList.test.tsx (edit: un-skip six)"
+          ],
+          "dependencies": [
+            "04-06"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "pnpm vitest run the two Team files green (RENDER_HEAVY)",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: UI flow and looks examples. Full DES cycle. Same components and copy source as 04-05/04-06; do not duplicate the look logic (one place for 'the list's status to WidgetBody'). `feat(features): ...`."
+        },
+        {
+          "id": "04-08",
+          "name": "The page objects that open a Portfolio or a Team's Features tab wait until the list says it is ready",
+          "description": "Known gap 4 / upstream issue 8. OverviewPage.goToPortfolio (or a new PortfolioDetailPage method it calls) waits for the Features list's `data-widget-status=\"ready\"` after navigating, instead of mere visibility (CLAUDE.md slow-connection rule). TeamDetailPage.goToFeatures waits the same way. No new spec. The Portfolio path is exercised by MultiTeamForecast.spec.ts, and by csv.spec.ts, which also opens a Portfolio through goToPortfolio. No spec covers the Team Features tab today, so that wait goes unexercised: accepted, because E2E is a thin sanity check.",
+          "criteria": [
+            "OverviewPage.goToPortfolio (or the PortfolioDetailPage method it uses) waits for data-widget-status=\"ready\" on the Features list, and only on target-page content (Bug #6112).",
+            "TeamDetailPage.goToFeatures waits for data-widget-status=\"ready\".",
+            "MultiTeamForecast.spec.ts and csv.spec.ts pass locally against a running Lighthouse on SQLite.",
+            "`pnpm build` in Lighthouse.EndToEndTests is clean."
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/portfolios/MultiTeamForecast.spec.ts",
+          "test_files": [
+            "Lighthouse.EndToEndTests/tests/specs/portfolios/MultiTeamForecast.spec.ts",
+            "Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts"
+          ],
+          "scenario_name": "Existing MultiTeamForecast and csv specs (no new spec): re-run locally with goToPortfolio waiting on data-widget-status=\"ready\"",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts (edit: goToPortfolio waits for the list's data-widget-status=\"ready\")",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/PortfolioDetailPage.ts (edit only if the wait lives in a new method there)",
+            "Lighthouse.EndToEndTests/tests/models/teams/TeamDetailPage.ts (edit: goToFeatures waits on ready)"
+          ],
+          "dependencies": [
+            "04-07"
+          ],
+          "estimated_hours": 1.5,
+          "exit_gates": [
+            "MultiTeamForecast.spec.ts and csv.spec.ts green locally (run them; never commit an unrun locator)",
+            "`pnpm build` in Lighthouse.EndToEndTests clean",
+            "Phase-04 exit gates green before the push"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: an E2E page-object wait. Its 'test' is the existing specs re-run. DES phases: PREPARE, GREEN, COMMIT. Specs go only through POMs, never inline page.locator(). Drive from seeded demo data. The TeamDetailPage wait is exercised by no spec today, which is accepted (E2E is a thin sanity check); do not add a spec for it. Demo Portfolios stay under 100, so slice 06's note never shows in E2E. CI runs E2E twice (ci_verifysqlite, ci_verifypostgres). `test(e2e): ...`."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The Overview and Settings open without waiting on every Feature (Story #6406)",
+      "description": "Releasable alone; needs only a finished phase 01. PortfolioRepository.GetById filters in the database; catalogue readers (no forecasts, no tracking with identity resolution) feed the five unchanged bodies. useLicenseRestrictions shares one licence query and one count per list, gains `status`, and refuses only the create actions while loading or failed, at the Overview's two buttons and the Get Started steps. The new-Team wizard and the copied-Team page's reason placement wait on a maintainer answer and are isolated in the last step (02-05), so 02-01..02-04 can ship without it. No Program.cs change.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-02 step's own gates are green, except 02-05 if it is still blocked. In that case the phase ships without it, and only the EditTeam it.skip stays pending for when it is unblocked.",
+        "The five slice-02 goldens are unchanged (no re-approval).",
+        "Time Slice02OverviewReadsNamesAndCountsScenarios (at the edge: split the golden cases into their own class if it is over 34 s) and the new frontend files against the budget on the push.",
+        "No Program.cs change, so no forced live-connector run.",
+        "The full filtered backend suite and the full `pnpm test` + `pnpm build` are green."
+      ],
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Opening one Portfolio reads that Portfolio and its Features, not the rest of the instance",
+          "description": "`PortfolioRepository.GetById` filters in the database with unchanged includes, so the detail pages, ApiHelpers and the forecast updater read one Portfolio. Add a relational SQLite test of the generated query in a unit namespace (the mutation filter excludes Integration.Containers and API.Integration).",
+          "criteria": [
+            "GET /portfolios/{Northwind Payments} materialises 1 Portfolio and its 2 Features, and no other Portfolio's Features.",
+            "The /portfolios/{id} golden body is unchanged.",
+            "A PortfolioRepository relational case shows the WHERE on the id in the SQL, with the includes unchanged."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs"
+          ],
+          "scenario_name": "Opening_Northwind_Payments_reads_Northwind_Payments_and_its_Features_not_the_rest_of_the_instance",
+          "unskips": [
+            "Slice02OverviewReadsNamesAndCountsScenarios.cs :: Opening_Northwind_Payments_reads_Northwind_Payments_and_its_Features_not_the_rest_of_the_instance (1)"
+          ],
+          "guards_kept_green": [
+            "Slice02OverviewReadsNamesAndCountsScenarios.cs :: Every_name_and_count_the_Overview_and_the_detail_pages_read_is_exactly_as_before (5)",
+            "Slice01WalkingSkeletonScenarios; ForecastUpdaterTest"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs (edit: GetById filters in the database)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs (edit: SQL-capture case)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "01-13"
+          ],
+          "estimated_hours": 2,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice02OverviewReadsNamesAndCountsScenarios, PortfolioRepositoryTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example read-count and SQL-capture tests. Full DES cycle. Count reads only through `CapturedMaterialisations.CountInto(services, counter)`, never a per-test interceptor (EF provider cache exhausts after 20 hosts). S8733 on multiple collection Includes: suppress at the call site naming DatabaseConfigurator. The only true edge into this phase is a finished phase 01; its place in the array follows DDD-3's default order unless the D27 re-score fixed another. `feat(portfolio): ...`."
+        },
+        {
+          "id": "02-02",
+          "name": "Naming and counting Portfolios and Teams reads no forecast at all",
+          "description": "Add catalogue readers on IPortfolioRepository (provisional `AllWithoutForecasts()`, `OneWithoutForecasts(id)`): the root, connection and options, Features with Team work and Teams, no forecasts, no tracking with identity resolution. GET /portfolios, /teams, /teams/{id}, /portfolios/{id} and /portfolios/{id}/settings build their unchanged DTOs from them. Give the readers a relational SQLite class in a unit namespace. Add a PostgreSQL run of the five goldens in Integration.Containers (Known gap 3, slice-02 part).",
+          "criteria": [
+            "Each of the five reads materialises 0 IndividualSimulationResult and 0 WhenForecast.",
+            "Each body equals its approved golden, on SQLite and on PostgreSQL.",
+            "The readers take and return no IQueryable, Expression or Func, and no touched file gains a GetAllByPredicate call.",
+            "The controllers keep their constructor shapes (no new parameter; existing S107 suppressions unchanged)."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioCatalogueReaderRelationalTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CatalogueBodiesOnPostgresTests.cs"
+          ],
+          "scenario_name": "Naming_and_counting_Portfolios_and_Teams_reads_no_forecast_at_all",
+          "unskips": [
+            "Slice02OverviewReadsNamesAndCountsScenarios.cs :: Naming_and_counting_Portfolios_and_Teams_reads_no_forecast_at_all (5 cases)"
+          ],
+          "guards_kept_green": [
+            "Slice02OverviewReadsNamesAndCountsScenarios.cs :: Every_name_and_count_the_Overview_and_the_detail_pages_read_is_exactly_as_before (5 goldens)",
+            "PortfoliosController/TeamsController/TeamController/PortfolioController tests; RBAC acceptance classes"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPortfolioRepository.cs (edit: catalogue readers)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs (edit: implement them, AsNoTrackingWithIdentityResolution)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs (edit: read through the catalogue)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs (edit)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs (edit)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs (edit: detail and settings)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioCatalogueReaderRelationalTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CatalogueBodiesOnPostgresTests.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice02OverviewReadsNamesAndCountsScenarios.cs (edit: un-skip one method)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice02OverviewReadsNamesAndCountsScenarios (all 11), the new relational and PostgreSQL classes, controller tests green",
+            "filtered dotnet test green (Docker running)"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: read counts and golden bodies. Full DES cycle. The no-tracking convention is the contract shape (pure read): nothing these readers return may reach a SaveChanges. Existing callers keep their write-capable port (DDD-15; splitting it is Epic 6264's). Watch: `Teams` built from a catalogue Portfolio must still compute every field the DTO shows without forecasts. If a body changes, the reader is missing an include: fix the reader, never the golden. Phase 05 builds on this step's catalogue reader. Mutation later includes PortfolioRepository.cs whole. `feat(portfolio): ...`."
+        },
+        {
+          "id": "02-03",
+          "name": "The licence check is one shared read per page and says whether it is loading, ready or failed",
+          "description": "`useLicenseRestrictions` reads `[\"licenseStatus\"]` (the key and query function LicenseStatusIcon already uses) and shared `[\"teams\"]` / `[\"portfolios\"]` list queries, enabled only when the licence is known and not Premium, with stale time 0. It adds a required `status: loading | ready | failed`. While loading or failed only the count-gated create answers refuse; edits and updates answer as today; ready answers exactly as today. LicenseStatusIcon and the hook share the one licence query, so only one module asks the server for it (SurveyNudge and SystemSettingsTab are exempt by name, upstream issue 4). Make `status` required and add `status: \"ready\"` to the hook mocks in OverviewDashboard.test.tsx and EditTeam.test.tsx (upstream issue 11).",
+          "criteria": [
+            "While the licence is on its way, canCreateTeam/canCreatePortfolio are false and the update answers true, with status loading.",
+            "A failed licence read, or a failed Team count on a free licence, refuses creation and allows edits, with status failed.",
+            "Once licence and counts are in, status is ready, and a free licence with room allows creation as today.",
+            "Three askers on one page share one licence read and one read of each list.",
+            "On Premium the lists are never fetched for counting.",
+            "Exactly one module (besides the named exemptions) calls getLicenseStatus.",
+            "The active guards (free at the limit, Premium) stay green."
+          ],
+          "test_file": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.status.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.status.test.tsx",
+            "Lighthouse.Frontend/src/hooks/licenseStatusOneAsker.enforcement.test.ts"
+          ],
+          "scenario_name": "while the licence is still on its way, Add Team and Add Portfolio are refused and editing stays allowed | when the licence cannot be read, Add Team and Add Portfolio are refused and editing stays allowed | when the Teams cannot be counted on a free licence, creating is refused as when the licence cannot be read | once the licence and the counts are in, the check says it is ready | on a free licence with room left, Add Team and Add Portfolio are allowed as today | three parts of one page asking at once share one licence read and one count of each list | on a Premium licence the Teams and Portfolios are never fetched just to be counted | only one module asks the server for the licence on behalf of every gate",
+          "unskips": [
+            "useLicenseRestrictions.status.test.tsx :: while the licence is still on its way, Add Team and Add Portfolio are refused and editing stays allowed",
+            "useLicenseRestrictions.status.test.tsx :: when the licence cannot be read, Add Team and Add Portfolio are refused and editing stays allowed",
+            "useLicenseRestrictions.status.test.tsx :: when the Teams cannot be counted on a free licence, creating is refused as when the licence cannot be read",
+            "useLicenseRestrictions.status.test.tsx :: once the licence and the counts are in, the check says it is ready",
+            "useLicenseRestrictions.status.test.tsx :: on a free licence with room left, Add Team and Add Portfolio are allowed as today",
+            "useLicenseRestrictions.status.test.tsx :: three parts of one page asking at once share one licence read and one count of each list",
+            "useLicenseRestrictions.status.test.tsx :: on a Premium licence the Teams and Portfolios are never fetched just to be counted",
+            "licenseStatusOneAsker.enforcement.test.ts :: only one module asks the server for the licence on behalf of every gate"
+          ],
+          "guards_kept_green": [
+            "useLicenseRestrictions.status.test.tsx: free at the limit, Premium (2)",
+            "useLicenseRestrictions.test.ts, LicenseStatusIcon tests, every one of the 22 call sites' tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts (edit: shared TanStack queries; status required)",
+            "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusIcon.tsx (edit: read the shared licence query)",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx (edit: mocks gain status: \"ready\")",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.test.tsx (edit: mocks gain status: \"ready\")",
+            "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.test.ts (edit only if its hand-written portfolio-service mock needs the shared-query shape)",
+            "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.status.test.tsx (edit: un-skip seven)",
+            "Lighthouse.Frontend/src/hooks/licenseStatusOneAsker.enforcement.test.ts (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_hours": 5,
+          "exit_gates": [
+            "pnpm vitest run the two files green",
+            "pnpm test green (every useLicenseRestrictions caller's tests)",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: hook state examples over three query states (no fast-check). Full DES cycle. Contract shape: a pure derivation over shared queries. The count's meaning is unchanged (the served, RBAC-filtered list). Reuse the existing `[\"licenseStatus\"]` key and query function; do not add a context provider (a second cache). The server's LicenseGuard is untouched. ci-learnings 2026-10-09: build fixtures outside the render callback. `feat(license): ...`."
+        },
+        {
+          "id": "02-04",
+          "name": "The Overview's create actions and the Get Started steps wait for the licence check and say why when it fails",
+          "description": "OverviewDashboard's \"+ Add Team\" / \"+ Add Portfolio\" are disabled with no tooltip while `status` is loading, and disabled with \"Couldn't check your license. Reload the page to try again.\" when failed. OnboardingStepper's Add Team / Add Portfolio steps (fed by the Overview's answers) follow the same two states, with the reason on failed. At the free limit the premium tooltip shows as today. The Overview's LoadingAnimation and error look are unchanged (decision 12).",
+          "criteria": [
+            "While the licence is checked, both Overview create buttons are disabled and hovering shows no tooltip.",
+            "When the check failed, both are disabled and hovering shows exactly \"Couldn't check your license. Reload the page to try again.\".",
+            "When the check failed, the Get Started Add Team step and Add Portfolio step are disabled and show the same reason.",
+            "Guards stay green: the premium tooltip at the free limit; enabled with room; the Add Team step says nothing while checking."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx",
+          "scenario_name": "while the licence is checked, Add Team and Add Portfolio are disabled and say nothing | when the licence cannot be checked, Add Team and Add Portfolio are disabled and say why | when the licence cannot be checked, the Add Team step is disabled and says why | when the licence cannot be checked, the Add Portfolio step is disabled and says why",
+          "unskips": [
+            "OverviewDashboard.licenseCheck.test.tsx :: while the licence is checked, Add Team and Add Portfolio are disabled and say nothing",
+            "OverviewDashboard.licenseCheck.test.tsx :: when the licence cannot be checked, Add Team and Add Portfolio are disabled and say why",
+            "OverviewDashboard.licenseCheck.test.tsx :: when the licence cannot be checked, the Add Team step is disabled and says why",
+            "OverviewDashboard.licenseCheck.test.tsx :: when the licence cannot be checked, the Add Portfolio step is disabled and says why"
+          ],
+          "guards_kept_green": [
+            "OverviewDashboard.licenseCheck.test.tsx: free-limit premium tooltip and enabled-with-room (2); Get Started step silent while checking and enabled with room (2)",
+            "OverviewDashboard.test.tsx (allowlisted at 77 s: add nothing to it)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx (edit: the two buttons follow status; reason on failed)",
+            "Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx (edit: Add Team/Add Portfolio steps disabled while loading or failed; reason on failed)",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx (edit: un-skip four)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "pnpm vitest run OverviewDashboard.licenseCheck.test.tsx green (RENDER_HEAVY timeout applied)",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI states with exact copy. Full DES cycle. The UI was sketched and approved at DISTILL (decisions 11, 15), so no re-sketch is needed. Reuse each control's existing disabled-with-tooltip style. Spell the copy 'license' (UI spelling). getByRole(\"tooltip\") is a strict-mode trap when two tooltips exist: scope it. `feat(license): ...`."
+        },
+        {
+          "id": "02-05",
+          "name": "Every new-Team path follows the licence check: the create wizard's Create and the copied Team's page say why when the check failed",
+          "description": "Decision 15 applied to the new-Team paths. EditTeam's copied-Team path (`/teams/new?cloneFrom=...`) already refuses the save while loading or failed. It must now show \"Couldn't check your license. Reload the page to try again.\" when failed, at the placement the maintainer chooses (the page autosaves and has no Save button to carry a tooltip). If the maintainer confirms the create wizard (`CreateTeamWizard`, the path most new Teams take) is a create entry point, its Create button follows the same two states, and a new scenario is added for it. BLOCKED: upstream issue 12 is open with DESIGN/the maintainer.",
+          "blocked_on": "maintainer: D15 wizard + clone-page reason placement",
+          "criteria": [
+            "When the licence check failed, a copied Team is not saved and the page shows the could-not-check reason at the agreed placement.",
+            "If the wizard is in scope: while the check loads, the wizard's Create is disabled with no reason; when it failed, it is disabled with the reason.",
+            "Guards stay green: a copied Team is not saved and nothing is said while checking; it saves with room; an existing Team saves on a failed check."
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.licenseCheck.test.tsx",
+          "test_files": [
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.licenseCheck.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.licenseCheck.test.tsx (new, only if the maintainer puts the wizard in scope)"
+          ],
+          "scenario_name": "when the licence cannot be checked, a copied Team is not saved and the page says why | (pending maintainer answer) the create wizard's Create follows the licence check",
+          "unskips": [
+            "EditTeam.licenseCheck.test.tsx :: when the licence cannot be checked, a copied Team is not saved and the page says why"
+          ],
+          "guards_kept_green": [
+            "EditTeam.licenseCheck.test.tsx: not saved and nothing said while checking; saves with room; an existing Team saves on a failed check (3)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.tsx (edit: show the reason on failed for the copied-Team path)",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.tsx (edit, only if the wizard is in scope)",
+            "Lighthouse.Frontend/src/pages/Teams/Edit/EditTeam.licenseCheck.test.tsx (edit: un-skip one; adjust where it looks for the reason to the agreed placement)",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateTeamWizard.licenseCheck.test.tsx (new, only if in scope)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "pnpm vitest run the touched files green",
+            "pnpm test green",
+            "pnpm build clean"
+          ],
+          "implementation_notes": "BLOCKED until the maintainer answers upstream issue 12: (a) is the create wizard's Create a create entry point under decision 15, and (b) where does the could-not-check reason sit on the copied-Team page? Before building, show the maintainer an ASCII sketch of the reason placement on the copied-Team page (and of the wizard's Create states if in scope), reusing an existing control style. CLAUDE.md requires a sketch for any UI not settled at DISTILL. Record the answer as a maintainer-decision block in feature-delta.md. Steps 02-01..02-04 and every later phase do not depend on this step, so phase 02 can ship without it. If it ships later, it is the only it.skip of this Epic left in the frontend. EXEMPT FROM PARADIGM: single-shot UI states with exact copy. Full DES cycle once unblocked. `feat(license): ...`."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Forecast rounds finish sooner (Story #6409)",
+      "description": "Releasable alone; builds one-way on 01a's readings (step 01-05) and 02-02's catalogue reader, nothing else. The gather reads forecast headers without histograms (tracked), and the fingerprint and skip are decided on that. A computed round replaces forecasts and lets the database cascade delete old histogram rows. ForecastUpdater reads its Portfolio through the catalogue reader and the trigger's collision check through `TeamIdsOf`. Write-back resolves against its own no-tracking full read after the save, only when a forecast write-back mapping exists that the licence allows. ForecastService drops its GetAllByPredicate call. No Program.cs change. The Slice01 guards named below apply only if slice 01 Part B (the lane) has shipped.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-05 step's own gates are green.",
+        "The four slice-05 active guards stay green, including the store-level orphan check and the no-Team Feature (PAY-2) staging comparison.",
+        "The Story 6354 fingerprint members are untouched (G1). The SkipUnchangedForecasts classes are green; if slice 01 Part B has shipped, the Slice01 classes and the slice-01 PostgreSQL identity class are green too.",
+        "Time Slice05LighterRoundsScenarios (pre-allowlist only if a PostgreSQL twin is added to the same class) and the new PostgreSQL class on the push.",
+        "ForecastService no longer calls GetAllByPredicate; no touched file gains one."
+      ],
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "A round that changes nothing on a Portfolio that writes nothing back decides to skip without reading a single forecast histogram",
+          "description": "The gather (provisional `IFeatureRepository` team gather) reads Features of the involved Teams, tracked, with Portfolios, Team work and Teams, dependency references and completion-forecast headers, and no histograms. The fingerprint and skip are decided on it. ForecastUpdater reads its Portfolio through the catalogue reader (02-02) and the trigger's Team-ids check through `IPortfolioRepository.TeamIdsOf(id)`. After the save and confirm-stamp, and only with a forecast write-back mapping the licence allows, ForecastUpdater reads the Portfolio's Features with completion and start forecasts and histograms, no tracking, and hands that to write-back resolution. Without a mapping nothing extra is read.",
+          "criteria": [
+            "On a Portfolio without a write-back mapping, a round that changes nothing skips and materialises 0 IndividualSimulationResult.",
+            "A skipped round on a Portfolio that writes its dates back still reads the histograms it stages from, and stages today's values.",
+            "Computed and skipped rounds stage the same values for every Feature, including the in-progress one no Team works on (PAY-2).",
+            "The tracker is sent the same date after a computed round and after the skipped round that follows.",
+            "The Story 6354 fingerprint of a seeded Portfolio is identical to before (golden)."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastGatherReaderRelationalTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs"
+          ],
+          "scenario_name": "A_round_that_changes_nothing_on_a_Portfolio_that_writes_nothing_back_decides_to_skip_without_reading_a_single_forecast_histogram",
+          "unskips": [
+            "Slice05LighterRoundsScenarios.cs :: A_round_that_changes_nothing_on_a_Portfolio_that_writes_nothing_back_decides_to_skip_without_reading_a_single_forecast_histogram (1)"
+          ],
+          "guards_kept_green": [
+            "Slice05LighterRoundsScenarios.cs :: A_skipped_round_on_a_Portfolio_that_writes_its_dates_back_still_reads_the_histograms_it_stages_from",
+            "Slice05LighterRoundsScenarios.cs :: The_tracker_is_sent_the_same_date_after_a_computed_round_and_after_the_skipped_round_that_follows_it",
+            "Slice05LighterRoundsScenarios.cs :: A_computed_round_and_the_skipped_round_after_it_stage_the_same_values_for_every_Feature_including_one_no_Team_works_on",
+            "SkipUnchangedForecasts acceptance classes; ForecastInputFingerprintTest; WriteBackTriggerService tests",
+            "Only if slice 01 Part B has shipped: Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios, FastWithManyFeaturesArchUnitTest slice-01 rules"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs (edit: team gather without histograms; Portfolio Features with full forecasts for write-back)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit: implement both)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPortfolioRepository.cs (edit: TeamIdsOf)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs (edit: TeamIdsOf)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit: gather through the new read; drop GetAllByPredicate)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs (edit: catalogue Portfolio read; TeamIdsOf trigger check; write-back from its own read after the save, mapping-gated)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ForecastGatherReaderRelationalTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/ForecastUpdaterTest.cs (edit: mocks follow the new reads; no extra read without a mapping)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "01-05",
+            "02-02"
+          ],
+          "estimated_hours": 6,
+          "exit_gates": [
+            "dotnet build zero warnings (Debug and Release)",
+            "Slice05LighterRoundsScenarios, the new relational class, ForecastUpdaterTest, SkipUnchangedForecasts classes green (and the Slice01 classes if Part B shipped)",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: read-count and staging-equality examples. Full DES cycle. True edges only: 01a's readings (01-05) and 02-02's catalogue reader. If the lane has shipped, round code stays free of ConfigureAwait(false) (the 01-08 source scan guards it); if it has not, these changes still stand alone. The write-back must NOT resolve against the catalogue Portfolio or the tracked gather. Untracked copies never receive a computed round's forecasts, and the gather is the Teams' Features, not the Portfolio's (PAY-2 is the edge that proves it). ForecastUpdater and ForecastService stay at 7 constructor parameters: the readers come from the update scope or the existing repository parameter. `feat(forecast): ...`."
+        },
+        {
+          "id": "05-02",
+          "name": "A computed round replaces yesterday's forecasts without reading their histograms, and leaves no orphan row at the store",
+          "description": "A computed round replaces each gathered Feature's forecasts. The old histogram rows go by the model's cascade delete, never loaded and deleted row by row. A computed round's stored rows equal the old code's for the same seed. The row diff is limited to the forecast and histogram tables of the gathered Features.",
+          "criteria": [
+            "A computed round (preconditions: it did not skip, and the stored forecast changed) materialises none of yesterday's IndividualSimulationResult rows.",
+            "With foreign keys on (PRAGMA foreign_keys = 1 asserted first), no histogram row is left that belongs to no forecast.",
+            "The computed round's stored percentiles and histogram rows equal today's for the same seed (G1 golden)."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs",
+          "scenario_name": "A_computed_round_replaces_yesterdays_forecasts_without_reading_their_histograms",
+          "unskips": [
+            "Slice05LighterRoundsScenarios.cs :: A_computed_round_replaces_yesterdays_forecasts_without_reading_their_histograms (1)"
+          ],
+          "guards_kept_green": [
+            "Slice05LighterRoundsScenarios.cs :: At_the_store_a_computed_round_leaves_no_histogram_row_behind_that_belongs_to_no_forecast",
+            "Slice01WalkingSkeletonScenarios.A_forecast_reads_the_same_wherever_its_round_runs (the G1 golden); 05-01's guards"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Forecast/ForecastService.cs (edit: replace forecasts on header-only entities; rely on the cascade)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs (edit only if the replace needs a header-level delete)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice05LighterRoundsScenarios.cs (edit: un-skip one)"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice05LighterRoundsScenarios (all 6) and the G1 golden green (plus the slice-01 identity classes if Part B shipped)",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: store-level and read-count examples. Full DES cycle. CF-7: a shorter save transaction is the point (SQLite WAL, busy_timeout 10 s). Set-based delete plus bulk insert is out (provider-specific; the general bulk library is dual-licensed commercial). Contract shape: bounded change over the forecasts of the gathered Features, nothing else. `feat(forecast): ...`."
+        },
+        {
+          "id": "05-03",
+          "name": "On PostgreSQL a computed round changes only its Features' forecast rows and both rounds stage today's write-back values",
+          "description": "Known gap 3, slice-05 part, and the DDD-17/18 provider tests. In Integration.Containers on PostgreSQL: the computed round's row diff is limited to the forecast and histogram tables of the gathered Features, and a computed and a skipped round, each with a forecast write-back mapping on Premium, stage exactly today's field values for the same seed. A round without a mapping reads no histograms.",
+          "criteria": [
+            "On PostgreSQL, the computed round's row diff touches only forecast and histogram rows of the gathered Features.",
+            "On PostgreSQL, computed and skipped rounds with a mapping stage the same values today's code stages, PAY-2 included.",
+            "Without a mapping no histogram is read.",
+            "Shared container, fresh DB per case. CI time read, and pre-allowlisted if real rounds make it slow."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LighterRoundsOnPostgresTests.cs",
+          "scenario_name": "(new DELIVER test) A computed round on PostgreSQL changes only its Features' forecast rows; computed and skipped rounds stage today's write-back values",
+          "unskips": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/LighterRoundsOnPostgresTests.cs (new)",
+            "Scripts/test-timings/test-time-budget.json (edit only if needed: reason 'runs real forecast rounds on PostgreSQL to compare stored forecasts and staged values')"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "estimated_hours": 3,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "the new class green with Docker running",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: provider identity examples. A characterisation test, green on arrival: prove it can fail by locally breaking the write-back read's include, and say so in the commit body. Compare through a fresh DbContext, ordered. `test(forecast): ...`."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Lighthouse says when a Portfolio grows past 100 Features (Story #6410)",
+      "description": "Releasable alone; needs only a finished phase 01, and stays last in phase order. The PortfolioSize domain value (count, threshold 100, over = more than 100). `GET api/latest/portfolios/{id}/size` returns `{ featureCount, threshold, isOverThreshold }` (PortfolioRead) from one COUNT (`FeatureCountOf`). PortfolioUpdater logs one Warning after a successful Features update when over, and the line also lands in Recent Problems. The Portfolio edit page shows the info note over 100, the one-line failure note when the size cannot be loaded, and nothing while loading or at/under 100. Save never waits on the count. No Program.cs change.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "exit_gates": [
+        "Every phase-06 step's own gates are green.",
+        "PendingEpic6400.cs is deleted. No frontend SCAFFOLD stub is left (getSize implemented).",
+        "Time Slice06PortfolioSizeScenarios, Slice06SizeWarningInTheLogScenarios and ModifyProjectSettings.sizeNote.test.tsx on the push.",
+        "Final Epic gate: the full filtered backend suite and the full `pnpm test` + `pnpm build` are green; `grep -rn \"PendingEpic6400\\|it.skip\"` over the DISTILL test files lists nothing, except the EditTeam.licenseCheck.test.tsx it.skip if 02-05 is still blocked.",
+        "The demo Portfolios stay at or under 100 Features, so neither the note nor the Warning appears in E2E or screenshots."
+      ],
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "A Portfolio's size says whether its last update stored more than 100 Features, counted without reading them",
+          "description": "`Models/PortfolioSize.cs` (pure: count, threshold 100, isOver = count > 100). `IPortfolioRepository.FeatureCountOf(id)` is one COUNT. The new action on PortfolioController, `GET portfolios/{portfolioId}/size`, with the PortfolioRead guard, returns `{ featureCount, threshold, isOverThreshold }`. Add a PortfolioSize unit test at 100 / 101 and a relational SQLite case for the COUNT.",
+          "criteria": [
+            "A Portfolio whose last update stored 101 Features answers featureCount 101, threshold 100, isOverThreshold true.",
+            "Exactly 100 answers isOverThreshold false.",
+            "A never-updated Portfolio answers 0 and false.",
+            "Counting materialises no Feature (one COUNT statement).",
+            "PortfolioSize unit: 100 is not over, 101 is over."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06PortfolioSizeScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06PortfolioSizeScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/PortfolioSizeTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs"
+          ],
+          "scenario_name": "A_Portfolio_whose_last_update_stored_101_Features_is_over_the_threshold_of_100 | A_Portfolio_holding_exactly_100_Features_is_not_over_the_threshold | A_Portfolio_that_was_never_updated_holds_no_Features_and_is_not_over_the_threshold | Counting_a_Portfolios_Features_reads_none_of_them",
+          "unskips": [
+            "Slice06PortfolioSizeScenarios.cs :: A_Portfolio_whose_last_update_stored_101_Features_is_over_the_threshold_of_100 (1)",
+            "Slice06PortfolioSizeScenarios.cs :: A_Portfolio_holding_exactly_100_Features_is_not_over_the_threshold (1)",
+            "Slice06PortfolioSizeScenarios.cs :: A_Portfolio_that_was_never_updated_holds_no_Features_and_is_not_over_the_threshold (1)",
+            "Slice06PortfolioSizeScenarios.cs :: Counting_a_Portfolios_Features_reads_none_of_them (1)"
+          ],
+          "guards_kept_green": [
+            "PortfolioController tests; Slice02 goldens (the settings body is unchanged: the size is NOT a field on PortfolioSettingDto)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/PortfolioSize.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/PortfolioSizeDto.cs (new: featureCount, threshold, isOverThreshold)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IPortfolioRepository.cs (edit: FeatureCountOf)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/PortfolioRepository.cs (edit: FeatureCountOf)",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs (edit: size action)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/PortfolioSizeTest.cs (new)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PortfolioRepositoryTest.cs (edit: COUNT case)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06PortfolioSizeScenarios.cs (edit: un-skip four)"
+          ],
+          "dependencies": [
+            "01-13"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice06PortfolioSizeScenarios touched cases, PortfolioSizeTest, PortfolioRepositoryTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "PortfolioSize is a pure function, and its unit test is a boundary table [TestCase(100,false)] [TestCase(101,true)] with no property library available. EXEMPT FROM PARADIGM at the acceptance level. Full DES cycle. One threshold constant lives in PortfolioSize, and the client never counts. A new contract: grep for PortfolioController usages and extend the test builders first. The only true edge into this phase is a finished phase 01; it stays last in phase order. `feat(portfolio): ...`."
+        },
+        {
+          "id": "06-02",
+          "name": "A reader who may not open the Portfolio is refused its size, and a missing Portfolio's size is not found",
+          "description": "Refusals of the size endpoint: 403 under the PortfolioRead guard for an unreadable Portfolio; 404 for a Portfolio that does not exist, after proving an existing one answers.",
+          "criteria": [
+            "A reader who may not open the Portfolio gets 403.",
+            "A Portfolio that does not exist answers 404, while an existing one answers 200."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06PortfolioSizeScenarios.cs",
+          "scenario_name": "A_reader_who_may_not_open_the_Portfolio_is_refused_its_size | The_size_of_a_Portfolio_that_does_not_exist_is_not_found",
+          "unskips": [
+            "Slice06PortfolioSizeScenarios.cs :: A_reader_who_may_not_open_the_Portfolio_is_refused_its_size (1)",
+            "Slice06PortfolioSizeScenarios.cs :: The_size_of_a_Portfolio_that_does_not_exist_is_not_found (1)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs (edit: guard and not-found on the size action)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06PortfolioSizeScenarios.cs (edit: un-skip two)"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "estimated_hours": 1.5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice06PortfolioSizeScenarios (all 6) green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: refusal examples. Full DES cycle. The PortfolioController action likely already gets the guard from its route attributes; if the 403 is green on arrival, prove it can fail by temporarily removing the guard locally. `feat(portfolio): ...`."
+        },
+        {
+          "id": "06-03",
+          "name": "An update that stores more than 100 Features leaves one Warning naming the Portfolio, which Recent Problems lists once",
+          "description": "PortfolioUpdater, after a successful Features update, logs exactly one Warning from the count it already holds, when that count is more than 100: \"Portfolio '{name}' ({id}) holds {N} Features after its update, more than 100. Its pages and forecasts get slower; narrowing its query keeps them fast.\" There is nothing at Error or Fatal, nothing on a failed update, and nothing at exactly 100. Add a PortfolioUpdaterTest line case. This step un-skips the last backend pending cases, so it deletes PendingEpic6400.cs whole.",
+          "criteria": [
+            "An update that stores 101 Features leaves exactly one line at Warning with the exact text, nothing at Error or Fatal, and all 101 stored.",
+            "GET /api/latest/logs/problems lists the size warning exactly once.",
+            "An update that fails leaves no size warning, even for a Portfolio that held 101 Features, after the successful update before it warned once.",
+            "An update storing exactly 100 leaves no size warning (active guard).",
+            "PendingEpic6400.cs is deleted whole; no test references it."
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
+          ],
+          "scenario_name": "An_update_that_stores_101_Features_leaves_one_warning_naming_the_Portfolio_and_still_stores_them_all | The_size_warning_is_listed_once_in_Recent_Problems | An_update_that_fails_leaves_no_size_warning_even_for_a_Portfolio_that_held_101_Features",
+          "unskips": [
+            "Slice06SizeWarningInTheLogScenarios.cs :: An_update_that_stores_101_Features_leaves_one_warning_naming_the_Portfolio_and_still_stores_them_all (1)",
+            "Slice06SizeWarningInTheLogScenarios.cs :: The_size_warning_is_listed_once_in_Recent_Problems (1)",
+            "Slice06SizeWarningInTheLogScenarios.cs :: An_update_that_fails_leaves_no_size_warning_even_for_a_Portfolio_that_held_101_Features (1)"
+          ],
+          "guards_kept_green": [
+            "Slice06SizeWarningInTheLogScenarios.cs :: An_update_that_stores_exactly_100_Features_leaves_no_size_warning",
+            "PortfolioUpdaterTest; TaskManager acceptance classes; Recent Problems tests"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/PortfolioUpdater.cs (edit: one Warning over 100, via PortfolioSize)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs (edit: line case)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Slice06SizeWarningInTheLogScenarios.cs (edit: un-skip three)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/PendingEpic6400.cs (delete)"
+          ],
+          "dependencies": [
+            "06-02"
+          ],
+          "estimated_hours": 2.5,
+          "exit_gates": [
+            "dotnet build zero warnings",
+            "Slice06SizeWarningInTheLogScenarios (all 4), PortfolioUpdaterTest green",
+            "filtered dotnet test green"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: an exact log line and level. Full DES cycle. Only backend tests use PendingEpic6400 (the blocked 02-05 case is a frontend it.skip), so the class goes whole here. If the phase order the re-score picked leaves a backend [Ignore(PendingEpic6400...)] in a later phase, delete the class in that phase's last step instead. Use a structured message template (Portfolio name, id, count) rather than interpolation, so the Recent Problems sink and the captured sink see the same text. The log line's 'Features' is a log constant, as the maintainer approved; log copy names entities with the seeded defaults. Accepted: it adds one Recent Problems entry per update over 100 (decision 14), and K3's scan counts Kestrel heartbeat warnings only. `feat(portfolio): ...`."
+        },
+        {
+          "id": "06-04",
+          "name": "The Portfolio's edit page says when it holds more than 100 Features, says when its size cannot be checked, and never waits on the count to save",
+          "description": "Replace the `PortfolioService.getSize(id)` stub. ModifyProjectSettings, editing an existing Portfolio, asks that Portfolio's size. Over 100: an info Alert, \"This {Portfolio} holds {N} {Features} (as of its last update). Above 100, its pages and forecasts get slower. If you don't plan with all of them, narrow the query.\" When it cannot be loaded: the same info Alert with \"Couldn't check this {Portfolio}'s size.\", and the page stays usable. While loading, and at or under 100, nothing shows. A Portfolio being created is not asked. Copy uses the configured Terminology.",
+          "criteria": [
+            "At 101, the note with its count shows in an info Alert (role alert, MuiAlert-colorInfo).",
+            "getSize is called with the edited Portfolio's id.",
+            "On a failed size read, \"Couldn't check this Portfolio's size.\" shows, and the page stays usable (Save works).",
+            "Renamed terms appear in the note and in the failure line.",
+            "At exactly 100, no note shows once the size has been asked for and has arrived.",
+            "While the size is on its way, no note and no warning show, once it has been asked for.",
+            "A Portfolio being created is not asked (active guard)."
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx",
+          "scenario_name": "a Portfolio holding 101 Features shows the note with its count, as information | the note asks for the size of the Portfolio being edited | when the size cannot be checked, the page says so and stays usable | the note uses the instance's own words for Features and Portfolios | the could-not-check message uses the instance's own word for Portfolios | a Portfolio holding exactly 100 Features shows no note | while the size is on its way the page shows no note and no warning",
+          "unskips": [
+            "ModifyProjectSettings.sizeNote.test.tsx :: a Portfolio holding 101 Features shows the note with its count, as information",
+            "ModifyProjectSettings.sizeNote.test.tsx :: the note asks for the size of the Portfolio being edited",
+            "ModifyProjectSettings.sizeNote.test.tsx :: when the size cannot be checked, the page says so and stays usable",
+            "ModifyProjectSettings.sizeNote.test.tsx :: the note uses the instance's own words for Features and Portfolios",
+            "ModifyProjectSettings.sizeNote.test.tsx :: the could-not-check message uses the instance's own word for Portfolios",
+            "ModifyProjectSettings.sizeNote.test.tsx :: a Portfolio holding exactly 100 Features shows no note",
+            "ModifyProjectSettings.sizeNote.test.tsx :: while the size is on its way the page shows no note and no warning"
+          ],
+          "guards_kept_green": [
+            "ModifyProjectSettings.sizeNote.test.tsx :: a Portfolio being created is not asked",
+            "ModifyProjectSettings tests; TerminologyConfiguration.test.tsx; useLicenseRestrictions.test.ts (hand-written getSize mocks)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/PortfolioService.ts (edit: getSize implemented)",
+            "Lighthouse.Frontend/src/models/Portfolio/PortfolioSize.ts (edit only if the contract type needs adjusting)",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/PortfolioSizeNote.tsx (new: the note and its failure line, MUI Alert severity info)",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx (edit: render the note above the query for an existing Portfolio)",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx (edit: un-skip seven)"
+          ],
+          "dependencies": [
+            "06-03"
+          ],
+          "estimated_hours": 4,
+          "exit_gates": [
+            "pnpm vitest run ModifyProjectSettings.sizeNote.test.tsx green",
+            "pnpm test green",
+            "pnpm build clean",
+            "Phase-06 and Epic exit gates green before the push"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy and three looks (decisions 8, 9). Full DES cycle. The sketch was approved at DISTILL. Reuse MUI Alert severity info, as the other settings notes do. Remove the SCAFFOLD comment from getSize. A keyed query (TanStack) for the size, so a late answer for another Portfolio never lands. Save never waits on it. Copy from the Terminology provider, never hard-coded. `feat(portfolio): ...`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (opus), iteration 1",
+    "approved_at": "2026-10-24T07:44:42Z",
+    "notes": "Conditionally approved (0 blockers); H1-H3, M1-M5, L1, L2, L4 applied in one revision: phase order 01,03,04,02,05,06 (DESIGN default, the baseline re-score may change it), 04-08 retargeted to the Portfolio specs, owner copy as props, 01-10 split."
+  }
+}
