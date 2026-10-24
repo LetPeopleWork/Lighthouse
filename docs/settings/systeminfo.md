@@ -73,6 +73,35 @@ Connection "Jira Cloud" changed the Teams' Parent Override Field default from "C
 
 An Estimation change queues no update, so its entry says *no update queued*. See [Defaults for Teams and Portfolios](worktrackingsystems.html#defaults-for-teams-and-portfolios).
 
+### Jira Release sweeps
+To offer or follow a Jira Release, Lighthouse reads the Releases of every project the connection can see. Each of these reads (a *sweep*) writes one Information entry with how long Jira took and how much it read, so you can tell whether a slow Delivery dialog or a slow refresh is waiting on Jira:
+
+```
+Jira Release sweep for the Picker took 3912 ms on this DataCenter connection: kept 48 of 1260 versions read over 31 pages from 27 projects; complete: True, projects skipped: 0
+```
+
+| Figure | Meaning |
+|--------|---------|
+| *for the …* | Why the Releases were read (see below) |
+| *took … ms* | How long the whole sweep took, from connecting to Jira to the last page of versions |
+| *on this … connection* | `Cloud` or `DataCenter`, or `Unknown` when Jira could not be reached before that was known |
+| *kept … of … versions read* | How many Releases were kept as choices, out of all the versions Jira returned |
+| *over … pages* | How many pages of versions Jira was asked for |
+| *from … projects* | How many projects the connection can see |
+| *complete* | `True` when every project was read; `False` when the list is missing something |
+| *projects skipped* | How many projects could not be read, for example because Jira refused them |
+
+The sweep is named for what asked for it:
+
+| Purpose | What asked for it |
+|---------|-------------------|
+| Picker | The list of Releases offered when you choose one in the Delivery dialog. A list read in the last few minutes is reused, and then no entry is written. |
+| Preview | The preview shown once you pick a Release, with its date and the Features it carries |
+| Save | Saving a Delivery that follows a Release, when it is created or changed |
+| Refresh | The regular Portfolio refresh that keeps Deliveries following a Release up to date |
+
+The entry names no host, connection, project or Release, so it can be shared as it is. Find it in the [Log Viewer](#view-logs) by searching for *Jira Release sweep*, or in the [downloaded log](#download). It is written at *Information* level, so it only shows while the [Log Level](#log-level) is *Information* or more detailed.
+
 ## Log Level
 Log levels describe the level of detail that should end up in the log. The more "sensitive", the more messages will be added. Following *Log Levels* can be selected:
 
