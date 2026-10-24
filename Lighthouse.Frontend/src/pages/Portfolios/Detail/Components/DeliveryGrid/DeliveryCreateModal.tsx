@@ -8,7 +8,9 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
+	type SxProps,
 	TextField,
+	type Theme,
 	Typography,
 } from "@mui/material";
 import type React from "react";
@@ -110,12 +112,15 @@ const SchemaLoadError: React.FC = () => (
 	</Alert>
 );
 
-const FeatureListLoadError: React.FC<
-	Readonly<{ portfolioTerm: string; featuresTerm: string }>
-> = ({ portfolioTerm, featuresTerm }) => (
-	<Alert severity="warning">
-		Couldn't load this {portfolioTerm}'s {featuresTerm}. Close this dialog and
-		open it again to retry.
+/**
+ * Every answer the dialog waits on is asked for afresh on each opening, so reopening it is the one way
+ * to try a failed answer again, and each such notice says so the same way.
+ */
+const RetryByReopeningNotice: React.FC<
+	Readonly<{ problem: string; sx?: SxProps<Theme> }>
+> = ({ problem, sx }) => (
+	<Alert severity="warning" sx={sx}>
+		{problem} Close this dialog and open it again to retry.
 	</Alert>
 );
 
@@ -450,9 +455,8 @@ const SelectionModeContent: React.FC<
 
 	if (body.kind === FEATURE_LIST_FAILED) {
 		return (
-			<FeatureListLoadError
-				portfolioTerm={portfolioTerm}
-				featuresTerm={contentProps.featuresTerm}
+			<RetryByReopeningNotice
+				problem={`Couldn't load this ${portfolioTerm}'s ${contentProps.featuresTerm}.`}
 			/>
 		);
 	}
@@ -562,10 +566,10 @@ const SelectionTabRow: React.FC<
 			{sourcesStatus === "loading" && <BusySelectionTab />}
 		</ButtonGroup>
 		{sourcesStatus === "error" && (
-			<Alert severity="warning" sx={{ mt: 1 }}>
-				Couldn't check what this {portfolioTerm}'s connection offers. Close this
-				dialog and open it again to retry.
-			</Alert>
+			<RetryByReopeningNotice
+				problem={`Couldn't check what this ${portfolioTerm}'s connection offers.`}
+				sx={{ mt: 1 }}
+			/>
 		)}
 	</Box>
 );
@@ -624,22 +628,6 @@ const boundSourceSelection = (
 	};
 };
 
-/**
- * Set once the dialog has been open with the given condition holding, and kept for the rest of that
- * opening, so leaving the tab and coming back never asks again. A new opening starts unset.
- */
-const useOpeningLatch = (opening: number, holds: boolean): boolean => {
-	const [latchedOpening, setLatchedOpening] = useState<number | null>(null);
-
-	useEffect(() => {
-		if (holds) {
-			setLatchedOpening(opening);
-		}
-	}, [holds, opening]);
-
-	return latchedOpening === opening;
-};
-
 const isValidFutureDate = (date: string): boolean => {
 	if (!date) {
 		return false;
@@ -651,6 +639,22 @@ const isValidFutureDate = (date: string): boolean => {
 	selectedDate.setHours(0, 0, 0, 0);
 
 	return selectedDate > today;
+};
+
+const nameErrorOf = (name: string, deliveryTerm: string): string | undefined =>
+	name.trim() ? undefined : `${deliveryTerm} name is required`;
+
+const dateErrorOf = (
+	date: string,
+	deliveryTerm: string,
+): string | undefined => {
+	if (!date) {
+		return `${deliveryTerm} date is required`;
+	}
+	if (!isValidFutureDate(date)) {
+		return `${deliveryTerm} date must be in the future`;
+	}
+	return undefined;
 };
 
 interface ValidationOptions {
@@ -679,17 +683,11 @@ const getFirstBlockingError = ({
 		return tabError;
 	}
 
-	if (!name.trim()) {
-		return `${deliveryTerm} name is required`;
-	}
-	if (!date) {
-		return `${deliveryTerm} date is required`;
-	}
-	if (!isValidFutureDate(date)) {
-		return `${deliveryTerm} date must be in the future`;
-	}
-
-	return tabError;
+	return (
+		nameErrorOf(name, deliveryTerm) ??
+		dateErrorOf(date, deliveryTerm) ??
+		tabError
+	);
 };
 
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
@@ -704,7 +702,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const { getTerm } = useTerminology();
 	const { licenseStatus } = useLicenseRestrictions();
 	const verdict = premiumVerdictOf(licenseStatus);
-	const isPremium = verdict === "premium";
 	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
 	const deliveriesTerm = getTerm(TERMINOLOGY_KEYS.DELIVERIES);
 	const isEditMode = !!editingDelivery;
@@ -759,16 +756,12 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
 	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
-	const ruleSchemaLatched = useOpeningLatch(
-		opening,
-		open && isPremium && activeTab.key === RULE_BASED_SELECTION_TAB_KEY,
-	);
 	const ruleSchema = useDialogRuleSchema({
 		portfolioId: portfolio.id,
 		isOpen: open,
 		opening,
 		verdict,
-		latched: ruleSchemaLatched,
+		ruleTabShowing: activeTab.key === RULE_BASED_SELECTION_TAB_KEY,
 	});
 	const bodyQuestion: SelectionBodyQuestion = {
 		tab: activeTab,
@@ -805,14 +798,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			return Object.keys(newErrors).length === 0;
 		}
 
-		if (!name.trim()) {
-			newErrors.name = `${deliveryTerm} name is required`;
+		const nameError = nameErrorOf(name, deliveryTerm);
+		if (nameError !== undefined) {
+			newErrors.name = nameError;
 		}
 
-		if (!isValidFutureDate(date)) {
-			newErrors.date = date
-				? `${deliveryTerm} date must be in the future`
-				: `${deliveryTerm} date is required`;
+		const dateError = dateErrorOf(date, deliveryTerm);
+		if (dateError !== undefined) {
+			newErrors.date = dateError;
 		}
 
 		setErrors(newErrors);

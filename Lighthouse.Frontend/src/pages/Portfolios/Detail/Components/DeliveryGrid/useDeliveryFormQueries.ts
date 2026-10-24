@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import type { IWorkItemRuleSchema } from "../../../../../models/WorkItemRules";
@@ -39,7 +39,7 @@ export interface DeliveryFormAnswer<T> {
 	data: T | undefined;
 }
 
-function answerOf<T>(
+export function dialogAnswerOf<T>(
 	query: DialogQueryState & { data: T | undefined },
 ): DeliveryFormAnswer<T> {
 	const status = dialogQueryStatusOf(query);
@@ -73,7 +73,7 @@ export function useDialogFeatureList({
 		enabled: isOpen && hasFeatures,
 	});
 
-	return hasFeatures ? answerOf(query) : NO_FEATURES_TO_ASK_FOR;
+	return hasFeatures ? dialogAnswerOf(query) : NO_FEATURES_TO_ASK_FOR;
 }
 
 const NO_FEATURES_TO_ASK_FOR: DeliveryFormAnswer<IFeature[]> = {
@@ -87,11 +87,26 @@ export interface DialogRuleSchemaRequest {
 	opening: number;
 	verdict: PremiumVerdict;
 	/**
-	 * Set the first time in this opening that the dialog is open, the licence is known premium and Rule-Based is the
-	 * tab on screen, whatever put it there: a click, editing a Rule-Based Delivery, or the licence arriving while
-	 * Rule-Based was already chosen. It stays set until the dialog closes, so moving back to Rule-Based never asks twice.
+	 * Whether Rule-Based is the tab on screen, whatever put it there: a click, editing a Rule-Based Delivery, or the
+	 * licence arriving while Rule-Based was already chosen.
 	 */
-	latched: boolean;
+	ruleTabShowing: boolean;
+}
+
+/**
+ * Set once the dialog has been open with the given condition holding, and kept for the rest of that
+ * opening, so leaving the tab and coming back never asks again. A new opening starts unset.
+ */
+function useOpeningLatch(opening: number, holds: boolean): boolean {
+	const [latchedOpening, setLatchedOpening] = useState<number | null>(null);
+
+	useEffect(() => {
+		if (holds) {
+			setLatchedOpening(opening);
+		}
+	}, [holds, opening]);
+
+	return latchedOpening === opening;
 }
 
 /** The fields a rule may test, asked for at most once per opening and only on a premium licence. */
@@ -100,16 +115,18 @@ export function useDialogRuleSchema({
 	isOpen,
 	opening,
 	verdict,
-	latched,
+	ruleTabShowing,
 }: DialogRuleSchemaRequest): DeliveryFormAnswer<IWorkItemRuleSchema> {
 	const { deliveryService } = useContext(ApiServiceContext);
+	const mayAsk = isOpen && verdict === "premium";
+	const latched = useOpeningLatch(opening, mayAsk && ruleTabShowing);
 
 	const query = useQuery({
 		...askedAfreshQueryOptions,
 		queryKey: ["deliveryRuleSchema", portfolioId, opening],
 		queryFn: () => deliveryService.getRuleSchema(portfolioId),
-		enabled: isOpen && verdict === "premium" && latched,
+		enabled: mayAsk && latched,
 	});
 
-	return answerOf(query);
+	return dialogAnswerOf(query);
 }

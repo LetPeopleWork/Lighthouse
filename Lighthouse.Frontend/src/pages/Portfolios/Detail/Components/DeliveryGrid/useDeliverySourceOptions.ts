@@ -8,7 +8,7 @@ import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
 import type { PremiumVerdict } from "./premiumVerdict";
-import { dialogQueryStatusOf } from "./useDeliveryFormQueries";
+import { dialogAnswerOf } from "./useDeliveryFormQueries";
 
 export interface DeliverySourceOptionsRequest {
 	portfolioId: number;
@@ -60,10 +60,7 @@ export function useDeliverySourceOptions({
 		if (!enabled || result === undefined) {
 			return STILL_LOADING;
 		}
-		const status = dialogQueryStatusOf(result);
-		if (status !== "ready") {
-			return { status, options: undefined };
-		}
-		return { status, options: result.data };
+		const { status, data } = dialogAnswerOf(result);
+		return { status, options: data };
 	};
 }
