@@ -2,6 +2,7 @@ import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import path from "node:path";
+import { StringDecoder } from "node:string_decoder";
 
 /** One record of the measured backend's file log, written in the harness's own template. */
 export type LogRecord = {
@@ -107,14 +108,40 @@ function pathAndQueryOf(url: string): string {
 	}
 }
 
+/**
+ * A backend logging every database command during a forecast round writes more than V8's largest string, so the
+ * file is read in chunks rather than whole.
+ */
+function* linesOf(file: string): Generator<string> {
+	const descriptor = fs.openSync(file, "r");
+	const buffer = Buffer.alloc(16 * 1024 * 1024);
+	const decoder = new StringDecoder("utf8");
+	let rest = "";
+	try {
+		for (;;) {
+			const read = fs.readSync(descriptor, buffer, 0, buffer.length, null);
+			if (read === 0) {
+				break;
+			}
+			const lines = (rest + decoder.write(buffer.subarray(0, read))).split(
+				"\n",
+			);
+			rest = lines.pop() ?? "";
+			yield* lines;
+		}
+		yield rest + decoder.end();
+	} finally {
+		fs.closeSync(descriptor);
+	}
+}
+
 export function readLogRecords(logFolder: string): LogRecord[] {
 	if (!fs.existsSync(logFolder)) {
 		return [];
 	}
 	const records: LogRecord[] = [];
 	for (const file of fs.readdirSync(logFolder).sort()) {
-		const text = fs.readFileSync(path.join(logFolder, file), "utf8");
-		for (const line of text.split("\n")) {
+		for (const line of linesOf(path.join(logFolder, file))) {
 			const match = recordPattern.exec(line);
 			if (match) {
 				records.push({

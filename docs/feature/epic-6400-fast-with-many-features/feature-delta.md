@@ -2943,3 +2943,149 @@ Order: 01 → 02 → 03 → 04 → 05 → 06, one scenario at a time.
 - Enable a scenario by deleting its skip.
 - The walking skeleton and the 27 active guards stay green throughout.
 - No commit, push or ADO change was made in DISTILL.
+
+## Wave: DELIVER / [REF] Baseline (Task 01a)
+
+Taken 2026-10-24 by the harness in `Lighthouse.EndToEndTests/perf`. The raw tables stay in `perf/out/runs/` (not in
+git). Scope as the maintainer chose it: the classification first, nothing else.
+
+- **Set-up**: SQLite, `main` at `8706170eb` with the round's Debug split, scale point 920 (*Northwind Platform*), the
+  seeded Northwind set without fillers (1,420 Features, 8 Teams). The backend ran pinned to 4 cores (`taskset -c 0-3`,
+  `DOTNET_PROCESSOR_COUNT=4`) on a 12-core host. Windows of 300 s, each lasting until its round ended. The raised pool
+  minimum for C and C0 was 64 threads. Opens: median of 3 after 1 warm-up.
+- **Two runs.** The first full run (opens plus windows) ran while another worktree was mutation-testing (Stryker,
+  load around 10 to 17 on 12 cores). Its decisive windows RT and C were genuinely disturbed, so the five windows were
+  re-run once on a quieter machine. **The window table and the classification below come from that re-run.** The
+  opens come from the first run only and carry its load.
+
+### What the 920 Features tab does on `main`
+
+**The 920-Feature Portfolio's Features tab never shows a row.** The page asks for its Features in one
+`GET /api/latest/features/ids?featureIds=…&…` with all 920 ids in the address. That address is 13.7 KB, above the
+8 KB request-line limit Kestrel applies by default, so the backend answers `414 URI Too Long` straight away and the
+list stays empty. Checked by hand against a copy of the seeded database: the 920 list gets 414 in 2 ms, the 100 list
+(1.6 KB) gets 200. The Team tab of the busiest Team (*Granite*, 397 Features, a 6 KB address) still loads. So the
+harness left the Portfolio tab out of the opens and out of the window traffic, and the Team tab stands in for list
+traffic throughout. Slice 04's single list read replaces this request; until then a Portfolio of roughly 600 or more
+Features (depending on id length) cannot show its Features list at all.
+
+### Calibration and falsifier
+
+| check | threshold | measured | verdict |
+| --- | --- | --- | --- |
+| Calibration: a computed round at 920 is long enough | ≥ 60 s, and ≥ 3× the idle first-row time | round alone (R) 448 s; idle first row of the Team tab 15.4 s, ×3 = 46 s | **passes**. The Portfolio tab has no first-row time (414), so the Team tab stands in. |
+| Falsifier: the idle 920 list is already fast | first row under ~10 s | the Portfolio list never renders; the Team tab (397 Features) takes 15.4 s | **does not fire**: the list slices are needed |
+
+### Opens (first run, disturbed: load 6 to 24 with Stryker running)
+
+| open | idle median (min–max) | during a computed round, median (min–max) |
+| --- | --- | --- |
+| Overview, first contentful paint | 176 ms (164–176) | 192 ms (180–200) |
+| Overview → Settings, configuration usable | 248 ms (238–287) | 360 ms (313–3,151) |
+| Team Features tab (*Granite*, 397 Features), first row | 15.4 s (14.0–18.1) | 36.8 s (32.7–48.4) |
+| Portfolio Features tab (920) | never: HTTP 414 | never: HTTP 414 |
+
+Behind the Team tab: `GET /features/ids` with 397 ids takes 11.7 to 15.0 s on the server, and `GET /teams/7` takes 3.4
+to 5.5 s. `/api/latest/teams` (161 KB) and `/api/latest/portfolios` (74 KB) are read on every page.
+
+### Windows (re-run)
+
+The load column is the host's 1-minute load average, sampled every 30 s across the window. Most of it is the
+measurement itself: the backend on 4 cores, Chrome and the harness. No foreign test or Stryker process ran during any
+re-run window. Other processes (a build, say) were not tracked.
+
+| window | pool minimum | length | load1 mean (max) | foreign work | heartbeat warnings | heartbeat delay | pool queue integral | max pool threads | GC pause share | throttled periods | round |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T | default | 300 s | 7.2 (10.2) | none | 0 | 0 ms | 327 | 22 | 14.8% | 0/0 | none |
+| R | default | 454 s | 3.9 (4.7) | none | 0 | 0 ms | 27 | 14 | 6.9% | 0/0 | 448 s |
+| RT | default | 549 s | 6.8 (10.6) | none | 0 | 0 ms | 1,879 | 28 | 10.4% | 0/0 | 543 s |
+| C | 64 | 582 s | 8.2 (13.0) | none | 0 | 0 ms | 79 | 14 | 11.2% | 0/0 | 570 s |
+| C0 | 64 | 301 s | 7.5 (11.2) | none | 0 | 0 ms | 28 | 12 | 15.4% | 0/0 | none |
+
+First run, for comparison (disturbed): T 15.4% GC, queue 502; R 7.1%, queue 39; RT 10.9%, queue 1,213; C 11.5%,
+queue 29; C0 14.0%, queue 21; no heartbeat warning anywhere. Load means (max): T 11.9 (14.5), R 5.7 (7.2), RT 10.0
+(14.7), C 11.1 (16.8), C0 7.3 (10.1), with foreign Stryker or `dotnet test` processes during T, R, RT and C. R was
+also flagged "disturbed" by the harness for a false reason: its foreign-test matcher took a load-sampling shell loop
+for a test run. At R's start the load was 3.6.
+
+**Round split** (Debug line, re-run): alone, gather 3.6 s, simulate 275.8 s (62%), save 165.5 s (37%), publish
+3.4 s. With page traffic (RT) the round took 543 s, 21% longer than alone. With the raised pool minimum (C) it took
+570 s: simulate 402 s, save 158 s. In the first run the computed round under the foreign mutation load took 979 s
+(simulate 563 s, save 405 s).
+
+### Ratios
+
+| reading | value |
+| --- | --- |
+| Q_r, heartbeat delay (primary) = R ÷ RT | undefined: 0 ms ÷ 0 ms |
+| Q_r, pool queue (secondary) = R ÷ RT | 27 ÷ 1,879 = **0.01** (first run 0.03) |
+| S_q = EF command time ÷ request wall time inside RT's round | **0.228** (first run 0.212) |
+
+### Classification of RT's stalls (thresholds from DDD-3, fixed before the reading)
+
+No heartbeat warning appeared in any window of either run, on 4 cores. The primary pool-starvation test ("C removes
+≥ 80% of RT's heartbeat delay") is therefore undefined: there is no delay to remove. As DDD-3 provides, the pool queue
+integral is read in its place, and this is a weaker test than the one K3 rests on.
+
+| cause | threshold | measured | holds? |
+| --- | --- | --- | --- |
+| Pool starvation | C removes ≥ 80% of RT's delay, and C0 shows no new warnings | heartbeat: undefined (0 → 0). Pool queue: C removes 1 − 79 ÷ 1,879 = **95.8%**; C0 0 warnings vs T 0, and queue 28 vs T 327 | **holds on the secondary reading only** |
+| GC | GC pause ≥ 10% of RT's wall time, or ≥ 50% inside ±1 s of each warning | **10.4%** of RT (first run 10.9%); the ±1 s test has no warnings to look at | **holds, narrowly** |
+| CPU quota | throttled periods ≥ 20% across RT | 0 of 0 periods: the backend ran without a CPU quota (no container) | **cannot be confirmed**: not established, so it does not force the stop by itself. It is a gap: the reporter's container may have a quota this machine cannot show. |
+
+Two things to read beside the GC figure. Page traffic alone pauses for GC more than the round does: T 14.8% and C0
+15.4% against R 6.9%. So GC here is driven by the instance-wide request reads, not by the round. And RT sits 0.4
+points above the threshold.
+
+### Branch taken: STOP at the hold point
+
+Pool starvation (on the secondary reading) and GC both hold. That is the mixed case, and under decision 16 it
+**stops**. DELIVER does not start step 01-06 or any later step until the maintainer's go is recorded here. The windows
+behind this were undisturbed on the re-run, so the classification is **not** provisional.
+
+### D27 re-score
+
+- **G2, measured shares.**
+  - On the request side, the instance-wide reads dominate. The Team list waits 12 to 15 s on one `features/ids`
+    request at 397 Features, and the 920 Portfolio list cannot load at all.
+  - Every page also reads `/teams` and `/portfolios` in full, and that page traffic is what drives the GC pauses
+    (T 14.8%).
+  - The round lengthens the Team tab 2.4× (15.4 s → 36.8 s, first run).
+  - On the round side, simulate takes 62% and save 37%; gather and publish take under 2%.
+  - S_q = 0.23: database command time is under a quarter of request time during a round. The rest is materialising
+    and serialising large graphs, plus waiting.
+- **Dissent A** (Q_r ≥ 0.6, S_q ≤ 0.3, idle already met): **does not hold**. Q_r is 0.01 on the pool queue and
+  undefined on heartbeats, and the idle list is not met (414, and 15 s on the Team tab).
+- **Dissent B** (K3 still fails after slice 2 or at the end, and S_q > 0.3): **not triggered**. It is checked again
+  after slice 01, but S_q is 0.23, below the 0.3 that would open the async-request-paths Epic.
+- **Order of 02, 03 and 05: for the maintainer to fix.** The mixed branch hands the order to the maintainer. The
+  readings point to this proposal: **03, then 05, then 02**, with 04 after a finished 03 and 06 last. This follows
+  DDD-3's earlier GC-branch proposal (05 and 03 ahead of 02), refined on the measured shares:
+  - 03 first, because the instance-wide request reads drive both the GC share and the slow lists, and 04, which
+    removes the 414, waits on 03.
+  - 05 next, because save is 37% of the round.
+  - 02 last, because the Overview already paints in under 0.2 s and Settings is usable in 0.25 s.
+- **Open questions for the maintainer.**
+  - Should slice 01 (the forecast lane) ship? The pool-queue control says a larger pool removes 96% of the queueing
+    a round adds. But K3's own measure, the heartbeat warnings, never appeared on this machine, so the lane's effect
+    on K3 cannot be shown here.
+  - Should the 920 list's 414 be raised as a Bug of its own, ahead of slice 04?
+
+### Deferred readings (not taken in this step)
+
+- PostgreSQL.
+- The v26.10.19.10 build.
+- Scale points 100 and 400.
+- Opens during a skipped round.
+- The Portfolio Features tab at 920, which cannot be read until the 414 is gone.
+- Five repetitions instead of three.
+- A CPU-quota reading, which needs the backend in a container with a quota.
+
+### Harness follow-ups
+
+- The foreign-test matcher matches any process whose command line names a test runner, a shell loop included. It
+  does not recognise Stryker by name.
+- The quiet-machine check runs only at the start of a block. Load that arrives mid-window goes unrecorded.
+- An open whose mark never appears (the 414) fails the whole run after 5 minutes. It should record "never loaded"
+  instead.
+- The per-backend log reaches about 560 MB during a round. It is now read in chunks, which was fixed in this step.
