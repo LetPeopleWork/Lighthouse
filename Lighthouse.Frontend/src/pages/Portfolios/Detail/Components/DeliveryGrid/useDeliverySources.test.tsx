@@ -1,7 +1,12 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	focusManager,
+	onlineManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import {
 	createMockApiServiceContext,
@@ -34,6 +39,11 @@ const aPageAndItsDialog = () => {
 		renderHook(() => useDeliverySources(portfolioId), { wrapper });
 };
 
+const aMomentPasses = () =>
+	act(async () => {
+		await new Promise((resolve) => setTimeout(resolve, 10));
+	});
+
 const requestsMade = () =>
 	vi.mocked(deliveryService.getDeliverySources).mock.calls.length;
 
@@ -42,6 +52,11 @@ beforeEach(() => {
 	vi.mocked(deliveryService.getDeliverySources).mockResolvedValue([
 		JIRA_RELEASE_SOURCE,
 	]);
+});
+
+afterEach(() => {
+	focusManager.setFocused(undefined);
+	onlineManager.setOnline(true);
 });
 
 describe("the ways to pick a Portfolio's connection offers", () => {
@@ -93,5 +108,37 @@ describe("the ways to pick a Portfolio's connection offers", () => {
 		expect(paymentsPlatform.result.current.status).toBe("success");
 		expect(deliveryService.getDeliverySources).toHaveBeenCalledWith(1);
 		expect(deliveryService.getDeliverySources).toHaveBeenCalledWith(2);
+	});
+	it("are not asked for again when the window regains focus or the connection comes back", async () => {
+		const observe = aPageAndItsDialog();
+		const dialog = observe(1);
+		await waitFor(() => expect(dialog.result.current.status).toBe("success"));
+
+		act(() => {
+			focusManager.setFocused(false);
+			focusManager.setFocused(true);
+			onlineManager.setOnline(false);
+			onlineManager.setOnline(true);
+		});
+		await aMomentPasses();
+
+		expect(requestsMade()).toBe(1);
+	});
+
+	it("are not kept once no reader is left, so the next reader never sees the old answer and asks again", async () => {
+		const observe = aPageAndItsDialog();
+		const page = observe(1);
+		const dialog = observe(1);
+		await waitFor(() => expect(dialog.result.current.status).toBe("success"));
+
+		page.unmount();
+		dialog.unmount();
+		await aMomentPasses();
+		const reopened = observe(1);
+
+		expect(reopened.result.current.status).toBe("pending");
+		expect(reopened.result.current.data).toBeUndefined();
+		await waitFor(() => expect(reopened.result.current.status).toBe("success"));
+		expect(requestsMade()).toBe(2);
 	});
 });
