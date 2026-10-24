@@ -36,7 +36,7 @@ const cases: [string, unknown, PremiumVerdict][] = [
 ];
 
 describe("what the dialog may say about its premium tabs", () => {
-	it.skip.each(cases)("%s", (_case, licenseStatus, verdict) => {
+	it.each(cases)("%s", (_case, licenseStatus, verdict) => {
 		expect(premiumVerdictOf(licenseStatus as ILicenseStatus | null)).toBe(
 			verdict,
 		);
