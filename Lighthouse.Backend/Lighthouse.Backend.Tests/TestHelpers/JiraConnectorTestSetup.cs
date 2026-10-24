@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public static JiraWorkTrackingConnector AConnectorOver(HttpMessageHandler handler, TimeProvider timeProvider)
             => AConnectorOver(handler, Mock.Of<ILogger<JiraWorkTrackingConnector>>(), new Cache<string, object>(), timeProvider);
 
-        private static JiraWorkTrackingConnector AConnectorOver(
+        public static JiraWorkTrackingConnector AConnectorOver(
             HttpMessageHandler handler, ILogger<JiraWorkTrackingConnector> logger, Cache<string, object> processWideCache, TimeProvider timeProvider)
         {
             var strategyMock = new Mock<IWorkTrackingAuthStrategy>();

@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private readonly List<FakeProject> projects = [];
         private readonly ConcurrentDictionary<string, FakeVersion> versionsById = new(StringComparer.Ordinal);
         private readonly Dictionary<string, List<string>> releaseIdsByIssueKey = new(StringComparer.Ordinal);
+        private readonly HashSet<string> projectsRefusingTheirVersions = new(StringComparer.Ordinal);
         private int nextProjectId = 10000;
 
         public FakeJiraDataCenter()
@@ -92,6 +93,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public FakeJiraDataCenter WithArchivedReleaseIn(string projectKey, string id, string name, string releaseDate)
             => WithVersionIn(projectKey, id, name, releaseDate, archived: true, released: true);
+
+        /// <summary>A project the credential may list but whose versions it may not read: Data Center answers 403.</summary>
+        public FakeJiraDataCenter WithProjectRefusingItsVersions(string projectKey)
+        {
+            projectsRefusingTheirVersions.Add(projectKey);
+
+            return this;
+        }
 
         /// <summary>Work that carries a Release, as the issue search reports it through the issue's fix versions.</summary>
         public FakeJiraDataCenter WithWorkOn(string issueKey, string releaseId)
@@ -188,6 +197,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             if (project is null)
             {
                 return NotFound();
+            }
+
+            if (projectsRefusingTheirVersions.Contains(projectKey))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden)
+                {
+                    Content = new StringContent("{\"errorMessages\":[\"Forbidden\"],\"errors\":{}}", Encoding.UTF8, "application/json"),
+                };
             }
 
             var startAt = int.TryParse(QueryValue(uri, "startAt"), CultureInfo.InvariantCulture, out var parsed) ? parsed : 0;
