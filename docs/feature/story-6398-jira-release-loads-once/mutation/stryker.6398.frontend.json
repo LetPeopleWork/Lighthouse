@@ -1,9 +1,18 @@
 {
   "packageManager": "pnpm",
   "testRunner": "vitest",
-  "plugins": ["@stryker-mutator/vitest-runner"],
-  "vitest": { "configFile": "vitest.stryker.6398.ts", "related": false },
-  "reporters": ["clear-text", "progress", "json"],
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6398.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
   "coverageAnalysis": "perTest",
   "incremental": true,
   "incrementalFile": "reports/mutation/stryker-incremental-6398.json",
@@ -11,14 +20,76 @@
   "timeoutMS": 120000,
   "inPlace": true,
   "disableTypeChecks": false,
-  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports", "/StrykerOutput"],
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
   "mutate": [
     "src/pages/Portfolios/Detail/Components/DeliveryGrid/premiumVerdict.ts",
     "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySources.ts",
     "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliverySourceOptions.ts",
-    "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryFormQueries.ts"
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDialogDeliverySources.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryFormQueries.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/dialogQueryStatus.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionBody.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/RetryByReopeningNotice.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.ts:492-492",
+    "src/components/Common/FeatureGrid/FeatureGrid.tsx:116-116",
+    "src/components/Common/FeatureGrid/FeatureGrid.tsx:244-244",
+    "src/components/Common/FeatureSelector/FeatureSelector.tsx:16-16",
+    "src/components/Common/FeatureSelector/FeatureSelector.tsx:25-25",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:29-29",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:43-57",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:71-81",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:180-181",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:187-187",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:207-208",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:225-226",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:302-304",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:310-310",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:314-314",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:320-344",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:359-359",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:367-385",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:398-399",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:405-405",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:414-465",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:533-548",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:575-579",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:590-593",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:606-612",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:648-665",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:690-697",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:746-746",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:808-810",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:854-854",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:895-895",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:909-909",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:918-926",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:930-933",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:955-955",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:970-970",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:981-981",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:12-12",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:23-25",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:51-52",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:286-317",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:332-332",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:371-378",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:382-394",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:411-415",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.tsx:430-430"
   ],
-  "thresholds": { "high": 90, "low": 80, "break": 0 },
-  "jsonReporter": { "fileName": "reports/mutation/stryker-6398-frontend.json" },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6398-frontend.json"
+  },
   "tempDirName": ".stryker-tmp-6398"
 }
