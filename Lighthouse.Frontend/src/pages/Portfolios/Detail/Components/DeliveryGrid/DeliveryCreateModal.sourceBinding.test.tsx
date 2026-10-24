@@ -420,7 +420,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		});
 	});
 
-	it("shows the Release it follows even when the list came out of the cache", async () => {
+	it("the edit dialog shows the Release the Launch follows, and asks for the list exactly once", async () => {
 		const deliveryService = serviceOffering([datedInJustATest]);
 
 		const { unmount } = render(

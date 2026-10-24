@@ -6,18 +6,8 @@ import type {
 } from "../../../../../models/Delivery/DeliverySource";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
+import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
 import type { PremiumVerdict } from "./premiumVerdict";
-
-// Each opening of the dialog asks afresh, because a reader who gave a Release a date in the tracker
-// and reopens the dialog expects to see that date. Nothing outlives the opening, and a failure is not
-// retried behind the reader's back: the notice tells them to reopen instead.
-const deliverySourceOptionsQueryOptions = {
-	staleTime: 0,
-	gcTime: 0,
-	retry: false,
-	refetchOnWindowFocus: false,
-	refetchOnReconnect: false,
-} as const;
 
 export interface DeliverySourceOptionsRequest {
 	portfolioId: number;
@@ -61,7 +51,7 @@ export function useDeliverySourceOptions({
 
 	const results = useQueries({
 		queries: sourceKeys.map((sourceKey) => ({
-			...deliverySourceOptionsQueryOptions,
+			...askedAfreshQueryOptions,
 			queryKey: ["deliverySourceOptions", portfolioId, sourceKey, opening],
 			queryFn: () =>
 				deliveryService.getDeliverySourceOptions(portfolioId, sourceKey),

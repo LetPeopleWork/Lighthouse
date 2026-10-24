@@ -56,14 +56,11 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
+import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
 import {
-	type DeliverySourceOptionsState,
-	useDeliverySourceOptions,
-} from "./useDeliverySourceOptions";
-import {
-	type DeliverySourcesQuery,
-	useDeliverySources,
-} from "./useDeliverySources";
+	type SourcesStatus,
+	useDialogDeliverySources,
+} from "./useDialogDeliverySources";
 
 interface DeliveryCreateModalProps {
 	open: boolean;
@@ -299,39 +296,6 @@ type SelectionBody =
 	| { kind: "loading" }
 	| { kind: typeof UNAVAILABLE }
 	| { kind: "content" };
-
-/** Whether the server has said which ways to pick this Portfolio's connection offers. */
-type SourcesStatus = "loading" | "error" | "ready";
-
-const sourcesStatusOf: Record<DeliverySourcesQuery["status"], SourcesStatus> = {
-	pending: "loading",
-	error: "error",
-	success: "ready",
-};
-
-/**
- * The ways to pick are the page's answer, read here rather than asked for again. A failed answer is
- * the one exception: the notice tells the reader to reopen the dialog to retry, so each opening that
- * finds it failed asks once more, and only once, however often the answer fails again.
- */
-const useSourcesAskedAgainAfterAFailure = (
-	sources: DeliverySourcesQuery,
-	open: boolean,
-	openingNumber: number,
-): void => {
-	const handledOpening = useRef<number | null>(null);
-	const { status, refetch } = sources;
-
-	useEffect(() => {
-		if (!open || handledOpening.current === openingNumber) {
-			return;
-		}
-		handledOpening.current = openingNumber;
-		if (status === "error") {
-			void refetch();
-		}
-	}, [open, openingNumber, status, refetch]);
-};
 
 interface SelectionBodyQuestion {
 	tab: DeliverySelectionTab;
@@ -674,18 +638,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	const [selectedTabKey, setSelectedTabKey] = useState(
 		defaultDeliverySelectionTab.key,
 	);
-	const sourcesQuery = useDeliverySources(portfolio.id);
-	const sources = useMemo(() => sourcesQuery.data ?? [], [sourcesQuery.data]);
-	const sourcesStatus = sourcesStatusOf[sourcesQuery.status];
-	const [openingNumber, setOpeningNumber] = useState(0);
-	useSourcesAskedAgainAfterAFailure(sourcesQuery, open, openingNumber);
-	const sourceOptionsOf = useDeliverySourceOptions({
-		portfolioId: portfolio.id,
-		isOpen: open,
-		opening: openingNumber,
-		offeredSources: sourcesQuery.data,
-		verdict,
-	});
+	const { sources, sourcesStatus, sourceOptionsOf, startNewOpening } =
+		useDialogDeliverySources(portfolio.id, open, verdict);
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -913,9 +867,9 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSourceReference(values.sourceReference);
 		setPublishForecastToSource(values.publishForecastToSource);
 		hydratedDeliveryId.current = null;
-		setOpeningNumber((previous) => previous + 1);
+		startNewOpening();
 		setErrors({});
-	}, []);
+	}, [startNewOpening]);
 
 	useEffect(() => {
 		if (!(open && editingDelivery)) {
