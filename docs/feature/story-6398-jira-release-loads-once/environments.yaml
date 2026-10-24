@@ -1,0 +1,137 @@
+# Environment inventory - story-6398-jira-release-loads-once
+# Consumed by DISTILL for environmental realism.
+#
+# Application change inside the existing product: the Add / Edit Delivery dialog's loading and failure looks and its
+# keyed queries (frontend, slices 01 and 02), and one Information log line per Jira Release sweep (backend, slice 03).
+# No migration, no persistence change, no configuration key, no chart or image change, no new dependency, no new
+# external call, no HTTP contract change. Program.cs is untouched. The axes that matter are authentication (RBAC), the
+# licence, the Jira deployment kind and the replica count. The database is not an axis: nothing is stored, and the
+# verify workflows already run the E2E on SQLite and PostgreSQL.
+
+target_environments:
+  - name: auth-off
+    description: >
+      Authentication off (Standalone and Docker default; the dev instance at http://localhost:5169). Every caller
+      shares one subject, so RbacGuard(PortfolioWrite) passes and canEdit is true as soon as the page mounts. The dialog
+      and the page observe the shared ["deliverySources", portfolioId] query in one commit: one sources GET per page
+      visit, none on opening the dialog. Where K1, K3 and K5 are read (Slow 4G waterfall) and CA-6 is taken.
+    platform: [linux, macos, windows, docker]
+    preconditions:
+      - "Premium licence imported on the dev instance (the Jira Release tab is premium)"
+      - "A Portfolio on the dev instance's Jira Cloud connection whose Deliveries offer the Jira Release tab"
+
+  - name: auth-on-rbac
+    description: >
+      Authentication on, RBAC enforced. A user with PortfolioWrite sees Add Delivery; canEdit comes from useRbac(),
+      which answers after the page mounts, so DeliveryModals usually mounts after the sources settled and its observer
+      refetches once (DDD-2's accepted late mount; DEVOPS Flags 5): two sources GETs per page visit, still none on
+      opening the dialog. A user without PortfolioWrite never mounts the dialog, so no options request is ever sent for
+      them; the grid still reads the shared sources query. The options and preview routes keep RbacGuard(PortfolioWrite)
+      and a 403 ends in the Release-list failure look (AC-1.8). No component fetches my-summary.
+    platform: [linux, docker, kubernetes]
+    preconditions:
+      - "Vitest: the call-count scenarios toggle canEdit from false to true after the sources settle"
+
+  - name: licence-premium
+    description: >
+      Premium licence, known. The Release list request starts while the dialog is open, as soon as the sources include
+      the source and the verdict is premium, whichever tab is on screen (D5, MD-7, MD-15). One options request per
+      offered source per opening; a reopen within 5 minutes is answered by the backend's process-wide cache and writes
+      no sweep line.
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions: []
+
+  - name: licence-community
+    description: >
+      Community licence, known not premium. No options request is ever sent (AC-2.3); once the licence is known, the
+      Jira Release tab shows today's premium notice and Rule-Based is locked with its tooltip (AC-1.3). Before it is
+      known, Rule-Based is enabled and both premium tabs show the loading look.
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions: []
+
+  - name: licence-unknown-or-failing
+    description: >
+      /license (or /teams, /portfolios, which the unchanged hook waits for) slow or failing. useLicenseRestrictions()
+      returns licenseStatus null for both, read as unknown: both premium tabs show the loading look for as long as the
+      dialog is open, Manual stays usable, Save is disabled on a body showing a loading look, no options request is
+      sent. Known limit until follow-up F1 (MD-12). Before Epic 6400 slice 02 ships, the licence wait is long on a large
+      instance (its /teams and /portfolios read every Portfolio); after it, one fast shared query (MD-15).
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions:
+      - "Dev-instance dogfood: DevTools request blocking on /api/latest/license"
+
+  - name: jira-cloud
+    description: >
+      Jira Cloud connection. The version route filters by status server side, so VersionsRead stays close to
+      ReleasesKept. The only Jira connection on the dev backup, and the letpeoplework demo site the CI Jira live tests
+      and the E2E walking skeleton (DeliverySourcePicker.spec.ts) use. The sweep line reads Deployment = Cloud.
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions:
+      - "Keep hand readings few: the demo site's rate limit is shared with CI"
+
+  - name: jira-data-center
+    description: >
+      Jira Data Center connection (the reporter's, about 200 projects). The version route cannot filter by status, so
+      every archived, released and unreleased version of every visible project is paged in; VersionsRead much larger
+      than ReleasesKept is the cost the MD-9 gate weighs. Covered in CI only by the stubbed handler on the DataCenter
+      routes in the slice-03 tests; no Data Center connection exists locally, so K1 on Data Center and the MD-9 reading
+      come from the reporter (five cold Picker sweep lines at Information level, with the version and its Epic 6400
+      state).
+    platform: [linux, docker, kubernetes]
+    preconditions:
+      - "Reporter's log level set to Information (at Warning the sweep line is not written)"
+
+  - name: jira-unreachable
+    description: >
+      Jira not reachable before its kind is known. The sweep line still appears once, with Deployment = Unknown,
+      ProjectCount 0 and Complete false, written after the guard rather than inside its catch (DEVOPS Flags 2); the
+      dialog shows the reworded Release-list failure Alert and reopening is the retry (MD-13, MD-16).
+    platform: [linux, macos, windows, docker, kubernetes]
+    preconditions: []
+
+  - name: multi-replica
+    description: >
+      Two or more replicas behind one service (Kubernetes chart). The Jira sweep cache is per process, so a reopen
+      within 5 minutes that reaches another replica sweeps again and writes a second line. Correct; K4 and K5 readings
+      count per replica. Nothing else is shared or new (no Redis channel).
+    platform: [linux, kubernetes]
+    preconditions: []
+
+  - name: standalone
+    description: "Standalone desktop build, one process, auth off. Same as auth-off; the log is read through Settings -> System Info -> Logs."
+    platform: [linux, macos, windows]
+    preconditions: []
+
+coexistence_matrix:
+  - tool: Docker images (ghcr.io/letpeoplework/lighthouse)
+    must_not_break: true
+    note: "No image change"
+  - tool: Helm chart
+    must_not_break: true
+    note: "No values or template change"
+  - tool: Standalone builds
+    must_not_break: true
+  - tool: lighthouse-clients (lh CLI, MCP)
+    must_not_break: true
+    note: "N/A: no route, payload or meaning changes; the clients do not drive the Delivery dialog; the sweep line is not an API"
+  - tool: Web app on an older bundle against the new server, and the reverse
+    must_not_break: true
+    note: "No contract change; an old bundle keeps today's dialog behaviour"
+  - tool: Log readers and the downloadable log file
+    must_not_break: true
+    note: "One new Information line; the Debug 'Getting Releases of N Jira projects' line is folded into it"
+  - tool: lefthook pre-commit (secret scan, Biome)
+    must_not_break: true
+
+platform_coverage:
+  Authentication: [off, on with RBAC]
+  Licence: [Premium, Community, unknown or failing]
+  Jira: [Cloud (dev instance, CI demo site), Data Center (stubbed in CI; reporter's instance only)]
+  Databases: "N/A: no persistence change; the verify workflows still run the E2E on SQLite and PostgreSQL"
+  Replicas: [single, multi (per-process sweep cache)]
+  CI: [GitHub Actions ubuntu-latest (ci_frontend, ci_backend with the JiraIntegration category on slice 03, ci_verifysqlite, ci_verifypostgres, sonar gates)]
+
+deployment_assumptions:
+  - "Ships with the next regular Lighthouse release through the existing release pipeline; no flag, no configuration"
+  - "Rollback is reverting the slice commits (02 before 01; 03 alone) or installing the previous release; nothing stored changes"
+  - "Epic 6400 slice 02 is assumed in by release (MD-15), a timing assumption for K1, not a dependency"

@@ -973,3 +973,315 @@ Iteration 2 not run: no critical issue, every high issue resolved in the text or
   Epic 6400.
 - **Development paradigm**: OOP project; the frontend pieces are hooks and pure helpers, the backend piece a value type
   and a log call in the existing connector.
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-24 · **Mode**: autonomous subagent, documents only (no
+code, no build, no commit, no ADO). An application change inside the existing product: no migration, no workflow, job,
+dependency, configuration key, chart value, image change or external call. One Information log line is added (DDD-6).
+
+- ✓ This file: DISCUSS (MD-1..MD-15, D1..D9, US-01..US-03, K1..K5, DoD, Standing Checklist), DESIGN (DDD-1..DDD-8,
+  Component Decomposition, contract shapes, Architecture Enforcement, OQ-1..OQ-7, MD-16, MD-17, CA-1..CA-8, Review,
+  Handoff) and the three slice briefs. ADR-263 and ADR-264.
+- ✓ `CLAUDE.md` (the usage-data rule, Quality Gates and the connector filter, E2E waits on
+  `data-widget-status="ready"`, loading and failure looks). `docs/ci-learnings.md`: the preflight rules (CA1859, CA1861,
+  S107, S2139, S6667, NUnit1028/2045/2046/2056/4002), the per-connector path classifier (2026-05-18), the test-time
+  budget (2026-10-15), Vitest `5000ms` timeouts in render-heavy files (2026-08-21, which names a DeliveryGrid modal spec),
+  the keyed-query rule (2026-10-09), the Stryker.NET span and filter traps (2026-08-16, 2026-09-17), the StrykerJS
+  exit-0 trap (2026-09-19), and the frontend Sonar entries (S3776, S3358, S6759, S4624, S6754, S6767, S7718, S7735, S4144).
+- ✓ `docs/product/kpi-contracts.yaml` (`OUT-6354-*` and `OUT-6400-*` style), `docs/settings/usagedata.md`,
+  `Models/UsageData/UsageDataEventName.cs` (last member `ReportPdfExportStarted = 20`), `docs/settings/systeminfo.md`
+  (`## Logs`, `### Connection default changes`: the precedent for documenting an Information line, and `## Log Level`).
+- ✓ Code read for CI facts: `Scripts/test-selection/path-classifier.sh` (`JIRA_REGEX`, `SHARED_REGEX`),
+  `Scripts/test-timings/test-time-budget.json` (no DeliveryGrid file on the frontend allowlist; backend allowlist holds
+  `JiraWorkTrackingConnectorTest`, `Slice03BrokenSourceTest`, `Slice04ForecastPublishingTest`),
+  `JiraWorkTrackingConnector.cs:3074-3093, :3204-3232, :3355-3376`, `JiraDeliverySourceProviderTest.cs:28-40`
+  (`[Category("acceptance")]`, stubbed handler, not a live category), `TestHelpers/RecordingLogger.cs` (keeps the
+  formatted message and the exception only), `pages/Common/MetricsView/widgetStatus.ts:7`, the E2E page objects
+  `ModifyDeliveriesDialog.ts:96-105`, `DeliverySourceTab.ts` and the spec `DeliverySourcePicker.spec.ts:56-100`,
+  `ci_verifysqlite.yml` / `ci_verifypostgres.yml` (Jira demo tokens), `Lighthouse.Backend/.editorconfig` (CA1873 off).
+- ✓ Dev backup `Lighthouse.Backend/Lighthouse.Backend/DB_Backup/LighthouseAppContext.db` in the main checkout, read
+  read-only for connection kinds only (no value printed): one Azure DevOps connection and **one Jira connection, Jira
+  Cloud**. No Data Center connection exists there or in any test (all Jira tests use the `letpeoplework` Cloud site).
+- ✓ Epic 6400 DEVOPS (`docs/feature/epic-6400-fast-with-many-features/feature-delta.md`, usage-data D24, mutation and
+  test-time rows) for shared CI-time risks.
+
+## Wave: DEVOPS / [REF] Platform Readiness
+
+| Item | Answer |
+|---|---|
+| Deployment targets | Existing: self-hosted Standalone builds, Docker images, Kubernetes through the existing Helm chart. No image, chart or packaging change. |
+| CI/CD | Existing `ci.yml` (`ci_changes`, `ci_frontend`, `ci_backend`, `ci_verifysqlite`, `ci_verifypostgres`, sonar gates). Extended by tests only; no new workflow, job or step. |
+| Branching | Trunk-based on `main`. |
+| Release | Existing release pipeline, unchanged. No flag (see Deployment Strategy). Slices may ship in one release or apart. |
+| Observability | Existing structured logging (`ILogger`, Serilog sinks: the instance log, Settings → System Info → Logs, the downloadable log file). One new Information line per Jira Release sweep (DDD-6, ADR-264). No metric, trace, dashboard or alert; nothing new leaves the instance. |
+| Mutation testing | per-feature, StrykerJS (frontend) and Stryker.NET (slice 03), ≥ 80 %, run last on frozen code. Scope below. |
+| Environment matrix | `environments.yaml`: auth off and on, premium and Community licence, licence unknown or failing, Jira Cloud and Data Center, single and multi-replica, Standalone. Database axis N/A (no persistence change). |
+| Pre-requisites | P1 the dev instance on `:5169` with a **premium licence imported** and a Portfolio on its Jira Cloud connection that offers Jira Releases (K1, K3, K5 readings, CA-6). P2 the premium licence fixture in this worktree for any local `dotnet test` (two Licensing tests fail without it). P3 a Data Center reading can only come from the reporter (no DC connection exists locally; see Flags 6). |
+
+## Wave: DEVOPS / [REF] Usage-Data Event
+
+**N/A, because this Story adds no action a person can take; it makes an existing one honest and faster.** Opening Add
+or Edit Delivery and picking a Jira Release work the same before and after, so an event emitted here would count the
+Deliveries feature, not this Story. What the catalogue already counts covers the part that is used: a visit to the
+Deliveries tab is `PortfolioTabOpened` (1) with the tab `/portfolios/:id/deliveries`. No Delivery event exists in
+`UsageDataEventName` (0..20) or in `docs/settings/usagedata.md`. Whether the Story worked is answered on the instance by
+K1, K3, K4 and K5 and in CI by K2, not by telemetry.
+
+The use that would show the Jira Release binding is worth having, *a Delivery was saved, and how it was chosen*, is a
+new event about Epic 5565's feature: for example `DeliveryCreated = 21` with one closed enum `Selection` ∈ {`Manual`,
+`RuleBased`, `Source`}, and never the source's name, the Portfolio or a date. It is not added here, for two reasons. It
+measures a different feature, and Epic 6400 is changing `UsageDataEventShapes`, the tab-opened events and
+`usagedata.md` in parallel (D24), so a new event now would touch the files MD-12 keeps this Story away from. Recorded
+for the maintainer as candidate **F4**. `UsageDataEventName` and `docs/settings/usagedata.md` stay unchanged here.
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → signal)
+
+Contracts appended to `docs/product/kpi-contracts.yaml` as `OUT-6398-*`. Self-hosted: no vendor dashboard and no
+runtime alert. The signals:
+
+- **Waterfall:** Chrome DevTools Network panel with the **"Slow 4G"** throttling preset and the cache disabled, on the
+  dev instance (P1), from opening the Deliveries tab. Read: `GET …/delivery-sources` (count and start), `GET /license`,
+  `/teams`, `/portfolios` (end), `GET …/delivery-sources/jira-release/options` (start, end) and the moment the source
+  tab body carries `data-widget-status="ready"` (Elements panel, or a scratch Playwright script, below).
+- **The sweep line (DDD-6, ADR-264).** Level **Information**, once per sweep, never on a cache hit. Template, held as a
+  `const string` in `JiraReleaseSweepCost` and passed to `LogInformation` with its values as arguments (structured
+  properties, never a pre-formatted string):
+  `Jira Release sweep for the {SweepPurpose} took {ElapsedMs} ms on this {Deployment} connection: kept {ReleasesKept}
+  of {VersionsRead} versions read over {VersionPages} pages from {ProjectCount} projects; complete: {Complete}, projects
+  skipped: {ProjectsSkipped}`. Fields, all closed or countable: `SweepPurpose` ∈ {`Picker`, `Refresh`}, `ElapsedMs`,
+  `Deployment` ∈ {`Unknown`, `Cloud`, `DataCenter`}, `ReleasesKept`, `VersionsRead`, `VersionPages`, `ProjectCount`,
+  `ProjectsSkipped`, `Complete`. It names no customer: no URL or host, no connection name, no project key or name, no
+  Release name or id, no credential, and no exception text (see Flags 2). The logger category is the connector's
+  (`Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira.JiraWorkTrackingConnector`).
+- **How an operator reads it.** The app's default level is Information (`appsettings.json`), but `systeminfo.md`
+  recommends "Warning or Information"; **at Warning the line is not written**. The operator sets the level to
+  Information under Settings → System Info → Log Level, opens Add Delivery, then searches the Log Viewer for
+  `Jira Release sweep` or downloads the log file (Settings → System Info → Logs → Download). Documented at finalize as a
+  new `### Jira Release sweeps` subsection under `## Logs` in `docs/settings/systeminfo.md`, beside `### Connection
+  default changes`, the existing precedent for documenting an Information line: the example line, what each field
+  means, that a cache hit writes nothing, that `VersionsRead` much larger than `ReleasesKept` is the Data Center paging
+  cost, and that the level must be Information.
+- **How the reporter's reading is taken (AC-3.3, MD-9).** Ask the reporter, through the maintainer, for: the level set
+  to Information; five cold picker sweeps over a day, each the first Add Delivery more than 5 minutes after the last
+  sweep, or the first after a restart (the backend cache lives 5 minutes per process); the five `SweepPurpose = Picker`
+  lines only, plus the Lighthouse version and whether that version carries Epic 6400 slice 02. The gate uses the median
+  `ElapsedMs` of those Picker lines (Refresh lines read every status and measure a different walk). The surrounding log
+  carries customer identifiers (per-project lines with project keys, F3): only the sweep lines and the version are
+  copied into this file; never a host, a project key or the company.
+
+| KPI | Signal | How it is read | Threshold | Contract |
+|---|---|---|---|---|
+| K1 time to a usable picker, premium, cache cold | Waterfall: from the Add Delivery click to the source tab body's `ready` | **Dev instance (Jira Cloud), before DISTILL (CA-6) and after slice 02:** restart the backend or wait 5 min (cold cache), open the Deliveries tab, click Add Delivery at 1 s, 5 s and 15 s, three runs each; record the median per click time. **Reporter (Data Center), after the release**: their own time to a usable picker, and the sweep lines | ≤ licence end + options duration + 0.5 s after the click, locally; ≤ 5 s on the reporter's instance (Epic 6400 slice 02 assumed in, MD-15) | `OUT-6398-one-wait-to-the-picker` |
+| K2 guesses shown | Vitest scenarios, one per state (sources loading or failed, licence unknown, `notPremium`, list failed, edit bound while sources pending, `403`), and the pure-helper table tests | **Gate (hard): every push.** Reading, not gate: the slice-01 dogfood once on the dev instance throttled to Slow 4G with DevTools request blocking on the sources, options and `/license` routes | 0 | `OUT-6398-no-guess-shown` |
+| K3 waits in series | Waterfall: sources GETs per dialog open; gap from `/license` end to options start | **CI (hard):** the call-count assertions of the contract-shape table (no sources request on open when the page holds them; options issued on the render the verdict becomes `premium`). **Reading:** the waterfall, as K1 | 0 sources requests on open; options start ≤ 100 ms after the licence answers (reading only, never a CI wall-clock assertion) | `OUT-6398-no-waits-in-series` |
+| K4 sweeps whose cost is visible | The sweep line | **CI (hard):** `RecordingLogger` tests through `GetOptions` and `ResolveMany`: one line per sweep, none on a cache hit, the allowlist of property names, no fixture host or key or name in any value, the failure path. **Reading:** the dev-instance dogfood (two opens within 5 min, one line) and the reporter's five lines, then the MD-9 gate within 2 weeks of the reading | 100 % of sweeps; gate outcome recorded here | `OUT-6398-sweep-cost-visible` |
+| K5 guardrail: Release list requests per dialog open | Waterfall options GETs; backend sweep lines per open | **CI (hard):** options calls: 0 while closed, 0 while not `premium`, 0 for a source not offered, 1 per offered source per opening, across open, close, reopen and a Portfolio switch. **Reading:** the waterfall; a page visit without the dialog shows no options GET | ≤ 1 per open; 0 per page visit without the dialog | `OUT-6398-one-list-request-per-open` |
+
+**CA-6, the pre-DISTILL Slow 4G waterfall: who and how.** The agent that runs DISTILL takes it first, before scenarios
+are written, as DESIGN's handoff asks; the maintainer looks at one run in DevTools by eye, because a scratch script
+could disagree with the browser's own panel. How: start the dev instance (`Lighthouse.Backend/Start-DevServer.ps1`, port
+`:5169`, auth off, premium licence imported); pick a Portfolio on the Jira Cloud connection whose Deliveries offer the
+Jira Release tab; run a scratch Playwright script (in the scratchpad, never committed) that opens Chromium, applies the
+Slow 4G network conditions through CDP (`Network.emulateNetworkConditions`), opens the Portfolio's Deliveries tab,
+clicks Add Delivery at 1 s, 5 s and 15 s in three runs each, and records each request's start and end and the moment the
+source tab body reaches `data-widget-status` `ready`. Before slice 02 ships that attribute does not exist yet, so the
+baseline records the picker becoming visible instead and says so. Record the table and the instance's Epic 6400 state
+in this file under DISTILL. Keep runs few: the dev instance's Jira connection is the `letpeoplework` Cloud site the CI
+Jira tests also use. **Data Center:** no local connection exists, so the K1 Data Center figure and the MD-9 gate come
+from the reporter only (Flags 6).
+
+## Wave: DEVOPS / [REF] CI Impact
+
+No new workflow, job or step. What the existing pipeline does with each slice:
+
+| Existing job | Slice 01, 02 (frontend + E2E page object) | Slice 03 (Jira connector) |
+|---|---|---|
+| `ci_changes` → `path-classifier.sh` | `frontend` and `e2e` paths; no backend path | `JIRA_REGEX` matches `…/WorkTrackingConnectors/Jira/`, so **`jira_connector=true`: the `JiraIntegration` live category runs** against the `letpeoplework` Cloud site. `SHARED_REGEX` does not match (no `Program.cs`, csproj or top-level `WorkTrackingConnectors/*.cs`), so the ADO, Linear and ServiceNow live categories **do not run**. Keep `JiraReleaseSweepCost.cs` inside `Jira/`; at the top level of `WorkTrackingConnectors/` it would force every live connector suite |
+| `ci_frontend` | Vitest, `tsc -b`, `vite build`, Biome, then the test-time budget check (`--warn-only`) | not triggered |
+| `ci_backend` | not triggered | Build (`TreatWarningsAsErrors`), unit + acceptance (the stubbed `JiraDeliverySourceProviderTest` is `[Category("acceptance")]`, not live), the Jira live category, then the budget check (`--warn-only`) |
+| sonar gates | Frontend project: no new issue | Backend project: no new issue; a red backend job skips Sonar, so read the gate after a red run |
+| `ci_verifysqlite`, `ci_verifypostgres` | Run the E2E walking skeleton `DeliverySourcePicker.spec.ts`, which reaches the live Jira Cloud demo through the app. Its page object changes (below). No new spec | Same spec; the sweep line is written into the app's log, nothing asserts it there |
+
+**Suites that gain tests.**
+- **Vitest (slices 01, 02).** New: the `premiumVerdictOf` and "which body" table tests, `useDeliverySources.test.ts`,
+  `useDeliverySourceOptions.test.ts`, the DeliveryGrid source-tree enforcement test, and new scenarios in the five
+  `DeliveryCreateModal*.test.tsx` suites and `useDeliveryManagement.test.ts`. Moved under a `QueryClientProvider`: the
+  five modal suites, the eight `DeliverySourceTab*.test.tsx` suites (through `DeliverySourceTabFixture.tsx`) and
+  `useDeliveryManagement.test.ts`; six tab suites drop the `clearDeliverySourceOptionsCache` import. Extend the fixture
+  first, then the suites.
+- **NUnit (slice 03).** A pure `JiraReleaseSweepCost` test class and the sweep-line tests in the connector test folder
+  (`…Tests/Services/Implementation/WorkTrackingConnectors/Jira/`), built like `JiraDeliverySourceProviderTest` with a
+  stubbed handler, a `FakeTimeProvider` and a capturing logger. **Not** in `JiraWorkTrackingConnectorTest`, which is a
+  live-Jira class already on the backend budget allowlist. `RecordingLogger` needs to capture structured properties
+  first (Flags 3).
+- **Playwright.** No new spec. `ModifyDeliveriesDialog.switchToSource` (or `DeliverySourceTab`'s constructor or
+  `picker`) waits for the source tab body's `data-widget-status="ready"`, as `MetricsPage.ts:52-71` does, instead of
+  the spec's `toBeVisible({ timeout: RELEASES_ARRIVE_FROM_JIRA })`. The new "Loading…" busy tab is a `button` whose name
+  does not contain "Jira Release", so `sourceTab("Jira Release")` (substring, case-insensitive) cannot match it; keep it
+  so. Run the spec locally against a running instance before committing the page object (CI learning 2026-05-17).
+
+**Test-time budget (warn-only today).** Frontend 63 s per file, backend 34 s per class; no DeliveryGrid file is on the
+frontend allowlist. The dialog suites render a real MUI dialog, the class of file that goes red on `Test timed out in
+5000ms` under a loaded run (the 2026-08-23 recurrence names a DeliveryGrid modal spec): keep the per-opening and
+late-answer tests on deferred promises resolved by hand, never on real timers, and if a modal suite grows past about
+half the budget, split it by theme rather than adding to the allowlist. Read each touched file's CI time on the slice
+push. Backend: the stubbed connector tests take well under a second each; no wall-clock assertion anywhere (K1 and K3's
+100 ms are readings). If DISTILL renames or deletes a test class or file, grep `test-time-budget.json` for it first.
+
+**Sonar and analyzer rules to pre-apply (from the ledger).**
+- Frontend: S3776 (≤ 15; `DeliveryCreateModal.tsx` is a past offender, hence `SelectionTabRow` and the pure body
+  helper), S3358 (no nested ternary, also inside `${…}`), S4624 (no template literal inside another, which the caption
+  "Getting the {sourceName}s…" invites), S6759 (`Readonly<>` props on every JSX helper), S6767 (no declared prop that is
+  never drawn, likely when the list state replaces the tab's own fetch), S6754 (`[thing, setThing]`, for the opening
+  counter), S7735 (no negated condition in a ternary), S7718 (catch parameter naming), S4144 (no two byte-identical mock
+  factories for the two hooks). Biome mirrors the Sonar TS profile; `pnpm build` runs `biome check --write`.
+- Backend: S6667 (a logging `catch` passes the exception first; this decides where the sweep line is written, Flags 2),
+  CA2254 (a constant template: the `const string` in `JiraReleaseSweepCost`), S2139 (no log-and-rethrow), CA1859 (new
+  private members, parameters and locals typed concrete, which matters when the per-project read returns its tally),
+  S107 (`WalkReleasePages` has five parameters: carry the counts back in the return value, not as extra parameters),
+  S2325/S1144 on new private members. Tests: NUnit2045 and NUnit2056 (`Assert.EnterMultipleScope`), NUnit4002
+  (`Is.Zero`), NUnit2046 (`Has.Count`), NUnit1028 (private `TestCaseSource`), CA1861 (hoist constant arrays such as the
+  property-name allowlist into a `static readonly`).
+
+**Local gates (mirror CI) before each commit.** Slices 01 and 02: `pnpm test`, `pnpm build` (zero warnings; runs
+`biome check --write`), and `DeliverySourcePicker.spec.ts` against a running instance. Slice 03: `dotnet build` (zero
+warnings), the filtered `dotnet test` from `CLAUDE.md`, and the Jira live category once
+(`TestCategory=JiraIntegration`), because CI will run it on this path.
+
+**Shared CI-time risks with Epic 6400 (MD-12).** No file overlap in code (re-checked: nothing in this scope is
+`useLicenseRestrictions.ts`, a `["licenseStatus"]` key, `getLicenseStatus`, `PortfolioRepository` or the Portfolio and
+Team controllers; the frontend mutate globs and the backend `test-case-filter` below name none of them). Shared at CI
+time:
+- Both stories add Vitest suites that render real components, so the frontend job's wall clock and the
+  `5000ms`-timeout contention rise together; a timeout in a file neither touched is the 2026-08-21 entry, not a
+  regression.
+- Both may add entries to `Scripts/test-timings/test-time-budget.json`; an entry naming a file the other renamed fails
+  the step. Grep it before each push.
+- Text-level merge points: `docs/product/kpi-contracts.yaml` (both append at the end), `docs/settings/systeminfo.md` and
+  `docs/portfolios/detail.md` at finalize, the vNext release notes, and the ADR numbers 263 and 264 (re-check at push).
+  6400 also edits `WidgetShell.tsx`; this Story only reuses the `data-widget-status` convention and, at most, imports the
+  `WidgetStatus` type from `widgetStatus.ts`, read only.
+- `DeliverySourcesController` calls `GetById`, which 6400 slice 02 changes. Slice 03's tests drive the connector
+  directly (CA-2), so 6400's change cannot redden them.
+- Never run the two stories' Stryker runs at the same time on one machine (memory: concurrent runs end 100 % `Timeout`).
+
+## Wave: DEVOPS / [REF] Coexistence
+
+- **Docker images, Helm chart, Standalone:** no change.
+- **Lighthouse-Clients (CLI + MCP):** N/A, because no route, payload or meaning changes and the clients do not drive
+  this dialog. The sweep line is not an API.
+- **Older web bundle against a new server, or the reverse:** no contract changes, so both work; an old bundle keeps
+  today's behaviour.
+- **Log readers:** one new Information line; the Debug "Getting Releases of N Jira projects" line goes (DDD-6). An
+  operator who grepped that Debug line, rare by nature, reads `ProjectCount` in the new line instead. Release-note text:
+  not needed for it.
+- **Multi-replica:** the sweep cache is process-wide per replica, so on a multi-replica install a reopen within 5
+  minutes may reach a replica with a cold cache and write a second line. Correct behaviour, but readers of K4 and K5
+  count per replica.
+
+## Wave: DEVOPS / [REF] Deployment Strategy and Rollback
+
+Ships in the next ordinary release through the existing pipeline. **No feature flag**: the change is the dialog's own
+state handling plus one log line; the server's `LicenseGuard` and `RbacGuard` stay the gate, so nothing a flag could
+protect is at risk, and a flag would add a second branch to the exact state the K2 scenarios pin.
+
+**Rollback first.** Revert the slice's commit(s) on `main`, or install the previous release (re-pin the image tag,
+`helm rollback`, or reinstall Standalone).
+- No migration, configuration or contract change, so either direction is safe at any time.
+- Slice 02 builds on slice 01's files: revert 02 before 01. Slice 03 is independent and reverts alone.
+- What a rollback brings back: the guesses (01), the waits in series (02), no sweep line (03). Nothing stored is lost.
+
+**Production validation** (per instance, advisory). After the upgrade, on a premium instance: open Add Delivery with the
+connection slow, and no premium notice and no missing tab appear before the answer; the log shows one
+`Jira Release sweep for the Picker …` line on the first open and none on a reopen within 5 minutes.
+
+## Wave: DEVOPS / [REF] Mutation Scope (for DELIVER, run last on frozen code)
+
+Gate ≥ 80 % over the included set, per file. Read the per-file table in `mutation-report.json` before believing a
+score; a run that shows no mutants for a listed file is broken, not clean. Commit before each run; run the two stacks
+one after the other, never together, and never while Epic 6400 runs its own.
+
+| File (`FE:` under `Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/`, `BE:` under `Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/`) | Slice | Scope | Covered by |
+|---|---|---|---|
+| `FE: useDeliverySources.ts` (new) | 02 | whole file | hook call-count tests, the page and dialog scenarios |
+| `FE: useDeliverySourceOptions.ts` (new) | 02 | whole file | open / close / reopen / Portfolio-switch call counts, late-answer test, `403` |
+| `FE:` `premiumVerdictOf` and the "which body" helper (new; whole file if the crafter puts them in a sibling file, else spans) | 01 | whole file or spans | table tests |
+| `FE: DeliveryCreateModal.tsx` | 01, 02 | StrykerJS line spans of the changed regions only, **one span per entry**, a one-line span written `N-N`; computed from `git diff -U0` on the frozen commit | modal suites |
+| `FE: DeliverySourceTab.tsx` | 01, 02 | changed spans only (caption, reworded Alert, status attribute, the list-state prop path); preview logic unchanged and not mutated | tab suites |
+| `FE: useDeliveryManagement.ts` | 02 | changed span (the shared query replacing `fetchDeliverySources`) | `useDeliveryManagement.test.ts` |
+| `FE: DeliverySourceTabFixture.tsx`, the enforcement test, `deliverySelectionTabs.ts` | — | excluded (test code; `deliverySelectionTabs.ts` unchanged) | — |
+| `BE: JiraReleaseSweepCost.cs` (new) | 03 | whole file | value tests (allowlist of property names, rendering) |
+| `BE: JiraWorkTrackingConnector.cs` (3,639 lines) | 03 | **character-offset spans** of `SweepReleases`, `ReadReleasesOf`, `WalkReleasePages` and `SweepReleasesWithoutThrowing` only (`"…/JiraWorkTrackingConnector.cs{a..b}"`, `a` and `b` byte offsets into the frozen file, never line numbers); fallback: excluded, as DESIGN has it (Flags 4) | sweep-line tests through `GetOptions` and `ResolveMany`; `JiraDeliverySourceProviderTest` |
+| `E2E: ModifyDeliveriesDialog.ts`, `DeliverySourceTab.ts` | 01 | excluded (test code) | the walking skeleton |
+
+**Stryker.NET traps.** Line-number spans `{65..102}` silently match nothing, because the numbers are character offsets
+(ci-learnings 2026-09-17; memory says "ignores line spans", same cause). Compute offsets against the frozen file's bytes
+and recompute after any edit; confirm in the report that the connector shows mutants, else drop it to the fallback. A
+whole-file entry beside a muted span masks the mute. The "N mutants created" line is a pre-filter count; scope is the
+later "will be tested" line. `test-case-filter` (required, or the initial run takes all 4,000+ tests):
+`(FullyQualifiedName~WorkTrackingConnectors.Jira.JiraDeliverySourceProviderTest|FullyQualifiedName~WorkTrackingConnectors.Jira.JiraReleaseSweep)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration&TestCategory!=JiraIntegration`.
+`JiraDeliverySourceProviderTest` carries `[Category("acceptance")]` but is a stubbed, in-process class, so it stays in;
+the WebApplicationFactory suites (`API.Integration`, 80 minutes instead of 3) and the live `JiraWorkTrackingConnectorTest`
+stay out. **DISTILL names the new slice-03 classes so they match `JiraReleaseSweep`** (for example
+`JiraReleaseSweepCostTest`, `JiraReleaseSweepLineTest`), or the filter fragment changes with them; check the names
+against the filter before believing the score. `--with-baseline` after a test-only kill round tests 0 mutants; run fresh.
+
+**StrykerJS traps.** `inPlace: true` (sandbox mode fails here), `"disableTypeChecks": false`, commit first (a dead run
+leaves files modified), `"plugins": ["@stryker-mutator/vitest-runner"]`, `"related": false`, the setup file
+`./setupTests.ts`, and a standalone `pnpm exec vitest run --config <the stryker vitest config>` printing a test count
+before the first Stryker run (Stryker exits 0 on a config error). Configs and `results.md` are committed under this
+feature's `mutation/` folder, as in prior features.
+
+## Wave: DEVOPS / [REF] Flags Against DESIGN (not silently fixed)
+
+1. **`data-widget-status` values (DDD-5).** DESIGN writes `loading|ready|failed`. The house convention is
+   `WidgetStatus = "loading" | "error" | "ready"` (`pages/Common/MetricsView/widgetStatus.ts:7`), and `MetricsPage.ts`
+   waits on `ready` or `error`. `failed` would be the second waiting convention DDD-5 itself rejects. Proposed: `error`,
+   typed with `WidgetStatus`.
+2. **The sweep line cannot be written inside the guard's `catch` (DDD-6, failure path).** S6667 requires a logging call
+   inside a `catch` to pass the exception first, and the exception's text may carry the host, which AC-3.1 and ADR-264
+   forbid in this line. Proposed: write the line once, after the `try`/`catch` (or in a `finally`), from the locals
+   DDD-6 already holds; the existing could-not-ask line keeps the exception.
+3. **`RecordingLogger` cannot see structured properties (DDD-8, ADR-264 enforcement).** It keeps only the formatted
+   message and the exception, so "the property names equal the allowlist" cannot be asserted with it today. It is shared
+   by 15 test files. Proposed: extend it additively (keep `Entry`'s positional shape, add the state's key-value pairs
+   beside it) in its own commit before the slice-03 tests, or capture in a local logger inside the new test class.
+4. **Mutation of the connector (Architecture Enforcement).** DESIGN excludes `JiraWorkTrackingConnector.cs`. Character-
+   offset spans work in Stryker.NET (ci-learnings 2026-09-17), so DEVOPS includes the four sweep methods by offset and
+   keeps DESIGN's exclusion as the fallback. DESIGN may prefer the plain exclusion.
+5. **The late `canEdit` mount is the usual case with auth on (DDD-2).** `canEdit` comes from `useRbac()`, which answers
+   after the page mounts, so on an auth-on instance the dialog usually mounts after the sources settled and sends the
+   one extra sources GET DDD-2 accepted as an edge. Opening the dialog still sends none (K3 holds), but a K5-style count
+   per page visit is 2 there, and the auth-off dev instance hides it. Accept and record, or let the dialog mount its
+   observer regardless of `canEdit`; DESIGN decides.
+6. **K1 and CA-6 on Data Center cannot be read locally.** The dev backup's only Jira connection is Cloud, and every Jira
+   test uses the `letpeoplework` Cloud site. CA-6's waterfall is a Cloud reading; the Data Center figure, and so the MD-9
+   gate, come only from the reporter. Option for the maintainer: a local Jira Data Center container on a trial licence
+   for one reading (Open Question 2).
+7. **The log level decides whether K4 can be read.** At Warning, a level `systeminfo.md` recommends, the line is not
+   written. Not a design error; the finalize docs and the request to the reporter must say "Information".
+
+## Wave: DEVOPS / [REF] Open Questions for the maintainer
+
+1. **F4, a Delivery-saved usage-data event** (`DeliveryCreated` with a closed `Selection` enum): record it as a
+   candidate for after Epic 6400 has shipped (recommended), or add it to this Story (it would touch `usagedata.md` and the
+   event shapes 6400 is changing).
+2. **A Data Center reading before release:** rely on the reporter's reading after the release (recommended; MD-9
+   already says so), or run a local Jira Data Center container on a trial licence once.
+3. **Flags 1, 2, 3, 5:** confirm the proposals, at the DISTILL review gate at the latest.
+
+## Wave: DEVOPS / [REF] Wave Decisions Summary
+
+- Usage data: N/A (no new action; `PortfolioTabOpened` already counts the Deliveries tab). F4 recorded as a candidate.
+- KPIs: K1, K3, K5 from a Slow 4G waterfall on the dev instance (Cloud) and the reporter's reading; K2, K3, K5 call
+  counts and states pinned in Vitest (hard); K4 from the new Information sweep line, pinned by captured-logger tests
+  (hard) and read by the reporter at Information level for the MD-9 gate. Five `OUT-6398-*` contracts appended.
+- CI: no new job. Slices 01 and 02 run the frontend job and the verify E2E (page object waits on `ready`); slice 03
+  runs the backend job plus the `JiraIntegration` live category only. No migration, no Program.cs.
+- Mutation: new hooks and `JiraReleaseSweepCost.cs` whole; spans of `DeliveryCreateModal.tsx`,
+  `DeliverySourceTab.tsx`, `useDeliveryManagement.ts`; the connector's four sweep methods by character offset, fallback
+  excluded.
+- Rollback: revert the commit or the release; no flag, no stored state.
+- Flags against DESIGN: seven, none silently fixed.
+- Files: this section, `environments.yaml`, `docs/product/kpi-contracts.yaml` (`OUT-6398-*`).

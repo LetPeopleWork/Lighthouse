@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-23
+updated: 2026-10-24
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2749,4 +2749,119 @@ outcomes:
       - condition: "a golden or identity test fails"
         action: "backend build fails (red)"
     acceptance_scenarios: []   # DISTILL names the golden and identity classes
+    status: designed-not-shipped
+
+  # story-6398-jira-release-loads-once (DEVOPS 2026-10-24). No usage-data event: the Story adds no action, it makes an
+  # existing one honest and faster; a visit to the Deliveries tab is already PortfolioTabOpened. A Delivery-saved event
+  # is recorded as candidate F4, not added. Timing KPIs are readings of a Chrome DevTools "Slow 4G" waterfall on the dev
+  # instance (:5169, auth off, premium, its Jira Cloud connection) and the reporter's Data Center instance, never CI
+  # budgets. The sweep line is an Information entry of the Jira connector naming no customer; it is written only at
+  # Information level or finer.
+  - id: OUT-6398-one-wait-to-the-picker
+    feature: story-6398-jira-release-loads-once
+    title: Time from opening Add Delivery to a usable Jira Release picker, premium, backend cache cold (K1)
+    target: "locally <= the licence call's end + the options call's duration + 0.5 s after the click; <= 5 s on the reporter's Data Center instance (Epic 6400 slice 02 assumed in, MD-15)"
+    ga_baseline: "3 waits of 3-5 s in series, about 10-15 s (reporter); restated from the CA-6 waterfall before DISTILL scenarios are written"
+    measurement_scope: per_instance   # dev instance (Cloud) by the vendor, the reporter's instance shared out of band
+    measured_by: >
+      Chrome DevTools Network panel, "Slow 4G" preset, cache disabled, on the dev instance with a premium licence and a
+      Portfolio on its Jira Cloud connection: restart the backend or wait 5 minutes (cold sweep cache), open the
+      Deliveries tab, click Add Delivery at 1 s, 5 s and 15 s, three runs each; read the time from the click to the
+      source tab body's data-widget-status ready (before slice 02: the picker visible, said so). A scratch Playwright
+      script with CDP Network.emulateNetworkConditions may record the runs; the maintainer checks one in DevTools by
+      eye. Data Center: the reporter's own reading after the release, with the version and its Epic 6400 state.
+    log_fields:
+      jira_release_sweep_line: ["SweepPurpose", "ElapsedMs", "Deployment"]
+    measurement_window: CA-6 before DISTILL scenarios; after slice 02 on the dev instance; once on the reporter's instance after the release
+    gate: soft
+    alerting:
+      - condition: "the local time to the picker exceeds licence end + options duration + 0.5 s after slice 02"
+        action: "manual: read the waterfall for a request that still starts on tab mount or waits on the sources; fix before release"
+    acceptance_scenarios: []   # wall-clock reading only; no CI scenario asserts a duration
+    status: designed-not-shipped
+
+  - id: OUT-6398-no-guess-shown
+    feature: story-6398-jira-release-loads-once
+    title: The Delivery dialog never shows a guess while the sources or the licence are unknown or failed (K2)
+    target: "0: no missing source tab, premium notice, locked Rule-Based tab or premium tooltip while sources or licence are unknown or failed"
+    ga_baseline: "shown on every slow open"
+    measurement_scope: vendor_repository   # the gate is CI; the throttled hand check is a reading
+    measured_by: >
+      Gate, CI on every push: the Vitest scenarios per state (sources loading and failed with Try again, licence unknown
+      and notPremium, Release list failed with the reopen copy, editing a bound Delivery while sources are pending, a
+      403 from the guards) and the table tests of premiumVerdictOf and the which-body helper. Reading, not gate: the
+      slice-01 dogfood once on the dev instance throttled to Slow 4G, with DevTools request blocking on the sources,
+      options and /license routes.
+    log_fields: {}
+    measurement_window: every push (gate); once in slice 01 DELIVER (reading)
+    gate: hard
+    alerting:
+      - condition: "a state scenario or table test fails"
+        action: "frontend build fails (red)"
+    acceptance_scenarios: []   # DISTILL names the scenarios
+    status: designed-not-shipped
+
+  - id: OUT-6398-no-waits-in-series
+    feature: story-6398-jira-release-loads-once
+    title: One noticeable wait before the picker, not three (K3)
+    target: "0 sources requests on opening the dialog when the page holds them; the options request starts <= 100 ms after the licence answers premium (reading)"
+    ga_baseline: "3 waits in series (sources, licence, Release list started on tab mount)"
+    measurement_scope: per_instance
+    measured_by: >
+      CI (hard): call counts on the mocked deliveryService, no getDeliverySources on open when the page holds the
+      answer, getDeliverySourceOptions issued on the render the verdict becomes premium whichever tab is on screen.
+      Reading: the K1 waterfall, sources GETs per open and the gap from the /license response end to the options
+      request start. With auth on, the page may show two sources GETs per visit (late canEdit mount), still none on open.
+    log_fields: {}
+    measurement_window: every push (counts); with the K1 readings
+    gate: soft   # the 100 ms gap is a reading; the call counts are pinned in CI
+    alerting: []
+    acceptance_scenarios: []
+    status: designed-not-shipped
+
+  - id: OUT-6398-sweep-cost-visible
+    feature: story-6398-jira-release-loads-once
+    title: Every Jira Release sweep says what it cost, and the cache gate is applied from it (K4)
+    target: "100% of sweeps write one sweep line, none on a cache hit; the MD-9 gate applied within 2 weeks of the reporter's reading"
+    ga_baseline: "0% (a Debug count of projects only)"
+    measurement_scope: per_instance
+    measured_by: >
+      CI (hard): captured-logger tests through GetOptions and ResolveMany with Jira's HTTP stubbed and a fake time
+      provider: one line per sweep, none on a cache hit, property names equal the allowlist, no value equals the
+      fixture's host, project keys or names or Release names, the failure path writes what was learned. Readings: on
+      the dev instance two opens within 5 minutes write one line; the reporter, at Information level, sends five cold
+      Picker sweep lines (each the first open more than 5 minutes after the last sweep, or the first after a restart)
+      with the version and its Epic 6400 state. MD-9: median ElapsedMs of those Picker lines over 2 s opens follow-up F2
+      (longer cache or a narrower sweep); otherwise close with no change. Only the sweep lines and the version are
+      copied into the feature file, never a host, project key or the company.
+    log_fields:
+      jira_release_sweep_line: ["SweepPurpose", "ElapsedMs", "Deployment", "ReleasesKept", "VersionsRead", "VersionPages", "ProjectCount", "ProjectsSkipped", "Complete"]
+    measurement_window: every push (gate); once on the dev instance after slice 03; the reporter's reading after the release, gate within 2 weeks
+    gate: hard   # the line's existence and shape; the MD-9 outcome is a decision, not a gate
+    alerting:
+      - condition: "median Picker ElapsedMs over 2000 on the reporter's cold sweeps"
+        action: "manual: open follow-up F2, choosing between a longer cache lifetime and narrowing the sweep to the Portfolio's projects (single-flight decided with it, OQ-6)"
+    acceptance_scenarios: []   # DISTILL names the classes (JiraReleaseSweep* so the Stryker filter matches)
+    status: designed-not-shipped
+
+  - id: OUT-6398-one-list-request-per-open
+    feature: story-6398-jira-release-loads-once
+    title: At most one Release list request per dialog opening, none per page visit without it (K5, guardrail)
+    target: "<= 1 options request per offered source per opening; 0 per page visit without the dialog; 0 while the licence is unknown or not premium"
+    ga_baseline: "1 per Jira Release tab mount"
+    measurement_scope: vendor_repository   # pinned in CI; the waterfall and sweep lines are readings
+    measured_by: >
+      CI (hard): getDeliverySourceOptions call counts across open, close, reopen and a Portfolio switch; 0 while closed,
+      while the verdict is not premium, or for a source not offered. Readings: the K1 waterfall (no options GET on a
+      page visit without the dialog); sweep lines per open on the backend, per replica on a multi-replica install. A
+      close and reopen during a running sweep starts a second sweep (accepted, OQ-6), visible as two lines close
+      together.
+    log_fields:
+      jira_release_sweep_line: ["SweepPurpose"]
+    measurement_window: every push (gate); with the K1 readings
+    gate: hard
+    alerting:
+      - condition: "a call-count scenario fails"
+        action: "frontend build fails (red)"
+    acceptance_scenarios: []
     status: designed-not-shipped
