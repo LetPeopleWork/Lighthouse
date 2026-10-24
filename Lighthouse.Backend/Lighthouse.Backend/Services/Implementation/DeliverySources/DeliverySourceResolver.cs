@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
     public class DeliverySourceResolver(IWorkTrackingConnectorFactory workTrackingConnectorFactory) : IDeliverySourceResolver
     {
         public async Task<IReadOnlyDictionary<string, PortfolioSourcePreview>> ResolveForPortfolio(
-            Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences)
+            Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences, DeliverySourceSweepPurpose purpose)
         {
             ArgumentNullException.ThrowIfNull(portfolio);
             ArgumentNullException.ThrowIfNull(sourceReferences);
@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
                 return NothingCouldBeAsked(sourceReferences, DeliverySourceUnavailableReason.CapabilityWithdrawn);
             }
 
-            var resolutions = await provider.ResolveMany(connection, sourceKey, sourceReferences);
+            var resolutions = await provider.ResolveMany(connection, sourceKey, sourceReferences, purpose);
             var trackedByReferenceId = portfolio.Features
                 .GroupBy(feature => feature.ReferenceId)
                 .ToDictionary(group => group.Key, group => group.ToList());

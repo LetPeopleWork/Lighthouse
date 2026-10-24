@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.API
                 return NotFound(SourceNotOffered(portfolioId, sourceKey));
             }
 
-            var previews = await deliverySourceResolver.ResolveForPortfolio(portfolio, sourceKey, [request.SourceReference]);
+            var previews = await deliverySourceResolver.ResolveForPortfolio(portfolio, sourceKey, [request.SourceReference], DeliverySourceSweepPurpose.Preview);
             if (!previews.TryGetValue(request.SourceReference, out var preview))
             {
                 return CouldNotBeAsked(request.SourceReference);

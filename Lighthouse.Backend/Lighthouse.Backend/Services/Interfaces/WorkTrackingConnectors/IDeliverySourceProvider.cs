@@ -24,6 +24,6 @@ namespace Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors
         /// stay constant in the number of bound Deliveries rather than growing with it.
         /// </summary>
         Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
-            WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences);
+            WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences, DeliverySourceSweepPurpose purpose);
     }
 }

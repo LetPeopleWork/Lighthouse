@@ -240,14 +240,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         protected void TheRemoteSays(string sourceReference, DeliverySourceResolution resolution)
         {
             JiraConnector
-                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, DeliverySourceResolution> { [sourceReference] = resolution });
         }
 
         protected void TheRemoteSays(Dictionary<string, DeliverySourceResolution> byReference)
         {
             JiraConnector
-                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(byReference);
         }
 
@@ -259,7 +259,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         protected void TheRemoteCannotBeAskedAtAll()
         {
             JiraConnector
-                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(c => c.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ThrowsAsync(new ArgumentException(
                     $"This Jira connection does not offer a delivery source called '{JiraReleaseSourceKey}'."));
         }

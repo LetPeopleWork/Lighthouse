@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             using (Assert.EnterMultipleScope())
             {
                 resolverMock.Verify(
-                    resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Never);
                 Assert.That(delivery.SourceLastSyncedOn, Is.Null);
             }
@@ -179,12 +179,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                     ReleaseSourceKey,
                     It.Is<IReadOnlyList<string>>(references => references.Count == 2
                         && references.Contains(TheRelease)
-                        && references.Contains(ASecondRelease))),
+                        && references.Contains(ASecondRelease)), It.IsAny<DeliverySourceSweepPurpose>()),
                 Times.Once);
         }
 
         [Test]
-        [Ignore("The resolver cannot be told the sweep's purpose yet")]
         public async Task The_refresh_tells_the_resolver_its_sweep_is_for_a_refresh()
         {
             var portfolio = APortfolio();
@@ -192,8 +191,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([ADeliveryFollowing(ReleaseSourceKey, TheRelease)]));
 
-            resolverMock.VerifyThePurposeIn(resolver => resolver.ResolveForPortfolio(
-                portfolio, ReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Refresh));
+            resolverMock.Verify(resolver => resolver.ResolveForPortfolio(
+                portfolio, ReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Refresh), Times.Once());
         }
 
         [Test]
@@ -208,8 +207,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
             using (Assert.EnterMultipleScope())
             {
-                resolverMock.Verify(resolver => resolver.ResolveForPortfolio(portfolio, ReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()), Times.Once);
-                resolverMock.Verify(resolver => resolver.ResolveForPortfolio(portfolio, ASecondSourceKey, It.IsAny<IReadOnlyList<string>>()), Times.Once);
+                resolverMock.Verify(resolver => resolver.ResolveForPortfolio(portfolio, ReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()), Times.Once);
+                resolverMock.Verify(resolver => resolver.ResolveForPortfolio(portfolio, ASecondSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()), Times.Once);
             }
         }
 
@@ -221,7 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([theirs]));
 
             resolverMock.Verify(
-                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                 Times.Never);
         }
 
@@ -454,7 +453,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([halfWritten]));
 
             resolverMock.Verify(
-                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                 Times.Never);
         }
 
@@ -474,7 +473,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             await subject.ResyncSourceBoundDeliveries(portfolio, new RecordableDeliveries([]));
 
             resolverMock.Verify(
-                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                 Times.Never);
         }
 
@@ -496,7 +495,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             {
                 resolverMock.Verify(
                     resolver => resolver.ResolveForPortfolio(
-                        portfolio, ReleaseSourceKey, It.Is<IReadOnlyList<string>>(references => references.Count == 1)),
+                        portfolio, ReleaseSourceKey, It.Is<IReadOnlyList<string>>(references => references.Count == 1), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Once);
                 Assert.That(first.Name, Is.EqualTo(TheNameItHasNow));
                 Assert.That(second.Name, Is.EqualTo(TheNameItHasNow));
@@ -524,21 +523,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         private void GivenTheResolverAnswers(string sourceKey, Dictionary<string, PortfolioSourcePreview> previews)
         {
             resolverMock
-                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), sourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), sourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(previews);
         }
 
         private void GivenNothingResolves()
         {
             resolverMock
-                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()))
+                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>());
         }
 
         private void GivenTheSourceCannotBeAskedAtAll(string sourceKey, Exception howItFailed)
         {
             resolverMock
-                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), sourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(resolver => resolver.ResolveForPortfolio(It.IsAny<Portfolio>(), sourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ThrowsAsync(howItFailed);
         }
 

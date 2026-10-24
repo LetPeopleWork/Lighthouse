@@ -681,7 +681,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .WithWorkOn("LGH-3", "99999");
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
-            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn, DeliverySourceSweepPurpose.Refresh);
 
             var snapshot = SnapshotOf(resolutions[TheDatedRelease]);
 
@@ -754,7 +754,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = JiraConnectorTestSetup.AConnectorOver(AJira().WithTheWorkProject().Handler);
 
             var resolutions = await subject.ResolveMany(
-                AConnectionWhoseUrlIsNotAUrl(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+                AConnectionWhoseUrlIsNotAUrl(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn, DeliverySourceSweepPurpose.Refresh);
 
             using (Assert.EnterMultipleScope())
             {
@@ -978,7 +978,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .WithReleaseIn(TheReleaseProject, TheDatedRelease, TheDatedReleaseName, TheDayTheDatedReleaseShipsInJira);
 
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
-            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn);
+            var resolutions = await subject.ResolveMany(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey, TheDatedReleaseOnItsOwn, DeliverySourceSweepPurpose.Refresh);
 
             Assert.That(resolutions[TheDatedRelease], Is.InstanceOf<DeliverySourceResolution.Unavailable>(),
                 "a project list that could not be read lists no projects, and a sweep of no projects finds no Releases - read as the whole truth, that retires every binding on the connection.");
@@ -1075,7 +1075,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
 
             await Assert.ThrowsAsync<ArgumentException>(
-                async () => await subject.ResolveMany(UnreachableJiraConnection(), "jira-sprint", TheDatedReleaseOnItsOwn),
+                async () => await subject.ResolveMany(UnreachableJiraConnection(), "jira-sprint", TheDatedReleaseOnItsOwn, DeliverySourceSweepPurpose.Refresh),
                 "the connection has no url and no credentials, so anything that reached the network would fail differently.");
         }
 
@@ -1099,7 +1099,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = JiraConnectorTestSetup.AConnectorOver(jira.Handler);
 
             return await subject.ResolveMany(
-                JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection, JiraReleaseSourceKey, sourceReferences);
+                JiraConnectorTestSetup.ATeamOnJiraCloud().WorkTrackingSystemConnection, JiraReleaseSourceKey, sourceReferences, DeliverySourceSweepPurpose.Refresh);
         }
 
         private static JiraStub AJira() => new();

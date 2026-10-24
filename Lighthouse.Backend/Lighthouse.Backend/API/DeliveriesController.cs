@@ -574,7 +574,7 @@ namespace Lighthouse.Backend.API
             }
 
             var previews = await deliverySourceResolver.ResolveForPortfolio(
-                portfolio, request.SourceKey!, [request.SourceReference!]);
+                portfolio, request.SourceKey!, [request.SourceReference!], DeliverySourceSweepPurpose.Save);
 
             if (!previews.TryGetValue(request.SourceReference!, out var preview))
             {

@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             GivenTheRemoteAnswers(new DeliverySourceResolution.Resolved(
                 new DeliverySourceSnapshot("Release 1.0", TheReleaseDate, BothItemsAreTagged)));
 
-            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             var preview = previews[TheRelease];
             using (Assert.EnterMultipleScope())
@@ -70,7 +70,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             GivenTheRemoteAnswers(new DeliverySourceResolution.Resolved(
                 new DeliverySourceSnapshot("Release 1.0", TheReleaseDate, OnlyTheUntrackedItemIsTagged)));
 
-            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             using (Assert.EnterMultipleScope())
             {
@@ -86,11 +86,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             GivenTheRemoteAnswers(new DeliverySourceResolution.Resolved(
                 new DeliverySourceSnapshot("Release 1.0", TheReleaseDate, BothItemsAreTagged)));
 
-            await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             using (Assert.EnterMultipleScope())
             {
-                providerMock.Verify(p => p.ResolveMany(portfolio.WorkTrackingSystemConnection, SourceKey, TheBoundReference), Times.Once);
+                providerMock.Verify(p => p.ResolveMany(portfolio.WorkTrackingSystemConnection, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh), Times.Once);
                 providerMock.Verify(p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()), Times.Never,
                     "spelling the membership query a second time here would put a second copy of the remote query language in the codebase.");
             }
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             var portfolio = GivenAPortfolioTracking(TrackedItem);
             GivenTheRemoteAnswers(new DeliverySourceResolution.NotFound());
 
-            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             using (Assert.EnterMultipleScope())
             {
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
                 .Setup(f => f.GetWorkTrackingConnector(portfolio.WorkTrackingSystemConnection.WorkTrackingSystem))
                 .Returns(Mock.Of<IWorkTrackingConnector>());
 
-            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             Assert.That(previews[TheRelease].Resolution, Is.TypeOf<DeliverySourceResolution.Unavailable>(),
                 "a connector that cannot answer is not the same as a remote that answered 'deleted', and only one of the two may retire a binding.");
@@ -131,10 +131,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             var portfolio = GivenAPortfolioTracking(TrackedItem);
             GivenAConnectorThatReadsSources();
             providerMock
-                .Setup(p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), SourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), SourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, DeliverySourceResolution>());
 
-            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference);
+            var previews = await subject.ResolveForPortfolio(portfolio, SourceKey, TheBoundReference, DeliverySourceSweepPurpose.Refresh);
 
             Assert.That(previews[TheRelease].Resolution, Is.TypeOf<DeliverySourceResolution.Unavailable>(),
                 "an answer that simply omits a reference says nothing about whether it exists, so it must not read as deleted.");
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             {
                 Assert.That(offered, Is.EqualTo(expectedToBeOffered));
                 providerMock.Verify(
-                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Never,
                     "a key nobody offers has to be answered without a remote call, or a mistyped key comes back as the remote being unwell.");
                 providerMock.Verify(p => p.GetOptions(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>()), Times.Never);
@@ -197,7 +197,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
         {
             GivenAConnectorThatReadsSources();
             providerMock
-                .Setup(p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), SourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), SourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, DeliverySourceResolution> { [TheRelease] = resolution });
         }
 

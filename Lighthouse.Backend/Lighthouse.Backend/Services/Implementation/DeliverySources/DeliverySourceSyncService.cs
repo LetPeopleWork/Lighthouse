@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Services.Implementation.DeliverySources
 
             try
             {
-                return await resolver.ResolveForPortfolio(portfolio, sourceKey, references);
+                return await resolver.ResolveForPortfolio(portfolio, sourceKey, references, DeliverySourceSweepPurpose.Refresh);
             }
 #pragma warning disable CA1031 // an unreadable source costs its own Deliveries their refresh and nothing else; the next refresh asks again
             catch (Exception exception)

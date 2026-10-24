@@ -1506,7 +1506,7 @@ namespace Lighthouse.Backend.Tests.API
                     Is.EqualTo($"Portfolio with ID {ThePortfolioItLivesIn} offers no delivery source called '{TheKeyOneLetterOut}'"),
                     "naming the key back is what tells a caller they asked for something that does not exist here, rather than that the Portfolio itself is missing.");
                 deliverySourceResolverMock.Verify(
-                    x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Never,
                     "the Jira connector throws on a key it does not offer, so asking it would turn a typo into a 500.");
                 Assert.That(persistedDelivery, Is.Null);
@@ -1539,7 +1539,6 @@ namespace Lighthouse.Backend.Tests.API
         /// their sweep the same way: the operator's question is "a save swept Jira", whichever of the two it was.
         /// </summary>
         [TestCaseSource(nameof(EveryWayADeliveryIsSavedFollowingASource))]
-        [Ignore("The resolver cannot be told the sweep's purpose yet")]
         public async Task A_Delivery_saved_following_a_source_tells_the_resolver_its_sweep_is_for_a_save(
             Func<DeliveriesController, UpdateDeliveryRequest, Task<IActionResult>> saveIt)
         {
@@ -1549,8 +1548,8 @@ namespace Lighthouse.Backend.Tests.API
 
             await saveIt(CreateSubject(), ADeliveryFollowingTheRelease());
 
-            deliverySourceResolverMock.VerifyThePurposeIn(x => x.ResolveForPortfolio(
-                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Save));
+            deliverySourceResolverMock.Verify(x => x.ResolveForPortfolio(
+                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Save), Times.Once());
         }
 
         /// <summary>
@@ -1616,7 +1615,7 @@ namespace Lighthouse.Backend.Tests.API
                 resolution, trackedFeatures, trackedFeatures.Length);
 
             deliverySourceResolverMock
-                .Setup(x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(x => x.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(releasesTheResolverAnswersFor);
         }
 

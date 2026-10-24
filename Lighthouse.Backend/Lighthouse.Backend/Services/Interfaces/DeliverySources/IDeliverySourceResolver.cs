@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Interfaces.DeliverySources
     public interface IDeliverySourceResolver
     {
         Task<IReadOnlyDictionary<string, PortfolioSourcePreview>> ResolveForPortfolio(
-            Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences);
+            Portfolio portfolio, string sourceKey, IReadOnlyList<string> sourceReferences, DeliverySourceSweepPurpose purpose);
 
         /// <summary>
         /// Whether the connection behind this Portfolio says it offers the named source at all. A

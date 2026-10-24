@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("kpi-OUT-6398-sweep-cost-visible")]
     public class JiraReleaseSweepLineTest
     {
-        private const string Pending = "The sweep does not write its cost yet";
         private const string JiraReleaseSourceKey = "jira-release";
         private const string TheSweepLine = "Jira Release sweep for the";
         private const string ThePaymentsProject = "PAY";
@@ -120,7 +119,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(DeliverySourceSweepPurpose.Preview)]
         [TestCase(DeliverySourceSweepPurpose.Save)]
         [TestCase(DeliverySourceSweepPurpose.Refresh)]
-        [Ignore(Pending)]
         [Category("driving_port")]
         public async Task Every_sweep_to_resolve_bound_Releases_writes_one_line_named_for_the_caller_that_asked(DeliverySourceSweepPurpose purpose)
         {
@@ -313,23 +311,5 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     : base.SendAsync(request, cancellationToken);
             }
         }
-    }
-
-    /// <summary>
-    /// Stands in for the purpose the resolver will hand the connector, which the connector cannot take yet. A test that
-    /// reaches it fails on the spot; once the connector takes the purpose itself, the compiler picks the connector's own
-    /// method over this one, and this class has nothing left to do.
-    /// </summary>
-    internal static class ConnectorTakingASweepPurpose
-    {
-        public static Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
-            this JiraWorkTrackingConnector connector,
-            WorkTrackingSystemConnection connection,
-            string sourceKey,
-            IReadOnlyList<string> sourceReferences,
-            DeliverySourceSweepPurpose purpose)
-            => throw new AssertionException(
-                $"{connector.GetType().Name} cannot be told yet that a sweep of {sourceKey} for {sourceReferences.Count} " +
-                $"reference(s) on connection {connection.Id} is for the {purpose}");
     }
 }

@@ -3304,7 +3304,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// minutes ago.
         /// </summary>
         public async Task<IReadOnlyDictionary<string, DeliverySourceResolution>> ResolveMany(
-            WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences)
+            WorkTrackingSystemConnection connection, string sourceKey, IReadOnlyList<string> sourceReferences,
+            DeliverySourceSweepPurpose purpose)
         {
             RejectSourceTheConnectionDoesNotOffer(sourceKey);
 
@@ -3316,7 +3317,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
 
             var (client, releases, sawEveryRelease) = await SweepReleasesWithoutThrowing(
-                connection, EveryVersionStatus, ResolveSweepPurposeUntilTheCallerNamesIt);
+                connection, EveryVersionStatus, purpose);
 
             var releasesById = releases
                 .DistinctBy(release => release.Id, StringComparer.Ordinal)
@@ -3355,8 +3356,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return resolutions;
         }
-
-        internal const DeliverySourceSweepPurpose ResolveSweepPurposeUntilTheCallerNamesIt = DeliverySourceSweepPurpose.Refresh;
 
         private static void RejectSourceTheConnectionDoesNotOffer(string sourceKey)
         {

@@ -367,7 +367,7 @@ namespace Lighthouse.Backend.Tests.API
             GivenAPortfolioOn(WorkTrackingSystems.Jira, offersDeliverySources: true);
             GivenTheConnectionOffersJiraReleases();
             deliverySourceResolverMock
-                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>());
 
             var result = await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
@@ -400,15 +400,14 @@ namespace Lighthouse.Backend.Tests.API
         /// operator reading the sweep lines has to be able to tell those sweeps from the picker's own list.
         /// </summary>
         [Test]
-        [Ignore("The resolver cannot be told the sweep's purpose yet")]
         public async Task A_preview_tells_the_resolver_its_sweep_is_for_a_preview()
         {
             GivenTheResolverAnswers(new DeliverySourceResolution.NoDate("Release 3.0"), [], taggedItemCount: 0);
 
             await subject.Preview(PortfolioId, JiraReleaseSourceKey, ARequestForTheBoundRelease());
 
-            deliverySourceResolverMock.VerifyThePurposeIn(r => r.ResolveForPortfolio(
-                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Preview));
+            deliverySourceResolverMock.Verify(r => r.ResolveForPortfolio(
+                It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), DeliverySourceSweepPurpose.Preview), Times.Once());
         }
 
         [Test]
@@ -440,7 +439,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 deliverySourceProviderMock.Verify(
-                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    p => p.ResolveMany(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Never,
                     "membership is read once, through the resolver, so the remote query language is spelled in exactly one place.");
                 deliverySourceProviderMock.Verify(
@@ -461,7 +460,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(result, Is.TypeOf<NotFoundObjectResult>());
                 deliverySourceResolverMock.Verify(
-                    r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()),
+                    r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()),
                     Times.Never,
                     "a key nobody offers is refused before anything is resolved, so a made-up request cannot be reported as the remote being unwell.");
             }
@@ -528,7 +527,7 @@ namespace Lighthouse.Backend.Tests.API
             GivenTheConnectionOffersJiraReleases();
 
             deliverySourceResolverMock
-                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>()))
+                .Setup(r => r.ResolveForPortfolio(It.IsAny<Portfolio>(), JiraReleaseSourceKey, It.IsAny<IReadOnlyList<string>>(), It.IsAny<DeliverySourceSweepPurpose>()))
                 .ReturnsAsync(new Dictionary<string, PortfolioSourcePreview>
                 {
                     [TheBoundRelease] = new PortfolioSourcePreview(resolution, trackedFeatures, taggedItemCount),
