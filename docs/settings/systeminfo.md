@@ -84,12 +84,14 @@ Jira Release sweep for the Picker took 3912 ms on this DataCenter connection: ke
 |--------|---------|
 | *for the …* | Why the Releases were read (see below) |
 | *took … ms* | How long the whole sweep took, from connecting to Jira to the last page of versions |
-| *on this … connection* | `Cloud` or `DataCenter`, or `Unknown` when Jira could not be reached before that was known |
+| *on this … connection* | `Cloud` or `DataCenter`. `Unknown` means Lighthouse did not learn which kind of Jira this is: either Jira could not be reached, or it answered without saying which kind it is. In the second case the rest of the line still carries real counts |
 | *kept … of … versions read* | How many Releases were kept as choices, out of all the versions Jira returned |
 | *over … pages* | How many pages of versions Jira was asked for |
-| *from … projects* | How many projects the connection can see |
+| *from … projects* | How many projects Jira listed for the connection |
 | *complete* | `True` when every project was read; `False` when the list is missing something |
 | *projects skipped* | How many projects could not be read, for example because Jira refused them |
+
+If Jira was reached and the entry still says `complete: False` with `projects skipped: 0`, the list of projects itself could not be read completely, so *from … projects* counts only the projects that were listed.
 
 The sweep is named for what asked for it:
 
