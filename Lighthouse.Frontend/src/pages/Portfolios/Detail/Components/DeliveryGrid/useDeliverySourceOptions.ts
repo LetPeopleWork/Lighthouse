@@ -7,10 +7,10 @@ import type {
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
+import { dialogAnswerOf } from "./dialogQueryStatus";
 import type { PremiumVerdict } from "./premiumVerdict";
-import { dialogAnswerOf } from "./useDeliveryFormQueries";
 
-export interface DeliverySourceOptionsRequest {
+interface DeliverySourceOptionsRequest {
 	portfolioId: number;
 	isOpen: boolean;
 	/** Counts the openings of the dialog, so each one asks afresh and a late answer meets nobody. */

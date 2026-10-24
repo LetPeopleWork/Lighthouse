@@ -21,6 +21,7 @@ import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
+import { RetryByReopeningNotice } from "./RetryByReopeningNotice";
 import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
 
 /**
@@ -370,9 +371,10 @@ export const DeliverySourceTab: React.FC<DeliverySourceTabProps> = ({
 	if (optionList.status === "error") {
 		return (
 			<SourceTabBody status="error">
-				<Alert severity="error">
-					{`The list of ${sourceName} entries could not be loaded. Close this dialog and open it again to retry.`}
-				</Alert>
+				<RetryByReopeningNotice
+					severity="error"
+					problem={`The list of ${sourceName} entries could not be loaded.`}
+				/>
 			</SourceTabBody>
 		);
 	}

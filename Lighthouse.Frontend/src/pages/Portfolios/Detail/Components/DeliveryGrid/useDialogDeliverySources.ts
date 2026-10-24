@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
+import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import type { PremiumVerdict } from "./premiumVerdict";
 import {
 	type DeliverySourceOptionsState,
@@ -11,7 +12,7 @@ import {
 } from "./useDeliverySources";
 
 /** Whether the server has said which ways to pick this Portfolio's connection offers. */
-export type SourcesStatus = "loading" | "error" | "ready";
+export type SourcesStatus = WidgetStatus;
 
 const sourcesStatusOf: Record<DeliverySourcesQuery["status"], SourcesStatus> = {
 	pending: "loading",

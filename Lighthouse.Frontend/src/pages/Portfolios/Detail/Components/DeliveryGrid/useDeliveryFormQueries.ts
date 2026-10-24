@@ -4,49 +4,11 @@ import type { IFeature } from "../../../../../models/Feature";
 import type { Portfolio } from "../../../../../models/Portfolio/Portfolio";
 import type { IWorkItemRuleSchema } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
-import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
+import { type DialogAnswer, dialogAnswerOf } from "./dialogQueryStatus";
 import type { PremiumVerdict } from "./premiumVerdict";
 
-/** What a body of the dialog needs to know of one of its queries to say what it is doing. */
-export interface DialogQueryState {
-	data: unknown;
-	isError: boolean;
-	isFetching: boolean;
-}
-
-/**
- * What a body of the dialog shows for one of its queries. A query that has not started, because the licence, the
- * sources or the open flag are not in yet, has neither data nor an error and reads as loading, never as ready: the
- * reader is waiting for it, whatever the reason it has not been sent.
- */
-export function dialogQueryStatusOf(query: DialogQueryState): WidgetStatus {
-	if (query.isFetching) {
-		return "loading";
-	}
-	if (query.isError) {
-		return "error";
-	}
-	if (query.data === undefined) {
-		return "loading";
-	}
-	return "ready";
-}
-
-/** One of the dialog's own answers, as far as the form needs to know it. */
-export interface DeliveryFormAnswer<T> {
-	status: WidgetStatus;
-	data: T | undefined;
-}
-
-export function dialogAnswerOf<T>(
-	query: DialogQueryState & { data: T | undefined },
-): DeliveryFormAnswer<T> {
-	const status = dialogQueryStatusOf(query);
-	return { status, data: status === "ready" ? query.data : undefined };
-}
-
-export interface DialogFeatureListRequest {
+interface DialogFeatureListRequest {
 	portfolio: Portfolio;
 	isOpen: boolean;
 	/** Counts the openings of the dialog, so an answer meant for an earlier one is never shown. */
@@ -61,7 +23,7 @@ export function useDialogFeatureList({
 	portfolio,
 	isOpen,
 	opening,
-}: DialogFeatureListRequest): DeliveryFormAnswer<IFeature[]> {
+}: DialogFeatureListRequest): DialogAnswer<IFeature[]> {
 	const { featureService } = useContext(ApiServiceContext);
 	const featureIds = portfolio.features.map((feature) => feature.id);
 	const hasFeatures = featureIds.length > 0;
@@ -76,12 +38,12 @@ export function useDialogFeatureList({
 	return hasFeatures ? dialogAnswerOf(query) : NO_FEATURES_TO_ASK_FOR;
 }
 
-const NO_FEATURES_TO_ASK_FOR: DeliveryFormAnswer<IFeature[]> = {
+const NO_FEATURES_TO_ASK_FOR: DialogAnswer<IFeature[]> = {
 	status: "ready",
 	data: [],
 };
 
-export interface DialogRuleSchemaRequest {
+interface DialogRuleSchemaRequest {
 	portfolioId: number;
 	isOpen: boolean;
 	opening: number;
@@ -116,7 +78,7 @@ export function useDialogRuleSchema({
 	opening,
 	verdict,
 	ruleTabShowing,
-}: DialogRuleSchemaRequest): DeliveryFormAnswer<IWorkItemRuleSchema> {
+}: DialogRuleSchemaRequest): DialogAnswer<IWorkItemRuleSchema> {
 	const { deliveryService } = useContext(ApiServiceContext);
 	const mayAsk = isOpen && verdict === "premium";
 	const latched = useOpeningLatch(opening, mayAsk && ruleTabShowing);

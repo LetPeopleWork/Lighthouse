@@ -8,9 +8,7 @@ import {
 	DialogActions,
 	DialogContent,
 	DialogTitle,
-	type SxProps,
 	TextField,
-	type Theme,
 	Typography,
 } from "@mui/material";
 import type React from "react";
@@ -39,12 +37,23 @@ import type {
 } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
-import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import {
 	type DeliverySourceCurrentSelection,
 	DeliverySourceTab,
 	DeliverySourceTabLoading,
 } from "./DeliverySourceTab";
+import {
+	awaitsBoundSourceTab,
+	dialogKnowsItsAnswer,
+	FEATURE_LIST_FAILED,
+	FEATURE_LIST_LOADING,
+	PREMIUM_NOTICE,
+	type SelectionBody,
+	type SelectionBodyQuestion,
+	saveIsAllowed,
+	selectionBodyOf,
+	UNAVAILABLE,
+} from "./deliverySelectionBody";
 import {
 	type DeliveryRuleMode,
 	type DeliverySelectionState,
@@ -59,6 +68,7 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
+import { RetryByReopeningNotice } from "./RetryByReopeningNotice";
 import {
 	useDialogFeatureList,
 	useDialogRuleSchema,
@@ -109,18 +119,6 @@ const LoadingSpinner: React.FC = () => (
 const SchemaLoadError: React.FC = () => (
 	<Alert severity="warning">
 		Failed to load rule schema. Please try again.
-	</Alert>
-);
-
-/**
- * Every answer the dialog waits on is asked for afresh on each opening, so reopening it is the one way
- * to try a failed answer again, and each such notice says so the same way.
- */
-const RetryByReopeningNotice: React.FC<
-	Readonly<{ problem: string; sx?: SxProps<Theme> }>
-> = ({ problem, sx }) => (
-	<Alert severity="warning" sx={sx}>
-		{problem} Close this dialog and open it again to retry.
 	</Alert>
 );
 
@@ -298,122 +296,6 @@ const selectionTabContent: Record<
 	[MANUAL_SELECTION_TAB_KEY]: ManualSelectionContent,
 	[RULE_BASED_SELECTION_TAB_KEY]: RuleBasedContent,
 };
-
-/**
- * What the body under the tabs shows. A premium tab says it is premium only once the licence has
- * said so; until the licence answers it shows the same loading look as a list still on its way, so
- * nobody is told to upgrade a licence they may well have.
- */
-const PREMIUM_NOTICE = "premiumNotice";
-const UNAVAILABLE = "unavailable";
-const FEATURE_LIST_LOADING = "featureListLoading";
-const FEATURE_LIST_FAILED = "featureListFailed";
-
-type SelectionBody =
-	| { kind: typeof PREMIUM_NOTICE; notice: string }
-	| { kind: "loading" }
-	| { kind: typeof UNAVAILABLE }
-	| { kind: typeof FEATURE_LIST_LOADING }
-	| { kind: typeof FEATURE_LIST_FAILED }
-	| { kind: "content" };
-
-interface SelectionBodyQuestion {
-	tab: DeliverySelectionTab;
-	verdict: PremiumVerdict;
-	ruleSchemaStatus: WidgetStatus;
-	sourcesStatus: SourcesStatus;
-	followsTrackerEntry: boolean;
-	featureListStatus: WidgetStatus;
-}
-
-/**
- * The Manual list stays on screen while it loads, under the grid's own busy look, so the reader sees
- * where the Features will appear; only a list that could not be loaded gives its place to a notice.
- */
-const manualBodyOf: Record<WidgetStatus, SelectionBody> = {
-	loading: { kind: FEATURE_LIST_LOADING },
-	error: { kind: FEATURE_LIST_FAILED },
-	ready: { kind: "content" },
-};
-
-const contentBodyOf = ({
-	tab,
-	ruleSchemaStatus,
-	featureListStatus,
-}: Pick<
-	SelectionBodyQuestion,
-	"tab" | "ruleSchemaStatus" | "featureListStatus"
->): SelectionBody => {
-	if (tab.key === MANUAL_SELECTION_TAB_KEY) {
-		return manualBodyOf[featureListStatus];
-	}
-	if (
-		tab.key === RULE_BASED_SELECTION_TAB_KEY &&
-		ruleSchemaStatus === "loading"
-	) {
-		return { kind: "loading" };
-	}
-	return { kind: "content" };
-};
-
-/**
- * A delivery that follows an entry of the work tracking system belongs on a tab that only exists
- * once the server has listed it. Until then the form stands on no tab at all: any tab pressed, any
- * body shown and any name typed would be a guess, and the Manual list in particular would read as
- * what the delivery holds.
- */
-const awaitsBoundSourceTab = ({
-	tab,
-	sourcesStatus,
-	followsTrackerEntry,
-}: Pick<
-	SelectionBodyQuestion,
-	"tab" | "sourcesStatus" | "followsTrackerEntry"
->): boolean =>
-	followsTrackerEntry && tab.source === undefined && sourcesStatus !== "ready";
-
-const selectionBodyOf = (question: SelectionBodyQuestion): SelectionBody => {
-	const { tab, verdict, sourcesStatus } = question;
-	if (awaitsBoundSourceTab(question)) {
-		return sourcesStatus === "loading"
-			? { kind: "loading" }
-			: { kind: UNAVAILABLE };
-	}
-	const gate = tab.premiumGate;
-	if (gate !== undefined && verdict === "notPremium") {
-		return { kind: PREMIUM_NOTICE, notice: gate.notice };
-	}
-	if (gate !== undefined && verdict === "unknown") {
-		return { kind: "loading" };
-	}
-	return contentBodyOf(question);
-};
-
-/**
- * Whatever stands under the form reads as the dialog's verdict on it, so nothing stands there, and
- * nothing can be saved, while the dialog is still waiting to hear what it may offer.
- */
-const dialogKnowsItsAnswer = (
-	sourcesStatus: SourcesStatus,
-	verdict: PremiumVerdict,
-): boolean => sourcesStatus !== "loading" && verdict !== "unknown";
-
-const BODIES_THAT_BLOCK_SAVING: ReadonlySet<SelectionBody["kind"]> = new Set([
-	"loading",
-	UNAVAILABLE,
-	FEATURE_LIST_LOADING,
-	FEATURE_LIST_FAILED,
-]);
-
-const bodyBlocksSaving = (body: SelectionBody): boolean =>
-	BODIES_THAT_BLOCK_SAVING.has(body.kind);
-
-const saveIsAllowed = (
-	knowsItsAnswer: boolean,
-	blockingError: string | null,
-	body: SelectionBody,
-): boolean =>
-	knowsItsAnswer && blockingError === null && !bodyBlocksSaving(body);
 
 const SelectionModeContent: React.FC<
 	Omit<SelectionContentProps, "listIsLoading"> & {

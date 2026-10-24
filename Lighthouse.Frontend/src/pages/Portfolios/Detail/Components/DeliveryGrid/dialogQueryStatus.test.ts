@@ -3,7 +3,7 @@ import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import {
 	type DialogQueryState,
 	dialogQueryStatusOf,
-} from "./useDeliveryFormQueries";
+} from "./dialogQueryStatus";
 
 const AN_ANSWER = ["Checkout redesign"];
 
