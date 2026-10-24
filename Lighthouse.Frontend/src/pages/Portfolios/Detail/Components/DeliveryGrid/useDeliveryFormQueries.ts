@@ -8,9 +8,6 @@ import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
 import type { PremiumVerdict } from "./premiumVerdict";
 
-// The rule fields' scenarios were written ahead of their hook; until it is built, every call to it throws.
-export const __SCAFFOLD__ = true;
-
 /** What a body of the dialog needs to know of one of its queries to say what it is doing. */
 export interface DialogQueryState {
 	data: unknown;
@@ -42,6 +39,13 @@ export interface DeliveryFormAnswer<T> {
 	data: T | undefined;
 }
 
+function answerOf<T>(
+	query: DialogQueryState & { data: T | undefined },
+): DeliveryFormAnswer<T> {
+	const status = dialogQueryStatusOf(query);
+	return { status, data: status === "ready" ? query.data : undefined };
+}
+
 export interface DialogFeatureListRequest {
 	portfolio: Portfolio;
 	isOpen: boolean;
@@ -69,11 +73,7 @@ export function useDialogFeatureList({
 		enabled: isOpen && hasFeatures,
 	});
 
-	if (!hasFeatures) {
-		return NO_FEATURES_TO_ASK_FOR;
-	}
-	const status = dialogQueryStatusOf(query);
-	return { status, data: status === "ready" ? query.data : undefined };
+	return hasFeatures ? answerOf(query) : NO_FEATURES_TO_ASK_FOR;
 }
 
 const NO_FEATURES_TO_ASK_FOR: DeliveryFormAnswer<IFeature[]> = {
@@ -95,8 +95,21 @@ export interface DialogRuleSchemaRequest {
 }
 
 /** The fields a rule may test, asked for at most once per opening and only on a premium licence. */
-export function useDialogRuleSchema(
-	_request: DialogRuleSchemaRequest,
-): DeliveryFormAnswer<IWorkItemRuleSchema> {
-	throw new Error("useDialogRuleSchema is not built yet");
+export function useDialogRuleSchema({
+	portfolioId,
+	isOpen,
+	opening,
+	verdict,
+	latched,
+}: DialogRuleSchemaRequest): DeliveryFormAnswer<IWorkItemRuleSchema> {
+	const { deliveryService } = useContext(ApiServiceContext);
+
+	const query = useQuery({
+		...askedAfreshQueryOptions,
+		queryKey: ["deliveryRuleSchema", portfolioId, opening],
+		queryFn: () => deliveryService.getRuleSchema(portfolioId),
+		enabled: isOpen && verdict === "premium" && latched,
+	});
+
+	return answerOf(query);
 }

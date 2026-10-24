@@ -1,3 +1,4 @@
+import { notifyManager } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -117,6 +118,10 @@ vi.mock("../../../../../components/Common/DeliveryRuleBuilder", () => ({
 		</ul>
 	),
 }));
+
+// The query cache tells its readers on a timer by default, which lands after the act() a scenario
+// hands an answer over in; told on a microtask instead, the answer is on screen when act() returns.
+notifyManager.setScheduler(queueMicrotask);
 
 beforeEach(() => {
 	vi.clearAllMocks();
@@ -401,7 +406,7 @@ describe("the rule fields are asked for whenever Rule-Based is on screen with a 
 		expect(ruleFieldsAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("chosen before the licence has answered, Rule-Based shows the spinner and asks nothing; once the licence answers premium, it asks once", async () => {
+	it("chosen before the licence has answered, Rule-Based shows the spinner and asks nothing; once the licence answers premium, it asks once", async () => {
 		licence.status = null;
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOffering([]);
@@ -428,7 +433,7 @@ describe("the rule fields are asked for whenever Rule-Based is on screen with a 
 		expect(notice.wasEverShown()).toBe(false);
 	});
 
-	it.skip("chosen before the licence has answered, Rule-Based never asks when the licence then answers not premium, and shows the premium notice", async () => {
+	it("chosen before the licence has answered, Rule-Based never asks when the licence then answers not premium, and shows the premium notice", async () => {
 		licence.status = null;
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOffering([]);
@@ -449,7 +454,7 @@ describe("the rule fields are asked for whenever Rule-Based is on screen with a 
 });
 
 describe("Lena chooses Rule-Based on a premium licence", () => {
-	it.skip("the spinner shows from the first moment, never the could-not-load notice, until the fields arrive", async () => {
+	it("the spinner shows from the first moment, never the could-not-load notice, until the fields arrive", async () => {
 		const user = userEvent.setup();
 		const fields = anAnswerNotGivenYet<IWorkItemRuleSchema>();
 		openTheDialog({
@@ -482,7 +487,7 @@ describe("Lena chooses Rule-Based on a premium licence", () => {
 		expect(ruleFieldsAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("fields that could not be loaded show today's notice and are not asked again in that opening, whichever tab she moves to", async () => {
+	it("fields that could not be loaded show today's notice and are not asked again in that opening, whichever tab she moves to", async () => {
 		const user = userEvent.setup();
 		const deliveryService = aConnectionOffering([]);
 		vi.mocked(deliveryService.getRuleSchema).mockRejectedValue(
@@ -502,7 +507,7 @@ describe("Lena chooses Rule-Based on a premium licence", () => {
 		expect(ruleFieldsAskedFor(deliveryService)).toBe(1);
 	});
 
-	it.skip("reopening the dialog is the retry: the next opening asks once more and shows the fields", async () => {
+	it("reopening the dialog is the retry: the next opening asks once more and shows the fields", async () => {
 		const user = userEvent.setup();
 		const failed = anAnswerNotGivenYet<IWorkItemRuleSchema>();
 		const deliveryService = aConnectionWhoseRuleFieldsAnswer(failed);
@@ -527,7 +532,7 @@ describe("Lena chooses Rule-Based on a premium licence", () => {
 		expect(ruleFieldsAskedFor(deliveryService)).toBe(2);
 	});
 
-	it.skip.each<[string, Portfolio]>([
+	it.each<[string, Portfolio]>([
 		["Payments Platform again", PAYMENTS_PLATFORM],
 		[ONBOARDING.name, ONBOARDING],
 	])(

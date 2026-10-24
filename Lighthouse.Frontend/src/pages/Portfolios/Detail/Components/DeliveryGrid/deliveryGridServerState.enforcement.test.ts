@@ -55,7 +55,7 @@ describe("the Deliveries folder's server state", () => {
 		]);
 	});
 
-	it.skip("asks for the dialog's Feature list and its rule fields from their own hooks only", () => {
+	it("asks for the dialog's Feature list and its rule fields from their own hooks only", () => {
 		expect(filesCalling("getRuleSchema")).toEqual([
 			"useDeliveryFormQueries.ts",
 		]);

@@ -57,7 +57,10 @@ import {
 	ruleInputError,
 } from "./deliverySelectionTabs";
 import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
-import { useDialogFeatureList } from "./useDeliveryFormQueries";
+import {
+	useDialogFeatureList,
+	useDialogRuleSchema,
+} from "./useDeliveryFormQueries";
 import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
 import {
 	type SourcesStatus,
@@ -177,8 +180,7 @@ interface ManualSelectionContentProps extends CommonSelectionContentProps {
 }
 
 interface RuleBasedContentProps extends CommonSelectionContentProps {
-	loadingSchema: boolean;
-	ruleSchema: IWorkItemRuleSchema | null;
+	ruleSchema: IWorkItemRuleSchema | undefined;
 	rules: IWorkItemRuleCondition[];
 	mode: DeliveryRuleMode;
 	validatingRules: boolean;
@@ -227,7 +229,6 @@ const ManualSelectionContent: React.FC<ManualSelectionContentProps> = ({
 );
 
 const RuleBasedContent: React.FC<RuleBasedContentProps> = ({
-	loadingSchema,
 	ruleSchema,
 	errors,
 	rules,
@@ -241,10 +242,6 @@ const RuleBasedContent: React.FC<RuleBasedContentProps> = ({
 	onModeChange,
 	onValidateRules,
 }) => {
-	if (loadingSchema) {
-		return <LoadingSpinner />;
-	}
-
 	if (!ruleSchema) {
 		return <SchemaLoadError />;
 	}
@@ -318,7 +315,7 @@ type SelectionBody =
 interface SelectionBodyQuestion {
 	tab: DeliverySelectionTab;
 	verdict: PremiumVerdict;
-	ruleSchemaIsLoading: boolean;
+	ruleSchemaStatus: WidgetStatus;
 	sourcesStatus: SourcesStatus;
 	followsTrackerEntry: boolean;
 	featureListStatus: WidgetStatus;
@@ -336,16 +333,19 @@ const manualBodyOf: Record<WidgetStatus, SelectionBody> = {
 
 const contentBodyOf = ({
 	tab,
-	ruleSchemaIsLoading,
+	ruleSchemaStatus,
 	featureListStatus,
 }: Pick<
 	SelectionBodyQuestion,
-	"tab" | "ruleSchemaIsLoading" | "featureListStatus"
+	"tab" | "ruleSchemaStatus" | "featureListStatus"
 >): SelectionBody => {
 	if (tab.key === MANUAL_SELECTION_TAB_KEY) {
 		return manualBodyOf[featureListStatus];
 	}
-	if (tab.key === RULE_BASED_SELECTION_TAB_KEY && ruleSchemaIsLoading) {
+	if (
+		tab.key === RULE_BASED_SELECTION_TAB_KEY &&
+		ruleSchemaStatus === "loading"
+	) {
 		return { kind: "loading" };
 	}
 	return { kind: "content" };
@@ -624,6 +624,22 @@ const boundSourceSelection = (
 	};
 };
 
+/**
+ * Set once the dialog has been open with the given condition holding, and kept for the rest of that
+ * opening, so leaving the tab and coming back never asks again. A new opening starts unset.
+ */
+const useOpeningLatch = (opening: number, holds: boolean): boolean => {
+	const [latchedOpening, setLatchedOpening] = useState<number | null>(null);
+
+	useEffect(() => {
+		if (holds) {
+			setLatchedOpening(opening);
+		}
+	}, [holds, opening]);
+
+	return latchedOpening === opening;
+};
+
 const isValidFutureDate = (date: string): boolean => {
 	if (!date) {
 		return false;
@@ -710,10 +726,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	});
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
-	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
-		null,
-	);
-	const [loadingSchema, setLoadingSchema] = useState(false);
 	const [validatingRules, setValidatingRules] = useState(false);
 	const [rulesValidated, setRulesValidated] = useState(false);
 	const [sourceReference, setSourceReference] = useState<string | null>(null);
@@ -747,10 +759,21 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
 	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
+	const ruleSchemaLatched = useOpeningLatch(
+		opening,
+		open && isPremium && activeTab.key === RULE_BASED_SELECTION_TAB_KEY,
+	);
+	const ruleSchema = useDialogRuleSchema({
+		portfolioId: portfolio.id,
+		isOpen: open,
+		opening,
+		verdict,
+		latched: ruleSchemaLatched,
+	});
 	const bodyQuestion: SelectionBodyQuestion = {
 		tab: activeTab,
 		verdict,
-		ruleSchemaIsLoading: loadingSchema,
+		ruleSchemaStatus: ruleSchema.status,
 		sourcesStatus,
 		followsTrackerEntry: Boolean(editingDelivery?.sourceKey),
 		featureListStatus: featureList.status,
@@ -767,31 +790,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		rulesValidated,
 		matchedFeaturesLength: matchedFeatures.length,
 	};
-
-	useEffect(() => {
-		if (
-			open &&
-			isPremium &&
-			selectedTabKey === RULE_BASED_SELECTION_TAB_KEY &&
-			!ruleSchema &&
-			!loadingSchema
-		) {
-			setLoadingSchema(true);
-			deliveryService
-				.getRuleSchema(portfolio.id)
-				.then((schema) => setRuleSchema(schema))
-				.catch((err) => console.error("Failed to load rule schema:", err))
-				.finally(() => setLoadingSchema(false));
-		}
-	}, [
-		open,
-		isPremium,
-		selectedTabKey,
-		ruleSchema,
-		loadingSchema,
-		deliveryService,
-		portfolio.id,
-	]);
 
 	const validateForm = () => {
 		const newErrors: typeof errors = activeTab.fieldErrors(
@@ -920,7 +918,6 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSelectedTabKey(defaultDeliverySelectionTab.key);
 		setRules(values.rules);
 		setMode(values.mode);
-		setRuleSchema(null);
 		setRulesValidated(false);
 		setMatchedFeatures([]);
 		setSourceReference(values.sourceReference);
@@ -1048,8 +1045,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					<SelectionModeContent
 						tab={activeTab}
 						body={activeBody}
-						loadingSchema={loadingSchema}
-						ruleSchema={ruleSchema}
+						ruleSchema={ruleSchema.data}
 						errors={errors}
 						listedFeatures={featureList.data ?? []}
 						selectedFeatureIds={selectedFeatureIds}
