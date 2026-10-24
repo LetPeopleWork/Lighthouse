@@ -52,6 +52,7 @@ import {
 	type SelectionBodyQuestion,
 	saveIsAllowed,
 	selectionBodyOf,
+	selectionTabIsLocked,
 	UNAVAILABLE,
 } from "./deliverySelectionBody";
 import {
@@ -371,14 +372,17 @@ const SelectionModeContent: React.FC<
 	);
 };
 
-const SelectionTabButton: React.FC<{
-	tab: DeliverySelectionTab;
-	activeTabKey: string | null;
-	verdict: PremiumVerdict;
-	onSelect: (tab: DeliverySelectionTab) => void;
-}> = ({ tab, activeTabKey, verdict, onSelect }) => {
+const SelectionTabButton: React.FC<
+	Readonly<{
+		tab: DeliverySelectionTab;
+		activeTabKey: string | null;
+		verdict: PremiumVerdict;
+		awaitingBoundTab: boolean;
+		onSelect: (tab: DeliverySelectionTab) => void;
+	}>
+> = ({ tab, activeTabKey, verdict, awaitingBoundTab, onSelect }) => {
 	const gate = tab.premiumGate;
-	const isLocked = verdict === "notPremium" && gate?.whenLocked === "lockTab";
+	const isLocked = selectionTabIsLocked(tab, verdict, awaitingBoundTab);
 	const isSelected = activeTabKey === tab.key;
 	const button = (
 		<Button
@@ -419,6 +423,7 @@ const SelectionTabRow: React.FC<
 		tabs: DeliverySelectionTab[];
 		activeTabKey: string | null;
 		verdict: PremiumVerdict;
+		awaitingBoundTab: boolean;
 		sourcesStatus: SourcesStatus;
 		portfolioTerm: string;
 		onSelect: (tab: DeliverySelectionTab) => void;
@@ -427,6 +432,7 @@ const SelectionTabRow: React.FC<
 	tabs,
 	activeTabKey,
 	verdict,
+	awaitingBoundTab,
 	sourcesStatus,
 	portfolioTerm,
 	onSelect,
@@ -442,6 +448,7 @@ const SelectionTabRow: React.FC<
 					tab={tab}
 					activeTabKey={activeTabKey}
 					verdict={verdict}
+					awaitingBoundTab={awaitingBoundTab}
 					onSelect={onSelect}
 				/>
 			))}
@@ -736,7 +743,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	};
 
 	const handleSelectTab = (tab: DeliverySelectionTab) => {
-		if (tab.key === selectedTabKey) {
+		if (tab.key === selectedTabKey || standsOnNoTab) {
 			return;
 		}
 
@@ -912,6 +919,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						tabs={tabs}
 						activeTabKey={standsOnNoTab ? null : activeTab.key}
 						verdict={verdict}
+						awaitingBoundTab={standsOnNoTab}
 						sourcesStatus={sourcesStatus}
 						portfolioTerm={portfolioTerm}
 						onSelect={handleSelectTab}

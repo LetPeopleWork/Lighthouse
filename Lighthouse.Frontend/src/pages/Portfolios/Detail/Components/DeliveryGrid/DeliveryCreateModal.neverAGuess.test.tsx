@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
@@ -397,6 +397,38 @@ describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", 
 		expect(theRuleBasedTab()).toHaveAttribute("aria-pressed", "false");
 		expect(screen.getByLabelText("Launch Name")).toBeDisabled();
 		expect(screen.getByLabelText("Launch Date")).toBeDisabled();
+	});
+
+	it("while the ways to pick load, Manual and Rule-Based cannot be pressed, so the Release and its broadcast are still there once they answer", async () => {
+		const { deliveryService, sources } = withSourcesStillOnTheirWay();
+		openTheDialog({
+			deliveryService,
+			editingDelivery: {
+				...aLaunchFollowingAJiraRelease(),
+				publishForecastToSource: true,
+			},
+		});
+
+		await waitFor(() => expect(theBusyTab()).not.toBeNull());
+		expect(theManualTab()).toBeDisabled();
+		expect(theRuleBasedTab()).toBeDisabled();
+		fireEvent.click(theManualTab() as HTMLElement);
+		fireEvent.click(theRuleBasedTab() as HTMLElement);
+
+		await whenTheServerAnswers(sources, [JIRA_RELEASE_SOURCE]);
+
+		const jiraReleaseTab = await untilTheJiraReleaseTabIsOffered();
+		expect(jiraReleaseTab).toHaveAttribute("aria-pressed", "true");
+		await untilThePickerIsReady();
+		await waitFor(() =>
+			expect(theReleasePicker()).toHaveValue("Release 44 (Project X)"),
+		);
+		expect(
+			screen.getByRole("switch", {
+				name: "Publish forecast to the Jira Release",
+			}),
+		).toBeChecked();
+		expect(screen.getByRole("button", { name: "Update" })).toBeEnabled();
 	});
 
 	it("when the ways to pick could not be checked, the dialog shows the notice alone and Update stays off", async () => {

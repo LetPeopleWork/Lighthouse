@@ -80,6 +80,19 @@ export const awaitsBoundSourceTab = ({
 >): boolean =>
 	followsTrackerEntry && tab.source === undefined && sourcesStatus !== "ready";
 
+/**
+ * A tab pressed while the form waits for the one it belongs on would let go of the entry the delivery
+ * follows and of its broadcast, and the tab arriving afterwards would not bring either back. So no tab
+ * can be pressed until then, besides the premium tabs a licence without premium locks.
+ */
+export const selectionTabIsLocked = (
+	tab: DeliverySelectionTab,
+	verdict: PremiumVerdict,
+	awaitingBoundTab: boolean,
+): boolean =>
+	awaitingBoundTab ||
+	(verdict === "notPremium" && tab.premiumGate?.whenLocked === "lockTab");
+
 export const selectionBodyOf = (
 	question: SelectionBodyQuestion,
 ): SelectionBody => {
