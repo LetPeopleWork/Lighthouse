@@ -199,6 +199,9 @@ Following a Jira Release is a **Premium feature** and requires a Premium license
 The name field and the date field are filled in for you and cannot be typed into. That is the point: from here on Jira owns them.
 
 {: .note}
+While the form is still finding out what the portfolio's connection offers, whether your license covers Premium features, or which Releases there are, it says it is loading rather than guessing: a busy *Loading…* tab sits in the tab row, and the Jira Release tab reads *Getting the Jira Releases…*. If something cannot be loaded, the form says so in place. Close the form and open it again to retry.
+
+{: .note}
 A Release that has no date cannot be followed — there is nothing for the delivery to take. Give it a date in Jira and it becomes selectable.
 
 #### What Jira maintains from then on
