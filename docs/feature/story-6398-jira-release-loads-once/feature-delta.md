@@ -1271,6 +1271,14 @@ feature's `mutation/` folder, as in prior features.
    already says so), or run a local Jira Data Center container on a trial licence once.
 3. **Flags 1, 2, 3, 5:** confirm the proposals, at the DISTILL review gate at the latest.
 
+### Maintainer decisions — 2026-10-24, end of DEVOPS
+
+| ID | Decision | Answers |
+|---|---|---|
+| MD-18 | **F4 later.** No usage-data event in this Story; a Delivery-saved event stays a candidate for after Epic 6400. | Open Question 1 |
+| MD-19 | **No local Jira Data Center is available; do without it.** CA-6 and the pre-release K1 reading are Jira Cloud readings; the Data Center figure and the MD-9 gate come from the reporter after the release. | Open Question 2 |
+| MD-20 | **Flags 1–5 as proposed, the maintainer not objecting:** `data-widget-status` uses `error` typed with `WidgetStatus`; the sweep line is written once after the `try`/`catch`; `RecordingLogger` is extended additively in its own commit before slice 03's tests; the connector's four sweep methods are mutated by offset spans, exclusion as fallback; the second sources GET with auth on is accepted, recorded, and pinned by a DISTILL scenario (opening the dialog still sends none). | Open Question 3 |
+
 ## Wave: DEVOPS / [REF] Wave Decisions Summary
 
 - Usage data: N/A (no new action; `PortfolioTabOpened` already counts the Deliveries tab). F4 recorded as a candidate.
