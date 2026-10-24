@@ -528,7 +528,8 @@
           "criteria": [
             "feature-delta.md records the post-lane readings on SQLite and PostgreSQL at 4 cores, the count of Kestrel heartbeat warnings inside forecast windows (with the window count), during-round over idle for Settings and the first Feature row, and the hypothesis verdict.",
             "The startup banner line shown in the run's log proves the lane ran.",
-            "No customer identifiers are committed."
+            "No customer identifiers are committed.",
+            "Because no heartbeat warning appeared in the baseline, the lane's effect is shown on RT's pool-queue integral (baseline 1,879 at 920 Features) beside the heartbeat delay (maintainer decision 2026-10-24)."
           ],
           "test_file": "N/A (harness reading; K3 is a reading, never a CI budget)",
           "scenario_name": "N/A: no TDD test. The lane's CI precondition is the thread scenarios of 01-06 and 01-07.",
@@ -854,7 +855,8 @@
             "While the first answer is on its way: a spinner, no rows, data-widget-status=\"loading\"; once it lands: rows and \"ready\".",
             "A row's parent is named and its Teams at work are shown from the same answer.",
             "The status reaches the grid as a prop from the owner list; FeaturesView and DeliverySection pass nothing and render exactly as before.",
-            "PortfolioFeatureList.test.tsx keeps every row/column/dialog claim on the new setup."
+            "PortfolioFeatureList.test.tsx keeps every row/column/dialog claim on the new setup.",
+            "A Portfolio holding 920 Features opens its Features tab: today the page asks for all ids in one 13.7 KB query string and the server answers 414 URI Too Long; the one-list read removes that request (maintainer decision 2026-10-24: no separate Bug, this step fixes it)."
           ],
           "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx",
           "test_files": [
@@ -1062,7 +1064,7 @@
     {
       "id": "02",
       "name": "The Overview and Settings open without waiting on every Feature (Story #6406)",
-      "description": "Releasable alone; needs only a finished phase 01. PortfolioRepository.GetById filters in the database; catalogue readers (no forecasts, no tracking with identity resolution) feed the five unchanged bodies. useLicenseRestrictions shares one licence query and one count per list, gains `status`, and refuses only the create actions while loading or failed, at the Overview's two buttons and the Get Started steps. The new-Team wizard and the copied-Team page's reason placement wait on a maintainer answer and are isolated in the last step (02-05), so 02-01..02-04 can ship without it. No Program.cs change.",
+      "description": "Releasable alone; needs only a finished phase 01. PortfolioRepository.GetById filters in the database; catalogue readers (no forecasts, no tracking with identity resolution) feed the five unchanged bodies. useLicenseRestrictions shares one licence query and one count per list, gains `status`, and refuses only the create actions while loading or failed, at the Overview's two buttons and the Get Started steps. The new-Team wizard and the copied-Team page's reason placement wait on a maintainer answer and are isolated in the last step (02-05), so 02-01..02-04 can ship without it. No Program.cs change. Execution order fixed by the maintainer after the baseline (2026-10-24): 01, 03, 04, then 02-01 and 02-02, then phase 05, then 02-03 to 02-05, then 06.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "exit_gates": [
@@ -1292,7 +1294,7 @@
     {
       "id": "05",
       "name": "Forecast rounds finish sooner (Story #6409)",
-      "description": "Releasable alone; builds one-way on 01a's readings (step 01-05) and 02-02's catalogue reader, nothing else. The gather reads forecast headers without histograms (tracked), and the fingerprint and skip are decided on that. A computed round replaces forecasts and lets the database cascade delete old histogram rows. ForecastUpdater reads its Portfolio through the catalogue reader and the trigger's collision check through `TeamIdsOf`. Write-back resolves against its own no-tracking full read after the save, only when a forecast write-back mapping exists that the licence allows. ForecastService drops its GetAllByPredicate call. No Program.cs change. The Slice01 guards named below apply only if slice 01 Part B (the lane) has shipped.",
+      "description": "Releasable alone; builds one-way on 01a's readings (step 01-05) and 02-02's catalogue reader, nothing else. The gather reads forecast headers without histograms (tracked), and the fingerprint and skip are decided on that. A computed round replaces forecasts and lets the database cascade delete old histogram rows. ForecastUpdater reads its Portfolio through the catalogue reader and the trigger's collision check through `TeamIdsOf`. Write-back resolves against its own no-tracking full read after the save, only when a forecast write-back mapping exists that the licence allows. ForecastService drops its GetAllByPredicate call. No Program.cs change. The Slice01 guards named below apply only if slice 01 Part B (the lane) has shipped. Execution order fixed by the maintainer after the baseline (2026-10-24): 01, 03, 04, then 02-01 and 02-02, then phase 05, then 02-03 to 02-05, then 06.",
       "default_agent": "nw-software-crafter",
       "default_deps_strategy": "sequential",
       "exit_gates": [

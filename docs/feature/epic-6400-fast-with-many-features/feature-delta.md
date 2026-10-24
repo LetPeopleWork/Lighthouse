@@ -3089,3 +3089,15 @@ behind this were undisturbed on the re-run, so the classification is **not** pro
 - An open whose mark never appears (the 414) fails the whole run after 5 minutes. It should record "never loaded"
   instead.
 - The per-backend log reaches about 560 MB during a round. It is now read in chunks, which was fixed in this step.
+
+### Maintainer decision — 2026-10-24, after the baseline
+
+- **Go.** DELIVER continues past the hold point, on the mixed reading (pool starvation on the pool-queue reading
+  only, GC narrowly at 10.4%, CPU quota not measurable).
+- **Order.** 01, 03, 04, then 02-01 and 02-02, then 05, then 02-03 to 02-05, then 06. That is 03 before 05 before
+  02 as proposed; the two backend reads of 02 come ahead of 05 because 05's round reads its Portfolio through
+  02-02's catalogue reader.
+- **Slice 01's forecast lane ships.** Because no heartbeat warning appeared here, its effect is shown on RT's
+  pool-queue integral (1,879 at 920 Features) beside the heartbeat delay.
+- **The 920 list's 414 gets no Bug of its own.** Slice 04's one-list read removes the request, and step 04-04
+  checks that a Portfolio holding 920 Features opens its Features tab.
