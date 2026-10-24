@@ -3047,7 +3047,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return remembered;
             }
 
-            var (_, options, sawEveryRelease) = await SweepReleasesWithoutThrowing(connection, OfferableVersionStatuses);
+            var (_, options, sawEveryRelease) = await SweepReleasesWithoutThrowing(
+                connection, OfferableVersionStatuses, DeliverySourceSweepPurpose.Picker);
 
             // A sweep that lost a project is worth showing once and never worth keeping. The reader is
             // looking at a list with Releases missing from it, and the one thing they will try - close
@@ -3072,11 +3073,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// deletion may retire a binding.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> SweepReleases(
-            HttpClient client, JiraRestRoutes routes, string statuses)
+            HttpClient client, JiraRestRoutes routes, string statuses, JiraReleaseSweepTally tally)
         {
             var (projects, listedEveryProject) = await ReadVisibleProjects(client, routes);
 
-            logger.LogDebug("Getting Releases of {ProjectCount} Jira projects", projects.Count);
+            tally.ProjectCount = projects.Count;
 
             var readsByProject = new (IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)[projects.Count];
 
@@ -3084,7 +3085,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 0,
                 projects.Count,
                 new ParallelOptions { MaxDegreeOfParallelism = MaxParallelProjectReads },
-                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, routes, projects[index], statuses));
+                async (index, _) => readsByProject[index] = await ReadReleasesOf(client, routes, projects[index], statuses, tally));
 
             IReadOnlyList<DeliverySourceOption> releases = [.. readsByProject.SelectMany(read => read.Releases)];
             var sawEverything = listedEveryProject && Array.TrueForAll(readsByProject, read => read.SawEverything);
@@ -3202,13 +3203,23 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// a project whose answer never arrived or could not be read.
         /// </summary>
         private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesOf(
-            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses)
+            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, JiraReleaseSweepTally tally)
+        {
+            var read = await ReadReleasesWithoutThrowing(client, routes, project, statuses, tally);
+
+            tally.CountProjectRead(read.Releases.Count, read.SawEverything);
+
+            return read;
+        }
+
+        private async Task<(IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)> ReadReleasesWithoutThrowing(
+            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, JiraReleaseSweepTally tally)
         {
             var releases = new List<DeliverySourceOption>();
 
             try
             {
-                return (releases, await WalkReleasePages(client, routes, project, statuses, releases));
+                return (releases, await WalkReleasePages(client, routes, project, statuses, releases, tally));
             }
             catch (Exception exception) when (JiraCouldNotBeAsked(exception))
             {
@@ -3223,7 +3234,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         /// <summary>Every page of one project's Releases into <paramref name="releases"/>, and whether all of them were read.</summary>
         private async Task<bool> WalkReleasePages(
-            HttpClient client, JiraRestRoutes routes, DeliverySourceProject project, string statuses, List<DeliverySourceOption> releases)
+            HttpClient client,
+            JiraRestRoutes routes,
+            DeliverySourceProject project,
+            string statuses,
+            List<DeliverySourceOption> releases,
+            JiraReleaseSweepTally tally)
         {
             var startAt = 0;
             var wantedStatuses = statuses.Split(',');
@@ -3252,6 +3268,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     return false;
                 }
 
+                tally.CountVersionPage(page.Count);
                 startAt += page.Count;
                 releases.AddRange(routes.CanFilterVersionsByStatus
                     ? page
@@ -3298,7 +3315,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return resolutions;
             }
 
-            var (client, releases, sawEveryRelease) = await SweepReleasesWithoutThrowing(connection, EveryVersionStatus);
+            var (client, releases, sawEveryRelease) = await SweepReleasesWithoutThrowing(
+                connection, EveryVersionStatus, ResolveSweepPurposeUntilTheCallerNamesIt);
 
             var releasesById = releases
                 .DistinctBy(release => release.Id, StringComparer.Ordinal)
@@ -3338,6 +3356,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return resolutions;
         }
 
+        internal const DeliverySourceSweepPurpose ResolveSweepPurposeUntilTheCallerNamesIt = DeliverySourceSweepPurpose.Refresh;
+
         private static void RejectSourceTheConnectionDoesNotOffer(string sourceKey)
         {
             if (!Array.Exists(JiraSources, source => source.Key == sourceKey))
@@ -3357,13 +3377,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// difference between a caller answering "could not be asked" and a caller throwing.
         /// </summary>
         private async Task<(HttpClient? Client, IReadOnlyList<DeliverySourceOption> Releases, bool SawEverything)>
-            SweepReleasesWithoutThrowing(WorkTrackingSystemConnection connection, string statuses)
+            SweepReleasesWithoutThrowing(WorkTrackingSystemConnection connection, string statuses, DeliverySourceSweepPurpose purpose)
         {
+            var tally = new JiraReleaseSweepTally();
+            var startedAt = timeProvider.GetTimestamp();
+
             try
             {
                 var client = await GetJiraRestClientAsync(connection);
                 var routes = JiraRestRoutes.For(await GetDeploymentType(client, connection));
-                var (releases, sawEverything) = await SweepReleases(client, routes, statuses);
+                tally.Deployment = routes.Deployment;
+                var (releases, sawEverything) = await SweepReleases(client, routes, statuses, tally);
+                tally.Complete = sawEverything;
 
                 return (client, releases, sawEverything);
             }
@@ -3372,6 +3397,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation(exception, "Could not read the Jira Releases on this connection");
 
                 return (null, [], false);
+            }
+            finally
+            {
+                tally.ToCost(purpose, timeProvider.GetElapsedTime(startedAt)).WriteTo(logger);
             }
         }
 

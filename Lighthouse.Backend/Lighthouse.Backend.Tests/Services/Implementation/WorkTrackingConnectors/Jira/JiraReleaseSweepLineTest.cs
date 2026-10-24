@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 .WithReleaseIn(TheHrProject, "10101", "HR onboarding", "2026-12-01");
 
         [Test]
-        [Ignore(Pending)]
         [Category("driving_port")]
         public async Task A_picker_sweep_on_Data_Center_writes_one_line_with_its_counts_and_time()
         {
@@ -107,7 +106,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task A_list_remembered_from_the_last_sweep_writes_no_second_line()
         {
             var connector = AConnectorOver(PaymentsOnDataCenter().Handler);
@@ -200,7 +198,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task The_line_names_no_host_connection_project_or_Release_of_the_customer()
         {
             var connection = FakeJiraDataCenter.AConnection();
@@ -222,7 +219,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task The_sweep_writes_its_project_count_in_its_line_and_nowhere_else()
         {
             await AConnectorOver(PaymentsOnDataCenter().Handler).GetOptions(FakeJiraDataCenter.AConnection(), JiraReleaseSourceKey);
