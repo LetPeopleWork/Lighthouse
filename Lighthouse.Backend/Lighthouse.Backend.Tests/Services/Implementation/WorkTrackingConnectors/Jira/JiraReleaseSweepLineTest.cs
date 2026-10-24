@@ -28,6 +28,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string ThePaymentsProject = "PAY";
         private const string TheHrProject = "HR";
         private const string TheDatedRelease = "10004";
+        private const string TheUnusableAddressHost = "jira.payments.example.invalid";
+
+        /// <summary>A typo in the connection form: the port is not a number, so no client can be built for it.</summary>
+        private const string AnAddressThatCannotBeUsed = $"https://{TheUnusableAddressHost}:not-a-port/";
 
         private static readonly TimeSpan EachRequestTakes = TimeSpan.FromMilliseconds(125);
 
@@ -173,6 +177,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(line.Properties[Field.Complete], Is.False);
                 Assert.That(line.Failure, Is.Null, "the exception's text names the host; the could-not-ask line already carries it.");
                 Assert.That(line.Message, Does.Not.Contain(JiraThatCannotBeReached.TheHost));
+            }
+        }
+
+        [Test]
+        public async Task A_connection_whose_address_cannot_be_used_is_named_as_unknown()
+        {
+            var connection = FakeJiraDataCenter.AConnection();
+            connection.Options.Single(option => option.Key == JiraWorkTrackingOptionNames.Url).Value = AnAddressThatCannotBeUsed;
+
+            await Assert.DoesNotThrowAsync(
+                async () => await AConnectorOver(PaymentsOnDataCenter().Handler).GetOptions(connection, JiraReleaseSourceKey),
+                "an address that cannot be used is a Jira that could not be asked, not a failure for the caller.");
+
+            var line = TheOneSweepLine();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Properties[Field.Deployment]?.ToString(), Is.EqualTo("Unknown"),
+                    "the client could not even be built, so nothing ever said which kind of Jira this is.");
+                Assert.That(line.Properties[Field.ProjectCount], Is.Zero);
+                Assert.That(line.Properties[Field.ReleasesKept], Is.Zero);
+                Assert.That(line.Properties[Field.VersionsRead], Is.Zero);
+                Assert.That(line.Properties[Field.VersionPages], Is.Zero);
+                Assert.That(line.Properties[Field.ProjectsSkipped], Is.Zero);
+                Assert.That(line.Properties[Field.Complete], Is.False);
+                Assert.That(line.Failure, Is.Null);
+                Assert.That(line.Message, Does.Not.Contain(TheUnusableAddressHost));
             }
         }
 
