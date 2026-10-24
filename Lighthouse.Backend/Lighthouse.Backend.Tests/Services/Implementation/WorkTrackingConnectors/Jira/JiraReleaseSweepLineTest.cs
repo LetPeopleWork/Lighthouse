@@ -141,7 +141,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task A_project_that_refuses_its_versions_makes_the_line_say_the_list_is_incomplete()
         {
             var jira = PaymentsOnDataCenter().WithProjectRefusingItsVersions(TheHrProject);
@@ -159,7 +158,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task A_Jira_that_cannot_be_reached_still_gets_its_line_with_nothing_invented()
         {
             var unreachable = new JiraThatCannotBeReached();
@@ -181,7 +179,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task A_Jira_that_will_not_say_which_kind_it_is_is_named_as_unknown()
         {
             var jira = PaymentsOnDataCenter();
@@ -234,7 +231,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task A_sweep_that_ends_in_an_unexpected_failure_still_writes_what_it_had_counted_before_the_failure_goes_on()
         {
             var jira = new FakeJiraDataCenter { VersionsPerPage = 3 }.WithProject(ThePaymentsProject, "Payments");
