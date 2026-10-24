@@ -287,10 +287,13 @@ const selectionTabContent: Record<
  * said so; until the licence answers it shows the same loading look as a list still on its way, so
  * nobody is told to upgrade a licence they may well have.
  */
+const PREMIUM_NOTICE = "premiumNotice";
+const UNAVAILABLE = "unavailable";
+
 type SelectionBody =
-	| { kind: "premiumNotice"; notice: string }
+	| { kind: typeof PREMIUM_NOTICE; notice: string }
 	| { kind: "loading" }
-	| { kind: "unavailable" }
+	| { kind: typeof UNAVAILABLE }
 	| { kind: "content" };
 
 /** Whether the server has said which ways to pick this Portfolio's connection offers. */
@@ -321,11 +324,11 @@ const selectionBodyOf = ({
 		return { kind: "loading" };
 	}
 	if (awaitsSourceTab && sourcesStatus === "error") {
-		return { kind: "unavailable" };
+		return { kind: UNAVAILABLE };
 	}
 	const gate = tab.premiumGate;
 	if (gate !== undefined && verdict === "notPremium") {
-		return { kind: "premiumNotice", notice: gate.notice };
+		return { kind: PREMIUM_NOTICE, notice: gate.notice };
 	}
 	if (gate !== undefined && verdict === "unknown") {
 		return { kind: "loading" };
@@ -346,7 +349,7 @@ const dialogKnowsItsAnswer = (
 ): boolean => sourcesStatus !== "loading" && verdict !== "unknown";
 
 const bodyBlocksSaving = (body: SelectionBody): boolean =>
-	body.kind === "loading" || body.kind === "unavailable";
+	body.kind === "loading" || body.kind === UNAVAILABLE;
 
 const saveIsAllowed = (
 	knowsItsAnswer: boolean,
@@ -375,7 +378,7 @@ const SelectionModeContent: React.FC<
 	onPublishForecastChange,
 	...contentProps
 }) => {
-	if (body.kind === "premiumNotice") {
+	if (body.kind === PREMIUM_NOTICE) {
 		return <PremiumFeatureNotice message={body.notice} />;
 	}
 
@@ -387,7 +390,7 @@ const SelectionModeContent: React.FC<
 		return <LoadingSpinner />;
 	}
 
-	if (body.kind === "unavailable") {
+	if (body.kind === UNAVAILABLE) {
 		return null;
 	}
 
