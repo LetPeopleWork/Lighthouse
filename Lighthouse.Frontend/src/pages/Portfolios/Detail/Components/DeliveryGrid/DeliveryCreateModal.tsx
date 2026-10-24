@@ -290,13 +290,38 @@ const selectionTabContent: Record<
 type SelectionBody =
 	| { kind: "premiumNotice"; notice: string }
 	| { kind: "loading" }
+	| { kind: "unavailable" }
 	| { kind: "content" };
 
-const selectionBodyOf = (
-	tab: DeliverySelectionTab,
-	verdict: PremiumVerdict,
-	listIsLoading: boolean,
-): SelectionBody => {
+/** Whether the server has said which ways to pick this Portfolio's connection offers. */
+type SourcesStatus = "loading" | "error" | "ready";
+
+interface SelectionBodyQuestion {
+	tab: DeliverySelectionTab;
+	verdict: PremiumVerdict;
+	listIsLoading: boolean;
+	sourcesStatus: SourcesStatus;
+	awaitsSourceTab: boolean;
+}
+
+/**
+ * A delivery that follows an entry of the work tracking system belongs on a tab that only exists
+ * once the server has listed it. Until then any other tab's body would be a guess, and the Manual
+ * list in particular would read as what the delivery holds.
+ */
+const selectionBodyOf = ({
+	tab,
+	verdict,
+	listIsLoading,
+	sourcesStatus,
+	awaitsSourceTab,
+}: SelectionBodyQuestion): SelectionBody => {
+	if (awaitsSourceTab && sourcesStatus === "loading") {
+		return { kind: "loading" };
+	}
+	if (awaitsSourceTab && sourcesStatus === "error") {
+		return { kind: "unavailable" };
+	}
 	const gate = tab.premiumGate;
 	if (gate !== undefined && verdict === "notPremium") {
 		return { kind: "premiumNotice", notice: gate.notice };
@@ -309,6 +334,18 @@ const selectionBodyOf = (
 	}
 	return { kind: "content" };
 };
+
+/**
+ * Whatever stands under the form reads as the dialog's verdict on it, so nothing stands there, and
+ * nothing can be saved, while the dialog is still waiting to hear what it may offer.
+ */
+const dialogKnowsItsAnswer = (
+	sourcesStatus: SourcesStatus,
+	verdict: PremiumVerdict,
+): boolean => sourcesStatus !== "loading" && verdict !== "unknown";
+
+const bodyBlocksSaving = (body: SelectionBody): boolean =>
+	body.kind === "loading" || body.kind === "unavailable";
 
 const SelectionModeContent: React.FC<
 	SelectionContentProps & {
@@ -340,6 +377,10 @@ const SelectionModeContent: React.FC<
 
 	if (body.kind === "loading") {
 		return <LoadingSpinner />;
+	}
+
+	if (body.kind === "unavailable") {
+		return null;
 	}
 
 	if (tab.source) {
@@ -399,6 +440,55 @@ const SelectionTabButton: React.FC<{
 		</LicenseTooltip>
 	);
 };
+
+const BusySelectionTab: React.FC = () => (
+	<Button disabled aria-busy="true">
+		<CircularProgress size={20} sx={{ mr: 1 }} />
+		Loading…
+	</Button>
+);
+
+const SelectionTabRow: React.FC<
+	Readonly<{
+		tabs: DeliverySelectionTab[];
+		activeTabKey: string;
+		verdict: PremiumVerdict;
+		sourcesStatus: SourcesStatus;
+		portfolioTerm: string;
+		onSelect: (tab: DeliverySelectionTab) => void;
+	}>
+> = ({
+	tabs,
+	activeTabKey,
+	verdict,
+	sourcesStatus,
+	portfolioTerm,
+	onSelect,
+}) => (
+	<Box sx={{ mb: 2 }}>
+		<Typography variant="subtitle2" sx={{ mb: 1 }}>
+			Selection Mode
+		</Typography>
+		<ButtonGroup size="small" aria-label="Selection Mode">
+			{tabs.map((tab) => (
+				<SelectionTabButton
+					key={tab.key}
+					tab={tab}
+					activeTabKey={activeTabKey}
+					verdict={verdict}
+					onSelect={onSelect}
+				/>
+			))}
+			{sourcesStatus === "loading" && <BusySelectionTab />}
+		</ButtonGroup>
+		{sourcesStatus === "error" && (
+			<Alert severity="warning" sx={{ mt: 1 }}>
+				Couldn't check what this {portfolioTerm}'s connection offers. Close this
+				dialog and open it again to retry.
+			</Alert>
+		)}
+	</Box>
+);
 
 /**
  * A date the work tracking system holds, in the form the date field wants. Read in UTC, because that
@@ -533,6 +623,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		defaultDeliverySelectionTab.key,
 	);
 	const [sources, setSources] = useState<IDeliverySource[]>([]);
+	const [sourcesStatus, setSourcesStatus] = useState<SourcesStatus>("loading");
 	const [rules, setRules] = useState<IWorkItemRuleCondition[]>([]);
 	const [mode, setMode] = useState<DeliveryRuleMode>("and");
 	const [ruleSchema, setRuleSchema] = useState<IWorkItemRuleSchema | null>(
@@ -572,11 +663,15 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	// tracker owns them from the moment the entry is picked, and typing over them here would be undone
 	// by the next sync.
 	const readsFromSource = activeTab.source !== undefined;
-	const activeBody = selectionBodyOf(
-		activeTab,
+	const activeBody = selectionBodyOf({
+		tab: activeTab,
 		verdict,
-		activeTab.key === RULE_BASED_SELECTION_TAB_KEY && loadingSchema,
-	);
+		listIsLoading:
+			activeTab.key === RULE_BASED_SELECTION_TAB_KEY && loadingSchema,
+		sourcesStatus,
+		awaitsSourceTab:
+			Boolean(editingDelivery?.sourceKey) && activeTab.source === undefined,
+	});
 	const selectionState: DeliverySelectionState = {
 		selectedFeatureIds,
 		rules,
@@ -604,10 +699,26 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 			return;
 		}
 
+		// An answer that arrives after the dialog closed belongs to a question nobody is asking any more.
+		let asked = true;
+		setSourcesStatus("loading");
 		deliveryService
 			.getDeliverySources(portfolio.id)
-			.then((offered) => setSources(offered))
-			.catch(() => setSources([]));
+			.then((offered) => {
+				if (!asked) {
+					return;
+				}
+				setSources(offered);
+				setSourcesStatus("ready");
+			})
+			.catch(() => {
+				if (asked) {
+					setSourcesStatus("error");
+				}
+			});
+		return () => {
+			asked = false;
+		};
 	}, [open, deliveryService, portfolio.id]);
 
 	useEffect(() => {
@@ -768,6 +879,8 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		setSourceReference(values.sourceReference);
 		setPublishForecastToSource(values.publishForecastToSource);
 		hydratedDeliveryId.current = null;
+		setSources([]);
+		setSourcesStatus("loading");
 		setErrors({});
 		clearDeliverySourceOptionsCache();
 	}, []);
@@ -814,6 +927,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 		}
 	}, [open, resetForm]);
 
+	const knowsItsAnswer = dialogKnowsItsAnswer(sourcesStatus, verdict);
 	const blockingError = getFirstBlockingError({
 		name,
 		date,
@@ -877,22 +991,14 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 						sx={{ mb: 2 }}
 					/>
 
-					<Box sx={{ mb: 2 }}>
-						<Typography variant="subtitle2" sx={{ mb: 1 }}>
-							Selection Mode
-						</Typography>
-						<ButtonGroup size="small" aria-label="Selection Mode">
-							{tabs.map((tab) => (
-								<SelectionTabButton
-									key={tab.key}
-									tab={tab}
-									activeTabKey={activeTab.key}
-									verdict={verdict}
-									onSelect={handleSelectTab}
-								/>
-							))}
-						</ButtonGroup>
-					</Box>
+					<SelectionTabRow
+						tabs={tabs}
+						activeTabKey={activeTab.key}
+						verdict={verdict}
+						sourcesStatus={sourcesStatus}
+						portfolioTerm={portfolioTerm}
+						onSelect={handleSelectTab}
+					/>
 
 					<SelectionModeContent
 						tab={activeTab}
@@ -936,7 +1042,7 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 				}}
 			>
 				<Box sx={{ flex: 1, mr: 2 }}>
-					{blockingError && (
+					{knowsItsAnswer && blockingError && (
 						<Alert severity="error" sx={{ py: 0 }}>
 							{blockingError}
 						</Alert>
@@ -947,7 +1053,11 @@ export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 					<Button
 						onClick={handleSave}
 						variant="contained"
-						disabled={blockingError !== null || activeBody.kind === "loading"}
+						disabled={
+							!knowsItsAnswer ||
+							blockingError !== null ||
+							bodyBlocksSaving(activeBody)
+						}
 					>
 						{isEditMode ? "Update" : "Save"}
 					</Button>

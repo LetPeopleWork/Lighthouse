@@ -125,7 +125,7 @@ const withTheReleaseListStillOnItsWay = () => {
 };
 
 describe("Lena opens Add Launch while the ways to pick are still loading", () => {
-	it.skip("shows a busy tab in place of the ones still loading, and the Jira Release tab once they answer", async () => {
+	it("shows a busy tab in place of the ones still loading, and the Jira Release tab once they answer", async () => {
 		const { deliveryService, sources } = withSourcesStillOnTheirWay();
 
 		openTheDialog({ deliveryService });
@@ -264,7 +264,7 @@ describe("once the licence is known", () => {
 });
 
 describe("when the ways to pick could not be checked", () => {
-	it.skip("the dialog says so in an amber notice (the warning colour, which only its class carries) with no button, and Manual and Rule-Based still work", async () => {
+	it("the dialog says so in an amber notice (the warning colour, which only its class carries) with no button, and Manual and Rule-Based still work", async () => {
 		const { deliveryService, sources } = withSourcesStillOnTheirWay();
 		openTheDialog({ deliveryService });
 
@@ -348,7 +348,7 @@ describe("when the Release list could not be loaded", () => {
 });
 
 describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", () => {
-	it.skip("while the ways to pick load, the dialog shows a loading look, never the Manual tab's list, and Update stays off", async () => {
+	it("while the ways to pick load, the dialog shows a loading look, never the Manual tab's list, and Update stays off", async () => {
 		const { deliveryService } = withSourcesStillOnTheirWay();
 
 		openTheDialog({
@@ -363,7 +363,7 @@ describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", 
 		expect(screen.getByRole("button", { name: "Update" })).toBeDisabled();
 	});
 
-	it.skip("when the ways to pick could not be checked, the dialog shows the notice alone and Update stays off", async () => {
+	it("when the ways to pick could not be checked, the dialog shows the notice alone and Update stays off", async () => {
 		const { deliveryService, sources } = withSourcesStillOnTheirWay();
 		openTheDialog({
 			deliveryService,
@@ -380,7 +380,7 @@ describe("Lena edits PAY 2026.10, which follows the Jira Release of that name", 
 });
 
 describe("nothing under the form reads as the dialog's answer while it does not know yet", () => {
-	it.skip("while the ways to pick are still loading, no 'name is required' stands under the form, and Save stays off", async () => {
+	it("while the ways to pick are still loading, no 'name is required' stands under the form, and Save stays off", async () => {
 		const { deliveryService } = withSourcesStillOnTheirWay();
 		openTheDialog({ deliveryService });
 
@@ -390,7 +390,7 @@ describe("nothing under the form reads as the dialog's answer while it does not 
 		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
 	});
 
-	it.skip("while the licence has not answered, no 'name is required' stands under the form, and Save stays off", async () => {
+	it("while the licence has not answered, no 'name is required' stands under the form, and Save stays off", async () => {
 		theLicenceIs(null);
 		openTheDialog({ deliveryService: aConnectionOfferingJiraReleases() });
 

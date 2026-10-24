@@ -321,6 +321,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		expect(tabPressedState()).toEqual({
 			Manual: "false",
 			"Rule-Based": "true",
+			"Loading…": null,
 		});
 
 		await announce();
@@ -342,6 +343,7 @@ describe("DeliveryCreateModal editing a Launch that follows a Release", () => {
 		expect(tabPressedState()).toEqual({
 			Manual: "true",
 			"Rule-Based": "false",
+			"Loading…": null,
 		});
 
 		await announce();
