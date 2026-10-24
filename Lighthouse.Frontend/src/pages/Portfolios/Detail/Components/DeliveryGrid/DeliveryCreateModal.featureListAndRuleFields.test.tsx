@@ -381,6 +381,24 @@ describe("Lena picks Deliverables by hand on Payments Platform", () => {
 		expect(theRowFor(REFUNDS)).toHaveAttribute("aria-selected", "true");
 		expect(screen.getByRole("button", { name: "Update" })).toBeEnabled();
 	});
+
+	it("editing Autumn launch, Update stays off when the list could not be loaded", async () => {
+		const list = anAnswerNotGivenYet<IFeature[]>();
+		openTheDialog({
+			deliveryService: aConnectionOffering([]),
+			featureService: aFeatureServiceAnswering(list),
+			portfolio: PAYMENTS_PLATFORM,
+			editingDelivery: AUTUMN_LAUNCH,
+		});
+
+		await whenTheServerFails(list);
+
+		const notice = await waitFor(() =>
+			theNoticeSaying(COPY.featuresCouldNotBeLoaded),
+		);
+		expect(notice).toHaveClass(AMBER_NOTICE);
+		expect(screen.getByRole("button", { name: "Update" })).toBeDisabled();
+	});
 });
 
 describe("the rule fields are asked for whenever Rule-Based is on screen with a premium licence, however it got there", () => {
