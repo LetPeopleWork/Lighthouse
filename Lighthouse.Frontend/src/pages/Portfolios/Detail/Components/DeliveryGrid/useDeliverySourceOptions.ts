@@ -8,6 +8,7 @@ import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext
 import type { WidgetStatus } from "../../../../Common/MetricsView/widgetStatus";
 import { askedAfreshQueryOptions } from "./askedAfreshQueryOptions";
 import type { PremiumVerdict } from "./premiumVerdict";
+import { dialogQueryStatusOf } from "./useDeliveryFormQueries";
 
 export interface DeliverySourceOptionsRequest {
 	portfolioId: number;
@@ -25,11 +26,6 @@ export interface DeliverySourceOptionsState {
 
 const STILL_LOADING: DeliverySourceOptionsState = {
 	status: "loading",
-	options: undefined,
-};
-
-const COULD_NOT_LOAD: DeliverySourceOptionsState = {
-	status: "error",
 	options: undefined,
 };
 
@@ -64,12 +60,10 @@ export function useDeliverySourceOptions({
 		if (!enabled || result === undefined) {
 			return STILL_LOADING;
 		}
-		if (result.status === "error") {
-			return COULD_NOT_LOAD;
+		const status = dialogQueryStatusOf(result);
+		if (status !== "ready") {
+			return { status, options: undefined };
 		}
-		if (result.status === "pending") {
-			return STILL_LOADING;
-		}
-		return { status: "ready", options: result.data };
+		return { status, options: result.data };
 	};
 }

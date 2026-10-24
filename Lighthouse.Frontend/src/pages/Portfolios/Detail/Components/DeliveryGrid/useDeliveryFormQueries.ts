@@ -19,8 +19,17 @@ export interface DialogQueryState {
  * sources or the open flag are not in yet, has neither data nor an error and reads as loading, never as ready: the
  * reader is waiting for it, whatever the reason it has not been sent.
  */
-export function dialogQueryStatusOf(_query: DialogQueryState): WidgetStatus {
-	throw new Error("dialogQueryStatusOf is not built yet");
+export function dialogQueryStatusOf(query: DialogQueryState): WidgetStatus {
+	if (query.isFetching) {
+		return "loading";
+	}
+	if (query.isError) {
+		return "error";
+	}
+	if (query.data === undefined) {
+		return "loading";
+	}
+	return "ready";
 }
 
 /** One of the dialog's own answers, as far as the form needs to know it. */

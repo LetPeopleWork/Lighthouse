@@ -51,7 +51,7 @@ const cases: [string, DialogQueryState, WidgetStatus][] = [
 ];
 
 describe("what a body of the Delivery dialog says about one of its answers", () => {
-	it.skip.each(cases)("%s", (_case, query, status) => {
+	it.each(cases)("%s", (_case, query, status) => {
 		expect(dialogQueryStatusOf(query)).toBe(status);
 	});
 });
