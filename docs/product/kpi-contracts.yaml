@@ -2753,31 +2753,33 @@ outcomes:
 
   # story-6398-jira-release-loads-once (DEVOPS 2026-10-24). No usage-data event: the Story adds no action, it makes an
   # existing one honest and faster; a visit to the Deliveries tab is already PortfolioTabOpened. A Delivery-saved event
-  # is recorded as candidate F4, not added. Timing KPIs are readings of a Chrome DevTools "Slow 4G" waterfall on the dev
+  # is candidate F4 (MD-18: later; trigger set in DISCUSS, the first slice touching the Delivery save path after Epic
+  # 6400 slice 02 ships), not added. Timing KPIs are readings of a Chrome DevTools "Slow 4G" waterfall on the dev
   # instance (:5169, auth off, premium, its Jira Cloud connection) and the reporter's Data Center instance, never CI
   # budgets. The sweep line is an Information entry of the Jira connector naming no customer; it is written only at
   # Information level or finer.
   - id: OUT-6398-one-wait-to-the-picker
     feature: story-6398-jira-release-loads-once
-    title: Time from opening Add Delivery to a usable Jira Release picker, premium, backend cache cold (K1)
-    target: "locally <= the licence call's end + the options call's duration + 0.5 s after the click; <= 5 s on the reporter's Data Center instance (Epic 6400 slice 02 assumed in, MD-15)"
-    ga_baseline: "3 waits of 3-5 s in series, about 10-15 s (reporter); restated from the CA-6 waterfall before DISTILL scenarios are written"
+    title: Time from the Add Delivery click to a usable Jira Release picker, premium (K1a Jira Cloud on the dev instance before release, licence answered and Release-list cache warm; K1b Jira Data Center on the reporter's instance after release)
+    target: "K1a <= 1.2 s for the licence-answered, warm-cache case (the list's own ~0.7 s + 0.5 s); for a click before the licence answers and for a cold Release-list cache, <= the measured remainder of the licence call after the click + the measured list + 0.5 s. K1b <= 5 s on the reporter's Data Center instance (Epic 6400 slice 02 assumed in, MD-15)"
+    ga_baseline: "K1a 2.70 s, the licence-answered, warm-cache case only: CA-6 reading 2026-10-24 (dev instance :5169, Jira Cloud only per MD-19, auth off, premium, Portfolio 4, CDP 562.5 ms latency / 1.6 Mbit/s down / 750 kbit/s up, 9 runs within +-25 ms; every click landed at about 21.2 s, after the licence had answered; the Release-list backend cache probably warm): click -> Jira Release tab visible 1.88 s, click -> picker usable 2.70 s; waits in series: the dialog's own sources request ~1.3 s, then the options request ~0.7 s started on the tab click. No click-before-licence or cold-cache baseline exists; DELIVER's throttled hand check takes them. The maintainer's by-eye DevTools check of one CA-6 run did not happen. K1b: 3 waits of 3-5 s in series, about 10-15 s, as reported, no sub-timings"
     measurement_scope: per_instance   # dev instance (Cloud) by the vendor, the reporter's instance shared out of band
     measured_by: >
-      Chrome DevTools Network panel, "Slow 4G" preset, cache disabled, on the dev instance with a premium licence and a
-      Portfolio on its Jira Cloud connection: restart the backend or wait 5 minutes (cold sweep cache), open the
-      Deliveries tab, click Add Delivery at 1 s, 5 s and 15 s, three runs each; read the time from the click to the
-      source tab body's data-widget-status ready (before slice 02: the picker visible, said so). A scratch Playwright
-      script with CDP Network.emulateNetworkConditions may record the runs; the maintainer checks one in DevTools by
-      eye. Data Center: the reporter's own reading after the release, with the version and its Epic 6400 state.
+      K1a: Chrome DevTools Network panel, "Slow 4G" preset, cache disabled, on the dev instance with a premium licence
+      and a Portfolio on its Jira Cloud connection; the time from the Add Delivery click to the source tab body's
+      data-widget-status ready. CA-6 (DISTILL) was taken by a scratch Playwright script with CDP throttling and covers
+      the licence-answered, warm-cache case only. DELIVER's throttled hand check, after slice 02 and read by eye in
+      DevTools, repeats that case and adds a click before the licence has answered and a cold Release-list cache
+      (restart the backend or wait 5 minutes). K1b: the reporter's own reading after the release, with the version and
+      its Epic 6400 state.
     log_fields:
       jira_release_sweep_line: ["SweepPurpose", "ElapsedMs", "Deployment"]
-    measurement_window: CA-6 before DISTILL scenarios; after slice 02 on the dev instance; once on the reporter's instance after the release
+    measurement_window: CA-6 in DISTILL (taken); DELIVER's throttled hand check after slice 02; once on the reporter's instance after the release
     gate: soft
     alerting:
-      - condition: "the local time to the picker exceeds licence end + options duration + 0.5 s after slice 02"
+      - condition: "after slice 02, the licence-answered, warm-cache time to the picker exceeds 1.2 s, or another case exceeds its measured remainder + list + 0.5 s"
         action: "manual: read the waterfall for a request that still starts on tab mount or waits on the sources; fix before release"
-    acceptance_scenarios: []   # wall-clock reading only; no CI scenario asserts a duration
+    acceptance_scenarios: []   # wall-clock reading only; no CI scenario asserts a duration. Expected after slice 02 on the CA-6 setup: about 0.7 s + render (the list alone, started on opening)
     status: designed-not-shipped
 
   - id: OUT-6398-no-guess-shown
@@ -2787,7 +2789,7 @@ outcomes:
     ga_baseline: "shown on every slow open"
     measurement_scope: vendor_repository   # the gate is CI; the throttled hand check is a reading
     measured_by: >
-      Gate, CI on every push: the Vitest scenarios per state (sources loading and failed with Try again, licence unknown
+      Gate, CI on every push: the Vitest scenarios per state (sources loading and failed, reopened after a failure (MD-23: no Try again), licence unknown
       and notPremium, Release list failed with the reopen copy, editing a bound Delivery while sources are pending, a
       403 from the guards) and the table tests of premiumVerdictOf and the which-body helper. Reading, not gate: the
       slice-01 dogfood once on the dev instance throttled to Slow 4G, with DevTools request blocking on the sources,
@@ -2798,14 +2800,17 @@ outcomes:
     alerting:
       - condition: "a state scenario or table test fails"
         action: "frontend build fails (red)"
-    acceptance_scenarios: []   # DISTILL names the scenarios
+    acceptance_scenarios:
+      - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.neverAGuess.test.tsx (every describe)"
+      - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.licenceNeverKnown.test.tsx (the known limit, the real licence hook)"
+      - "Lighthouse.Frontend/.../DeliveryGrid/premiumVerdict.test.ts"
     status: designed-not-shipped
 
   - id: OUT-6398-no-waits-in-series
     feature: story-6398-jira-release-loads-once
-    title: One noticeable wait before the picker, not three (K3)
-    target: "0 sources requests on opening the dialog when the page holds them; the options request starts <= 100 ms after the licence answers premium (reading)"
-    ga_baseline: "3 waits in series (sources, licence, Release list started on tab mount)"
+    title: Exactly one request on the critical path between the click and a usable picker, the Release list (K3)
+    target: "exactly 1 request on the critical path (the Release list) and 0 sources requests from the dialog when the page holds a good answer; the options request starts <= 100 ms after the licence is known premium (reading)"
+    ga_baseline: "2 in the CA-6 reading (the dialog's sources request, then the Release list); 3 waits as reported"
     measurement_scope: per_instance
     measured_by: >
       CI (hard): call counts on the mocked deliveryService, no getDeliverySources on open when the page holds the
@@ -2816,7 +2821,9 @@ outcomes:
     measurement_window: every push (counts); with the K1 readings
     gate: soft   # the 100 ms gap is a reading; the call counts are pinned in CI
     alerting: []
-    acceptance_scenarios: []
+    acceptance_scenarios:
+      - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx: the dialog opens with the ways to pick the page already knows; the Release list starts when the dialog opens"
+      - "Lighthouse.Frontend/.../DeliveryGrid/useDeliverySources.test.tsx"
     status: designed-not-shipped
 
   - id: OUT-6398-sweep-cost-visible
@@ -2841,7 +2848,9 @@ outcomes:
     alerting:
       - condition: "median Picker ElapsedMs over 2000 on the reporter's cold sweeps"
         action: "manual: open follow-up F2, choosing between a longer cache lifetime and narrowing the sweep to the Portfolio's projects (single-flight decided with it, OQ-6)"
-    acceptance_scenarios: []   # DISTILL names the classes (JiraReleaseSweep* so the Stryker filter matches)
+    acceptance_scenarios:
+      - "Lighthouse.Backend.Tests/.../WorkTrackingConnectors/Jira/JiraReleaseSweepLineTest"
+      - "Lighthouse.Backend.Tests/.../WorkTrackingConnectors/Jira/JiraReleaseSweepCostTest"
     status: designed-not-shipped
 
   - id: OUT-6398-one-list-request-per-open
@@ -2863,5 +2872,34 @@ outcomes:
     alerting:
       - condition: "a call-count scenario fails"
         action: "frontend build fails (red)"
-    acceptance_scenarios: []
+    acceptance_scenarios:
+      - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx: the Release list starts when the dialog opens; nothing is fetched that nobody asked for; a late answer never lands"
+      - "Lighthouse.Frontend/.../DeliveryGrid/deliveryGridServerState.enforcement.test.ts"
+    status: designed-not-shipped
+
+  - id: OUT-6398-no-stale-form-answer
+    feature: story-6398-jira-release-loads-once
+    title: No opening shows an earlier opening's Feature list or rule schema, or an empty Feature list while it loads or after it failed (K6, guardrail, slice 04)
+    target: "0"
+    ga_baseline: "a reopen shows the last opening's Feature list until the new one lands; a failed list shows an empty grid that reads as no Features; the rule schema re-asks in a loop after a failure (N3)"
+    measurement_scope: vendor_repository   # the gate is CI; the throttled dogfood is a reading
+    measured_by: >
+      Gate, CI on every push: Vitest scenarios through the dialog with held, failed and late answers for
+      featureService.getFeaturesByIds and deliveryService.getRuleSchema, across close and reopen and a Portfolio switch,
+      in add and edit mode: the grid's own loading overlay while the list is pending, the amber reopen-to-retry Alert in
+      place of the grid on failure, today's LoadingSpinner and SchemaLoadError for the schema, Save disabled while the
+      active body is not ready, one schema request per opening (the latch), a Portfolio with no Features making no
+      request; FeatureSelector and FeatureGrid forwarding loading, every other user unchanged. Reading, not gate: the
+      slice-04 dogfood on the dev instance throttled to Slow 4G with DevTools request blocking on features/ids and the
+      schema route (one failure look, no repeated schema requests in the waterfall).
+    log_fields: {}
+    measurement_window: every push (gate); once in slice 04 DELIVER (reading)
+    gate: hard
+    alerting:
+      - condition: "a slice-04 scenario fails"
+        action: "frontend build fails (red)"
+    acceptance_scenarios:
+      - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx (every describe)"
+      - "Lighthouse.Frontend/.../DeliveryGrid/dialogQueryStatus.test.ts"
+      - "Lighthouse.Frontend/.../DeliveryGrid/deliveryGridServerState.enforcement.test.ts (the Feature list and rule fields from their own hooks only)"
     status: designed-not-shipped

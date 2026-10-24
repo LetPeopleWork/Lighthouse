@@ -8,8 +8,9 @@ Release list as soon as the licence is known premium rather than when the tab is
 disappears and the Release list no longer starts last.
 
 ## IN scope
-- The dialog takes the sources from the Deliveries page's answer (`useDeliveryManagement`), asking again only when the
-  page has none yet (how: DESIGN, inside the Deliveries folder; keyed TanStack queries are the house pattern).
+- The dialog takes the sources from the Deliveries page's answer (`useDeliveryManagement`), asking only when the page
+  has no successful answer yet, and asking again on opening when the page's last answer failed (MD-23, AC-2.1 as
+  amended; how: DESIGN, inside the Deliveries folder; keyed TanStack queries are the house pattern).
 - The Release list request starts while the dialog is open, as soon as the sources include the source and the
   licence is known premium, whichever tab is on screen (MD-7, MD-15: N1 answered (b)). No request for a licence that
   is unknown or known not to be premium, so the server is never asked for something it would refuse.
@@ -34,14 +35,17 @@ be about 1¾ days, past the one-day slice cap.
 ## Learning hypothesis
 - **Disproves** "the waits are long mainly because they run in series" if, with the sources reused and the Release
   list started on open, the time to a usable picker on the throttled dev instance stays close to today's sum.
-- **Confirms** it if the time to a usable picker drops to the licence call + the Release list call + 0.5 s, and to
-  5 s or less on the reporter's instance (K1, K3; assumes Epic 6400 slice 02 is in by release, MD-15).
+- **Confirms** it if the time from the click to a usable picker on the dev instance (Jira Cloud, licence answered, warm
+  cache) drops from CA-6's 2.70 s to 1.2 s or less (K1a), with exactly one request on the critical path (K3); and, after
+  release, to 5 s or less on the reporter's Data Center instance (K1b; assumes Epic 6400 slice 02 is in, MD-15).
 
 ## Acceptance criteria
 US-02 AC-2.1 to AC-2.6 in `feature-delta.md`.
 
 ## Dependencies
-Slice 01, finished (otherwise the shorter wait still shows today's guesses). No file overlap with Epic 6400.
+Technically independent of slice 01: it can ship alone. It is ordered after 01 as a sequencing preference only, because
+shipped first it would show today's guesses for a shorter time (F-L1). No file overlap with Epic 6400 (AC-2.6, checked at
+review by diff against the named list).
 
 ## Effort
 About ¾ day. Reference class: passing one already-fetched list down and lifting one fetch out of a tab body.

@@ -10759,42 +10759,61 @@ live in that file's `Wave: DESIGN / [REF] C4` sections, not here. Upstream chang
 ## Application Architecture — story-6398-jira-release-loads-once (the Delivery dialog never guesses and waits once)
 
 Feature: story-6398-jira-release-loads-once (ADO Story #6398) · Wave: DESIGN · 2026-10-24 · Morgan, PROPOSE mode.
-Full design: `docs/feature/story-6398-jira-release-loads-once/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-8, the C4
-component view, loading and failure looks). Runs in parallel with Epic 6400 and touches none of its files.
+Full design: `docs/feature/story-6398-jira-release-loads-once/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-11, the C4
+component view, loading and failure looks). Runs in parallel with Epic 6400 and touches none of its files; it relies on
+`DataGridBase`'s `loading` prop, which 6400 extends, so that prop is re-checked at merge or push.
 
 ### Key invariants introduced
 
 - **The Delivery dialog derives what it shows from keyed query states, never from a stand-in default.** Sources
-  loading or failed is not "no Jira Release tab"; a `null` licence is "not known yet", never "not premium".
+  loading or failed is not "no Jira Release tab". A licence is premium or not only when the hook hands an object with
+  a boolean `canUsePremiumFeatures`; anything else is "not known yet", never "not premium".
 - **The sources are one shared query** (`["deliverySources", portfolioId]`) read by the Deliveries page and the
-  dialog, so opening the dialog sends no request when the page has answered. Try again refetches it.
+  dialog, so opening the dialog sends no request when the page has answered. There is no Try again button: when the
+  last answer failed, reopening the dialog asks once more. An on-open effect calls `refetch()` once per opening, only
+  when the query is in `error`.
 - **The Release list is one query per offered source and per opening** (`["deliverySourceOptions", portfolioId,
   sourceKey, opening]`, gc time 0, no retry), started by the dialog once the licence is known premium, not by the tab.
   A late answer for a closed opening or another Portfolio is dropped; a failed list is never served on reopen, so
-  reopening is the retry.
-- **Every Jira Release sweep writes one Information line** of counts, elapsed ms, deployment kind and completeness, and
-  nothing that names the customer (no host, project, Release or connection name). A cache hit writes nothing.
+  reopening is the retry. The Manual Feature list and the Rule-Based schema follow the same per-opening keying (slice
+  04); the schema is asked once per opening, behind a latch set from state (dialog open, licence premium, Rule-Based
+  active, however it became active). Every body reads `loading` until its query has data or an error, so a query not
+  started yet never reads as ready.
+- **Every Jira Release sweep writes one Information line**, in a `finally`, of counts, elapsed ms, deployment kind and
+  completeness, and nothing that names the customer (no host, project, Release or connection name). A cache hit
+  writes nothing. Its purpose is one of `Picker`, `Preview`, `Save`, `Refresh`, named explicitly by each caller. The
+  counts accumulate in a per-sweep tally (`Interlocked` adds inside the parallel loop) that the `finally` reads, so a
+  failed sweep still reports what it had counted.
 
 ### Component changes
 
-- NEW, frontend: `useDeliverySources`, `useDeliverySourceOptions` (Deliveries folder), a pure licence verdict
-  (`unknown | premium | notPremium`), a private `SelectionTabRow`.
-- MODIFIED, frontend: `DeliveryCreateModal` (looks by status, busy tab, sources notice with Try again, edit-mode wait,
-  owns the Release-list queries), `DeliverySourceTab` (list state as a prop; module cache removed; reworded failure;
-  `data-widget-status`), `useDeliveryManagement` (sources through the shared query, return shape unchanged), the
-  Delivery dialog E2E page object (waits for `ready`).
-- NEW, backend: `JiraReleaseSweepCost` (internal value and log template). MODIFIED: `JiraWorkTrackingConnector` (counts
-  carried back from the per-project reads; the sweep timed through the injected `TimeProvider`).
-- UNCHANGED: `useLicenseRestrictions`, `DeliveryModals`, `PortfolioDeliveryView`, `deliverySelectionTabs`,
-  `DeliverySourcesController`, `LicenseGuard`, `RbacGuard`, the sweep's reads, cache and lifetime, every HTTP contract.
-  L1/L2 C4 unchanged; no new external call.
+- NEW, frontend: `useDeliverySources`, `useDeliverySourceOptions`, `useDeliveryFormQueries` (Deliveries folder), a pure
+  licence verdict (`unknown | premium | notPremium`), a private `SelectionTabRow`.
+- MODIFIED, frontend: `DeliveryCreateModal` (looks by status, busy tab, a sources notice that asks to reopen the dialog
+  and has no button, edit-mode wait, owns the Release-list, Feature-list and schema queries), `DeliverySourceTab`
+  (list state as a prop; module cache removed; reworded failure; `data-widget-status`), `useDeliveryManagement`
+  (sources through the shared query, return shape unchanged), `FeatureSelector` and `FeatureGrid` (an optional
+  `loading` forwarded to `DataGridBase`'s existing prop), the Delivery dialog E2E page object (waits for `ready`).
+- NEW, backend: `JiraReleaseSweepCost` (internal value and log template), `DeliverySourceSweepPurpose` (public closed
+  enum). MODIFIED: `JiraWorkTrackingConnector` (counts carried back from the per-project reads; the sweep timed through
+  the injected `TimeProvider`); `IDeliverySourceProvider.ResolveMany` and `IDeliverySourceResolver.ResolveForPortfolio`
+  (one required trailing purpose parameter, one implementer each); their three callers pass a constant
+  (`DeliverySourcesController` preview, `DeliveriesController` save, `DeliverySourceSyncService` refresh).
+- UNCHANGED: `useLicenseRestrictions`, `DataGridBase`, `DeliveryModals`, `PortfolioDeliveryView`,
+  `deliverySelectionTabs`, every controller action signature, `GetOptions`, `LicenseGuard`, `RbacGuard`, the sweep's
+  reads, cache and lifetime, every HTTP contract. L1/L2 C4 unchanged; no new external call.
 
 ### Architectural Enforcement (this feature)
 
-- Source-tree test in the Deliveries folder: only the two hooks call `getDeliverySources` / `getDeliverySourceOptions`;
-  no module-level cache of server answers; no `getLicenseStatus` and no `licenseStatus` key.
-- Call counts across open, close, reopen and Portfolio switch; a late-answer test; the sweep line's property allowlist
-  checked with a captured logger.
+- Source-tree test in the Deliveries folder: only the dialog's query hooks call `getDeliverySources`,
+  `getDeliverySourceOptions`, `getFeaturesByIds` and `getRuleSchema`. There is no module-level cache of server answers,
+  and the preview's ref guard is the one named hand-written late-answer guard. No `getLicenseStatus`, no
+  `licenseStatus` key.
+- Call counts across open, close, reopen, tab switches and Portfolio switch; the sources pair (a failed answer then a
+  reopen asks once more; a good answer then a reopen asks nothing). Late-answer tests. The sweep line's property
+  allowlist is checked with a captured logger, including an exception that escapes the guard, and one test per sweep
+  purpose. The schema latch is pinned by editing a Rule-Based Delivery and by a licence that turns premium after the
+  tab was chosen.
 
 ### ADR References (this feature)
 

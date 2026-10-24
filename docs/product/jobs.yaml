@@ -4840,6 +4840,9 @@ jobs:
       and narrows only the payload fetch, so removal semantics are untouched. The DoneItemsCutoffDays
       window already bounds CLOSED items; it does nothing for open ones, which is why the cost does not
       fall off on its own.
+      NOTE 2026-10-24: story-6398-jira-release-loads-once first pointed its US-03 (the Jira Release sweep line) here,
+      then re-pointed it the same day to job-operator-read-an-update-log-that-says-something, which fits better: slice
+      03 adds one legible log line and changes no fetch. This job is not reused by 6398.
     job_story: >
       When Lighthouse refreshes a team or portfolio against a work-tracking system that holds years or
       decades of history,
@@ -4979,6 +4982,15 @@ jobs:
       already recorded in RefreshLog and go unreported. This job ships FIRST in the epic because it is the
       instrument every other slice's acceptance is read off — and because a UI for the same information is
       Epic 5511's job, not this one's.
+      REUSED 2026-10-24 by story-6398-jira-release-loads-once (ADO Story #6398), slice 03 / US-03 only: the Jira
+      Release sweep (one call per project on the connection, every version paged in on Data Center) gets the same kind
+      of line this job asks for: one Information-level structured line per sweep with its purpose, duration, projects,
+      versions read, pages and whether it was complete, read in Settings > System Info > Logs (the built-in Log Viewer,
+      or the downloaded log file) and documented there under "Jira Release sweeps". It lets the operator tell a slow
+      Release picker that is Jira's time from one that is Lighthouse's. The maintainer ruled that reading a value of its
+      own (MD-25 in that feature delta). Re-pointed here from job-operator-sync-without-hammering-the-tracker during the
+      same day's re-review, because this job is about reading one legible line, which is all slice 03 adds. Wording
+      unchanged.
     job_story: >
       When I look at Lighthouse's logs to understand what an update just did,
       I want a single line per update telling me which entity, in which mode, how much it saw, how much it
@@ -5840,6 +5852,14 @@ jobs:
       act, one step shorter") is what those waits break: 10-15 s of guesses is longer than typing the name and
       date by hand. Wording unchanged; the story serves the pull by making the picker wait once, for about as
       long as the slowest call, and never show a guess as the answer.
+      REUSED again 2026-10-24 by the same story's slice 04 / US-04 (MD-26): the Manual tab's Feature list and the
+      Rule-Based fields in the same dialog get loading and failure looks and stop showing an earlier opening's answer.
+      None of the delivery-forecaster persona's jobs is about choosing a Delivery's Features or rules by hand; this one
+      covers it because its
+      functional dimension defines the Release picker as "a third way to define a Delivery, beside Manual and Rules",
+      and its anxiety ("will it actually find my Features?") is the same worry an empty Feature list raises. The
+      outcome is the same act: defining a Delivery from what is true now. If a Manual or rule job is added later,
+      US-04 moves to it. Wording unchanged.
     job_story: >
       When the thing I am forecasting already exists as a Release in the work tracking system,
       I want to point a Delivery at it instead of describing it again,
