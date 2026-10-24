@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-23
+updated: 2026-10-24
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -69,6 +69,7 @@ feature_context:
   - epic-6311-responsive-during-updates
   - story-6354-skip-unchanged-forecasts
   - epic-6400-fast-with-many-features
+  - story-6398-jira-release-loads-once
 
 jobs:
   - id: job-rbac-bootstrap
@@ -5830,6 +5831,15 @@ jobs:
     title: Point a Delivery at the Release it already tracks
     persona: delivery-forecaster
     feature_context: epic-5565-delivery-date-sync
+    note: >
+      REUSED 2026-10-24 by story-6398-jira-release-loads-once (ADO Story #6398, no parent Epic; DISCOVER and
+      DIVERGE skipped by the maintainer). A user on Jira Data Center who binds a Delivery to a Jira Release daily
+      waits three times, 3-5 s each and one after another, before the Release picker answers: the tab is missing
+      while the Portfolio's sources load, then says a premium licence is needed while the licence is still unknown,
+      and only then starts listing the Releases. The habit force above ("the picker has to be visibly the same
+      act, one step shorter") is what those waits break: 10-15 s of guesses is longer than typing the name and
+      date by hand. Wording unchanged; the story serves the pull by making the picker wait once, for about as
+      long as the slowest call, and never show a guess as the answer.
     job_story: >
       When the thing I am forecasting already exists as a Release in the work tracking system,
       I want to point a Delivery at it instead of describing it again,
