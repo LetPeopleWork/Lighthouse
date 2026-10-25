@@ -103,6 +103,13 @@ Two standing principles worth keeping visible here because they're easy to skip 
      table. Say which were chosen and which were rejected, with one line of why for each.
 
   It is a learning aid, not a replacement for `brief.md` or the ADRs.
+- **DELIVER starts by agreeing the nWave rigor profile, and every dispatch honours it.** At the start of
+  DELIVER, propose a profile (`/nw-rigor`) per slice and get the maintainer's yes. Most frontend and plain
+  backend work is `standard`, some is `thorough`, very little is `exhaustive`. Record the choice in
+  `feature-delta.md`. Then pass `model` explicitly on every agent dispatch: the profile's `agent_model` for
+  crafters and designers, its `reviewer_model` for reviewers. The session runs on Opus and most nWave agents
+  say `model: inherit`, so a dispatch without `model` quietly runs on Opus whatever the profile says. The
+  project's own gates (mutation testing per feature, the AFK reviews) run under every profile.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
