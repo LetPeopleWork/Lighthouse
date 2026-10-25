@@ -20,9 +20,14 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private readonly OnTheLaneThreads scheduler;
 
-        private int started;
+        // Handing work over (and starting the threads with the first of it) and closing the lane each happen whole
+        // under this lock. Otherwise a stop could close and throw away the queue between the moment work was added
+        // and the moment the threads started on it, or wait on a thread that had not been started yet.
+        private readonly Lock handOver = new();
 
-        private int disposed;
+        private bool started;
+
+        private bool disposed;
 
         private ILogger logger = NullLogger.Instance;
 
@@ -36,12 +41,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private int ThreadCount => threads.Count;
 
-        private bool HasStarted => Volatile.Read(ref started) == 1;
-
-        /// <summary>
-        /// The lane is built before the container that holds the loggers, so where it reports is handed to it
-        /// once the container hands it out.
-        /// </summary>
+        /// <summary>Where the lane reports a thread that did not finish in time; until told, it reports nowhere.</summary>
         public ForecastLane ReportingThreadsThatDidNotFinishTo(ILogger<ForecastLane> reportTo)
         {
             logger = reportTo;
@@ -55,14 +55,21 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         /// </summary>
         public void Dispose()
         {
-            if (Interlocked.Exchange(ref disposed, 1) == 1)
+            bool threadsWereStarted;
+
+            lock (handOver)
             {
-                return;
+                if (disposed)
+                {
+                    return;
+                }
+
+                disposed = true;
+                waiting.CompleteAdding();
+                threadsWereStarted = started;
             }
 
-            waiting.CompleteAdding();
-
-            var stillBusy = HasStarted ? ThreadsStillBusyAfterWaiting() : [];
+            var stillBusy = threadsWereStarted ? ThreadsStillBusyAfterWaiting() : [];
 
             if (stillBusy.Count == 0)
             {
@@ -95,11 +102,17 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         // The threads start with the first round rather than with the lane, so a host that never forecasts
         // never owns idle threads it may not get the chance to stop.
-        private void StartTheThreadsOnce()
+        private void Take(Task task)
         {
-            if (Interlocked.Exchange(ref started, 1) == 0)
+            lock (handOver)
             {
-                threads.ForEach(thread => thread.Start());
+                waiting.Add(task);
+
+                if (!started)
+                {
+                    threads.ForEach(thread => thread.Start());
+                    started = true;
+                }
             }
         }
 
@@ -117,11 +130,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
                 }
             }
 
-            protected override void QueueTask(Task task)
-            {
-                lane.waiting.Add(task);
-                lane.StartTheThreadsOnce();
-            }
+            protected override void QueueTask(Task task) => lane.Take(task);
 
             // Waiting on a task that is still queued runs it right here when the waiter is a lane thread itself;
             // otherwise a round waiting on its own queued work could hold every lane thread and never move.
