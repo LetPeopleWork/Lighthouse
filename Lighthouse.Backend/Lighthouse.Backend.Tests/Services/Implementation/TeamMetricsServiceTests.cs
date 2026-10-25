@@ -153,6 +153,49 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void GetFeaturesInProgressForTeam_ReferenceTheRepositoryHolds_ReturnsThatFeatureAlongsideAPlaceholderForAnUntrackedOne()
+        {
+            featureRepositoryMock.Holds([new Feature { Id = 42, ReferenceId = "Feature1", Name = "Checkout redesign" }]);
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Untracked1");
+
+            var featuresInProgress = subject.GetCurrentFeaturesInProgressForTeam(testTeam, TestToday.AmbientAsUtcMidnight).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featuresInProgress, Has.Count.EqualTo(2));
+                Assert.That(featuresInProgress[0].Id, Is.EqualTo(42));
+                Assert.That(featuresInProgress[0].Name, Is.EqualTo("Checkout redesign"));
+                Assert.That(featuresInProgress[1].Id, Is.EqualTo(-1));
+                Assert.That(featuresInProgress[1].ReferenceId, Is.EqualTo("Untracked1"));
+            }
+        }
+
+        [Test]
+        public async Task CountingFeaturesInProgress_NeverReadsFeatures()
+        {
+            testTeam.AutomaticallyAdjustFeatureWIP = true;
+            AddWorkItem(StateCategories.Doing, 1, "Feature1");
+            AddWorkItem(StateCategories.Doing, 1, "Feature2");
+            var start = TestToday.AmbientAsUtcMidnight.AddDays(-7);
+            var end = TestToday.AmbientAsUtcMidnight;
+
+            await subject.UpdateTeamMetrics(testTeam);
+            var workedOn = subject.GetFeaturesWorkedOnInfoForTeam(testTeam, start, end);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(testTeam.FeatureWIP, Is.EqualTo(2));
+                Assert.That(workedOn.Count, Is.EqualTo(2));
+                featureRepositoryMock.Verify(r => r.FeaturesWithReferenceIds(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
+                featureRepositoryMock.Verify(r => r.GetAll(), Times.Never);
+                featureRepositoryMock.Verify(r => r.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()), Times.Never);
+                featureRepositoryMock.Verify(r => r.WholeGraphWithoutHistograms(), Times.Never);
+                featureRepositoryMock.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
         public void GetCurrentWipForTeam_NoWorkItemsInDoing_ReturnsEmpty()
         {
             AddWorkItem(StateCategories.ToDo, 1, string.Empty);

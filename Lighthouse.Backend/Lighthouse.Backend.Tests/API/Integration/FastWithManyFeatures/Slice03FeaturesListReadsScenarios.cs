@@ -89,8 +89,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         /// <summary>
         /// A tracker can hand Lighthouse two Features under one id, and a Team's page must still open. The copy in
         /// Northwind Archive is later in forecast order than the one in Northwind Platform, so its name tells the two
-        /// apart. The in-progress answer is cached for the day, so a second read without a refresh in between must
-        /// not warn again: the operator hears about the id once per refresh, not once per page view.
+        /// apart. The warning is remembered alongside the Team's cached metrics, so a second read with nothing recomputed
+        /// in between must not warn again: the operator hears about the id once each time the Team's metrics are worked
+        /// out again (a refresh, a recomputation, or the cached figures running out), not once per page view.
         /// </summary>
         [Test]
         [Category("driving_port")]
@@ -116,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         /// <summary>
-        /// A Team's refresh ends by recomputing its metrics, which empties the day's cache, so the next read finds the id
+        /// A Team's refresh ends by recomputing its metrics, which throws away the remembered warning along with the cached figures, so the next read finds the id
         /// twice again and warns again. The refresh is run as that last step, because the faked tracker would hand the
         /// Team no work items and the in-progress Feature would vanish with them.
         /// </summary>
