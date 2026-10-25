@@ -13,7 +13,7 @@ export interface IFeatureService {
 	getFeaturesByIds(featureIds: number[]): Promise<IFeature[]>;
 	getFeaturesByReferences(featureReferences: string[]): Promise<IFeature[]>;
 	getFeatureWorkItems(featureId: number): Promise<IWorkItem[]>;
-	/** Every gesture in D18 reduces to this one call (US-03, US-04). */
+	/** Every way of reordering a Feature reduces to this one call. */
 	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void>;
 	/** Everything one Features tab shows, in one answer. */
 	getFeatureList(owner: FeatureListOwner): Promise<IFeatureList>;
@@ -79,7 +79,6 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 		});
 	}
 
-	// Every gesture reduces to this one call; they differ only in which row is named as the target (D18).
 	moveFeature(featureId: number, target: FeatureMoveTarget): Promise<void> {
 		return this.withErrorHandling(async () => {
 			await this.apiService.patch(`/features/${featureId}/rank`, target);
