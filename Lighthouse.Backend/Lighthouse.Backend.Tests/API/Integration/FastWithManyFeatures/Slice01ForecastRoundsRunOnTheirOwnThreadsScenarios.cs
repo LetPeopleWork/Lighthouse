@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
@@ -8,6 +9,7 @@ using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
 namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 {
@@ -62,9 +64,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             await WhenABackgroundRoundRunsFor(portfolio);
 
             var threads = round.TheThreadsItDrewOn;
+            var laneThreads = Factory.Services.GetRequiredService<ForecastLane>().Scheduler.MaximumConcurrencyLevel;
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(threads, Is.Not.Empty, "The round simulated nothing, so this proved nothing.");
+                Assert.That(laneThreads, Is.EqualTo(TheForecastThreads),
+                    $"A host with {coresTheHostHas} cores must have {TheForecastThreads} forecast threads, whatever cores the machine running the test has.");
                 Assert.That(threads, Has.None.Matches<ThreadsAForecastRoundRanOn.SeenThread>(thread => thread.OnTheSharedPool),
                     "The round simulated on the threads that answer pages: " + string.Join("; ", threads));
                 Assert.That(threads, Has.All.Matches<ThreadsAForecastRoundRanOn.SeenThread>(thread => thread.InTheBackground),
@@ -129,7 +134,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             GivenRunsThatFinish(inEveryTen: 7);
 
             WhenThePortfolioForecastIsUnderWay(portfolio);
+            var stopping = Factory.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping;
             var lighthouseStops = WhenLighthouseIsStopped();
+            Assert.That(stopping.WaitHandle.WaitOne(TheLongestAStopMayTake), Is.True,
+                $"Lighthouse did not begin to stop within {TheLongestAStopMayTake.TotalSeconds}s of being asked to.");
             Draws.LetItCarryOn();
 
             Assert.That(lighthouseStops.Wait(TheLongestAStopMayTake), Is.True,

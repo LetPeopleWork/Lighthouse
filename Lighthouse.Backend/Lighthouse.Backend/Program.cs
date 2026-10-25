@@ -1564,9 +1564,10 @@ namespace Lighthouse.Backend
             builder.Services.AddSingleton(ForecastSimulationLimits.Default);
             builder.Services.AddSingleton<ForecastSimulation>();
 
-            // Handed over through a factory so the container disposes it, after the hosted services have stopped.
-            var forecastLane = new ForecastLane(ForecastSimulationLimits.Default);
-            builder.Services.AddSingleton(services => forecastLane.ReportingThreadsThatDidNotFinishTo(services.GetRequiredService<ILogger<ForecastLane>>()));
+            // Built from the limits the container holds, so the lane has as many threads as a forecast may use runs at
+            // once. The container builds it, so it also disposes it, after the hosted services have stopped.
+            builder.Services.AddSingleton(services => new ForecastLane(services.GetRequiredService<ForecastSimulationLimits>())
+                .ReportingThreadsThatDidNotFinishTo(services.GetRequiredService<ILogger<ForecastLane>>()));
             builder.Services.AddSingleton<IPlatformService, PlatformService>();
             builder.Services.AddSingleton<IProcessService, ProcessService>();
             builder.Services.AddSingleton<ISystemInfoService, SystemInfoService>();
