@@ -237,7 +237,7 @@ describe("Story 6408 (slice 04): after an update the list refreshes without hidi
 			});
 		});
 
-		expect(theListStatus(container)).toBe("loading");
+		await waitFor(() => expect(theListStatus(container)).toBe("loading"));
 		expect(
 			screen.getByRole("row", { name: CHECKOUT_REDESIGN }),
 		).toBeInTheDocument();
