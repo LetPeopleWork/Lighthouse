@@ -51,9 +51,14 @@ everything else. K3 (no heartbeat warning through a round, pages within 1.2 × i
    a singleton through a factory that returns that instance, so the container still owns and disposes it (an
    instance handed to the container directly would never be disposed). The startup banner reads that same instance,
    so it states the lane's real size before any round runs. The lane lives for the process. On shutdown the update queue drains
-   first (its hosted service stops before the container disposes singletons); an in-flight round is cancelled by its
-   token before its save (ADR-249). The lane is disposed after the hosted services stop: it completes its queue, joins
-   its background threads with a bounded timeout, and logs any thread that did not finish. Being background threads,
+   first (its hosted service stops before the container disposes singletons). The drain alone only waits for the
+   in-flight round, which would then save: so the round's token is linked to the host's `ApplicationStopping` signal,
+   which fires before the hosted services stop, and the round leaves between simulated runs, before its save
+   (ADR-249). A round ended this way is logged at Information and its update recorded as Completed, not Failed, so a
+   normal shutdown writes no error; a Task Manager Stop still records Cancelled. The lane is disposed after the hosted
+   services stop: it completes its queue, joins its background threads within one bounded timeout shared by all of
+   them, and logs any thread that did not finish; disposing twice does nothing, and work handed to it afterwards is
+   refused. Being background threads,
    they never hold the process open.
 6. **Nothing else moves.** The queue stays one sequential reader; holds, Stop and Cancel all, the per-update
    cancellation token and the write-back round are unchanged. Domain-event handlers keep opening their own scope.
