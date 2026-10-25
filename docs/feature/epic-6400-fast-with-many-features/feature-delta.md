@@ -3177,3 +3177,11 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
 - Other scale points and repetitions.
 - Heartbeat warnings inside matched forecast windows on the reporter's instance: that is the production K3 reading,
   the reporter's own log after release.
+
+### Maintainer decision — 2026-10-25, rigor profile and pace from slice 03 on
+
+- **Slice 03 runs at `standard`**: sonnet crafter, haiku reviewer, refactor pass. Slice 01 ran every step on Opus
+  because no dispatch named a model; from here every dispatch passes the profile's model explicitly. The profile for
+  slices 04, 02, 05 and 06 is agreed before each starts.
+- **One step at a time** while the maintainer's weekly usage is short: each step ends at a hold, and the maintainer
+  decides whether to go on.
