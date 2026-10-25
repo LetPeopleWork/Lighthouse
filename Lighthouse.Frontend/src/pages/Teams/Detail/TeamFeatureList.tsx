@@ -1,7 +1,7 @@
 import { Box } from "@mui/material";
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import {
 	createForecastedStartColumn,
@@ -15,30 +15,41 @@ import FeatureProgressIndicator from "../../../components/Common/FeatureListData
 import { useFeatureChildItems } from "../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
-import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
+import { useFeatureList } from "../../../hooks/useFeatureList";
+import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
+
+const NO_FEATURES: IFeature[] = [];
 
 interface FeatureListProps {
 	team: Team;
 }
 
 const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
-	const { teamMetricsService, featureService } = useContext(ApiServiceContext);
-
-	const [featuresInProgress, setFeaturesInProgress] = useState<string[]>([]);
-	const [features, setFeatures] = useState<IFeature[]>([]);
+	const featureList = useFeatureList({ kind: "team", id: team.id });
+	const features = featureList.data?.features ?? NO_FEATURES;
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
+	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 
-	const parentMap = useParentWorkItems(features);
+	const parentMap = useMemo(
+		() =>
+			new Map<string, ParentWorkItem>(
+				(featureList.data?.parents ?? []).map((parent) => [
+					parent.referenceId,
+					parent,
+				]),
+			),
+		[featureList.data],
+	);
 
 	// Stable single-element array so useMemo deps don't change on every render
 	const teams = useMemo(() => [team], [team]);
@@ -51,35 +62,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 		close: handleCloseWorkItemsDialog,
 	} = useFeatureChildItems();
 
-	// Load features
-	useEffect(() => {
-		const fetchFeatures = async () => {
-			const featureIds = team.features.map((fr) => fr.id);
-			const featureData = await featureService.getFeaturesByIds(featureIds);
-			setFeatures(featureData);
-		};
-
-		fetchFeatures().catch((error) => {
-			console.error("Error fetching features:", error);
-		});
-	}, [team.features, featureService]);
-
-	// Fetch features in progress
-	useEffect(() => {
-		const fetchFeaturesInProgress = async () => {
-			const inProgress = await teamMetricsService.getFeaturesInProgress(
-				team.id,
-				new Date(),
-			);
-			setFeaturesInProgress(inProgress.map((feature) => feature.referenceId));
-		};
-
-		fetchFeaturesInProgress().catch((error) => {
-			console.error("Error fetching features in progress:", error);
-		});
-	}, [team, teamMetricsService]);
-
-	// Define columns
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
 			createNameColumn(featureTerm),
@@ -125,8 +107,14 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 
 	const getActiveWorkTeams = useCallback(
 		(row: IFeature) =>
-			featuresInProgress.includes(row.referenceId) ? [team] : [],
-		[featuresInProgress, team],
+			(featureList.data?.activeWork ?? []).some(
+				(work) =>
+					work.teamId === team.id &&
+					work.featureReferenceIds.includes(row.referenceId),
+			)
+				? [team]
+				: [],
+		[featureList.data, team],
 	);
 
 	return (
@@ -136,7 +124,18 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 				columns={columns}
 				storageKey={`team-features-${team.id}`}
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_team_${team.id}`}
-				loading={features.length === 0}
+				status={featureList.look}
+				// Until an answer has arrived the list is not empty, only unanswered, so it must not claim to be.
+				emptyStateMessage={
+					featureList.look === "ready"
+						? `This ${teamTerm} has no ${featuresTerm} yet.`
+						: ""
+				}
+				allCompletedMessage={(count) =>
+					`All ${count} ${featuresTerm} are completed. Turn off Hide Completed ${featuresTerm} to see them.`
+				}
+				failureMessage={`The ${featuresTerm} couldn't be loaded.`}
+				onRetry={() => void featureList.refetch()}
 				getActiveWorkTeams={getActiveWorkTeams}
 			/>
 			{selectedFeature && (

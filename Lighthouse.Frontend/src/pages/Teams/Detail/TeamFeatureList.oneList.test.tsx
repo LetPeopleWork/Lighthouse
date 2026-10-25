@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 
 describe("Story 6408 (slice 04): Aisha opens Team Borealis's Features and one answer fills the list", () => {
-	it.skip("the list asks once, for the Team's list, and reads nothing else", async () => {
+	it("the list asks once, for the Team's list, and reads nothing else", async () => {
 		const featureService = aFeatureServiceAnswering(
 			Promise.resolve(WhatBorealisWorksOn),
 		);
@@ -70,7 +70,7 @@ describe("Story 6408 (slice 04): Aisha opens Team Borealis's Features and one an
 		expect(teamMetricsService.getFeaturesInProgress).not.toHaveBeenCalled();
 	});
 
-	it.skip("a Team that works on no Features yet says so, as an answer that has arrived", async () => {
+	it("a Team that works on no Features yet says so, as an answer that has arrived", async () => {
 		const { container } = await renderAFeatureList(
 			<TeamFeatureList team={TeamWithNothingYet} />,
 			{
@@ -82,7 +82,7 @@ describe("Story 6408 (slice 04): Aisha opens Team Borealis's Features and one an
 		expect(theListStatus(container)).toBe("ready");
 	});
 
-	it.skip("when the list cannot be loaded it says so, and Retry asks again", async () => {
+	it("when the list cannot be loaded it says so, and Retry asks again", async () => {
 		const featureService = aFeatureServiceAnswering(
 			aDroppedConnection(),
 			Promise.resolve(WhatBorealisWorksOn),
@@ -102,7 +102,7 @@ describe("Story 6408 (slice 04): Aisha opens Team Borealis's Features and one an
 		).toBeInTheDocument();
 	});
 
-	it.skip("the messages use the instance's own words for Features and Teams", async () => {
+	it("the messages use the instance's own words for Features and Teams", async () => {
 		await renderAFeatureList(<TeamFeatureList team={TeamWithNothingYet} />, {
 			featureService: aFeatureServiceAnswering(Promise.resolve(aList([]))),
 			terms: RenamedTerms,
@@ -115,7 +115,7 @@ describe("Story 6408 (slice 04): Aisha opens Team Borealis's Features and one an
 });
 
 describe("Story 6408 (slice 04): after an update the Team's list never shows an old answer as current", () => {
-	it.skip("a refresh that fails takes the could-not-load look rather than showing the old rows as current", async () => {
+	it("a refresh that fails takes the could-not-load look rather than showing the old rows as current", async () => {
 		const { container, queryClient } = await renderAFeatureList(
 			<TeamFeatureList team={TeamBorealis} />,
 			{
@@ -140,7 +140,7 @@ describe("Story 6408 (slice 04): after an update the Team's list never shows an 
 		).not.toBeInTheDocument();
 	});
 
-	it.skip("an answer for the Team the reader has already left never replaces the one they are on", async () => {
+	it("an answer for the Team the reader has already left never replaces the one they are on", async () => {
 		const borealisAnswer = deferred<IFeatureList>();
 		const nothingYetAnswer = deferred<IFeatureList>();
 		const { rerender } = await renderAFeatureList(

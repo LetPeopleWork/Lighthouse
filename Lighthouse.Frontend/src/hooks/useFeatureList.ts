@@ -1,9 +1,5 @@
-import {
-	QueryClientContext,
-	useQuery,
-	useQueryClient,
-} from "@tanstack/react-query";
-import { useCallback, useContext, useSyncExternalStore } from "react";
+import { QueryClientContext, useQuery } from "@tanstack/react-query";
+import { useCallback, useContext } from "react";
 import type { FeatureListOwner } from "../models/FeatureList";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 
@@ -17,22 +13,12 @@ export const featureListKey = (owner: FeatureListOwner) =>
 export const useFeatureList = (owner: FeatureListOwner) => {
 	const { featureService } = useContext(ApiServiceContext);
 
-	const queryClient = useQueryClient();
-	const queryKey = featureListKey(owner);
-
 	const query = useQuery({
-		queryKey,
+		queryKey: featureListKey(owner),
 		queryFn: () => featureService.getFeatureList(owner),
 	});
 
-	// Read from the cache itself, which tells its listeners at once, rather than through the query's
-	// observer, which tells them a tick later: a refresh must dim the rows the moment it starts.
-	const isFetching = useSyncExternalStore(
-		(onChange) => queryClient.getQueryCache().subscribe(onChange),
-		() => queryClient.isFetching({ queryKey }) > 0,
-	);
-
-	return { ...query, look: lookOf(query.isError, isFetching) };
+	return { ...query, look: lookOf(query.isError, query.isFetching) };
 };
 
 const lookOf = (isError: boolean, isFetching: boolean): FeatureListLook => {

@@ -33,12 +33,8 @@ const mockTeamMetricsService: ITeamMetricsService =
 
 const mockFeatureService: IFeatureService = createMockFeatureService();
 
-const mockGetFeaturesInProgress = vi.fn();
-mockTeamMetricsService.getFeaturesInProgress = mockGetFeaturesInProgress;
-mockGetFeaturesInProgress.mockResolvedValue([]);
-
-const mockGetFeaturesByIds = vi.fn();
-mockFeatureService.getFeaturesByIds = mockGetFeaturesByIds;
+const mockGetFeatureList = vi.fn();
+mockFeatureService.getFeatureList = mockGetFeatureList;
 
 const mockGetFeatureWorkItems = vi.fn();
 mockFeatureService.getFeatureWorkItems = mockGetFeatureWorkItems;
@@ -181,7 +177,11 @@ describe("TeamFeatureList component", () => {
 	];
 
 	beforeEach(() => {
-		mockGetFeaturesByIds.mockResolvedValue(mockFeatures);
+		mockGetFeatureList.mockResolvedValue({
+			features: mockFeatures,
+			parents: [],
+			activeWork: [],
+		});
 		mockGetFeatureWorkItems.mockResolvedValue(mockFeatureWorkItems);
 		// Mock matchMedia for MUI DataGrid
 		Object.defineProperty(globalThis, "matchMedia", {
