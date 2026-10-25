@@ -13,7 +13,9 @@ export class PortfolioDetailPage {
 
 	/** The Features list once it has read its Features; the overview page never renders one, so a stale page cannot satisfy it. */
 	get featureListReady(): Locator {
-		return this.page.locator('[data-widget-status="ready"]').first();
+		return this.page.locator('[data-widget-status="ready"]').filter({
+			has: this.page.getByTestId("hide-completed-features-toggle"),
+		});
 	}
 
 	async waitUntilFeatureListReady(): Promise<PortfolioDetailPage> {

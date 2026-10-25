@@ -26,7 +26,14 @@ export class TeamDetailPage {
 		await this.page.getByRole("tab", { name: "Settings" }).click();
 	}
 
+	get featureListReady(): Locator {
+		return this.page.locator('[data-widget-status="ready"]').filter({
+			has: this.page.getByTestId("hide-completed-features-toggle"),
+		});
+	}
+
 	async getNumberOfFeatures(): Promise<number> {
+		await this.featureListReady.waitFor();
 		const grid = this.page.getByRole("grid");
 
 		// MUI puts data rows inside a rowgroup
@@ -163,7 +170,7 @@ export class TeamDetailPage {
 
 	async goToFeatures(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Features" }).click();
-		await this.page.locator('[data-widget-status="ready"]').first().waitFor();
+		await this.featureListReady.waitFor();
 	}
 
 	async goToMetrics(): Promise<MetricsPage> {
