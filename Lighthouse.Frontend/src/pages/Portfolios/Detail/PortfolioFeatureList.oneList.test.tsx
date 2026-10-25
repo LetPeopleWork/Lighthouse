@@ -97,7 +97,7 @@ describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and 
 		expect(within(row).getByText(/Platform 2027/)).toBeInTheDocument();
 	});
 
-	it.skip("a row shows the Teams working on it, from the same answer", async () => {
+	it("a row shows the Teams working on it, from the same answer", async () => {
 		await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
 			{
@@ -108,9 +108,17 @@ describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and 
 		);
 
 		const row = await screen.findByRole("row", { name: CHECKOUT_REDESIGN });
-		expect(within(row).getByText("Atlas")).toBeInTheDocument();
+		const indicator = within(row).getByTestId("active-work-indicator");
 		const otherRow = screen.getByRole("row", { name: /Search revamp/ });
-		expect(within(otherRow).queryByText("Atlas")).not.toBeInTheDocument();
+		expect(within(otherRow).getByTestId("no-active-work")).toBeInTheDocument();
+		expect(
+			within(otherRow).queryByTestId("active-work-indicator"),
+		).not.toBeInTheDocument();
+
+		await userEvent.hover(indicator);
+
+		const tooltip = await screen.findByRole("tooltip");
+		expect(within(tooltip).getByText("Atlas")).toBeInTheDocument();
 	});
 });
 

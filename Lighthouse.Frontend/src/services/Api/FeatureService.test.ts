@@ -380,6 +380,67 @@ describe("FeatureService", () => {
 		});
 	});
 
+	describe("getFeatureList", () => {
+		const theAnswer = () => ({
+			features: [
+				{
+					name: "Checkout redesign",
+					id: 11,
+					referenceId: "NW-1",
+					state: "In Progress",
+					type: "Epic",
+					size: 5,
+					lastUpdated: new Date(),
+					isUsingDefaultFeatureSize: false,
+					owningTeam: "",
+					parentWorkItemReference: "ST-1",
+					projects: [],
+					remainingWork: { 1: 5 },
+					totalWork: { 1: 8 },
+					forecasts: [],
+					url: "",
+					stateCategory: "Doing",
+					startedDate: null,
+					closedDate: null,
+					cycleTime: 0,
+					workItemAge: 3,
+					isBlocked: false,
+				},
+			],
+			parents: [
+				{
+					referenceId: "ST-1",
+					name: "Platform 2027",
+					url: "https://northwind.example/browse/ST-1",
+				},
+			],
+			activeWork: [{ teamId: 1, featureReferenceIds: ["NW-1"] }],
+		});
+
+		it.each([
+			["portfolio", 2, "/portfolios/2/feature-list"],
+			["team", 3, "/teams/3/feature-list"],
+		] as const)(
+			"should ask for a %s's list at its own address and read rows, parents and active work from the answer",
+			async (kind, id, expectedUrl) => {
+				mockedAxios.get.mockResolvedValueOnce({ data: theAnswer() });
+
+				const list = await featureService.getFeatureList({ kind, id });
+
+				expect(mockedAxios.get).toHaveBeenCalledWith(expectedUrl);
+				expect(list.features).toHaveLength(1);
+				expect(list.features[0].getRemainingWorkForFeature()).toBe(5);
+				expect(list.features[0].referenceId).toBe("NW-1");
+				expect(list.parents.map((parent) => parent.name)).toEqual([
+					"Platform 2027",
+				]);
+				expect(list.activeWork).toEqual([
+					{ teamId: 1, featureReferenceIds: ["NW-1"] },
+				]);
+			},
+		);
+	});
+
 	describe("getFeatureWorkItems", () => {
 		it("should get child work items for a feature", async () => {
 			const date = new Date();
