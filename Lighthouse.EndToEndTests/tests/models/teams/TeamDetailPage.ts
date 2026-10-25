@@ -163,6 +163,7 @@ export class TeamDetailPage {
 
 	async goToFeatures(): Promise<void> {
 		await this.page.getByRole("tab", { name: "Features" }).click();
+		await this.page.locator('[data-widget-status="ready"]').first().waitFor();
 	}
 
 	async goToMetrics(): Promise<MetricsPage> {

@@ -40,7 +40,7 @@ export class OverviewPage {
 		const portfolioLink = await this.getPortfolioLink(portfolio);
 		await portfolioLink.click();
 
-		return new PortfolioDetailPage(this.page);
+		return new PortfolioDetailPage(this.page).waitUntilFeatureListReady();
 	}
 
 	async editPortfolio(portfolio: {

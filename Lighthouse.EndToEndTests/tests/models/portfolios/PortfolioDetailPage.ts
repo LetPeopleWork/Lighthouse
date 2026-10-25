@@ -11,6 +11,16 @@ export class PortfolioDetailPage {
 		this.page = page;
 	}
 
+	/** The Features list once it has read its Features; the overview page never renders one, so a stale page cannot satisfy it. */
+	get featureListReady(): Locator {
+		return this.page.locator('[data-widget-status="ready"]').first();
+	}
+
+	async waitUntilFeatureListReady(): Promise<PortfolioDetailPage> {
+		await this.featureListReady.waitFor();
+		return this;
+	}
+
 	getFeatureLink(feature: string): Locator {
 		const featureLink = this.page.getByRole("link", { name: feature });
 		return featureLink;
