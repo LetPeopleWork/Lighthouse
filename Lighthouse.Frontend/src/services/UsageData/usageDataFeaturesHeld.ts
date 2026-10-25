@@ -58,15 +58,21 @@ export const whenAPageHandsInFeaturesHeld = (
  *
  * Nothing is handed while the owner is still loading. Once loading is over, an owner that did not
  * arrive is handed as Unknown, so an opening waiting on it does not wait for ever.
+ *
+ * A detail page stays mounted when only its id changes, so for a moment it can still hold the
+ * owner it showed before. That owner counts as still loading, never as the new one's band.
  */
 export const useFeaturesHeldForUsageData = (
 	kind: OwnerKind,
 	id: number,
 	isLoading: boolean,
-	featuresCount: number | undefined,
+	loadedOwner: { id: number; featuresCount: number } | undefined,
 ): void => {
+	const loadedId = loadedOwner?.id;
+	const featuresCount = loadedOwner?.featuresCount;
+
 	useEffect(() => {
-		if (isLoading) {
+		if (isLoading || (loadedId !== undefined && loadedId !== id)) {
 			return;
 		}
 
@@ -80,5 +86,5 @@ export const useFeaturesHeldForUsageData = (
 		return () => {
 			held.delete(key);
 		};
-	}, [kind, id, isLoading, featuresCount]);
+	}, [kind, id, isLoading, loadedId, featuresCount]);
 };

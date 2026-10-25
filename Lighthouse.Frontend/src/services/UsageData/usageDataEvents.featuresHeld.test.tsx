@@ -22,6 +22,7 @@ import {
 	FLUSH_INTERVAL_MS,
 	useUsageDataEventDetector,
 } from "./usageDataEvents";
+import { featuresHeldOnPage } from "./usageDataFeaturesHeld";
 
 vi.mock("../../pages/Portfolios/Detail/PortfolioForecastView", () => ({
 	default: () => null,
@@ -58,17 +59,17 @@ const featuresNumbering = (count: number): IEntityReference[] =>
 		name: `Feature ${index + 1}`,
 	}));
 
-const portfolioHolding = (count: number): Portfolio => {
+const portfolioHolding = (count: number, id = 7): Portfolio => {
 	const portfolio = new Portfolio();
-	portfolio.id = 7;
+	portfolio.id = id;
 	portfolio.name = "Ocean Explorer";
 	portfolio.features = featuresNumbering(count);
 	return portfolio;
 };
 
-const teamHolding = (count: number): Team => {
+const teamHolding = (count: number, id = 3): Team => {
 	const team = new Team();
-	team.id = 3;
+	team.id = id;
 	team.name = "Deep Divers";
 	team.features = featuresNumbering(count);
 	return team;
@@ -86,8 +87,8 @@ const Detector = () => {
 };
 
 interface Owners {
-	getPortfolio?: () => Promise<Portfolio | null>;
-	getTeam?: () => Promise<Team | null>;
+	getPortfolio?: (id: number) => Promise<Portfolio | null>;
+	getTeam?: (id: number) => Promise<Team | null>;
 }
 
 const renderTheApplicationAt = (path: string, owners: Owners) => {
@@ -297,6 +298,69 @@ describe("a tab opening carries the band of the Features its page holds", () => 
 				expect.objectContaining({
 					name: "PortfolioTabOpened",
 					route: "PortfolioDetail_Settings",
+					featuresHeld: "Unknown",
+				}),
+			]),
+		);
+	});
+
+	it("never hands a Team the band of the Team shown before it, while the new one is on its way", async () => {
+		let arrive: (team: Team) => void = () => {};
+		const usageDataService = renderTheApplicationAt("/teams/3/features", {
+			getTeam: (id) =>
+				id === 3
+					? Promise.resolve(teamHolding(920, 3))
+					: new Promise<Team>((resolve) => {
+							arrive = resolve;
+						}),
+		});
+		await answerAboutThisBrowser(usageDataService);
+		await waitFor(() => expect(featuresHeldOnPage("/teams/3")).toBe("From400"));
+
+		act(() => navigateTo("/teams/4/features"));
+		await stayFor(DWELL_BEFORE_A_PAGE_COUNTS_MS + FLUSH_INTERVAL_MS);
+		expect(handedIn(usageDataService)).toEqual([]);
+
+		await act(async () => {
+			arrive(teamHolding(45, 4));
+			await Promise.resolve();
+		});
+		await stayFor(FLUSH_INTERVAL_MS);
+
+		await waitFor(() =>
+			expect(handedIn(usageDataService)).toEqual([
+				expect.objectContaining({
+					name: "TeamTabOpened",
+					featuresHeld: "From21To50",
+				}),
+			]),
+		);
+	});
+
+	it("never hands a Portfolio the band of a Portfolio left behind whose answer comes late", async () => {
+		let arriveLate: (portfolio: Portfolio) => void = () => {};
+		const usageDataService = renderTheApplicationAt("/portfolios/7/features", {
+			getPortfolio: (id) =>
+				new Promise<Portfolio>((resolve) => {
+					if (id === 7) {
+						arriveLate = resolve;
+					}
+				}),
+		});
+		await answerAboutThisBrowser(usageDataService);
+
+		act(() => navigateTo("/portfolios/8/features"));
+		await act(async () => {
+			arriveLate(portfolioHolding(920, 7));
+			await Promise.resolve();
+		});
+		await stayFor(DWELL_BEFORE_A_PAGE_COUNTS_MS);
+		hideTheTab();
+
+		await waitFor(() =>
+			expect(handedIn(usageDataService)).toEqual([
+				expect.objectContaining({
+					name: "PortfolioTabOpened",
 					featuresHeld: "Unknown",
 				}),
 			]),

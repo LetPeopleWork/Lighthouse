@@ -128,7 +128,12 @@ const TeamDetail: React.FC = () => {
 		rbacService,
 	} = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
-	useFeaturesHeldForUsageData("Team", teamId, isLoading, team?.features.length);
+	useFeaturesHeldForUsageData(
+		"Team",
+		teamId,
+		isLoading,
+		team && { id: team.id, featuresCount: team.features.length },
+	);
 	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const rbac = useRbac();

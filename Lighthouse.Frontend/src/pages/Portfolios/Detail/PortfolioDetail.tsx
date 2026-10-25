@@ -101,7 +101,10 @@ const PortfolioDetail: React.FC = () => {
 		"Portfolio",
 		portfolioId,
 		isLoading,
-		portfolio?.features.length,
+		portfolio && {
+			id: portfolio.id,
+			featuresCount: portfolio.features.length,
+		},
 	);
 
 	const rbac = useRbac();

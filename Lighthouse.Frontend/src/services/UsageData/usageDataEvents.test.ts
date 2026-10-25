@@ -56,7 +56,7 @@ const useThePageHoldsItsFeatures = (path: string) => {
 		owner === "portfolios" ? "Portfolio" : "Team",
 		Number(id),
 		false,
-		2,
+		{ id: Number(id), featuresCount: 2 },
 	);
 };
 
