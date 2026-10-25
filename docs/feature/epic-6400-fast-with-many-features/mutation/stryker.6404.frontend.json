@@ -1,0 +1,29 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts", "related": false },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6404.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports", "/StrykerOutput"],
+  "mutate": [
+    "src/models/UsageData/featuresHeldOf.ts",
+    "src/services/UsageData/usageDataFeaturesHeld.ts",
+    "src/services/UsageData/usageDataEvents.ts:77-79",
+    "src/services/UsageData/usageDataEvents.ts:92-109",
+    "src/services/UsageData/usageDataEvents.ts:111-119",
+    "src/services/UsageData/usageDataEvents.ts:122-132",
+    "src/services/UsageData/usageDataEvents.ts:163-163",
+    "src/pages/Teams/Detail/TeamDetail.tsx:131-136",
+    "src/pages/Portfolios/Detail/PortfolioDetail.tsx:100-108"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6404-frontend.json" },
+  "tempDirName": ".stryker-tmp-6404"
+}

@@ -1,8 +1,11 @@
-import { act, render, waitFor } from "@testing-library/react";
+import { act, render, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UsageDataConsentProvider } from "../../hooks/useUsageDataConsent";
+import {
+	UsageDataConsentProvider,
+	useUsageDataConsent,
+} from "../../hooks/useUsageDataConsent";
 import type { IEntityReference } from "../../models/EntityReference";
 import { Portfolio } from "../../models/Portfolio/Portfolio";
 import { Team } from "../../models/Team/Team";
@@ -22,7 +25,10 @@ import {
 	FLUSH_INTERVAL_MS,
 	useUsageDataEventDetector,
 } from "./usageDataEvents";
-import { featuresHeldOnPage } from "./usageDataFeaturesHeld";
+import {
+	featuresHeldOnPage,
+	useFeaturesHeldForUsageData,
+} from "./usageDataFeaturesHeld";
 
 vi.mock("../../pages/Portfolios/Detail/PortfolioForecastView", () => ({
 	default: () => null,
@@ -53,6 +59,12 @@ const granted: IUsageDataState = {
 	administratorDisabled: false,
 };
 
+const withdrawn: IUsageDataState = {
+	...granted,
+	sending: false,
+	decision: "Declined",
+};
+
 const featuresNumbering = (count: number): IEntityReference[] =>
 	Array.from({ length: count }, (_, index) => ({
 		id: index + 1,
@@ -76,9 +88,12 @@ const teamHolding = (count: number, id = 3): Team => {
 };
 
 let navigateTo: (path: string) => void = () => {};
+let withdrawConsent: () => Promise<void> = () => Promise.resolve();
 
 const Detector = () => {
 	useUsageDataEventDetector();
+	const { decide } = useUsageDataConsent();
+	withdrawConsent = () => decide("declined");
 	const navigate = useNavigate();
 	navigateTo = (path) => {
 		void navigate(path);
@@ -92,10 +107,14 @@ interface Owners {
 }
 
 const renderTheApplicationAt = (path: string, owners: Owners) => {
+	let state = granted;
 	const usageDataService: IUsageDataService = {
-		getState: vi.fn().mockResolvedValue(granted),
+		getState: vi.fn(() => Promise.resolve(state)),
 		recordDecision: vi.fn().mockResolvedValue("freshly-minted-token"),
-		revoke: vi.fn().mockResolvedValue(undefined),
+		revoke: vi.fn(() => {
+			state = withdrawn;
+			return Promise.resolve();
+		}),
 		acknowledgeAsked: vi.fn().mockResolvedValue(undefined),
 		postEvents: vi.fn().mockResolvedValue(undefined),
 	};
@@ -384,5 +403,52 @@ describe("a tab opening carries the band of the Features its page holds", () => 
 				}),
 			]),
 		);
+	});
+
+	it("goes as Unknown at the next hand-in when the Portfolio fails to load, while the person stays", async () => {
+		const usageDataService = renderTheApplicationAt("/portfolios/7/metrics", {
+			getPortfolio: () => Promise.reject(new Error("the server is down")),
+		});
+		await answerAboutThisBrowser(usageDataService);
+
+		await stayFor(DWELL_BEFORE_A_PAGE_COUNTS_MS + FLUSH_INTERVAL_MS);
+
+		await waitFor(() =>
+			expect(handedIn(usageDataService)).toEqual([
+				expect.objectContaining({
+					name: "PortfolioTabOpened",
+					featuresHeld: "Unknown",
+				}),
+			]),
+		);
+	});
+
+	it("sends nothing that was still waiting for its Team once the person withdraws", async () => {
+		const usageDataService = renderTheApplicationAt("/teams/3/metrics", {
+			getTeam: () => new Promise<Team>(() => {}),
+		});
+		await answerAboutThisBrowser(usageDataService);
+
+		await stayFor(DWELL_BEFORE_A_PAGE_COUNTS_MS);
+		await act(async () => {
+			await withdrawConsent();
+		});
+		await stayFor(FLUSH_INTERVAL_MS);
+
+		expect(usageDataService.revoke).toHaveBeenCalled();
+		expect(handedIn(usageDataService)).toEqual([]);
+	});
+
+	it("never takes the band a Portfolio handed in for a Team page, nor for another Portfolio", () => {
+		renderHook(() =>
+			useFeaturesHeldForUsageData("Portfolio", 3, false, {
+				id: 3,
+				featuresCount: 920,
+			}),
+		);
+
+		expect(featuresHeldOnPage("/portfolios/3/metrics")).toBe("From400");
+		expect(featuresHeldOnPage("/teams/3/metrics")).toBeUndefined();
+		expect(featuresHeldOnPage("/portfolios/4/metrics")).toBeUndefined();
 	});
 });
