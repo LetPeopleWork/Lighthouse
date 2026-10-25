@@ -62,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("contract-shape:pure-function")]
         public async Task Aisha_opens_Team_Borealis_Features_and_gets_the_Features_Borealis_works_on_across_Portfolios()
@@ -84,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         /// are compared as the client receives them.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("guardrail-G2")]
         [Category("kpi-OUT-6400-answers-unchanged")]
@@ -101,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("guardrail-G2")]
         [Category("contract-shape:unbounded-preservation")]
@@ -125,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-first-feature-row")]
         [Category("contract-shape:pure-function")]
@@ -142,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]

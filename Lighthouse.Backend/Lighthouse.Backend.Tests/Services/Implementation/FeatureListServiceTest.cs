@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly string[] OnlyCheckout = ["NW-1"];
 
+        private static readonly string[] OnlyCheckoutName = ["Checkout redesign"];
+
         private static readonly int[] PositionsOneAndTwo = [1, 2];
 
         private static readonly bool[] BothMovable = [true, true];
@@ -107,8 +109,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             checkout.AddOrUpdateWorkForTeam(atlas, 3, 5);
             checkout.AddOrUpdateWorkForTeam(cobalt, 3, 5);
             featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
-            teamMetricsMock.Setup(metrics => metrics.GetWipSnapshotForTeam(It.IsAny<Team>(), It.IsAny<DateTime>()))
-                .Returns((Team team, DateTime _) => [AWorkItemUnder(team, "NW-1")]);
+            teamMetricsMock.Setup(metrics => metrics.GetInProgressFeatureReferences(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(["NW-1", null, string.Empty]);
 
             var list = await TheListOfThePlatform();
 
@@ -142,7 +144,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public async Task A_Team_s_list_holds_the_Features_the_reader_gives_for_the_Team_read_and_filtered_as_a_Portfolio_s_are()
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign");
+            var hidden = AFeature(2, "NW-2", "Hidden", portfolioId: Strategy);
+            featureListReaderMock.Setup(r => r.FeaturesOfTeam(Atlas)).Returns([checkout, hidden]);
+
+            var list = await AService().ForTeamAsync(reader, Atlas, CancellationToken.None);
+
+            Assert.That(list.Features.Select(row => row.Name), Is.EqualTo(OnlyCheckoutName));
+        }
+
         private async Task<FeatureListRead> TheListOfThePlatform()
+            => await AService().ForPortfolioAsync(reader, Platform, CancellationToken.None);
+
+        private FeatureListService AService()
         {
             var clock = new FakeLighthouseClock(Now);
             var positions = new Mock<IFeaturePositionMap>();
@@ -156,18 +173,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             var decision = new DependencyDecision(new DependencyHonourPolicy(), Mock.Of<ILicenseService>(licence => licence.CanUsePremiumFeatures()));
 
-            var service = new FeatureListService(
+            return new FeatureListService(
                 featureListReaderMock.Object,
                 rbacMock.Object,
                 positions.Object,
                 moves.Object,
                 new FeatureDependencyRendering(featureListReaderMock.Object, rbacMock.Object, decision),
                 new FeatureListActiveWork(teamMetricsMock.Object, rbacMock.Object, clock));
-
-            return await service.ForPortfolioAsync(reader, Platform, CancellationToken.None);
         }
 
-        private static Feature AFeature(int id, string referenceId, string name, string parentReferenceId = "")
+        private static Feature AFeature(int id, string referenceId, string name, string parentReferenceId = "", int portfolioId = Platform)
         {
             var feature = new Feature(new WorkItemBase
             {
@@ -181,17 +196,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Id = id,
             };
 
-            feature.Portfolios.Add(new Portfolio { Id = Platform, Name = "Northwind Platform" });
+            feature.Portfolios.Add(new Portfolio { Id = portfolioId, Name = "Northwind Platform" });
 
             return feature;
         }
-
-        private static WorkItem AWorkItemUnder(Team team, string featureReferenceId)
-            => new(new WorkItemBase
-            {
-                ReferenceId = $"{featureReferenceId}-{team.Name}",
-                ParentReferenceId = featureReferenceId,
-                StateCategory = StateCategories.Doing,
-            }, team);
     }
 }

@@ -14,6 +14,9 @@ namespace Lighthouse.Backend.Services.Interfaces
         /// on, which Teams the caller may read are at work on them, and the parents the caller may read.
         /// </summary>
         Task<FeatureListRead> ForPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken);
+
+        /// <summary>The Features a Team works on across Portfolios, read and filtered as a Portfolio's are.</summary>
+        Task<FeatureListRead> ForTeamAsync(ClaimsPrincipal user, int teamId, CancellationToken cancellationToken);
     }
 
     /// <summary>What one read of a list worked out. Turning it into the rows of an answer is the caller's.</summary>

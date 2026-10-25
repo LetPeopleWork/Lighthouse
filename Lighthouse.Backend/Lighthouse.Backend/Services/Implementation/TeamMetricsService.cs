@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        private IReadOnlyList<string?> GetInProgressFeatureReferences(Team team, DateTime asOfDate)
+        public IReadOnlyList<string?> GetInProgressFeatureReferences(Team team, DateTime asOfDate)
         {
             return GetFromCacheIfExists<IReadOnlyList<string?>, Team>(team, $"{FeatureWipMetricIdentifier}_{asOfDate:yyyy-MM-dd}", () =>
             {

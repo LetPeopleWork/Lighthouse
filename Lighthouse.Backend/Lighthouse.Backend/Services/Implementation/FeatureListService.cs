@@ -18,7 +18,16 @@ namespace Lighthouse.Backend.Services.Implementation
     {
         public async Task<FeatureListRead> ForPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken)
         {
-            var held = reader.FeaturesOfPortfolio(portfolioId);
+            return await ListOf(user, reader.FeaturesOfPortfolio(portfolioId), cancellationToken);
+        }
+
+        public async Task<FeatureListRead> ForTeamAsync(ClaimsPrincipal user, int teamId, CancellationToken cancellationToken)
+        {
+            return await ListOf(user, reader.FeaturesOfTeam(teamId), cancellationToken);
+        }
+
+        private async Task<FeatureListRead> ListOf(ClaimsPrincipal user, IReadOnlyList<Feature> held, CancellationToken cancellationToken)
+        {
             var readablePortfolioIds = await ReadablePortfolioIds(user, held.SelectMany(feature => feature.Portfolios).Select(portfolio => portfolio.Id), cancellationToken);
             var readable = held.Where(feature => FeatureReadability.IsReadableBy(feature, readablePortfolioIds)).ToList();
 

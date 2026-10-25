@@ -84,12 +84,17 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         }
 
         public IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId)
+            => ListRead(Context.Features.Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId)));
+
+        public IReadOnlyList<Feature> FeaturesOfTeam(int teamId)
+            => ListRead(Context.Features.Where(feature => feature.FeatureWork.Any(work => work.TeamId == teamId)));
+
+        private List<Feature> ListRead(IQueryable<Feature> owned)
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
 #pragma warning disable S8733
-            var features = Context.Features
+            var features = owned
                 .AsNoTrackingWithIdentityResolution()
-                .Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId))
                 .Include(f => f.Portfolios)
                 .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
                 .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)

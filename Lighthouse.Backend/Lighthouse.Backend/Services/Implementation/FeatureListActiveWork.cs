@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         private List<string> WorkedOnToday(Team team)
-            => [.. InProgressFeatureResolution.ReferencesOf(teamMetricsService.GetWipSnapshotForTeam(team, clock.TodayAsUtcMidnight))
+            => [.. teamMetricsService.GetInProgressFeatureReferences(team, clock.TodayAsUtcMidnight)
                 .OfType<string>()
                 .Where(reference => reference.Length > 0)];
     }

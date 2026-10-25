@@ -48,6 +48,12 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         IEnumerable<Feature> GetCurrentFeaturesInProgressForTeam(Team team, DateTime asOfDate);
 
+        /// <summary>
+        /// The parent reference of each distinct piece of work the Team has in progress on the day, from the same
+        /// per-Team, per-day cache the Features in progress are read through, so both answer alike.
+        /// </summary>
+        IReadOnlyList<string?> GetInProgressFeatureReferences(Team team, DateTime asOfDate);
+
         IEnumerable<Feature> GetAllFeaturesForSizeChart(Team team, DateTime startDate, DateTime endDate);
 
         IEnumerable<PercentileValue> GetSizePercentilesForTeam(Team team, DateTime startDate, DateTime endDate);

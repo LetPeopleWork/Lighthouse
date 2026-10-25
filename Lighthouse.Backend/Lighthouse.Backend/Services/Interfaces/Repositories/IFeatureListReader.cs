@@ -17,6 +17,11 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId);
 
         /// <summary>
+        /// The Features one Team has work in, across Portfolios, read exactly as <see cref="FeaturesOfPortfolio"/> reads them.
+        /// </summary>
+        IReadOnlyList<Feature> FeaturesOfTeam(int teamId);
+
+        /// <summary>
         /// Every Feature held, in forecast order, with its Portfolios, its work per Team and those Teams, what
         /// it depends on, and the header of each completion forecast, but none of the simulation results
         /// behind them and no start forecasts. That is everything the dependency decision reads, and a
