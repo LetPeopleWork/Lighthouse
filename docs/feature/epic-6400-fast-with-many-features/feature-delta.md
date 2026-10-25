@@ -3101,3 +3101,79 @@ behind this were undisturbed on the re-run, so the classification is **not** pro
   pool-queue integral (1,879 at 920 Features) beside the heartbeat delay.
 - **The 920 list's 414 gets no Bug of its own.** Slice 04's one-list read removes the request, and step 04-04
   checks that a Portfolio holding 920 Features opens its Features tab.
+
+## Wave: DELIVER / [REF] Slice 01 reading
+
+Taken 2026-10-25 by the same harness, on the build with the forecast lane. The raw tables stay in
+`perf/out/runs/2026-10-25T08-03-05-404Z-sqlite-main/` (not in git). Scope as the maintainer chose it on 2026-10-25
+(option B): only the two windows the lane is judged on, T and RT, once.
+
+- **Set-up**: SQLite, `main` at `58fdcbde9` (the forecast lane of steps 01-06 to 01-08 included), backend and frontend
+  built fresh from that commit. The same seed as the baseline: a copy of the 920 scale point's database (*Northwind
+  Platform*, 1,420 Features, 8 Teams, no fillers). The backend ran pinned to 4 cores (`taskset -c 0-3`,
+  `DOTNET_PROCESSOR_COUNT=4`) on the 12-core host, with the default pool minimum. Windows of 300 s, RT lasting until
+  its round ended. The window traffic was the Overview, Settings and the Team tab of *Granite* (397 Features), as in
+  the baseline.
+- **The lane's thread count**, from the backend's banner on this run:
+  `Cores : Forecast rounds run on 2 dedicated threads; each forecast uses up to 2 of 4 cores`.
+
+### Windows
+
+The load column is the host's 1-minute load average when each window started, as the harness checks it. Unlike the
+baseline re-run, no sampling loop ran beside the harness, so there is no mean or maximum across the window. RT
+started after the harness waited 60 s for the load left by T to fall below 6. The harness found no foreign test or
+Stryker process before either window. The machine also carried a local Kubernetes cluster and a long-running
+Lighthouse instance, both idle (around 1 to 2% CPU each).
+
+| window | pool minimum | length | load1 at start | foreign work | heartbeat warnings | heartbeat delay | pool queue integral | max pool threads | GC pause share | throttled periods | round |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T | default | 301 s | 1.56 | none | 0 | 0 ms | 373 | 13 | 14.7% | 0/0 | none |
+| RT | default | 580 s | 4.58 | none | 0 | 0 ms | **515** | 13 | 11.1% | 0/0 | 572 s |
+
+Beside the baseline:
+
+| reading | baseline (`main` before the lane) | with the lane |
+| --- | --- | --- |
+| RT pool queue integral | 1,879 | **515**, 73% less |
+| T pool queue integral | 327 | 373 |
+| RT ÷ T, pool queue | 5.7 | 1.4 |
+| RT max pool threads | 28 | 13 |
+| heartbeat warnings, T and RT | 0 and 0 | 0 and 0 |
+| RT round length | 543 s | 572 s, 5% longer |
+| RT GC pause share | 10.4% | 11.1% |
+| S_q inside RT's round | 0.228 | 0.234 |
+
+**Round split** (Debug line, RT): gather 5.6 s, simulate 403.1 s (71%), save 159.3 s (28%), publish 3.5 s. The
+baseline has no split for its RT round. Beside its round alone (simulate 275.8 s, save 165.5 s), save is unchanged
+and simulate is longer, close to the 402 s the baseline's raised-pool window C took. The two dedicated threads let a
+forecast use at most 2 of the 4 cores, so the round itself is slower while the pages keep their threads.
+
+**Team tab, first row** (*Granite*, 397 Features, the opens the windows took anyway): idle in T, median 15.3 s
+(13.1 to 18.3 s, 4 opens); during RT's round, median 20.1 s (19.7 to 20.4 s, 2 opens), 1.3 times idle. The
+baseline's during-round figure (36.8 s) came from its disturbed first run, so it is not a fair comparison.
+
+### Verdict (reported to the maintainer, not acted on)
+
+- **Pool queue.** The lane cuts RT's pool queue integral from 1,879 to 515, and the pool no longer grows past the 13
+  threads page traffic uses without a round. RT's queueing is now 1.4 times T's, where it was 5.7 times before.
+- **Heartbeat warnings.** None in either window, as in the baseline, so K3's own measure still cannot be shown on
+  this machine.
+- **Round length.** 572 s against the baseline's 543 s with page traffic: the round is 5% slower, the price of
+  holding it to two threads.
+- **Still above 1.2 times idle.** RT's pool queue is 1.4 times T's and the Team tab's first row 1.3 times idle, so
+  the during-round readings have not come down to idle. S_q is 0.234, below 0.3, so what remains points to **GC or
+  the database**, not to Dissent B. RT's GC share (11.1%) stays below what page traffic alone causes (14.7% in T).
+- **Learning hypothesis.** It holds on this machine: a forecast round on its own threads no longer starves the shared
+  pool that answers pages, though pages are still somewhat slower during a round, for reasons the later slices
+  address.
+- **Not provisional.** No foreign work was found before either window, so RT was not re-run. The load is known only
+  at each window's start, not across it.
+
+### Deferred readings (not taken in this step)
+
+- Skipped rounds (5 computed and 5 skipped rounds, as the roadmap first planned).
+- The R, C and C0 windows.
+- PostgreSQL.
+- Other scale points and repetitions.
+- Heartbeat warnings inside matched forecast windows on the reporter's instance: that is the production K3 reading,
+  the reporter's own log after release.
