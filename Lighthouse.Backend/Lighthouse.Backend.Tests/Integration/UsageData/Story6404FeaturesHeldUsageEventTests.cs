@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
@@ -147,7 +146,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // Data leaving that the page does not describe is data nobody was told about.
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("contract-shape:bounded-change")]
         public void The_usage_data_page_names_every_band_and_says_the_number_itself_never_travels()
         {

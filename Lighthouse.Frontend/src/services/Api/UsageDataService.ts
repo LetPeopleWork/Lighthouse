@@ -1,6 +1,7 @@
 import type {
 	IUsageDataState,
 	UsageDataDecisionValue,
+	UsageDataFeaturesHeld,
 	UsageDataOptionalFeature,
 	UsageDataRefinementVerdict,
 	UsageDataReportTemplate,
@@ -72,6 +73,8 @@ export interface IUsageDataEvent {
 	reportTemplate?: UsageDataReportTemplate;
 	/** Only on a connection's Additional Fields being changed: whether its updates run now or later. */
 	updates?: UsageDataUpdates;
+	/** Only on the two tab openings: how many Features the page holds, as a band and never the number. */
+	featuresHeld?: UsageDataFeaturesHeld;
 	/** How long before this batch was handed in the thing happened, so a reader can order them. */
 	offsetMs: number;
 	sequence: number;

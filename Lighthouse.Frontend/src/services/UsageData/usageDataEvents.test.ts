@@ -12,6 +12,7 @@ import {
 	FLUSH_INTERVAL_MS,
 	useUsageDataEventDetector,
 } from "./usageDataEvents";
+import { useFeaturesHeldForUsageData } from "./usageDataFeaturesHeld";
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
 
@@ -45,6 +46,20 @@ const stoppedByTheAdministrator: IUsageDataState = {
 	administratorDisabled: true,
 };
 
+/**
+ * Stands in for the detail page at this path once it has loaded its Team or Portfolio, so an opening
+ * goes as soon as it counts instead of waiting for a page that is not mounted here.
+ */
+const useThePageHoldsItsFeatures = (path: string) => {
+	const [, owner, id] = /^\/(teams|portfolios)\/(\d+)/.exec(path) ?? [];
+	useFeaturesHeldForUsageData(
+		owner === "portfolios" ? "Portfolio" : "Team",
+		Number(id),
+		false,
+		2,
+	);
+};
+
 const renderDetector = (state: IUsageDataState, path: string) => {
 	const usageDataService: IUsageDataService = {
 		getState: vi.fn().mockResolvedValue(state),
@@ -65,7 +80,13 @@ const renderDetector = (state: IUsageDataState, path: string) => {
 			),
 		);
 
-	const rendered = renderHook(() => useUsageDataEventDetector(), { wrapper });
+	const rendered = renderHook(
+		() => {
+			useUsageDataEventDetector();
+			useThePageHoldsItsFeatures(path);
+		},
+		{ wrapper },
+	);
 	return { ...rendered, usageDataService };
 };
 
@@ -101,6 +122,7 @@ const renderDetectorThatCanMoveOn = (state: IUsageDataState, path: string) => {
 	const rendered = renderHook(
 		() => {
 			useUsageDataEventDetector();
+			useThePageHoldsItsFeatures(path);
 			return useNavigate();
 		},
 		{ wrapper },

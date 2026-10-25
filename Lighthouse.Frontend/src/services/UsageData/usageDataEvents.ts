@@ -1,9 +1,10 @@
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect, useRef } from "react";
 import { useLocation } from "react-router";
 import {
 	readUsageDataConsentToken,
 	useUsageDataConsent,
 } from "../../hooks/useUsageDataConsent";
+import { UsageDataFeaturesHeld } from "../../models/UsageData/UsageData";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import type { IUsageDataEvent } from "../Api/UsageDataService";
 import {
@@ -12,6 +13,10 @@ import {
 	notice,
 	takeWhatWasNoticed,
 } from "./usageDataBuffer";
+import {
+	featuresHeldOnPage,
+	whenAPageHandsInFeaturesHeld,
+} from "./usageDataFeaturesHeld";
 import { usageDataPageOpeningFor } from "./usageDataRouteKeys";
 
 /**
@@ -69,6 +74,9 @@ export const useUsageDataEventDetector = (): void => {
 	// lying around. Refusing mints a token too, so a browser that said no holds one - and asking
 	// the wrong question here would collect on behalf of exactly the person who asked us not to.
 	const isSending = indicatorState === "sending";
+	const isStillSending = useRef(isSending);
+	isStillSending.current = isSending;
+	const goWithoutTheBand = useRef<(() => void) | undefined>(undefined);
 
 	useEffect(() => {
 		if (!isSending) {
@@ -81,11 +89,47 @@ export const useUsageDataEventDetector = (): void => {
 			return;
 		}
 
+		let countedAt = 0;
+		let stopWaiting: (() => void) | undefined;
+
+		const noticeWith = (featuresHeld: UsageDataFeaturesHeld) => {
+			stopWaiting?.();
+			stopWaiting = undefined;
+			goWithoutTheBand.current = undefined;
+			notice({ ...opening, featuresHeld, noticedAt: countedAt });
+		};
+
+		const noticeOnceThePageHandsInItsBand = () => {
+			const featuresHeld = featuresHeldOnPage(pathname);
+
+			if (featuresHeld !== undefined) {
+				noticeWith(featuresHeld);
+			}
+		};
+
 		const counted = setTimeout(() => {
-			notice({ ...opening, noticedAt: Date.now() });
+			countedAt = Date.now();
+			// The page may not have its Team or Portfolio yet. The opening still counts: it waits for
+			// the band while the person stays, and goes without one the moment they do not.
+			goWithoutTheBand.current = () =>
+				noticeWith(UsageDataFeaturesHeld.Unknown);
+			stopWaiting = whenAPageHandsInFeaturesHeld(
+				noticeOnceThePageHandsInItsBand,
+			);
+			noticeOnceThePageHandsInItsBand();
 		}, DWELL_BEFORE_A_PAGE_COUNTS_MS);
 
-		return () => clearTimeout(counted);
+		return () => {
+			clearTimeout(counted);
+
+			// Withdrawing consent ends the wait too, and must not send what was waiting.
+			if (isStillSending.current) {
+				goWithoutTheBand.current?.();
+			}
+
+			stopWaiting?.();
+			goWithoutTheBand.current = undefined;
+		};
 	}, [isSending, pathname]);
 
 	// Stryker disable ArrayDeclaration: the dependency lists below only show themselves when a dependency changes, and a test contrived to change one would be watching React re-run an effect rather than anything this feature promises.
@@ -116,6 +160,7 @@ export const useUsageDataEventDetector = (): void => {
 			// Somebody switching away or closing the lid is the ordinary ending, not the exception.
 			// Waiting for the next tick of the clock would lose everything since the last one.
 			if (document.visibilityState === "hidden") {
+				goWithoutTheBand.current?.();
 				handIn();
 			}
 		};

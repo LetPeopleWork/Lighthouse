@@ -39,6 +39,7 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
+import { useFeaturesHeldForUsageData } from "../../../services/UsageData/usageDataFeaturesHeld";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import ReportsTab from "../../Common/Reports/ReportsTab";
@@ -127,6 +128,7 @@ const TeamDetail: React.FC = () => {
 		rbacService,
 	} = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
+	useFeaturesHeldForUsageData("Team", teamId, isLoading, team?.features.length);
 	const { settingsLoaded, settingsSaved } = useRefinementSetUpReporter();
 
 	const rbac = useRbac();

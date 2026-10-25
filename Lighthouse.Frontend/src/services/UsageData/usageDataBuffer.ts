@@ -1,4 +1,5 @@
 import type {
+	UsageDataFeaturesHeld,
 	UsageDataOptionalFeature,
 	UsageDataRefinementVerdict,
 	UsageDataReportTemplate,
@@ -27,6 +28,7 @@ export interface NoticedEvent {
 	refinementVerdict?: UsageDataRefinementVerdict;
 	reportTemplate?: UsageDataReportTemplate;
 	updates?: UsageDataUpdates;
+	featuresHeld?: UsageDataFeaturesHeld;
 	noticedAt: number;
 }
 
