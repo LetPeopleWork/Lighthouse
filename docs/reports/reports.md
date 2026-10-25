@@ -86,7 +86,7 @@ If the report no longer exists, or was made by a newer version of Lighthouse, th
 
 ## Browsers and the Standalone App
 
-Export PDF has been checked in Chrome and Firefox. The [Standalone app](../Installation/standalone.html) uses the same print dialog, but it has not been checked there yet. If printing does not work in the Standalone app, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
+Export PDF works in Chrome, Firefox and the [Standalone app](../Installation/standalone.html). If printing does not work for you, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
 # Who Can Do What
 
