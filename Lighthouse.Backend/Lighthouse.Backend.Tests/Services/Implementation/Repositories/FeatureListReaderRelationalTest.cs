@@ -29,6 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         private static readonly string[] CheckoutThenPayments = ["CHECKOUT-1", "PAYMENTS-1"];
         private static readonly string[] PlatformAndPayments = ["Platform", "Payments"];
         private static readonly string[] AtlasThenBorealis = ["Atlas", "Borealis"];
+        private static readonly string[] BothCopies = ["Copy in Payments", "Copy in Platform"];
 
         private int atlasId;
         private int borealisId;
@@ -117,6 +118,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             TheFeaturesOf(atlasId, out var context);
 
             Assert.That(context.ChangeTracker.Entries(), Is.Empty);
+        }
+
+        [Test]
+        public async Task A_parent_reference_held_by_two_Features_comes_back_as_both_copies_so_the_caller_can_pick_the_readable_one()
+        {
+            using (var context = AContext())
+            {
+                var platform = context.Portfolios.Single(portfolio => portfolio.Name == "Platform");
+                var payments = context.Portfolios.Single(portfolio => portfolio.Name == "Payments");
+                var inPayments = new Feature { Name = "Copy in Payments", ReferenceId = "SHARED-1", Order = "8" };
+                inPayments.Portfolios.Add(payments);
+                var inPlatform = new Feature { Name = "Copy in Platform", ReferenceId = "SHARED-1", Order = "9" };
+                inPlatform.Portfolios.Add(platform);
+                context.Features.AddRange(inPayments, inPlatform);
+                await context.SaveChangesAsync();
+            }
+
+            using var reading = AContext();
+            var ordering = new Mock<IFeatureOrdering>();
+            var parents = new FeatureRepository(reading, ordering.Object, NullLogger<FeatureRepository>.Instance).ParentsOf(["SHARED-1"]);
+
+            Assert.That(parents.Select(parent => parent.Name), Is.EquivalentTo(BothCopies));
         }
 
         private IReadOnlyList<Feature> TheFeaturesOf(int teamId, out LighthouseAppContext context)

@@ -57,7 +57,9 @@ namespace Lighthouse.Backend.Services.Implementation
             var readablePortfolioIds = await ReadablePortfolioIds(user, parents.SelectMany(parent => parent.PortfolioIds), cancellationToken);
 
             // A parent in no Portfolio is visible to everyone, as a Feature in none is.
-            return [.. parents.Where(parent => parent.PortfolioIds.Count == 0 || parent.PortfolioIds.Any(readablePortfolioIds.Contains))];
+            return [.. parents
+                .Where(parent => parent.PortfolioIds.Count == 0 || parent.PortfolioIds.Any(readablePortfolioIds.Contains))
+                .DistinctBy(parent => parent.ReferenceId, StringComparer.Ordinal)];
         }
 
         private async Task<HashSet<int>> ReadablePortfolioIds(ClaimsPrincipal user, IEnumerable<int> portfolioIds, CancellationToken cancellationToken)

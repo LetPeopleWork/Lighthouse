@@ -34,7 +34,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// <summary>
         /// The parents the given reference ids name, as far as this instance holds them: reference, name, link
         /// and the Portfolios each sits in, and nothing else of the Feature. An id nothing holds is not in the
-        /// answer; one held twice answers once.
+        /// answer; one held by several Features answers once per Feature, so the caller can choose the copy its
+        /// reader may see.
         /// </summary>
         IReadOnlyList<FeatureParent> ParentsOf(IReadOnlyCollection<string> referenceIds);
     }

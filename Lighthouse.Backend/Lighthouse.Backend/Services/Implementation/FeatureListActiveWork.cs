@@ -27,15 +27,16 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ConfigureAwait(false);
 
             var readableTeamIds = readable.ToHashSet();
+            var shown = features.Select(feature => feature.ReferenceId).Where(reference => reference.Length > 0).ToHashSet(StringComparer.Ordinal);
 
             return [.. involved
                 .Where(team => readableTeamIds.Contains(team.Id))
-                .Select(team => new TeamAtWork(team.Id, WorkedOnToday(team)))];
+                .Select(team => new TeamAtWork(team.Id, WorkedOnToday(team, shown)))];
         }
 
-        private List<string> WorkedOnToday(Team team)
+        private List<string> WorkedOnToday(Team team, HashSet<string> shown)
             => [.. teamMetricsService.GetInProgressFeatureReferences(team, clock.TodayAsUtcMidnight)
                 .OfType<string>()
-                .Where(reference => reference.Length > 0)];
+                .Where(shown.Contains)];
     }
 }

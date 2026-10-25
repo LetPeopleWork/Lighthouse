@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly string[] OnlyTheReadableParent = ["ST-1"];
 
+        private static readonly string[] OnlyTheReadableCopy = ["Readable copy"];
+
         private readonly ClaimsPrincipal reader = new();
 
         private Mock<IFeatureListReader> featureListReaderMock = null!;
@@ -119,6 +121,51 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(list.ActiveWork.Select(work => work.TeamId), Is.EqualTo(OnlyAtlas));
                 Assert.That(list.ActiveWork.Single().FeatureReferenceIds, Is.EqualTo(OnlyCheckout));
             }
+        }
+
+        [Test]
+        public async Task A_Team_s_work_names_only_the_Features_among_the_rows_never_one_of_a_Portfolio_the_reader_cannot_read()
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign");
+            checkout.AddOrUpdateWorkForTeam(atlas, 3, 5);
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
+            teamMetricsMock.Setup(metrics => metrics.GetInProgressFeatureReferences(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns(["NW-1", "NW-9"]);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.ActiveWork.Single().FeatureReferenceIds, Is.EqualTo(OnlyCheckout));
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task A_parent_held_twice_is_named_once_from_the_copy_the_reader_may_read_whichever_copy_comes_first(bool unreadableCopyFirst)
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign", parentReferenceId: "ST-1");
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
+            var hiddenCopy = new FeatureParent("ST-1", "Hidden copy", "https://tracker.example/hidden", [Strategy]);
+            var readableCopy = new FeatureParent("ST-1", "Readable copy", "https://tracker.example/readable", [Platform]);
+            featureListReaderMock.Setup(r => r.ParentsOf(It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns(unreadableCopyFirst ? [hiddenCopy, readableCopy] : [readableCopy, hiddenCopy]);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.Parents.Select(parent => parent.Name), Is.EqualTo(OnlyTheReadableCopy));
+        }
+
+        [Test]
+        public async Task A_parent_held_twice_in_Portfolios_the_reader_may_read_is_named_once()
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign", parentReferenceId: "ST-1");
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
+            featureListReaderMock.Setup(r => r.ParentsOf(It.IsAny<IReadOnlyCollection<string>>())).Returns([
+                new FeatureParent("ST-1", "First copy", "https://tracker.example/first", [Platform]),
+                new FeatureParent("ST-1", "Second copy", "https://tracker.example/second", [Platform]),
+            ]);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.Parents, Has.Count.EqualTo(1));
         }
 
         [Test]

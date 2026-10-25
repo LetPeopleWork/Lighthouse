@@ -120,8 +120,6 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .ToList();
 
             return [.. held
-                .GroupBy(parent => parent.ReferenceId, StringComparer.Ordinal)
-                .Select(sameId => sameId.First())
                 .Select(parent => new FeatureParent(parent.ReferenceId, parent.Name, parent.Url ?? string.Empty, parent.PortfolioIds))];
         }
 
