@@ -155,7 +155,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("error")]
         [Category("rbac")]
@@ -170,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("error")]
         [Category("rbac")]
@@ -185,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("error")]
         [Category("rbac")]
@@ -207,7 +204,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:pure-function")]

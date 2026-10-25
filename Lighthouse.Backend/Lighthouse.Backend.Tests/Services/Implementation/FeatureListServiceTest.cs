@@ -156,10 +156,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(list.Features.Select(row => row.Name), Is.EqualTo(OnlyCheckoutName));
         }
 
+        [Test]
+        public async Task A_Team_that_does_not_exist_has_no_list_to_open_while_one_that_does_is_opened_by_whoever_may_read_it()
+        {
+            rbacMock.Setup(rbac => rbac.CanReadTeamAsync(reader, Atlas, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(repository => repository.Exists(Atlas)).Returns(true);
+
+            var service = AService(teams.Object);
+            var existing = await service.AccessToTeamAsync(reader, Atlas, CancellationToken.None);
+            var missing = await service.AccessToTeamAsync(reader, 9999, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(existing, Is.EqualTo(FeatureListAccess.Granted));
+                Assert.That(missing, Is.EqualTo(FeatureListAccess.OwnerMissing));
+            }
+        }
+
         private async Task<FeatureListRead> TheListOfThePlatform()
             => await AService().ForPortfolioAsync(reader, Platform, CancellationToken.None);
 
-        private FeatureListService AService()
+        private FeatureListService AService(IRepository<Team>? teams = null)
         {
             var clock = new FakeLighthouseClock(Now);
             var positions = new Mock<IFeaturePositionMap>();
@@ -179,7 +197,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 positions.Object,
                 moves.Object,
                 new FeatureDependencyRendering(featureListReaderMock.Object, rbacMock.Object, decision),
-                new FeatureListActiveWork(teamMetricsMock.Object, rbacMock.Object, clock));
+                new FeatureListActiveWork(teamMetricsMock.Object, rbacMock.Object, clock),
+                new FeatureListOwners(Mock.Of<IRepository<Portfolio>>(), teams ?? Mock.Of<IRepository<Team>>(), rbacMock.Object));
         }
 
         private static Feature AFeature(int id, string referenceId, string name, string parentReferenceId = "", int portfolioId = Platform)

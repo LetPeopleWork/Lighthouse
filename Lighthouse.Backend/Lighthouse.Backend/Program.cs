@@ -1446,6 +1446,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Dependencies.FeatureDependencyRendering>();
             builder.Services.AddScoped<Lighthouse.Backend.API.FeatureListRows>();
             builder.Services.AddScoped<FeatureListActiveWork>();
+            builder.Services.AddScoped<FeatureListOwners>();
             builder.Services.AddScoped<IFeatureListService, FeatureListService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();

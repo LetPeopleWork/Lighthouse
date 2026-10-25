@@ -14,8 +14,19 @@ namespace Lighthouse.Backend.Services.Implementation
         IFeaturePositionMap featurePositionMap,
         IFeatureMoveAuthorization featureMoveAuthorization,
         FeatureDependencyRendering dependencyRendering,
-        FeatureListActiveWork activeWork) : IFeatureListService
+        FeatureListActiveWork activeWork,
+        FeatureListOwners owners) : IFeatureListService
     {
+        public async Task<FeatureListAccess> AccessToPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken)
+        {
+            return await owners.AccessToPortfolioAsync(user, portfolioId, cancellationToken);
+        }
+
+        public async Task<FeatureListAccess> AccessToTeamAsync(ClaimsPrincipal user, int teamId, CancellationToken cancellationToken)
+        {
+            return await owners.AccessToTeamAsync(user, teamId, cancellationToken);
+        }
+
         public async Task<FeatureListRead> ForPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken)
         {
             return await ListOf(user, reader.FeaturesOfPortfolio(portfolioId), cancellationToken);
