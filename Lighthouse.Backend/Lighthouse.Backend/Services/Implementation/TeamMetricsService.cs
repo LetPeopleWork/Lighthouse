@@ -34,7 +34,27 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var references = GetInProgressFeatureReferences(team, asOfDate);
 
-            return new InProgressFeatureResolution(featureRepository).Resolve(references);
+            var warnedAbout = GetFromCacheIfExists<StoredTwiceWarnings, Team>(team, $"{FeatureWipMetricIdentifier}Warned_{asOfDate:yyyy-MM-dd}", () => new StoredTwiceWarnings(), logger);
+
+            return new InProgressFeatureResolution(featureRepository)
+                .Resolve(references, referenceId => warnedAbout.WarnOnce(referenceId, () =>
+                    logger.LogWarning("Team {TeamName} works on more than one Feature stored under the reference id {ReferenceId}; showing the first in forecast order", team.Name, referenceId)));
+        }
+
+        private sealed class StoredTwiceWarnings
+        {
+            private readonly HashSet<string> warned = [];
+
+            public void WarnOnce(string referenceId, Action warn)
+            {
+                lock (warned)
+                {
+                    if (warned.Add(referenceId))
+                    {
+                        warn();
+                    }
+                }
+            }
         }
 
         private IReadOnlyList<string?> GetInProgressFeatureReferences(Team team, DateTime asOfDate)

@@ -93,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         /// not warn again: the operator hears about the id once per refresh, not once per page view.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6400.Slice03)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -122,7 +121,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         /// Team no work items and the in-progress Feature would vanish with them.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6400.Slice03)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]

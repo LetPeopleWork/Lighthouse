@@ -23,6 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static readonly string[] SearchThenCheckoutNames = ["Search", "Checkout"];
         private static readonly string[] CheckoutThenSearchIds = ["CHECKOUT-1", "SEARCH-1"];
+        private static readonly string[] OnlyCheckoutId = ["CHECKOUT-1"];
         private static readonly string[] FirstCopyOfCheckout = ["Checkout, first"];
         private static readonly string[] TwoUnknowns = ["Unknown" + NotTracked, "Unknown" + NotTracked];
 
@@ -91,6 +92,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
+        public void A_reference_stored_twice_is_reported_by_its_id_and_one_stored_once_is_not()
+        {
+            repository.Holds([AFeature("CHECKOUT-1", "Checkout, first"), AFeature("CHECKOUT-1", "Checkout, second"), AFeature("SEARCH-1", "Search")]);
+            var reported = new List<string>();
+
+            Resolve(CheckoutThenSearchIds, reported.Add);
+
+            Assert.That(reported, Is.EqualTo(OnlyCheckoutId));
+        }
+
+        [Test]
         public void No_references_answer_nothing()
         {
             Assert.That(Resolve(NoReferences), Is.Empty);
@@ -107,7 +119,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         private IReadOnlyList<Feature> Resolve(IReadOnlyList<string?> references)
-            => new InProgressFeatureResolution(repository.Object).Resolve(references);
+            => Resolve(references, _ => { });
+
+        private IReadOnlyList<Feature> Resolve(IReadOnlyList<string?> references, Action<string> onStoredTwice)
+            => new InProgressFeatureResolution(repository.Object).Resolve(references, onStoredTwice);
 
         private static Feature AFeature(string referenceId, string name)
             => new() { ReferenceId = referenceId, Name = name };
