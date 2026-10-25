@@ -3185,3 +3185,5 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
   slices 04, 02, 05 and 06 is agreed before each starts.
 - **One step at a time** while the maintainer's weekly usage is short: each step ends at a hold, and the maintainer
   decides whether to go on.
+- **Slice 04 runs at `standard`** (maintainer, 2026-10-25): sonnet crafter, haiku reviewer, refactor pass; the whole
+  slice, then a hold.
