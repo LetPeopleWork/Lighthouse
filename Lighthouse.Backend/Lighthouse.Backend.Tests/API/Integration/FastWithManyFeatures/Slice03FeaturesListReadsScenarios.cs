@@ -49,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice03)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-first-feature-row")]
         [Category("contract-shape:pure-function")]

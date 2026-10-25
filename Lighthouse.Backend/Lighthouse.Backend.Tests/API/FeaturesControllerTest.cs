@@ -50,6 +50,9 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Union(parentFeatures).Where(predicate.Compile()).OrderBy(f => f, new FeatureComparer()).AsQueryable());
 
+            featureRepositoryMock.Setup(x => x.WholeGraphWithoutHistograms())
+                .Returns(() => features.Union(parentFeatures).OrderBy(f => f, new FeatureComparer()).ToList());
+
             // The same stand-in store the two reads above answer from, so a Feature this fixture holds is
             // one a dependency naming it resolves against.
             featureRepositoryMock.Setup(x => x.GetAllReferenceIds())

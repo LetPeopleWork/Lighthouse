@@ -67,6 +67,22 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     sameId => sameId.Select(feature => feature.CreatedDate).Where(created => created != DateTime.MinValue).Min(),
                     StringComparer.Ordinal));
 
+        public IReadOnlyList<Feature> WholeGraphWithoutHistograms()
+        {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
+            var features = Context.Features
+                .AsNoTrackingWithIdentityResolution()
+                .Include(f => f.Portfolios)
+                .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
+                .Include(f => f.Forecasts)
+                .Include(f => f.DependsOnReferences)
+                .ToList();
+#pragma warning restore S8733
+
+            return featureOrdering.Order(features).ToList();
+        }
+
         private IQueryable<Feature> GetFeatures()
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.

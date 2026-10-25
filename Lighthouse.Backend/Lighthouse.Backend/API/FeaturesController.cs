@@ -253,7 +253,7 @@ namespace Lighthouse.Backend.API
         {
             var wholeGraph = everyFeatureIsLoaded
                 ? features
-                : featureRepository.GetAllByPredicate(_ => true).ToList();
+                : featureRepository.WholeGraphWithoutHistograms();
 
             var blockers = ByReferenceId(wholeGraph);
 

@@ -20,6 +20,16 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         StoredFeatures GetStoredFeatureCreatedDates();
 
         /// <summary>
+        /// Every Feature held, in forecast order, with its Portfolios, its work per Team and those Teams, what
+        /// it depends on, and the header of each completion forecast, but none of the simulation results
+        /// behind them and no start forecasts. That is everything the dependency decision reads, and a
+        /// small part of what reading a Feature whole costs. Nothing is tracked, yet a Team or Portfolio
+        /// shared by several Features is still one object, as in a tracked read. Read only: nothing returned
+        /// here may be saved.
+        /// </summary>
+        IReadOnlyList<Feature> WholeGraphWithoutHistograms();
+
+        /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
         /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last
