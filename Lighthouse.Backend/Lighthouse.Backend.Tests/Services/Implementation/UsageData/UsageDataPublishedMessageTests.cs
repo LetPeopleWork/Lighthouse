@@ -104,6 +104,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         /// <summary>
+        /// A tab opening's band travels by its name, so the collector holds one of six words and never a
+        /// number that could be a count of Features.
+        /// </summary>
+        [Test]
+        public async Task ATabOpeningWithABand_TravelsWithTheBandsName()
+        {
+            var posted = new WhatWasPosted();
+            var wayOut = AWayOutToldToSendTo(AnAddressAnythingCanPostTo, posted);
+
+            await wayOut.PublishAsync(APermit(), ABatch(featuresHeld: UsageDataFeaturesHeld.From400), CancellationToken.None);
+
+            var carried = TheOneMessageIn(posted).GetProperty("properties");
+
+            Assert.That(
+                carried.TryGetProperty("features_held", out var written) ? written.GetString() : null,
+                Is.EqualTo("From400"),
+                "the band did not leave as its name");
+        }
+
+        /// <summary>
+        /// An opening without a band leaves without one, rather than with an empty value the collector
+        /// would count as a band of its own.
+        /// </summary>
+        [Test]
+        public async Task AnEventWithoutABand_LeavesNoBandAtAll()
+        {
+            var posted = new WhatWasPosted();
+            var wayOut = AWayOutToldToSendTo(AnAddressAnythingCanPostTo, posted);
+
+            await wayOut.PublishAsync(APermit(), ABatch(), CancellationToken.None);
+
+            Assert.That(TheOneMessageIn(posted).GetProperty("properties").TryGetProperty("features_held", out _), Is.False,
+                "an event that carried no band left with one written anyway");
+        }
+
+        /// <summary>
         /// Everything the caller does about a batch that did not arrive - putting the day's
         /// allowance back, telling an operator once - hangs on this being noticed. A collector that
         /// answers with a refusal and is treated as having accepted is the worst outcome the whole
@@ -254,7 +290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
         }
 
         private static AcceptedUsageDataBatch ABatch(
-            int offsetMs = 0, UsageDataSource source = UsageDataSource.Browser)
+            int offsetMs = 0, UsageDataSource source = UsageDataSource.Browser, UsageDataFeaturesHeld? featuresHeld = null)
         {
             return new AcceptedUsageDataBatch(
                 "a-token-a-browser-presented",
@@ -266,7 +302,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.UsageData
                     Enabled: null,
                     SizingMoment: null,
                     offsetMs,
-                    Sequence: 0)],
+                    Sequence: 0,
+                    FeaturesHeld: featuresHeld)],
                 source);
         }
 

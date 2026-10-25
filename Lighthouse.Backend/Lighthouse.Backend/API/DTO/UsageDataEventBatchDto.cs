@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Lighthouse.Backend.Models.UsageData;
 
 namespace Lighthouse.Backend.API.DTO
@@ -32,5 +33,6 @@ namespace Lighthouse.Backend.API.DTO
         int? Sequence,
         UsageDataRefinementVerdict? RefinementVerdict = null,
         UsageDataReportTemplate? ReportTemplate = null,
-        UsageDataUpdates? Updates = null);
+        UsageDataUpdates? Updates = null,
+        [property: JsonConverter(typeof(UsageDataFeaturesHeldByNameOnly))] UsageDataFeaturesHeld? FeaturesHeld = null);
 }

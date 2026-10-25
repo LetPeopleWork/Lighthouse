@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.UsageData;
@@ -21,6 +23,9 @@ namespace Lighthouse.Backend.Tests.API
     public class UsageDataControllerTests
     {
         private const string APresentedToken = "a-token-a-browser-presented";
+
+        private static readonly JsonSerializerOptions AsTheApplicationReadsIt =
+            new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
 
         /// <summary>
         /// Zero is a real answer to both questions. An event reported the moment it happened waited
@@ -151,6 +156,129 @@ namespace Lighthouse.Backend.Tests.API
                     "the refusal does not name the two answers it would have taken, so whoever is "
                     + "looking at a page that stopped working has nothing to go on");
             }
+        }
+
+        /// <summary>
+        /// A tab opening may say roughly how many Features its page holds, and that band waits with it.
+        /// </summary>
+        [Test]
+        public async Task ATabOpeningCarryingABand_WaitsWithThatBand()
+        {
+            var queue = new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
+            var controller = AController(queue, ABrowserThatAgreed());
+
+            var answer = await controller.HandInEvents(
+                ABatchOf(APortfolioTabOpening(UsageDataFeaturesHeld.From400)), APresentedToken,
+                TestContext.CurrentContext.CancellationToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer, Is.InstanceOf<NoContentResult>(), "a tab opening with one of the six bands was refused");
+                Assert.That(queue.TryTakeNext(out var waiting), Is.True, "the opening was accepted and then not kept");
+                Assert.That(waiting!.Events[0].FeaturesHeld, Is.EqualTo(UsageDataFeaturesHeld.From400),
+                    "the band was not kept as it was sent");
+            }
+        }
+
+        /// <summary>
+        /// A number that names none of the six bands could be a count of Features, and a count could
+        /// single out one instance.
+        /// </summary>
+        [TestCase(920)]
+        [TestCase(6)]
+        public async Task ATabOpeningCarryingABandOutsideTheSix_IsRefusedAndNothingWaits(int band)
+        {
+            var queue = new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
+            var controller = AController(queue, ABrowserThatAgreed());
+
+            var answer = await controller.HandInEvents(
+                ABatchOf(APortfolioTabOpening((UsageDataFeaturesHeld)band)), APresentedToken,
+                TestContext.CurrentContext.CancellationToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer, Is.InstanceOf<BadRequestResult>(), "a band that is none of the six was taken in");
+                Assert.That(queue.TryTakeNext(out _), Is.False, "the opening was refused and kept anyway");
+            }
+        }
+
+        /// <summary>
+        /// Only the two tab openings have a page whose size they could report.
+        /// </summary>
+        [Test]
+        public async Task AReportBeingCreatedCarryingABand_IsRefusedAndNothingWaits()
+        {
+            var queue = new UsageDataEventQueue(Mock.Of<ILogger<UsageDataEventQueue>>());
+            var controller = AController(queue, ABrowserThatAgreed());
+
+            var aReportCreated = new UsageDataEventDto(
+                UsageDataEventName.ReportCreated,
+                Route: null,
+                WorkTrackingSystem: null,
+                OptionalFeature: null,
+                Enabled: null,
+                SizingMoment: null,
+                OffsetMs: 0,
+                Sequence: 0,
+                ReportTemplate: UsageDataReportTemplate.ThenAndNow,
+                FeaturesHeld: UsageDataFeaturesHeld.From400);
+
+            var answer = await controller.HandInEvents(
+                ABatchOf(aReportCreated), APresentedToken, TestContext.CurrentContext.CancellationToken);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer, Is.InstanceOf<BadRequestResult>(), "a band on an event that opens no page was taken in");
+                Assert.That(queue.TryTakeNext(out _), Is.False, "the event was refused and kept anyway");
+            }
+        }
+
+        /// <summary>
+        /// A band travels by its name only. Read as the application reads every message, a number - bare
+        /// or in quotes - is not a band, including the numbers the six bands are stored as.
+        /// </summary>
+        [TestCase("920")]
+        [TestCase("4")]
+        [TestCase("0")]
+        [TestCase("\"920\"")]
+        [TestCase("\"4\"")]
+        public void ABandWrittenAsANumber_IsNotReadAsABand(string written)
+        {
+            Assert.That(() => ReadAsTheApplicationReadsIt(written), Throws.InstanceOf<JsonException>(),
+                $"{written} was read as a band, so a count of Features could pass for one");
+        }
+
+        [Test]
+        public void ABandWrittenByItsName_IsReadAsThatBand()
+        {
+            Assert.That(ReadAsTheApplicationReadsIt("\"From101To399\"").FeaturesHeld,
+                Is.EqualTo(UsageDataFeaturesHeld.From101To399));
+        }
+
+        private static UsageDataEventDto ReadAsTheApplicationReadsIt(string band)
+        {
+            return JsonSerializer.Deserialize<UsageDataEventDto>(
+                $"{{\"name\":\"PortfolioTabOpened\",\"route\":\"PortfolioDetail_Features\",\"featuresHeld\":{band},\"offsetMs\":0,\"sequence\":0}}",
+                AsTheApplicationReadsIt)!;
+        }
+
+        private static UsageDataEventDto APortfolioTabOpening(UsageDataFeaturesHeld band)
+        {
+            return new UsageDataEventDto(
+                UsageDataEventName.PortfolioTabOpened,
+                UsageDataRouteKey.PortfolioDetail_Features,
+                WorkTrackingSystem: null,
+                OptionalFeature: null,
+                Enabled: null,
+                SizingMoment: null,
+                OffsetMs: 0,
+                Sequence: 0,
+                FeaturesHeld: band);
+        }
+
+        private static UsageDataEventBatchDto ABatchOf(UsageDataEventDto reported)
+        {
+            return new UsageDataEventBatchDto([reported]);
         }
 
         private static UsageDataEventBatchDto ABatchReporting(

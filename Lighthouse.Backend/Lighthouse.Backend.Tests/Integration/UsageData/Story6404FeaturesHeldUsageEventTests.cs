@@ -49,7 +49,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase(PortfolioTabOpened, PortfolioFeaturesTab, From400)]
         [TestCase(PortfolioTabOpened, PortfolioFeaturesTab, "Unknown")]
         [TestCase(TeamTabOpened, TeamFeaturesTab, From400)]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-openings-by-size")]
         [Category("contract-shape:bounded-change")]
@@ -101,7 +100,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("0")]
         [TestCase("\"920\"")]
         [TestCase("\"Lots\"")]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -117,7 +115,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // Only the two tab openings may say how large their page is.
         [TestCase("TeamCreated", "")]
         [TestCase("WorkTrackingSystemConnected", ",\"workTrackingSystem\":\"Jira\"")]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -135,7 +132,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// never move once released, or bands stored before a release would read as another band after it.
         /// </summary>
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("kpi-OUT-6400-openings-by-size")]
         [Category("contract-shape:pure-function")]
         public void The_six_bands_travel_by_name_and_each_keeps_the_internal_number_it_was_released_with()

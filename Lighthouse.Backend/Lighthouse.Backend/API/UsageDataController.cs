@@ -198,6 +198,7 @@ namespace Lighthouse.Backend.API
                 || (reported.RefinementVerdict is { } verdict && !Enum.IsDefined(verdict))
                 || (reported.ReportTemplate is { } template && !Enum.IsDefined(template))
                 || (reported.Updates is { } updates && !Enum.IsDefined(updates))
+                || (reported.FeaturesHeld is { } band && !Enum.IsDefined(band))
                 || reported.OffsetMs is not { } offset || offset < 0
                 || reported.Sequence is not { } sequence || sequence < 0)
             {
@@ -215,7 +216,8 @@ namespace Lighthouse.Backend.API
                 sequence,
                 reported.RefinementVerdict,
                 reported.ReportTemplate,
-                reported.Updates);
+                reported.Updates,
+                reported.FeaturesHeld);
 
             return UsageDataEventShapes.Fits(taken) ? taken : null;
         }

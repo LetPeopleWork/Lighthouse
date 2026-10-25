@@ -6,8 +6,9 @@ namespace Lighthouse.Backend.Models.UsageData
     /// carried one its event has no business carrying, is refused where it is read.
     ///
     /// Most parts are absent for most of these, and that is the shape rather than a gap. Two events
-    /// say which page somebody opened, one says which kind of work tracking system was connected,
-    /// one says which setting was switched and whether it is now on or off, and a sizing vote says
+    /// say which page somebody opened and may say roughly how many Features it holds, one says which
+    /// kind of work tracking system was connected, one says which setting was switched and whether it
+    /// is now on or off, and a sizing vote says
     /// when it was cast relative to the Team's Refinement, and a Refinement day says which verdict
     /// its tab showed, and a report being created or opened says which type of report it was, and a
     /// change to a connection's fields says whether its updates run now or later; the rest say only
@@ -29,5 +30,6 @@ namespace Lighthouse.Backend.Models.UsageData
         int Sequence,
         UsageDataRefinementVerdict? RefinementVerdict = null,
         UsageDataReportTemplate? ReportTemplate = null,
-        UsageDataUpdates? Updates = null);
+        UsageDataUpdates? Updates = null,
+        UsageDataFeaturesHeld? FeaturesHeld = null);
 }

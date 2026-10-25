@@ -82,6 +82,15 @@ namespace Lighthouse.Backend.Models.UsageData
         private static readonly FrozenSet<UsageDataEventName> EventsThatSayWhenTheUpdatesRun =
             FrozenSet.ToFrozenSet([UsageDataEventName.WorkTrackingSystemFieldsChanged]);
 
+        /// <summary>
+        /// The two tab openings, which may say roughly how many Features their page holds. Unlike every
+        /// other part this one may be absent even where it belongs: a browser opened before the band
+        /// existed does not send it, and its openings still count. No other event has a page of
+        /// Features to say anything about.
+        /// </summary>
+        private static readonly FrozenSet<UsageDataEventName> EventsThatSayHowManyFeaturesTheirPageHolds =
+            FrozenSet.ToFrozenSet([UsageDataEventName.TeamTabOpened, UsageDataEventName.PortfolioTabOpened]);
+
         public static bool Fits(UsageDataEventReported reported)
         {
             var name = reported.Name;
@@ -93,7 +102,8 @@ namespace Lighthouse.Backend.Models.UsageData
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheyHappenedInRefinement, name, reported.SizingMoment)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichVerdictARefinementDayShowed, name, reported.RefinementVerdict)
                 && IsCarriedExactlyWhenDeclared(EventsThatSayWhichTypeOfReport, name, reported.ReportTemplate)
-                && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheUpdatesRun, name, reported.Updates);
+                && IsCarriedExactlyWhenDeclared(EventsThatSayWhenTheUpdatesRun, name, reported.Updates)
+                && IsCarriedOnlyWhenDeclared(EventsThatSayHowManyFeaturesTheirPageHolds, name, reported.FeaturesHeld);
         }
 
         private static bool NamesItsPage(UsageDataEventName name, UsageDataRouteKey? route)
@@ -119,6 +129,13 @@ namespace Lighthouse.Backend.Models.UsageData
             where TPart : struct
         {
             return eventsThatCarryIt.Contains(name) == part.HasValue;
+        }
+
+        private static bool IsCarriedOnlyWhenDeclared<TPart>(
+            FrozenSet<UsageDataEventName> eventsThatMayCarryIt, UsageDataEventName name, TPart? part)
+            where TPart : struct
+        {
+            return !part.HasValue || eventsThatMayCarryIt.Contains(name);
         }
     }
 }

@@ -50,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             "distinct_id",
             "enabled",
             "event",
+            "features_held",
             "licence_tier",
             "optional_feature",
             "properties",
