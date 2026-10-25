@@ -188,6 +188,71 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             }
         }
 
+        [Test]
+        public void Disposing_the_lane_waits_for_a_busy_thread_that_ends_in_time_and_reports_nothing()
+        {
+            var logger = new Mock<ILogger<ForecastLane>>();
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 2 }).ReportingThreadsThatDidNotFinishTo(logger.Object);
+            using var started = new ManualResetEventSlim(initialState: false);
+            using var letItGo = new ManualResetEventSlim(initialState: false);
+            Thread? busy = null;
+            var work = RunOn(lane, () =>
+            {
+                busy = Thread.CurrentThread;
+                started.Set();
+                letItGo.Wait(TheLongestAWaitMayTake);
+            });
+            started.Wait(TheLongestAWaitMayTake);
+
+            var disposing = OnItsOwnThread(lane.Dispose);
+            var returnedWhileTheThreadWasBusy = disposing.Wait(LongEnoughForAFreeThreadToPickItUp);
+            letItGo.Set();
+            var disposeReturned = disposing.Wait(TheLongestAWaitMayTake);
+            var stillRunningAfterDispose = busy is { IsAlive: true };
+            work.Wait(TheLongestAWaitMayTake);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(returnedWhileTheThreadWasBusy, Is.False, "Disposing the lane gave up on a thread without waiting for it.");
+                Assert.That(disposeReturned, Is.True, "Disposing the lane did not return once its thread had ended.");
+                Assert.That(stillRunningAfterDispose, Is.False, "Dispose returned while the lane thread was still running.");
+                logger.Verify(
+                    l => l.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    Times.Never);
+            }
+        }
+
+        [Test]
+        public void Disposing_the_lane_waits_for_all_its_busy_threads_together_rather_than_one_after_another()
+        {
+            var logger = new Mock<ILogger<ForecastLane>>();
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 4 }).ReportingThreadsThatDidNotFinishTo(logger.Object);
+            using var bothStarted = new CountdownEvent(2);
+            using var letThemGo = new ManualResetEventSlim(initialState: false);
+            var stuck = Enumerable.Range(0, 2)
+                .Select(_ => RunOn(lane, () =>
+                {
+                    bothStarted.Signal();
+                    letThemGo.Wait(TheLongestAWaitMayTake * 3);
+                }))
+                .ToList();
+            bothStarted.Wait(TheLongestAWaitMayTake);
+
+            var disposing = OnItsOwnThread(lane.Dispose);
+            var disposeEnded = disposing.ContinueWith(_ => { }, CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default).Wait(TheLongestAWaitMayTake);
+            letThemGo.Set();
+            Task.WaitAll([.. stuck], TheLongestAWaitMayTake);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(disposeEnded, Is.True, "Disposing the lane waited for its busy threads one after another.");
+                Assert.That(disposing.Status, Is.EqualTo(TaskStatus.RanToCompletion), "Disposing the lane failed while it waited for its busy threads.");
+                logger.Verify(
+                    l => l.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    Times.Once);
+            }
+        }
+
         private static Task OnItsOwnThread(Action work)
             => Task.Factory.StartNew(work, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

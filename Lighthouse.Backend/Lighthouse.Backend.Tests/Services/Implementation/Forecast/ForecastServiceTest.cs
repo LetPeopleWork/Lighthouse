@@ -34,6 +34,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly string[] MarkThenSaveOrder = ["mark", "save"];
 
+        private static readonly TimeSpan SlowStep = TimeSpan.FromMilliseconds(60);
+
+        private const int ShortestCredibleDurationMilliseconds = 25;
+
         private Mock<IRepository<Feature>> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<ILogger<ForecastService>> loggerMock;
@@ -791,6 +795,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
             var forecast = await subject.When(team, 5);
 
             Assert.That(forecast.HasSufficientData, Is.False);
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_ComputedForecast_TellsHowLongTheSaveTook()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var feature = SetupFeature(CreateTeam(1, [1]), 35);
+            SetupFeatures(feature);
+            featureRepositoryMock.Setup(x => x.Save()).Returns(async () => await Task.Delay(SlowStep, CancellationToken.None));
+
+            var outcome = await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature), TheInstanceDay);
+
+            Assert.That(outcome.SaveMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_ConfirmedUnchanged_TellsHowLongTheGatherTook()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var team = CreateTeam(1, [1]);
+            var feature = SetupFeature(team, 35);
+            SetupFeatures(feature);
+            var portfolio = CreatePortfolio(feature);
+            var firstRun = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+            portfolio.ForecastInputFingerprint = ((ForecastRunOutcome.Computed)firstRun).FreshFingerprint;
+            var status = teamMetricsServiceMock.Object.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting);
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(() =>
+                {
+                    SpinWait.SpinUntil(() => false, SlowStep);
+                    return status;
+                });
+
+            var outcome = await subject.UpdateForecastsForPortfolio(portfolio, TheInstanceDay);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome, Is.TypeOf<ForecastRunOutcome.ConfirmedUnchanged>());
+                Assert.That(outcome.GatherMs, Is.GreaterThanOrEqualTo(ShortestCredibleDurationMilliseconds));
+            }
+        }
+
+        [Test]
+        public async Task UpdateForecastsForPortfolio_EachTeamsForecastSaysWhatItsThroughputLeftOutAndWhetherItWasEnough()
+        {
+            var subject = CreateSubjectWithPersistentThroughput();
+            var team = CreateTeam(1, [1]);
+            var throughput = teamMetricsServiceMock.Object.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting).Throughput;
+            teamMetricsServiceMock
+                .Setup(x => x.GetForecastThroughputStatus(team, ThroughputFilterMode.RespectTeamSetting))
+                .Returns(new ForecastThroughputStatus(throughput, FilterApplied: true, ExcludedSummary: "2 Bugs left out", HasSufficientData: true));
+            var feature = SetupFeature(team, 5);
+            SetupFeatures(feature);
+
+            await subject.UpdateForecastsForPortfolio(CreatePortfolio(feature), TheInstanceDay);
+
+            var teamsForecast = feature.Forecasts.Single(forecast => forecast.Team == team);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(teamsForecast.FilterApplied, Is.True);
+                Assert.That(teamsForecast.ExcludedSummary, Is.EqualTo("2 Bugs left out"));
+                Assert.That(teamsForecast.HasSufficientData, Is.True);
+            }
         }
 
         private void AssertComputedAndSavedWithoutRecording(ForecastRunOutcome outcome, Portfolio portfolio, Feature feature, string? recorded)

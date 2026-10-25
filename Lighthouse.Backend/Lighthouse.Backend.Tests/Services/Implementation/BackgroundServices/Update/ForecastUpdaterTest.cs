@@ -13,6 +13,7 @@ using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Concurrent;
@@ -34,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Mock<IPortfolioRepository> forecastInputsMock;
         private Mock<IFeatureRepository> featureRepositoryMock;
         private ForecastLane forecastLane;
+        private Mock<IHostApplicationLifetime> lighthouseLifetime;
 
         private int idCounter = 0;
 
@@ -105,6 +107,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             forecastLane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 8 });
             SetupServiceProviderMock(forecastLane);
+
+            lighthouseLifetime = new Mock<IHostApplicationLifetime>();
+            SetupServiceProviderMock(lighthouseLifetime.Object);
         }
 
         [TearDown]
@@ -363,6 +368,89 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                     "Nobody stopped this forecast, and the queue reports it as failed; the refresh history must agree.");
                 Assert.That(recorded.Entry.Success, Is.False);
                 Assert.That(ReadUpdateSummary(), Does.Contain(" | forecast=failed after "));
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>(),
+                    "Lighthouse is not stopping either, so nothing explains the cancellation and the queue must see the failure.");
+            }
+        }
+
+        [Test]
+        public void Update_ShouldEndWithoutAFailureAndSaySo_WhenLighthouseStopsDuringTheForecast()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            lighthouseLifetime.SetupGet(x => x.ApplicationStopping).Returns(new CancellationToken(canceled: true));
+            forecastServiceMock
+                .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
+                .Returns((Portfolio _, DateOnly _, CancellationToken stop) => stop.IsCancellationRequested
+                    ? Task.FromCanceled<ForecastRunOutcome>(stop)
+                    : Task.FromResult(ForecastServiceDoubles.Computed));
+
+            var recorded = CaptureRefreshLog();
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            var informationLines = loggerMock.Invocations
+                .Where(i => i.Arguments[0] is LogLevel.Information)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded.Entry.Cancelled, Is.True, "The forecast was handed a stop that Lighthouse stopping should have raised.");
+                Assert.That(WhatTheRefreshThrew, Is.Null, "A forecast stopped because Lighthouse is stopping did not fail, and the queue must not read it as failed.");
+                Assert.That(informationLines, Has.Some.Contains("because Lighthouse is stopping"));
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_ShouldNotAskForASecondForecast_WhenOneIsAlreadyHeld()
+        {
+            var portfolio = CreatePortfolio();
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            Mock.Get(UpdateQueueService)
+                .Setup(x => x.IsHeld(new UpdateKey(UpdateType.Forecasts, portfolio.Id)))
+                .Returns(true);
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Test]
+        public void Update_ShouldHoldTheWaitingForecastAgain_WhenAForecastJoinedTheQueueWhileItWaited()
+        {
+            var team = new Team { Name = "Sibling Team", Id = 42 };
+            var portfolio = CreatePortfolioWorkedOnBy(team);
+            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            var teamKey = new UpdateKey(UpdateType.Team, team.Id);
+            var forecastKey = new UpdateKey(UpdateType.Forecasts, portfolio.Id);
+            var teamStillQueued = true;
+            var forecastQueued = false;
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(teamKey))))
+                .Returns(() => teamStillQueued);
+            updateStatusStoreMock
+                .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(forecastKey))))
+                .Returns(() => forecastQueued);
+            var holds = new List<(IReadOnlyCollection<UpdateKey> WaitingOn, Action Release)>();
+            Mock.Get(UpdateQueueService)
+                .Setup(x => x.HoldUntilQueuedWorkClears(forecastKey, It.IsAny<IReadOnlyCollection<UpdateKey>>(), It.IsAny<Action>()))
+                .Callback((UpdateKey _, IReadOnlyCollection<UpdateKey> waitingOn, Action release) => holds.Add((waitingOn, release)));
+
+            var subject = CreateSubject();
+            subject.TriggerUpdate(portfolio.Id);
+
+            teamStillQueued = false;
+            forecastQueued = true;
+            holds[0].Release();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(holds, Has.Count.EqualTo(2), "The waiting forecast ran instead of waiting for the forecast queued meanwhile.");
+                Assert.That(holds[^1].WaitingOn, Does.Contain(forecastKey));
+                forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
             }
         }
 

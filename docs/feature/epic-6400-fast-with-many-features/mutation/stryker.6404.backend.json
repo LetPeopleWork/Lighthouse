@@ -1,0 +1,20 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Forecast/ForecastLane.cs",
+      "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
+      "**/Services/Implementation/Forecast/ForecastService.cs",
+      "**/Models/UsageData/UsageDataEventShapes.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Services.Implementation.Forecast.|FullyQualifiedName~Tests.Services.Implementation.BackgroundServices.Update.|FullyQualifiedName~UsageDataEventShapesTests|FullyQualifiedName~Tests.Services.Implementation.UsageData.|FullyQualifiedName~UsageDataControllerTests|FullyQualifiedName~StartupBanner)&FullyQualifiedName!~Dogfood&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
