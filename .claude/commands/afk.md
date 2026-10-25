@@ -62,8 +62,8 @@ are reviewed is complete.
    **At the end of every slice** (the last step of a roadmap phase is committed), before the next
    slice's first step:
    1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched.
-   2. **Adversarial review** of the slice, with the same rules as the final review below (strong model,
-      verbatim quotes, one revision pass, blockers fixed and proven).
+   2. **Adversarial review** of the slice, with the same rules as the final review below (the rigor
+      profile's reviewer model, verbatim quotes, one revision pass, blockers fixed and proven).
    3. **Review window — 5 minutes.** Post a slice summary (what the slice delivered, its commits, the
       refactor and review outcome, anything worth a look) ending with: *"Review window open for 5 min:
       say **hold** to pause before the next slice; otherwise I carry on at HH:MM."* Start a background
@@ -76,7 +76,8 @@ are reviewed is complete.
       - Delete or ignore the timer's notification once the window is already settled.
 6. **Final quality gates, after the last slice**, in this order:
    1. **Refactor** (L1–L6, `nw-refactor`) across the whole feature.
-   2. **Adversarial review** of the whole feature — on a strong model, never a lightweight one; demand a
+   2. **Adversarial review** of the whole feature, on the model the agreed rigor profile names for
+      reviewers (pass it explicitly; never pick a model of your own); demand a
       verbatim quote for every cited line and spot-check any citation before acting on it. One revision
       pass for its findings; blockers must be fixed and proven (a test that fails before the fix and
       passes after).
@@ -132,6 +133,9 @@ answer arrives, record it and resume from `position` — still in AFK mode.
 
 ## Hard rules for the whole run
 
+- **Follow the nWave rigor profile on every dispatch.** Pass `model` explicitly: the profile's
+  `agent_model` for crafters and designers, its `reviewer_model` for every reviewer, gates included. AFK
+  mode never picks a stronger or weaker model of its own.
 - **Never push**, never `git pull --rebase`, never force anything. Local commits are expected; say how
   many are ahead of origin at the hold.
 - Commit at every step boundary through the project's conventions (DES `des-commit` inside DELIVER;
