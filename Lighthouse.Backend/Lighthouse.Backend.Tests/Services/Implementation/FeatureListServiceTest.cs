@@ -218,6 +218,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public async Task A_parent_held_by_several_Portfolios_is_named_when_the_reader_may_read_any_one_of_them()
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign", parentReferenceId: "ST-1");
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
+            featureListReaderMock.Setup(r => r.ParentsOf(It.IsAny<IReadOnlyCollection<string>>())).Returns([
+                new FeatureParent("ST-1", "Platform 2027", "https://tracker.example/ST-1", [Strategy, Platform]),
+            ]);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.Parents.Select(parent => parent.ReferenceId), Is.EqualTo(OnlyTheReadableParent));
+        }
+
+        [Test]
+        public async Task Where_nothing_limits_what_the_reader_may_read_the_parents_of_the_rows_are_all_named()
+        {
+            var checkout = AFeature(1, "NW-1", "Checkout redesign", parentReferenceId: "ST-1");
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([checkout]);
+            featureListReaderMock.Setup(r => r.ParentsOf(It.IsAny<IReadOnlyCollection<string>>())).Returns([
+                new FeatureParent("ST-1", "Platform 2027", "https://tracker.example/ST-1", [Strategy]),
+            ]);
+            rbacMock.Setup(rbac => rbac.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((IReadOnlyList<int>)null!);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.Parents.Select(parent => parent.ReferenceId), Is.EqualTo(OnlyTheReadableParent));
+        }
+
+        [Test]
+        public async Task A_Feature_without_a_reference_id_is_never_taken_for_one_a_Team_has_in_progress()
+        {
+            var unreferenced = AFeature(1, string.Empty, "Not yet in the tracker");
+            unreferenced.AddOrUpdateWorkForTeam(atlas, 3, 5);
+            featureListReaderMock.Setup(r => r.FeaturesOfPortfolio(Platform)).Returns([unreferenced]);
+            teamMetricsMock.Setup(metrics => metrics.GetInProgressFeatureReferences(It.IsAny<Team>(), It.IsAny<DateTime>()))
+                .Returns([string.Empty]);
+
+            var list = await TheListOfThePlatform();
+
+            Assert.That(list.ActiveWork.Single().FeatureReferenceIds, Is.Empty);
+        }
+
         private async Task<FeatureListRead> TheListOfThePlatform()
             => await AService().ForPortfolioAsync(reader, Platform, CancellationToken.None);
 
