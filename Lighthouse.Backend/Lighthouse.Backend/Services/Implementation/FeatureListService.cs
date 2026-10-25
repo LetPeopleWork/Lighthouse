@@ -17,15 +17,9 @@ namespace Lighthouse.Backend.Services.Implementation
         FeatureListActiveWork activeWork,
         FeatureListOwners owners) : IFeatureListService
     {
-        public async Task<FeatureListAccess> AccessToPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken)
-        {
-            return await owners.AccessToPortfolioAsync(user, portfolioId, cancellationToken);
-        }
+        public bool PortfolioExists(int portfolioId) => owners.PortfolioExists(portfolioId);
 
-        public async Task<FeatureListAccess> AccessToTeamAsync(ClaimsPrincipal user, int teamId, CancellationToken cancellationToken)
-        {
-            return await owners.AccessToTeamAsync(user, teamId, cancellationToken);
-        }
+        public bool TeamExists(int teamId) => owners.TeamExists(teamId);
 
         public async Task<FeatureListRead> ForPortfolioAsync(ClaimsPrincipal user, int portfolioId, CancellationToken cancellationToken)
         {

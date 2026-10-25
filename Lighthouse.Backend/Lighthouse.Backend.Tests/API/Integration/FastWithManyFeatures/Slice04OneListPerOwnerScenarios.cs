@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
             var status = await TheStatusOf(TheListOfThePortfolio(northwind.Platform), AViewerOfThePortfolio(northwind.Payments));
 
-            Assert.That(status, Is.EqualTo(HttpStatusCode.Forbidden));
+            Assert.That(status, Is.EqualTo(HttpStatusCode.NotFound), "an owner the reader may not open looks the same as one that is not there");
         }
 
         [Test]
@@ -179,7 +179,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
             var status = await TheStatusOf(TheListOfTheTeam(northwind.Borealis), AViewerOfTheTeam(northwind.Atlas));
 
-            Assert.That(status, Is.EqualTo(HttpStatusCode.Forbidden));
+            Assert.That(status, Is.EqualTo(HttpStatusCode.NotFound), "an owner the reader may not open looks the same as one that is not there");
         }
 
         [Test]

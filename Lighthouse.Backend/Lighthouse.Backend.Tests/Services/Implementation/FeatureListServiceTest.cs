@@ -157,20 +157,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public async Task A_Team_that_does_not_exist_has_no_list_to_open_while_one_that_does_is_opened_by_whoever_may_read_it()
+        public void A_Team_that_does_not_exist_has_no_list_to_open_while_one_that_does_has()
         {
-            rbacMock.Setup(rbac => rbac.CanReadTeamAsync(reader, Atlas, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             var teams = new Mock<IRepository<Team>>();
             teams.Setup(repository => repository.Exists(Atlas)).Returns(true);
 
             var service = AService(teams.Object);
-            var existing = await service.AccessToTeamAsync(reader, Atlas, CancellationToken.None);
-            var missing = await service.AccessToTeamAsync(reader, 9999, CancellationToken.None);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(existing, Is.EqualTo(FeatureListAccess.Granted));
-                Assert.That(missing, Is.EqualTo(FeatureListAccess.OwnerMissing));
+                Assert.That(service.TeamExists(Atlas), Is.True);
+                Assert.That(service.TeamExists(9999), Is.False);
             }
         }
 
@@ -198,7 +195,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 moves.Object,
                 new FeatureDependencyRendering(featureListReaderMock.Object, rbacMock.Object, decision),
                 new FeatureListActiveWork(teamMetricsMock.Object, rbacMock.Object, clock),
-                new FeatureListOwners(Mock.Of<IRepository<Portfolio>>(), teams ?? Mock.Of<IRepository<Team>>(), rbacMock.Object));
+                new FeatureListOwners(Mock.Of<IRepository<Portfolio>>(), teams ?? Mock.Of<IRepository<Team>>()));
         }
 
         private static Feature AFeature(int id, string referenceId, string name, string parentReferenceId = "", int portfolioId = Platform)

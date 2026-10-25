@@ -3187,3 +3187,7 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
   decides whether to go on.
 - **Slice 04 runs at `standard`** (maintainer, 2026-10-25): sonnet crafter, haiku reviewer, refactor pass; the whole
   slice, then a hold.
+- **An unreadable owner's Features list answers 404, like every other Portfolio and Team read** (maintainer,
+  2026-10-25, option A at 04-03): the list reuses the read guard, so a reader cannot tell an unreadable Portfolio or
+  Team from a missing one. The two DISTILL scenarios that expected 403 now expect 404. A Team that does not exist
+  answers 404 too (it answered 200 with an empty list before).
