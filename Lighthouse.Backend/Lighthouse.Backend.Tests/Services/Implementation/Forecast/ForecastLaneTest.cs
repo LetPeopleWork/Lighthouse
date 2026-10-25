@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.Forecast;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 {
@@ -101,6 +103,93 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 Assert.That(ranOn, Has.None.Matches<Thread>(thread => thread.IsAlive), "A lane thread outlived the lane.");
             }
         }
+
+        [Test]
+        public void Disposing_the_lane_runs_what_was_already_given_to_it_and_joins_every_thread_before_it_returns()
+        {
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 4 });
+            using var holdTheFirst = new ManualResetEventSlim(initialState: false);
+            var ranOn = new ConcurrentBag<Thread>();
+            var first = RunOn(lane, () =>
+            {
+                ranOn.Add(Thread.CurrentThread);
+                holdTheFirst.Wait(TheLongestAWaitMayTake);
+            });
+            var queuedBehindIt = Enumerable.Range(0, 6).Select(_ => RunOn(lane, () => ranOn.Add(Thread.CurrentThread))).ToList();
+
+            var disposing = OnItsOwnThread(lane.Dispose);
+            holdTheFirst.Set();
+            var disposeReturned = disposing.Wait(TheLongestAWaitMayTake);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(disposeReturned, Is.True, "Disposing the lane did not return.");
+                Assert.That(Task.WaitAll([first, .. queuedBehindIt], TimeSpan.Zero), Is.True, "Work given to the lane before it was disposed did not run.");
+                Assert.That(ranOn, Has.None.Matches<Thread>(thread => thread.IsAlive), "Dispose returned while a lane thread was still running.");
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Work_given_to_the_lane_after_it_was_disposed_is_refused(bool theLaneHadRunSomething)
+        {
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 2 });
+            if (theLaneHadRunSomething)
+            {
+                RunOn(lane, () => { }).Wait(TheLongestAWaitMayTake);
+            }
+
+            lane.Dispose();
+
+            Assert.Throws<TaskSchedulerException>(() => RunOn(lane, () => { }));
+        }
+
+        [Test]
+        public void Disposing_the_lane_twice_is_harmless()
+        {
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 2 });
+            RunOn(lane, () => { }).Wait(TheLongestAWaitMayTake);
+
+            lane.Dispose();
+
+            Assert.DoesNotThrow(lane.Dispose);
+        }
+
+        [Test]
+        public void A_thread_still_busy_when_the_lane_is_disposed_is_reported_and_left_to_end_with_the_process()
+        {
+            var logger = new Mock<ILogger<ForecastLane>>();
+            var lane = new ForecastLane(new ForecastSimulationLimits(1, 1) { CoresSeen = 2 }).ReportingThreadsThatDidNotFinishTo(logger.Object);
+            using var started = new ManualResetEventSlim(initialState: false);
+            using var letItGo = new ManualResetEventSlim(initialState: false);
+            Thread? busy = null;
+            var stuck = RunOn(lane, () =>
+            {
+                busy = Thread.CurrentThread;
+                started.Set();
+                letItGo.Wait(TheLongestAWaitMayTake * 3);
+            });
+            started.Wait(TheLongestAWaitMayTake);
+
+            var disposeReturned = OnItsOwnThread(lane.Dispose).Wait(TheLongestAWaitMayTake);
+            var stillBusy = busy is { IsAlive: true };
+            var inTheBackground = stillBusy && busy!.IsBackground;
+            letItGo.Set();
+            stuck.Wait(TheLongestAWaitMayTake);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(disposeReturned, Is.True, "Disposing the lane waited for a busy thread without end.");
+                Assert.That(stillBusy, Is.True, "The thread was meant to still be busy when the lane gave up waiting.");
+                Assert.That(inTheBackground, Is.True, "A thread left busy would hold the process open.");
+                logger.Verify(
+                    l => l.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception?>(), It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    Times.Once);
+            }
+        }
+
+        private static Task OnItsOwnThread(Action work)
+            => Task.Factory.StartNew(work, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
         private static Task RunOn(ForecastLane lane, Action work)
             => Task.Factory.StartNew(work, CancellationToken.None, TaskCreationOptions.DenyChildAttach, lane.Scheduler);

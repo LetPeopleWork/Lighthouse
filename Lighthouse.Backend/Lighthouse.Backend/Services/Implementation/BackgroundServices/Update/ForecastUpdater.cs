@@ -155,16 +155,30 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// <summary>
         /// The round moves onto the forecast threads once, here, and stays there: everything it starts and every
         /// await inside it follows the scheduler it runs on, so a long round never holds the threads that answer pages.
+        /// It also stops when Lighthouse stops, before anything is saved: the shutdown waits for the update under way,
+        /// and a round left to finish would replace every forecast with one drawn while the process was going away.
         /// </summary>
         protected override async Task Update(int id, IServiceProvider serviceProvider)
         {
             var lane = serviceProvider.GetRequiredService<ForecastLane>();
+            var operatorStop = cancellationContext.Current;
+            var lighthouseStopping = serviceProvider.GetService<IHostApplicationLifetime>()?.ApplicationStopping ?? CancellationToken.None;
 
-            await Task.Factory.StartNew(
-                () => ForecastOnTheLane(id, serviceProvider),
-                CancellationToken.None,
-                TaskCreationOptions.DenyChildAttach,
-                lane.Scheduler).Unwrap();
+            using var stopsWhenAskedOrWithLighthouse = CancellationTokenSource.CreateLinkedTokenSource(operatorStop, lighthouseStopping);
+            cancellationContext.Current = stopsWhenAskedOrWithLighthouse.Token;
+
+            try
+            {
+                await Task.Factory.StartNew(
+                    () => ForecastOnTheLane(id, serviceProvider),
+                    CancellationToken.None,
+                    TaskCreationOptions.DenyChildAttach,
+                    lane.Scheduler).Unwrap();
+            }
+            catch (OperationCanceledException stopped) when (lighthouseStopping.IsCancellationRequested && !operatorStop.IsCancellationRequested)
+            {
+                Logger.LogInformation(stopped, "The forecast of portfolio {PortfolioId} was stopped because Lighthouse is stopping; every Feature keeps the forecast it had.", id);
+            }
         }
 
         private async Task ForecastOnTheLane(int id, IServiceProvider serviceProvider)

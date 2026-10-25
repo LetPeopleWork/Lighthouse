@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Forecast;
 
 namespace Lighthouse.Backend.Services.Implementation.Forecast
@@ -20,6 +22,10 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
 
         private int started;
 
+        private int disposed;
+
+        private ILogger logger = NullLogger.Instance;
+
         public ForecastLane(ForecastSimulationLimits limits)
         {
             scheduler = new OnTheLaneThreads(this);
@@ -33,20 +39,52 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         private bool HasStarted => Volatile.Read(ref started) == 1;
 
         /// <summary>
-        /// Stops taking work, lets each thread finish what it holds, and waits a short while for them to end. A
-        /// thread that is still busy after that is left to the process: the queue it reads stays open, so it
-        /// is not torn from under it.
+        /// The lane is built before the container that holds the loggers, so where it reports is handed to it
+        /// once the container hands it out.
+        /// </summary>
+        public ForecastLane ReportingThreadsThatDidNotFinishTo(ILogger<ForecastLane> reportTo)
+        {
+            logger = reportTo;
+            return this;
+        }
+
+        /// <summary>
+        /// Stops taking work, lets the threads run what they were already given, and waits a short while, all
+        /// threads together, for them to end. A thread that is still busy after that is reported and left to the
+        /// process: the queue it reads stays open, so it is not torn from under it.
         /// </summary>
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref disposed, 1) == 1)
+            {
+                return;
+            }
+
             waiting.CompleteAdding();
 
-            var everyThreadEnded = !HasStarted || threads.TrueForAll(thread => thread.Join(HowLongAThreadMayTakeToFinish));
+            var stillBusy = HasStarted ? ThreadsStillBusyAfterWaiting() : [];
 
-            if (everyThreadEnded)
+            if (stillBusy.Count == 0)
             {
                 waiting.Dispose();
+                return;
             }
+
+            logger.LogWarning("{Count} forecast thread(s) were still busy {Seconds}s after Lighthouse began to stop and are left to end with the process: {Threads}",
+                stillBusy.Count, HowLongAThreadMayTakeToFinish.TotalSeconds, string.Join(", ", stillBusy.Select(thread => thread.Name)));
+        }
+
+        private List<Thread> ThreadsStillBusyAfterWaiting()
+        {
+            var waited = Stopwatch.StartNew();
+
+            return [.. threads.Where(thread => !thread.Join(TimeLeft(waited)))];
+        }
+
+        private static TimeSpan TimeLeft(Stopwatch waited)
+        {
+            var left = HowLongAThreadMayTakeToFinish - waited.Elapsed;
+            return left > TimeSpan.Zero ? left : TimeSpan.Zero;
         }
 
         private Thread CreateThread(int number) => new(scheduler.RunWhatIsQueued)

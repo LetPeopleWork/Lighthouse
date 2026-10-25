@@ -94,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
@@ -119,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:unbounded-preservation")]
