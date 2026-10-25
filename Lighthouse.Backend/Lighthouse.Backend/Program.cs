@@ -1779,7 +1779,10 @@ namespace Lighthouse.Backend
                 builder.Configuration.GetValue<bool>(EncryptionKeyRingBootstrapper.StartAnywaySettingKey),
                 WhereTheKeyCameFrom.Resolve(
                     ringInForce.Custody, suppliedRing, suppliedKey, suppliedUnderTheRetiredName, keysFilePath),
-                ConfiguredKeyRingSource.ThePublishedKeyUnderTheRetiredName(suppliedUnderTheRetiredName)));
+                ConfiguredKeyRingSource.ThePublishedKeyUnderTheRetiredName(suppliedUnderTheRetiredName))
+            {
+                ForecastThreads = app.Services.GetRequiredService<ForecastLane>().Scheduler.MaximumConcurrencyLevel,
+            });
 
             var startupBannerBuilder = new StringBuilder();
 

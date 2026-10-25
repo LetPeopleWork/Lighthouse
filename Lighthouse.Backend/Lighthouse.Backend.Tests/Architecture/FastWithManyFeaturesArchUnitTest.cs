@@ -41,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("slice-01")]
         [Category("story-6404")]
         [Category("kpi-OUT-6400-no-stall-during-rounds")]
@@ -63,7 +62,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice01)]
         [Category("slice-01")]
         [Category("story-6404")]
         public void Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads()

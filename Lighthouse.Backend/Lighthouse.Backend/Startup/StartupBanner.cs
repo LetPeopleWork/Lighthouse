@@ -19,7 +19,10 @@ namespace Lighthouse.Backend.Startup
         bool KeyCameFromTheRetiredSetting,
         bool AllowsStartWithUnreadableSecrets = false,
         KeySupply? KeySupply = null,
-        bool ThePublishedKeyWasLeftInTheSettingsFile = false);
+        bool ThePublishedKeyWasLeftInTheSettingsFile = false)
+    {
+        public int ForecastThreads { get; init; } = ForecastSimulationLimits.Default.MostRunsAtOnce;
+    }
 
     // Said on every start for as long as the old name keeps working, because the only thing that makes it
     // safe to eventually stop reading that name is everyone having moved off it first.
@@ -140,7 +143,7 @@ namespace Lighthouse.Backend.Startup
             info.Add(Line("🧩", "Architecture", RuntimeInformation.OSArchitecture.ToString()));
             info.Add(Line("🔢", "Process ID", Environment.ProcessId.ToString(CultureInfo.InvariantCulture)));
             info.Add(Line("💾", "Database", facts.DatabaseProvider));
-            info.Add(ForecastCoresLine(ForecastSimulationLimits.Default));
+            info.Add(ForecastLaneLine(facts.ForecastThreads, ForecastSimulationLimits.Default));
 
             if (!string.IsNullOrEmpty(facts.LogFilePath))
             {
@@ -221,11 +224,12 @@ namespace Lighthouse.Backend.Startup
             return lines;
         }
 
-        // The line reads ForecastSimulationLimits.Default, which is the very instance the application registers
-        // for its forecasts, so the banner cannot claim a share of the cores that a forecast does not keep to.
-        private static string ForecastCoresLine(ForecastSimulationLimits limits)
+        // The share of the cores is read off ForecastSimulationLimits.Default, the very instance the application
+        // registers for its forecasts, so the banner cannot claim a share that a forecast does not keep to.
+        private static string ForecastLaneLine(int threads, ForecastSimulationLimits limits)
         {
-            return Line("🧮", "Cores", $"Forecasts use up to {limits.MostRunsAtOnce} of {limits.CoresSeen} cores");
+            var dedicatedThreads = threads == 1 ? "1 dedicated thread" : $"{threads} dedicated threads";
+            return Line("🧮", "Cores", $"Forecast rounds run on {dedicatedThreads}; each forecast uses up to {limits.MostRunsAtOnce} of {limits.CoresSeen} cores");
         }
 
         private static string WarningLine(string value)
