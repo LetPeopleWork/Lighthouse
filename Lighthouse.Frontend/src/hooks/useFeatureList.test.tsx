@@ -1,7 +1,11 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+	onlineManager,
+	QueryClient,
+	QueryClientProvider,
+} from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import type { FeatureListOwner, IFeatureList } from "../models/FeatureList";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import {
@@ -37,6 +41,18 @@ const renderTheHook = (
 };
 
 describe("useFeatureList", () => {
+	afterEach(() => onlineManager.setOnline(true));
+
+	it("is loading, not ready, while the query waits for the browser to come back online", () => {
+		onlineManager.setOnline(false);
+		const { result } = renderTheHook(
+			aFeatureServiceAnswering(Promise.resolve(NorthwindPlatformsList)),
+			portfolio(2),
+		);
+
+		expect(result.current.look).toBe("loading");
+	});
+
 	it("keys the list by the kind and id of its owner", () => {
 		expect(featureListKey({ kind: "team", id: 7 })).toEqual([
 			"feature-list",

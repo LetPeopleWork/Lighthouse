@@ -32,14 +32,14 @@ export const useFeatureList = (owner: FeatureListOwner) => {
 
 	return {
 		...query,
-		look: lookOf(query.isError, query.isFetching),
+		look: lookOf(query.isError, query.isPending || query.isFetching),
 		parentsByReferenceId,
 	};
 };
 
-const lookOf = (isError: boolean, isFetching: boolean): FeatureListLook => {
+const lookOf = (isError: boolean, isLoading: boolean): FeatureListLook => {
 	if (isError) return "error";
-	return isFetching ? "loading" : "ready";
+	return isLoading ? "loading" : "ready";
 };
 
 /**

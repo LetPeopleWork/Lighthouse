@@ -20,7 +20,7 @@ export interface IFeatureService {
 }
 
 export class FeatureService extends BaseApiService implements IFeatureService {
-	// Every Feature the caller may read, across every Portfolio, in forecast order (US-01).
+	// Every Feature the caller may read, across every Portfolio, in forecast order.
 	getAllFeatures(): Promise<IFeature[]> {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<unknown>("/features");
