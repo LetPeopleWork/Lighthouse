@@ -13,6 +13,7 @@ import { useHideCompletedFeatures } from "../../../hooks/useHideCompletedFeature
 import type { IFeature } from "../../../models/Feature";
 import type { FeatureMoveTarget } from "../../../models/FeatureOrdering";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { WidgetBody } from "../../../pages/Common/MetricsView/WidgetShell";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import DataGridBase from "../DataGrid/DataGridBase";
@@ -31,6 +32,7 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	storageKey,
 	hideCompletedStorageKey,
 	loading = false,
+	status,
 	emptyStateMessage,
 	getActiveWorkTeams,
 	showPosition = false,
@@ -118,8 +120,22 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			: []),
 	];
 
+	const grid = (
+		<DataGridBase
+			rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
+			columns={gridColumns}
+			storageKey={storageKey}
+			loading={loading}
+			emptyStateMessage={emptyStateMessage}
+			enableExport={enableExport}
+			exportFileName={exportFileName}
+			exportTable={exportTable}
+			onSortModelChange={(model) => setIsSortActive(model.length > 0)}
+		/>
+	);
+
 	return (
-		<TableContainer component={Paper}>
+		<TableContainer component={Paper} data-widget-status={status}>
 			<Box sx={{ display: "flex", justifyContent: "flex-end", p: 2, gap: 2 }}>
 				<FormControlLabel
 					control={
@@ -133,17 +149,17 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 					label={`Hide Completed ${featuresTerm}`}
 				/>
 			</Box>
-			<DataGridBase
-				rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
-				columns={gridColumns}
-				storageKey={storageKey}
-				loading={loading}
-				emptyStateMessage={emptyStateMessage}
-				enableExport={enableExport}
-				exportFileName={exportFileName}
-				exportTable={exportTable}
-				onSortModelChange={(model) => setIsSortActive(model.length > 0)}
-			/>
+			{status ? (
+				<WidgetBody
+					widgetKey="feature-list"
+					status={status}
+					hasContentToDim={features.length > 0}
+				>
+					{grid}
+				</WidgetBody>
+			) : (
+				grid
+			)}
 		</TableContainer>
 	);
 };

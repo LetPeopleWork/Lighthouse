@@ -1,5 +1,9 @@
-import type { IFeature } from "../../models/Feature";
-import type { FeatureListOwner, IFeatureList } from "../../models/FeatureList";
+import { Feature, type IFeature } from "../../models/Feature";
+import {
+	type FeatureListOwner,
+	FeatureListSchema,
+	type IFeatureList,
+} from "../../models/FeatureList";
 import type { FeatureMoveTarget } from "../../models/FeatureOrdering";
 import type { IWorkItem } from "../../models/WorkItem";
 import { BaseApiService } from "./BaseApiService";
@@ -62,9 +66,17 @@ export class FeatureService extends BaseApiService implements IFeatureService {
 		});
 	}
 
-	// SCAFFOLD: replaced in DELIVER by the read of the owner's feature-list endpoint.
-	getFeatureList(_owner: FeatureListOwner): Promise<IFeatureList> {
-		return Promise.reject(new Error("Not yet implemented: getFeatureList"));
+	getFeatureList(owner: FeatureListOwner): Promise<IFeatureList> {
+		return this.withErrorHandling(async () => {
+			const collection = owner.kind === "portfolio" ? "portfolios" : "teams";
+			const response = await this.apiService.get<unknown>(
+				`/${collection}/${owner.id}/feature-list`,
+			);
+
+			const answer = BaseApiService.parse(FeatureListSchema, response.data);
+
+			return { ...answer, features: answer.features.map(Feature.fromParsed) };
+		});
 	}
 
 	// Every gesture reduces to this one call; they differ only in which row is named as the target (D18).

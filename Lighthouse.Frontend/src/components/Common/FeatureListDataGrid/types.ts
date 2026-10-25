@@ -28,6 +28,8 @@ export interface FeatureListDataGridProps {
 	storageKey: string;
 	hideCompletedStorageKey: string;
 	loading?: boolean;
+	/** The look the list is in, for a page object to wait on. Without it the grid says nothing about its look. */
+	status?: "loading" | "ready" | "error";
 	emptyStateMessage?: string;
 	/** Only where the list is the whole instance: an instance-wide ordinal shown inside a narrower subset reads as that subset's own numbering. */
 	showPosition?: boolean;

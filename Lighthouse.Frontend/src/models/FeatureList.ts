@@ -1,4 +1,16 @@
-import type { IFeature } from "./Feature";
+import { z } from "zod";
+import { FeatureSchema, type IFeature } from "./Feature";
+
+/** How the list arrives from the backend; the rows are turned into Features once they are checked. */
+export const FeatureListSchema = z.object({
+	features: z.array(FeatureSchema),
+	parents: z.array(
+		z.object({ referenceId: z.string(), name: z.string(), url: z.string() }),
+	),
+	activeWork: z.array(
+		z.object({ teamId: z.number(), featureReferenceIds: z.array(z.string()) }),
+	),
+});
 
 /** Whose Features a list shows: a Portfolio's, or the ones a Team works on. */
 export type FeatureListOwner =

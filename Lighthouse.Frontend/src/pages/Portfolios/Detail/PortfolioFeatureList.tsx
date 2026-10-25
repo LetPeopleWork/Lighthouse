@@ -1,6 +1,6 @@
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import {
 	createForecastedStartColumn,
@@ -13,32 +13,15 @@ import FeatureListDataGrid from "../../../components/Common/FeatureListDataGrid/
 import FeatureProgressIndicator from "../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import { useFeatureChildItems } from "../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
-import { useParentWorkItems } from "../../../hooks/useParentWorkItems";
+import { useFeatureList } from "../../../hooks/useFeatureList";
+import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import type { IWorkItem } from "../../../models/WorkItem";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
 
-const referenceIdsInProgress = async (
-	teamMetricsService: {
-		getFeaturesInProgress(teamId: number, asOfDate: Date): Promise<IWorkItem[]>;
-	},
-	teamId: number,
-): Promise<string[]> => {
-	try {
-		const inProgress = await teamMetricsService.getFeaturesInProgress(
-			teamId,
-			new Date(),
-		);
-		return inProgress.map((feature) => feature.referenceId);
-	} catch (error) {
-		console.error(`Failed to fetch features for team ${teamId}:`, error);
-		return [];
-	}
-};
+const NO_FEATURES: IFeature[] = [];
 
 interface PortfolioFeatureListProps {
 	portfolio: IPortfolio;
@@ -47,18 +30,23 @@ interface PortfolioFeatureListProps {
 const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	portfolio,
 }) => {
-	const { teamMetricsService, featureService } = useContext(ApiServiceContext);
-
-	const [featuresInProgress, setFeaturesInProgress] = useState<
-		Record<string, string[]>
-	>({});
-	const [features, setFeatures] = useState<IFeature[]>([]);
+	const featureList = useFeatureList({ kind: "portfolio", id: portfolio.id });
+	const features = featureList.data?.features ?? NO_FEATURES;
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 
-	const parentMap = useParentWorkItems(features);
+	const parentMap = useMemo(
+		() =>
+			new Map<string, ParentWorkItem>(
+				(featureList.data?.parents ?? []).map((parent) => [
+					parent.referenceId,
+					parent,
+				]),
+			),
+		[featureList.data],
+	);
 
 	const {
 		selectedFeature,
@@ -67,37 +55,6 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 		show: handleShowFeatureDetails,
 		close: handleCloseWorkItemsDialog,
 	} = useFeatureChildItems();
-
-	// Load features
-	const fetchFeatures = useCallback(async () => {
-		const featureIds = portfolio.features.map((fr) => fr.id);
-		const featureData = await featureService.getFeaturesByIds(featureIds);
-		setFeatures(featureData);
-	}, [portfolio.features, featureService]);
-
-	useEffect(() => {
-		fetchFeatures().catch((error) => {
-			console.error("Error fetching features:", error);
-		});
-	}, [fetchFeatures]);
-
-	// Fetch features in progress
-	useEffect(() => {
-		const fetchFeaturesInProgress = async () => {
-			const featuresByTeam = await Promise.all(
-				portfolio.involvedTeams.map(async (team) => [
-					team.id,
-					await referenceIdsInProgress(teamMetricsService, team.id),
-				]),
-			);
-
-			setFeaturesInProgress(Object.fromEntries(featuresByTeam));
-		};
-
-		fetchFeaturesInProgress().catch((error) => {
-			console.error("Error fetching features in progress:", error);
-		});
-	}, [portfolio.involvedTeams, teamMetricsService]);
 
 	const columns: DataGridColumn<IFeature & GridValidRowModel>[] = useMemo(
 		() => [
@@ -125,11 +82,17 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	);
 
 	const getActiveWorkTeams = useCallback(
-		(row: IFeature) =>
-			portfolio.involvedTeams.filter((team) =>
-				featuresInProgress[team.id]?.includes(row.referenceId),
-			),
-		[portfolio.involvedTeams, featuresInProgress],
+		(row: IFeature) => {
+			const teamIdsAtWork = new Set(
+				(featureList.data?.activeWork ?? [])
+					.filter((work) => work.featureReferenceIds.includes(row.referenceId))
+					.map((work) => work.teamId),
+			);
+			return portfolio.involvedTeams.filter((team) =>
+				teamIdsAtWork.has(team.id),
+			);
+		},
+		[portfolio.involvedTeams, featureList.data],
 	);
 
 	return (
@@ -139,11 +102,13 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				columns={columns}
 				storageKey={`portfolio-features-${portfolio.id}`}
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
-				loading={features.length === 0}
+				status={featureList.look}
 				getActiveWorkTeams={getActiveWorkTeams}
 				showPosition
 				// A move renumbers the whole instance, so the places every row shows are re-read, not patched.
-				onOrderChanged={fetchFeatures}
+				onOrderChanged={async () => {
+					await featureList.refetch();
+				}}
 			/>
 			{selectedFeature && (
 				<WorkItemsDialog

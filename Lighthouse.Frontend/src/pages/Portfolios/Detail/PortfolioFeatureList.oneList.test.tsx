@@ -41,7 +41,7 @@ beforeEach(() => {
 });
 
 describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and one answer fills the list", () => {
-	it.skip("the list asks once, for the Portfolio's list, and reads nothing else", async () => {
+	it("the list asks once, for the Portfolio's list, and reads nothing else", async () => {
 		const featureService = aFeatureServiceAnswering(
 			Promise.resolve(NorthwindPlatformsList),
 		);
@@ -63,7 +63,7 @@ describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and 
 		expect(teamMetricsService.getFeaturesInProgress).not.toHaveBeenCalled();
 	});
 
-	it.skip("while the first answer is on its way the list shows a spinner and no rows, and once it lands it says it is ready", async () => {
+	it("while the first answer is on its way the list shows a spinner and no rows, and once it lands it says it is ready", async () => {
 		const answer = deferred<IFeatureList>();
 		const { container } = await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
@@ -83,7 +83,7 @@ describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and 
 		expect(screen.getByText(/Search revamp/)).toBeInTheDocument();
 	});
 
-	it.skip("a row's parent is named from the same answer", async () => {
+	it("a row's parent is named from the same answer", async () => {
 		await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
 			{

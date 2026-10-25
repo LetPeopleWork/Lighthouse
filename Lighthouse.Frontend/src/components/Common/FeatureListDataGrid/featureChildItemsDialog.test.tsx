@@ -146,6 +146,9 @@ beforeEach(() => {
 	childItemRequests = [];
 	featureService = createMockFeatureService();
 	featureService.getFeaturesByIds = vi.fn().mockResolvedValue(bothFeatures);
+	featureService.getFeatureList = vi
+		.fn()
+		.mockResolvedValue({ features: bothFeatures, parents: [], activeWork: [] });
 	featureService.getFeaturesByReferences = vi.fn().mockResolvedValue([]);
 	featureService.getFeatureWorkItems = vi.fn(() => {
 		const request = deferred<IWorkItem[]>();

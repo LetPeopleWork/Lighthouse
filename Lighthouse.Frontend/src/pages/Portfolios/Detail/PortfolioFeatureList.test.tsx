@@ -10,6 +10,7 @@ import type { IWorkItem } from "../../../models/WorkItem";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IFeatureService } from "../../../services/Api/FeatureService";
 import type { ITeamMetricsService } from "../../../services/Api/MetricsService";
+import { aList } from "../../../tests/FeatureListTestKit";
 import {
 	createMockApiServiceContext,
 	createMockTeamMetricsService,
@@ -139,9 +140,9 @@ const MockApiServiceProvider = ({
 	];
 
 	const mockFeatureService: Partial<IFeatureService> = {
-		getFeaturesByIds: vi
+		getFeatureList: vi
 			.fn()
-			.mockResolvedValue([mockFeature1, mockFeature2, mockFeature3]),
+			.mockResolvedValue(aList([mockFeature1, mockFeature2, mockFeature3])),
 		getFeatureWorkItems: vi.fn().mockResolvedValue(mockFeatureWorkItems),
 	};
 
