@@ -86,7 +86,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice04)]
         [Category("slice-04")]
         [Category("story-6408")]
         public void The_Features_list_endpoint_reads_through_its_service_and_never_from_a_repository()

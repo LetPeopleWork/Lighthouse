@@ -1348,6 +1348,8 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<IRepository<Portfolio>>(services => services.GetRequiredService<IPortfolioRepository>());
             builder.Services.AddScoped<IFeatureRepository, FeatureRepository>();
             builder.Services.AddScoped<IRepository<Feature>>(services => services.GetRequiredService<IFeatureRepository>());
+            // Forwarded, not registered by type: a second FeatureRepository would be a second unit of work in the same request.
+            builder.Services.AddScoped<IFeatureListReader>(services => services.GetRequiredService<IFeatureRepository>());
             builder.Services.AddScoped<IWorkItemRepository, WorkItemRepository>();
             builder.Services.AddScoped<IWorkItemStateTransitionRepository, WorkItemStateTransitionRepository>();
             builder.Services.AddScoped<IFeatureStateTransitionRepository, FeatureStateTransitionRepository>();
@@ -1441,6 +1443,10 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.OptionalFeatures.OptionalFeatureApplierRegistry>();
             builder.Services.AddScoped<IFeatureRankingService, FeatureRankingService>();
             builder.Services.AddScoped<IFeatureMoveAuthorization, FeatureMoveAuthorization>();
+            builder.Services.AddScoped<Lighthouse.Backend.Services.Implementation.Dependencies.FeatureDependencyRendering>();
+            builder.Services.AddScoped<Lighthouse.Backend.API.FeatureListRows>();
+            builder.Services.AddScoped<FeatureListActiveWork>();
+            builder.Services.AddScoped<IFeatureListService, FeatureListService>();
             builder.Services.AddScoped<ITeamDataService, TeamDataService>();
             builder.Services.AddScoped<IWorkItemService, WorkItemService>();
             builder.Services.AddScoped<ITerminologyService, TerminologyService>();

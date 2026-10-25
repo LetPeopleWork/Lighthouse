@@ -83,6 +83,43 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(features).ToList();
         }
 
+        public IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId)
+        {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
+            var features = Context.Features
+                .AsNoTrackingWithIdentityResolution()
+                .Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId))
+                .Include(f => f.Portfolios)
+                .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
+                .Include(f => f.Forecasts).ThenInclude(f => f.SimulationResults)
+                .Include(f => f.StartForecasts.Where(start => start.TeamId == null)).ThenInclude(f => f.SimulationResults)
+                .Include(f => f.DependsOnReferences)
+                .ToList();
+#pragma warning restore S8733
+
+            return featureOrdering.Order(features).ToList();
+        }
+
+        public IReadOnlyList<FeatureParent> ParentsOf(IReadOnlyCollection<string> referenceIds)
+        {
+            if (referenceIds.Count == 0)
+            {
+                return [];
+            }
+
+            var held = Context.Features
+                .AsNoTracking()
+                .Where(feature => referenceIds.Contains(feature.ReferenceId))
+                .Select(feature => new { feature.ReferenceId, feature.Name, feature.Url, PortfolioIds = feature.Portfolios.Select(portfolio => portfolio.Id).ToList() })
+                .ToList();
+
+            return [.. held
+                .GroupBy(parent => parent.ReferenceId, StringComparer.Ordinal)
+                .Select(sameId => sameId.First())
+                .Select(parent => new FeatureParent(parent.ReferenceId, parent.Name, parent.Url ?? string.Empty, parent.PortfolioIds))];
+        }
+
         public IReadOnlyList<Feature> FeaturesWithReferenceIds(IReadOnlyCollection<string> referenceIds)
         {
             if (referenceIds.Count == 0)

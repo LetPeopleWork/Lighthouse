@@ -1,6 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.API
         private readonly IFeatureRankingService featureRankingService;
         private readonly IFeatureOrderingPolicyProvider featureOrderingPolicyProvider;
         private readonly ILighthouseClock clock;
-        private readonly IDependencyDecision dependencyDecision;
+        private readonly FeatureDependencyRendering dependencyRendering;
 
 #pragma warning disable S107 // Every parameter is a distinct port this controller drives; bundling them into a parameter object would only hide the arity, not the coupling.
         public FeaturesController(
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.API
             this.featureRankingService = featureRankingService;
             this.featureOrderingPolicyProvider = featureOrderingPolicyProvider;
             this.clock = clock;
-            this.dependencyDecision = dependencyDecision;
+            dependencyRendering = new FeatureDependencyRendering(featureRepository, rbacAdministrationService, dependencyDecision);
         }
 
         /// <summary>
@@ -121,13 +121,6 @@ namespace Lighthouse.Backend.API
 
             return Ok(items);
         }
-
-        // Two Features can carry the same tracker id across Portfolios; a dependency names an id, so the
-        // first of them stands for all of them - the same way the decision itself reads them.
-        private static Dictionary<string, Feature> ByReferenceId(IReadOnlyCollection<Feature> features)
-            => features
-                .GroupBy(feature => feature.ReferenceId, StringComparer.Ordinal)
-                .ToDictionary(byReferenceId => byReferenceId.Key, byReferenceId => byReferenceId.First(), StringComparer.Ordinal);
 
         /// <summary>
         /// Moves one Feature to the place another one holds. Every gesture in the UI — Top, Up, Down,
@@ -223,81 +216,11 @@ namespace Lighthouse.Backend.API
 
             var readable = features.Where(f => IsReadableBy(f, readablePortfolioIdSet)).ToList();
             var verdicts = await featureMoveAuthorization.GetVerdictsAsync(User, readable, readablePortfolioIdSet, RequestAborted);
-            var dependencies = await WhatTheseFeaturesWaitOn(features, positions, everyFeatureIsLoaded);
+            var dependencies = await dependencyRendering.WhatTheseFeaturesWaitOn(User, features, positions, everyFeatureIsLoaded, RequestAborted);
 
             return readable
                 .Select(f => BuildFeatureDto(f, blackoutPeriods, readablePortfolioIdSet, positions, verdicts[f.Id], dependencies))
                 .ToList();
-        }
-
-        /// <summary>
-        /// Which Features each of these is waiting on, worked out once for the whole page. A reference is
-        /// only ever an id string the work tracking system wrote, so one naming something this instance
-        /// does not hold cannot be named to a reader and is not here.
-        /// </summary>
-        /// <param name="everyFeatureIsLoaded">
-        /// Whether the caller's list is already the whole graph, in which case it is used as it stands.
-        /// </param>
-        /// <remarks>
-        /// The whole graph is read either way, because what is wrong with a dependency is a question about
-        /// all of it - what is in a circle, what shares a Portfolio. Answering a request for a handful from
-        /// that handful would report Features as unreachable merely because the request did not ask for
-        /// them, and answering it with nothing would leave the same dependency warned about on one screen
-        /// and silent on another. Two screens disagreeing about one dependency is the failure this feature
-        /// exists to prevent, so the cost is paid rather than the answer withheld.
-        /// </remarks>
-        private async Task<DependenciesAsRead> WhatTheseFeaturesWaitOn(
-            IReadOnlyCollection<Feature> features,
-            IReadOnlyDictionary<int, int> positions,
-            bool everyFeatureIsLoaded)
-        {
-            var wholeGraph = everyFeatureIsLoaded
-                ? features
-                : featureRepository.WholeGraphWithoutHistograms();
-
-            var blockers = ByReferenceId(wholeGraph);
-
-            var readablePortfolioIds = await GetReadablePortfolioIds(
-                blockers.Values.SelectMany(blocker => blocker.Portfolios).Select(portfolio => portfolio.Id));
-
-            var verdicts = VerdictsBy(dependencyDecision.About(wholeGraph, positions));
-
-            return new DependenciesAsRead(blockers, readablePortfolioIds, verdicts);
-        }
-
-        private static Dictionary<(string Dependent, string Blocker), DependencyVerdict> VerdictsBy(HonouredDependencies decided)
-            => decided.Verdicts
-                .GroupBy(verdict => (verdict.DependentReferenceId, verdict.BlockerReferenceId))
-                .ToDictionary(byPair => byPair.Key, byPair => byPair.First());
-
-        /// <summary>
-        /// What one read worked out about dependencies, read once per row afterwards. A Feature the reader
-        /// may not see is listed as withheld rather than dropped: a shorter list is one the reader has no
-        /// way of telling is short.
-        /// </summary>
-        private sealed record DependenciesAsRead(
-            Dictionary<string, Feature> Blockers,
-            HashSet<int> ReadablePortfolioIds,
-            Dictionary<(string Dependent, string Blocker), DependencyVerdict> Verdicts)
-        {
-            public List<FeatureDependsOnDto> Of(Feature feature)
-                => feature.DependsOnReferences
-                    .Where(reference => Blockers.ContainsKey(reference.ReferenceId))
-                    .Select(reference => AnEntryFor(feature, reference))
-                    .ToList();
-
-            private FeatureDependsOnDto AnEntryFor(Feature feature, FeatureDependencyReference reference)
-            {
-                var blocker = Blockers[reference.ReferenceId];
-                var verdict = Verdicts.GetValueOrDefault((feature.ReferenceId, reference.ReferenceId));
-
-                if (!FeatureReadability.IsReadableBy(blocker, ReadablePortfolioIds))
-                {
-                    return FeatureDependsOnDto.Withheld(reference.Source, verdict);
-                }
-
-                return new FeatureDependsOnDto(blocker, reference.Source, verdict);
-            }
         }
 
         private FeatureDto BuildFeatureDto(

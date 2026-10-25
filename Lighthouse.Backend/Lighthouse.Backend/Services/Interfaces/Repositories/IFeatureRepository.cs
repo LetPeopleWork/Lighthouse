@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {
-    public interface IFeatureRepository : IRepository<Feature>
+    public interface IFeatureRepository : IRepository<Feature>, IFeatureListReader
     {
         /// <summary>
         /// The reference id of every Feature held, and nothing else about them. Reading a Feature brings
@@ -18,16 +18,6 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         /// for some migrated issues is not a known one.
         /// </summary>
         StoredFeatures GetStoredFeatureCreatedDates();
-
-        /// <summary>
-        /// Every Feature held, in forecast order, with its Portfolios, its work per Team and those Teams, what
-        /// it depends on, and the header of each completion forecast, but none of the simulation results
-        /// behind them and no start forecasts. That is everything the dependency decision reads, and a
-        /// small part of what reading a Feature whole costs. Nothing is tracked, yet a Team or Portfolio
-        /// shared by several Features is still one object, as in a tracked read. Read only: nothing returned
-        /// here may be saved.
-        /// </summary>
-        IReadOnlyList<Feature> WholeGraphWithoutHistograms();
 
         /// <summary>
         /// The Features holding these reference ids and no others, in forecast order, each read whole as

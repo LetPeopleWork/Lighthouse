@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.API
+namespace Lighthouse.Backend.Services.Implementation.Authorization
 {
     /// <summary>
     /// Whether a reader may see a Feature at all. It lives on its own because more than one surface asks
