@@ -83,6 +83,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(features).ToList();
         }
 
+        public IReadOnlyList<Feature> FeaturesWithReferenceIds(IReadOnlyCollection<string> referenceIds)
+        {
+            if (referenceIds.Count == 0)
+            {
+                return [];
+            }
+
+            return featureOrdering.Order(GetFeatures().Where(feature => referenceIds.Contains(feature.ReferenceId)).ToList()).ToList();
+        }
+
         private IQueryable<Feature> GetFeatures()
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.

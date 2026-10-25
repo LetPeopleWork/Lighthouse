@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly string[] BothTeamsInNameOrder = ["Team 1", "Team 2"];
 
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
 
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             logger = new Mock<ILogger<ForecastService>>();
         }

@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             return new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
                 workItemRepository.Object,
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 appSettingService.Object,
                 serviceProvider.Object,
                 Mock.Of<IBlackoutPeriodService>(),

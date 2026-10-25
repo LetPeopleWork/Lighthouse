@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         {
             var features = Universe.Select(AFeatureOfThePortfolio).ToList();
 
-            var featureRepository = new Mock<IRepository<Feature>>();
+            var featureRepository = new Mock<IFeatureRepository>();
             featureRepository
                 .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
                 workItemRepository.Object,
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 appSettings.Object,
                 AFreshCache(),
                 Mock.Of<IBlackoutPeriodService>(),

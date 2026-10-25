@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     public class TeamMetricsServiceTests
     {
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
 
@@ -32,7 +32,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Setup()
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
+            featureRepositoryMock.Holds([]);
             forecastServiceMock = new Mock<IForecastService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             SetupEffectiveBlackoutDays();

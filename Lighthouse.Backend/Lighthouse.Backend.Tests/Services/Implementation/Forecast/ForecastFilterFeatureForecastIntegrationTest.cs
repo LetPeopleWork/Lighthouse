@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private static readonly string[] BugsOnlyFallback = ["BUG-1", "BUG-2"];
 
         private Mock<IWorkItemRepository> workItemRepositoryMock;
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<ILicenseService> licenseServiceMock;
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         public void Setup()
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             forecastServiceMock = new Mock<IForecastService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);

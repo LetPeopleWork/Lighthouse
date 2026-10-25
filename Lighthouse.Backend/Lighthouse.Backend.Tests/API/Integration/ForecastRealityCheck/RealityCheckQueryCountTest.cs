@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             return new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
                 new WorkItemRepository(context, Mock.Of<ILogger<WorkItemRepository>>()),
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 appSettingService.Object,
                 serviceProvider.Object,
                 NoBlackoutPeriods(),

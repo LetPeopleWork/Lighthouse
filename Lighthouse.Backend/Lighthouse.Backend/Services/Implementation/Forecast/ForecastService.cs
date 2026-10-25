@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         IRandomNumberService randomNumberService,
         ILogger<ForecastService> logger,
         ITeamMetricsService teamMetricsService,
-        IRepository<Feature> featureRepository,
+        IFeatureRepository featureRepository,
         IPortfolioRepository portfolioRepository,
         IWhatTheForecastWaitsFor whatTheForecastWaitsFor,
         ForecastSimulation simulation,

@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Services.Implementation
     public class TeamMetricsService(
         ILogger<TeamMetricsService> logger,
         IWorkItemRepository workItemRepository,
-        IRepository<Feature> featureRepository,
+        IFeatureRepository featureRepository,
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
         IBlackoutPeriodService blackoutPeriodService,
@@ -32,42 +32,20 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             logger.LogDebug("Getting Feature Wip for Team {TeamName} as of {AsOfDate}", team.Name, asOfDate.Date);
 
-            return GetFromCacheIfExists<IEnumerable<Feature>, Team>(team, $"{FeatureWipMetricIdentifier}_{asOfDate:yyyy-MM-dd}", () =>
+            var references = GetInProgressFeatureReferences(team, asOfDate);
+
+            return new InProgressFeatureResolution(featureRepository).Resolve(references);
+        }
+
+        private IReadOnlyList<string?> GetInProgressFeatureReferences(Team team, DateTime asOfDate)
+        {
+            return GetFromCacheIfExists<IReadOnlyList<string?>, Team>(team, $"{FeatureWipMetricIdentifier}_{asOfDate:yyyy-MM-dd}", () =>
             {
-                var activeWorkItemsForTeam = GetWipSnapshotForTeam(team, asOfDate);
-                var featureReferences = activeWorkItemsForTeam.Select(wi => wi.ParentReferenceId).Distinct().ToList();
+                var references = InProgressFeatureResolution.ReferencesOf(GetWipSnapshotForTeam(team, asOfDate));
 
-                var features = new List<Feature>();
-                foreach (var featureReference in featureReferences)
-                {
-                    var feature = featureRepository.GetByPredicate(wi => wi.ReferenceId == featureReference);
-                    if (feature != null)
-                    {
-                        features.Add(feature);
-                    }
-                    else
-                    {
-                        var reference = string.IsNullOrEmpty(featureReference) ? "Unknown" : featureReference;
+                logger.LogDebug("Finished updating Feature Wip for Team {TeamName} as of {AsOfDate} - Found {FeatureWIP} Features in Progress", team.Name, asOfDate.Date, references.Count);
 
-                        var unknownFeature = new Feature
-                        {
-                            Id = -1,
-                            ReferenceId = reference,
-                            Name = $"{reference} (Item not tracked by Lighthouse)",
-                            Type = string.Empty,
-                            State = string.Empty,
-                            StateCategory = StateCategories.Unknown,
-                            Url = string.Empty,
-                            Order = string.Empty,
-                        };
-
-                        features.Add(unknownFeature);
-                    }
-                }
-
-                logger.LogDebug("Finished updating Feature Wip for Team {TeamName} as of {AsOfDate} - Found {FeatureWIP} Features in Progress", team.Name, asOfDate.Date, featureReferences.Count);
-
-                return features;
+                return references;
             }, logger);
         }
 
@@ -813,8 +791,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
             return GetFromCacheIfExists(team, $"FeaturesWorkedOnInfo_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var currentCount = GetCurrentFeaturesInProgressForTeam(team, endDate).Count();
-                var previousCount = GetCurrentFeaturesInProgressForTeam(team, startDate).Count();
+                var currentCount = GetInProgressFeatureReferences(team, endDate).Count;
+                var previousCount = GetInProgressFeatureReferences(team, startDate).Count;
                 return BuildFeaturesWorkedOnInfoDto(currentCount, previousCount, endDate, startDate);
             }, logger);
         }
@@ -905,7 +883,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return;
             }
 
-            var featureWip = GetCurrentFeaturesInProgressForTeam(team, Clock.TodayAsUtcMidnight).Count();
+            var featureWip = GetInProgressFeatureReferences(team, Clock.TodayAsUtcMidnight).Count;
             team.FeatureWIP = featureWip;
         }
 

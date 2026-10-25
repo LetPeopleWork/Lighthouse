@@ -65,7 +65,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         private static async Task<long> TimeOneForecast()
         {
             var teamMetrics = new Mock<ITeamMetricsService>();
-            var featureRepository = new Mock<IRepository<Feature>>();
+            var featureRepository = new Mock<IFeatureRepository>();
 
             var teams = Enumerable.Range(0, Teams).Select(index => ATeamThatDelivers(index, teamMetrics)).ToArray();
 

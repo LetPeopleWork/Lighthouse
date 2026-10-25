@@ -639,7 +639,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var features = TheFixturePortfolio(team, storeDependencies);
 
-            var featureRepository = new Mock<IRepository<Feature>>();
+            var featureRepository = new Mock<IFeatureRepository>();
             featureRepository.Holds(features);
 
             var portfolio = new Portfolio { Id = 1, Name = "Portfolio" };

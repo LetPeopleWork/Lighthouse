@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         public void Setup()
         {
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
-            var featureRepositoryMock = new Mock<IRepository<Feature>>();
+            var featureRepositoryMock = new Mock<IFeatureRepository>();
             var blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
                 .Returns([]);
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     [TestFixture]
     public class PortfolioWorkItemAgeAsOfDateTest
     {
-        private Mock<IRepository<Feature>> featureRepository;
+        private Mock<IFeatureRepository> featureRepository;
         private PortfolioMetricsService subject;
         private Portfolio portfolio;
         private List<Feature> features;
@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         [SetUp]
         public void Setup()
         {
-            featureRepository = new Mock<IRepository<Feature>>();
+            featureRepository = new Mock<IFeatureRepository>();
             var appSettingService = new Mock<IAppSettingService>();
             appSettingService.Setup(m => m.GetFeatureRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
 

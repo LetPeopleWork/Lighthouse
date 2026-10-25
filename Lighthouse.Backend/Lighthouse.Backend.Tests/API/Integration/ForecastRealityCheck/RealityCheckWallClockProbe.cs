@@ -268,7 +268,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             return new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
                 new WorkItemRepository(context, Mock.Of<ILogger<WorkItemRepository>>()),
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 appSettingService.Object,
                 serviceProvider.Object,
                 NoBlackoutPeriods(),
@@ -283,7 +283,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 new RandomNumberService(),
                 Mock.Of<ILogger<ForecastService>>(),
                 Mock.Of<ITeamMetricsService>(),
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(new DrawsAfreshEveryTime(), ForecastSimulationLimits.Default),

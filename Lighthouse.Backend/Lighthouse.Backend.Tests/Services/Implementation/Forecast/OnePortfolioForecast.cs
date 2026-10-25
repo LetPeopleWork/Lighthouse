@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     {
         private readonly Mock<ITeamMetricsService> teamMetrics = new();
 
-        private readonly Mock<IRepository<Feature>> features = new();
+        private readonly Mock<IFeatureRepository> features = new();
 
         public static ForecastSimulationLimits Limits(int trials, int mostDays, int cores = 4)
             => new(trials, mostDays) { CoresSeen = cores };

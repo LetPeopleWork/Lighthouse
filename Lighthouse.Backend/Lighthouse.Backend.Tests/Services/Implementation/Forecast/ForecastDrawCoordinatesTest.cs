@@ -29,14 +29,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     [Category("slice-02")]
     public class ForecastDrawCoordinatesTest
     {
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
 
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 

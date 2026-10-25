@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 new NotSoRandomNumberService(),
                 Mock.Of<ILogger<ForecastService>>(),
                 teamMetricsServiceMock.Object,
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 Mock.Of<IPortfolioRepository>(),
                 new NothingWaitsForAnything(),
                 new ForecastSimulation(round, limits),

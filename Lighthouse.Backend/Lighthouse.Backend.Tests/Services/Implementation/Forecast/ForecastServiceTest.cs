@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private const int ShortestCredibleDurationMilliseconds = 25;
 
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
         private Mock<ILogger<ForecastService>> loggerMock;
         private Mock<IPortfolioRepository> portfolioRepositoryMock;
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
             loggerMock = new Mock<ILogger<ForecastService>>();
             portfolioRepositoryMock = new Mock<IPortfolioRepository>();

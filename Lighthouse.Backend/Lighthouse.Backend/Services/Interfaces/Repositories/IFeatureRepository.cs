@@ -30,6 +30,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyList<Feature> WholeGraphWithoutHistograms();
 
         /// <summary>
+        /// The Features holding these reference ids and no others, in forecast order, each read whole as
+        /// <see cref="IRepository{T}.GetAll"/> reads it. One database statement however many ids are asked
+        /// for; an id nothing holds simply has no Feature in the answer.
+        /// </summary>
+        IReadOnlyList<Feature> FeaturesWithReferenceIds(IReadOnlyCollection<string> referenceIds);
+
+        /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
         /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last

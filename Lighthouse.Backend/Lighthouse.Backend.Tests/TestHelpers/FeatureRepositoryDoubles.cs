@@ -20,5 +20,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 .Setup(r => r.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
                 .Returns((Expression<Func<Feature, bool>> predicate) => held.AsQueryable().Where(predicate));
         }
+
+        public static void Holds(this Mock<IFeatureRepository> repository, IEnumerable<Feature> features)
+        {
+            var held = features.ToList();
+
+            repository
+                .Setup(r => r.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => held.AsQueryable().Where(predicate));
+            repository
+                .Setup(r => r.FeaturesWithReferenceIds(It.IsAny<IReadOnlyCollection<string>>()))
+                .Returns((IReadOnlyCollection<string> referenceIds) => held.Where(feature => referenceIds.Contains(feature.ReferenceId)).ToList());
+        }
     }
 }

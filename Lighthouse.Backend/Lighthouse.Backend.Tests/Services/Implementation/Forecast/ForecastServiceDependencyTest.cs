@@ -41,13 +41,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         private const string Second = "F-2";
         private const string Third = "F-3";
 
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 

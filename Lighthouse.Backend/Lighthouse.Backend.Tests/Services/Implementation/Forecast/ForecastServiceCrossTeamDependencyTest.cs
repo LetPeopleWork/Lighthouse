@@ -34,14 +34,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
 
         private static readonly int[] ThePercentilesLighthouseShows = [50, 70, 85, 95];
 
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
 
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 

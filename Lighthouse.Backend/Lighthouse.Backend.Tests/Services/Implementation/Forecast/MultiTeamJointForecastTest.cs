@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
     // robust against the ~0.5 % sampling error at 10 000 trials.
     public class MultiTeamJointForecastTest
     {
-        private Mock<IRepository<Feature>> featureRepositoryMock;
+        private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<ITeamMetricsService> teamMetricsServiceMock;
 
         private int idCounter;
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         [SetUp]
         public void Setup()
         {
-            featureRepositoryMock = new Mock<IRepository<Feature>>();
+            featureRepositoryMock = new Mock<IFeatureRepository>();
             teamMetricsServiceMock = new Mock<ITeamMetricsService>();
         }
 

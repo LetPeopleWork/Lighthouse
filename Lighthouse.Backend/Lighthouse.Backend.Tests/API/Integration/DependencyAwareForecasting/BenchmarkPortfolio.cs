@@ -37,11 +37,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
 
         private const int RemainingItemsPerFeature = 12;
 
-        private readonly Mock<IRepository<Feature>> featureRepository = new();
+        private readonly Mock<IFeatureRepository> featureRepository = new();
 
         private readonly Mock<ITeamMetricsService> teamMetrics = new();
 
-        internal IRepository<Feature> FeatureRepository => featureRepository.Object;
+        internal IFeatureRepository FeatureRepository => featureRepository.Object;
 
         internal ITeamMetricsService TeamMetrics => teamMetrics.Object;
 

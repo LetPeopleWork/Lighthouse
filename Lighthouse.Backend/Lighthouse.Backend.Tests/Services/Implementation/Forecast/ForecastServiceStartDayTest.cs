@@ -42,13 +42,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
         // A team the run admits no row for, because there is nothing to draw its delivery from.
         private static readonly int[] NothingMeasured = [];
 
-        private Mock<IRepository<Feature>> featureRepository;
+        private Mock<IFeatureRepository> featureRepository;
         private Mock<ITeamMetricsService> teamMetrics;
 
         [SetUp]
         public void Setup()
         {
-            featureRepository = new Mock<IRepository<Feature>>();
+            featureRepository = new Mock<IFeatureRepository>();
             teamMetrics = new Mock<ITeamMetricsService>();
         }
 
