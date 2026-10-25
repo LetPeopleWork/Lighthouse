@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
@@ -667,6 +668,40 @@ describe("TeamDetail component", () => {
 				ctx.mockUpdateService.subscribeToForecastUpdates,
 			).toHaveBeenCalled();
 		});
+
+		it.each([
+			["a completed Team update", "getTeamCallback"],
+			["a completed Forecasts update", "getForecastCallback"],
+		] as const)(
+			"makes the Team's Features list ask again on %s",
+			async (_name, callbackOf) => {
+				const ctx = buildTeamPageContext();
+				const queryClient = new QueryClient();
+				const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+				render(
+					<QueryClientProvider client={queryClient}>
+						<BrowserRouter>
+							<ApiServiceContext.Provider value={ctx.mockApiContext}>
+								<TeamDetail />
+							</ApiServiceContext.Provider>
+						</BrowserRouter>
+					</QueryClientProvider>,
+				);
+				await waitFor(() => expect(ctx[callbackOf]()).not.toBeNull());
+
+				await act(async () => {
+					await ctx[callbackOf]()?.({
+						status: "Completed",
+						updateType: "Team",
+						id: 1,
+					});
+				});
+
+				expect(invalidate).toHaveBeenCalledWith({
+					queryKey: ["feature-list", "team", 1],
+				});
+			},
+		);
 	});
 });
 

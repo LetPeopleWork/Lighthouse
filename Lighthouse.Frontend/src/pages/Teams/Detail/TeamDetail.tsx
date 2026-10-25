@@ -25,6 +25,7 @@ import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickS
 import RefreshStatusIcon from "../../../components/Common/RefreshStatusIcon/RefreshStatusIcon";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
+import { useRefreshFeatureList } from "../../../hooks/useFeatureList";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
@@ -93,6 +94,10 @@ const TeamDetail: React.FC = () => {
 		reportId?: string;
 	}>();
 	const teamId = Number(id);
+	const refreshFeatureList = useRefreshFeatureList({
+		kind: "team",
+		id: teamId,
+	});
 
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
@@ -300,6 +305,8 @@ const TeamDetail: React.FC = () => {
 	useEffect(() => {
 		const handleTeamUpdate = async (update: IUpdateStatus) => {
 			if (update.status === "Completed") {
+				// The Features list is a keyed read of its own, so it asks again once the owner has updated.
+				refreshFeatureList();
 				setIsTeamUpdating(false);
 				setLastTeamRefreshFailed(false);
 				if (activeViewRef.current === "settings") {
@@ -345,7 +352,7 @@ const TeamDetail: React.FC = () => {
 					console.error("Error cleaning up team subscription:", error);
 				});
 		};
-	}, [teamId, updateSubscriptionService]);
+	}, [teamId, updateSubscriptionService, refreshFeatureList]);
 
 	const portfolioSubscriptionKey = team?.portfolios
 		?.map((portfolio) => portfolio.id)
@@ -358,10 +365,12 @@ const TeamDetail: React.FC = () => {
 		const portfolioIds = portfolioSubscriptionKey.split(",").map(Number);
 
 		const handleForecastUpdate = async (update: IUpdateStatus) => {
-			if (
-				update.status === "Completed" &&
-				activeViewRef.current !== "settings"
-			) {
+			if (update.status !== "Completed") {
+				return;
+			}
+
+			refreshFeatureList();
+			if (activeViewRef.current !== "settings") {
 				await fetchTeamRef.current();
 			}
 		};
@@ -390,7 +399,7 @@ const TeamDetail: React.FC = () => {
 					});
 			}
 		};
-	}, [portfolioSubscriptionKey, updateSubscriptionService]);
+	}, [portfolioSubscriptionKey, updateSubscriptionService, refreshFeatureList]);
 
 	useEffect(() => {
 		if (team && isViewUnavailable(team, activeView)) {

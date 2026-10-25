@@ -16,6 +16,7 @@ import SystemWipQuickSetting from "../../../components/Common/QuickSettings/Syst
 import QuickSettingsBar from "../../../components/Common/QuickSettingsBar/QuickSettingsBar";
 import RefreshStatusIcon from "../../../components/Common/RefreshStatusIcon/RefreshStatusIcon";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useRefreshFeatureList } from "../../../hooks/useFeatureList";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import type {
@@ -63,6 +64,10 @@ const PortfolioDetail: React.FC = () => {
 		reportId?: string;
 	}>();
 	const portfolioId = Number(id);
+	const refreshFeatureList = useRefreshFeatureList({
+		kind: "portfolio",
+		id: portfolioId,
+	});
 
 	const [portfolio, setPortfolio] = useState<Portfolio>();
 	const [hasNoAccess, setHasNoAccess] = useState(false);
@@ -320,6 +325,8 @@ const PortfolioDetail: React.FC = () => {
 	useEffect(() => {
 		const handlePortfolioUpdate = async (update: IUpdateStatus) => {
 			if (update.status === "Completed") {
+				// The Features list is a keyed read of its own, so it asks again once the owner has updated.
+				refreshFeatureList();
 				if (activeViewRef.current === "settings") {
 					setPendingPortfolioRefresh(true);
 				} else {
@@ -398,7 +405,7 @@ const PortfolioDetail: React.FC = () => {
 					);
 				});
 		};
-	}, [portfolioId, updateSubscriptionService]);
+	}, [portfolioId, updateSubscriptionService, refreshFeatureList]);
 
 	// Flush any pending background refresh as soon as the user leaves the settings tab
 	useEffect(() => {

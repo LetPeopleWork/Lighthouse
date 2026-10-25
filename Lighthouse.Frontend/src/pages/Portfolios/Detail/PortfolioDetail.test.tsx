@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 	act,
 	fireEvent,
@@ -918,6 +919,34 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 			});
 			return (update: IUpdateStatus) => featuresCallback?.(update);
 		};
+
+		it.each(["Features", "Forecasts"] as const)(
+			"makes the Portfolio's Features list ask again when a %s update completes",
+			async (updateType) => {
+				const queryClient = new QueryClient();
+				const invalidate = vi.spyOn(queryClient, "invalidateQueries");
+				render(
+					<QueryClientProvider client={queryClient}>
+						<MockApiServiceProvider>
+							<MemoryRouter initialEntries={["/portfolios/2"]}>
+								<Routes>
+									<Route path="/portfolios/:id" element={<PortfolioDetail />} />
+								</Routes>
+							</MemoryRouter>
+						</MockApiServiceProvider>
+					</QueryClientProvider>,
+				);
+				await waitFor(() => expect(featuresCallback).not.toBeNull());
+
+				await act(async () => {
+					await featuresCallback?.({ status: "Completed", updateType, id: 2 });
+				});
+
+				expect(invalidate).toHaveBeenCalledWith({
+					queryKey: ["feature-list", "portfolio", 2],
+				});
+			},
+		);
 
 		it("says so on the refresh button", async () => {
 			const tell = await renderAndWaitForTheUpdateFeed();

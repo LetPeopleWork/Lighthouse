@@ -218,7 +218,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 });
 
 describe("Story 6408 (slice 04): after an update the list refreshes without hiding what it shows", () => {
-	it.skip("while a refresh is on its way the rows stay, dimmed and out of the pointer's reach, and the list says it is loading", async () => {
+	it("while a refresh is on its way the rows stay, dimmed and out of the pointer's reach, and the list says it is loading", async () => {
 		const refresh = deferred<IFeatureList>();
 		const { container, queryClient } = await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
@@ -252,7 +252,7 @@ describe("Story 6408 (slice 04): after an update the list refreshes without hidi
 		);
 	});
 
-	it.skip("a refresh that fails takes the could-not-load look rather than showing the old rows as current", async () => {
+	it("a refresh that fails takes the could-not-load look rather than showing the old rows as current", async () => {
 		const { container, queryClient } = await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
 			{
@@ -277,7 +277,7 @@ describe("Story 6408 (slice 04): after an update the list refreshes without hidi
 		).not.toBeInTheDocument();
 	});
 
-	it.skip("an answer for the Portfolio the reader has already left never replaces the one they are on", async () => {
+	it("an answer for the Portfolio the reader has already left never replaces the one they are on", async () => {
 		const platformsAnswer = deferred<IFeatureList>();
 		const mobilesAnswer = deferred<IFeatureList>();
 		const { rerender } = await renderAFeatureList(
