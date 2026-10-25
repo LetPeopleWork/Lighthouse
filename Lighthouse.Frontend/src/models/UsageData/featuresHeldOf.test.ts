@@ -3,7 +3,7 @@ import { featuresHeldOf } from "./featuresHeldOf";
 import { UsageDataFeaturesHeld } from "./UsageData";
 
 describe("Story 6404 (slice 01): the band a tab opening carries for the Features its page holds", () => {
-	it.skip.each([
+	it.each([
 		[0, UsageDataFeaturesHeld.UpTo20],
 		[20, UsageDataFeaturesHeld.UpTo20],
 		[21, UsageDataFeaturesHeld.From21To50],
@@ -18,11 +18,11 @@ describe("Story 6404 (slice 01): the band a tab opening carries for the Features
 		expect(featuresHeldOf(count)).toBe(band);
 	});
 
-	it.skip("a page that has not counted its Features yet travels as Unknown", () => {
+	it("a page that has not counted its Features yet travels as Unknown", () => {
 		expect(featuresHeldOf(undefined)).toBe(UsageDataFeaturesHeld.Unknown);
 	});
 
-	it.skip.each([-1, 2.5, Number.NaN])(
+	it.each([-1, 2.5, Number.NaN])(
 		"a count no page can hold (%s) travels as Unknown, never as a number",
 		(count) => {
 			expect(featuresHeldOf(count)).toBe(UsageDataFeaturesHeld.Unknown);
