@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces;
 namespace Lighthouse.Backend.API.DTO
 {
     /// <summary>
-    /// Everything the Features grid of one Portfolio draws, in one answer: the rows, the parents they hang under,
+    /// Everything the Features grid of one Portfolio or Team draws, in one answer: the rows, the parents they hang under,
     /// and which Teams are working on which Features today.
     /// </summary>
     public class FeatureListDto
