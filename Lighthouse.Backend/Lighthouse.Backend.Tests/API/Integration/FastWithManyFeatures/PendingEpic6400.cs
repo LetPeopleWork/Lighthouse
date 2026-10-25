@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
     /// </summary>
     internal static class PendingEpic6400
     {
-        public const string Slice01 = "Pending until Story 6404 (pages keep answering while Lighthouse forecasts) is delivered.";
-
         public const string Slice02 = "Pending until Story 6406 (the Overview and Settings open without waiting on every Feature) is delivered.";
 
         public const string Slice03 = "Pending until Story 6407 (large Features lists open sooner, with the same dependencies) is delivered.";

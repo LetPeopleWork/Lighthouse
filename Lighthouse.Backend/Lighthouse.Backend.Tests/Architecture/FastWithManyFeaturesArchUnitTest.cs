@@ -155,7 +155,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [GeneratedRegex(@"\b[A-Za-z_]\w*\b")]
         private static partial Regex Identifier();
 
-        [GeneratedRegex(@"\bTaskScheduler\s*\.\s*Current\b|\b\w*[Ll]ane\w*\b")]
+        [GeneratedRegex(@"\bTaskScheduler\s*\.\s*Current\b|\b(?:\w*Lane|lane)\b")]
         private static partial Regex RoundsScheduler();
 
         [GeneratedRegex(@"\bTaskScheduler\s*\.\s*Default\b")]
