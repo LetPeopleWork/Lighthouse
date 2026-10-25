@@ -4,6 +4,32 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.10.25.1
+
+## Export Any Report as a PDF
+
+A report often has to reach people who never open Lighthouse: a sponsor, a steering meeting, a slide deck. Until now that meant screenshots, cropped and pasted, and already out of date by the next meeting.
+
+Every report now has **Export PDF**, next to its name and in its row on the Reports tab. Lighthouse reads the report fresh and opens your browser's print dialog. Save it as a dated, branded PDF with a header and footer on every page, and you never leave the page you were on. Export PDF is part of Community.
+
+Full detail: [Export PDF](https://docs.lighthouse.letpeople.work/reports/reports.html#export-pdf).
+
+## Bugfixes and Improvements
+
+- **Quiet updates no longer recalculate your forecasts.** When nothing a Portfolio's forecast reads has changed, Lighthouse confirms the forecast in seconds instead of simulating it again for minutes.
+- **Picking a Jira Release for a Delivery loads once and never shows a guess.** The Delivery dialog shows when it is still loading or could not load. The Release picker says why a Release cannot be picked, and that you can type to search.
+- **Paste your Jira address straight from the browser.** Jira Cloud addresses with a `/jira/` path and Jira Data Center installations served under a path now work.
+- **A failed connection save says why.** The wizard tells you what went wrong and keeps your entries.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [James Hattersley-Dykes](https://www.linkedin.com/in/jameshd/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.19.10...v26.10.25.1)
+
 # Lighthouse v26.10.19.10
 
 ## Set a Connection's Defaults Once, Not for Every Team
