@@ -34,6 +34,9 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 	loading = false,
 	status,
 	emptyStateMessage,
+	allCompletedMessage,
+	failureMessage,
+	onRetry,
 	getActiveWorkTeams,
 	showPosition = false,
 	onOrderChanged,
@@ -120,13 +123,20 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 			: []),
 	];
 
+	const everyFeatureIsHidden =
+		features.length > 0 && filteredFeatures.length === 0;
+	const noRowsMessage =
+		everyFeatureIsHidden && allCompletedMessage
+			? allCompletedMessage(features.length)
+			: emptyStateMessage;
+
 	const grid = (
 		<DataGridBase
 			rows={filteredFeatures as (IFeature & GridValidRowModel)[]}
 			columns={gridColumns}
 			storageKey={storageKey}
 			loading={loading}
-			emptyStateMessage={emptyStateMessage}
+			emptyStateMessage={noRowsMessage}
 			enableExport={enableExport}
 			exportFileName={exportFileName}
 			exportTable={exportTable}
@@ -154,6 +164,8 @@ const FeatureListDataGrid: React.FC<FeatureListDataGridProps> = ({
 					widgetKey="feature-list"
 					status={status}
 					hasContentToDim={features.length > 0}
+					failureMessage={failureMessage}
+					onRetry={onRetry}
 				>
 					{grid}
 				</WidgetBody>

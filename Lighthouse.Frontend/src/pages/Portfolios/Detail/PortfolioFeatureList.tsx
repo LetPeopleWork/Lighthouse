@@ -36,6 +36,8 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const parentMap = useMemo(
 		() =>
@@ -103,6 +105,17 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 				storageKey={`portfolio-features-${portfolio.id}`}
 				hideCompletedStorageKey={`lighthouse_hide_completed_features_portfolio_${portfolio.id}`}
 				status={featureList.look}
+				// Until an answer has arrived the list is not empty, only unanswered, so it must not claim to be.
+				emptyStateMessage={
+					featureList.look === "ready"
+						? `This ${portfolioTerm} has no ${featuresTerm} yet.`
+						: ""
+				}
+				allCompletedMessage={(count) =>
+					`All ${count} ${featuresTerm} are completed. Turn off Hide Completed ${featuresTerm} to see them.`
+				}
+				failureMessage={`The ${featuresTerm} couldn't be loaded.`}
+				onRetry={() => void featureList.refetch()}
 				getActiveWorkTeams={getActiveWorkTeams}
 				showPosition
 				// A move renumbers the whole instance, so the places every row shows are re-read, not patched.

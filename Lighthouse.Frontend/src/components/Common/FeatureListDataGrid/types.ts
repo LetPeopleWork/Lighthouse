@@ -30,7 +30,14 @@ export interface FeatureListDataGridProps {
 	loading?: boolean;
 	/** The look the list is in, for a page object to wait on. Without it the grid says nothing about its look. */
 	status?: "loading" | "ready" | "error";
+	/** Said when there are no Features at all. Without it the grid keeps its own wording. */
 	emptyStateMessage?: string;
+	/** Said when Hide Completed hides every Feature; given how many are held. Without it the empty message is used. */
+	allCompletedMessage?: (completedCount: number) => string;
+	/** What the could-not-load look says; without it the shared wording is used. */
+	failureMessage?: string;
+	/** Offers Retry on the could-not-load look. */
+	onRetry?: () => void;
 	/** Only where the list is the whole instance: an instance-wide ordinal shown inside a narrower subset reads as that subset's own numbering. */
 	showPosition?: boolean;
 	/** Enable CSV export and clipboard copy on this grid (default: false) - Premium Feature */

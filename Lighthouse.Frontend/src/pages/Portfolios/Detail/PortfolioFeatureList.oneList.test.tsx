@@ -123,7 +123,7 @@ describe("Story 6408 (slice 04): Martin opens Northwind Platform's Features and 
 });
 
 describe("Story 6408 (slice 04): the list says when it cannot show Features", () => {
-	it.skip("when the list cannot be loaded it says so and offers to try again", async () => {
+	it("when the list cannot be loaded it says so and offers to try again", async () => {
 		const { container } = await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
 			{ featureService: aFeatureServiceAnswering(aDroppedConnection()) },
@@ -134,7 +134,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 		expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
 	});
 
-	it.skip("Retry asks again and shows the list once it arrives", async () => {
+	it("Retry asks again and shows the list once it arrives", async () => {
 		const featureService = aFeatureServiceAnswering(
 			aDroppedConnection(),
 			Promise.resolve(NorthwindPlatformsList),
@@ -151,7 +151,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 		expect(theListStatus(container)).toBe("ready");
 	});
 
-	it.skip("a Portfolio with no Features yet says so, as an answer that has arrived", async () => {
+	it("a Portfolio with no Features yet says so, as an answer that has arrived", async () => {
 		const { container } = await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindMobile} />,
 			{ featureService: aFeatureServiceAnswering(Promise.resolve(aList([]))) },
@@ -161,7 +161,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 		expect(theListStatus(container)).toBe("ready");
 	});
 
-	it.skip("when Hide Completed hides every Feature the list says how many there are and how to see them", async () => {
+	it("when Hide Completed hides every Feature the list says how many there are and how to see them", async () => {
 		// More completed Features than one page of the grid holds, so the count cannot be the page's.
 		const completedFeatures = PAGE_SIZE + 7;
 		const everyFeatureDone = aList(
@@ -188,7 +188,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 		).toBeInTheDocument();
 	});
 
-	it.skip("every message uses the instance's own words for Features and Portfolios", async () => {
+	it("every message uses the instance's own words for Features and Portfolios", async () => {
 		await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindMobile} />,
 			{
@@ -202,7 +202,7 @@ describe("Story 6408 (slice 04): the list says when it cannot show Features", ()
 		).toBeInTheDocument();
 	});
 
-	it.skip("the could-not-load message uses the instance's own word for Features", async () => {
+	it("the could-not-load message uses the instance's own word for Features", async () => {
 		await renderAFeatureList(
 			<PortfolioFeatureList portfolio={NorthwindPlatform} />,
 			{
