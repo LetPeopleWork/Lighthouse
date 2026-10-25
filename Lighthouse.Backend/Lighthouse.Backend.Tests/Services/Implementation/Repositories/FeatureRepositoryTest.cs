@@ -11,6 +11,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     {
         // ForecastService consumes this sequence to decide which Features a team's simulated throughput lands on.
         private static readonly string[] LadderOrder = ["0", "1", "2", "2", "3", "", "", "abc"];
+        private static readonly string[] LadderReferenceIds = ["F-3", "F-empty-a", "F-1", "F-2a", "F-2b", "F-abc", "F-empty-b", "F-0"];
         private static readonly string[] LadderOrderWithoutTheBug = ["1", "2", "2", "3", "", "", "abc"];
 
         [Test]
@@ -82,6 +83,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
 
             Assert.That(found, Is.Not.Null);
             Assert.That(found.Order, Is.EqualTo("2"));
+        }
+
+        [Test]
+        public async Task GetByPredicate_NoFeatureMatches_ReturnsNull()
+        {
+            var subject = await GivenTheLadderFixture();
+
+            var found = subject.GetByPredicate(feature => feature.ReferenceId == "F-missing");
+
+            Assert.That(found, Is.Null);
+        }
+
+        [Test]
+        public async Task GetAllReferenceIds_ListsTheReferenceIdOfEveryStoredFeature()
+        {
+            var subject = await GivenTheLadderFixture();
+
+            var referenceIds = subject.GetAllReferenceIds();
+
+            Assert.That(referenceIds, Is.EquivalentTo(LadderReferenceIds));
         }
 
         [Test]
