@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { featuresHeldOf } from "./featuresHeldOf";
 import { UsageDataFeaturesHeld } from "./UsageData";
 
-describe("Story 6404 (slice 01): the band a tab opening carries for the Features its page holds", () => {
+describe("the band a tab opening carries for the Features its page holds", () => {
 	it.each([
 		[0, UsageDataFeaturesHeld.UpTo20],
 		[20, UsageDataFeaturesHeld.UpTo20],
