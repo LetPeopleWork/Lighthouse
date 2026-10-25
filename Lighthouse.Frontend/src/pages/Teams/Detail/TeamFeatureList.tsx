@@ -16,7 +16,6 @@ import { useFeatureChildItems } from "../../../components/Common/FeatureListData
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useFeatureList } from "../../../hooks/useFeatureList";
-import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -32,6 +31,7 @@ interface FeatureListProps {
 const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const featureList = useFeatureList({ kind: "team", id: team.id });
 	const features = featureList.data?.features ?? NO_FEATURES;
+	const { parentsByReferenceId } = featureList;
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -39,17 +39,6 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
-
-	const parentMap = useMemo(
-		() =>
-			new Map<string, ParentWorkItem>(
-				(featureList.data?.parents ?? []).map((parent) => [
-					parent.referenceId,
-					parent,
-				]),
-			),
-		[featureList.data],
-	);
 
 	// Stable single-element array so useMemo deps don't change on every render
 	const teams = useMemo(() => [team], [team]);
@@ -80,7 +69,7 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 					/>
 				),
 			},
-			createParentColumn(parentMap),
+			createParentColumn(parentsByReferenceId),
 			createForecastedStartColumn(),
 			createForecastsColumn(),
 			{
@@ -102,7 +91,13 @@ const TeamFeatureList: React.FC<FeatureListProps> = ({ team }) => {
 			},
 			createStateColumn(),
 		],
-		[featureTerm, teams, parentMap, portfoliosTerm, handleShowFeatureDetails],
+		[
+			featureTerm,
+			teams,
+			parentsByReferenceId,
+			portfoliosTerm,
+			handleShowFeatureDetails,
+		],
 	);
 
 	const getActiveWorkTeams = useCallback(

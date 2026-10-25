@@ -1,7 +1,8 @@
 import { QueryClientContext, useQuery } from "@tanstack/react-query";
-import { useCallback, useContext } from "react";
+import { useCallback, useContext, useMemo } from "react";
 import type { FeatureListOwner } from "../models/FeatureList";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import type { ParentWorkItem } from "./useParentWorkItems";
 
 export type FeatureListLook = "loading" | "ready" | "error";
 
@@ -18,7 +19,22 @@ export const useFeatureList = (owner: FeatureListOwner) => {
 		queryFn: () => featureService.getFeatureList(owner),
 	});
 
-	return { ...query, look: lookOf(query.isError, query.isFetching) };
+	const parentsByReferenceId = useMemo(
+		() =>
+			new Map<string, ParentWorkItem>(
+				(query.data?.parents ?? []).map((parent) => [
+					parent.referenceId,
+					parent,
+				]),
+			),
+		[query.data],
+	);
+
+	return {
+		...query,
+		look: lookOf(query.isError, query.isFetching),
+		parentsByReferenceId,
+	};
 };
 
 const lookOf = (isError: boolean, isFetching: boolean): FeatureListLook => {

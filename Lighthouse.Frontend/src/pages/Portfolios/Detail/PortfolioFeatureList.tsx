@@ -14,7 +14,6 @@ import FeatureProgressIndicator from "../../../components/Common/FeatureListData
 import { useFeatureChildItems } from "../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import { useFeatureList } from "../../../hooks/useFeatureList";
-import type { ParentWorkItem } from "../../../hooks/useParentWorkItems";
 import type { IFeature } from "../../../models/Feature";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -32,23 +31,13 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 }) => {
 	const featureList = useFeatureList({ kind: "portfolio", id: portfolio.id });
 	const features = featureList.data?.features ?? NO_FEATURES;
+	const { parentsByReferenceId } = featureList;
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
-
-	const parentMap = useMemo(
-		() =>
-			new Map<string, ParentWorkItem>(
-				(featureList.data?.parents ?? []).map((parent) => [
-					parent.referenceId,
-					parent,
-				]),
-			),
-		[featureList.data],
-	);
 
 	const {
 		selectedFeature,
@@ -75,12 +64,17 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 					/>
 				),
 			},
-			createParentColumn(parentMap),
+			createParentColumn(parentsByReferenceId),
 			createForecastedStartColumn(),
 			createForecastsColumn(),
 			createStateColumn(),
 		],
-		[featureTerm, portfolio.involvedTeams, parentMap, handleShowFeatureDetails],
+		[
+			featureTerm,
+			portfolio.involvedTeams,
+			parentsByReferenceId,
+			handleShowFeatureDetails,
+		],
 	);
 
 	const getActiveWorkTeams = useCallback(
