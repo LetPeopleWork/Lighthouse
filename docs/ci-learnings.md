@@ -426,6 +426,13 @@ get re-applied.
 
 ## Tests
 
+### 2026-10-26 — A page-wide `getByLabel` in an E2E page object turns into a strict-mode violation the day a section renders sooner
+- **Symptom**: run `40352248307`, both `verifysqlite` and `verifypostgres`: `TeamsOverview.spec.ts` › "The Clone icon opens a pre-filled new-team page" failed all 3 retries with `strict mode violation: getByLabel('Name', { exact: true }) resolved to 3 elements` (the Team name plus two cycle-time definition names) at `BaseEditPage.getName()`.
+- **Root cause**: the Team settings page shows the Premium-only cycle-time editor, whose definitions also carry a field labelled "Name". The page-wide locator only passed because that editor used to appear after the read; once the license became one shared cached query, the editor rendered on first paint and the ambiguity became certain. No local unit test can see it; only the E2E against a Premium instance does.
+- **Fix**: `Lighthouse.EndToEndTests/tests/models/common/BaseEditPage.ts` scopes `getName()`/`setName()` to the "General Configuration" card (`78a682b22`).
+- **Rule going forward**: a page-object locator for a form field is scoped to the section (card/heading) that owns it, never page-wide by label alone — another section can add a field with the same label at any time; and when a change makes data arrive sooner (shared or cached queries), run the E2E specs of the pages that consume it locally before pushing.
+
+
 ### 2026-10-21 — every test passed and the run still failed: a Save press outlived the file's last test
 - **Symptom**: `Verify Frontend / frontend` red on run 39608625778 with `Test Files 499 passed`, `Tests 8026 passed`, `Errors 1 error`: an `Unhandled Rejection` `ReferenceError: window is not defined` from `dispatchSetState` at `ActionButton.tsx:48` (`setInternalIsWaiting(false)` in its `finally`), "originated in `EditConnection.fieldChange.test.tsx`". The same file passed on the two runs before.
 - **Root cause**: `ActionButton` holds its busy state for at least 300 ms after every press. The file's last test pressed the page's Save, saw the refusal and ended in about 370 ms of its own, with the 300 ms floor still running; vitest then tore down that file's jsdom environment, and the pending state update reached for a `window` that no longer existed. It only bites on a file's **last** test, and only when it ends inside the floor, so it comes and goes with machine speed.
