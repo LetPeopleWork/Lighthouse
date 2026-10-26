@@ -3194,3 +3194,6 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
 - **Steps 02-01 and 02-02 run at `standard`** (maintainer, 2026-10-26): sonnet crafter, haiku reviewer, refactor pass;
   both steps with their gates, then a hold. The rest of slice 02 (02-03 to 02-05) waits for slice 05, per the order
   above.
+- **Slice 05 runs at a custom profile** (maintainer, 2026-10-26): sonnet crafter, **sonnet** reviewer, refactor pass.
+  The slice changes how forecasts are saved and replaced, where a reviewer that passes an untested edge costs wrong
+  or orphaned forecasts. Step by step, then a hold.
