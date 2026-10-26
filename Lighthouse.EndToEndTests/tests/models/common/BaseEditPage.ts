@@ -5,13 +5,22 @@ export abstract class BaseEditPage<T> extends BaseSettingsPage<T> {
 	abstract save(): Promise<T>;
 
 	async setName(newName: string): Promise<void> {
-		await this.page.getByLabel("Name", { exact: true }).fill(newName);
+		await this.nameInput.fill(newName);
 	}
 
 	async getName(): Promise<string> {
-		return (
-			(await this.page.getByLabel("Name", { exact: true }).inputValue()) ?? ""
-		);
+		return (await this.nameInput.inputValue()) ?? "";
+	}
+
+	// Scoped to the General Configuration card: Premium pages also render the
+	// cycle-time definitions editor, whose rows each carry a field labelled "Name".
+	private get nameInput(): Locator {
+		return this.page
+			.locator(".MuiCard-root")
+			.filter({
+				has: this.page.getByRole("heading", { name: "General Configuration" }),
+			})
+			.getByLabel("Name", { exact: true });
 	}
 
 	async toggleAdvancedConfiguration(): Promise<void> {
