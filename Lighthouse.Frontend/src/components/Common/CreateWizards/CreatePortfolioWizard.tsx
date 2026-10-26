@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCreateWizard } from "../../../hooks/useCreateWizard";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import {
 	DEFAULT_PERCENTILE_HISTORY_DAYS,
@@ -63,9 +64,12 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 		saveSettings: savePortfolioSettings,
 	});
 
+	const { status, canCreatePortfolio } = useLicenseRestrictions();
+
 	return (
 		<CreateWizardShell
 			{...wizard}
+			createLicenseGate={{ status, allowed: canCreatePortfolio }}
 			entityLabel="portfolio"
 			nameLabel="Portfolio Name"
 			isForTeam={false}

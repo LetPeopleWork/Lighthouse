@@ -24,6 +24,10 @@ import {
 import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import CreatePortfolioWizard from "./CreatePortfolioWizard";
 
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({ status: "ready", canCreatePortfolio: true }),
+}));
+
 vi.mock("../../DataRetrievalWizards", () => ({
 	getWizardsForSystem: vi.fn().mockReturnValue([]),
 }));
