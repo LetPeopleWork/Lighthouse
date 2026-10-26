@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
         public const string Slice04 = "Pending until Story 6408 (the Features list opens fast and says when it cannot load) is delivered.";
 
-        public const string Slice05 = "Pending until Story 6409 (forecast rounds finish sooner) is delivered.";
-
         public const string Slice06 = "Pending until Story 6410 (Lighthouse says when a Portfolio grows past 100 Features) is delivered.";
     }
 }
