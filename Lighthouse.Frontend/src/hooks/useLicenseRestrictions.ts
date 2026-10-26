@@ -1,6 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { type UseQueryResult, useQuery } from "@tanstack/react-query";
 import { useContext } from "react";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
+import { ApiError } from "../services/Api/ApiError";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 
 /** Whether the license and the counts the create gates read have arrived. */
@@ -19,6 +20,16 @@ interface LicenseRestrictions {
 
 const MAX_TEAMS_WITHOUT_PREMIUM = 3;
 const MAX_PORTFOLIOS_WITHOUT_PREMIUM = 1;
+
+/**
+ * What a list read gives to count: the list itself, even when a later refresh failed, and an empty list when the
+ * caller may not read it at all. Undefined means there is nothing to go on yet.
+ */
+const listOf = <T>(query: UseQueryResult<T[]>): T[] | undefined =>
+	query.data ??
+	(query.error instanceof ApiError && query.error.code === 403
+		? []
+		: undefined);
 
 /** The one place the license is read for gating: every gate and the header icon share this query. */
 export const useLicenseStatusQuery = () => {
@@ -78,16 +89,21 @@ export const useLicenseRestrictions = (): LicenseRestrictions => {
 		canUpdatePortfolioData: true,
 	});
 
-	if (license.isError || teams.isError || portfolios.isError) {
+	if (license.isError && !licenseStatus) {
 		return unsettled("failed");
 	}
 
-	if (!teams.data || !portfolios.data) {
-		return unsettled("loading");
+	const teamList = listOf(teams);
+	const portfolioList = listOf(portfolios);
+
+	if (!teamList || !portfolioList) {
+		return unsettled(
+			teams.isError || portfolios.isError ? "failed" : "loading",
+		);
 	}
 
-	const teamCount = teams.data.length;
-	const portfolioCount = portfolios.data.length;
+	const teamCount = teamList.length;
+	const portfolioCount = portfolioList.length;
 
 	return {
 		...limits,

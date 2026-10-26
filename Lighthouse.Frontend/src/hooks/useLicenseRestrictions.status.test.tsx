@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
 import { Portfolio } from "../models/Portfolio/Portfolio";
 import { Team } from "../models/Team/Team";
+import { ApiError } from "../services/Api/ApiError";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../services/Api/LicensingService";
 import { deferred } from "../tests/HeldMetricsService";
@@ -81,7 +82,13 @@ const anInstance = ({
 		</QueryClientProvider>
 	);
 
-	return { licensingService, teamService, portfolioService, wrapper };
+	return {
+		licensingService,
+		teamService,
+		portfolioService,
+		queryClient,
+		wrapper,
+	};
 };
 
 /** Several parts of one page asking at once, the way the header, the Overview and every grid do. */
@@ -209,5 +216,39 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		await waitFor(() => expect(result.current.status).toBe("ready"));
 		expect(teamService.getTeams).not.toHaveBeenCalled();
 		expect(portfolioService.getPortfolios).not.toHaveBeenCalled();
+	});
+
+	it("a refused read of the Teams or Portfolios list counts as an empty list, as the Overview treats it", async () => {
+		const forbidden = new ApiError(403, "Forbidden");
+		const { wrapper } = anInstance({
+			teamList: Promise.reject(forbidden),
+			portfolioList: Promise.reject(forbidden),
+		});
+
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(result.current.canCreateTeam).toBe(true);
+		expect(result.current.canCreatePortfolio).toBe(true);
+	});
+
+	it("a background refresh that fails keeps answering from the counts already in hand", async () => {
+		const { wrapper, teamService, queryClient } = anInstance({
+			teamList: Promise.resolve(teams(3)),
+		});
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+
+		vi.mocked(teamService.getTeams).mockRejectedValueOnce(
+			new Error("the network dropped"),
+		);
+		await act(async () => {
+			await queryClient.refetchQueries({ queryKey: ["teams"] });
+			// TanStack tells its observers on the next tick, so the page sees the failed refresh only after this.
+			await new Promise((resolve) => setTimeout(resolve));
+		});
+		expect(queryClient.getQueryState(["teams"])?.status).toBe("error");
+		expect(result.current.status).toBe("ready");
+		expect(result.current.canCreateTeam).toBe(false);
 	});
 });
