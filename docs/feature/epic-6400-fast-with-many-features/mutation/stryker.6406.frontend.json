@@ -1,0 +1,79 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6406.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6406.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/hooks/useLicenseRestrictions.ts",
+    "src/components/App/License/LicenseToolTip.tsx:19-32",
+    "src/pages/Overview/OverviewDashboard.tsx:152-152",
+    "src/pages/Overview/OverviewDashboard.tsx:472-472",
+    "src/pages/Overview/OverviewDashboard.tsx:516-516",
+    "src/pages/Overview/OverviewDashboard.tsx:539-539",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:17-18",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:46-46",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:58-58",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:93-93",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:101-101",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:109-109",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:113-126",
+    "src/components/Common/OnboardingStepper/OnboardingStepper.tsx:192-202",
+    "src/components/Common/CreateWizards/CreateTeamWizard.tsx:65-75",
+    "src/components/Common/CreateWizards/CreatePortfolioWizard.tsx:67-77",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:70-75",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:126-126",
+    "src/components/Common/CreateWizards/CreateWizardShell.tsx:178-182",
+    "src/components/Common/CreateWizards/WizardStepperFrame.tsx:11-12",
+    "src/components/Common/CreateWizards/WizardStepperFrame.tsx:20-26",
+    "src/components/Common/CreateWizards/WizardStepperFrame.tsx:50-71",
+    "src/pages/Teams/Edit/EditTeam.tsx:42-42",
+    "src/pages/Teams/Edit/EditTeam.tsx:146-150",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:48-49",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:121-121",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:399-399",
+    "src/components/Common/ValidationActions/SaveStateIndicator.tsx:20-24",
+    "src/components/Common/ValidationActions/SaveStateIndicator.tsx:36-43",
+    "src/pages/Portfolios/Edit/EditPortfolio.tsx:36-36",
+    "src/pages/Portfolios/Edit/EditPortfolio.tsx:153-158",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:50-53",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:123-129",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:175-175",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:398-398",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:422-423",
+    "src/components/Common/LicenseStatus/LicenseStatusIcon.tsx:7-8",
+    "src/components/Common/LicenseStatus/LicenseStatusIcon.tsx:22-22"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6406-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6406"
+}
