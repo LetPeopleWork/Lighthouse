@@ -12,6 +12,19 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyCollection<int> GetPortfolioIdsForTeam(int teamId);
 
         /// <summary>
+        /// Every portfolio with its connection and options, its Features and the Teams working on them, and no
+        /// forecast. For callers that name or count portfolios and Teams. Nothing returned is tracked, so none
+        /// of it can reach a save; use <see cref="IRepository{T}.GetAll"/> to change a portfolio.
+        /// </summary>
+        IReadOnlyList<Portfolio> AllWithoutForecasts();
+
+        /// <summary>
+        /// One portfolio read as <see cref="AllWithoutForecasts"/> reads them, or null when there is none with
+        /// this id.
+        /// </summary>
+        Portfolio? OneWithoutForecasts(int id);
+
+        /// <summary>
         /// The ids of the portfolios any of the given teams does work for, each once, in one read.
         /// </summary>
         IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds);

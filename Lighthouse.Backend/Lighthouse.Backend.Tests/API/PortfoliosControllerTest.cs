@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API
         public async Task GetPortfolios_ReturnsAllPortfoliosFromRepository()
         {
             var testPortfolios = GetTestPortfolios();
-            portfolioRepoMock.Setup(x => x.GetAll()).Returns(testPortfolios);
+            portfolioRepoMock.Setup(x => x.AllWithoutForecasts()).Returns(testPortfolios);
 
             var subject = CreateSubject();
 
@@ -337,7 +337,7 @@ namespace Lighthouse.Backend.Tests.API
             var firstPortfolio = new Portfolio { Id = 12, Name = "Visible" };
             var secondPortfolio = new Portfolio { Id = 42, Name = "Hidden" };
 
-            portfolioRepoMock.Setup(x => x.GetAll()).Returns([firstPortfolio, secondPortfolio]);
+            portfolioRepoMock.Setup(x => x.AllWithoutForecasts()).Returns([firstPortfolio, secondPortfolio]);
 
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
@@ -364,7 +364,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolio.Features.Add(new Feature(visibleTeam, 3));
             portfolio.Features.Add(new Feature(hiddenTeam, 5));
 
-            portfolioRepoMock.Setup(x => x.GetAll()).Returns([portfolio]);
+            portfolioRepoMock.Setup(x => x.AllWithoutForecasts()).Returns([portfolio]);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([visibleTeam.Id]);

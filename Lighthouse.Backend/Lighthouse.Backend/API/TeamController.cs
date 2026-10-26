@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.API
         {
             return await this.GetEntityByIdAnExecuteAction(teamRepository, teamId, async team =>
             {
-                var allPortfolios = portfolioRepository.GetAll().ToList();
+                var allPortfolios = portfolioRepository.AllWithoutForecasts().ToList();
                 var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
                 var readablePortfolioIds = await rbacAdministrationService
                     .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)

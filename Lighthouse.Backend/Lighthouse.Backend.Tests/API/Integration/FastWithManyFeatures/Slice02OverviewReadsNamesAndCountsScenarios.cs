@@ -53,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         [TestCase(OneTeam)]
         [TestCase(OnePortfolio)]
         [TestCase(OnePortfoliosSettings)]
-        [Ignore(PendingEpic6400.Slice02)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-navigation-and-settings-answer")]
         [Category("contract-shape:pure-function")]

@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var testPortfolios = GetTestPortfolios();
             var testPortfolio = testPortfolios[^1];
-            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(testPortfolio);
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(42)).Returns(testPortfolio);
 
             var subject = CreateSubject();
 
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolio.Features.Add(new Feature(visibleTeam, 3));
             portfolio.Features.Add(new Feature(hiddenTeam, 5));
 
-            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(portfolio);
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(42)).Returns(portfolio);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([visibleTeam.Id]);
@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.API
                 WorkTrackingSystemConnectionId = 101
             };
 
-            portfolioRepoMock.Setup(x => x.GetById(12)).Returns(portfolio);
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(12)).Returns(portfolio);
 
             var subject = CreateSubject();
 
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Tests.API
             portfolio.Features.Add(new Feature(visibleTeam, 3));
             portfolio.Features.Add(new Feature(hiddenTeam, 5));
 
-            portfolioRepoMock.Setup(x => x.GetById(42)).Returns(portfolio);
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(42)).Returns(portfolio);
             rbacAdministrationServiceMock
                 .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync([visibleTeam.Id]);

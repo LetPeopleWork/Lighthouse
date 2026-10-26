@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.API
         {
             var portfolioDtos = new List<PortfolioDto>();
 
-            var allPortfolios = portfolioRepository.GetAll().ToList();
+            var allPortfolios = portfolioRepository.AllWithoutForecasts();
             var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
             var readablePortfolioIds = await rbacAdministrationService
                 .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)

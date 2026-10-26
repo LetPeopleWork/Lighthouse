@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public async Task<ActionResult<PortfolioDto>> Get(int portfolioId)
         {
-            return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
+            return await ReadPortfolio(portfolioId, async portfolio =>
             {
                 var teamIds = portfolio.Teams.Select(t => t.Id).ToArray();
                 var readableTeamIds = await rbacAdministrationService
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.API
         [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
         public async Task<ActionResult<PortfolioSettingDto>> GetPortfolioSettings(int portfolioId)
         {
-            return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
+            return await ReadPortfolio(portfolioId, async portfolio =>
             {
                 var relatedTeamIds = portfolio.Teams.Select(t => t.Id);
                 if (portfolio.OwningTeam is not null)
@@ -192,6 +192,18 @@ namespace Lighthouse.Backend.API
                 };
                 return portfolioSettingDto;
             });
+        }
+
+        // The Portfolio is read for its names and counts only, so no forecast comes with it.
+        private async Task<ActionResult<TResult>> ReadPortfolio<TResult>(int portfolioId, Func<Portfolio, Task<TResult>> describe)
+        {
+            var portfolio = portfolioRepository.OneWithoutForecasts(portfolioId);
+            if (portfolio is null)
+            {
+                return NotFound();
+            }
+
+            return Ok(await describe(portfolio));
         }
     }
 }

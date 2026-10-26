@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.API
             var readableTeamIds = await rbacAdministrationService
                 .GetReadableTeamIdsAsync(User, teamIds, HttpContext?.RequestAborted ?? default)
                 .ConfigureAwait(false);
-            var allPortfolios = portfolioRepository.GetAll().ToList();
+            var allPortfolios = portfolioRepository.AllWithoutForecasts().ToList();
             var portfolioIds = allPortfolios.Select(p => p.Id).ToArray();
             var readablePortfolioIdSet = await rbacAdministrationService
                 .GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext?.RequestAborted ?? default)

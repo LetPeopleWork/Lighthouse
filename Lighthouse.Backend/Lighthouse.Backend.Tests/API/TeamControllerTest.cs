@@ -1270,6 +1270,7 @@ namespace Lighthouse.Backend.Tests.API
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
             portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
+            portfolioRepositoryMock.Setup(x => x.AllWithoutForecasts()).Returns(portfolios);
 
             return new TeamController(
                 teamRepositoryMock.Object, portfolioRepositoryMock.Object, workItemRepoMock.Object, teamUpdateServiceMock.Object, blackoutPeriodServiceMock.Object, updateQueueServiceMock.Object, rbacAdministrationServiceMock.Object, forecastFilterRuleServiceMock.Object, blockedItemServiceMock.Object, licenseServiceMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new OwnerSettingRefusals(connectionRepositoryMock.Object, terminologyServiceMock.Object));

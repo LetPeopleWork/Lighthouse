@@ -79,6 +79,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .SingleOrDefault(x => x.Id == id);
         }
 
+        public IReadOnlyList<Portfolio> AllWithoutForecasts()
+        {
+            return PortfoliosWithoutForecasts().ToList();
+        }
+
+        public Portfolio? OneWithoutForecasts(int id)
+        {
+            return PortfoliosWithoutForecasts().SingleOrDefault(portfolio => portfolio.Id == id);
+        }
+
         public override void Remove(int id)
         {
             logger.LogInformation("Removing Project with {Id}", id);
@@ -109,6 +119,19 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             }
 
             Context.Features.RemoveRange(orphanedFeatures);
+        }
+
+        private IQueryable<Portfolio> PortfoliosWithoutForecasts()
+        {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
+            return Context.Portfolios
+                .AsNoTrackingWithIdentityResolution()
+                .Include(r => r.Features).ThenInclude(f => f.FeatureWork).ThenInclude(rw => rw.Team.WorkTrackingSystemConnection.Options)
+                .Include(p => p.WorkTrackingSystemConnection.Options)
+                .Include(p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
+                .Include(p => p.WorkTrackingSystemConnection.WriteBackMappingDefinitions);
+#pragma warning restore S8733
         }
 
         private IQueryable<Portfolio> GetAllProjectsWithIncludes()
