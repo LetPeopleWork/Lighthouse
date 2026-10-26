@@ -2,9 +2,11 @@ import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router";
+import { LICENSE_CHECK_FAILED_MESSAGE } from "../../../components/App/License/licenseCheckCopy";
 import CreatePortfolioWizard from "../../../components/Common/CreateWizards/CreatePortfolioWizard";
 import ModifyProjectSettings from "../../../components/Common/ProjectSettings/ModifyProjectSettings";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -31,6 +33,7 @@ const EditPortfolio: React.FC = () => {
 	const { portfolioService, workTrackingSystemService, teamService } =
 		useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
+	const { status, canCreatePortfolio } = useLicenseRestrictions();
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
 
 	const pageTitle = isNewPortfolio
@@ -147,6 +150,12 @@ const EditPortfolio: React.FC = () => {
 				getAllTeams={getAllTeams}
 				validateProjectSettings={validateProjectSettings}
 				saveProjectSettings={saveProjectSettings}
+				disableSave={isNewPortfolio ? !canCreatePortfolio : undefined}
+				notSavedReason={
+					isNewPortfolio && status === "failed"
+						? LICENSE_CHECK_FAILED_MESSAGE
+						: undefined
+				}
 			/>
 		</SnackbarErrorHandler>
 	);

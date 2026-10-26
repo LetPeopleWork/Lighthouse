@@ -47,6 +47,10 @@ interface ModifyProjectSettingsProps {
 	) => Promise<IPortfolioSettings>;
 	validateProjectSettings: (settings: IPortfolioSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
+	/** Settles whether saving is off, instead of the license answer for existing Portfolios; a new Portfolio is saved only when creating one is allowed. */
+	disableSave?: boolean;
+	/** Why saving is switched off, when the person editing should be told. */
+	notSavedReason?: string;
 }
 
 // Bug #5613: autosave is the only save trigger, so an invalid form has to name what blocks it.
@@ -116,9 +120,13 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	saveProjectSettings,
 	validateProjectSettings,
 	modifyDefaultSettings = false,
+	disableSave,
+	notSavedReason,
 }) => {
 	const [teams, setTeams] = useState<ITeam[]>([]);
 	const { canUpdatePortfolioData } = useLicenseRestrictions();
+	const canSave =
+		disableSave === undefined ? canUpdatePortfolioData : !disableSave;
 	const { portfolioService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
@@ -164,7 +172,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		getSchemaForSystem: getDefaultPortfolioSchema,
 		autoSave: {
 			enabled: true,
-			canSave: canUpdatePortfolioData,
+			canSave,
 			refreshOnSave: true,
 		},
 		validateForm: (s, system, isDefault) =>
@@ -387,7 +395,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							</Grid>
 						)}
 
-						{canUpdatePortfolioData && formInvalidReasons.length > 0 && (
+						{canSave && formInvalidReasons.length > 0 && (
 							<Grid size={{ xs: 12 }}>
 								<Alert
 									severity="warning"
@@ -411,7 +419,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						>
 							<SaveStateIndicator
 								saveState={saveState}
-								canSave={canUpdatePortfolioData}
+								canSave={canSave}
+								notSavedReason={notSavedReason}
 								onRetry={retry}
 								onReload={() => void reloadAfterConflict()}
 							/>
