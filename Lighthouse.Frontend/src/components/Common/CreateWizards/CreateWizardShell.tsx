@@ -7,6 +7,7 @@ import {
 	STEP_NAME_CREATE,
 	STEPS,
 } from "../../../hooks/useCreateWizard";
+import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -66,6 +67,8 @@ export interface CreateWizardShellProps {
 	onBack: () => void;
 	onNext: () => void;
 	onCreate: () => void;
+	/** What the license check allows for the thing being created; leave out when creating it is not limited. */
+	createLicenseGate?: { status: LicenseCheckStatus; allowed: boolean };
 }
 
 const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
@@ -116,6 +119,7 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 	onBack,
 	onNext,
 	onCreate,
+	createLicenseGate,
 }) => {
 	const renderWizardButtons = () =>
 		availableWizards.map((wizard) => (
@@ -167,7 +171,11 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 					? {
 							label: "Create",
 							onClick: onCreate,
-							disabled: name.trim() === "" || saving,
+							disabled:
+								name.trim() === "" ||
+								saving ||
+								(createLicenseGate !== undefined && !createLicenseGate.allowed),
+							licenseGate: createLicenseGate,
 						}
 					: undefined
 			}

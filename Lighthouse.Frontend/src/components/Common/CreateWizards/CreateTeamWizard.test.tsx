@@ -25,6 +25,10 @@ import {
 import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import CreateTeamWizard from "./CreateTeamWizard";
 
+vi.mock("../../../hooks/useLicenseRestrictions", () => ({
+	useLicenseRestrictions: () => ({ status: "ready", canCreateTeam: true }),
+}));
+
 vi.mock("../../DataRetrievalWizards", () => ({
 	getWizardsForSystem: vi.fn().mockReturnValue([]),
 }));

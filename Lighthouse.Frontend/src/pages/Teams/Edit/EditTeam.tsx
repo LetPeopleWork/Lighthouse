@@ -2,6 +2,7 @@ import { Alert, Container, Link, Typography } from "@mui/material";
 import type React from "react";
 import { useContext } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router";
+import { LICENSE_CHECK_FAILED_MESSAGE } from "../../../components/App/License/licenseCheckCopy";
 import CreateTeamWizard from "../../../components/Common/CreateWizards/CreateTeamWizard";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import ModifyTeamSettings from "../../../components/Common/Team/ModifyTeamSettings";
@@ -38,7 +39,7 @@ const EditTeamPage: React.FC = () => {
 	const { teamService, workTrackingSystemService } =
 		useContext(ApiServiceContext);
 
-	const { canCreateTeam, canUpdateTeamData } = useLicenseRestrictions();
+	const { status, canCreateTeam, canUpdateTeamData } = useLicenseRestrictions();
 
 	const canSave = isNewTeam ? canCreateTeam : canUpdateTeamData;
 
@@ -142,6 +143,11 @@ const EditTeamPage: React.FC = () => {
 				validateTeamSettings={validateTeamSettings}
 				saveTeamSettings={saveTeamSettings}
 				disableSave={!canSave}
+				notSavedReason={
+					isNewTeam && status === "failed"
+						? LICENSE_CHECK_FAILED_MESSAGE
+						: undefined
+				}
 			/>
 		</SnackbarErrorHandler>
 	);

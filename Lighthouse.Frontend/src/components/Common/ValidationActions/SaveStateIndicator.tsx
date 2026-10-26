@@ -17,8 +17,11 @@ export interface SaveStateIndicatorProps {
 	canSave: boolean;
 	onRetry?: () => void;
 	onReload?: () => void;
+	/** Why nothing is saved although the form could be; shown in place of the save state while saving is off. */
+	notSavedReason?: string;
 }
 
+const NOT_SAVED_PREFIX = "Not saved: ";
 const SAVING_COPY = "Saving…";
 const SAVED_COPY = "All changes saved";
 const ERROR_COPY = "Couldn't save";
@@ -30,7 +33,14 @@ const SaveStateIndicator: React.FC<SaveStateIndicatorProps> = ({
 	canSave,
 	onRetry,
 	onReload,
+	notSavedReason,
 }) => {
+	if (!canSave && notSavedReason) {
+		return (
+			<Alert severity="warning">{`${NOT_SAVED_PREFIX}${notSavedReason}`}</Alert>
+		);
+	}
+
 	if (!canSave || saveState === "idle") {
 		return null;
 	}

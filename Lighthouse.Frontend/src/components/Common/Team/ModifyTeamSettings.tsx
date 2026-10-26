@@ -45,6 +45,8 @@ interface ModifyTeamSettingsProps {
 	validateTeamSettings: (settings: ITeamSettings) => Promise<boolean>;
 	modifyDefaultSettings?: boolean;
 	disableSave?: boolean;
+	/** Why saving is switched off, when the person editing should be told. */
+	notSavedReason?: string;
 }
 
 // Autosave is the only save trigger, so an invalid form has to name what blocks it.
@@ -116,6 +118,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	validateTeamSettings,
 	modifyDefaultSettings = false,
 	disableSave = false,
+	notSavedReason,
 }) => {
 	const { teamService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
@@ -393,6 +396,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							<SaveStateIndicator
 								saveState={saveState}
 								canSave={!disableSave}
+								notSavedReason={notSavedReason}
 								onRetry={retry}
 								onReload={() => void reloadAfterConflict()}
 							/>

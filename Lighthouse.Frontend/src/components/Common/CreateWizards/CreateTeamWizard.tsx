@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCreateWizard } from "../../../hooks/useCreateWizard";
+import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { getDefaultTeamSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import {
 	DEFAULT_FEATURE_WIP,
@@ -61,9 +62,12 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 		saveSettings: saveTeamSettings,
 	});
 
+	const { status, canCreateTeam } = useLicenseRestrictions();
+
 	return (
 		<CreateWizardShell
 			{...wizard}
+			createLicenseGate={{ status, allowed: canCreateTeam }}
 			entityLabel="team"
 			nameLabel="Team Name"
 			isForTeam={true}

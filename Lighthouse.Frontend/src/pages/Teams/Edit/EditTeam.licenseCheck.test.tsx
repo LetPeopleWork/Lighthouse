@@ -1,6 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import SaveStateIndicator from "../../../components/Common/ValidationActions/SaveStateIndicator";
 import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
 import {
 	ApiServiceContext,
@@ -10,6 +11,8 @@ import EditTeamPage from "./EditTeam";
 
 const COULD_NOT_CHECK =
 	"Couldn't check your license. Reload the page to try again.";
+
+const NOT_SAVED = `Not saved: ${COULD_NOT_CHECK}`;
 
 const ATLAS = 7;
 
@@ -59,9 +62,18 @@ vi.mock(
 );
 
 vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
-	default: (props: { disableSave?: boolean }) => {
+	default: (props: { disableSave?: boolean; notSavedReason?: string }) => {
 		theForm.saves = !props.disableSave;
-		return <div data-testid="modify-team-settings">ModifyTeamSettings</div>;
+		return (
+			<div data-testid="modify-team-settings">
+				ModifyTeamSettings
+				<SaveStateIndicator
+					saveState="idle"
+					canSave={!props.disableSave}
+					notSavedReason={props.notSavedReason}
+				/>
+			</div>
+		);
 	},
 }));
 
@@ -115,16 +127,16 @@ describe("Story 6406 (slice 02): saving a new Team follows the licence check", (
 		await anAdminCopiesATeam();
 
 		expect(theForm.saves).toBe(false);
-		expect(screen.queryByText(COULD_NOT_CHECK)).not.toBeInTheDocument();
+		expect(screen.queryByText(NOT_SAVED)).not.toBeInTheDocument();
 	});
 
-	it.skip("when the licence cannot be checked, a copied Team is not saved and the page says why", async () => {
+	it("when the licence cannot be checked, a copied Team is not saved and the page says why", async () => {
 		givenTheLicenceCheck("failed", false);
 
 		await anAdminCopiesATeam();
 
 		expect(theForm.saves).toBe(false);
-		expect(await screen.findByText(COULD_NOT_CHECK)).toBeInTheDocument();
+		expect(await screen.findByText(NOT_SAVED)).toBeInTheDocument();
 	});
 
 	it("once the licence is checked and there is room, a copied Team saves, as today", async () => {
@@ -141,6 +153,6 @@ describe("Story 6406 (slice 02): saving a new Team follows the licence check", (
 		await anAdminEditsAtlas();
 
 		expect(theForm.saves).toBe(true);
-		expect(screen.queryByText(COULD_NOT_CHECK)).not.toBeInTheDocument();
+		expect(screen.queryByText(NOT_SAVED)).not.toBeInTheDocument();
 	});
 });

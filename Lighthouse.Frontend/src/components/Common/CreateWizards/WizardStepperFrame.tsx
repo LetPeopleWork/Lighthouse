@@ -8,6 +8,8 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
+import { LicenseTooltip } from "../../App/License/LicenseToolTip";
 import ActionButton from "../ActionButton/ActionButton";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 
@@ -15,6 +17,8 @@ export interface WizardFrameAction {
 	label: string;
 	onClick: () => void | Promise<void>;
 	disabled: boolean;
+	/** Set when the action creates something the license limits: it then says why it is disabled. */
+	licenseGate?: { status: LicenseCheckStatus; allowed: boolean };
 }
 
 export interface WizardFrameError {
@@ -38,14 +42,27 @@ export interface WizardStepperFrameProps {
 
 const WizardActionButton: React.FC<{ action: WizardFrameAction }> = ({
 	action,
-}) => (
-	<ActionButton
-		buttonText={action.label}
-		onClickHandler={() => Promise.resolve(action.onClick())}
-		buttonVariant="contained"
-		disabled={action.disabled}
-	/>
-);
+}) => {
+	const button = (
+		<ActionButton
+			buttonText={action.label}
+			onClickHandler={() => Promise.resolve(action.onClick())}
+			buttonVariant="contained"
+			disabled={action.disabled}
+		/>
+	);
+	if (!action.licenseGate) return button;
+
+	return (
+		<LicenseTooltip
+			canUseFeature={action.licenseGate.allowed}
+			defaultTooltip=""
+			checkStatus={action.licenseGate.status}
+		>
+			<span>{button}</span>
+		</LicenseTooltip>
+	);
+};
 
 const WizardStepperFrame: React.FC<WizardStepperFrameProps> = ({
 	steps,
