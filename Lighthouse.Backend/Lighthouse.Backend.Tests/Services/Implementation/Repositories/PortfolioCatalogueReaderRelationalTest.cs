@@ -28,6 +28,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         private static readonly string[] CheckoutThenSearch = ["Checkout", "Search"];
         private static readonly string[] AtlasThenBorealis = ["Atlas", "Borealis"];
         private static readonly string[] TheOneOptionKey = ["Url"];
+        private static readonly string[] TheOneFieldName = ["Risk"];
 
         private int platformId;
 
@@ -182,6 +183,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var one = TheRepository(out _).OneWithoutForecasts(portfolioId);
 
             Assert.That(one!.OwningTeam?.Id, Is.EqualTo(ownerId));
+        }
+
+        [Test]
+        [Category("contract-shape:pure-function")]
+        public async Task The_additional_field_definitions_of_the_connection_come_with_the_Portfolio()
+        {
+            int portfolioId;
+            using (var context = AContext())
+            {
+                var withField = new Portfolio { Name = "With field", WorkTrackingSystemConnection = AConnection("With field") };
+                withField.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { DisplayName = "Risk", Reference = "customfield_1" });
+                context.Portfolios.Add(withField);
+                await context.SaveChangesAsync();
+                portfolioId = withField.Id;
+            }
+
+            var one = TheRepository(out _).OneWithoutForecasts(portfolioId);
+
+            Assert.That(one!.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Select(field => field.DisplayName), Is.EqualTo(TheOneFieldName));
         }
 
         private PortfolioRepository TheRepository(out LighthouseAppContext context)

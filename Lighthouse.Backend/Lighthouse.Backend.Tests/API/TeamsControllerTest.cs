@@ -671,7 +671,6 @@ namespace Lighthouse.Backend.Tests.API
             portfolios ??= [];
 
             teamRepositoryMock.Setup(x => x.GetAll()).Returns(teams);
-            portfolioRepositoryMock.Setup(x => x.GetAll()).Returns(portfolios);
             portfolioRepositoryMock.Setup(x => x.AllWithoutForecasts()).Returns(portfolios);
 
             return new TeamsController(
