@@ -1,4 +1,5 @@
 using System.Data;
+using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
@@ -194,6 +195,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
                 Assert.That(TheLastForecastRoundOf(portfolio)?.Skipped, Is.True, "The second round was to be the skipped one.");
                 Assert.That(fromTheSkippedRound, Is.EquivalentTo(fromTheComputedRound),
                     "A skipped round stages what the computed round before it staged, Feature by Feature.");
+            }
+        }
+
+        [Test]
+        [Category("driving_port")]
+        [Category("guardrail-G1")]
+        [Category("kpi-OUT-6400-answers-unchanged")]
+        [Category("contract-shape:bounded-change")]
+        public async Task A_computed_round_writes_back_the_forecasted_start_of_a_Feature_a_Team_works_on_and_the_day_work_began_on_one_no_Team_works_on()
+        {
+            var portfolio = GivenAPortfolioWithOneFeatureOfFiveItems(TheFeature);
+            GivenTheForecastIsWrittenBackToTheTracker(portfolio);
+            GivenThePortfolioAlsoHoldsAFeatureNoTeamWorksOn(portfolio);
+            GivenEveryFeaturesStartIsWrittenBackToo(portfolio);
+
+            await WhenTheRoundRunsFor(portfolio);
+            var staged = TheValuesByWorkItemAndField(TheValuesTheTrackerReceived());
+
+            var feature = await TheFeatureAsTheClientSeesIt(TheFeature);
+            var theStart85Day = TheStartPercentile(feature, 85).GetProperty("expectedDate").GetString()![..10];
+            var theDayAuditTrailBegan = Now.UtcDateTime.AddDays(-3).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(staged, Does.ContainKey(TheStartOf("PAY-1")), "No start was staged for the Feature a Team works on.");
+                Assert.That(staged.GetValueOrDefault(TheStartOf("PAY-1")), Does.StartWith(theStart85Day),
+                    "The Feature a Team works on was sent another start than its forecasted 85% start.");
+                Assert.That(staged.GetValueOrDefault(TheStartOf(AuditTrailsReference)), Does.StartWith(theDayAuditTrailBegan),
+                    "The Feature no Team works on was sent another start than the day it began.");
             }
         }
 

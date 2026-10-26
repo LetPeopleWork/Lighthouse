@@ -135,8 +135,15 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             await WhenTheRoundRunsFor(portfolio);
             var fromTheSkippedRound = TheValuesByWorkItemAndField(TheValuesTheTrackerReceived().Skip(staged.Count));
 
+            var feature = await TheFeatureAsTheClientSeesIt(TheFeature);
+            var theStart85Day = TheStartPercentile(feature, 85).GetProperty("expectedDate").GetString()![..10];
+            var theDayAuditTrailBegan = Now.UtcDateTime.AddDays(-3).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(fromTheComputedRound.GetValueOrDefault($"{TheFeatureATeamWorksOn} {TheStartFieldInTheTracker}"), Does.StartWith(theStart85Day),
+                    "The Feature a Team works on was sent another start than its forecasted 85% start.");
+                Assert.That(fromTheComputedRound.GetValueOrDefault($"{TheFeatureNoTeamWorksOn} {TheStartFieldInTheTracker}"), Does.StartWith(theDayAuditTrailBegan),
+                    "The Feature no Team works on was sent another start than the day it began.");
                 Assert.That(fromTheComputedRound, Does.ContainKey($"{TheFeatureNoTeamWorksOn} {TheStartFieldInTheTracker}"),
                     "The computed round staged nothing for the Feature no Team works on, so that Feature was never compared. Staged: "
                     + string.Join(", ", fromTheComputedRound.Keys));

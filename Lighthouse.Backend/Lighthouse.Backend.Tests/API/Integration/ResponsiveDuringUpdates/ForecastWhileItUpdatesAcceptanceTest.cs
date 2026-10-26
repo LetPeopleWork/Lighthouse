@@ -290,6 +290,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             return default;
         }
 
+        protected static JsonElement TheStartPercentile(JsonElement feature, int probability)
+        {
+            foreach (var percentile in feature.GetProperty("startForecast").GetProperty("percentiles").EnumerateArray())
+            {
+                if (percentile.GetProperty("probability").GetInt32() == probability)
+                {
+                    return percentile;
+                }
+            }
+
+            Assert.Fail($"The Feature carried no {probability}% start percentile: {feature}");
+
+            return default;
+        }
+
         /// <summary>Every forecast date the tracker was sent for the mapped field, as the tracker received them.</summary>
         protected IReadOnlyList<WriteBackFieldUpdate> TheForecastDatesTheTrackerReceived()
             => ConnectorMock.Invocations
