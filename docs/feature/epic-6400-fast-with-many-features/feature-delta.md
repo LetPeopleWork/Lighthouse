@@ -3191,3 +3191,6 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
   2026-10-25, option A at 04-03): the list reuses the read guard, so a reader cannot tell an unreadable Portfolio or
   Team from a missing one. The two DISTILL scenarios that expected 403 now expect 404. A Team that does not exist
   answers 404 too (it answered 200 with an empty list before).
+- **Steps 02-01 and 02-02 run at `standard`** (maintainer, 2026-10-26): sonnet crafter, haiku reviewer, refactor pass;
+  both steps with their gates, then a hold. The rest of slice 02 (02-03 to 02-05) waits for slice 05, per the order
+  above.
