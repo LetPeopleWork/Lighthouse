@@ -127,6 +127,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 #pragma warning disable S8733
             return Context.Portfolios
                 .AsNoTrackingWithIdentityResolution()
+                .Include(p => p.OwningTeam)
                 .Include(r => r.Features).ThenInclude(f => f.FeatureWork).ThenInclude(rw => rw.Team.WorkTrackingSystemConnection.Options)
                 .Include(p => p.WorkTrackingSystemConnection.Options)
                 .Include(p => p.WorkTrackingSystemConnection.AdditionalFieldDefinitions)

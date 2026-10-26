@@ -163,6 +163,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(features.SelectMany(feature => feature.Forecasts), Is.Not.Empty);
         }
 
+        [Test]
+        [Category("contract-shape:pure-function")]
+        public async Task The_owning_Team_comes_back_even_when_it_works_none_of_the_Features()
+        {
+            int portfolioId;
+            int ownerId;
+            using (var context = AContext())
+            {
+                var idleOwner = new Team { Name = "Idle owner", WorkTrackingSystemConnection = AConnection("Idle owner") };
+                var owned = new Portfolio { Name = "Owned", WorkTrackingSystemConnection = AConnection("Owned"), OwningTeam = idleOwner };
+                context.Portfolios.Add(owned);
+                await context.SaveChangesAsync();
+                portfolioId = owned.Id;
+                ownerId = idleOwner.Id;
+            }
+
+            var one = TheRepository(out _).OneWithoutForecasts(portfolioId);
+
+            Assert.That(one!.OwningTeam?.Id, Is.EqualTo(ownerId));
+        }
+
         private PortfolioRepository TheRepository(out LighthouseAppContext context)
         {
             context = AContext();
