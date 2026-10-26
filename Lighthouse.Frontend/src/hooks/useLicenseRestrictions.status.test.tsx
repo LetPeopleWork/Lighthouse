@@ -147,8 +147,6 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		await waitFor(() => expect(result.current.status).toBe("ready"));
 	});
 
-	// "Allowed" is also what the hook answers before anything has arrived, and today nothing it exposes says the counts
-	// have arrived, so this waits for the check to say it is ready, which slice 02 adds.
 	it("on a free licence with room left, Add Team and Add Portfolio are allowed as today", async () => {
 		const { wrapper } = anInstance({
 			teamList: Promise.resolve(teams(2)),
@@ -170,7 +168,8 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 
 		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
 
-		await waitFor(() => expect(result.current.canCreateTeam).toBe(false));
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(result.current.canCreateTeam).toBe(false);
 		expect(result.current.canCreatePortfolio).toBe(false);
 		expect(result.current.canUpdateTeamData).toBe(true);
 		expect(result.current.canUpdatePortfolioData).toBe(true);
@@ -190,6 +189,21 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.canCreatePortfolio).toBe(true);
 	});
 
+	it("on a Premium licence a Teams or Portfolios list that cannot be read still leaves the check ready with everything allowed", async () => {
+		const { wrapper } = anInstance({
+			licence: Promise.resolve(aPremiumLicence),
+			teamList: Promise.reject(new Error("the network dropped")),
+			portfolioList: Promise.reject(new Error("the network dropped")),
+		});
+
+		const { result } = renderHook(() => useLicenseRestrictions(), {
+			wrapper,
+		});
+
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(result.current.canCreateTeam).toBe(true);
+		expect(result.current.canCreatePortfolio).toBe(true);
+	});
 	it("three parts of one page asking at once share one licence read and one count of each list", async () => {
 		const { wrapper, licensingService, teamService, portfolioService } =
 			anInstance();

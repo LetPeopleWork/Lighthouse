@@ -27,10 +27,10 @@ import {
 } from "./DeliveryDialogTestKit";
 
 /**
- * The licence as the app really reads it: three requests at once, for the licence, the teams and the
- * portfolios. Until a later change gives that check a failure look of its own, a check that never
- * answers, or fails on any of the three, leaves the premium tabs loading. That is the accepted limit;
- * what it must never do is tell Lena she needs a premium licence she may well have.
+ * The licence as the app really reads it. The dialog needs only the licence itself: while that read has no
+ * answer, because it never arrives or because it failed, the premium tabs stay loading. What this must never do
+ * is tell Lena she needs a premium licence she may well have. A failing Teams or Portfolios list is none of the
+ * dialog's business, since those lists are only read on a free licence to count what may still be created.
  */
 
 vi.mock("../../../../../services/TerminologyContext", () => ({
