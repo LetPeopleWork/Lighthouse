@@ -265,4 +265,61 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.status).toBe("ready");
 		expect(result.current.canCreateTeam).toBe(false);
 	});
+
+	it("a list read that fails for any reason other than being refused is a failed check, not an empty list", async () => {
+		const { wrapper } = anInstance({
+			teamList: Promise.reject(new ApiError(500, "Server error")),
+			portfolioList: Promise.resolve(portfolios(0)),
+		});
+
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+
+		await waitFor(() => expect(result.current.status).toBe("failed"));
+		expect(result.current.canCreateTeam).toBe(false);
+	});
+
+	it("a licence answer read a minute ago is still in date and is not asked for again", async () => {
+		const { wrapper, licensingService, queryClient } = anInstance({
+			licence: Promise.resolve(aPremiumLicence),
+		});
+		queryClient.setQueryData(["licenseStatus"], aFreeLicence, {
+			updatedAt: Date.now() - 60_000,
+		});
+		queryClient.setQueryData(["teams"], teams(1));
+		queryClient.setQueryData(["portfolios"], portfolios(0));
+
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(licensingService.getLicenseStatus).not.toHaveBeenCalled();
+		expect(result.current.licenseStatus).toEqual(aFreeLicence);
+	});
+
+	it("the licence is asked for once, not again a second later", async () => {
+		const { wrapper, licensingService } = anInstance({
+			licence: Promise.resolve(aPremiumLicence),
+		});
+
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+		await waitFor(() => expect(result.current.status).toBe("ready"));
+		await new Promise((resolve) => setTimeout(resolve, 1300));
+
+		expect(licensingService.getLicenseStatus).toHaveBeenCalledTimes(1);
+	});
+
+	it("answers from the licence, Teams and Portfolios already held under their shared names while they are read again", () => {
+		const { wrapper, queryClient } = anInstance({
+			teamList: deferred<Team[]>().promise,
+			portfolioList: deferred<Portfolio[]>().promise,
+		});
+		queryClient.setQueryData(["licenseStatus"], aFreeLicence);
+		queryClient.setQueryData(["teams"], teams(1));
+		queryClient.setQueryData(["portfolios"], portfolios(1));
+
+		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
+
+		expect(result.current.status).toBe("ready");
+		expect(result.current.canCreateTeam).toBe(true);
+		expect(result.current.canCreatePortfolio).toBe(false);
+	});
 });

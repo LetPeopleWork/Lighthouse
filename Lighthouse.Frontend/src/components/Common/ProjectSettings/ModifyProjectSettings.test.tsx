@@ -584,6 +584,56 @@ describe("ModifyProjectSettings", () => {
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
 
+	it("a caller that switches saving off says why, whatever the license allows", async () => {
+		render(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+				disableSave={true}
+				notSavedReason="the copy has no name yet"
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.getByText("Not saved: the copy has no name yet"),
+		).toBeInTheDocument();
+
+		fireEvent.click(screen.getByText("Change General"));
+		await new Promise((resolve) => setTimeout(resolve, 500));
+
+		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+	});
+
+	it("a caller that leaves saving on is not stopped by the license", async () => {
+		mockCanUpdatePortfolioData.mockReturnValue(false);
+
+		render(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+				disableSave={false}
+			/>,
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+		fireEvent.click(screen.getByText("Change General"));
+
+		await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+	});
+
 	it("refreshes dependent portfolio data after a valid state-mapping change", async () => {
 		renderWithProvider(
 			<ModifyProjectSettings
