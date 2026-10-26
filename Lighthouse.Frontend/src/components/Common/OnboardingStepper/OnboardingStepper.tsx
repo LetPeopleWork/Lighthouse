@@ -90,6 +90,7 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 			action: () => navigate("/connections/new"),
 			actionLabel: `Add ${connectionTerm}`,
 			enabled: true,
+			licenseGated: false,
 		},
 		{
 			label: `Add ${teamTerm}`,
@@ -97,6 +98,7 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 			action: () => navigate("/teams/new"),
 			actionLabel: `Add ${teamTerm}`,
 			enabled: hasConnections && canCreateTeam,
+			licenseGated: true,
 		},
 		{
 			label: `Add ${portfolioTerm}`,
@@ -104,8 +106,23 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 			action: () => navigate("/portfolios/new"),
 			actionLabel: `Add ${portfolioTerm}`,
 			enabled: hasTeams && canCreatePortfolio,
+			licenseGated: true,
 		},
 	];
+
+	const cta = (
+		<span>
+			<Button
+				variant="contained"
+				startIcon={<AddIcon />}
+				onClick={steps[activeStep].action}
+				disabled={!steps[activeStep].enabled}
+				data-testid="onboarding-cta"
+			>
+				{steps[activeStep].actionLabel}
+			</Button>
+		</span>
+	);
 
 	return (
 		<Box
@@ -172,23 +189,17 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 				>
 					{steps[activeStep].description}
 				</Typography>
-				<LicenseTooltip
-					canUseFeature
-					defaultTooltip=""
-					checkStatus={licenseCheckStatus}
-				>
-					<span>
-						<Button
-							variant="contained"
-							startIcon={<AddIcon />}
-							onClick={steps[activeStep].action}
-							disabled={!steps[activeStep].enabled}
-							data-testid="onboarding-cta"
-						>
-							{steps[activeStep].actionLabel}
-						</Button>
-					</span>
-				</LicenseTooltip>
+				{steps[activeStep].licenseGated ? (
+					<LicenseTooltip
+						canUseFeature
+						defaultTooltip=""
+						checkStatus={licenseCheckStatus}
+					>
+						{cta}
+					</LicenseTooltip>
+				) : (
+					cta
+				)}
 			</Box>
 		</Box>
 	);
