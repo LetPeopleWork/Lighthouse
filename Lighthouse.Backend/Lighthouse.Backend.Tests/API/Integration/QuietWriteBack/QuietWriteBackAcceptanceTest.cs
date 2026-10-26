@@ -374,10 +374,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
         }
 
         /// <summary>
-        /// Makes the forecast pass resolvable. Production populates a Feature's forecasts inside
-        /// <see cref="IForecastService.UpdateForecastsForPortfolio"/>; the fake does the same thing with
-        /// a fixed number of working days, so the resolved date is deterministic without pinning a
-        /// Monte Carlo run.
+        /// Makes the forecast pass resolvable. Production stores a Feature's forecasts inside
+        /// <see cref="IForecastService.UpdateForecastsForPortfolio"/>, and the write-back reads them back from
+        /// the store; the fake does the same thing with a fixed number of working days, so the resolved date
+        /// is deterministic without pinning a Monte Carlo run.
         /// </summary>
         protected void TheForecastRunProduces(int workingDaysToCompletion)
         {
@@ -385,12 +385,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
                 .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .Callback((Portfolio portfolio, DateOnly _, CancellationToken _) =>
                 {
-                    foreach (var feature in portfolio.Features)
+                    using var scope = Factory.Services.CreateScope();
+                    var features = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+
+                    foreach (var held in portfolio.Features)
                     {
                         var simulation = new SimulationResult();
                         simulation.SimulationResults[workingDaysToCompletion] = 100;
+                        var feature = features.GetById(held.Id)!;
                         feature.SetFeatureForecasts([new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true }]);
+                        features.Update(feature);
                     }
+
+                    features.Save().GetAwaiter().GetResult();
                 })
                 .ReturnsAsync(ForecastServiceDoubles.Computed);
         }

@@ -27,6 +27,15 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyList<Feature> FeaturesWithReferenceIds(IReadOnlyCollection<string> referenceIds);
 
         /// <summary>
+        /// The Features any of these Teams has work in, in forecast order, tracked so a forecast round can
+        /// replace their forecasts and save. Read with their Portfolios, their work per Team and those Teams,
+        /// what they depend on, and the header of every completion and start forecast, but none of the
+        /// simulation results behind them: a round that replaces a forecast has no use for the histogram it
+        /// replaces, and one that finds nothing changed never needs it.
+        /// </summary>
+        IReadOnlyList<Feature> FeaturesWorkedOnBy(IReadOnlyCollection<int> teamIds);
+
+        /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
         /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last

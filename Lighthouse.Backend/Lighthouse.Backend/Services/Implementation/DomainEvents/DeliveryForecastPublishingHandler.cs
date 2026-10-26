@@ -30,14 +30,21 @@ namespace Lighthouse.Backend.Services.Implementation.DomainEvents
 
             try
             {
+                var deliveries = deliveryRepository.GetRecordableByPortfolio(domainEvent.PortfolioId);
+
+                // A Portfolio with no Delivery has nothing to publish, and reading it brings the histograms of
+                // every forecast of its Features along.
+                if (deliveries.Count == 0)
+                {
+                    return;
+                }
+
                 var portfolio = portfolioRepository.GetById(domainEvent.PortfolioId);
 
                 if (portfolio == null)
                 {
                     return;
                 }
-
-                var deliveries = deliveryRepository.GetRecordableByPortfolio(domainEvent.PortfolioId);
 
                 await publishingService.PublishForPortfolio(portfolio, deliveries);
 

@@ -118,9 +118,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             deliveryRepositoryMock.Verify(repository => repository.GetRecordableByPortfolio(ThePortfolio), Times.Once);
         }
 
+        /// <summary>
+        /// Reading a Portfolio brings the histogram of every forecast of its Features with it, so a Portfolio
+        /// with no Delivery to publish for is not read at all.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_with_no_Delivery_is_not_read_and_publishes_nothing()
+        {
+            GivenAPortfolio();
+            deliveryRepositoryMock
+                .Setup(repository => repository.GetRecordableByPortfolio(ThePortfolio))
+                .Returns(new RecordableDeliveries([]));
+
+            await subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None);
+
+            portfolioRepositoryMock.Verify(repository => repository.GetById(It.IsAny<int>()), Times.Never);
+            publishingServiceMock.Verify(
+                service => service.PublishForPortfolio(It.IsAny<Portfolio>(), It.IsAny<RecordableDeliveries>()),
+                Times.Never);
+        }
+
         [Test]
         public async Task A_Portfolio_that_is_gone_by_the_time_the_forecast_lands_publishes_nothing()
         {
+            GivenTheRecordableDeliveries();
             portfolioRepositoryMock.Setup(repository => repository.GetById(ThePortfolio)).Returns((Portfolio?)null);
 
             await subject.HandleAsync(new PortfolioForecastsUpdated(ThePortfolio), CancellationToken.None);
@@ -163,7 +184,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 
         private RecordableDeliveries GivenTheRecordableDeliveries()
         {
-            var deliveries = new RecordableDeliveries([]);
+            var deliveries = new RecordableDeliveries([new Delivery("Launch", DateTime.UtcNow.AddDays(30), ThePortfolio)]);
             deliveryRepositoryMock.Setup(repository => repository.GetRecordableByPortfolio(ThePortfolio)).Returns(deliveries);
 
             return deliveries;

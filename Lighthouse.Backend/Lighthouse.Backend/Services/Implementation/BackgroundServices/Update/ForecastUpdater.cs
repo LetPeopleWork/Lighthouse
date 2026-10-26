@@ -1,10 +1,12 @@
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Diagnostics;
@@ -123,15 +125,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         private List<UpdateKey> TeamsOfThePortfolioWaitingToRefresh(int portfolioId)
         {
             using var scope = scopeFactory.CreateScope();
-            var portfolio = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId);
-
-            if (portfolio == null)
-            {
-                return [];
-            }
-
-            var teamKeys = portfolio.Teams
-                .Select(team => new UpdateKey(UpdateType.Team, team.Id))
+            var teamKeys = scope.ServiceProvider.GetRequiredService<IPortfolioRepository>().TeamIdsOf(portfolioId)
+                .Select(teamId => new UpdateKey(UpdateType.Team, teamId))
                 .ToList();
 
             return updateStatusStore.HasQueuedWork(teamKeys) ? teamKeys : [];
@@ -183,7 +178,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task ForecastOnTheLane(int id, IServiceProvider serviceProvider)
         {
-            var portfolio = serviceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(id);
+            var portfolio = serviceProvider.GetRequiredService<IPortfolioRepository>().OneWithoutForecasts(id);
 
             if (portfolio == null)
             {
@@ -256,13 +251,38 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task StageTheWriteBackAndAnnounce(Portfolio portfolio, IServiceProvider serviceProvider)
         {
-            var writeBackTriggerService = serviceProvider.GetRequiredService<IWriteBackTriggerService>();
             serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
                 portfolio.WorkTrackingSystemConnection,
-                writeBackTriggerService.ResolveForecastWriteBackForPortfolio(portfolio));
+                ResolveTheForecastWriteBack(portfolio, serviceProvider));
 
             await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
         }
+
+        /// <summary>
+        /// Staging dates needs the forecasts as they are stored now, histograms and all, so they are read here, after
+        /// the round saved, and only for a Portfolio whose connection maps a forecast to a field the licence lets
+        /// us write. The mappings are read from the connection itself: the Portfolio this round carries is read
+        /// without them, and without forecasts, so resolving against it would stage nothing.
+        /// </summary>
+        private static IReadOnlyList<WriteBackFieldUpdate> ResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
+        {
+            var connection = serviceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(portfolio.WorkTrackingSystemConnection.Id);
+
+            if (connection is null || !MapsAForecast(connection) || !serviceProvider.GetRequiredService<ILicenseService>().CanUsePremiumFeatures())
+            {
+                return [];
+            }
+
+            var withItsForecasts = new Portfolio { Id = portfolio.Id, Name = portfolio.Name, WorkTrackingSystemConnection = connection };
+            withItsForecasts.UpdateFeatures(serviceProvider.GetRequiredService<IFeatureRepository>().FeaturesOfPortfolio(portfolio.Id));
+
+            return serviceProvider.GetRequiredService<IWriteBackTriggerService>().ResolveForecastWriteBackForPortfolio(withItsForecasts);
+        }
+
+        private static bool MapsAForecast(WorkTrackingSystemConnection connection)
+            => connection.WriteBackMappingDefinitions.Exists(mapping =>
+                mapping.AppliesTo == WriteBackAppliesTo.Portfolio
+                && (WriteBackValueSources.Completion.Contains(mapping.ValueSource) || WriteBackValueSources.Start.Contains(mapping.ValueSource)));
 
         /// <summary>
         /// A skipped forecast was not drawn again, but it was checked against current data, so every Feature

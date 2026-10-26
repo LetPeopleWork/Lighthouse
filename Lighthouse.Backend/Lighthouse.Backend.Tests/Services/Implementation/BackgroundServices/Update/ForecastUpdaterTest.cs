@@ -5,7 +5,9 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -22,7 +24,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 {
     public class ForecastUpdaterTest : UpdateServiceTestBase
     {
-        private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
+        private Mock<IRepository<WorkTrackingSystemConnection>> connectionRepositoryMock;
+        private Mock<ILicenseService> licenseServiceMock;
         private Mock<IAppSettingService> appSettingServiceMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IWriteBackTriggerService> writeBackTriggerServiceMock;
@@ -64,7 +67,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void Setup()
         {
-            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
+            connectionRepositoryMock
+                .Setup(x => x.GetById(TheConnectionId))
+                .Returns(ConnectionMappingAForecast());
+            licenseServiceMock = new Mock<ILicenseService>();
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             appSettingServiceMock = new Mock<IAppSettingService>();
             forecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
             writeBackTriggerServiceMock = new Mock<IWriteBackTriggerService>();
@@ -92,12 +100,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 .Setup(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
+            forecastInputsMock
+                .Setup(x => x.TeamIdsOf(It.IsAny<int>()))
+                .Returns((int portfolioId) => forecastInputsMock.Object.OneWithoutForecasts(portfolioId)?.Teams.Select(team => team.Id).ToList() ?? []);
+
             featureRepositoryMock = new Mock<IFeatureRepository>();
+            featureRepositoryMock
+                .Setup(x => x.FeaturesOfPortfolio(It.IsAny<int>()))
+                .Returns([]);
             featureRepositoryMock
                 .Setup(x => x.ConfirmForecastsAsOf(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            SetupServiceProviderMock(portfolioRepositoryMock.Object);
+            SetupServiceProviderMock(connectionRepositoryMock.Object);
+            SetupServiceProviderMock(licenseServiceMock.Object);
             SetupServiceProviderMock(forecastInputsMock.Object);
             SetupServiceProviderMock(featureRepositoryMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
@@ -122,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldDoNothing_WhenProjectNotFound()
         {
             // Arrange
-            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Portfolio)null);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(It.IsAny<int>())).Returns((Portfolio)null);
 
             var subject = CreateSubject();
 
@@ -130,8 +146,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(1);
 
             // Assert
-            portfolioRepositoryMock.Verify(x => x.GetById(It.IsAny<int>()), Times.AtLeastOnce);
-            portfolioRepositoryMock.VerifyNoOtherCalls();
+            forecastInputsMock.Verify(x => x.OneWithoutForecasts(It.IsAny<int>()), Times.AtLeastOnce);
+            forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
             forecastServiceMock.Verify(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -141,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             // Arrange
             var project = CreatePortfolio();
 
-            portfolioRepositoryMock.Setup(x => x.GetById(project.Id)).Returns(project);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(project.Id)).Returns(project);
 
             var subject = CreateSubject();
 
@@ -156,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldForecastForTheInstanceDayTheClockReports()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
@@ -169,19 +185,70 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var portfolio = CreatePortfolio();
 
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var subject = CreateSubject();
 
             subject.TriggerUpdate(portfolio.Id);
 
-            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(portfolio), Times.Once);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldResolveWriteBackAgainstTheMappingsAndForecastsStoredAfterTheRound()
+        {
+            var portfolio = CreatePortfolio();
+            var storedFeature = new Feature { Name = "Stored", Id = idCounter++ };
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            featureRepositoryMock.Setup(x => x.FeaturesOfPortfolio(portfolio.Id)).Returns([storedFeature]);
+
+            Portfolio? resolved = null;
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()))
+                .Callback((Portfolio given) => resolved = given)
+                .Returns([]);
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(resolved?.Id, Is.EqualTo(portfolio.Id));
+                Assert.That(resolved?.Features, Has.Exactly(1).SameAs(storedFeature));
+                Assert.That(resolved?.WorkTrackingSystemConnection.WriteBackMappingDefinitions, Has.Count.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void Update_ShouldReadNoFeaturesForWriteBack_WhenTheConnectionMapsNoForecast()
+        {
+            var portfolio = CreatePortfolio();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            connectionRepositoryMock.Setup(x => x.GetById(TheConnectionId)).Returns(ConnectionMappingNoForecast());
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            featureRepositoryMock.Verify(x => x.FeaturesOfPortfolio(It.IsAny<int>()), Times.Never);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
+            domainEventDispatcherMock.Verify(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldReadNoFeaturesForWriteBack_WhenTheLicenceDoesNotAllowIt()
+        {
+            var portfolio = CreatePortfolio();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(false);
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            featureRepositoryMock.Verify(x => x.FeaturesOfPortfolio(It.IsAny<int>()), Times.Never);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
         }
 
         [Test]
         public void Update_ShouldNotTriggerWriteBack_WhenProjectNotFound()
         {
-            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Portfolio)null);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(It.IsAny<int>())).Returns((Portfolio)null);
 
             var subject = CreateSubject();
 
@@ -196,7 +263,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             // Arrange
             var portfolio = CreatePortfolio();
 
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock.Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>())).ThrowsAsync(new Exception("Test exception"));
 
             var subject = CreateSubject();
@@ -210,11 +277,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldPublishPortfolioForecastsUpdatedExactlyOnce_AfterForecastWriteBack()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var dispatchSequence = new List<string>();
             writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
                 .Callback(() => dispatchSequence.Add("forecastWriteBack"))
                 .Returns([]);
             domainEventDispatcherMock
@@ -232,7 +299,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [Test]
         public void Update_ShouldNotPublishPortfolioForecastsUpdated_WhenProjectNotFound()
         {
-            portfolioRepositoryMock.Setup(x => x.GetById(It.IsAny<int>())).Returns((Portfolio)null);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(It.IsAny<int>())).Returns((Portfolio)null);
 
             var subject = CreateSubject();
 
@@ -245,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordRefreshLogForForecast_WhenPortfolioIsFound()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var recorded = CaptureRefreshLog();
 
@@ -269,7 +336,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_RecordsTheForecastAtTheClocksInstant()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var recorded = CaptureRefreshLog();
 
@@ -282,7 +349,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordHowLongTheForecastRan()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(portfolio, It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
@@ -303,7 +370,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordUnsuccessfulRefreshLog_WhenForecastThrows()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Test exception"));
@@ -325,7 +392,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordTheRefreshAsCancelled_WhenTheForecastIsStopped()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastIsStopped();
 
             var recorded = CaptureRefreshLog();
@@ -352,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordAFailureNotACancel_WhenACancellationArrivesThatNobodyAskedFor()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new TaskCanceledException("A call inside the forecast timed out."));
@@ -377,7 +444,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldEndWithoutAFailureAndSaySo_WhenLighthouseStopsDuringTheForecast()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             lighthouseLifetime.SetupGet(x => x.ApplicationStopping).Returns(new CancellationToken(canceled: true));
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
@@ -407,7 +474,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void TriggerUpdate_ShouldNotAskForASecondForecast_WhenOneIsAlreadyHeld()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             Mock.Get(UpdateQueueService)
                 .Setup(x => x.IsHeld(new UpdateKey(UpdateType.Forecasts, portfolio.Id)))
                 .Returns(true);
@@ -423,7 +490,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Sibling Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             var teamKey = new UpdateKey(UpdateType.Team, team.Id);
             var forecastKey = new UpdateKey(UpdateType.Forecasts, portfolio.Id);
             var teamStillQueued = true;
@@ -458,7 +525,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldSayTheForecastWasCancelled_InTheSummaryLine_WhenTheForecastIsStopped()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastIsStopped();
 
             var subject = CreateSubject();
@@ -473,7 +540,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Sibling Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
                 .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
@@ -491,7 +558,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Sibling Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
                 .Setup(x => x.HasQueuedWork(It.IsAny<IReadOnlyCollection<UpdateKey>>()))
@@ -509,7 +576,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Only Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var subject = CreateSubject(inProcessUpdateStatusStore);
 
@@ -526,7 +593,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Refreshing Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
 
@@ -542,7 +609,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Refreshing Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
             RecordUpdate(UpdateType.Team, TeamOutsideThePortfolioId, UpdateProgress.Queued);
@@ -561,8 +628,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var team = new Team { Name = "Shared Team", Id = 42 };
             var firstPortfolio = CreatePortfolioWorkedOnBy(team);
             var secondPortfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(firstPortfolio.Id)).Returns(firstPortfolio);
-            portfolioRepositoryMock.Setup(x => x.GetById(secondPortfolio.Id)).Returns(secondPortfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(firstPortfolio.Id)).Returns(firstPortfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(secondPortfolio.Id)).Returns(secondPortfolio);
 
             RecordUpdate(UpdateType.Team, team.Id, UpdateProgress.InProgress);
 
@@ -581,7 +648,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var firstFeature = CreateFeatureWorkedOnBy(new Team { Name = "Team On The First Feature", Id = 42 });
             var secondFeature = CreateFeatureWorkedOnBy(new Team { Name = "Team On The Second Feature", Id = 43 });
             var portfolio = CreatePortfolio(firstFeature, secondFeature);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             portfolio.UpdateFeatures([secondFeature, firstFeature]);
 
@@ -598,7 +665,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var firstTeam = new Team { Name = "First Team", Id = 42 };
             var lastTeam = new Team { Name = "Last Team", Id = 43 };
             var portfolio = CreatePortfolio(CreateFeatureWorkedOnBy(firstTeam), CreateFeatureWorkedOnBy(lastTeam));
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             using var updateQueue = CreateRealUpdateQueue();
 
@@ -621,7 +688,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             var team = new Team { Name = "Sibling Team", Id = 42 };
             var portfolio = CreatePortfolioWorkedOnBy(team);
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             updateStatusStoreMock
                 .Setup(x => x.HasQueuedWork(It.Is<IReadOnlyCollection<UpdateKey>>(keys => keys.Contains(new UpdateKey(UpdateType.Team, team.Id)))))
@@ -638,7 +705,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void TriggerImmediateUpdate_ShouldForecast_WhenAForecastForThePortfolioIsAlreadyOwed()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             Mock.Get(UpdateQueueService)
                 .Setup(x => x.IsHeld(new UpdateKey(UpdateType.Forecasts, portfolio.Id)))
@@ -660,7 +727,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var runningTeam = new Team { Name = "Running Team", Id = 42 };
             var waitingTeam = new Team { Name = "Waiting Team", Id = 43 };
             var portfolio = CreatePortfolio(CreateFeatureWorkedOnBy(runningTeam), CreateFeatureWorkedOnBy(waitingTeam));
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             using var updateQueue = CreateRealUpdateQueue();
 
@@ -686,7 +753,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordASkippedSuccessfulRefreshAndSaySo_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
 
             var recorded = CaptureRefreshLog();
@@ -707,27 +774,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldStillStageAndAnnounceButRecordNothing_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(portfolio), Times.Once);
+            writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)), Times.Once);
             domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == portfolio.Id), It.IsAny<CancellationToken>()), Times.Once);
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldRecordTheInputsLast_AfterStagingAndAnnouncing_WhenTheForecastWasComputed()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
 
             var sequence = new List<string>();
             writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
                 .Callback(() => sequence.Add("forecastWriteBack"))
                 .Returns([]);
             domainEventDispatcherMock
@@ -749,7 +816,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldLeaveTheMarkAndNotFail_WhenTheComputedForecastHasNoFreshInputs()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, null));
 
             var recorded = CaptureRefreshLog();
@@ -764,14 +831,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Assert.That(WhatTheRefreshThrew, Is.Null);
             }
 
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldForgetTheInputsAndRecordNothing_WhenTheForecastFails()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("The forecast failed"));
@@ -780,28 +847,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(portfolio.Id);
 
             forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldForgetTheInputs_WhenTheForecastIsStopped()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastIsStopped();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldStillReportTheForecastsOwnFailure_WhenForgettingTheInputsFails()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             var forecastFailure = new InvalidOperationException("The forecast failed");
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
@@ -826,13 +893,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldRecordNothingAndSaySo_WhenTheRunCouldNotMarkItself()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(null, "fresh"));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
             Assert.That(DebugLines(), Has.Some.Contains(InputsNotRecorded));
         }
 
@@ -840,7 +907,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldSaySo_WhenTheInputsCouldNotReplaceTheMark()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
             forecastInputsMock
                 .Setup(x => x.TryRecordForecastInputs(It.IsAny<int>(), It.IsAny<string?>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -856,7 +923,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldNotSaySo_WhenTheInputsWereRecorded()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
 
             var subject = CreateSubject();
@@ -873,10 +940,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldLeaveTheMarkAndForgetNothing_WhenStagingFailsAfterAComputedForecast()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
             writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
                 .Throws(new InvalidOperationException("Staging failed"));
 
             var recorded = CaptureRefreshLog();
@@ -885,14 +952,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             subject.TriggerUpdate(portfolio.Id);
 
             Assert.That(recorded.Entry.Success, Is.False);
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldLeaveTheMarkAndForgetNothing_WhenAnnouncingFailsAfterAComputedForecast()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
             domainEventDispatcherMock
                 .Setup(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()))
@@ -901,7 +968,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         /// <summary>
@@ -912,24 +979,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldForgetTheInputs_WhenStagingFailsAfterASkippedForecast()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
             writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
                 .Throws(new InvalidOperationException("Staging failed"));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
             forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.Is<IReadOnlyCollection<int>>(ids => ids.Count == 1 && ids.Contains(portfolio.Id)), CancellationToken.None), Times.Once);
-            forecastInputsMock.VerifyNoOtherCalls();
+            VerifyNoOtherInputRecordingCalls();
         }
 
         [Test]
         public void Update_ShouldTimeTheGatherTheSimulationTheSaveAndThePublishingApart_AtDebug()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
@@ -946,7 +1013,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldCountTheConfirmationInTheSaveFigure_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged(TheFeaturesTheSkippedForecastRead));
             featureRepositoryMock
                 .Setup(x => x.ConfirmForecastsAsOf(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
@@ -972,7 +1039,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldConfirmTheForecastsOfEveryFeatureItRead_AtTheRound_BeforeStagingAndAnnouncing_WhenTheInputsAreConfirmedUnchanged()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged(TheFeaturesTheSkippedForecastRead));
 
             var sequence = new List<string>();
@@ -988,7 +1055,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 })
                 .Returns(Task.CompletedTask);
             writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(portfolio))
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
                 .Callback(() => sequence.Add("forecastWriteBack"))
                 .Returns([]);
             domainEventDispatcherMock
@@ -1011,20 +1078,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void Update_ShouldConfirmNothing_WhenTheForecastWasComputed()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            featureRepositoryMock.VerifyNoOtherCalls();
+            VerifyNothingWasConfirmed();
         }
 
         [Test]
         public void Update_ShouldConfirmNothing_WhenTheForecastFails()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             forecastServiceMock
                 .Setup(x => x.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new InvalidOperationException("The simulation failed"));
@@ -1032,19 +1099,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
-            featureRepositoryMock.VerifyNoOtherCalls();
+            VerifyNothingWasConfirmed();
         }
 
         [Test]
         public void Update_ShouldConfirmNothing_WhenTheForecastIsStopped()
         {
             var portfolio = CreatePortfolio();
-            portfolioRepositoryMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastIsStopped();
 
             var subject = CreateSubject();
             subject.TriggerUpdate(portfolio.Id);
 
+            VerifyNothingWasConfirmed();
+        }
+
+        /// <summary>Reading the Portfolio and its Teams is how a round starts; what these tests pin is that it records or forgets nothing beyond what they verified.</summary>
+        private void VerifyNoOtherInputRecordingCalls()
+        {
+            forecastInputsMock.Verify(x => x.OneWithoutForecasts(It.IsAny<int>()), Times.AtMost(int.MaxValue));
+            forecastInputsMock.Verify(x => x.TeamIdsOf(It.IsAny<int>()), Times.AtMost(int.MaxValue));
+            forecastInputsMock.VerifyNoOtherCalls();
+        }
+
+        /// <summary>Staging a forecast write-back reads the Portfolio's Features; confirming a forecast is the only other thing a round does to them.</summary>
+        private void VerifyNothingWasConfirmed()
+        {
+            featureRepositoryMock.Verify(x => x.FeaturesOfPortfolio(It.IsAny<int>()), Times.AtMost(int.MaxValue));
             featureRepositoryMock.VerifyNoOtherCalls();
         }
 
@@ -1164,9 +1246,38 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 Name = "Project",
                 Id = idCounter++,
                 UpdateTime = lastUpdatedTime,
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Id = TheConnectionId },
             };
             portfolio.UpdateFeatures(features);
             return portfolio;
         }
+
+        private const int TheConnectionId = 77;
+
+        private static WorkTrackingSystemConnection ConnectionMappingAForecast()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = TheConnectionId };
+            connection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
+            {
+                ValueSource = WriteBackValueSource.ForecastPercentile85,
+                AppliesTo = WriteBackAppliesTo.Portfolio,
+            });
+
+            return connection;
+        }
+
+        private static WorkTrackingSystemConnection ConnectionMappingNoForecast()
+        {
+            var connection = new WorkTrackingSystemConnection { Id = TheConnectionId };
+            connection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
+            {
+                ValueSource = WriteBackValueSource.FeatureSize,
+                AppliesTo = WriteBackAppliesTo.Portfolio,
+            });
+
+            return connection;
+        }
+
+        private static Portfolio TheWriteBackPortfolioOf(Portfolio portfolio) => It.Is<Portfolio>(candidate => candidate.Id == portfolio.Id);
     }
 }

@@ -442,9 +442,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
         }
 
         /// <summary>
-        /// Production fills a Feature's forecasts inside the forecast service; the fake does the same with
-        /// a fixed number of working days, so the resolved date is deterministic without pinning a Monte
-        /// Carlo run.
+        /// Production stores a Feature's forecasts inside the forecast service and the write-back reads them
+        /// back from the store; the fake does the same with a fixed number of working days, so the resolved
+        /// date is deterministic without pinning a Monte Carlo run.
         /// </summary>
         private void GivenTheForecastRunCompletesIn(int workingDays)
         {
@@ -452,12 +452,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
                 .Setup(s => s.UpdateForecastsForPortfolio(It.IsAny<Portfolio>(), It.IsAny<DateOnly>(), It.IsAny<CancellationToken>()))
                 .Callback((Portfolio portfolio, DateOnly _, CancellationToken _) =>
                 {
-                    foreach (var feature in portfolio.Features)
+                    using var scope = factory.Services.CreateScope();
+                    var features = scope.ServiceProvider.GetRequiredService<IRepository<Feature>>();
+
+                    foreach (var held in portfolio.Features)
                     {
                         var simulation = new SimulationResult();
                         simulation.SimulationResults[workingDays] = 100;
+                        var feature = features.GetById(held.Id)!;
                         feature.SetFeatureForecasts([new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true }]);
+                        features.Update(feature);
                     }
+
+                    features.Save().GetAwaiter().GetResult();
                 })
                 .ReturnsAsync(ForecastServiceDoubles.Computed);
         }

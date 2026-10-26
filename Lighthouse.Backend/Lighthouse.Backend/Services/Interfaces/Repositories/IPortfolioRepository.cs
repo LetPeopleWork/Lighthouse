@@ -25,6 +25,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         Portfolio? OneWithoutForecasts(int id);
 
         /// <summary>
+        /// The ids of the Teams working on any Feature of this portfolio, each once, and nothing else. Empty when
+        /// the portfolio holds no Feature a Team works on, or there is no such portfolio.
+        /// </summary>
+        IReadOnlyCollection<int> TeamIdsOf(int portfolioId);
+
+        /// <summary>
         /// The ids of the portfolios any of the given teams does work for, each once, in one read.
         /// </summary>
         IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds);

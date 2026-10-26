@@ -128,9 +128,7 @@ namespace Lighthouse.Backend.Services.Implementation.Forecast
         {
             var teamIds = teams.Select(team => team.Id).ToList();
 
-            return featureRepository
-                .GetAllByPredicate(feature => feature.FeatureWork.Any(work => teamIds.Contains(work.TeamId)))
-                .ToList();
+            return featureRepository.FeaturesWorkedOnBy(teamIds).ToList();
         }
 
         /// <summary>

@@ -83,6 +83,23 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(features).ToList();
         }
 
+        public IReadOnlyList<Feature> FeaturesWorkedOnBy(IReadOnlyCollection<int> teamIds)
+        {
+            // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
+#pragma warning disable S8733
+            var features = Context.Features
+                .Where(feature => feature.FeatureWork.Any(work => teamIds.Contains(work.TeamId)))
+                .Include(f => f.Portfolios)
+                .Include(f => f.FeatureWork).ThenInclude(rw => rw.Team)
+                .Include(f => f.Forecasts)
+                .Include(f => f.StartForecasts)
+                .Include(f => f.DependsOnReferences)
+                .ToList();
+#pragma warning restore S8733
+
+            return featureOrdering.Order(features).ToList();
+        }
+
         public IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId)
             => ListRead(Context.Features.Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId)));
 

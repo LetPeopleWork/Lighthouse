@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private const int SiblingTeamId = 42;
 
         private Mock<IRepository<Portfolio>> portfolioRepositoryMock;
+        private Mock<IPortfolioRepository> portfolioCatalogueMock;
         private Mock<IForecastUpdater> forecastUpdaterMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IUpdateStatusStore> updateStatusStoreMock;
@@ -41,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         public void SetUp()
         {
             portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            portfolioCatalogueMock = new Mock<IPortfolioRepository>();
             forecastUpdaterMock = new Mock<IForecastUpdater>();
             forecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
             updateStatusStoreMock = new Mock<IUpdateStatusStore>();
@@ -54,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             refreshLogServiceMock.Setup(l => l.LogRefreshAsync(It.IsAny<RefreshLog>())).Returns(Task.CompletedTask);
 
             SetupServiceProviderMock(portfolioRepositoryMock.Object);
-            SetupServiceProviderMock(Mock.Of<IPortfolioRepository>());
+            SetupServiceProviderMock(portfolioCatalogueMock.Object);
             SetupServiceProviderMock(forecastServiceMock.Object);
             SetupServiceProviderMock(refreshLogServiceMock.Object);
             SetupServiceProviderMock(Mock.Of<IWriteBackTriggerService>());
@@ -135,6 +137,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             portfolioRepositoryMock.Setup(r => r.GetAll()).Returns([portfolio]);
             portfolioRepositoryMock.Setup(r => r.GetById(portfolio.Id)).Returns(portfolio);
+            portfolioCatalogueMock.Setup(r => r.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            portfolioCatalogueMock.Setup(r => r.TeamIdsOf(portfolio.Id)).Returns(portfolio.Teams.Select(team => team.Id).ToList());
         }
 
         private void GivenTheSiblingTeamStandsQueued()
