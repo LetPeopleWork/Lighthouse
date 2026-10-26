@@ -1,10 +1,4 @@
-import {
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
@@ -15,6 +9,7 @@ import {
 } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 

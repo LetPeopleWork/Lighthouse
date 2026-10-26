@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
@@ -8,6 +8,7 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 

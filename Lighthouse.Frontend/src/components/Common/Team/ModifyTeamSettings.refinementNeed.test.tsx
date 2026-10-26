@@ -1,7 +1,6 @@
 import {
 	act,
 	fireEvent,
-	render,
 	screen,
 	waitFor,
 	within,
@@ -22,6 +21,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { actAndSettle } from "../../../tests/actAndSettle";
 import { inSequence } from "../../../tests/inSequence";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 import RefinementCadenceSettings from "./RefinementCadenceSettings";

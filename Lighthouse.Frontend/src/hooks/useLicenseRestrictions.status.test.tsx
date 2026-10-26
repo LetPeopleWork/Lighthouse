@@ -92,7 +92,7 @@ const useThreeAskers = () => [
 ];
 
 describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the licence check", () => {
-	it.skip("while the licence is still on its way, Add Team and Add Portfolio are refused and editing stays allowed", () => {
+	it("while the licence is still on its way, Add Team and Add Portfolio are refused and editing stays allowed", () => {
 		const { wrapper } = anInstance({
 			licence: deferred<ILicenseStatus>().promise,
 		});
@@ -106,7 +106,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.canUpdatePortfolioData).toBe(true);
 	});
 
-	it.skip("when the licence cannot be read, Add Team and Add Portfolio are refused and editing stays allowed", async () => {
+	it("when the licence cannot be read, Add Team and Add Portfolio are refused and editing stays allowed", async () => {
 		const { wrapper } = anInstance({
 			licence: Promise.reject(new Error("the network dropped")),
 		});
@@ -120,7 +120,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.canUpdatePortfolioData).toBe(true);
 	});
 
-	it.skip("when the Teams cannot be counted on a free licence, creating is refused as when the licence cannot be read", async () => {
+	it("when the Teams cannot be counted on a free licence, creating is refused as when the licence cannot be read", async () => {
 		const { wrapper } = anInstance({
 			teamList: Promise.reject(new Error("the network dropped")),
 		});
@@ -132,7 +132,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.canUpdateTeamData).toBe(true);
 	});
 
-	it.skip("once the licence and the counts are in, the check says it is ready", async () => {
+	it("once the licence and the counts are in, the check says it is ready", async () => {
 		const { wrapper } = anInstance();
 
 		const { result } = renderHook(() => useLicenseRestrictions(), { wrapper });
@@ -142,7 +142,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 
 	// "Allowed" is also what the hook answers before anything has arrived, and today nothing it exposes says the counts
 	// have arrived, so this waits for the check to say it is ready, which slice 02 adds.
-	it.skip("on a free licence with room left, Add Team and Add Portfolio are allowed as today", async () => {
+	it("on a free licence with room left, Add Team and Add Portfolio are allowed as today", async () => {
 		const { wrapper } = anInstance({
 			teamList: Promise.resolve(teams(2)),
 			portfolioList: Promise.resolve(portfolios(0)),
@@ -183,7 +183,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(result.current.canCreatePortfolio).toBe(true);
 	});
 
-	it.skip("three parts of one page asking at once share one licence read and one count of each list", async () => {
+	it("three parts of one page asking at once share one licence read and one count of each list", async () => {
 		const { wrapper, licensingService, teamService, portfolioService } =
 			anInstance();
 
@@ -199,7 +199,7 @@ describe("Story 6406 (slice 02): creating a Team or Portfolio waits for the lice
 		expect(portfolioService.getPortfolios).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip("on a Premium licence the Teams and Portfolios are never fetched just to be counted", async () => {
+	it("on a Premium licence the Teams and Portfolios are never fetched just to be counted", async () => {
 		const { wrapper, teamService, portfolioService } = anInstance({
 			licence: Promise.resolve(aPremiumLicence),
 		});

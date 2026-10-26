@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import WidgetShell from "./WidgetShell";
 
 const inProgressItem = (overrides?: Partial<IWorkItem>): IWorkItem => ({

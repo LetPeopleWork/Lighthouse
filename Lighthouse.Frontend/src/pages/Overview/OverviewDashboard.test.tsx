@@ -65,6 +65,7 @@ vi.mock("../../hooks/useLicenseRestrictions", () => ({
 	useLicenseRestrictions: () => ({
 		canCreatePortfolio: true,
 		createPortfolioTooltip: "",
+		status: "ready",
 		canCreateTeam: true,
 		createTeamTooltip: "",
 	}),

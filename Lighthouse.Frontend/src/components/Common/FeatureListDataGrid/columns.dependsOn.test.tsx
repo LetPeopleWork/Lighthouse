@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature, type IFeature } from "../../../models/Feature";
@@ -13,6 +13,7 @@ const THE_DEFAULT_TERMS: DependencyTerms = {
 	portfolioTerm: "Portfolio",
 };
 
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import FeatureListDataGrid from "./FeatureListDataGrid";
 
 vi.mock("../../../hooks/useFeatureOrdering", () => ({
@@ -88,7 +89,9 @@ const feature = (dependsOn: IFeatureDependency[] = []): IFeature =>
 const renderCell = (row: IFeature) => {
 	const column = createDependsOnColumn(THE_DEFAULT_TERMS);
 	return render(
-		column.renderCell?.({ row, value: (row.dependsOn ?? []).length }),
+		<div>
+			{column.renderCell?.({ row, value: (row.dependsOn ?? []).length })}
+		</div>,
 	);
 };
 

@@ -1,4 +1,4 @@
-import { act, render, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { MemoryRouter, Route, Routes, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +18,7 @@ import {
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../tests/renderWithQueryClient";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import type { IUsageDataService } from "../Api/UsageDataService";
 import {

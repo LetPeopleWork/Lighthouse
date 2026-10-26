@@ -34,6 +34,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		// Default to premium license for existing tests
 		vi.mocked(useLicenseRestrictions).mockReturnValue({
+			status: "ready",
 			canCreateTeam: true,
 			canUpdateTeamData: true,
 			canCreatePortfolio: true,
@@ -808,6 +809,7 @@ describe("AdditionalFieldsEditor", () => {
 	describe("License Restrictions", () => {
 		it("should disable Add Field button when free user has 1 field already", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -836,6 +838,7 @@ describe("AdditionalFieldsEditor", () => {
 		it("should show license tooltip on disabled Add Field button for free users at limit", async () => {
 			const user = userEvent.setup();
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -873,6 +876,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should show alert message when free user is at limit", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -901,6 +905,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should allow premium users to add unlimited fields", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -930,6 +935,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should allow free users to add 1 field when they have 0 fields", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -953,6 +959,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should not show alert when free user has 0 fields", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -977,6 +984,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should display all existing fields even when over limit for free users", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -1012,6 +1020,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should not show alert when premium user has many fields", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,
@@ -1041,6 +1050,7 @@ describe("AdditionalFieldsEditor", () => {
 
 		it("should handle null license status gracefully", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,

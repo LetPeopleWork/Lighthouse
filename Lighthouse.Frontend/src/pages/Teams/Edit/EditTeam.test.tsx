@@ -118,6 +118,7 @@ const mockSuggestionService = {
 };
 
 const mockLicenseRestrictions = {
+	status: "ready",
 	canCreateTeam: true,
 	canUpdateTeamSettings: true,
 	createTeamTooltip: "",

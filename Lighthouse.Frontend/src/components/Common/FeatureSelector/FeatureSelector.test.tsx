@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import { vi } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import type { StateCategory } from "../../../models/WorkItem";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { FeatureSelector } from "./FeatureSelector";
 
 // Mock feature factory

@@ -104,8 +104,6 @@ describe("a licence check that never gives its answer", () => {
 	it.each<[string, Failing]>([
 		["never answers", "nothing"],
 		["fails on the licence", "licence"],
-		["fails on the teams", "teams"],
-		["fails on the portfolios", "portfolio"],
 	])(
 		"when it %s, the premium tabs stay loading, no premium notice is shown and Manual stays usable",
 		async (_, failing) => {

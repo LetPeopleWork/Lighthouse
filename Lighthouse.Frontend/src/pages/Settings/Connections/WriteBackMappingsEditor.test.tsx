@@ -64,6 +64,7 @@ describe("WriteBackMappingsEditor", () => {
 	beforeEach(() => {
 		mockOnChange.mockClear();
 		vi.mocked(useLicenseRestrictions).mockReturnValue({
+			status: "ready",
 			canCreateTeam: true,
 			canUpdateTeamData: true,
 			canCreatePortfolio: true,
@@ -634,6 +635,7 @@ describe("WriteBackMappingsEditor", () => {
 	describe("License Restrictions", () => {
 		it("should disable Add button when user does not have premium", () => {
 			vi.mocked(useLicenseRestrictions).mockReturnValue({
+				status: "ready",
 				canCreateTeam: true,
 				canUpdateTeamData: true,
 				canCreatePortfolio: true,

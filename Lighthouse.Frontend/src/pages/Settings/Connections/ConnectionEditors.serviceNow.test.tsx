@@ -24,6 +24,7 @@ const premiumLicense: ILicenseStatus = {
 describe("Connection settings a ServiceNow administrator should not be offered", () => {
 	beforeEach(() => {
 		vi.mocked(useLicenseRestrictions).mockReturnValue({
+			status: "ready",
 			canCreateTeam: true,
 			canUpdateTeamData: true,
 			canCreatePortfolio: true,

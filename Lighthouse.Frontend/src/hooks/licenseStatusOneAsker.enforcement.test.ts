@@ -22,7 +22,7 @@ const productionModules = (): string[] =>
 		.filter((file) => !file.startsWith("tests/"));
 
 describe("Story 6406 (slice 02): one page asks for the licence once", () => {
-	it.skip("only one module asks the server for the licence on behalf of every gate", () => {
+	it("only one module asks the server for the licence on behalf of every gate", () => {
 		const askers = productionModules()
 			.filter((file) => !READ_THE_LICENCE_FOR_OTHER_REASONS.has(file))
 			.filter((file) =>

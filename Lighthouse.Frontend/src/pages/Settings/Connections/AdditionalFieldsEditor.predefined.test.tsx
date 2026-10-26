@@ -40,6 +40,7 @@ const freeLicense: ILicenseStatus = {
 
 const withLicense = (licenseStatus: ILicenseStatus) => {
 	vi.mocked(useLicenseRestrictions).mockReturnValue({
+		status: "ready",
 		canCreateTeam: true,
 		canUpdateTeamData: true,
 		canCreatePortfolio: true,

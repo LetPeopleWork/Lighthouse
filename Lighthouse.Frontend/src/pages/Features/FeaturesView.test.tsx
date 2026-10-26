@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../tests/renderWithQueryClient";
 import FeaturesView from "./FeaturesView";
 
 // The instance renames the concept, so nothing on this page may hard-code the word "Feature".

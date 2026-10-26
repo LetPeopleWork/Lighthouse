@@ -2,11 +2,11 @@ import SecurityIcon from "@mui/icons-material/Security";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
-import { useContext, useState } from "react";
+import { useState } from "react";
+import { useLicenseStatusQuery } from "../../../hooks/useLicenseRestrictions";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
 	errorColor,
 	successColor,
@@ -16,20 +16,10 @@ import LicenseStatusPopover from "./LicenseStatusPopover";
 
 const LicenseStatusIcon: React.FC = () => {
 	const theme = useTheme();
-	const { licensingService } = useContext(ApiServiceContext);
 	const queryClient = useQueryClient();
 	const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
-	const {
-		data: licenseStatus,
-		isLoading,
-		error,
-	} = useQuery({
-		queryKey: ["licenseStatus"],
-		queryFn: () => licensingService.getLicenseStatus(),
-		staleTime: 1000 * 60 * 5, // 5 minutes
-		refetchInterval: 1000 * 60 * 60, // 1 hour
-	});
+	const { data: licenseStatus, isLoading, error } = useLicenseStatusQuery();
 
 	const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
 		setAnchorEl(event.currentTarget);

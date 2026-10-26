@@ -1,11 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-	act,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -30,6 +24,7 @@ import {
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import PortfolioDetail from "./PortfolioDetail";
 
 vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({

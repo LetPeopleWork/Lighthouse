@@ -1,8 +1,11 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
+import { createElement, type ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
 import { Portfolio } from "../models/Portfolio/Portfolio";
 import { Team } from "../models/Team/Team";
+import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
 import { useLicenseRestrictions } from "./useLicenseRestrictions";
 
@@ -49,14 +52,21 @@ const mockApiServiceContext = createMockApiServiceContext({
 	portfolioService: mockPortfolioService,
 });
 
-// Mock useContext
-vi.mock("react", async () => {
-	const actual = await vi.importActual("react");
-	return {
-		...actual,
-		useContext: () => mockApiServiceContext,
-	};
-});
+const aWrapper = () => {
+	const queryClient = new QueryClient({
+		defaultOptions: { queries: { retry: false } },
+	});
+	return ({ children }: { children: ReactNode }) =>
+		createElement(
+			QueryClientProvider,
+			{ client: queryClient },
+			createElement(
+				ApiServiceContext.Provider,
+				{ value: mockApiServiceContext },
+				children,
+			),
+		);
+};
 
 describe("useLicenseRestrictions", () => {
 	beforeEach(() => {
@@ -96,10 +106,12 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
@@ -129,9 +141,11 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
@@ -146,9 +160,11 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(false);
@@ -163,9 +179,11 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(false);
@@ -180,9 +198,11 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
@@ -197,9 +217,11 @@ describe("useLicenseRestrictions", () => {
 			mockTeamService.getTeams.mockResolvedValue(teams);
 			mockPortfolioService.getPortfolios.mockResolvedValue(portfolios);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
 			await waitFor(() => {
-				expect(result.current.licenseStatus).not.toBe(null);
+				expect(result.current.status).toBe("ready");
 			});
 
 			expect(result.current.canCreateTeam).toBe(true);
@@ -208,7 +230,7 @@ describe("useLicenseRestrictions", () => {
 			expect(result.current.canUpdatePortfolioData).toBe(false);
 		});
 
-		it("should handle API errors gracefully", () => {
+		it("should refuse creation and keep editing allowed when the license cannot be read", async () => {
 			mockLicensingService.getLicenseStatus.mockRejectedValue(
 				new Error("API Error"),
 			);
@@ -217,11 +239,16 @@ describe("useLicenseRestrictions", () => {
 				new Error("API Error"),
 			);
 
-			const { result } = renderHook(() => useLicenseRestrictions());
+			const { result } = renderHook(() => useLicenseRestrictions(), {
+				wrapper: aWrapper(),
+			});
+			await waitFor(() => {
+				expect(result.current.status).toBe("failed");
+			});
 
-			expect(result.current.canCreateTeam).toBe(true);
+			expect(result.current.canCreateTeam).toBe(false);
 			expect(result.current.canUpdateTeamData).toBe(true);
-			expect(result.current.canCreatePortfolio).toBe(true);
+			expect(result.current.canCreatePortfolio).toBe(false);
 			expect(result.current.canUpdatePortfolioData).toBe(true);
 			expect(result.current.licenseStatus).toBe(null);
 		});

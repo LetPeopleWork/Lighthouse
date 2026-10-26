@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
@@ -7,6 +7,7 @@ import {
 	createMockApiServiceContext,
 	createMockFeatureService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import {
 	createFeatureOrderingActionsColumn,
 	createStateColumn,

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -10,6 +10,7 @@ import {
 	createMockApiServiceContext,
 	createMockSystemInfoService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import ThirdPartyPackagesSection from "./ThirdPartyPackagesSection";
 
 /**

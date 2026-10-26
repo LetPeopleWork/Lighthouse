@@ -11,6 +11,7 @@ const mockedUseLicenseRestrictions = vi.mocked(useLicenseRestrictions);
 
 const setPremium = (canUsePremiumFeatures: boolean) => {
 	mockedUseLicenseRestrictions.mockReturnValue({
+		status: "ready",
 		canCreateTeam: true,
 		canUpdateTeamData: true,
 		canCreatePortfolio: true,

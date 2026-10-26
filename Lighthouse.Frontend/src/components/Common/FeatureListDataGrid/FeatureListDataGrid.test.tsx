@@ -1,8 +1,9 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { IEntityReference } from "../../../models/EntityReference";
 import { Feature } from "../../../models/Feature";
+import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createForecastsColumn, createStateColumn } from "./columns";
 import FeatureListDataGrid from "./FeatureListDataGrid";
 
