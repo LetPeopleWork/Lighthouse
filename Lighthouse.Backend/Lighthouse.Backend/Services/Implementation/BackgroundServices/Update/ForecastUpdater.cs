@@ -251,9 +251,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
         private async Task StageTheWriteBackAndAnnounce(Portfolio portfolio, IServiceProvider serviceProvider)
         {
-            serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(
-                portfolio.WorkTrackingSystemConnection,
-                ResolveTheForecastWriteBack(portfolio, serviceProvider));
+            var (connection, updates) = ResolveTheForecastWriteBack(portfolio, serviceProvider);
+            serviceProvider.GetRequiredService<IWriteBackCollector>().Stage(connection, updates);
 
             await domainEventDispatcher.PublishAsync(new PortfolioForecastsUpdated(portfolio.Id));
         }
@@ -263,7 +262,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// be read stages nothing rather than failing a round whose forecasts are current: the announcement
         /// still goes out and the inputs are still recorded. A stop is not such a failure and still stops the round.
         /// </summary>
-        private IReadOnlyList<WriteBackFieldUpdate> ResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
+        private (WorkTrackingSystemConnection Connection, IReadOnlyList<WriteBackFieldUpdate> Updates) ResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
         {
             try
             {
@@ -275,7 +274,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 Logger.LogError(exception, "Forecast write-back could not be resolved for Portfolio {PortfolioId} ({PortfolioName}): {ErrorMessage}",
                     portfolio.Id, portfolio.Name, exception.Message);
-                return [];
+                return (portfolio.WorkTrackingSystemConnection, []);
             }
         }
 
@@ -283,21 +282,22 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// Staging dates needs the forecasts as they are stored now, histograms and all, so they are read here, after
         /// the round saved, and only for a Portfolio whose connection maps a forecast to a field the licence lets
         /// us write. The mappings are read from the connection itself: the Portfolio this round carries is read
-        /// without them, and without forecasts, so resolving against it would stage nothing.
+        /// without them, and without forecasts, so resolving against it would stage nothing. The updates come back
+        /// with that same connection, so a round never replaces a connection that carries its mappings with one that does not.
         /// </summary>
-        private static IReadOnlyList<WriteBackFieldUpdate> ReadAndResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
+        private static (WorkTrackingSystemConnection Connection, IReadOnlyList<WriteBackFieldUpdate> Updates) ReadAndResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
         {
             var connection = serviceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(portfolio.WorkTrackingSystemConnection.Id);
 
             if (connection is null || !MapsAForecast(connection) || !serviceProvider.GetRequiredService<ILicenseService>().CanUsePremiumFeatures())
             {
-                return [];
+                return (portfolio.WorkTrackingSystemConnection, []);
             }
 
             var withItsForecasts = new Portfolio { Id = portfolio.Id, Name = portfolio.Name, WorkTrackingSystemConnection = connection };
             withItsForecasts.UpdateFeatures(serviceProvider.GetRequiredService<IFeatureRepository>().FeaturesOfPortfolio(portfolio.Id));
 
-            return serviceProvider.GetRequiredService<IWriteBackTriggerService>().ResolveForecastWriteBackForPortfolio(withItsForecasts);
+            return (connection, serviceProvider.GetRequiredService<IWriteBackTriggerService>().ResolveForecastWriteBackForPortfolio(withItsForecasts));
         }
 
         private static bool MapsAForecast(WorkTrackingSystemConnection connection)

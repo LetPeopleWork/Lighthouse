@@ -235,6 +235,24 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
+        public void Update_ShouldStageTheConnectionItReadTheMappingsFrom()
+        {
+            var portfolio = CreatePortfolio();
+            var loadedConnection = ConnectionMappingAForecast();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            connectionRepositoryMock.Setup(x => x.GetById(TheConnectionId)).Returns(loadedConnection);
+            writeBackTriggerServiceMock
+                .Setup(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()))
+                .Returns([new WriteBackFieldUpdate { WorkItemId = "PLAT-1", TargetFieldReference = "customfield_10042", Value = "2026-11-30" }]);
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            WriteBackCollectorMock.Verify(
+                x => x.Stage(It.Is<WorkTrackingSystemConnection>(staged => ReferenceEquals(staged, loadedConnection)), It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates => updates.Count == 1)),
+                Times.Once);
+        }
+
+        [Test]
         public void Update_ShouldStillAnnounceAndRecordItsInputsAndStageNothing_WhenTheFeaturesCannotBeRead()
         {
             var portfolio = CreatePortfolio();
