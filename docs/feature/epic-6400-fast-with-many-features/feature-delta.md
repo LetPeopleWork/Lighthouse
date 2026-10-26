@@ -3203,3 +3203,12 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
 - **One before/after reading at the end** (maintainer, 2026-10-26): slices 03, 04, 02-01/02-02 and 05 took no
   readings of their own. The scaled instance is read once more after 02-03 to 02-05, with the 01-05 harness and
   set-up (SQLite, 920 Features, 4 cores), against the baseline for K1–K4. Per-slice shares are not attributed.
+- **D15 settled** (maintainer, 2026-10-26, unblocks 02-05):
+  1. The create-Team wizard is a create entry point. Its Create button is disabled with no reason while the license
+     check loads, and disabled with "Couldn't check your license. Reload the page to try again." (tooltip) when it
+     failed, like "+ Add Team" and the Get Started steps.
+  2. A copied Team (`/teams/new?cloneFrom=…`) is not saved while the check loads or failed. When it failed, the reason
+     shows in the save-state indicator area at the top of the page ("Not saved: Couldn't check your license. Reload
+     the page to try again."), not in a separate banner.
+- **02-03 to 02-05 run at `standard`** (maintainer, 2026-10-26): sonnet crafter, haiku reviewer, refactor pass; the
+  rest of slice 02, then a hold.
