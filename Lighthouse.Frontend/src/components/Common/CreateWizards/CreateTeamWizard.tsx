@@ -62,12 +62,17 @@ const CreateTeamWizard: React.FC<CreateTeamWizardProps> = ({
 		saveSettings: saveTeamSettings,
 	});
 
-	const { status, canCreateTeam } = useLicenseRestrictions();
+	const { status, canCreateTeam, maxTeamsWithoutPremium } =
+		useLicenseRestrictions();
 
 	return (
 		<CreateWizardShell
 			{...wizard}
-			createLicenseGate={{ status, allowed: canCreateTeam }}
+			createLicenseGate={{
+				status,
+				allowed: canCreateTeam,
+				premiumExtraInfo: `Free users can only create up to ${maxTeamsWithoutPremium} teams`,
+			}}
 			entityLabel="team"
 			nameLabel="Team Name"
 			isForTeam={true}

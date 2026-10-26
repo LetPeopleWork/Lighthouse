@@ -68,7 +68,11 @@ export interface CreateWizardShellProps {
 	onNext: () => void;
 	onCreate: () => void;
 	/** What the license check allows for the thing being created; leave out when creating it is not limited. */
-	createLicenseGate?: { status: LicenseCheckStatus; allowed: boolean };
+	createLicenseGate?: {
+		status: LicenseCheckStatus;
+		allowed: boolean;
+		premiumExtraInfo?: string;
+	};
 }
 
 const CreateWizardShell: React.FC<CreateWizardShellProps> = ({

@@ -170,12 +170,12 @@ describe("Story 6406 (slice 02): the create-Portfolio wizard's Create follows th
 		expect(create).toBeEnabled();
 	});
 
-	it("at the free Portfolio limit, Create is disabled and points to the premium license", async () => {
+	it("at the free Portfolio limit, Create is disabled and says why", async () => {
 		givenTheLicenceCheck("ready", false);
 
 		const create = await anAdminReachesTheLastStep();
 
 		expect(create).toBeDisabled();
-		await hoveringShows(create, "requires a premium license");
+		await hoveringShows(create, "Free users can only create up to 1 portfolio");
 	});
 });

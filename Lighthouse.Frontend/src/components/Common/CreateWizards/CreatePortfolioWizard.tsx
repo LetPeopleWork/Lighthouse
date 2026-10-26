@@ -64,12 +64,17 @@ const CreatePortfolioWizard: React.FC<CreatePortfolioWizardProps> = ({
 		saveSettings: savePortfolioSettings,
 	});
 
-	const { status, canCreatePortfolio } = useLicenseRestrictions();
+	const { status, canCreatePortfolio, maxPortfoliosWithoutPremium } =
+		useLicenseRestrictions();
 
 	return (
 		<CreateWizardShell
 			{...wizard}
-			createLicenseGate={{ status, allowed: canCreatePortfolio }}
+			createLicenseGate={{
+				status,
+				allowed: canCreatePortfolio,
+				premiumExtraInfo: `Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`,
+			}}
 			entityLabel="portfolio"
 			nameLabel="Portfolio Name"
 			isForTeam={false}

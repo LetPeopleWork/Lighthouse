@@ -18,7 +18,12 @@ export interface WizardFrameAction {
 	onClick: () => void | Promise<void>;
 	disabled: boolean;
 	/** Set when the action creates something the license limits: it then says why it is disabled. */
-	licenseGate?: { status: LicenseCheckStatus; allowed: boolean };
+	licenseGate?: {
+		status: LicenseCheckStatus;
+		allowed: boolean;
+		/** Said next to the premium pointer when the free limit is what disables the action. */
+		premiumExtraInfo?: string;
+	};
 }
 
 export interface WizardFrameError {
@@ -58,6 +63,7 @@ const WizardActionButton: React.FC<{ action: WizardFrameAction }> = ({
 			canUseFeature={action.licenseGate.allowed}
 			defaultTooltip=""
 			checkStatus={action.licenseGate.status}
+			premiumExtraInfo={action.licenseGate.premiumExtraInfo}
 		>
 			<span>{button}</span>
 		</LicenseTooltip>

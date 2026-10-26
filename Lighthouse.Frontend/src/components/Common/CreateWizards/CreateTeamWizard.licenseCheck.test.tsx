@@ -169,4 +169,13 @@ describe("Story 6406 (slice 02): the create-Team wizard's Create follows the lic
 
 		expect(create).toBeEnabled();
 	});
+
+	it("at the free Team limit, Create is disabled and says why", async () => {
+		givenTheLicenceCheck("ready", false);
+
+		const create = await anAdminReachesTheLastStep();
+
+		expect(create).toBeDisabled();
+		await hoveringShows(create, "Free users can only create up to 3 teams");
+	});
 });
