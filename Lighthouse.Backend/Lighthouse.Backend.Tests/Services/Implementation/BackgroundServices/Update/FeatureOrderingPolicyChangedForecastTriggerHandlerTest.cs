@@ -79,6 +79,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
                 forecastUpdaterMock.Verify(u => u.TriggerImmediateUpdate(1), Times.Once);
                 forecastUpdaterMock.Verify(u => u.TriggerImmediateUpdate(2), Times.Once);
                 forecastUpdaterMock.Verify(u => u.TriggerImmediateUpdate(3), Times.Once);
+                forecastUpdaterMock.Verify(u => u.TriggerImmediateUpdate(It.IsAny<int>()), Times.Exactly(3));
+                portfolioCatalogueMock.Verify(r => r.GetAll(), Times.Never);
             }
         }
 
@@ -129,13 +131,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         private void GivenThePortfolios(params int[] portfolioIds)
         {
-            var portfolios = portfolioIds.Select(id => new Portfolio { Id = id }).ToList();
-            portfolioRepositoryMock.Setup(r => r.GetAll()).Returns(portfolios);
+            portfolioCatalogueMock.Setup(r => r.AllIds()).Returns(portfolioIds);
         }
 
         private void GivenTheOnlyPortfolioIs(Portfolio portfolio)
         {
-            portfolioRepositoryMock.Setup(r => r.GetAll()).Returns([portfolio]);
+            portfolioCatalogueMock.Setup(r => r.AllIds()).Returns([portfolio.Id]);
             portfolioRepositoryMock.Setup(r => r.GetById(portfolio.Id)).Returns(portfolio);
             portfolioCatalogueMock.Setup(r => r.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             portfolioCatalogueMock.Setup(r => r.TeamIdsOf(portfolio.Id)).Returns(portfolio.Teams.Select(team => team.Id).ToList());
@@ -180,7 +181,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         private Task WhenTheOrderChangesTo(FeatureOrderingPolicy policy, IForecastUpdater forecastUpdater)
         {
             var subject = new FeatureOrderingPolicyChangedForecastTriggerHandler(
-                portfolioRepositoryMock.Object,
+                portfolioCatalogueMock.Object,
                 forecastUpdater);
 
             return subject.HandleAsync(new FeatureOrderingPolicyChanged(policy), CancellationToken.None);

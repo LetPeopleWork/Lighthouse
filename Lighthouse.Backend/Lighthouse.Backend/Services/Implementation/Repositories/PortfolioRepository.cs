@@ -55,6 +55,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return GetPortfolioIdsForTeams([teamId]);
         }
 
+        public IReadOnlyList<int> AllIds()
+        {
+            return Context.Portfolios
+                .Select(portfolio => portfolio.Id)
+                .ToList();
+        }
+
         public IReadOnlyCollection<int> TeamIdsOf(int portfolioId)
         {
             return Context.Features

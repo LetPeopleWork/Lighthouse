@@ -190,6 +190,21 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        [Test]
+        [Category("contract-shape:bounded-change")]
+        public void Every_Portfolio_is_listed_by_id_without_reading_any_Feature_or_forecast()
+        {
+            using var context = AContext();
+
+            var ids = new PortfolioRepository(context, NullLogger<PortfolioRepository>.Instance).AllIds();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ids, Is.EquivalentTo(new List<int> { platformId, paymentsId, lonelyId }));
+                Assert.That(context.ChangeTracker.Entries(), Is.Empty);
+            }
+        }
+
         private IReadOnlyList<Feature> TheFeaturesWorkedOnBy(int[] teamIds, out LighthouseAppContext context)
         {
             context = AContext();

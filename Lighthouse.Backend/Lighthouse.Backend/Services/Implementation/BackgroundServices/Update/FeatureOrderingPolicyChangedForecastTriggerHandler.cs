@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -20,14 +19,14 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
     /// </para>
     /// </summary>
     public class FeatureOrderingPolicyChangedForecastTriggerHandler(
-        IRepository<Portfolio> portfolioRepository,
+        IPortfolioRepository portfolioRepository,
         IForecastUpdater forecastUpdater) : IDomainEventHandler<FeatureOrderingPolicyChanged>
     {
         public Task HandleAsync(FeatureOrderingPolicyChanged domainEvent, CancellationToken cancellationToken)
         {
-            foreach (var portfolio in portfolioRepository.GetAll())
+            foreach (var portfolioId in portfolioRepository.AllIds())
             {
-                forecastUpdater.TriggerImmediateUpdate(portfolio.Id);
+                forecastUpdater.TriggerImmediateUpdate(portfolioId);
             }
 
             return Task.CompletedTask;
