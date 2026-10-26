@@ -73,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice02)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("kpi-OUT-6400-navigation-and-settings-answer")]

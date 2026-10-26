@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             logger.LogDebug("Get Project by Id. Id: {Id}", id);
 
             return GetAllProjectsWithIncludes()
-                    .SingleOrDefault(x => x.Id == id);
+                .SingleOrDefault(x => x.Id == id);
         }
 
         public override void Remove(int id)
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             Context.Features.RemoveRange(orphanedFeatures);
         }
 
-        private IEnumerable<Portfolio> GetAllProjectsWithIncludes()
+        private IQueryable<Portfolio> GetAllProjectsWithIncludes()
         {
             // Split queries are configured globally for every relational provider (DatabaseConfigurator), so S8733's Cartesian explosion cannot occur.
 #pragma warning disable S8733

@@ -1,5 +1,11 @@
-﻿using Lighthouse.Backend.Models;
+﻿using System.Data.Common;
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -265,6 +271,54 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var genericPort = ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
 
             Assert.That(genericPort, Is.SameAs(portfolioPort));
+        }
+
+        [Test]
+        public void GetById_OnARelationalDatabase_FiltersOnTheIdInTheQueryAndKeepsTheIncludes()
+        {
+            using var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+            var sent = new CommandsSentToTheStore();
+            var options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(sent)
+                .Options;
+
+            using var context = new LighthouseAppContext(options, new Mock<ICryptoService>().Object, Mock.Of<ILogger<LighthouseAppContext>>());
+            context.Database.EnsureCreated();
+            var wanted = new Portfolio { Name = "Wanted", WorkTrackingSystemConnection = CreateConnection() };
+            wanted.Features.Add(new Feature { Name = "Held", Order = "1" });
+            context.Portfolios.AddRange(wanted, new Portfolio { Name = "Other", WorkTrackingSystemConnection = CreateConnection() });
+            context.SaveChanges();
+            context.ChangeTracker.Clear();
+            sent.Clear();
+
+            var found = new PortfolioRepository(context, Mock.Of<ILogger<PortfolioRepository>>()).GetById(wanted.Id);
+
+            var portfolioQuery = sent.Commands.First(command => command.Contains("FROM \"Portfolios\""));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(found?.Name, Is.EqualTo("Wanted"));
+                Assert.That(found?.Features, Has.Count.EqualTo(1));
+                Assert.That(portfolioQuery, Does.Contain("WHERE \"p\".\"Id\" = @"));
+                Assert.That(sent.Commands.Any(command => command.Contains("FROM \"Features\"") || command.Contains("\"Features\" AS")), Is.True);
+            }
+        }
+
+        private sealed class CommandsSentToTheStore : DbCommandInterceptor
+        {
+            private readonly List<string> commands = [];
+
+            public IReadOnlyList<string> Commands => commands;
+
+            public void Clear() => commands.Clear();
+
+            public override InterceptionResult<DbDataReader> ReaderExecuting(
+                DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+            {
+                commands.Add(command.CommandText);
+                return result;
+            }
         }
 
         private static WorkTrackingSystemConnection CreateConnection()
