@@ -3212,3 +3212,9 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
      the page to try again."), not in a separate banner.
 - **02-03 to 02-05 run at `standard`** (maintainer, 2026-10-26): sonnet crafter, haiku reviewer, refactor pass; the
   rest of slice 02, then a hold.
+- **The Portfolio create paths follow the license check like the Team ones** (maintainer, 2026-10-26, from the slice-02
+  review): the create-Portfolio wizard's Create is silent while the check loads and shows the could-not-check reason
+  when it failed; a copied Portfolio is not saved while the check loads or failed and says "Not saved: …" in its
+  save-state indicator. A new or copied Portfolio is gated by the create answer, not the edit answer.
+- **At the free limit, the create wizards' Create is disabled with the premium tooltip** (maintainer, 2026-10-26),
+  like "+ Add Team" / "+ Add Portfolio", with the same "Free users can only create up to …" wording.
