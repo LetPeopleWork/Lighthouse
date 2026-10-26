@@ -13,8 +13,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
 
         /// <summary>
         /// Every portfolio with its connection and options, its Features and the Teams working on them, and no
-        /// forecast. For callers that name or count portfolios and Teams. Nothing returned is tracked, so none
-        /// of it can reach a save; use <see cref="IRepository{T}.GetAll"/> to change a portfolio.
+        /// forecast. For callers that name or count portfolios and Teams. Nothing returned is tracked, so do not
+        /// pass any of it to a write; use <see cref="IRepository{T}.GetAll"/> to change a portfolio.
         /// </summary>
         IReadOnlyList<Portfolio> AllWithoutForecasts();
 
