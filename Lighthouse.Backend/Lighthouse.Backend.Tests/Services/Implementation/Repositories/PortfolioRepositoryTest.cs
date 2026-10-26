@@ -89,6 +89,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public void GetById_NoPortfolioHasThatId_ReturnsNothing()
+        {
+            Assert.That(CreateSubject().GetById(4711), Is.Null);
+        }
+
+        [Test]
+        public void Remove_NoPortfolioHasThatId_RemovesNothingAndDoesNotFail()
+        {
+            Assert.DoesNotThrow(() => CreateSubject().Remove(4711));
+        }
+
+        [Test]
         public async Task AddOverrideSetting_SavesCorrectly()
         {
             var subject = CreateSubject();

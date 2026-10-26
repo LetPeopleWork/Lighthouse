@@ -355,6 +355,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
                 "A run recorded its inputs over a press that landed while it was saving.");
         }
 
+        [Test]
+        public async Task A_forgotten_Portfolio_records_a_token_that_says_it_was_forgotten()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+
+            await Forget(portfolioId);
+
+            Assert.That(await WhatIsRecordedFor(portfolioId), Does.StartWith("forgotten:").And.Length.EqualTo("forgotten:".Length + 32).And.Not.Contain("-"));
+        }
+
+        [Test]
+        public async Task A_Portfolio_marked_running_records_a_token_that_says_a_forecast_is_computing()
+        {
+            var portfolioId = await APortfolio("Payments Platform");
+
+            var mark = await Mark(portfolioId, null);
+
+            var recorded = await WhatIsRecordedFor(portfolioId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recorded, Is.EqualTo(mark));
+                Assert.That(mark, Does.StartWith("computing:").And.Length.EqualTo("computing:".Length + 32).And.Not.Contain("-"));
+            }
+        }
+
         // --- Each step on its own context, as each request and each round has its own ---
 
         private LighthouseAppContext AContext() => new(options, crypto.Object, Mock.Of<ILogger<LighthouseAppContext>>());

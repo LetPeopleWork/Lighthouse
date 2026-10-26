@@ -695,6 +695,71 @@ namespace Lighthouse.Backend.Tests.API
             return connection;
         }
 
+        [Test]
+        public async Task GetPortfolioSettings_NamesTheBlockedRuleSetThePortfolioIsEffectivelyUnder()
+        {
+            var portfolio = new Portfolio { Id = 12, Name = "Portfolio" };
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(12)).Returns(portfolio);
+            blockedItemServiceMock.Setup(x => x.GetEffectiveRuleSetJson(portfolio)).Returns("{\"effective\":true}");
+
+            var result = await CreateSubject().GetPortfolioSettings(12);
+
+            var dto = (result.Result as OkObjectResult)!.Value as PortfolioSettingDto;
+            Assert.That(dto!.BlockedRuleSetJson, Is.EqualTo("{\"effective\":true}"));
+        }
+
+        [Test]
+        public async Task GetPortfolioSettings_AsksWhichTeamsAreReadableForTheInvolvedTeamsThenTheOwningTeamUnderTheRequestsAbortToken()
+        {
+            using var aborted = new CancellationTokenSource();
+            var involved = new Team { Id = 1, Name = "Involved" };
+            var owning = new Team { Id = 2, Name = "Owning" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = owning, OwningTeamId = owning.Id };
+            portfolio.Features.Add(new Feature(involved, 3));
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(42)).Returns(portfolio);
+            var asked = new List<int>();
+            var tokenSeen = CancellationToken.None;
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .Callback((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken token) =>
+                {
+                    asked.AddRange(ids);
+                    tokenSeen = token;
+                })
+                .ReturnsAsync([involved.Id, owning.Id]);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { RequestAborted = aborted.Token } };
+
+            await subject.GetPortfolioSettings(42);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(asked, Is.EqualTo(new[] { involved.Id, owning.Id }));
+                Assert.That(tokenSeen, Is.EqualTo(aborted.Token));
+            }
+        }
+
+        [Test]
+        public async Task GetPortfolio_AsksWhichTeamsAreReadableUnderTheRequestsAbortToken()
+        {
+            using var aborted = new CancellationTokenSource();
+            var team = new Team { Id = 1, Name = "Team" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio" };
+            portfolio.Features.Add(new Feature(team, 3));
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(42)).Returns(portfolio);
+            var tokenSeen = CancellationToken.None;
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .Callback((ClaimsPrincipal _, IEnumerable<int> _, CancellationToken token) => tokenSeen = token)
+                .ReturnsAsync([team.Id]);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new Microsoft.AspNetCore.Http.DefaultHttpContext { RequestAborted = aborted.Token } };
+
+            await subject.Get(42);
+
+            Assert.That(tokenSeen, Is.EqualTo(aborted.Token));
+        }
+
         private PortfolioController CreateSubject()
         {
             return new PortfolioController(
