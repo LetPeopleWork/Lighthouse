@@ -259,12 +259,33 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         }
 
         /// <summary>
+        /// The forecasts are already saved by the time the write-back is resolved, so a write-back that cannot
+        /// be read stages nothing rather than failing a round whose forecasts are current: the announcement
+        /// still goes out and the inputs are still recorded. A stop is not such a failure and still stops the round.
+        /// </summary>
+        private IReadOnlyList<WriteBackFieldUpdate> ResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
+        {
+            try
+            {
+                return ReadAndResolveTheForecastWriteBack(portfolio, serviceProvider);
+            }
+#pragma warning disable CA1031
+            catch (Exception exception) when (exception is not OperationCanceledException)
+#pragma warning restore CA1031
+            {
+                Logger.LogError(exception, "Forecast write-back could not be resolved for Portfolio {PortfolioId} ({PortfolioName}): {ErrorMessage}",
+                    portfolio.Id, portfolio.Name, exception.Message);
+                return [];
+            }
+        }
+
+        /// <summary>
         /// Staging dates needs the forecasts as they are stored now, histograms and all, so they are read here, after
         /// the round saved, and only for a Portfolio whose connection maps a forecast to a field the licence lets
         /// us write. The mappings are read from the connection itself: the Portfolio this round carries is read
         /// without them, and without forecasts, so resolving against it would stage nothing.
         /// </summary>
-        private static IReadOnlyList<WriteBackFieldUpdate> ResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
+        private static IReadOnlyList<WriteBackFieldUpdate> ReadAndResolveTheForecastWriteBack(Portfolio portfolio, IServiceProvider serviceProvider)
         {
             var connection = serviceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(portfolio.WorkTrackingSystemConnection.Id);
 

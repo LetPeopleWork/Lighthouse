@@ -67,6 +67,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         [SetUp]
         public void Setup()
         {
+            WriteBackCollectorMock.Reset();
+            WriteBackCollectorMock.Setup(c => c.FlushAsync()).ReturnsAsync([]);
             connectionRepositoryMock = new Mock<IRepository<WorkTrackingSystemConnection>>();
             connectionRepositoryMock
                 .Setup(x => x.GetById(TheConnectionId))
@@ -230,6 +232,50 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             featureRepositoryMock.Verify(x => x.FeaturesOfPortfolio(It.IsAny<int>()), Times.Never);
             writeBackTriggerServiceMock.Verify(x => x.ResolveForecastWriteBackForPortfolio(It.IsAny<Portfolio>()), Times.Never);
             domainEventDispatcherMock.Verify(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Test]
+        public void Update_ShouldStillAnnounceAndRecordItsInputsAndStageNothing_WhenTheFeaturesCannotBeRead()
+        {
+            var portfolio = CreatePortfolio();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+            featureRepositoryMock.Setup(x => x.FeaturesOfPortfolio(It.IsAny<int>())).Throws(new InvalidOperationException("database is locked"));
+            var recorded = CaptureRefreshLog();
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            VerifyTheRoundSurvivedAWriteBackThatCouldNotBeRead(portfolio, recorded);
+        }
+
+        [Test]
+        public void Update_ShouldStillAnnounceAndRecordItsInputsAndStageNothing_WhenTheConnectionCannotBeRead()
+        {
+            var portfolio = CreatePortfolio();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
+            connectionRepositoryMock.Setup(x => x.GetById(TheConnectionId)).Throws(new InvalidOperationException("database is locked"));
+            var recorded = CaptureRefreshLog();
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            VerifyTheRoundSurvivedAWriteBackThatCouldNotBeRead(portfolio, recorded);
+        }
+
+        [Test]
+        public void Update_ShouldStopTheRound_WhenReadingTheFeaturesForWriteBackIsCancelled()
+        {
+            var portfolio = CreatePortfolio();
+            forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            featureRepositoryMock.Setup(x => x.FeaturesOfPortfolio(It.IsAny<int>())).Throws(new OperationCanceledException());
+
+            CreateSubject().TriggerUpdate(portfolio.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.InstanceOf<OperationCanceledException>());
+                domainEventDispatcherMock.Verify(x => x.PublishAsync(It.IsAny<PortfolioForecastsUpdated>(), It.IsAny<CancellationToken>()), Times.Never);
+            }
         }
 
         [Test]
@@ -942,8 +988,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.Computed(TheRunMark, "fresh"));
-            writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
+            WriteBackCollectorMock
+                .Setup(x => x.Stage(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .Throws(new InvalidOperationException("Staging failed"));
 
             var recorded = CaptureRefreshLog();
@@ -981,8 +1027,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             var portfolio = CreatePortfolio();
             forecastInputsMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
             TheForecastAnswers(new ForecastRunOutcome.ConfirmedUnchanged([]));
-            writeBackTriggerServiceMock
-                .Setup(x => x.ResolveForecastWriteBackForPortfolio(TheWriteBackPortfolioOf(portfolio)))
+            WriteBackCollectorMock
+                .Setup(x => x.Stage(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
                 .Throws(new InvalidOperationException("Staging failed"));
 
             var subject = CreateSubject();
@@ -1128,6 +1174,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         {
             featureRepositoryMock.Verify(x => x.FeaturesOfPortfolio(It.IsAny<int>()), Times.AtMost(int.MaxValue));
             featureRepositoryMock.VerifyNoOtherCalls();
+        }
+
+        private void VerifyTheRoundSurvivedAWriteBackThatCouldNotBeRead(Portfolio portfolio, RecordedRefreshLog recorded)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheRefreshThrew, Is.Null);
+                Assert.That(recorded.Entry.Success, Is.True);
+                domainEventDispatcherMock.Verify(x => x.PublishAsync(It.Is<PortfolioForecastsUpdated>(e => e.PortfolioId == portfolio.Id), It.IsAny<CancellationToken>()), Times.Once);
+                forecastInputsMock.Verify(x => x.TryRecordForecastInputs(portfolio.Id, TheRunMark, "fresh", It.IsAny<CancellationToken>()), Times.Once);
+                forecastInputsMock.Verify(x => x.ForgetForecastInputs(It.IsAny<IReadOnlyCollection<int>>(), It.IsAny<CancellationToken>()), Times.Never);
+                WriteBackCollectorMock.Verify(x => x.Stage(It.IsAny<WorkTrackingSystemConnection>(), It.Is<IReadOnlyList<WriteBackFieldUpdate>>(updates => updates.Count == 0)), Times.Once);
+            }
         }
 
         private void TheForecastAnswers(ForecastRunOutcome outcome)
