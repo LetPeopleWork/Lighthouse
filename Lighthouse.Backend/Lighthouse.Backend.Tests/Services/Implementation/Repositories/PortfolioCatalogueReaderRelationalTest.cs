@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
@@ -202,6 +203,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             var one = TheRepository(out _).OneWithoutForecasts(portfolioId);
 
             Assert.That(one!.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Select(field => field.DisplayName), Is.EqualTo(TheOneFieldName));
+        }
+
+        [Test]
+        [Category("contract-shape:pure-function")]
+        public async Task The_write_back_mappings_of_the_connection_are_not_read_because_no_page_served_from_here_shows_them()
+        {
+            int portfolioId;
+            using (var context = AContext())
+            {
+                var withMapping = new Portfolio { Name = "With mapping", WorkTrackingSystemConnection = AConnection("With mapping") };
+                withMapping.WorkTrackingSystemConnection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition());
+                context.Portfolios.Add(withMapping);
+                await context.SaveChangesAsync();
+                portfolioId = withMapping.Id;
+            }
+
+            var one = TheRepository(out _).OneWithoutForecasts(portfolioId);
+
+            Assert.That(one!.WorkTrackingSystemConnection.WriteBackMappingDefinitions, Is.Empty);
         }
 
         private PortfolioRepository TheRepository(out LighthouseAppContext context)
