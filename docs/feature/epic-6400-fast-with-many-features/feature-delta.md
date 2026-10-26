@@ -3197,3 +3197,9 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
 - **Slice 05 runs at a custom profile** (maintainer, 2026-10-26): sonnet crafter, **sonnet** reviewer, refactor pass.
   The slice changes how forecasts are saved and replaced, where a reviewer that passes an untested edge costs wrong
   or orphaned forecasts. Step by step, then a hold.
+- **Two pre-existing leaks stay as they are** (maintainer, 2026-10-26): `featuresInProgress` on the Team metrics
+  endpoint naming Portfolios the caller cannot read, and a withheld dependency keeping its verdict reason. Neither is
+  fixed in this Epic.
+- **One before/after reading at the end** (maintainer, 2026-10-26): slices 03, 04, 02-01/02-02 and 05 took no
+  readings of their own. The scaled instance is read once more after 02-03 to 02-05, with the 01-05 harness and
+  set-up (SQLite, 920 Features, 4 cores), against the baseline for K1–K4. Per-slice shares are not attributed.
