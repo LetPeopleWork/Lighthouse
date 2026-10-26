@@ -14,6 +14,8 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
+import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
+import { LicenseTooltip } from "../../App/License/LicenseToolTip";
 
 const DISMISSED_KEY = "lighthouse-hide-onboarding-stepper";
 
@@ -41,6 +43,7 @@ interface OnboardingStepperProps {
 	hasPortfolios: boolean;
 	canCreateTeam: boolean;
 	canCreatePortfolio: boolean;
+	licenseCheckStatus: LicenseCheckStatus;
 	teamTerm: string;
 	portfolioTerm: string;
 	connectionTerm: string;
@@ -52,6 +55,7 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 	hasPortfolios,
 	canCreateTeam,
 	canCreatePortfolio,
+	licenseCheckStatus,
 	teamTerm,
 	portfolioTerm,
 	connectionTerm,
@@ -168,15 +172,23 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 				>
 					{steps[activeStep].description}
 				</Typography>
-				<Button
-					variant="contained"
-					startIcon={<AddIcon />}
-					onClick={steps[activeStep].action}
-					disabled={!steps[activeStep].enabled}
-					data-testid="onboarding-cta"
+				<LicenseTooltip
+					canUseFeature
+					defaultTooltip=""
+					checkStatus={licenseCheckStatus}
 				>
-					{steps[activeStep].actionLabel}
-				</Button>
+					<span>
+						<Button
+							variant="contained"
+							startIcon={<AddIcon />}
+							onClick={steps[activeStep].action}
+							disabled={!steps[activeStep].enabled}
+							data-testid="onboarding-cta"
+						>
+							{steps[activeStep].actionLabel}
+						</Button>
+					</span>
+				</LicenseTooltip>
 			</Box>
 		</Box>
 	);

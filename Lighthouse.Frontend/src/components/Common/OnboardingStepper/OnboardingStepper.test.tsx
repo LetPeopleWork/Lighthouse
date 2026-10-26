@@ -19,6 +19,7 @@ const defaultProps = {
 	hasPortfolios: false,
 	canCreateTeam: true,
 	canCreatePortfolio: true,
+	licenseCheckStatus: "ready" as const,
 	teamTerm: "Team",
 	portfolioTerm: "Portfolio",
 	connectionTerm: "Connection",

@@ -149,6 +149,7 @@ const OverviewDashboard: React.FC = () => {
 		useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
 	const {
+		status: licenseCheckStatus,
 		canCreatePortfolio,
 		canCreateTeam,
 		maxPortfoliosWithoutPremium,
@@ -468,6 +469,7 @@ const OverviewDashboard: React.FC = () => {
 							hasPortfolios={hasPortfolios}
 							canCreateTeam={canCreateTeam && rbac.canCreateTeam}
 							canCreatePortfolio={canCreatePortfolio && rbac.canCreatePortfolio}
+							licenseCheckStatus={licenseCheckStatus}
 							teamTerm={teamTerm}
 							portfolioTerm={portfolioTerm}
 						/>
@@ -511,6 +513,7 @@ const OverviewDashboard: React.FC = () => {
 								<span>
 									<LicenseTooltip
 										canUseFeature={canCreateTeam}
+										checkStatus={licenseCheckStatus}
 										defaultTooltip=""
 										premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
 									>
@@ -533,6 +536,7 @@ const OverviewDashboard: React.FC = () => {
 						{rbac.canCreatePortfolio && (
 							<LicenseTooltip
 								canUseFeature={canCreatePortfolio}
+								checkStatus={licenseCheckStatus}
 								defaultTooltip=""
 								premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
 							>

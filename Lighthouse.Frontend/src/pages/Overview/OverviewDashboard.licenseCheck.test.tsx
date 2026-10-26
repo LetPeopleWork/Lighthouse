@@ -200,7 +200,7 @@ const hoveringShowsNothing = async (action: HTMLElement) => {
 };
 
 describe("Story 6406 (slice 02): the Overview's create actions while the licence is checked", () => {
-	it.skip("while the licence is checked, Add Team and Add Portfolio are disabled and say nothing", async () => {
+	it("while the licence is checked, Add Team and Add Portfolio are disabled and say nothing", async () => {
 		givenTheLicenceCheck("loading", false);
 
 		const { addTeam, addPortfolio } = await anAdminOpensTheOverview();
@@ -211,7 +211,7 @@ describe("Story 6406 (slice 02): the Overview's create actions while the licence
 		await hoveringShowsNothing(addPortfolio);
 	});
 
-	it.skip("when the licence cannot be checked, Add Team and Add Portfolio are disabled and say why", async () => {
+	it("when the licence cannot be checked, Add Team and Add Portfolio are disabled and say why", async () => {
 		givenTheLicenceCheck("failed", false);
 
 		const { addTeam, addPortfolio } = await anAdminOpensTheOverview();
@@ -253,7 +253,7 @@ describe("Story 6406 (slice 02): the Get Started steps follow the same licence c
 		await hoveringShowsNothing(addTeam);
 	});
 
-	it.skip("when the licence cannot be checked, the Add Team step is disabled and says why", async () => {
+	it("when the licence cannot be checked, the Add Team step is disabled and says why", async () => {
 		givenTheLicenceCheck("failed", false);
 
 		await anAdminOpensTheOverview({ teams: [], portfolios: [] });
@@ -264,7 +264,7 @@ describe("Story 6406 (slice 02): the Get Started steps follow the same licence c
 		await hoveringShows(addTeam, COULD_NOT_CHECK);
 	});
 
-	it.skip("when the licence cannot be checked, the Add Portfolio step is disabled and says why", async () => {
+	it("when the licence cannot be checked, the Add Portfolio step is disabled and says why", async () => {
 		givenTheLicenceCheck("failed", false);
 
 		await anAdminOpensTheOverview({ teams: [atlas], portfolios: [] });
