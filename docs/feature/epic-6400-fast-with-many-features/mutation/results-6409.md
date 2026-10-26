@@ -5,7 +5,7 @@ Gate: 80 % kill rate on what the slice changed. `ForecastUpdater.cs` and `Featur
 older code, so their whole-file scores are reported but survivors are triaged only in the regions
 `git diff d7595f8e2..e2655781c` shows.
 
-Stryker's "will be tested" line: **137** (of 22 768 created for the whole backend). One run was enough: the gate held
+Stryker's "will be tested" line: **137** (**139** after the refresh below) (of 22 768 created for the whole backend). One run was enough: the gate held
 on the first run, so there was no kill round and no second run.
 
 ## Whole file
@@ -14,11 +14,12 @@ on the first run, so there was no kill round and no second run.
 | --- | --- | --- | --- | --- | --- |
 | `BackgroundServices/Update/ForecastUpdater.cs` | 74 | 67 (2 by timeout) | 5 | 2 | 90.54 % |
 | `Repositories/FeatureRepository.cs` | 31 | 21 | 2 | 8 | 67.74 % |
-| `Repositories/PortfolioRepository.cs` | 36 | 30 | 6 | 0 | 83.33 % |
+| `Repositories/PortfolioRepository.cs` | 37 | 31 | 6 | 0 | 83.78 % |
+| `BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs` | 1 | 1 | 0 | 0 | 100 % |
 | `DomainEvents/DeliveryForecastPublishingHandler.cs` | 6 | 5 | 1 | 0 | 83.33 % |
 
 Scores count no-coverage mutants as not killed, as Stryker does; timeouts count as killed. Compile-error and ignored
-mutants are not scored. Final overall score printed by Stryker: 83.67 %.
+mutants are not scored. Final overall score printed by Stryker: 83.89 %.
 
 ## Changed region (what slice 05 changed)
 
@@ -26,7 +27,8 @@ mutants are not scored. Final overall score printed by Stryker: 83.67 %.
 | --- | --- | --- | --- | --- | --- |
 | `ForecastUpdater.cs` | catalogue read and `TeamIdsOf` trigger check (`:125-132`), `OneWithoutForecasts` (`:181`), `StageTheWriteBackAndAnnounce`, `ResolveTheForecastWriteBack` with its catch, `ReadAndResolveTheForecastWriteBack`, `MapsAForecast` (`:254-307`) | 20 | 18 | 2 | **90.00 %** |
 | `FeatureRepository.cs` | `FeaturesWorkedOnBy` (`:86-102`) | 1 | 1 | 0 | **100 %** |
-| `PortfolioRepository.cs` | `TeamIdsOf` (`:58-67`) | 2 | 2 | 0 | **100 %** |
+| `PortfolioRepository.cs` | `AllIds` and `TeamIdsOf` (`:58-72`) | 3 | 3 | 0 | **100 %** |
+| `FeatureOrderingPolicyChangedForecastTriggerHandler.cs` | the loop over `AllIds()` | 1 | 1 | 0 | **100 %** |
 | `DeliveryForecastPublishingHandler.cs` | the early return on no Delivery (`:33-41`) | 1 | 1 | 0 | **100 %** (plus the hand mutations below) |
 
 Stryker produces few mutants in the two query bodies (the `Where`/`Include` chains and `Distinct` give it little to
@@ -66,7 +68,7 @@ Outside the changed regions, older code, not triaged for this slice:
   `:104` / `:107` (the Portfolio and Team feature reads), `:118` and `:129` (a forecast read with its
   histograms, `ParentsOf`) and `:140` (`ParentsOf` projection) whose tests are in classes
   outside this filter.
-- `PortfolioRepository.cs:86`, `:104`, `:126`: `logger.LogDebug` / `LogInformation` calls and templates.
+- `PortfolioRepository.cs:93`, `:111`, `:133`: `logger.LogDebug` / `LogInformation` calls and templates.
 - `DeliveryForecastPublishingHandler.cs:70`: block removal in the catch around `logger.LogError`; the source carries a
   `Stryker disable` for it, and the round surviving a failed publish is asserted.
 
@@ -82,3 +84,18 @@ scored. Mutated by hand and run against `DeliveryForecastPublishingHandlerTest`,
 
 No survivor was justified as "covered only by the acceptance scenarios", and no test was added: the gate held on the
 first run and every in-scope survivor is a log line.
+
+## Refresh after the ids-only trigger
+
+Re-run 2026-10-26 on `55a6accc7`, which makes `FeatureOrderingPolicyChangedForecastTriggerHandler` read the Portfolios
+through the new `IPortfolioRepository.AllIds()` instead of `GetAll()`. Same config, with the handler added to `mutate`
+and `FeatureOrderingPolicyChangedForecastTriggerHandlerTest` added to the test-case filter (unit namespaces only);
+`ForecastGatherReaderRelationalTest`, already in the filter, carries the relational test for `AllIds()`. 139 mutants
+tested, 5 m 46 s, overall 83.89 %.
+
+- `PortfolioRepository.cs` 83.33 % to 83.78 %: the one new mutant (in `AllIds`) is killed; the six survivors are the
+  same log lines as before, only seven lines lower.
+- `FeatureOrderingPolicyChangedForecastTriggerHandler.cs`: one scored mutant, killed; two more are ignored by Stryker.
+  Nothing survives in new code, so there was no kill round.
+- The other three files are unchanged (`ForecastUpdater.cs` 90.54 %, `FeatureRepository.cs` 67.74 %,
+  `DeliveryForecastPublishingHandler.cs` 83.33 %).

@@ -7,11 +7,12 @@
       "**/Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs",
       "**/Services/Implementation/Repositories/FeatureRepository.cs",
       "**/Services/Implementation/Repositories/PortfolioRepository.cs",
-      "**/Services/Implementation/DomainEvents/DeliveryForecastPublishingHandler.cs"
+      "**/Services/Implementation/DomainEvents/DeliveryForecastPublishingHandler.cs",
+      "**/Services/Implementation/BackgroundServices/Update/FeatureOrderingPolicyChangedForecastTriggerHandler.cs"
     ],
     "thresholds": { "high": 80, "low": 70, "break": 0 },
     "coverage-analysis": "perTestInIsolation",
-    "test-case-filter": "(FullyQualifiedName~ForecastUpdaterTest|FullyQualifiedName~ForecastGatherReaderRelationalTest|FullyQualifiedName~Repositories.FeatureRepositoryTest|FullyQualifiedName~FeatureGraphReaderRelationalTest|FullyQualifiedName~FeaturesWithReferenceIdsRelationalTest|FullyQualifiedName~PortfolioRepositoryTest|FullyQualifiedName~PortfolioCatalogueReaderRelationalTest|FullyQualifiedName~DeliveryForecastPublishingHandlerTest|FullyQualifiedName~ForecastConfirmationRepositoryRelationalTest|FullyQualifiedName~Repositories.DeletionTests)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "test-case-filter": "(FullyQualifiedName~ForecastUpdaterTest|FullyQualifiedName~ForecastGatherReaderRelationalTest|FullyQualifiedName~Repositories.FeatureRepositoryTest|FullyQualifiedName~FeatureGraphReaderRelationalTest|FullyQualifiedName~FeaturesWithReferenceIdsRelationalTest|FullyQualifiedName~PortfolioRepositoryTest|FullyQualifiedName~PortfolioCatalogueReaderRelationalTest|FullyQualifiedName~DeliveryForecastPublishingHandlerTest|FullyQualifiedName~FeatureOrderingPolicyChangedForecastTriggerHandlerTest|FullyQualifiedName~ForecastConfirmationRepositoryRelationalTest|FullyQualifiedName~Repositories.DeletionTests)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
     "reporters": ["progress", "json", "cleartext"],
     "concurrency": 4,
     "additional-timeout": 30000,
