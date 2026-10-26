@@ -67,6 +67,7 @@ namespace Lighthouse.Backend.Data
                     PRAGMA journal_mode=WAL;
                     PRAGMA busy_timeout=10000;
                     PRAGMA synchronous=NORMAL;
+                    PRAGMA foreign_keys=ON;
                 ";
                             command.ExecuteNonQuery();
                         }
