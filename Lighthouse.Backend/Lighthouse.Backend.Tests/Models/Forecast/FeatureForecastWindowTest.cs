@@ -34,6 +34,16 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
+        public void A_start_forecast_is_sized_by_the_same_rule_as_a_completion_forecast()
+        {
+            var start = new StartForecast(new Dictionary<int, int> { [12] = Runs }, DateTime.UtcNow);
+
+            var end = FeatureForecastWindow.EndFor(Today, start);
+
+            Assert.That(end, Is.EqualTo(Today.AddDays((12 * 2) + TwoWeeksOfHeadroom)));
+        }
+
+        [Test]
         public void Without_a_forecast_only_the_headroom_is_read()
         {
             var end = FeatureForecastWindow.EndFor(Today, (WhenForecast)null!);

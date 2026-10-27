@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
@@ -111,6 +112,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(feature.Forecast.GetProbability(85), Is.EqualTo(WorkingDaysToCompletion));
                 Assert.That(written, Is.EqualTo("2026-03-22"));
             }
+        }
+
+        [Test]
+        public void ForecastWriteBackPlan_WeekendRule_WritesTodayPlusWorkingDaysSkippingEveryWeekend()
+        {
+            var rules = new List<RecurringBlackoutRule>
+            {
+                new()
+                {
+                    Weekdays = [DayOfWeek.Saturday, DayOfWeek.Sunday],
+                    IntervalWeeks = 1,
+                    Start = new DateOnly(2026, 1, 5),
+                    End = null,
+                    Description = "Weekends",
+                },
+            };
+            var oneOffRepository = new Mock<IRepository<BlackoutPeriod>>();
+            oneOffRepository.Setup(r => r.GetAll()).Returns(new List<BlackoutPeriod>().AsQueryable());
+            var ruleRepository = new Mock<IRepository<RecurringBlackoutRule>>();
+            ruleRepository.Setup(r => r.GetAll()).Returns(rules.AsQueryable());
+            var realBlackouts = new BlackoutPeriodService(
+                oneOffRepository.Object, ruleRepository.Object, Mock.Of<IDomainEventDispatcher>());
+            var weekendAwareSubject = new WriteBackTriggerService(
+                licenseServiceMock.Object,
+                workItemRepositoryMock.Object,
+                realBlackouts,
+                new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(FixedInstant),
+                Mock.Of<ITeamMetricsService>(),
+                Mock.Of<ILogger<WriteBackTriggerService>>());
+            var portfolio = PortfolioWithForecastedFeature(WorkingDaysToCompletion);
+
+            capturedUpdates = [.. weekendAwareSubject.ResolveForecastWriteBackForPortfolio(portfolio)];
+
+            Assert.That(capturedUpdates.Single().Value, Is.EqualTo("2026-03-24"));
         }
 
         private static WhenForecast DeterministicForecast(int workingDays)

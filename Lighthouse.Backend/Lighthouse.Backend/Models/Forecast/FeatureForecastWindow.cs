@@ -16,14 +16,14 @@ namespace Lighthouse.Backend.Models.Forecast
             return EndAfter(windowStart, worstCaseWorkingDays);
         }
 
-        public static DateTime EndFor(DateTime windowStart, WhenForecast forecast)
+        public static DateTime EndFor(DateTime windowStart, ForecastBase? forecast)
         {
             return EndAfter(windowStart, WorstCaseWorkingDaysOf(forecast));
         }
 
         // A percentile beyond the horizon has no day of its own, but it lies further out than any that
         // does. Sized as no days, the window would miss the blackouts of the earlier percentiles.
-        private static int WorstCaseWorkingDaysOf(WhenForecast? forecast)
+        private static int WorstCaseWorkingDaysOf(ForecastBase? forecast)
         {
             if (forecast is null)
             {
