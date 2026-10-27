@@ -106,9 +106,11 @@ vi.mock("@mui/x-charts", () => {
 			const container =
 				typeof document === "undefined"
 					? null
-					: document.querySelector('[data-testid="chart-container"]');
-			const seriesJson = container?.getAttribute("data-series")
-				? JSON.parse(container.getAttribute("data-series") as string)
+					: document.querySelector<HTMLElement>(
+							'[data-testid="chart-container"]',
+						);
+			const seriesJson = container?.dataset.series
+				? JSON.parse(container.dataset.series as string)
 				: [];
 			// Flatten all series data into a single array of { datum, seriesIndex, dataIndex } records
 			type ChartDatum = {

@@ -74,12 +74,10 @@ vi.mock("@mui/x-charts", () => {
 			</div>
 		),
 		ScatterPlot: ({ slots }: { slots?: { marker?: MarkerSlot } }) => {
-			const container = document.querySelector(
+			const container = document.querySelector<HTMLElement>(
 				'[data-testid="chart-container"]',
 			);
-			const series = JSON.parse(
-				container?.getAttribute("data-series") ?? "[]",
-			) as Series[];
+			const series = JSON.parse(container?.dataset.series ?? "[]") as Series[];
 			return (
 				<div data-testid="scatter-plot">
 					{series.flatMap((s, seriesIndex) =>
@@ -128,10 +126,9 @@ const gravitysFeatures = [
 	aFeature(3, 3, 12),
 ];
 
-const sizeAxis = () =>
-	screen.getByTestId("chart-container").getAttribute("data-x-axis-label");
+const sizeAxis = () => screen.getByTestId("chart-container").dataset.xAxisLabel;
 const verticalAxis = () =>
-	screen.getByTestId("chart-container").getAttribute("data-y-axis-label");
+	screen.getByTestId("chart-container").dataset.yAxisLabel;
 
 // A bubble's tooltip is the title of its circle.
 const bubbleTitles = () =>
@@ -305,8 +302,7 @@ describe("the Feature Size scatter on a Team filters by state like the Portfolio
 	const featuresPlotted = () =>
 		(
 			JSON.parse(
-				screen.getByTestId("chart-container").getAttribute("data-series") ??
-					"[]",
+				screen.getByTestId("chart-container").dataset.series ?? "[]",
 			) as { data?: unknown[] }[]
 		).flatMap((series) => series.data ?? []).length;
 

@@ -77,9 +77,7 @@ async function clickShowHideAll(user: ReturnType<typeof userEvent.setup>) {
 }
 
 const columnsShown = () =>
-	screen
-		.getAllByRole("columnheader")
-		.map((header) => header.getAttribute("data-field"));
+	screen.getAllByRole("columnheader").map((header) => header.dataset.field);
 
 const thePage = () => document.body;
 

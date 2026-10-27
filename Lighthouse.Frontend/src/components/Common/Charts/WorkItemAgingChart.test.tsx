@@ -2025,9 +2025,8 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 				doingStates={zenithDoingStates}
 			/>,
 		);
-		const withoutBands = screen
-			.getByTestId("mock-chart-container")
-			.getAttribute("data-series");
+		const withoutBands = screen.getByTestId("mock-chart-container").dataset
+			.series;
 
 		rerender(
 			<WorkItemAgingChart
@@ -2040,9 +2039,9 @@ describe("Work Item Age Band beside the dot the coach clicked", () => {
 			/>,
 		);
 
-		expect(
-			screen.getByTestId("mock-chart-container").getAttribute("data-series"),
-		).toBe(withoutBands);
+		expect(screen.getByTestId("mock-chart-container").dataset.series).toBe(
+			withoutBands,
+		);
 	});
 });
 
