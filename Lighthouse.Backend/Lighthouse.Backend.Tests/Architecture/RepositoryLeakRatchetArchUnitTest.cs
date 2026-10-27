@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ArchUnitNET.Loader;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Repositories;
@@ -21,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     [Category("stories-6367-6369")]
     [Category("slice-s05a")]
-    public class RepositoryLeakRatchetArchUnitTest
+    public partial class RepositoryLeakRatchetArchUnitTest
     {
         private const string PendingGetAllByPredicate = "pending: S05a-1";
 
@@ -181,7 +182,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // ---- The source scan for GetAllByPredicate callers ----
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ACallInCode_IsReportedWithItsFileAndLine()
         {
             var source = new ProductionSourceFile(
@@ -192,7 +192,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void AMentionInALineComment_IsNotACall()
         {
             var source = new ProductionSourceFile(
@@ -203,7 +202,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void AMentionInABlockComment_IsNotACall()
         {
             var source = new ProductionSourceFile(
@@ -214,7 +212,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ASlashPairInsideAStringLiteral_DoesNotHideACallOnTheSameLine()
         {
             var source = new ProductionSourceFile(
@@ -225,7 +222,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void AnEscapedQuoteBeforeASlashPairInsideAString_DoesNotHideACallOnTheSameLine()
         {
             var source = new ProductionSourceFile(
@@ -236,7 +232,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ACallWrittenOnTheLineAfterItsReceiver_IsReportedAtTheCallsLine()
         {
             var source = new ProductionSourceFile(
@@ -247,7 +242,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void TheDeclarationOnTheRepositoryContract_IsNotACall()
         {
             var source = new ProductionSourceFile(
@@ -258,7 +252,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ACallInsideTheRepositoriesFolder_IsAllowed()
         {
             var source = new ProductionSourceFile(
@@ -384,9 +377,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // SCAFFOLD: true
-        private static IReadOnlyList<string> GetAllByPredicateCallSites(IEnumerable<ProductionSourceFile> sources)
-            => throw new AssertionException("SCAFFOLD: GetAllByPredicateCallSites is not built yet");
+        // A call is the name reached through a member access, so the declaration on the repository
+        // contract (no dot in front of it) never matches. The pattern may span a line break between the
+        // dot and the name; the line reported is the one the name is on.
+        [GeneratedRegex(@"\.\s*GetAllByPredicate\s*(<[^>]*>)?\s*\(")]
+        private static partial Regex GetAllByPredicateCall();
+
+        private static List<string> GetAllByPredicateCallSites(IEnumerable<ProductionSourceFile> sources)
+            => sources
+                .Where(file => !file.RelativePath.StartsWith(RepositoriesFolder, StringComparison.Ordinal))
+                .SelectMany(file => CallLines(file.RelativePath, ProductionSource.WithoutComments(file.Source)))
+                .ToList();
+
+        private static IEnumerable<string> CallLines(string path, string code)
+            => GetAllByPredicateCall().Matches(code)
+                .Select(match => code.IndexOf("GetAllByPredicate", match.Index, StringComparison.Ordinal))
+                .Select(nameIndex => $"{path}:{code.Take(nameIndex).Count(character => character == '\n') + 1}");
 
         // SCAFFOLD: true
         private static IReadOnlyCollection<string> RepositoryDependentsIn(ArchitectureModel architecture, string namespacePattern)
