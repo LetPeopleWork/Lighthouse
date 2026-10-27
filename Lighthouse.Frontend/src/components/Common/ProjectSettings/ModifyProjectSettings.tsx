@@ -20,6 +20,7 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -422,7 +423,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 								canSave={canSave}
 								notSavedReason={notSavedReason}
 								onRetry={retry}
-								onReload={() => void reloadAfterConflict()}
+								onReload={() => fireAndForget(reloadAfterConflict())}
 							/>
 						</Grid>
 					</Grid>

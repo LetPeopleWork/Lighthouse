@@ -55,9 +55,9 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 			if (fetchedBoards.length === 0) {
 				setError(NO_BOARDS);
 			}
-		} catch (err) {
-			setError(refusalOr(err, "Failed to load boards. Please try again."));
-			console.error("Error loading boards:", err);
+		} catch (error_) {
+			setError(refusalOr(error_, "Failed to load boards. Please try again."));
+			console.error("Error loading boards:", error_);
 		} finally {
 			setLoading(false);
 		}
@@ -82,10 +82,12 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 					board.id,
 				);
 				setBoardInformation(info);
-			} catch (err) {
-				console.error("Error fetching board information:", err);
+			} catch (error_) {
+				console.error("Error fetching board information:", error_);
 				setBoardInformation(null);
-				setError(refusalOr(err, "Failed to read the board. Please try again."));
+				setError(
+					refusalOr(error_, "Failed to read the board. Please try again."),
+				);
 			} finally {
 				setFetchingBoardInfo(false);
 			}

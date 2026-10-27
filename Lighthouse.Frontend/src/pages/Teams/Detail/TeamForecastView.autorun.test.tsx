@@ -2,7 +2,6 @@ import { act, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import type { Team } from "../../../models/Team/Team";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
@@ -132,8 +131,6 @@ const renderForecastView = () =>
 			</ApiServiceContext.Provider>
 		</SnackbarErrorHandler>,
 	);
-
-void TERMINOLOGY_KEYS;
 
 describe("@US-05 @in-memory auto-run new-item forecast", () => {
 	beforeEach(() => {

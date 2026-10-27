@@ -257,9 +257,9 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
 			}
 			closeRuleDialog();
 			await fetchRules();
-		} catch (saveError) {
+		} catch (error_) {
 			setRuleFormError(
-				messageFromError(saveError, "Failed to save recurring blackout rule."),
+				messageFromError(error_, "Failed to save recurring blackout rule."),
 			);
 		} finally {
 			setRuleSaving(false);
@@ -272,12 +272,9 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
 			await recurringBlackoutRuleService.delete(id);
 			setDeleteRuleId(null);
 			await fetchRules();
-		} catch (deleteError) {
+		} catch (error_) {
 			setError(
-				messageFromError(
-					deleteError,
-					"Failed to delete recurring blackout rule.",
-				),
+				messageFromError(error_, "Failed to delete recurring blackout rule."),
 			);
 		}
 	};

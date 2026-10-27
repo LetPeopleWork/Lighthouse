@@ -64,8 +64,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 					new Date(),
 				);
 				setInProgressFeatures(featuresData);
-			} catch (err) {
-				console.error(`Error fetching ${featuresTerm} in progress:`, err);
+			} catch (error) {
+				console.error(`Error fetching ${featuresTerm} in progress:`, error);
 			}
 		};
 
@@ -110,8 +110,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				setForecastFilterConditions(
 					parseForecastFilterConditions(settings.forecastFilterRuleSetJson),
 				);
-			} catch (err) {
-				console.error("Error fetching team settings:", err);
+			} catch (error) {
+				console.error("Error fetching team settings:", error);
 			}
 		};
 

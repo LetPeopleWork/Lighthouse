@@ -20,6 +20,7 @@ import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/Advanc
 import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSettingsComponent";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import { validateStateMappings } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -398,7 +399,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 								canSave={!disableSave}
 								notSavedReason={notSavedReason}
 								onRetry={retry}
-								onReload={() => void reloadAfterConflict()}
+								onReload={() => fireAndForget(reloadAfterConflict())}
 							/>
 						</Grid>
 					</Grid>

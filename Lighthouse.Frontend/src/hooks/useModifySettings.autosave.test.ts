@@ -62,7 +62,7 @@ const makeArgs = (
 	validateForm: vi
 		.fn()
 		.mockImplementation((s: SimpleSettings) =>
-			s.name !== "" ? [] : ["Enter a Name"],
+			s.name === "" ? ["Enter a Name"] : [],
 		),
 	getSchemaForSystem: vi
 		.fn()

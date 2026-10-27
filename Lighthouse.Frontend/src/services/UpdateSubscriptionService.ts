@@ -1,6 +1,7 @@
 import * as signalR from "@microsoft/signalr";
 import axios, { type AxiosInstance } from "axios";
 import { getBackendReadyPromise, getBackendUrl } from "../utils/backendUrl";
+import { fireAndForget } from "../utils/fireAndForget";
 
 export type UpdateType = "Team" | "Features" | "Forecasts";
 
@@ -140,7 +141,7 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 
 				this.connection.onreconnected(() => {
 					this.isConnected = true;
-					void this.rejoinGroups();
+					fireAndForget(this.rejoinGroups());
 				});
 			}
 
@@ -161,8 +162,11 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			[...this.joinedGroups].map(async (group) => {
 				try {
 					await this.rejoinGroup(group);
-				} catch (err) {
-					console.error("Error restoring a subscription after reconnect:", err);
+				} catch (error) {
+					console.error(
+						"Error restoring a subscription after reconnect:",
+						error,
+					);
 				}
 			}),
 		);
@@ -239,8 +243,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 				id,
 			);
 			return updateStatus;
-		} catch (err) {
-			console.error("Error getting update status:", err);
+		} catch (error) {
+			console.error("Error getting update status:", error);
 			return null;
 		}
 	}
@@ -283,8 +287,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			const response =
 				await this.apiService.get<IGlobalUpdateStatus>("/update/status");
 			return response.data;
-		} catch (err) {
-			console.error("Error getting global update status:", err);
+		} catch (error) {
+			console.error("Error getting global update status:", error);
 			return { hasActiveUpdates: false, activeCount: 0 };
 		}
 	}
@@ -296,8 +300,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			this.connection.on(GLOBAL_UPDATES, callback);
 			this.joinedGroups.add(GLOBAL_UPDATES);
 			await this.connection.invoke("SubscribeToAllUpdates");
-		} catch (err) {
-			console.error("Error subscribing to all updates:", err);
+		} catch (error) {
+			console.error("Error subscribing to all updates:", error);
 		}
 	}
 
@@ -308,8 +312,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			this.connection.off(GLOBAL_UPDATES);
 			this.joinedGroups.delete(GLOBAL_UPDATES);
 			await this.connection.invoke("UnsubscribeFromAllUpdates");
-		} catch (err) {
-			console.error("Error unsubscribing from all updates:", err);
+		} catch (error) {
+			console.error("Error unsubscribing from all updates:", error);
 		}
 	}
 
@@ -326,8 +330,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			this.connection.on(updateKey, callback);
 			this.joinedGroups.add(updateKey);
 			await this.connection.invoke("SubscribeToUpdate", updateType, id);
-		} catch (err) {
-			console.error("Error subscribing to update:", err);
+		} catch (error) {
+			console.error("Error subscribing to update:", error);
 		}
 	}
 
@@ -340,8 +344,8 @@ export class UpdateSubscriptionService implements IUpdateSubscriptionService {
 			this.connection.off(updateKey);
 			this.joinedGroups.delete(updateKey);
 			await this.connection.invoke("UnsubscribeFromUpdate", updateType, id);
-		} catch (err) {
-			console.error("Error unsubscribing from update:", err);
+		} catch (error) {
+			console.error("Error unsubscribing from update:", error);
 		}
 	}
 }

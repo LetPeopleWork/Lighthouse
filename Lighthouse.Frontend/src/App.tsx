@@ -183,8 +183,8 @@ const App: React.FC = () => {
 					notifyBackendReady(event.payload);
 					setIsBackendReady(true);
 				});
-			} catch (e) {
-				console.error("Failed to initialize Tauri event listener:", e);
+			} catch (error) {
+				console.error("Failed to initialize Tauri event listener:", error);
 			}
 		};
 

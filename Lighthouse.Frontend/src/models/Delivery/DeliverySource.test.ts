@@ -156,15 +156,13 @@ describe("delivery source option", () => {
 	});
 
 	it("refuses an option with no id to bind to", () => {
-		const { id, ...withoutId } = datedRelease;
-		void id;
+		const withoutId = { ...datedRelease, id: undefined };
 
 		expect(() => DeliverySourceOptionSchema.parse(withoutId)).toThrow();
 	});
 
 	it("refuses an option whose project is missing, so no row can render nameless", () => {
-		const { projectName, ...withoutProjectName } = datedRelease;
-		void projectName;
+		const withoutProjectName = { ...datedRelease, projectName: undefined };
 
 		expect(() =>
 			DeliverySourceOptionSchema.parse(withoutProjectName),
@@ -181,8 +179,7 @@ describe("delivery source preview", () => {
 	});
 
 	it("refuses a preview with no date instead of dating it to 1970", () => {
-		const { date, ...withoutDate } = previewWire;
-		void date;
+		const withoutDate = { ...previewWire, date: undefined };
 
 		expect(() => DeliverySourcePreviewSchema.parse(withoutDate)).toThrow();
 		expect(() =>

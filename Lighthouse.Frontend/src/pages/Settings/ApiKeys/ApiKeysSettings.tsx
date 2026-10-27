@@ -37,6 +37,7 @@ import type {
 import { AuthMode } from "../../../models/Auth/AuthModels";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import ScopeRowList, {
 	type IPortfolioOption,
 	type IScopeRow,
@@ -180,7 +181,7 @@ const CreateApiKeyDialog: React.FC<CreateApiKeyDialogProps> = ({
 			}
 		};
 
-		void loadScopeOptions();
+		fireAndForget(loadScopeOptions());
 		return () => {
 			cancelled = true;
 		};
@@ -411,7 +412,7 @@ const ApiKeysSettings: React.FC = () => {
 			}
 		};
 
-		void initialize();
+		fireAndForget(initialize());
 	}, [authService, fetchKeys]);
 
 	useEffect(() => {
@@ -443,7 +444,7 @@ const ApiKeysSettings: React.FC = () => {
 			setScopeLookupLoaded(true);
 		};
 
-		void loadScopeLookup();
+		fireAndForget(loadScopeLookup());
 		return () => {
 			cancelled = true;
 		};

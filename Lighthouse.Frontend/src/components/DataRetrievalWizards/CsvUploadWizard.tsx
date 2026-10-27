@@ -80,11 +80,11 @@ const CsvUploadWizard: React.FC<DataRetrievalWizardProps> = ({
 		try {
 			const content = await file.text();
 			setFileContent(content);
-		} catch (err) {
-			console.error("Error reading file:", err);
+		} catch (error_) {
+			console.error("Error reading file:", error_);
 			setError(
-				err instanceof Error
-					? `Failed to read file: ${err.message}`
+				error_ instanceof Error
+					? `Failed to read file: ${error_.message}`
 					: "Failed to read file.",
 			);
 			setSelectedFile(null);

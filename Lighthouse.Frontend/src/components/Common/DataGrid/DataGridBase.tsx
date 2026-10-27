@@ -386,19 +386,19 @@ function DataGridBase<T extends GridValidRowModel>({
 										try {
 											const all = api.getAllColumns();
 											orderedFields = all.map((c) => c.field);
-										} catch (err) {
+										} catch (error) {
 											console.warn(
 												"Failed to getAllColumns for column order, falling back to visible columns",
-												err,
+												error,
 											);
 											try {
 												orderedFields = api
 													.getVisibleColumns()
 													.map((c) => c.field);
-											} catch (error_) {
+											} catch (error) {
 												console.warn(
 													"Failed to getVisibleColumns as fallback",
-													error_,
+													error,
 												);
 												orderedFields = columns.map((c) => c.field);
 											}

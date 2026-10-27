@@ -192,7 +192,7 @@ describe("useModifySettings", () => {
 			let callCount = 0;
 			const validateForm = vi.fn().mockImplementation((s: SimpleSettings) => {
 				callCount++;
-				return s.name !== "" ? [] : ["Enter a Name"];
+				return s.name === "" ? ["Enter a Name"] : [];
 			});
 			const args = makeHookArgs({ validateForm });
 			const { result } = renderHook(() => useModifySettings(args));

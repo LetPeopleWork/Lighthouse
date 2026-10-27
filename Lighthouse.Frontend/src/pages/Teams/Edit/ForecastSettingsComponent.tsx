@@ -30,6 +30,7 @@ import {
 } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 
 const PREMIUM_DOCS_HREF = "/docs/premium-features#forecast-filter";
 
@@ -79,7 +80,7 @@ const PremiumGatedForecastFilter: React.FC<PremiumGatedForecastFilterProps> = ({
 	const throughputTerm = getTerm(TERMINOLOGY_KEYS.THROUGHPUT);
 	const heading = `Exclude Items for ${throughputTerm}`;
 	const reloadThroughput = () => {
-		void teamService.updateTeamData(teamId);
+		fireAndForget(teamService.updateTeamData(teamId));
 	};
 
 	return (

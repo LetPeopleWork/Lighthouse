@@ -138,7 +138,7 @@ const FeatureMoveMenu: React.FC<FeatureMoveMenuProps> = ({
 						// explains the refusal.
 						aria-disabled={refusal !== null || gesture.target === undefined}
 						title={refusal ?? undefined}
-						sx={refusal !== null ? { opacity: 0.5 } : undefined}
+						sx={refusal === null ? undefined : { opacity: 0.5 }}
 						onClick={() => choose(gesture)}
 					>
 						{gesture.label}

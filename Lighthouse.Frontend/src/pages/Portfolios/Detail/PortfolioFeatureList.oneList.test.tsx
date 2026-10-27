@@ -18,6 +18,7 @@ import {
 	theListStatus,
 } from "../../../tests/FeatureListTestKit";
 import { deferred } from "../../../tests/HeldMetricsService";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import PortfolioFeatureList from "./PortfolioFeatureList";
 
 const COULD_NOT_LOAD = "The Features couldn't be loaded.";
@@ -232,9 +233,11 @@ describe("Story 6408 (slice 04): after an update the list refreshes without hidi
 		await screen.findByText(CHECKOUT_REDESIGN);
 
 		act(() => {
-			void queryClient.invalidateQueries({
-				queryKey: theListKeyOf(NorthwindPlatform.id),
-			});
+			fireAndForget(
+				queryClient.invalidateQueries({
+					queryKey: theListKeyOf(NorthwindPlatform.id),
+				}),
+			);
 		});
 
 		await waitFor(() => expect(theListStatus(container)).toBe("loading"));

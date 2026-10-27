@@ -11,6 +11,7 @@ import type { UsageDataDecisionValue } from "../models/UsageData/UsageData";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { writeAskedMarker } from "../services/UsageData/usageDataAskMarker";
 import { forgetWhatWasNoticed } from "../services/UsageData/usageDataBuffer";
+import { fireAndForget } from "../utils/fireAndForget";
 
 /**
  * Where this browser keeps its consent token. The token is the only handle on the consent record -
@@ -140,9 +141,12 @@ export function UsageDataConsentProvider({
 	}, [usageDataService]);
 
 	useEffect(() => {
-		void refresh();
+		fireAndForget(refresh());
 
-		const timer = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
+		const timer = setInterval(
+			() => fireAndForget(refresh()),
+			REFRESH_INTERVAL_MS,
+		);
 		return () => clearInterval(timer);
 	}, [refresh]);
 	// Stryker restore ArrayDeclaration
