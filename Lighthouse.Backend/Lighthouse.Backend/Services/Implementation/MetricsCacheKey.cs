@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Implementation
 {

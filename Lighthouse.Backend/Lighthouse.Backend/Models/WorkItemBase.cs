@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models

@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-
 namespace Lighthouse.Backend.Models.Auth
 {
     // ADR-131: single use is a conditional update over these columns, not a read-then-write.

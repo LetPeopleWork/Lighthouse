@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-
 namespace Lighthouse.Backend.Models.Authorization
 {
     public class RbacGroupMapping : IConcurrencyTokenEntity

@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Models

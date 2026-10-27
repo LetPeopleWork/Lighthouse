@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Interfaces
+﻿namespace Lighthouse.Backend.Models
 {
     public interface IEntity
     {

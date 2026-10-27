@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-
 namespace Lighthouse.Backend.Models
 {
     // Append new members only. A member inserted above an existing one shifts the numbers already

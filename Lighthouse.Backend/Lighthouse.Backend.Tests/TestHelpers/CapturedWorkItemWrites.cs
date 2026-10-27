@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
 namespace Lighthouse.Backend.Tests.TestHelpers

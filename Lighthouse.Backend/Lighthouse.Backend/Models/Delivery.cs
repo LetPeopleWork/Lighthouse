@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {

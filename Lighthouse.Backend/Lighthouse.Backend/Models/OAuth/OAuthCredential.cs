@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-
 namespace Lighthouse.Backend.Models.OAuth
 {
     public class OAuthCredential : IEntity

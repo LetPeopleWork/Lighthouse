@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Models
 {

@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Models.Reports

@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Interfaces.Repositories
 {

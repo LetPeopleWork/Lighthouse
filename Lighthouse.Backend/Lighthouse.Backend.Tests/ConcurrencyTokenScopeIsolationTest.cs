@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
-using Lighthouse.Backend.Services.Interfaces;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests

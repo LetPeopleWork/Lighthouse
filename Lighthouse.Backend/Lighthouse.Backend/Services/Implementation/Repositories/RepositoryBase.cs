@@ -1,5 +1,5 @@
 ﻿using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;

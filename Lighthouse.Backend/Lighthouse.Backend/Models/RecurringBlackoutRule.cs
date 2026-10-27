@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces;
-
 namespace Lighthouse.Backend.Models
 {
     public class RecurringBlackoutRule : IEntity
