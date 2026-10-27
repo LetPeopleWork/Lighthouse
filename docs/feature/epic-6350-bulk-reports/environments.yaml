@@ -1,0 +1,259 @@
+# environments.yaml - consumed by DISTILL for Mandate 4 (Environmental Realism)
+#
+# epic-6350-bulk-reports (Epic #6350, Every report in one place, created and removed in bulk). A cross-owner face
+# on the existing Reports module: one new controller (list, creation options, bulk create, bulk removal), a
+# top-level Reports page with selection, a bulk wizard, a combined print frame, and one read-only list in
+# lighthouse-clients. No new container, external system, secret, configuration entry or migration (D11).
+# The environments below are the axes along which the feature can behave differently, not deployment
+# targets to stand up.
+#
+# Axes considered and deliberately left OUT:
+#   - work tracking system kind. Only stored reports and each owner's kept-history start are read.
+#   - hosted (Kubernetes) tenant. Torn down 2026-09-26; the chart needs no change (see deployment_assumptions).
+#   - paper size / theme. The combined PDF reuses Epic 6298's print content unchanged; its A4 / Letter and
+#     light-under-dark rules are already pinned there and are not re-varied per report in a bundle.
+#   - Safari as a browser. Export PDF is the only engine-sensitive part and Safari was checked by hand in
+#     Epic 6298; a bundle is the same content repeated with page breaks.
+
+schema_version: 1
+feature_id: epic-6350-bulk-reports
+updated: 2026-10-27
+wave: DEVOPS
+
+target_environments:
+  - name: clean
+    description: >
+      Default instance: SQLite, authentication off (everyone Admin everywhere), Community, seeded
+      Terminology, demo data (Teams Zenith, Voyager, Pulsar, Gravity, Lightspeed, Meridian, Equinox;
+      Portfolios Apollo, Orion, Ocean Explorer, NeuroLink City, Altobelli). No pre-seeded report.
+    platform: [linux, macos, windows]
+    preconditions: ["Demo data seeded", "Authentication off", "No licence file"]
+
+  - name: premium
+    description: >
+      clean plus a Premium licence. Bulk creation is Premium (D2): the E2E walking skeleton needs it. In CI
+      ci_verifysqlite / ci_verifypostgres already generate and upload a licence; locally the gitignored
+      premium fixture must be copied into the worktree.
+    platform: [linux]
+    preconditions: ["Premium licence imported"]
+
+  - name: community
+    description: >
+      No licence. Reports page, opening, selection, bulk removal and the combined PDF work; Create reports is
+      shown disabled with the licence tooltip (D17, PROPOSED); POST reports/bulk answers 403 as a whole.
+    platform: [linux]
+
+  - name: db-sqlite
+    description: "SQLite. The cross-owner read (TeamId IN ... OR PortfolioId IN ...) and the owner-deleted-mid-run save failure (DDD-6) behave as on Postgres; E2E via ci_verifysqlite."
+    platform: [linux]
+    verification: automated
+
+  - name: db-postgres
+    description: "PostgreSQL. Same queries, real foreign keys; E2E via ci_verifypostgres. The FK-race test (DDD-6) must run on a relational provider, never EF InMemory, which enforces no foreign key."
+    platform: [linux]
+    verification: automated
+
+  - name: browser-chromium
+    description: "Chrome / Edge. Playwright's only project (headless): Reports page, bulk wizard, print-media emulation of the combined print route; window.print stubbed through the print POM."
+    platform: [linux, macos, windows]
+    verification: automated
+
+  - name: browser-firefox
+    description: "Firefox print engine. One combined PDF of 9 reports by hand (DoD 7)."
+    platform: [linux, windows]
+    verification: manual
+
+  - name: standalone-linux-webkitgtk
+    description: >
+      Tauri on WebKitGTK. The N = 50 gate (DDD-10): a 50-report combined print by hand in slice 07; if it
+      fails, N drops to 25 for removal, the combined PDF and the owners of one bulk run.
+    platform: [linux]
+    verification: manual
+
+  - name: standalone-windows-webview2
+    description: "Tauri on WebView2 (Chromium-based); expected to behave as Chrome. One combined print by hand."
+    platform: [windows]
+    verification: manual
+
+  - name: standalone-macos-wkwebview
+    description: >
+      Export PDF is disabled in the macOS desktop app (Bug 6425, on main). The selection's Export PDF reuses
+      the same predicate and copy (DDD-19); everything else on the Reports page works. Asserted in Vitest
+      through the existing utils/tauri seam; no manual check needed.
+    platform: [macos]
+    verification: automated
+
+  - name: docker
+    description: "amd64 + arm64 image. Nothing new to package; the SPA and the backend ship together."
+    platform: [linux]
+
+  - name: kubernetes
+    description: >
+      Helm chart, unchanged. Two facts matter: a bulk run is one request of up to about 30 s (N = 50), and
+      shutdownTimeoutSeconds defaults to 30, so a run caught by a rollout can be cut mid-run; the browser then
+      shows "could not confirm" and Reports shows what was made (D8). An operator's ingress read timeout below
+      30 s does the same.
+    platform: [linux]
+    verification: none
+
+  - name: auth-off
+    description: "Everyone is Admin everywhere: every readable owner is offered; every listed report removable (D7)."
+    platform: [linux]
+
+  - name: auth-on-rbac-off
+    description: "Signed in, RBAC off: the same permissive answers as auth off, through useRbac() and the existing CanWrite* semantics."
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC off"]
+
+  - name: auth-on-rbac-on
+    description: >
+      Elena (Admin of some Teams and one Portfolio, Viewer elsewhere), Martin (Viewer everywhere), Jonas (no
+      read on Team Pulsar). The list is filtered on the server; the owner step offers Admin owners only;
+      Remove needs Admin of every selected report's owner (D15); the server re-checks each owner (DDD-5).
+    platform: [linux]
+    preconditions: ["Authentication enabled", "RBAC on", "Viewer and Admin profiles"]
+
+  - name: rbac-summary-unavailable
+    description: "my-summary cannot be loaded: the owner step shows could-not-load with Retry (DDD-17); every other useRbac() caller keeps its permissive fallback."
+    platform: [linux]
+
+  - name: slow-connection
+    description: >
+      Browser throttled (project rule). Reports page, owner step, bulk result, removal and combined print show
+      their loading and failure looks; keyed queries never land a late answer on a newer view; E2E page objects
+      wait for data-widget-status="ready". Checked by hand once per view-adding slice.
+    platform: [linux]
+    verification: manual
+
+  - name: renamed-terminology
+    description: "Team, Portfolio and metric terms renamed; owner column, owner step groups, reasons and result rows use them."
+    platform: [linux]
+
+  - name: usage-data-consented
+    description: >
+      The only environment where AllReportsListed, ReportBulkCreationStarted, ReportBulkRemovalStarted,
+      ReportCombinedPdfExportStarted, and the bulk-run ReportCreated / ReportDeleted occurrences leave the
+      instance. Also asserted: nothing without consent.
+    platform: [linux]
+
+  - name: dev-instance-dogfood
+    description: >
+      The maintainer's dev instance (:5169, real history, many owners). G2 (Reports page ready <= 2 s), K3
+      (10 owners in <= 2 min), the bulk run's elapsed time against the 30 s budget, the combined print budget.
+      Never trusted as a test fixture.
+    platform: [linux]
+    verification: manual
+
+  - name: clients-vs-older-lighthouse
+    description: "lh / MCP against a Lighthouse without GET /api/latest/reports: 404 relayed as 'upgrade Lighthouse' (F10); no usage event."
+    platform: [linux]
+
+  - name: older-clients-vs-newer-lighthouse
+    description: "Clients without slice 06 against this Epic's Lighthouse: the four per-owner report tools and lh report list --team-id / --portfolio-id answer byte-identical bodies (OwnerName written only when set, DDD-2)."
+    platform: [linux]
+
+scenario_axes:
+  access:
+    slices: ["01", "02a", "02b", "03", "05", "07"]
+    vary_over: [auth-off, auth-on-rbac-off, auth-on-rbac-on]
+    rationale: "D7: read filters the list; Admin gates the owner step and Remove; Viewer exports. Component/AT level with the RBAC stand-ins, no @auth E2E."
+  licence:
+    slices: ["02a", "05", "07"]
+    vary_over: [community, premium]
+    rationale: "Bulk create Premium (refused whole on Community, 403); removal and combined PDF Community (D2)."
+  database:
+    slices: ["01", "02a", "05"]
+    vary_over: [db-sqlite, db-postgres]
+    rationale: "The cross-owner read and the per-owner save failure. Backend tests on a relational provider; E2E on both through the verify workflows."
+  rbac_load_failure:
+    slices: ["02b"]
+    vary_over: [rbac-summary-unavailable]
+    rationale: "DDD-17: only the owner step reports the failure."
+  slow_connection:
+    slices: ["01", "02a", "02b", "05", "07"]
+    vary_over: [slow-connection]
+    rationale: "Every fetching view has a loading and a failure look (project rule); Vitest with held and failed answers, plus one throttled check by hand per slice."
+  print_engine:
+    slices: ["07"]
+    vary_over: [browser-chromium, browser-firefox, standalone-linux-webkitgtk, standalone-windows-webview2, standalone-macos-wkwebview]
+    rationale: "Chromium automated (print-media emulation of /print/reports); the rest by hand; macOS disabled (DDD-19); Linux desktop is the N = 50 gate."
+  usage_data_emission:
+    slices: ["01", "02a", "05", "06", "07"]
+    vary_over: [usage-data-consented]
+    rationale: >
+      01: AllReportsListed once per history entry when the list is shown (dwell rule PROPOSED, see feature-delta).
+      02a: ReportBulkCreationStarted once per Create click that sends the request, then ReportCreated once per
+      created outcome. 05: ReportBulkRemovalStarted once per confirm, then ReportDeleted once per outcome removed
+      by this run (never for already-gone). 06: AllReportsListed from lh report list without an owner and
+      lighthouse_report_list, source Cli / Mcp, on success only. 07: ReportCombinedPdfExportStarted once per click
+      with 2 or more selected; exactly 1 selected reports ReportPdfExportStarted with its type. Each with and
+      without consent.
+  terminology:
+    slices: ["01", "02a", "03", "04"]
+    vary_over: [clean, renamed-terminology]
+    rationale: "Owner column, owner step groups, history-start reason and result rows."
+  clients_versions:
+    slices: ["06"]
+    vary_over: [clients-vs-older-lighthouse, older-clients-vs-newer-lighthouse]
+    rationale: "404 relayed as upgrade; per-owner bodies unchanged."
+  dogfood:
+    slices: ["01", "02a", "04", "07"]
+    vary_over: [dev-instance-dogfood]
+    rationale: "G2, K3, the run's elapsed ms in the report-bulk-run line, the 50-report print."
+
+coexistence_matrix:
+  - tool: "Per-owner Reports tab (ReportsTab, ReportList, row icons)"
+    must_not_break: true
+    note: "ReportList gains an optional owner column and an opt-in selection; off on the tab. ReportsTab tests stay green."
+  - tool: "Every other DataGridBase user"
+    must_not_break: true
+    note: "checkboxSelection is opt-in, off by default."
+  - tool: "Single-report wizard and its refusal copy"
+    must_not_break: true
+    note: "Steps reused by the bulk wizard; reportTypes, reportWindowCheck and reportRefusalCopy extended, not changed."
+  - tool: "Per-owner report endpoints (list, get, templates, create, edit, delete)"
+    must_not_break: true
+    note: "Golden bodies byte-identical; OwnerName written only when set (DDD-2)."
+  - tool: "Epic 6298 single export (report view button, list icon, print route)"
+    must_not_break: true
+    note: "PrintFrameHost takes a list; one report draws as today."
+  - tool: "Bug 6425 macOS desktop disabled Export PDF"
+    must_not_break: true
+    note: "The selection's Export PDF reuses the predicate and copy."
+  - tool: "Overview report chips"
+    must_not_break: true
+    note: "Unchanged; they read per owner."
+  - tool: "useRbac() callers"
+    must_not_break: true
+    note: "The load-failed flag is read only by the owner step; everyone else keeps the permissive fallback (DDD-17)."
+  - tool: "ReportCreated / ReportDeleted meaning"
+    must_not_break: true
+    note: "Still one per report made or removed; bulk adds occurrences of the same meaning. A report already gone is never counted as deleted, as in the single path."
+  - tool: "Usage-data disclosure test and docs/settings/usagedata.md counts"
+    must_not_break: true
+    note: "Each emitting slice adds its row in the same commit as the enum member; every 'other N events' count +1; the plain-events sentence +1."
+  - tool: "Usage-data daily budget (1000 events per instance)"
+    must_not_break: true
+    note: "A 50-owner bulk run spends up to 51 events. Accepted; the page already says the numbers are a floor."
+  - tool: "report-creation-slow per-report log line"
+    must_not_break: true
+    note: "Still fires per owner inside a bulk run; the run adds one report-bulk-run line."
+  - tool: "Backend CI test selection"
+    must_not_break: true
+    note: "Registering ReportBulkCommands in Program.cs (02a) marks the push connector-shared, so the live-connector suite runs once. Expected cost, not a break."
+  - tool: "lighthouse-clients per-owner report tools, lighthouse skill, drift test"
+    must_not_break: true
+    note: "lighthouse_report_list and lh report list without an owner added; the lighthouse skill names both."
+
+platform_coverage:
+  Linux: [Ubuntu 24.04, Standalone WebKitGTK (manual, N gate)]
+  macOS: [Standalone WKWebView (export disabled, Vitest)]
+  Windows: [Standalone WebView2 (manual), Chrome / Edge]
+  CI: [GitHub Actions ubuntu-latest, Playwright chromium headless, SQLite and PostgreSQL verify workflows]
+
+deployment_assumptions:
+  - "Ships in the existing artifacts: server zips, Docker image + Helm chart, Standalone Tauri app. No chart value, port, volume, secret or config entry."
+  - "No migration and nothing stored (D11). New endpoints only; rollback = previous release, and reports a bulk run made stay as ordinary reports."
+  - "The SPA and the backend ship together, so no browser sends an event member its server lacks. Each enum member lands in the commit that first emits it."
+  - "A bulk run is one request of up to about 30 s at N = 50; it finishes on the server when the browser stops listening (DDD-11), but a process shutdown (update, rollout, 30 s drain) can cut it mid-run, which D8's could-not-confirm look already covers."
+  - "lighthouse-clients slice 06 is released after a Lighthouse release carrying slice 01; changesets (minor) and a manual pnpm release:version + commit + push before the clients release."

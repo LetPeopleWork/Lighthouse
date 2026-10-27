@@ -631,7 +631,8 @@ Scenario: With RBAC off every report can be removed
 user is Admin; otherwise disabled with a reason naming how many cannot be removed (D15, PROPOSED). A user who
 administers nothing therefore never has Remove enabled. AC-5.2 Remove asks to confirm, naming the exact count and
 which owners, and, when it applies, the existing "can no longer be rebuilt" warning with a count. AC-5.3 Result per
-report (D8); already gone counts as removed. AC-5.4 The server re-checks Admin per report; a report whose owner the
+report (D8); already gone counts as removed (shown as removed; told apart in the answer only so
+it is not counted as a deletion in usage data, DU-1 applied 2026-10-27). AC-5.4 The server re-checks Admin per report; a report whose owner the
 caller no longer administers, or that was deleted with its owner, is one "Not removed" / "removed" row, never a
 whole-run failure. AC-5.5 Licence: Community (D2, LOCKED). AC-5.6 `ReportDeleted` keeps firing per report; D14's run
 event once. AC-5.7 A whole-request failure says it cannot confirm what was removed and links to Reports (D8, as
@@ -742,7 +743,8 @@ named, with Retry and Leave it out (D12, LOCKED). AC-7.5 A selection above the c
 "Pick at most 50 reports"; the action names the exact count (D16; N by the maintainer, 2026-10-27; it drops to 25 if a
 50-report print fails in the Linux desktop app). AC-7.6 macOS desktop: disabled with Bug
 6425's reason (on `main`); slice 07 adds no macOS handling of its own. AC-7.7 Preparing and failed looks as the single print page.
-AC-7.8 Usage per D14. **KPI**: K4, K6. **Tech**: a print page holding several reports reusing `ReportPrintContent`
+AC-7.8 Usage per D14: two or more selected count one combined-PDF event; exactly one selected counts as the
+single export (`ReportPdfExportStarted`), since it is the same PDF (DU-3 applied 2026-10-27). **KPI**: K4, K6. **Tech**: a print page holding several reports reusing `ReportPrintContent`
 (S13); N = 50 (maintainer, 2026-10-27).
 
 ---
@@ -973,6 +975,13 @@ applied in this file.
 
 ## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
 
+> **Revised after DEVOPS, 2026-10-27** (`devops/upstream-changes.md` DU-1 to DU-4 applied; DVQ-1 answered (a)):
+> DDD-9 a report already gone is answered `removed` with `code: "already-gone"`, so the browser counts
+> `ReportDeleted` only for reports the run removed; DDD-13 fixes the `report-bulk-run` fields, adds
+> `report-bulk-run-slow` (create > 30 s, remove > 10 s) and two slow-read Warnings (> 2 s); the usage placement
+> table counts the Reports page as soon as its list shows (no dwell) and the combined-PDF event only for two or
+> more reports. ADR-266 items 5 and 8 updated to match.
+
 **Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-27 · **Mode**: PROPOSE, autonomous subagent. Every
 decision this wave takes on its own is **Decided**; every genuine product or trade-off choice is **PROPOSED —
 maintainer picks** and listed under "Questions for the maintainer" (MQ-n).
@@ -1037,11 +1046,11 @@ one is. `lighthouse-clients` gains `lighthouse_report_list` and `lh report list`
 | DDD-6 | **Each owner stands alone** (rev. after review): `ReportBulkCommands` catches a failed creation or removal of one owner (a database update failure, e.g. the owner deleted between lookup and save), discards the failed pending change through a new `IReportWriter` member, logs a Warning with the exception, and answers that owner `notCreated` / `notRemoved` with a new code `not-saved`; the next owner proceeds and the response is still `200`. Rejected: a fresh DI scope per owner (resolving `ReportCommands` through a scope factory inside the module is service location, heavier than the one-line discard). Never all-or-nothing over the set (D8) | Decided | 266 |
 | DDD-7 | **Bulk create = one request**, `POST api/latest/reports/bulk` `{ templateKey, name, shownMetricKeys, thenAndNow, owners: [{ ownerKind, ownerId }] }`, `[LicenseGuard(RequirePremium)]` (a Community run is refused whole, 403, AC-2.7). Owners de-duplicated, kept in the order given, processed **sequentially**. Answer `200 { outcomes: [{ ownerKind, ownerId, ownerName?, status: created \| notCreated, reportId?, code?, earliestStart? }] }`. The configuration part is exactly `NewReportRequest` (type-agnostic, D4): a future type adds its own block as the single wizard does | **LOCKED (maintainer, 2026-10-27; MQ-1 a)** | 266 |
 | DDD-8 | Per-owner refusals reuse the closed refusal set; three codes are added for what only a run can meet: `owner-not-found` (deleted before or during the run), `not-admin` and `not-saved` (DDD-6). **400 rules** (rev. after review): an unknown owner kind, an owner list empty after de-duplication, more than N owners or ids after de-duplication, and a Then & Now body without its Then (the single create's own validation, shared, not copied) refuse the whole request; nothing is written. A licence lapse mid-run surfaces as the existing `report-cap-reached` on owners already holding one (AC-2.8) | Decided | 266 |
-| DDD-9 | **Bulk removal = one request**, `POST api/latest/reports/bulk-removal` `{ reportIds }` (Community). The server resolves each report's owner itself (never trusting a client-sent owner), checks Admin per report (DDD-5), deletes through `ReportCommands.Delete`. A report already gone counts as `removed` (AC-5.3). Accepted consequence: an id that exists on an owner the caller may not administer answers `not-admin`, so a caller can tell such an id exists; it learns nothing of its owner or content, and report ids are sequential anyway. Answer `{ outcomes: [{ reportId, status: removed \| notRemoved, code? }] }` | Decided | 266 |
+| DDD-9 | **Bulk removal = one request**, `POST api/latest/reports/bulk-removal` `{ reportIds }` (Community). The server resolves each report's owner itself (never trusting a client-sent owner), checks Admin per report (DDD-5), deletes through `ReportCommands.Delete`. A report already gone counts as `removed` (AC-5.3) and carries `code: "already-gone"` (rev. after DEVOPS, DU-1), so usage data never counts it as a deletion, as the single path never counts a 404. Accepted consequence: an id that exists on an owner the caller may not administer answers `not-admin`, so a caller can tell such an id exists; it learns nothing of its owner or content, and report ids are sequential anyway. Answer `{ outcomes: [{ reportId, status: removed \| notRemoved, code? }] }`; on `removed`, `code` is absent or `already-gone` | Decided | 266 |
 | DDD-10 | **Ceiling N**, one constant shared by the selection (removal and combined PDF) and by the owners of one bulk-create run; the server refuses a request above it (400) and the browser says "Pick at most N …" first | **LOCKED (maintainer, 2026-10-27; MQ-2: N = 50, dropping to 25 if a 50-report print fails in the Linux desktop app)** | 266, 267 |
 | DDD-11 | **The run finishes even when the browser stops listening** (no cancellation between owners): what was asked for gets made, and the "could not confirm, check Reports" look (D8) stays true. No server-side deadline either: N bounds the run, and the timed dogfood run in slice 02a is the gate that N is small enough | **LOCKED (maintainer, 2026-10-27; MQ-5 a, with MQ-1 a)** | 266 |
 | DDD-12 | **Usage events stay browser-sent** (F11). The domain-event bus was weighed for `ReportCreated` / `ReportDeleted` in bulk runs and rejected: consent and the per-browser proxy live in the browser, so a backend handler could neither honour the consent nor attribute the event. No other side effect of a run has a second consumer, so no domain event is introduced (YAGNI) | Decided | — |
-| DDD-13 | **Observability**: each owner's creation keeps its `report-creation-slow` line (10 s per report); the run adds one Information line `report-bulk-run` with action, owners asked, created/removed and refused counts and elapsed ms — no names, no ids of customers' owners beyond what existing report lines already log | Decided | 266 |
+| DDD-13 | **Observability**: each owner's creation keeps its `report-creation-slow` line (10 s per report); the run adds one line `report-bulk-run` (Information) with `Action`, `TemplateKey`, `ThenLengthDays`, `NowLengthDays` (create), `Asked`, `Done`, `NotDone`, `RefusedByCode` (code → count), `ElapsedMs` — no names, no ids of customers' owners beyond what existing report lines already log. (rev. after DEVOPS, DU-4) The same line is written as Warning `report-bulk-run-slow` when a create run exceeds 30 s or a removal 10 s; `GET reports` and `GET reports/creation-options` write `report-list-slow` / `report-creation-options-slow` (Warning; `Owners`, `Rows` where it applies, `ElapsedMs`) above 2 s (G2) | Decided | 266 |
 | DDD-14 | **Reports page at `/reports`**, a navigation entry beside Features; read with a keyed TanStack query `["reports", "all"]` (`staleTime: 0`, as `useOwnerReports`), so any invalidation of the `["reports"]` prefix after a per-owner or bulk change refreshes it; looks through `WidgetShell` `status` | Decided | — |
 | DDD-15 | **`ReportList` serves both pages**: an optional owner column (kind in the instance's term + name) and an opt-in selection; the row icons are unchanged and follow the row's own owner (Admin of that row's owner through `useRbac()`, the rule `useMayEditReports` applies to one owner). `DataGridBase` gains opt-in `checkboxSelection`; a filter change clears the selection; select-all takes the filtered rows on every page (D16). (rev. after review) `useRbac()` answers "Admin everywhere" until my-summary arrives, so Remove, the Create button's Admin state and every row's Edit and Delete icons stay unavailable while `useRbac().isLoading`, as `useMayEditReports` already does for one owner | Decided | — |
 | DDD-16 | **The bulk wizard reuses the single wizard's steps** via `reportTypes.ts`: Type → the type's configuration steps (fed by the creation options instead of one owner's templates) → owner step → result. The window check runs per owner with `reportWindowCheck.ts` against each owner's `earliestStart` (the server's bounds, AC-4.6). The creation options are a keyed query `["reportCreationOptions"]` with `staleTime: 0`, read afresh at each wizard opening; a late answer from an earlier opening never fills a newer one. A bulk run invalidates the `["reports"]` prefix (the lists), not the options, which a run does not change | Decided | — |
@@ -1280,13 +1289,13 @@ threshold where a component view earns its keep; the decomposition sketch above 
 
 | Moment | Fires where | Note |
 |---|---|---|
-| Reports page opened | `ReportsPage`, once per history entry (the `useReportOpenedReporter` rule) | slice 01 |
+| Reports page opened (`AllReportsListed`) | `ReportsPage`, once per history entry, as soon as the list is shown, no dwell (rev. after DEVOPS, DU-2; DVQ-1 a) | slice 01; a failed load counts nothing |
 | Bulk creation run | Bulk wizard, on the Create click, before the request | fires for every run, including one that will create nothing (D19) |
 | `ReportCreated` (existing) | The result handler, once per `created` outcome when the answer arrives | a lost answer counts none — accepted |
 | Bulk removal run | Removal dialog, on the confirm click, before the request | slice 05 |
-| `ReportDeleted` (existing) | Once per `removed` outcome | — |
-| Several reports in one PDF | `useReportsPdfExport`, on the click, before the frame mounts | slice 07; a Retry counts nothing (as ADR-255) |
-| Clients list | The clients' consent-gated port, per their practice | slice 06 |
+| `ReportDeleted` (existing) | Once per `removed` outcome without a code; never for `already-gone` (rev. after DEVOPS, DU-1) | — |
+| Several reports in one PDF (`ReportCombinedPdfExportStarted`) | `useReportsPdfExport`, on the click, before the frame mounts, with two or more selected; exactly one selected counts `ReportPdfExportStarted` with its type (rev. after DEVOPS, DU-3) | slice 07; a Retry or Leave it out counts nothing (as ADR-255) |
+| Clients list | `AllReportsListed`, source `Cli` / `Mcp`, no-owner form only, on success after consent (DEVOPS) | slice 06 |
 
 ## Wave: DESIGN / [REF] Changed Assumptions
 
@@ -1366,3 +1375,342 @@ the `report-bulk-run` log line (DDD-13); no new container, no migration, no new 
 integrations: none new; `lighthouse-clients` consumes `GET /api/latest/reports` — a contract test on the client side
 (its existing socket-level tests against a stand-in Lighthouse) is recommended for the new row shape. Development
 paradigm: OOP. Then DISTILL with the sketch walk, with MQ-1 to MQ-5 answered (2026-10-27) and `design/upstream-changes.md` applied to the DISCUSS sections.
+
+---
+
+## Wave: DEVOPS / [REF] Scope and Prior-Wave Reading
+
+**Agent**: Apex (`nw-platform-architect`) · **Date**: 2026-10-27 · **Mode**: autonomous subagent, documents only,
+lean. Per-wave review skipped: no trigger (no new deployment target, CI framework, observability rewrite or security
+posture change). **No new infrastructure, service, workflow, configuration entry or migration.** Decisions this wave
+cannot take alone carried **PROPOSED — maintainer picks** (DVQ-1..3, all answered and LOCKED 2026-10-27).
+
+| # | Decision | Answer for this feature | Source |
+|---|---|---|---|
+| 1 | Deployment target | What Lighthouse ships: server zips, the Docker image (browser), the Standalone Tauri app (Linux, Windows, macOS), Kubernetes via the Helm chart (Epics 5305/5306). **No chart change** | `ci.yml`, `chart/` |
+| 2 | Orchestration | Docker / Helm for those who use them; nothing new | — |
+| 3 | CI/CD | Existing GitHub Actions; E2E in `ci_verifysqlite` / `ci_verifypostgres`; clients' own `ci.yml`. **No workflow change in either repository** | `.github/workflows/` |
+| 4 | Existing infra | All reused | — |
+| 5 | Observability | Serilog structured logs + the opt-in usage-data pipe (browser or client → backend → PostHog) | `docs/settings/usagedata.md` |
+| 6 | Deployment | Calver release with the gated `release` job (`/release`); no new strategy. Clients: changesets + manual `pnpm release:version` | project memory |
+| 7 | Continuous learning | No feature flags, no A/B; usage data only | — |
+| 8 | Branching | Trunk-based, push to `main` | `CLAUDE.md` |
+| 9 | Mutation | `per-feature`, Stryker.NET + StrykerJS, ≥ 80% (already in `CLAUDE.md`, not edited) | `CLAUDE.md` |
+
+| Read | Status |
+|---|---|
+| This file: every DISCUSS and DESIGN section (1–1368), incl. D14/D19, Outcome KPIs, the Checklist's usage-data row, DDD-1..21, Usage data placement, Handoff | ✓ |
+| `discuss/wave-decisions.md`, `design/wave-decisions.md`, `design/upstream-changes.md` | ✓ |
+| Precedent `epic-6298-report-pdf-export`: DEVOPS sections, `environments.yaml`, `devops/wave-decisions.md`, `OUT-6298-*` contracts | ✓ |
+| `UsageDataEventName.cs`: **last `ReportPdfExportStarted = 20`** on this checkout, on `origin/main` (90e4bef8a, fetched 2026-10-27), on the main checkout and on the other worktree; no in-flight feature claims 21+ | ✓ |
+| `UsageDataEventShapes.cs` (a name-only event must carry no route and no part), `UsageDataReportTemplate` {`ThenAndNow = 0`} | ✓ |
+| Browser reporters: `useReportOpenedReporter` (once per history entry, 5 s dwell), `ReportWizard` (`ReportCreated` after the server accepted), `useReportDeletion` (`ReportDeleted` only on `deleted`, never on already-gone 404), `useReportPdfExport` (on the click, template mapped or nothing), `UsageDataService.ts` (string values) | ✓ |
+| `docs/settings/usagedata.md` (event table, "Ten of the twenty-one" sentence, field-table counts, the 1000/day budget) | ✓ |
+| Ingest limits: `UsageDataIngest` 60 batches/min per browser, no batch-size cap, `DailyEventBudget` 1000 | ✓ |
+| `docs/product/kpi-contracts.yaml` (format, `OUT-6298-*`) | ✓ |
+| `docs/ci-learnings.md` (index; test-time budget guard; Program.cs connector-shared rule via `Scripts/test-selection/path-classifier.sh`) | ✓ (targeted) |
+| `ci_backend.yml` filter, `ci_changes.yml`, `ci_verifysqlite.yml` (Premium licence generated and imported for E2E) | ✓ |
+| `Program.cs` (Reports DI registrations at ~1338), `ReportCommands` / `ReportQueries` slow-log lines, `chart/values.yaml` (`shutdownTimeoutSeconds: 30`) | ✓ |
+| `lighthouse-clients` (00e77a3): `client/src/usageData.ts` (client event unions), `cli/src/commandResult.ts` (`REPORTED_COMMANDS`), `FEATURE_REQUIRES_SERVER_NEWER_THAN` | ✓ (read only) |
+
+**Contradictions with DESIGN**: four small ones, in `devops/upstream-changes.md` (DU-1..DU-4): the already-gone
+removal outcome needs telling apart for `ReportDeleted`; the Reports-page dwell; the combined-PDF event's one-report
+case; two slow-read log lines beside `report-bulk-run`. **All four APPLIED 2026-10-27** to the DESIGN sections,
+`design/wave-decisions.md` and ADR-266, and to AC-5.3, AC-7.8 and slice briefs 01, 02, 05, 06, 07.
+
+---
+
+## Wave: DEVOPS / [REF] Usage-Data Event Design
+
+**Answered, not "N/A"** (CLAUDE.md DEVOPS rule). Four new **name-only** events, plus the existing `ReportCreated` /
+`ReportDeleted` fired per outcome inside bulk runs. Integers are **provisional**: each emitting slice's first step
+re-reads `UsageDataEventName.cs` on `main` and takes the next integer then; slices 05 and 07 depend only on 01, so the
+order can change. Tests pin names and append order (every existing member keeps its number), never the integer.
+
+| Event | Prov. # | Properties | Fires where | Slice | KPI |
+|---|---|---|---|---|---|
+| `AllReportsListed` | 21 | none | Browser: `ReportsPage`, once per history entry, when the list has been shown (`ready`, empty included; a failed load counts nothing). No dwell (DVQ-1 (a), LOCKED (maintainer, 2026-10-27)). Clients (06): a successful `lh report list` with neither `--team-id` nor `--portfolio-id`, and `lighthouse_report_list`, once per run or call | 01 (browser), 06 (clients) | K1, K5 |
+| `ReportBulkCreationStarted` | 22 | none | Bulk wizard, on the Create click, **only when the request is sent** (after the browser's own checks pass), before the answer | 02a | K2, K4 (cohort) |
+| `ReportBulkRemovalStarted` | 23 | none | Removal dialog, on the confirm click, when the request is sent | 05 | slice 05 hypothesis |
+| `ReportCombinedPdfExportStarted` | 24 | none | `useReportsPdfExport`, on the selection's Export PDF click, before the frame mounts, **when 2 or more reports are selected**. Exactly one selected → the existing `ReportPdfExportStarted` with that report's type (it is the same PDF). Retry and "Leave it out" count nothing | 07 | K4 |
+| `ReportCreated` (16, existing) | — | `report_template` (existing) | Bulk wizard result handler, **once per `created` outcome**, when the answer arrives; template from the chosen type (`usageDataReportTemplateFor`). A lost answer counts none (accepted) | 02a | K2 (denominator) |
+| `ReportDeleted` (18, existing) | — | none (existing) | Removal result handler, **once per outcome this run removed**; never for a report that was already gone (as the single path; needs DU-1) | 05 | — |
+
+**D19 — decided here: the bulk-creation event fires for every run that is sent, including one that creates nothing,
+and carries no outcome property.** K2 counts browsers that *try* bulk creation; the per-report `ReportCreated`
+already says what was made. A Community click cannot happen (the button is disabled, D17), and a selection over N is
+refused in the browser before sending, so "sent" is the honest attempt.
+
+**Weighed and declined** (each fails "a property only when a KPI cannot be counted without it"):
+
+- **`report_template` on the bulk events**: no KPI asks which type is created in bulk; the per-report
+  `ReportCreated` from the run already carries the type. (6298 kept it on export only by the maintainer's explicit
+  wish; offered again as DVQ-3, declined: LOCKED (maintainer, 2026-10-27).)
+- **A closed `origin` {Wizard, Bulk} on `ReportCreated`** (DESIGN OQ-3): K2 is per browser, and the bulk event
+  already marks bulk browsers. Dropped; OQ-3 is closed.
+- **An entry-point enum on `ReportOpened` / `ReportPdfExportStarted`** (Reports page vs per-owner tab): no KPI splits
+  by entry. Opening a report from the Reports page lands on the same report view and counts as today; the row icon's
+  single export on the Reports page is "its icon in the Reports list".
+- **A count bucket on the bulk or combined events**: a count; never proposed.
+- **A scope {One, Several} on `ReportPdfExportStarted`**: a mixed bundle has no single `report_template`, and the
+  property is required on that event; a separate name keeps both events exact.
+
+**Clients (slice 06): yes, `AllReportsListed` from source `Cli` / `Mcp`.** K5 has no other instrument. The clients'
+`UsageDataEventName` union gains it as a plain occurrence; `lh`'s reported-command mapping must key on the
+**no-owner** form only (the per-owner `report list` keeps reporting nothing). Only after consent, only on a 2xx
+answer; a 404 (older Lighthouse), 401/403 or network failure reports nothing. No backend change beyond slice 01's
+member: the event is sent only after `GET /api/latest/reports` answered, and slice 01 ships the endpoint and the
+member together, so no server can receive it without knowing it.
+
+**Privacy check** (memory: usage data is never personal). What travels: the event name plus the facts every event
+already carries (source, server-held identifier, version, deployment mode, licence tier, authentication, timestamp)
+and, on the per-report `ReportCreated`, the existing closed type word. Never: how many owners or reports, which owners,
+report names or ids, windows, values, refusal reasons, outcome counts, durations, filters, sort, the selection.
+
+**Rows DELIVER adds to `docs/settings/usagedata.md`** (each in the emitting slice, same commit as the enum member):
+
+| Event | When it is sent | What travels with it |
+|---|---|---|
+| Every report was listed | Somebody opened the **Reports** page and it showed its list *(as soon as it is shown, with no wait)*, or listed every report with `lh report list` without a Team or Portfolio, or the MCP tool `lighthouse_report_list`. Counted once per opening, run or call; **a list your server could not give is never reported** | Nothing. **Not how many reports, not which Teams or Portfolios, not any report's name** |
+| Reports were created for several Teams or Portfolios | Somebody chose **Create** in **Create reports** and the request went to your server. Counted once per run, **whether or not any report was made**; each report made is also counted as *A report was created* | Nothing. **Not how many Teams or Portfolios were picked, not which, not how many were made, not why any were not** |
+| Several reports were removed at once | Somebody confirmed **Remove** for the reports selected on the **Reports** page and the request went to your server. Each report it removed is also counted as *A report was deleted* | Nothing. **Not how many, not which, not their Teams or Portfolios** |
+| Several reports were exported as one PDF | Somebody chose **Export PDF** for two or more reports selected on the **Reports** page. Counted when chosen, before the print dialog opens, so a cancelled dialog counts too; trying again after a report could not be loaded counts nothing more. One selected report is counted as *A report was exported as a PDF* | Nothing. **Not how many reports, not which, not their types, never whether a file was saved** |
+
+Existing rows, edited in the slice that changes them: *A report was created* (02a) gains "…, including each report
+made by **Create reports** for several Teams or Portfolios"; *A report was deleted* (05) gains "…, including each
+report removed with **Remove** on the Reports page; a report that was already gone is not counted"; *A report was
+exported as a PDF* (07) gains "…, or **Export PDF** with one report selected on the Reports page".
+Counts DELIVER keeps true: every new event adds one to each field row's "On the other N events", including "Which type
+of report" (still only three carry it); the sentence "**Ten of the twenty-one** carry nothing" becomes "Eleven of the
+twenty-two" after 01, and +1/+1 per later event (Fourteen of the twenty-five after 07).
+
+**Volume**: a 50-owner run sends up to 51 events in one batch (no batch cap; one POST, well inside 60/min). The
+instance budget is 1000/day; twenty full runs in a day would spend it. Accepted: the page already says counts are a
+floor.
+
+---
+
+## Wave: DEVOPS / [REF] Environment Matrix
+
+Machine artifact: `environments.yaml` (target environments, `scenario_axes` per slice, coexistence, assumptions).
+
+| Environment | Why it exists here |
+|---|---|
+| `clean` / `premium` / `community` | Bulk create is Premium and refused whole on Community (403); page, removal and combined PDF are Community. CI's verify workflows already import a generated Premium licence |
+| `db-sqlite` / `db-postgres` | New cross-owner reads and the owner-deleted-mid-run save failure (DDD-6). **The FK-race test needs a relational provider; EF InMemory enforces no foreign key and would pass vacuously.** E2E runs on both through `ci_verify*` |
+| `browser-chromium` (auto) / `browser-firefox` (manual) | The combined print; Chromium through print-media emulation of `/print/reports?reports=…` |
+| `standalone-linux-webkitgtk` | **The N = 50 gate**: a 50-report combined print by hand in slice 07; failure drops N to 25 everywhere |
+| `standalone-windows-webview2` | One combined print by hand |
+| `standalone-macos-wkwebview` | Export disabled (Bug 6425 predicate reused); asserted in Vitest, no manual check |
+| `docker`, `kubernetes` | No change. A bulk run is ≤ ~30 s; the chart's 30 s shutdown drain can cut a run during a rollout, which D8's could-not-confirm look covers |
+| `auth-off`, `auth-on-rbac-off`, `auth-on-rbac-on`, `rbac-summary-unavailable` | D7, DDD-5, DDD-17 |
+| `slow-connection` | Project rule: every fetching view has its loading and failure looks |
+| `renamed-terminology` | Owner column, owner groups, reasons, result rows |
+| `usage-data-consented` | The only place the events above leave the instance |
+| `dev-instance-dogfood` | G2, K3, the run's elapsed ms, the 50-report print |
+| `clients-vs-older-lighthouse` / `older-clients-vs-newer-lighthouse` | 404 → "upgrade Lighthouse"; per-owner bodies byte-identical |
+
+**Left out**: work tracking system kind; paper size and theme (pinned by Epic 6298, a bundle repeats the same
+content); Safari (checked in 6298); a hosted tenant (torn down).
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD Pipeline Outline
+
+**Lighthouse: no workflow change. Clients: no workflow change** (no new skill, so the pack dry-run list is untouched;
+the `lighthouse` skill's edit is covered by the existing drift test).
+
+| Stage | Workflow | What it does for this feature |
+|---|---|---|
+| Change detection | `ci_changes.yml` | Backend in 01, 02a, (03/04 if the options read changes), 05; frontend in every Lighthouse slice. **Slice 02a's `Program.cs` registration of `ReportBulkCommands` is on the connector-shared list** (`path-classifier.sh`), so that push runs the live-connector suite once. Expected; land the registration in one commit, and do not touch `Program.cs` again in later slices if the composition can be avoided |
+| Backend | `ci_backend.yml` | NUnit: controller, bulk commands, owner write access, parity, FK-race (relational provider), golden per-owner bodies, ArchUnitNET rules (DESIGN), enum name + append-order pins. Test-time budget guard runs last: keep new classes fast (shared Postgres container, never one per case) |
+| Frontend | `ci_frontend.yml` | Vitest: page, selection, wizard, owner step, result, removal, bundle state, usage events consented / not consented; `pnpm build` (Biome `--write` in prebuild). Budget guard runs last |
+| E2E | `ci_verifysqlite.yml`, `ci_verifypostgres.yml` | **One walking skeleton** (DoD 6): bulk-create on two demo Teams under the CI-imported Premium licence → both listed on Reports → one opens. POMs wait on `data-widget-status="ready"`. Slice 07 may add a print-media check of `/print/reports` inside the same POM set, with `window.print` stubbed |
+| Sonar | `ci_sonar_gates.yml` | No new issue; DESIGN's preflight (S6964 nullable value types on the bulk DTOs, S107, CA1859, NUnit2045) |
+| Package / Docker / Chart / Standalone | existing jobs | Unchanged |
+| Release | `ci_release.yml` via `/release` | Calver; `waiting` on main is deploy approval, which the maintainer gives |
+| Clients CI | `lighthouse-clients/.github/workflows/ci.yml` | `pnpm ci` (drift test names `lighthouse_report_list` and `lh report list`), socket-level tests against a stand-in Lighthouse for the new row shape (DESIGN handoff), changeset check |
+
+**Local gates**: `pnpm test`, `pnpm build`; `dotnet build` (zero warnings) and the filtered `dotnet test`; `pnpm ci`
+in the clients. Run the E2E spec live before committing (memory).
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring Contracts (KPI → instrument)
+
+The pipe carries no instance, owner or report identity, so per-instance KPIs are measured per browser (or per `lh`
+install / MCP server identifier). Contracts appended to `docs/product/kpi-contracts.yaml` as `OUT-6350-*`.
+
+| KPI | Instrument | Derivation (90-day window from the release carrying the slice) | Scope | Contract |
+|---|---|---|---|---|
+| **K1** ≥ 40% open the Reports page | `AllReportsListed` (Browser) ÷ `ReportOpened` (Browser) | Num: browsers with ≥ 1 of each. Den: browsers with ≥ 1 `ReportOpened` | opt-in | `OUT-6350-K1-reports-page-used` |
+| **K2** (north star) ≥ 30% of Premium creators use bulk | `ReportBulkCreationStarted`, `ReportCreated`, licence tier | Den: Premium browsers with ≥ 1 `ReportCreated` **or** ≥ 1 `ReportBulkCreationStarted`. Num: those with ≥ 1 `ReportBulkCreationStarted` (D19: tries count) | opt-in | `OUT-6350-K2-bulk-creation-used` |
+| **K3** 10 owners ≤ 2 min | Timed dogfood on `:5169`, slices 02a–04, plus the `report-bulk-run` elapsed ms | — | manual | none |
+| **K4** ≥ 20% of bulk creators export several in one PDF | `ReportCombinedPdfExportStarted` ÷ `ReportBulkCreationStarted` | Num: browsers with ≥ 1 of each. Den: browsers with ≥ 1 `ReportBulkCreationStarted`. Window from the release carrying 07 | opt-in | `OUT-6350-K4-combined-pdf-by-bulk-creators` |
+| **K5** ≥ 3 client ids list every report | `AllReportsListed` (Cli / Mcp) | Distinct identifiers within 90 days of the clients release carrying 06 | opt-in | `OUT-6350-K5-all-reports-listed-by-clients` |
+| **K6** the informant retires his script | Maintainer asks after 07 ships | — | manual | none |
+| Slice 05 hypothesis | `ReportBulkRemovalStarted` | Any opted-in browser or a dogfood run within 30 days of the release carrying 05 | opt-in | `OUT-6350-bulk-removal-used` |
+| **G1** no write on a non-Admin owner; **G4** every picked owner in the result | Acceptance tests (DDD-5, D8) | — | CI | `OUT-6350-G-per-owner-outcome-and-rbac` |
+| **G2** Reports page ready ≤ 2 s | Dogfood timing (manual) + `report-list-slow` Warning from real instances (DU-4) | — | manual + per-instance log | `OUT-6350-G2-reports-page-ready` |
+| **G3** single wizard and per-owner tab unchanged | Existing tests + golden bodies | — | CI | part of `OUT-6350-G-per-owner-outcome-and-rbac` |
+
+Caveats: per browser, not per person or instance; K2 and K4 are lower bounds for people on several browsers; K4's
+cohort is Premium (bulk creation), though the combined PDF is Community; a lost bulk answer sends no `ReportCreated`.
+
+---
+
+## Wave: DEVOPS / [REF] Deployment and Release Strategy
+
+**Rollback first.** Nothing is stored and no migration runs; rollback = install the previous release. Reports a bulk
+run made are ordinary rows and keep working on the previous release (the per-owner tab lists them). Past events in
+PostHog are harmless. SPA and backend ship together, so no browser sends a member its server lacks. Clients roll back
+by installing the previous npm / binary version; against an older Lighthouse they already relay 404 as "upgrade".
+
+**Lighthouse**: each slice lands green on trunk; releases follow the maintainer's normal cadence (**DVQ-2 (a), LOCKED (maintainer, 2026-10-27)**); slice 01 reaches users first. The N = 50 gate in
+slice 07 can only *tighten* N; a lower constant is a one-line change and harmless to anything already released.
+
+**Clients (slice 06)**: one changeset, **minor**, for `lighthouse-client`, `-cli`, `-mcp-core`, `-mcp-stdio`,
+`-mcp-http` (same five as 6298 slice 04); the `lighthouse` skill names the tool and command (drift test; skill text
+needs no changeset). **The clients release follows a Lighthouse release carrying slice 01**; before it, run
+`pnpm release:version`, commit and push (memory). No `FEATURE_REQUIRES_SERVER_NEWER_THAN` entry is required (DDD-20
+relays the 404); adding one is DELIVER's option for a clearer message, valued at the last release without slice 01.
+
+**Long request vs. shutdown**: a bulk run (≤ ~30 s) caught by an update or rollout (Kubernetes drain
+`shutdownTimeoutSeconds: 30`, Standalone update) may stop mid-run. Every completed owner is saved; the browser shows
+could-not-confirm and points to Reports (D8). No mitigation added.
+
+---
+
+## Wave: DEVOPS / [REF] Observability
+
+Operational logs, not usage data; no owner or report **names**, no user. Existing per-report lines keep their ids.
+
+| Line | Level | When | Fields |
+|---|---|---|---|
+| `report-bulk-run` (DDD-13) | Information | once per bulk request, after the last item | `Action` (`create` \| `remove`), `TemplateKey` (create), `ThenLengthDays`, `NowLengthDays` (create), `Asked` (items after de-duplication), `Done` (created / removed), `NotDone`, `RefusedByCode` (dictionary code → count, codes from the closed refusal set), `ElapsedMs` |
+| `report-bulk-run-slow` (in place of the line above) | Warning | create run `ElapsedMs` > **30 000**; removal run > **10 000** | same fields |
+| `report-creation-slow` (existing) | Warning | per owner > 10 s, unchanged inside a run | unchanged |
+| not-saved owner (DDD-6) | Warning | per failed owner, with the exception | owner kind + id (as existing report lines), code `not-saved` |
+| `report-list-slow` (DU-4) | Warning | `GET reports` > **2 000 ms** (G2) | `Owners` (readable owner count), `Rows`, `ElapsedMs` |
+| `report-creation-options-slow` (DU-4) | Warning | `GET reports/creation-options` > **2 000 ms** | `Owners`, `ElapsedMs` |
+
+Thresholds: 30 s is DESIGN's worst case at N = 50 (≈ 0.6 s per owner) and half a common 60 s proxy timeout — a run
+past it risks the browser losing the answer; removal does no Then computation, so 10 s already means trouble; 2 s is
+G2. No alerting: Lighthouse is self-hosted; operators read their logs. No metric or dashboard is added.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation Testing Strategy
+
+`per-feature`, ≥ 80%, both stacks, as `CLAUDE.md` says (not edited). Mutated last, on frozen code; acceptance suite
+excluded from Stryker.NET (memory); read the per-file table, not only the total. Results in
+`docs/feature/epic-6350-bulk-reports/mutation/`.
+
+| When | Tool | Scope |
+|---|---|---|
+| After the last backend slice (05) | Stryker.NET | `ReportsController`, `ReportBulkCommands`, the `IReportOwnerWriteAccess` adapter, `ReportQueries.ListAcross` / `.CreationOptions`, `ReportRepository` new reads + `DiscardPendingChanges`, `ReportOwnerLookup.All`, `ReportRefusalCodes` additions, the slow-log thresholds. Mutate whole files (line spans are ignored by .NET, memory) |
+| After 07 | StrykerJS | `ReportsPage`, `useAllReports`, `useReportCreationOptions`, `BulkReportWizard`, `OwnerStep`, `BulkResult`, `useBulkReportCreation`, `useBulkReportRemoval`, `RemoveSelectedDialog`, `ReportPrintBundle`, `bundleStateOf`, `useReportsPdfExport`, the `AllReportsListed` reporter, `ReportService` additions, and the extended parts (`ReportList` owner column / selection, `DataGridBase` selection prop, `reportWindowCheck`, `reportRefusalCopy`, `useRbac` load-failed flag, `PrintFrameHost`). Excluded: `App.tsx` routing (covered by E2E) |
+| After 06 | StrykerJS in the clients | The cross-owner list reader and summary, `lighthouse_report_list`, `lh report list` without an owner, the `AllReportsListed` occurrence and its no-owner keying |
+
+---
+
+## Wave: DEVOPS / [REF] Branching Strategy
+
+Trunk-based on `main` in both repositories. One focused commit per step; push only when green; no autonomous rebase.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence Matrix
+
+| Must not break | Why it is at risk |
+|---|---|
+| Per-owner Reports tab, its row icons, every other `DataGridBase` grid | `ReportList` / `DataGridBase` gain an owner column and opt-in selection |
+| Single wizard and refusal copy | Steps reused; `reportTypes`, `reportWindowCheck`, `reportRefusalCopy` extended |
+| Per-owner endpoints' bodies (and so older clients) | `ReportSummary.OwnerName`, written only when set (DDD-2) |
+| Epic 6298 single export (view button, list icon, print route) | `PrintFrameHost` takes a list |
+| macOS desktop disabled Export PDF (Bug 6425) | The selection reuses the predicate |
+| `useRbac()` callers' permissive fallback | Load-failed flag added (DDD-17) |
+| RBAC off / auth off: everyone Admin everywhere | Owner step and Remove derive Admin through `useRbac()`; server through `CanWrite*` |
+| Community: page, removal, combined PDF | Bulk create refused whole (403) |
+| `ReportCreated` / `ReportDeleted` meaning, disclosure test, page counts | Bulk adds per-outcome occurrences; already-gone never counted (DU-1) |
+| Newer clients vs older Lighthouse | 404 → "upgrade"; no event |
+| Overview chips; `report-creation-slow` | Unchanged |
+
+---
+
+## Wave: DEVOPS / [REF] Pre-requisites from DESIGN
+
+| DESIGN item | Platform answer |
+|---|---|
+| DDD-12 usage events browser-sent | Kept; four name-only events, per-outcome `ReportCreated` / `ReportDeleted` |
+| Usage placement table | Kept, with DU-1 (already-gone), DU-2 (dwell, DVQ-1), DU-3 (one-report export) |
+| DDD-13 `report-bulk-run` | Fields and slow thresholds above; DU-4 adds two slow-read lines |
+| DDD-10 N = 50, Linux desktop gate | `standalone-linux-webkitgtk`, slice 07, by hand |
+| DDD-11 run finishes when the browser leaves | Holds; a process shutdown can still cut it (D8 covers) |
+| DDD-20 clients 404 relay | Holds; gate entry optional |
+| OQ-3 `origin` on `ReportCreated` | Closed: not needed |
+| No migration, no container | Confirmed; no chart or config change |
+
+---
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+To `nw-acceptance-designer`: `environments.yaml` and the event design above; tags `@kpi-OUT-6350-*`.
+
+- Vitest, consented / not consented: `AllReportsListed` once per history entry when the list is shown, never on a
+  failed load, with no dwell (DVQ-1 (a)); `ReportBulkCreationStarted` once per sent run, also for an all-refused run, never
+  when the browser refuses before sending; `ReportCreated` with `ThenAndNow` once per `created` outcome, none on a lost
+  answer; `ReportBulkRemovalStarted` once per sent removal; `ReportDeleted` once per outcome removed by this run, none
+  for already-gone; `ReportCombinedPdfExportStarted` once per click with ≥ 2 selected, none on Retry / Leave it out;
+  one selected → `ReportPdfExportStarted` with its type.
+- Backend: names and append order after `ReportPdfExportStarted = 20`, 0..20 fixed; `Fits` accepts each new event
+  bare and refuses it with any part; the disclosure test's row count.
+- Backend: FK-race on a relational provider; `report-bulk-run` fields (no names) via a captured logger.
+- Clients (06): consented `lh report list` without an owner and `lighthouse_report_list` report `AllReportsListed`
+  with source `Cli` / `Mcp` once; with an owner, on 404 / 403 / failure, and without consent: nothing.
+- E2E: the one walking skeleton (DoD 6), under the CI-imported Premium licence.
+
+---
+
+## Wave: DEVOPS / [REF] Questions for the maintainer
+
+*All three answered by the maintainer on 2026-10-27, each with the recommendation; see "Maintainer answers"
+below. The options are kept for the record.*
+
+1. **DVQ-1 — When the Reports page counts as opened.** (a) As soon as its list is shown, once per history entry, no
+   wait; (b) after 5 s on the page, like the tab openings and `ReportOpened`. **Recommendation: (a)**: the page is a
+   launcher, and passing through it to a report is exactly the use K1 measures; with (b) a quick find-and-open counts
+   nothing. The usage-data page then says so beside the Refinement verdict's no-wait exception.
+2. **DVQ-2 — Release cut.** (a) Normal cadence: release whenever you cut one; slice 01 (Community, valuable alone)
+   reaches users first, and the clients release follows the first release carrying 01; (b) once the whole Epic (01–07)
+   has landed, as you chose for 6298; (c) after 02a, so the first release already offers the page and bulk creation.
+   **Recommendation: (a)**: unlike 6298's typeface, no gate spans slices here (the N gate only tightens). Cost: user
+   docs and screenshots arrive at finalize, after the first slices ship.
+3. **DVQ-3 — `report_template` on the bulk and combined events.** (a) Name-only (project rule; no KPI needs it);
+   (b) carry it, as you chose for `ReportPdfExportStarted`, to see which types are made or printed in bulk (a combined
+   PDF of mixed types would then need a rule). **Recommendation: (a).**
+
+## Wave: DEVOPS / [REF] Maintainer answers (2026-10-27)
+
+These settle DVQ-1 to DVQ-3; each is now LOCKED. DU-1 to DU-4 are applied upstream (`devops/upstream-changes.md`).
+
+| DVQ | Answer |
+|---|---|
+| DVQ-1 When the Reports page counts as opened | **(a)** As soon as its list is shown, once per history entry, no wait. |
+| DVQ-2 Release cut | **(a)** Normal cadence; the clients release follows the first release carrying slice 01. |
+| DVQ-3 `report_template` on the bulk and combined events | **(a)** Name-only. |
+
+---
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| D19 PROPOSED for DEVOPS | Decided: fires per sent run, no outcome property | K2 counts tries |
+| A PDF of several reports: new event or a `scope` on `ReportPdfExportStarted` (Checklist) | New name-only `ReportCombinedPdfExportStarted` for ≥ 2; one report keeps the single event | A mixed bundle has no single type (DU-3) |
+| `ReportCreated` may gain `origin` (OQ-3) | No | No KPI needs it |
+| Clients list: "per their practice" | Clients report `AllReportsListed` (no-owner form only) | K5 has no other instrument |
+| K2 denominator: browsers with `ReportCreated` (Premium) | … or with `ReportBulkCreationStarted` | Keeps an all-refused try inside the cohort (D19) |
+| Already gone = removed (DDD-9) | Still shown as removed; told apart for `ReportDeleted` | Single path never counts a 404 (DU-1) |
+| Reports page counted once per history entry "(the `useReportOpenedReporter` rule)" | Once per history entry, as soon as the list shows, no dwell (DVQ-1 (a), LOCKED (maintainer, 2026-10-27)) | That rule carries a 5 s wait (DU-2) |
+| `report-bulk-run` only (DDD-13) | Plus slow thresholds and two slow-read lines | G2 needs a signal from real instances (DU-4) |

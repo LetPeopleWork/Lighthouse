@@ -4,6 +4,10 @@
 **Predecessor**: DISCUSS (`../discuss/wave-decisions.md`, committed e082bce11). **Successor**: DEVOPS
 (`nw-platform-architect`), then DISTILL with the sketch walk.
 
+> **Revised after DEVOPS, 2026-10-27**: `../devops/upstream-changes.md` DU-1 to DU-4 applied (DDD-9 already-gone
+> marker, DDD-13 log fields and slow lines, the usage placement's no-dwell page opening and two-or-more combined
+> export); ADR-266 items 5 and 8 updated.
+
 Full text: `../feature-delta.md` → "Wave: DESIGN" sections. Back-propagation: `upstream-changes.md`. ADRs:
 ADR-265, ADR-266, ADR-267 in `docs/product/architecture/` (Proposed). Brief: `docs/product/architecture/brief.md` →
 "Application Architecture — epic-6350-bulk-reports".
@@ -26,10 +30,13 @@ Decided:
 - **DDD-6** each owner stands alone: a failed save is caught, its pending change discarded, answered `not-saved`.
 - **DDD-8** three refusal codes added: `owner-not-found`, `not-admin`, `not-saved`; 400 rules for a malformed run; a
   mid-run licence lapse is the existing cap refusal.
-- **DDD-9** bulk removal = one request of report ids; owners resolved by the server; already gone = removed.
+- **DDD-9** bulk removal = one request of report ids; owners resolved by the server; already gone = removed, with
+  `code: "already-gone"` so it is never counted as a deletion in usage data (DU-1).
 - **DDD-12** usage events stay browser-sent; the domain-event bus was weighed and rejected (consent and the browser
   proxy live in the browser; no second consumer of a run's effects).
-- **DDD-13** one `report-bulk-run` log line per run; per-report slow lines unchanged.
+- **DDD-13** one `report-bulk-run` log line per run (fixed fields, no names), Warning `report-bulk-run-slow` above
+  30 s create / 10 s remove; `report-list-slow` and `report-creation-options-slow` above 2 s (DU-4); per-report slow
+  lines unchanged.
 - **DDD-14–16** `/reports` page on a keyed query; `ReportList` + `DataGridBase` extended with an owner column and an
   opt-in selection; the bulk wizard composes the single wizard's steps.
 - **DDD-18/19** combined PDF = the hidden print frame drawing several reports, ready only when all are; macOS

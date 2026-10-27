@@ -24,7 +24,8 @@ on this slice only.
 - Loading look; could-not-load look with Retry; empty look pointing to the owners' Reports tabs; never stale rows
   shown as current (keyed query).
 - A report of a type this version cannot show is listed and opens to the existing look.
-- Usage data: the page-opened event (D14; DEVOPS designs; listed in `docs/settings/usagedata.md` here).
+- Usage data: `AllReportsListed`, name-only, once per history entry as soon as the list shows, no dwell (DVQ-1 a);
+  a failed load counts nothing; listed in `docs/settings/usagedata.md` here.
 
 ## OUT
 

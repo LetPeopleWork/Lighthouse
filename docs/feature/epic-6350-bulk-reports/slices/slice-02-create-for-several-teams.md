@@ -30,8 +30,8 @@ one run, and sees per Team whether it was created or why not, including every re
   the server refuses the request (AC-2.12, added after DESIGN).
 - A run where every picked Team is refused: headline "0 reports created, {N} not created", every row with its reason.
 - A lost answer: "could not confirm which reports were created", link to Reports (D8).
-- Usage data: one bulk-run event per run (D14; DEVOPS designs), also for a run that created nothing and with no outcome
-  property (D19, PROPOSED for DEVOPS), and `ReportCreated` per report created, as today.
+- Usage data: `ReportBulkCreationStarted`, name-only, once per sent run, also for a run that created nothing and with
+  no outcome property (D19, decided by DEVOPS), and `ReportCreated` per report created, as today.
 
 ## OUT
 

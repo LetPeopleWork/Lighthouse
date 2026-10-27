@@ -20,7 +20,8 @@ and Portfolios in one call, each with report id, owner kind, owner id and name, 
 - The `lighthouse` skill names the new tool and command (drift test); `lighthouse-reports` skill may mention it.
 - Changesets (`lighthouse-client`, `lighthouse-mcp-core`, `lighthouse-cli`, minor); manual `pnpm release:version`,
   commit and push before the clients release.
-- Usage data per the clients' consent-gated practice (a list reports nothing today; DEVOPS decides).
+- Usage data (DEVOPS): `AllReportsListed`, source `Cli` / `Mcp`, for the no-owner list only, on success after
+  consent; the per-owner list keeps reporting nothing.
 
 ## OUT
 

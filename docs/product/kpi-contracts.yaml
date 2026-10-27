@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-24
+updated: 2026-10-27
 description: >
   KPI contracts — per-outcome data collection, dashboard mapping, alerting thresholds.
   Created during the DEVOPS wave of work-tracking-oauth-authentication.
@@ -2950,4 +2950,127 @@ outcomes:
       - "Lighthouse.Frontend/.../DeliveryGrid/DeliveryCreateModal.featureListAndRuleFields.test.tsx (every describe)"
       - "Lighthouse.Frontend/.../DeliveryGrid/dialogQueryStatus.test.ts"
       - "Lighthouse.Frontend/.../DeliveryGrid/deliveryGridServerState.enforcement.test.ts (the Feature list and rule fields from their own hooks only)"
+    status: designed-not-shipped
+
+  # epic-6350-bulk-reports (DEVOPS 2026-10-27). Per-browser proxies as in epic-5878 / epic-6298. Event integers are
+  # provisional (21-24), taken on main by each emitting slice. K3 (timed dogfood) and K6 (the informant's script)
+  # are measured by hand and have no contract here.
+
+  - id: OUT-6350-K1-reports-page-used
+    feature: epic-6350-bulk-reports
+    title: Browsers that read reports open the Reports page
+    target: ">= 40% of browsers that report ReportOpened (source Browser) also report AllReportsListed (source Browser) within 90 days of the release carrying slice 01"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "AllReportsListed (provisional 21), slice 01, name-only: the Reports page showed its list (empty included; a failed load counts nothing), once per history entry. Dwell per DVQ-1 (recommended: none)."
+        - "ReportOpened (existing, epic-5878), source Browser: denominator and second numerator condition."
+      derivation: "Numerator: distinct browsers with >= 1 AllReportsListed (source Browser) AND >= 1 ReportOpened (source Browser) in the window. Denominator: distinct browsers with >= 1 ReportOpened (source Browser)."
+      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6350-K1-reports-page-used - Vitest: consented, the Reports page reports AllReportsListed once per history entry when the list is shown, nothing on a failed load, nothing without consent. Backend: AllReportsListed appended after ReportPdfExportStarted = 20 with 0..20 fixed; Fits accepts it bare and refuses it with any part"
+    measurement_window: "90 days from the release carrying slice 01"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Per browser, not per person or instance. Clients' AllReportsListed (source Cli / Mcp) is excluded here and counted by K5."
+
+  - id: OUT-6350-K2-bulk-creation-used
+    feature: epic-6350-bulk-reports
+    title: Premium report creators create in bulk (north star)
+    target: ">= 30% of Premium browsers that create reports report ReportBulkCreationStarted within 90 days of the release carrying slice 02a"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportBulkCreationStarted (provisional 22), slice 02a, name-only: the Create click in Create reports when the request is sent; also a run that creates nothing (D19)."
+        - "ReportCreated (existing), now also once per created outcome of a bulk run, with report_template."
+        - "Licence tier, attached by the server to every event."
+      derivation: "Denominator: distinct browsers on Premium with >= 1 ReportCreated or >= 1 ReportBulkCreationStarted in the window. Numerator: those with >= 1 ReportBulkCreationStarted."
+      surfacing: ["docs/settings/usagedata.md rows (slice 02a)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6350-K2-bulk-creation-used - Vitest: consented, one ReportBulkCreationStarted per sent run, also for an all-refused run; none when the browser refuses before sending; ReportCreated with ThenAndNow once per created outcome, none on a lost answer; nothing without consent"
+    measurement_window: "90 days from the release carrying slice 02a"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Tries, not successes (D19). A lost bulk answer sends no ReportCreated. A person on two browsers counts twice in the denominator."
+
+  - id: OUT-6350-K4-combined-pdf-by-bulk-creators
+    feature: epic-6350-bulk-reports
+    title: Bulk creators export several reports in one PDF
+    target: ">= 20% of browsers that report ReportBulkCreationStarted also report ReportCombinedPdfExportStarted within 90 days of the release carrying slice 07"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportCombinedPdfExportStarted (provisional 24), slice 07, name-only: the selection's Export PDF click with 2 or more reports selected, before the frame mounts; Retry and Leave it out count nothing. One selected report reports ReportPdfExportStarted instead."
+        - "ReportBulkCreationStarted (OUT-6350-K2)."
+      derivation: "Numerator: distinct browsers with >= 1 ReportBulkCreationStarted AND >= 1 ReportCombinedPdfExportStarted in the window. Denominator: distinct browsers with >= 1 ReportBulkCreationStarted."
+      surfacing: ["docs/settings/usagedata.md row (slice 07)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6350-K4-combined-pdf-by-bulk-creators - Vitest: consented, one ReportCombinedPdfExportStarted per click with >= 2 selected; one selected reports ReportPdfExportStarted with its type; Retry and Leave it out report nothing; nothing without consent; disabled in the macOS desktop app, so nothing there"
+    measurement_window: "90 days from the release carrying slice 07"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Counts the choice, cancelled dialogs included. Cohort is Premium (bulk creation) though the combined PDF is Community; Community use is visible as a raw count only. Lower bound for people exporting from another browser."
+
+  - id: OUT-6350-K5-all-reports-listed-by-clients
+    feature: epic-6350-bulk-reports
+    title: Every report is listed through lh or MCP
+    target: ">= 3 distinct client identifiers (source Cli or Mcp) report AllReportsListed within 90 days of the clients release carrying slice 06"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "AllReportsListed, source Cli / Mcp: a successful lh report list with neither --team-id nor --portfolio-id, or lighthouse_report_list, once per run or call, after consent. The per-owner list, 404 (older Lighthouse), 401/403 and failures report nothing."
+      derivation: "Distinct identifiers with >= 1 AllReportsListed from source Cli or Mcp in the window."
+      surfacing: ["docs/settings/usagedata.md 'Every report was listed' row (slice 06 finalize)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6350-K5-all-reports-listed-by-clients - clients tests: consented no-owner list reports AllReportsListed once with source Cli / Mcp; with an owner, on refusal and without consent nothing"
+    measurement_window: "90 days from the clients release carrying slice 06"
+    alerting: []
+    status: designed-not-shipped
+    caveat: "Identifiers are per consent answer (lh install, MCP server), a lower-bound proxy for instances."
+
+  - id: OUT-6350-bulk-removal-used
+    feature: epic-6350-bulk-reports
+    title: Bulk removal is used (slice 05 learning hypothesis)
+    target: ">= 1 opted-in browser reports ReportBulkRemovalStarted, or a dogfood run uses it, within 30 days of the release carrying slice 05"
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "ReportBulkRemovalStarted (provisional 23), slice 05, name-only: the confirm click when the request is sent."
+        - "ReportDeleted (existing), once per report the run removed; never for one already gone (DU-1)."
+      derivation: "Distinct browsers with >= 1 ReportBulkRemovalStarted in the window; plus the maintainer's dogfood note."
+      surfacing: ["docs/settings/usagedata.md rows (slice 05)", "collector dashboard"]
+    acceptance_scenarios: "@kpi-OUT-6350-bulk-removal-used - Vitest: consented, one ReportBulkRemovalStarted per sent removal; ReportDeleted once per outcome removed by this run, none for already-gone; nothing without consent"
+    measurement_window: "30 days from the release carrying slice 05"
+    alerting: []
+    status: designed-not-shipped
+
+  - id: OUT-6350-G-per-owner-outcome-and-rbac
+    feature: epic-6350-bulk-reports
+    title: No write on a non-Admin owner; every picked owner in the result; single paths unchanged (G1, G3, G4)
+    target: "0 failures"
+    measurement_scope: vendor_repository
+    measured_by: >
+      Gate, CI on every push: acceptance and unit tests for the per-owner Admin check at reach time (not-admin,
+      nothing written), one outcome per picked owner or report in the order given, the FK-race on a relational
+      provider, bulk-vs-single parity, golden per-owner bodies, and the existing single-wizard and Reports-tab tests.
+    log_fields: {}
+    measurement_window: every push
+    gate: hard
+    alerting:
+      - condition: "a guardrail test fails"
+        action: "backend or frontend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6350-G2-reports-page-ready
+    feature: epic-6350-bulk-reports
+    title: The Reports page is ready within 2 s
+    target: "<= 2 s on the dev instance; report-list-slow rare on real instances"
+    measurement_scope: per_instance
+    measured_by: >
+      Reading: timed by hand on the dev instance (:5169) in slice 01, throttled once. Per instance: the Warning
+      report-list-slow above 2000 ms on GET api/latest/reports (and report-creation-options-slow on the options read),
+      visible to the operator in the logs; the vendor sees it only if shared.
+    log_fields:
+      report-list-slow: ["Owners", "Rows", "ElapsedMs"]
+      report-creation-options-slow: ["Owners", "ElapsedMs"]
+      report-bulk-run: ["Action", "TemplateKey", "ThenLengthDays", "NowLengthDays", "Asked", "Done", "NotDone", "RefusedByCode", "ElapsedMs"]
+    measurement_window: "slice 01 DELIVER (reading); ongoing per instance"
+    gate: soft
+    alerting: []
     status: designed-not-shipped

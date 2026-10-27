@@ -22,7 +22,8 @@ Epic 6298 PDF shows it — the leadership "big picture" in one file.
   at DISTILL sketch walk).
 - Preparing and failed looks as the single print page.
 - macOS desktop app: disabled with Bug 6425's reason (on `main`); this slice adds no macOS handling of its own.
-- Usage data: a several-report PDF is distinguishable (D14; DEVOPS designs).
+- Usage data (DEVOPS): `ReportCombinedPdfExportStarted`, name-only, once per click with two or more selected;
+  exactly one selected counts `ReportPdfExportStarted` with its type; Retry and Leave it out count nothing.
 
 ## OUT
 

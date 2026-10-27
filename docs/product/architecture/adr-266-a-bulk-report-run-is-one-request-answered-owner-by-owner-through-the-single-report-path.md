@@ -2,7 +2,8 @@
 
 **Status**: Proposed (DESIGN, 2026-10-27, PROPOSE mode). Items 1, 6 and 7 LOCKED by the maintainer on 2026-10-27:
 one request with owners processed one by one; N = 50 (dropping to 25 if a 50-report print fails in the Linux desktop
-app); the run finishes when the browser stops listening.
+app); the run finishes when the browser stops listening. Revised after DEVOPS, 2026-10-27: items 5 (already-gone
+marker) and 8 (log fields and slow lines).
 **Feature**: `epic-6350-bulk-reports` (Epic #6350, slices 02a, 03, 05)
 **Relies on**: ADR-222 (authorisation in the controllers, owner scoping in the ports), ADR-265 (the cross-owner
 controller), the existing `LicenseGuard` and `ReportCapPolicy`.
@@ -38,13 +39,17 @@ database context, where the next save would try it again.
    exists; it learns nothing of the owner or the report, and report ids are sequential anyway. Accepted. A run
    from a Community instance is refused whole by `LicenseGuard(RequirePremium)`; a licence that lapses mid-run shows
    on owners already holding one as the existing cap refusal. For removal, the server finds each report's owner
-   itself; a report already gone counts as removed.
+   itself; a report already gone counts as removed and its outcome carries `code: "already-gone"`, so the browser
+   never counts it as a deletion in usage data, as the single path never counts a 404.
 6. **A ceiling N = 50** bounds the owners of one creation run and the reports of one removal (400 above it); the browser
    says so before sending.
 7. **A run finishes** even when the browser stops listening; the browser's "could not confirm, check Reports" stays
    true. There is no server-side deadline: N bounds the run, and a timed run on a real instance is the check that N
    is small enough.
-8. One Information log line per run (action, counts, elapsed); each report keeps its own slow-creation line.
+8. One log line per run, `report-bulk-run` (Information): action, template key and window lengths (create), items
+   asked, done, not done, refusals by code, elapsed ms; no names. Written as Warning `report-bulk-run-slow` above
+   30 s (create) or 10 s (remove). The cross-owner list and creation options warn above 2 s (`report-list-slow`,
+   `report-creation-options-slow`). Each report keeps its own slow-creation line.
 
 ## Alternatives considered
 

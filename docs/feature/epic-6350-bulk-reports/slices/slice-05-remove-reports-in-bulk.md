@@ -17,11 +17,12 @@ knowing which Then windows can no longer be rebuilt, with a per-report outcome.
   PROPOSED — confirm at DISTILL sketch walk). Auth off or RBAC off: every report removable.
 - Confirm naming the exact count and which owners, plus the existing "can no longer be rebuilt" warning with a count
   when it applies.
-- Result per report (D8): removed; already gone counts as removed; lost Admin → not removed, with the reason; never a
+- Result per report (D8): removed; already gone counts as removed (answered with `already-gone`, never counted as a deletion in usage data); lost Admin → not removed, with the reason; never a
   whole-run failure.
 - A lost answer: "could not confirm what was removed", link to Reports (D8, AC-5.7).
 - Shares the PDF's ceiling N = 50 (maintainer, 2026-10-27): above it, "Pick at most 50 reports" (AC-5.9; D16).
-- The server re-checks Admin per report. `ReportDeleted` per report as today; one bulk-removal-run event (D14).
+- The server re-checks Admin per report. `ReportDeleted` per report this run removed (never already-gone); one `ReportBulkRemovalStarted` per sent
+  removal, name-only (DEVOPS).
 
 ## OUT
 
