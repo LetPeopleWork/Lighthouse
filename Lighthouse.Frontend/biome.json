@@ -51,6 +51,7 @@
 				"noUselessTernary": "error",
 				"noUselessThisAlias": "error",
 				"noUselessTypeConstraint": "error",
+				"noVoid": "error",
 				"useArrayFind": "error",
 				"useDateNow": "error",
 				"useFlatMap": "error",
@@ -112,6 +113,7 @@
 			},
 			"style": {
 				"noMultilineString": "error",
+				"noNegationElse": "error",
 				"noNestedTernary": "error",
 				"useAsConstAssertion": "error",
 				"useCollapsedElseIf": "error",
@@ -119,6 +121,25 @@
 				"useDefaultParameterLast": "error",
 				"useForOf": "error",
 				"useLiteralEnumMembers": "error",
+				"useNamingConvention": {
+					"level": "error",
+					"options": {
+						"conventions": [
+							{
+								"selector": {
+									"kind": "catchParameter"
+								},
+								"match": "error_?"
+							},
+							{
+								"selector": {
+									"kind": "any"
+								},
+								"match": ".*"
+							}
+						]
+					}
+				},
 				"useNodejsImportProtocol": "error",
 				"useNumberNamespace": "error",
 				"useObjectSpread": "error",
