@@ -86,7 +86,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
-	it.skip(`the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio (${pending})`, async () => {
+	it(`the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
 		});
@@ -108,7 +108,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`the owner's kind is announced in the instance's own word (${pending})`, async () => {
+	it(`the owner's kind is announced in the instance's own word (${pending})`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter),
 			terms: { ...defaultTerms, [TERMINOLOGY_KEYS.TEAM]: "Squad" },
@@ -121,7 +121,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
-	it.skip(`two reports of the same name on different owners are both listed and told apart by owner (${pending})`, async () => {
+	it(`two reports of the same name on different owners are both listed and told apart by owner (${pending})`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, gravitysQuarter),
 		});
@@ -220,7 +220,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it.skip(`the filter narrows the rows by owner name (${pending})`, async () => {
+	it(`the filter narrows the rows by owner name (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(
 				zenithsQuarter,
@@ -236,7 +236,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`the filter still matches an owner's kind, though the cell shows only its name (${pending})`, async () => {
+	it(`the filter still matches an owner's kind, though the cell shows only its name (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
 		});

@@ -1,9 +1,17 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
+import FolderSpecialIcon from "@mui/icons-material/FolderSpecial";
+import GroupsIcon from "@mui/icons-material/Groups";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
-import { CircularProgress, IconButton, Tooltip } from "@mui/material";
+import {
+	Box,
+	CircularProgress,
+	IconButton,
+	TextField,
+	Tooltip,
+} from "@mui/material";
 import type React from "react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
@@ -158,13 +166,17 @@ const OwnerLink: React.FC<{ readonly report: IReportAcrossOwners }> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const owner: IReportOwner = { kind: report.ownerKind, id: report.ownerId };
+	const KindIcon = owner.kind === "team" ? GroupsIcon : FolderSpecialIcon;
 	return (
-		<StyledLink
-			to={`/${owner.kind}s/${owner.id}`}
-			aria-label={`${report.ownerName}, ${getTerm(ownerTermKeyOf(owner))}`}
-		>
-			{report.ownerName}
-		</StyledLink>
+		<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+			<KindIcon fontSize="small" color="action" />
+			<StyledLink
+				to={`/${owner.kind}s/${owner.id}`}
+				aria-label={`${report.ownerName}, ${getTerm(ownerTermKeyOf(owner))}`}
+			>
+				{report.ownerName}
+			</StyledLink>
+		</Box>
 	);
 };
 
@@ -175,12 +187,41 @@ const ownerColumn: DataGridColumn<IReportListItem> = {
 	renderCell: ({ row }) => <OwnerLink report={row as IReportAcrossOwners} />,
 };
 
+const FILTER_LABEL = "Filter: name / owner / type";
+
+const matchesFilter = (
+	report: IReportListItem,
+	needle: string,
+	ownerKindWord: (owner: IReportOwner) => string,
+): boolean => {
+	const owner: IReportOwner = { kind: report.ownerKind, id: report.ownerId };
+	const { ownerName = "" } = report as Partial<IReportAcrossOwners>;
+	return [
+		report.name,
+		ownerName,
+		ownerKindWord(owner),
+		reportTypeTitleOf(report.templateKey) ?? "",
+	].some((text) => text.toLowerCase().includes(needle));
+};
+
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	owner,
 	reports,
 	actions,
 	showOwner = false,
 }) => {
+	const { getTerm } = useTerminology();
+	const [filter, setFilter] = useState("");
+	const needle = filter.trim().toLowerCase();
+	const shownReports = useMemo(
+		() =>
+			needle === ""
+				? reports
+				: reports.filter((report) =>
+						matchesFilter(report, needle, (o) => getTerm(ownerTermKeyOf(o))),
+					),
+		[reports, needle, getTerm],
+	);
 	const columns: DataGridColumn<IReportListItem>[] = useMemo(() => {
 		const shown: DataGridColumn<IReportListItem>[] = [
 			{
@@ -216,11 +257,25 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	}, [actions, showOwner]);
 
 	return (
-		<DataGridBase
-			rows={reports}
-			columns={columns}
-			storageKey={owner === undefined ? "reports-all" : `reports-${owner.kind}`}
-		/>
+		<>
+			{showOwner && (
+				<TextField
+					size="small"
+					placeholder={FILTER_LABEL}
+					value={filter}
+					onChange={(event) => setFilter(event.target.value)}
+					slotProps={{ htmlInput: { "aria-label": FILTER_LABEL } }}
+					sx={{ mb: 1, minWidth: 300 }}
+				/>
+			)}
+			<DataGridBase
+				rows={shownReports}
+				columns={columns}
+				storageKey={
+					owner === undefined ? "reports-all" : `reports-${owner.kind}`
+				}
+			/>
+		</>
 	);
 };
 
