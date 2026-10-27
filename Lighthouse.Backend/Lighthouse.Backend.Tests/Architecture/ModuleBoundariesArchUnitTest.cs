@@ -87,15 +87,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApiLayerPattern))
                 .Because(
                     "Models is the shared kernel at the bottom of the modular monolith; it must not depend " +
-                    "upward on the API driving adapter. The stronger Models-must-not-depend-on-Services half is " +
-                    "NOT yet enforceable: every entity implements Services.Interfaces.IEntity and " +
-                    "Models.WorkTrackingSystemConnection references the Services.Implementation.WorkTrackingConnectors." +
-                    "WorkTrackingSystems enum, so those contracts would need to move into Models first.")
+                    "upward on the API driving adapter.")
                 .Check(Architecture);
         }
 
         [Test]
-        [Ignore("pending: S04a-6")]
         public void SharedKernel_DoesNotDependOnServices()
         {
             KernelRules.ModelsDoNotDependOnServices().Check(Architecture);

@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             .Build());
 
         [Test]
-        [Ignore("pending: S04a-6")]
         public void AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed()
         {
             var rule = KernelRules.ModelsDoNotDependOnServices(OffendingModels, FixtureServices);
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore("pending: S04a-6")]
         public void AModelThatStaysInsideTheKernel_PassesTheKernelRule()
         {
             var rule = KernelRules.ModelsDoNotDependOnServices(CleanModels, FixtureServices);
