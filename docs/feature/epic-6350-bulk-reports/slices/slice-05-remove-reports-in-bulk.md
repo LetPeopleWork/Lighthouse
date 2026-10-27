@@ -20,7 +20,7 @@ knowing which Then windows can no longer be rebuilt, with a per-report outcome.
 - Result per report (D8): removed; already gone counts as removed; lost Admin → not removed, with the reason; never a
   whole-run failure.
 - A lost answer: "could not confirm what was removed", link to Reports (D8, AC-5.7).
-- Shares the PDF's ceiling N (DESIGN sets N): above it, "Pick at most N reports" (AC-5.9; D16, PROPOSED).
+- Shares the PDF's ceiling N = 50 (maintainer, 2026-10-27): above it, "Pick at most 50 reports" (AC-5.9; D16).
 - The server re-checks Admin per report. `ReportDeleted` per report as today; one bulk-removal-run event (D14).
 
 ## OUT
@@ -39,6 +39,7 @@ Dev instance: remove the trial reports left by slices 02a–04's dogfood runs.
 ## DESIGN must answer
 
 Bulk endpoint vs one call per report; what the page shows while removal runs and if the answer never arrives; N.
+*Answered*: one request of report ids (DESIGN DDD-9), N = 50.
 
 ## DISTILL must sketch first
 

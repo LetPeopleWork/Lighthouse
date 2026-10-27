@@ -13,8 +13,9 @@ comparison.
 - Owner step grouped by kind ({Teams}, {Portfolios}) in the instance's terms; Portfolios where the user is Admin only.
 - Window presets that fit a mixed selection (PROPOSED: 30 / 90 / 180 and any number of days ≥ 14; settled in the
   DISTILL sketch walk).
-- Result rows name the owner kind ("Portfolio Ocean Explorer · Created"); every 02a reason applies, including "Not
-  created: {Portfolio} Ocean Explorer does not capture {Work Item Age}".
+- Result rows name the owner kind ("Portfolio Ocean Explorer · Created"); every 02a reason applies. (Rev. after DESIGN,
+  2026-10-27: the "does not capture a metric" reason was dropped; metrics are captured per owner kind and today every
+  metric applies to both kinds.)
 - Server: the same per-owner checks for Portfolios; the Admin set (02a) includes Portfolios with `PortfolioWrite`.
 
 ## OUT

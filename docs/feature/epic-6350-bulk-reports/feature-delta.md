@@ -3,6 +3,15 @@
 ADO Epic #6350 "Every report in one place, created and removed in bulk". DISCOVER and DIVERGE were skipped by the
 maintainer; this file starts at DISCUSS.
 
+> **Revised after DESIGN, 2026-10-27** (maintainer answers MQ-1 to MQ-5; `design/upstream-changes.md` U-1 to U-8
+> applied): the "does not capture a chosen metric" half is dropped from D13, AC-2.5, AC-3.4, US-04 and AC-4.2, because
+> metrics are captured per owner kind and today every metric applies to both kinds (re-add note under Out of Scope);
+> the ceiling is **N = 50** (the selection for removal and PDF, and the owners of one bulk run), dropping to 25 if a
+> 50-report print fails in the Linux desktop app; inventory S7 corrected (the Admin set is already in `useRbac()`);
+> AC-2b.3 holds because `useRbac()` will report a failed load; the run finishes on the server when the answer is lost.
+> Owners and their history starts arrive in one read (DDD-3), so AC-4.5, AC-4.7 and US-04 now have no partial state:
+> the owner step has both or shows could-not-load with Retry (US-04 scenarios merged, 6 → 4).
+
 ## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
 
 **Agent**: Luna (`nw-product-owner`) · **Date**: 2026-10-27 · **Mode**: autonomous subagent. The maintainer's
@@ -34,7 +43,7 @@ confirms** and are listed under "Questions for the maintainer". Config: user-fac
 | S4 | The create wizard: Type → Then → Now → Metrics & name, one owner, Type step backed by a type list; the window check mirrors the server's bounds; refusal copy per code | `wizard/ReportWizard.tsx`, `TypeStep.tsx`, `reportTypes.ts`, `thenAndNow/*`, `reportWindowCheck.ts`, `reportRefusalCopy.ts` | Bulk creation reuses the type and configuration steps and adds an owner step and a result; the type list already keeps the flow type-agnostic (D4). |
 | S5 | Editing gates go through `useMayEditReports.ts`, built on `useRbac()` | `useMayEditReports.ts` | The owner picker and the bulk-removal selection derive "Admin of this owner" the same way, per owner. |
 | S6 | Endpoints are per owner only: `api/latest/{teams,portfolios}/{id}/reports` — GET under `TeamRead`/`PortfolioRead`; POST, PUT, DELETE under `TeamWrite`/`PortfolioWrite` (Admin). No cross-owner list, no bulk create or delete | `TeamReportsController.cs`, `PortfolioReportsController.cs`, `ReportsControllerBase.cs` | Slice 01 needs a cross-owner read (DESIGN: new endpoint vs fan-out). Bulk create/remove: a bulk endpoint vs one call per owner is DESIGN's. |
-| S7 | Read-scope filtering across owners exists (`GetReadableTeamIdsAsync`, `GetReadablePortfolioIdsAsync`), used by Features, Portfolios and Suggestions; **no** equivalent for "owners I may write" | `FeaturesController.cs`, `PortfoliosController.cs`, `SuggestionsController.cs` | The global list can filter like `/features`. The Admin set for the picker is new (DESIGN). |
+| S7 | Read-scope filtering across owners exists (`GetReadableTeamIdsAsync`, `GetReadablePortfolioIdsAsync`), used by Features, Portfolios and Suggestions. *(Corrected after DESIGN, 2026-10-27)* The Admin set already reaches the browser: `useRbac()` exposes `isTeamAdmin` / `isPortfolioAdmin` from my-summary's admin ids; on the server `GetWritablePortfolioIdsAsync` exists, without a Team twin | `FeaturesController.cs`, `PortfoliosController.cs`, `SuggestionsController.cs`, `hooks/useRbac.ts`, `RbacAdministrationService.cs` | The global list can filter like `/features`. The picker filters readable owners through `useRbac()`; no new RBAC member. |
 | S8 | Refusals are ProblemDetails with a `code`; window refusals carry `earliestStart`; the cap answers 403. Codes: name-missing, name-too-long, template-not-supported, no-metric-shown, unknown-metric, duplicate-metric, metric-not-captured, then-too-short/-too-long/-ends-in-the-future/-before-cutoff, now-too-short/-too-long/-before-cutoff, report-cap-reached | `ReportsControllerBase.cs`, `Models/Reports/ReportRefusalCodes.cs`, `ReportWindowPolicy.cs` (min window 14 days) | Per-owner "not created" reasons come from these codes; `earliestStart` gives "its kept history starts {date}". |
 | S9 | Each owner keeps its own history, "Closed Items Cutoff (days)" in its settings (`DoneItemsCutoffDays`, default 365), with a line saying it bounds how far back Reports reach (Story 6348) | `AdvancedInputs.tsx` | Same windows on many owners hit different cutoffs (D1). The settings line is where "keep more history" points. |
 | S10 | Community: 1 report per type per owner; Premium unlimited; a lapsed licence takes nothing away | `ReportCapPolicy.cs` | Bulk create is Premium (D2), so the cap does not bite unless the licence lapses mid-run. |
@@ -136,9 +145,8 @@ D1–D6 restate the maintainer's decisions of 2026-10-27 (locked). D7 onward are
   Retry or "Leave it out".
 - [D13] **Owners that cannot take the report are shown but not pickable — LOCKED for history (maintainer, 2026-10-27;
   Q4 (a))** in slice 04, with the owner's history start and a link to its settings; going back to shorter windows
-  makes them pickable. **Extended to metrics — PROPOSED — confirm at DISTILL sketch walk (Q7)**: the Metrics step offers
-  every metric; an owner that does not capture a chosen metric is shown but not pickable in the owner step, with the
-  reason. The result still words `metric-not-captured` as a safety net.
+  makes them pickable. ~~Extended to metrics (Q7)~~ **Dropped after DESIGN (2026-10-27, MQ-3 a)**: metrics are captured
+  per owner kind and today every metric applies to both kinds, so no owner can lack a chosen metric.
 - [D14] **Usage data is wanted** (DEVOPS designs): Reports page opened; a bulk creation run; a bulk removal run; a
   PDF holding several reports. Name-only preferred; at most a closed enum; never counts, names, ids or values.
 - [D15] **Selection rules — PROPOSED — confirm at DISTILL sketch walk (Q6)**: on the Reports page every listed row is
@@ -147,8 +155,8 @@ D1–D6 restate the maintainer's decisions of 2026-10-27 (locked). D7 onward are
   selected reports cannot be removed ("2 of the 5 selected reports are on a Team or Portfolio you are not Admin of").
 - [D16] **Selection under filter, sort and pages — PROPOSED — confirm at DISTILL sketch walk (Q8)**: changing a filter
   clears the selection; sorting keeps it; select-all selects every row the current filter shows, on all pages; the
-  remove confirm and the PDF name the exact count. A selection larger than the ceiling DESIGN sets (N) is refused with
-  "Pick at most N reports".
+  remove confirm and the PDF name the exact count. A selection larger than the ceiling **N = 50** (maintainer,
+  2026-10-27, MQ-2) is refused with "Pick at most 50 reports"; the same N bounds the owners of one bulk-creation run.
 - [D17] **"Create reports" states — PROPOSED — confirm at DISTILL sketch walk (Q9)**: always shown on the Reports page.
   On Community: disabled with a Premium hint (the existing licence-tooltip pattern, consistent with D2). On Premium for
   a user who administers no owner: disabled with "You are not Admin of any Team or Portfolio" (slice 02b). While the
@@ -165,7 +173,7 @@ D1–D6 restate the maintainer's decisions of 2026-10-27 (locked). D7 onward are
 ## Wave: DISCUSS / [REF] Scope Assessment
 
 **PASS — 8 stories (01, 02a, 02b, 03–07), 2 code bases (Lighthouse frontend + backend Reports module;
-`lighthouse-clients`), ~7¼ days** (rev. 2026-10-27 after review and re-review: was ~6; 01 +½d for row selection, 02
+`lighthouse-clients`), ~7 days** (rev. 2026-10-27 after DESIGN: slice 04 ~¾d without its metric half, was ~7¼; after review and re-review: was ~6; 01 +½d for row selection, 02
 split into 02a ~1d and 02b ¼d, 06 ~1d).
 No new bounded context. The walking skeleton touches 3 integration points (cross-owner read, new page + navigation,
 existing report view). Under 2 weeks. Four user outcomes (find, create, remove, one PDF) ship as slices of one Epic
@@ -212,7 +220,7 @@ leadership. K4 (several reports in one PDF) shows it working; K6 asks whether th
 | 02a | Create a Then & Now for several Teams at once — the write path: type → windows + metrics + name once → pick from the Teams the user administers (every Team with RBAC/auth off) → per-Team result, incl. refusals mid-run, licence lapse, an all-refused run and a lost answer; server Premium and Admin checks | Premium | ~1d | 01 | "Same windows for many Teams is what leads want" — if after a run over the dev instance's Teams the maintainer edits most created reports, or more than half are skipped |
 | 02b | The owner step says why Create is unavailable: the no-Admin state and the owner step's loading and could-not-load looks | Premium | ¼d | 02a | "Saying why beats an empty step" — if a dogfood user without Admin rights, or on a throttled connection, cannot tell why there is nothing to pick |
 | 03 | Portfolios join the same selection | Premium | ½d | 02b | "Leads compare Teams and Portfolios on one setup" — if no dogfood run picks a Portfolio together with Teams |
-| 04 | The owner step shows owners that cannot take the report (history too short; a chosen metric not captured), with the reason and where to fix it | Premium | 1d | 02b, 03 | "Saying it before Create beats reasons after" — if dogfood runs still end with skipped owners the user did not expect |
+| 04 | The owner step shows owners that cannot take the report (history too short; the metric half dropped after DESIGN), with the reason and where to fix it | Premium | ~¾d | 02b, 03 | "Saying it before Create beats reasons after" — if dogfood runs still end with skipped owners the user did not expect |
 | 05 | Remove the selected reports (Admin owners only), with confirm and per-report result, incl. a lost answer | Community | 1d | 01 | "Bulk removal is needed once bulk creation exists" — if after a month no dogfood or opted-in run uses it |
 | 06 | Every report through the clients: `lh report list` with no owner and an MCP tool (stdio and HTTP), skill drift test, changesets, clients release | Community | ~1d | 01 (released) | "Assistants want the whole list, not per owner" — if in the `lighthouse` skill eval the assistant still lists owner by owner |
 | 07 | Several reports in one PDF: export the selection, each report on its own page(s) | Community | 1d | 01 | "One combined PDF replaces the script for leadership" — if the maintainer, given the dev instance's 90-day reports, would rather send separate PDFs or a spreadsheet |
@@ -410,8 +418,7 @@ result (D4). AC-2.3 The owner step offers only the Teams the user administers, d
 auth off, every Team (D7, D18). AC-2.4 Every created report equals what the single wizard creates with the same
 inputs; one name for all (D9). AC-2.5 The result lists every picked owner: Created (opens it) or Not created with a
 plain reason per refusal code (S8): cutoff reasons name the history start and point to Closed Items Cutoff (D1);
-`metric-not-captured` reads "Not created: {Team} Zenith does not capture {Work Item Age}"; not Admin; owner deleted;
-licence (cap). AC-2.6 A whole-request failure says it cannot confirm what was created and links to Reports (D8).
+not Admin; owner deleted; not saved; licence (cap). AC-2.6 A whole-request failure says it cannot confirm what was created and links to Reports (D8).
 AC-2.7 The server checks each owner when it reaches it: an owner the caller does not (or no longer) administer, or one
 deleted mid-run, becomes one "Not created" row with its reason, never a whole-run failure; a run from a non-Premium
 instance is refused as a whole with the licence reason. AC-2.8 A licence that lapses mid-run: owners past the
@@ -420,7 +427,9 @@ de-duplication by name or windows (D9's clause, PROPOSED — confirm at DISTILL 
 bulk-run event once per run, and `ReportCreated` once per report created, as today; the run event fires also for a run
 that created nothing and carries no outcome property (D19, PROPOSED for DEVOPS). AC-2.11 When every picked owner is
 refused, the headline reads "0 reports created, {N} not created" and every row carries its reason; never an empty or
-success-looking result.
+success-looking result. AC-2.12 (after DESIGN) One run takes at most 50 owners (the shared ceiling); above it the owner
+step says so before Create, and the server refuses a larger request. A chosen metric that does not apply to an
+owner's kind (`unknown-metric`) has a plain result wording as a safety net; no owner can meet it today.
 **KPI**: K2, K3, G1, G4. **Tech**: bulk endpoint vs one call per owner, progress and the 10 s slow log (S11) are
 DESIGN's; the Admin set per user is new (S7).
 
@@ -506,8 +515,7 @@ Scenario: A run of Portfolios only
 
 **AC**: AC-3.1 The owner step lists Teams and Portfolios in one selection, grouped by kind, in the instance's terms
 (D3). AC-3.2 Portfolio admin rights as D7, AC-2.3 and AC-2b.1–2b.3 apply. AC-3.3 Presets cover the mix (PROPOSED: 30 / 90 / 180
-and any number of days ≥ 14). AC-3.4 Result rows name the owner kind; every AC-2.5 reason applies to Portfolios,
-including "Not created: {Portfolio} Ocean Explorer does not capture {Work Item Age}". **KPI**: K2. **Tech**: same path
+and any number of days ≥ 14). AC-3.4 Result rows name the owner kind; every AC-2.5 reason applies to Portfolios. **KPI**: K2. **Tech**: same path
 as 02a.
 
 ### US-04 — The owner step says which owners cannot take the report (slice 04)
@@ -519,16 +527,15 @@ picking and decide then (shorter windows, or keep more history first).
 
 #### Elevator Pitch
 
-Before: owners that cannot hold the windows, or do not capture a chosen metric, are found out in the result.
+Before: owners that cannot hold the windows are found out in the result.
 After: on the owner step Team Equinox shows unpickable with "Kept history starts 30 Jul 2026 — Then starts 1 May 2026"
 and a link to its settings; the button reads "Create 2 reports".
 Decision enabled: shorten the windows, keep more history first, or go ahead without Equinox.
 
 **Examples**: (1) Equinox shown unpickable with its history start. (2) Elena goes back and picks 30-day windows
-ending 27 Sep 2026; Equinox becomes pickable. (3) Equinox's history start cannot be read; it stays pickable and 02a's
-result covers it. (4) Elena opens Equinox's settings from the link and raises Closed Items Cutoff; Equinox becomes
-pickable only after its next update has brought the older Work Items back. (5) A Portfolio that does not capture a
-chosen metric shows "Does not capture {Work Item Age}" and cannot be picked (PROPOSED, Q7).
+ending 27 Sep 2026; Equinox becomes pickable. (3) The owners cannot be loaded; the owner step shows could-not-load with
+Retry and offers nothing half-checked. (4) Elena opens Equinox's settings from the link and raises Closed Items Cutoff; Equinox becomes
+pickable only after its next update has brought the older Work Items back.
 
 ```gherkin
 Scenario: An owner that cannot hold the windows is shown but cannot be picked
@@ -542,38 +549,23 @@ Scenario: Shorter windows make it pickable
   When Elena goes back and chooses Then 29 Aug – 27 Sep 2026
   Then Team Equinox can be picked
 
-Scenario: An unknown history start falls back to the result
-  Given Team Equinox's kept history cannot be read
+Scenario: Owners arrive with their history starts, or not at all
+  Given the owners and their kept-history starts cannot be loaded
   When Elena reaches the owner step
-  Then Team Equinox can be picked and its outcome shows in the result
-
-# D13 extension — PROPOSED, confirm at DISTILL sketch walk
-Scenario: An owner that does not capture a chosen metric cannot be picked
-  Given Portfolio Ocean Explorer does not capture Work Item Age
-  When Elena chose Work Item Age and reaches the owner step
-  Then Portfolio Ocean Explorer cannot be picked and says it does not capture Work Item Age
-
-Scenario: Create waits for the owners' limits
-  Given the owners' kept-history starts are still loading
-  When Elena reaches the owner step
-  Then Create is not available until they have loaded or failed
-
-Scenario: Limits that could not be loaded leave the owners pickable and say so
-  Given the owners' kept-history starts and captured metrics cannot be loaded
-  When Elena reaches the owner step
-  Then every Team she administers can be picked
-  And the step says their limits could not be checked
-  And any owner that cannot take the report is listed as not created in the result
+  Then she sees that they couldn't be loaded, with Retry
+  And no owner is offered without its history start
+  And Create is not available
 ```
 
 **AC**: AC-4.1 On the owner step each owner whose kept history cannot hold Then or Now is shown but not pickable, with
-its history start and a link to its settings (D13, LOCKED). AC-4.2 Each owner that does not capture a chosen metric
-is shown but not pickable, with the reason (D13 extension, PROPOSED). AC-4.3 The Create count excludes them.
-AC-4.4 Going back and changing windows or metrics re-evaluates. AC-4.5 Unknown start → pickable; the server still
-decides (02a). AC-4.6 Uses the same bounds as the server (as `reportWindowCheck.ts` does today). AC-4.7 While the
-owners' limits load, Create is not available; if they cannot be loaded, the owners stay pickable and the step says
-their limits could not be checked. **KPI**: K3. **Tech**: each owner's earliest kept day and captured metrics must
-reach the browser (DESIGN).
+its history start and a link to its settings (D13, LOCKED). AC-4.2 *Dropped after DESIGN (2026-10-27, MQ-3 a): no
+owner can lack a chosen metric today.* AC-4.3 The Create count excludes them.
+AC-4.4 Going back and changing windows re-evaluates. AC-4.5 *(rev. after DESIGN)* The owner step has every owner
+together with its history start, or none: there is no owner offered with an unknown start (an owner keeping all its
+history has no start and takes any windows); the server still decides (02a). AC-4.6 Uses the same bounds as the server (as `reportWindowCheck.ts` does today). AC-4.7 *(rev. after DESIGN)*
+While the owners and their history starts load, the step shows its loading look and Create is not available; if they
+cannot be loaded, the step shows the could-not-load look with Retry (AC-2b.3's look). No partial state. **KPI**: K3. **Tech**: each owner's earliest kept day reaches the browser in the
+creation-options read (DESIGN DDD-3).
 
 ### US-05 — Remove reports in bulk (slice 05)
 
@@ -644,8 +636,8 @@ caller no longer administers, or that was deleted with its owner, is one "Not re
 whole-run failure. AC-5.5 Licence: Community (D2, LOCKED). AC-5.6 `ReportDeleted` keeps firing per report; D14's run
 event once. AC-5.7 A whole-request failure says it cannot confirm what was removed and links to Reports (D8, as
 AC-2.6). AC-5.8 Auth off or RBAC off: every report removable. **KPI**: G1. **Tech**: bulk endpoint or per-report
-calls (DESIGN). AC-5.9 Removal shares the PDF's ceiling N (DESIGN sets N): a selection above it is refused with "Pick
-at most N reports" (D16, PROPOSED).
+calls (DESIGN). AC-5.9 Removal shares the PDF's ceiling N = 50 (maintainer, 2026-10-27): a selection above it is refused
+with "Pick at most 50 reports" (D16).
 
 ### US-06 — Every report through the clients (slice 06)
 
@@ -707,7 +699,7 @@ Decision enabled: hand leadership the whole group's comparison as one file.
 **Examples**: (1) Martin exports 9 reports into one PDF in the table's order. (2) Martin is Viewer on every owner; he
 can still export all 9. (3) Team Voyager's report cannot be read; no PDF is made; the page names Voyager's report with
 Retry and "Leave it out". (4) In the macOS desktop app the action is disabled with the same reason as single export
-(Bug 6425). (5) Martin selects more reports than the ceiling N (for example 50): "Pick at most N reports" (PROPOSED). (6) One
+(Bug 6425). (5) Martin selects more reports than the ceiling N = 50, for example 51: "Pick at most 50 reports". (6) One
 report selected: the same PDF the single export makes.
 
 ```gherkin
@@ -738,19 +730,20 @@ Scenario: The macOS desktop app explains why it cannot print
 
 # D16 — PROPOSED, confirm at DISTILL sketch walk
 Scenario: Too many reports are refused before preparing
-  Given the ceiling is N reports and Martin selected more
+  Given the ceiling is 50 reports and Martin selected 51
   When Martin looks at Export PDF
-  Then he is told "Pick at most N reports"
+  Then he is told "Pick at most 50 reports"
 ```
 
 **AC**: AC-7.1 Export PDF acts on 01's selection, for any reader, whatever the user administers (D15; Community).
 AC-7.2 One print document; each report starts on a new page with Epic 6298's header, body and footer, its values read
 for this export (D5). AC-7.3 Order = the table's current order (D12, LOCKED). AC-7.4 Any unreadable report → no PDF;
-named, with Retry and Leave it out (D12, LOCKED). AC-7.5 A selection above the ceiling DESIGN sets is refused with
-"Pick at most N reports"; the action names the exact count (D16, PROPOSED). AC-7.6 macOS desktop: disabled with Bug
+named, with Retry and Leave it out (D12, LOCKED). AC-7.5 A selection above the ceiling N = 50 is refused with
+"Pick at most 50 reports"; the action names the exact count (D16; N by the maintainer, 2026-10-27; it drops to 25 if a
+50-report print fails in the Linux desktop app). AC-7.6 macOS desktop: disabled with Bug
 6425's reason (on `main`); slice 07 adds no macOS handling of its own. AC-7.7 Preparing and failed looks as the single print page.
 AC-7.8 Usage per D14. **KPI**: K4, K6. **Tech**: a print page holding several reports reusing `ReportPrintContent`
-(S13); N is DESIGN's.
+(S13); N = 50 (maintainer, 2026-10-27).
 
 ---
 
@@ -801,7 +794,9 @@ and ≥ 20% of those export several reports in one PDF (K4).
 Bulk editing of existing reports · one report spanning several Teams · new report types (Signals) · scheduled
 delivery (#5882) · several windows in one bulk run (D10, PROPOSED) · per-owner names in one run (D9) · de-duplicating reports
 (D9) · bulk create or remove through the clients (D6) · changing the single wizard's window limits (Story 6347,
-Removed) · a summary endpoint for the Overview chips · creating reports for owners the user does not administer.
+Removed) · a summary endpoint for the Overview chips · creating reports for owners the user does not administer ·
+owners that do not capture a chosen metric (dropped after DESIGN, 2026-10-27: metrics are captured per owner kind and
+today every metric applies to both kinds; **re-add to the owner step when a metric applies to one kind only**).
 
 ---
 
@@ -817,17 +812,17 @@ selection actions Remove and Export PDF; the cross-owner read and the bulk creat
 **DESIGN must answer**:
 
 - Slow connection (project rule): the Reports page's loading and could-not-load looks; **the owner step's loading and
-  could-not-load looks** (Admin set, kept-history starts, captured metrics — Create unavailable meanwhile, AC-2b.3,
+  could-not-load looks** (Admin set, kept-history starts — Create unavailable meanwhile, AC-2b.3,
   AC-4.7); the bulk result while creation or removal runs (progress, or a lone spinner) and when the answer never
   arrives (D8); the combined print page's preparing and failed looks (reuse Epic 6298's). Keyed queries so a late
   answer never lands on a newer view.
 - The cross-owner read: one endpoint (filtered with `GetReadable*IdsAsync`) or fan-out; payload with owner names.
-- The Admin set per user (no `GetWritable*` exists, S7) for the picker and the Remove rule, and how `useRbac()`
+- The Admin set per user (S7, corrected: already in `useRbac()`) for the picker and the Remove rule, and how `useRbac()`
   exposes it.
 - Bulk create/remove: one endpoint per action with per-owner outcomes vs one call per owner; per-owner checks at the
   moment each owner is reached (AC-2.7); Premium enforced on the server; licence lapse mid-run (AC-2.8); time budget
   for 20–30 owners against the 10 s slow log (S11).
-- Each owner's earliest kept day and captured metrics for slice 04.
+- Each owner's earliest kept day for slice 04.
 - Type-agnostic flow (D4): how a report type plugs its configuration into the bulk flow (`reportTypes.ts`).
 - Combined PDF: a print page for several reports, page breaks between them, the ceiling N, which bulk removal shares
   (AC-5.9).
@@ -836,14 +831,14 @@ selection actions Remove and Export PDF; the cross-owner read and the bulk creat
 **DISTILL must sketch with the maintainer first** (reuse `DataGridBase`, the `ReportList` columns and row icons): the
 Reports page (navigation entry, columns, selection column and count — shown from slice 05 or 07, empty / loading /
 failure looks, where Create reports, Remove and Export PDF sit, their disabled states and reasons — D15, D16, D17);
-the owner step (grouping by kind, unpickable owners with history start or metric reason and link, the no-Admin state,
+the owner step (grouping by kind, unpickable owners with history start and link, the no-Admin state,
 loading and could-not-load, the Create count); the presets for mixed selections; the result list wording for each
 refusal, including the all-refused headline; the bulk-removal confirm and its could-not-confirm look; the combined-PDF
 failure page (Retry / Leave it out) and the shared ceiling message; and the two open product choices D10 (several
 windows, several runs) and D9's no-de-duplication clause.
 
 **The sketch walk is a hard gate for every PROPOSED item.** DISTILL writes no scenario that pins a PROPOSED behaviour
-(D9's clause, D10, D13's metric extension, D15–D17, the presets) until the maintainer has confirmed or changed it in
+(D9's clause, D10, D15–D17, the presets) until the maintainer has confirmed or changed it in
 the walk; the outcome is recorded as a maintainer-decision block in this file.
 
 **Pre-requisites**: Reports and Then & Now (Epic 5878), the print route (Epic 6298) on `main`; Bug 6425's macOS
@@ -861,7 +856,7 @@ No silent N/A — every item answered.
 
 | Item | Answer |
 |---|---|
-| **RBAC impact** | **Applies.** Reports page: reports on owners the user can read (`TeamRead`/`PortfolioRead`), filtered on the server; every listed row selectable. Bulk create: only owners with `TeamWrite`/`PortfolioWrite` offered (02a), checked per owner on the server when reached. Bulk removal: enabled only when every selected report is on such an owner, checked per report. Combined PDF and clients list: read only. No new permission. UI gating via `useRbac()`; an "Admin set" helper is new (DESIGN). Auth/RBAC off: everyone may do everything. `docs/settings/rbac.md` gains rows for the page, bulk create, bulk remove and the combined PDF at finalize. |
+| **RBAC impact** | **Applies.** Reports page: reports on owners the user can read (`TeamRead`/`PortfolioRead`), filtered on the server; every listed row selectable. Bulk create: only owners with `TeamWrite`/`PortfolioWrite` offered (02a), checked per owner on the server when reached. Bulk removal: enabled only when every selected report is on such an owner, checked per report. Combined PDF and clients list: read only. No new permission. UI gating via `useRbac()`, which already carries the Admin set (S7, corrected after DESIGN). Auth/RBAC off: everyone may do everything. `docs/settings/rbac.md` gains rows for the page, bulk create, bulk remove and the combined PDF at finalize. |
 | **Lighthouse-Clients CLI/MCP** | **Slice 06 applies** (D6): `lh report list` with no owner and an MCP tool (stdio and HTTP); changesets for `lighthouse-client`, `lighthouse-mcp-core`, `lighthouse-cli` (minor); adapters by dependency bump; manual `pnpm release:version`, commit and push before the clients release; the `lighthouse` skill names the new tool and command (drift test); the `lighthouse-reports` skill may mention the list (skill-only, no changeset). **Slices 01–05 and 07: N/A, because** bulk create/remove stay web-only and the PDF is a browser print. |
 | **Website / marketing surface** | **Owed at finalize**: features list "Every report in one place; create a Then & Now for many Teams and Portfolios at once (Premium); several reports in one PDF"; the Premium list on the pricing page gains bulk creation. The website hot-links `docs/assets` from `@main`. Copy confirmed with the maintainer first. |
 | **Docs + screenshots** | **Owed at finalize**: `docs/reports/reports.md` (Reports page and selection, bulk create with per-owner outcomes and the history-start reason, bulk remove, combined PDF), `docs/reports/thenandnow.md` (same windows for many owners, Closed Items Cutoff), `docs/settings/rbac.md`, `docs/settings/usagedata.md` (each new event in the slice that emits it), `docs/aiintegration.md` (06). `@screenshot` one per theme: the Reports page, the owner step, the result with a skipped owner. Docs wait for the maintainer's confirmation. |
@@ -877,18 +872,18 @@ No silent N/A — every item answered.
 
 ## Wave: DISCUSS / [REF] DoR Validation
 
-(rev. 2026-10-27 after peer review)
+(rev. 2026-10-27 after peer review; rev. 2026-10-27 after DESIGN: US-04 down to 4 scenarios, slice 04 ~¾d)
 
 | # | DoR item | Status | Evidence |
 |---|---|---|---|
 | 1 | Problem clear, domain language | PASS — clear, not validated | Each story opens with Martin's or Elena's situation; the source is one informant (DISCOVER skipped by the maintainer). |
 | 2 | Persona specific | PASS | Martin (Head of Delivery, Viewer on 12 owners), Elena (coach, Admin of 4 Teams + 1 Portfolio, Premium), Priya (Admin of one Team, Community), Tomás (fellow Admin of Gravity), Jonas (no read on Pulsar). |
 | 3 | 3+ domain examples, real data | PASS | 4–7 per story with demo owners, contiguous windows (Then 1 May – 29 Jul, Now 30 Jul – 27 Oct 2026; Then 29 Aug – 27 Sep, Now 28 Sep – 27 Oct 2026), history start 30 Jul 2026. |
-| 4 | UAT G/W/T, 3–7 | PASS | US-01 6, US-02a 7 (one an outline, RBAC on/off), US-02b 3, US-03 3, US-04 6, US-05 7, US-06 3, US-07 6; each has a boundary or failure path. |
+| 4 | UAT G/W/T, 3–7 | PASS | US-01 6, US-02a 7 (one an outline, RBAC on/off), US-02b 3, US-03 3, US-04 4, US-05 7, US-06 3, US-07 6; each has a boundary or failure path. |
 | 5 | AC from UAT | PASS | AC-n.m per story trace to scenarios and D-decisions. |
-| 6 | Right-sized | PASS, one at the edge | 01 ~1.5d (list + the grid's selection column, shown from 05/07; demonstrable in one session), 02a ~1d (write path + Admin-set filter), 02b ¼d, 03 ½d, 04 1d, 05 1d, 06 ~1d, 07 1d; ~7¼d total. US-02a and US-05 at the 7-scenario cap. |
+| 6 | Right-sized | PASS, one at the edge | 01 ~1.5d (list + the grid's selection column, shown from 05/07; demonstrable in one session), 02a ~1d (write path + Admin-set filter), 02b ¼d, 03 ½d, 04 ~¾d, 05 1d, 06 ~1d, 07 1d; ~7d total. US-02a and US-05 at the 7-scenario cap. |
 | 7 | Technical notes | PASS | Inventory S1–S17; NFRs; "DESIGN must answer" incl. the owner step's looks. |
-| 8 | Dependencies tracked | PASS | 02a on 01; 02b on 02a; 03 on 02b; 04 on 02b and 03; 05, 06, 07 on 01 only; one direction. Q1–Q4 answered 2026-10-27; Q10 settled by the re-review; Q5–Q9 and Q11 open with defaults, gated by the DISTILL sketch walk. |
+| 8 | Dependencies tracked | PASS | 02a on 01; 02b on 02a; 03 on 02b; 04 on 02b and 03; 05, 06, 07 on 01 only; one direction. Q1–Q4 answered 2026-10-27; Q10 settled by the re-review; Q5, Q6, Q8, Q9 and Q11 open with defaults, gated by the DISTILL sketch walk; Q7 dropped after DESIGN. |
 | 9 | Outcome KPIs | PASS | K1–K6 with targets, baselines and measurement; G1–G4. |
 
 Elevator Pitch check: all eight stories carry Before / After / Decision enabled; no `@infrastructure` story; every
@@ -896,7 +891,8 @@ story has `job_id: job-lead-compare-every-owner-against-its-own-past-in-one-go`.
 
 **DoR status: 9 of 9 PASS** (item 1 "clear, not validated" on one informant; item 6 with 01 at ~1.5d). D2's removal
 half, D9's one name, D12 and D13 (history) are LOCKED by the maintainer (2026-10-27); D18 is settled by the re-review.
-PROPOSED, gated by the DISTILL sketch walk: D9's no-de-duplication clause, D10, D13's metric extension, D15–D17 and
+N = 50 is LOCKED (maintainer, after DESIGN); D13's metric extension is dropped. PROPOSED, gated by the DISTILL sketch
+walk: D9's no-de-duplication clause, D10, D15–D17 and
 the presets for mixed selections; D19 is PROPOSED for DEVOPS. None blocks DESIGN.
 
 ---
@@ -926,11 +922,12 @@ carries a default marked **PROPOSED — confirm at DISTILL sketch walk**.*
    selected report is removable, else disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are
    not Admin of"; (b) Remove acts on the removable ones and lists the rest as not removed; (c) non-removable rows
    cannot be selected (breaks the PDF for Viewers). **Default: (a).**
-7. **Q7 — Metrics an owner does not capture (D13 extension).** (a) Metrics step offers every metric; such owners shown
+7. **Q7 — Metrics an owner does not capture (D13 extension).** *Withdrawn after DESIGN (2026-10-27, MQ-3 a): no owner
+   can lack a metric today.* (a) Metrics step offers every metric; such owners shown
    but not pickable with the reason; (b) metrics limited to what every picked owner captures; (c) create without that
    metric for those owners. **Default: (a)** — same pattern as Q4, and (c) breaks "same comparison for everyone".
 8. **Q8 — Selection under filter and the ceiling (D16).** (a) Changing a filter clears the selection; select-all
-   takes the filtered rows on all pages; above N, "Pick at most N reports"; (b) the selection survives filter changes
+   takes the filtered rows on all pages; above N = 50 (set after DESIGN), "Pick at most 50 reports"; (b) the selection survives filter changes
    (hidden selected rows). **Default: (a)** — nothing selected is ever out of sight.
 9. **Q9 — "Create reports" states (D17).** (a) Always shown; Community: disabled with a Premium hint; Premium without
    any Admin owner: disabled with "You are not Admin of any Team or Portfolio"; (b) hidden in both cases. **Default:
@@ -943,7 +940,7 @@ carries a default marked **PROPOSED — confirm at DISTILL sketch walk**.*
 
 Non-blocking: the preset choice for mixed selections (30 / 90 / 180) is settled in the DISTILL sketch walk.
 
-**The DISTILL sketch walk is a hard gate for every PROPOSED item** (Q5–Q9, Q11, the presets): no scenario that pins
+**The DISTILL sketch walk is a hard gate for every PROPOSED item** (Q5, Q6, Q8, Q9, Q11, the presets; Q7 withdrawn after DESIGN): no scenario that pins
 one of them is written until the maintainer has confirmed or changed it there. D19 is PROPOSED for DEVOPS instead.
 
 ## Wave: DISCUSS / [REF] Maintainer answers (2026-10-27)
@@ -971,3 +968,401 @@ under "DESIGN must answer"; the usage events (and D19) to DEVOPS; the sketches a
 the presets) to the DISTILL sketch walk, which is a **hard gate**: DISTILL pins none of them in a scenario until the
 maintainer has confirmed or changed it there. Re-review (2026-10-27): conditionally approved; the conditions are
 applied in this file.
+
+---
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+**Agent**: Morgan (`nw-solution-architect`) · **Date**: 2026-10-27 · **Mode**: PROPOSE, autonomous subagent. Every
+decision this wave takes on its own is **Decided**; every genuine product or trade-off choice is **PROPOSED —
+maintainer picks** and listed under "Questions for the maintainer" (MQ-n).
+
+| Read | Status |
+|---|---|
+| This file, DISCUSS sections (all 973 lines), `discuss/wave-decisions.md`, all 8 `slices/*.md` (DESIGN-must-answer of each) | ✓ |
+| `docs/product/journeys/epic-6350-bulk-reports.yaml` | ✓ (structure and shared artifacts) |
+| `docs/product/architecture/brief.md` (tail sections, numbering) and ADR-219–264 titles; highest ADR is 264, no in-flight ADR above it in `docs/feature/*` | ✓ |
+| Root `ARCHITECTURE.md` (§4 module 9 Reports, §8 stored reports, §16 ADR index) | ✓ |
+| Epic 6264 modular-monolith DISCUSS | ✓ (Reports is cited there as already in the target module shape; nothing in this design crosses a module line) |
+| Epic 6298 DESIGN (section set, Reuse table, C4) | ✓ — mirrored at lean density |
+| `docs/ci-learnings.md` preflight rules (S107, S6964, S1192, CA1859, NUnit2045) | ✓ — nothing below needs any of them broken |
+| Backend Reports module, `ReportsControllerBase`, both owner controllers, `ReportRepository`, `IRbacAdministrationService`, `LicenseGuardAttribute`, `TeamsController.GetTeams`, `FeatureListController` | ✓ |
+| Frontend `pages/Common/Reports/*` (list, tab, wizard, print), `useRbac`, `useLicenseRestrictions`, `widgetStatus`, `FeaturesView`, `App.tsx` routes | ✓ |
+| `/storage/repos/lighthouse-clients` (`mcp-core/src/reportTools.ts`, `client/src/index.ts`, `cli` report group) | ✓ — reachable from this session, unlike in DISCUSS |
+
+## Wave: DESIGN / [REF] What DESIGN found in the code (beyond DISCUSS S1–S17)
+
+| # | Finding | Where | Consequence |
+|---|---|---|---|
+| F1 | **The Admin set already reaches the browser.** `useRbac()` exposes `isTeamAdmin(id)` / `isPortfolioAdmin(id)` from the my-summary's `adminTeamIds` / `adminPortfolioIds` (true everywhere with RBAC off or for a System Admin). S7's "no Admin-set helper" holds for the server's *list* helpers only, and even there `GetWritablePortfolioIdsAsync` exists; only its Team twin is missing | `hooks/useRbac.ts`, `UserAuthorizationSummary.cs`, `RbacAdministrationService.cs` | The owner step and the Remove rule need **no new backend**: readable owners from the server, filtered in the browser through `useRbac()`. |
+| F2 | **`useRbac()` fails open**: when my-summary cannot be loaded it answers the permissive summary (everyone Admin everywhere) and says nothing | `useRbac.ts` | AC-2b.3 ("could not load, with Retry") cannot be met as is. MQ-4. |
+| F3 | **"Captured metrics" are per owner kind, not per owner.** `ThenAndNowTemplate.Freeze` captures every metric `catalog.For(owner.Kind)` offers; `metric-not-captured` is an **Edit-only** refusal; a chosen metric outside the owner's kind is refused on creation as `unknown-metric`. Today every metric applies to both kinds (`WindowedReportMetric.AppliesTo` is `true`, no override) | `ThenAndNowTemplate.cs`, `ReportMetricCatalog.cs`, `WindowedReportMetric.cs` | No owner can lack a chosen metric today. D13's metric extension (AC-4.2) and AC-2.5's `metric-not-captured` row have nothing to act on. MQ-3, upstream U-1/U-2. |
+| F4 | The Reports module's ports take a `ReportOwner`, never a user; authorisation sits in the controllers (ADR-222, ARCHITECTURE §4) | `ReportCommands`, `ReportQueries`, owner controllers | A bulk run must check Admin per owner *inside* its loop without the module learning about users: a principal-bound capability handed in from the API (DDD-5). |
+| F5 | `ReportCommands.Create` adds to the request's one `DbContext` and saves; a save that fails (an owner deleted between lookup and save trips its foreign key) leaves the added row tracked, so the next owner's save would retry it | `ReportCommands.cs`, `ReportRepository.cs` | A failed save is caught per owner and its pending row discarded before the next owner (DDD-6). |
+| F6 | The list row (`ReportSummary`) already carries `thenAndNow.thenRebuildable`, computed on read by `ReportWindowPolicy.ThenRebuildable`; `Summarise` never computes Now | `ThenAndNowTemplate.Summarise` | The cross-owner list is cheap, and it is the source of the removal confirm's "can no longer be rebuilt" count (DESIGN Q5). |
+| F7 | `ReportSummary` has no owner name; `GET /teams` computes blackout overlap and forecast-filter state per Team, too heavy to serve as an owner list | `ReportReadModels.cs`, `TeamsController.GetTeams` | The owner name and the owner list come from the Reports module's owner lookup (a projection), not from `/teams` + `/portfolios`. |
+| F8 | The bulk wizard has no owner when it reaches the Metrics step, but the single wizard reads its metrics from one owner's `templates` endpoint | `ReportWizard.tsx`, `ReportQueries.Templates` | One owner-free creation-options read carries the templates, their metrics per owner kind, the window bounds and every readable owner with its kept-history start (DDD-3). |
+| F9 | `DataGridBase` has no row selection; the grid is MUI X DataGrid (community, MIT), which has a checkbox column whose select-all takes the filtered rows on every page | `components/Common/DataGrid/DataGridBase.tsx` | Selection is an opt-in prop on `DataGridBase` (R5). |
+| F10 | `/api/*` never falls back to the SPA shell, so a Lighthouse without the new route answers 404 | `Program.cs` `ShouldNotFallBackToSpaShell` | The clients' existing 404 relay ("upgrade Lighthouse") covers AC-6.3 unchanged. |
+| F11 | Usage events are sent by the browser under its consent and forwarded by the backend; the backend never originates one | `UsageDataService.ts`, `ReportWizard.tsx`, `useReportDeletion.tsx` | The domain-event bus cannot carry them (DDD-12). |
+
+## Wave: DESIGN / [REF] Architecture in one paragraph
+
+The Reports module gains a cross-owner face and nothing else changes shape. A new `ReportsController` at
+`api/{v1,latest}/reports` serves four things: the list of every report on an owner the caller may read (filtered on
+the server with the existing `GetReadable*IdsAsync`, each row carrying its owner's name); one owner-free
+*creation options* read (templates with their metrics per owner kind, window bounds, today, and every readable owner
+with its name and kept-history start); one bulk-create request; and one bulk-removal request. Both bulk requests are
+answered with **one outcome per owner (or per report)** — created/removed, or not, with a code from the closed refusal
+set — and go **through the same `ReportCommands.Create` / `Delete` as the single wizard**, one owner after another,
+a failed owner caught and its pending change discarded before the next, Admin checked for each owner at the moment the run reaches it through a
+principal-bound capability the controller hands in, so the module still never sees a user. Bulk creation is
+refused as a whole on Community by the existing `LicenseGuard`; a licence lapsing mid-run is already caught per owner
+by `ReportCapPolicy`. Nothing new is stored (no migration). In the browser, a top-level **Reports page** (`/reports`)
+lists the rows in `ReportList` on `DataGridBase` with an opt-in selection; **Create reports** opens a bulk wizard that
+reuses the type and configuration steps, adds an owner step (readable owners filtered through `useRbac()`, limits from
+the creation options) and a per-owner result; **Remove** and **Export PDF** act on the selection. The combined PDF
+reuses Epic 6298's hidden print frame, drawing several `ReportPrintContent`s one after another, ready only when every
+one is. `lighthouse-clients` gains `lighthouse_report_list` and `lh report list` with no owner, reading the same list.
+
+## Wave: DESIGN / [REF] Decisions (DDD-n)
+
+| # | Decision | Status | ADR |
+|---|---|---|---|
+| DDD-1 | **One cross-owner list endpoint**, `GET api/latest/reports` → `{ reports: ReportSummary[] }`, each row the per-owner row plus `ownerName`. Server-filtered by `GetReadableTeamIdsAsync` / `GetReadablePortfolioIdsAsync` over every owner id, then one database read of the readable owners' reports (`TeamId IN … OR PortfolioId IN …`). No Now computation. Rejected: fan-out over the per-owner GETs (one request per owner, no owner names, 12+ requests on a slow connection; G2 at risk) | Decided | 265 |
+| DDD-2 | `ReportSummary` gains an optional `OwnerName`, written only when set, so every per-owner list body stays byte-identical | Decided | 265 |
+| DDD-3 | **One owner-free creation-options read**, `GET api/latest/reports/creation-options` → `{ today, minimumLengthDays, templates: [{ templateKey, metricKeysByOwnerKind }], owners: [{ ownerKind, ownerId, ownerName, earliestStart }] }`, owners filtered by Read. Serves the bulk wizard's Type and Metrics steps, the owner step (02a, 03) and its limits (04) in one request. Rejected: `/teams` + `/portfolios` plus one `templates` read per owner (F7; 30 requests for slice 04) | Decided | 265 |
+| DDD-4 | **The Admin set is derived in the browser** from that owner list through `useRbac().isTeamAdmin` / `isPortfolioAdmin` (F1); no component reads my-summary; no new `IRbacAdministrationService` member. The server never trusts it: DDD-5 | Decided | — |
+| DDD-5 | **Admin is checked per owner when the run reaches it**, through an asynchronous capability port `IReportOwnerWriteAccess.MayWriteAsync(ReportOwner)` (a `Task<bool>`, because the checks it wraps are asynchronous) that the controller builds from `User` over the existing `CanWriteTeamAsync` / `CanWritePortfolioAsync`. All RBAC logic stays in `IRbacAdministrationService`; the Reports module still takes no user. Rejected: one `GetWritable*` set at the start of the run (misses an Admin lost mid-run, AC-2.7) | Decided | 266 |
+| DDD-6 | **Each owner stands alone** (rev. after review): `ReportBulkCommands` catches a failed creation or removal of one owner (a database update failure, e.g. the owner deleted between lookup and save), discards the failed pending change through a new `IReportWriter` member, logs a Warning with the exception, and answers that owner `notCreated` / `notRemoved` with a new code `not-saved`; the next owner proceeds and the response is still `200`. Rejected: a fresh DI scope per owner (resolving `ReportCommands` through a scope factory inside the module is service location, heavier than the one-line discard). Never all-or-nothing over the set (D8) | Decided | 266 |
+| DDD-7 | **Bulk create = one request**, `POST api/latest/reports/bulk` `{ templateKey, name, shownMetricKeys, thenAndNow, owners: [{ ownerKind, ownerId }] }`, `[LicenseGuard(RequirePremium)]` (a Community run is refused whole, 403, AC-2.7). Owners de-duplicated, kept in the order given, processed **sequentially**. Answer `200 { outcomes: [{ ownerKind, ownerId, ownerName?, status: created \| notCreated, reportId?, code?, earliestStart? }] }`. The configuration part is exactly `NewReportRequest` (type-agnostic, D4): a future type adds its own block as the single wizard does | **LOCKED (maintainer, 2026-10-27; MQ-1 a)** | 266 |
+| DDD-8 | Per-owner refusals reuse the closed refusal set; three codes are added for what only a run can meet: `owner-not-found` (deleted before or during the run), `not-admin` and `not-saved` (DDD-6). **400 rules** (rev. after review): an unknown owner kind, an owner list empty after de-duplication, more than N owners or ids after de-duplication, and a Then & Now body without its Then (the single create's own validation, shared, not copied) refuse the whole request; nothing is written. A licence lapse mid-run surfaces as the existing `report-cap-reached` on owners already holding one (AC-2.8) | Decided | 266 |
+| DDD-9 | **Bulk removal = one request**, `POST api/latest/reports/bulk-removal` `{ reportIds }` (Community). The server resolves each report's owner itself (never trusting a client-sent owner), checks Admin per report (DDD-5), deletes through `ReportCommands.Delete`. A report already gone counts as `removed` (AC-5.3). Accepted consequence: an id that exists on an owner the caller may not administer answers `not-admin`, so a caller can tell such an id exists; it learns nothing of its owner or content, and report ids are sequential anyway. Answer `{ outcomes: [{ reportId, status: removed \| notRemoved, code? }] }` | Decided | 266 |
+| DDD-10 | **Ceiling N**, one constant shared by the selection (removal and combined PDF) and by the owners of one bulk-create run; the server refuses a request above it (400) and the browser says "Pick at most N …" first | **LOCKED (maintainer, 2026-10-27; MQ-2: N = 50, dropping to 25 if a 50-report print fails in the Linux desktop app)** | 266, 267 |
+| DDD-11 | **The run finishes even when the browser stops listening** (no cancellation between owners): what was asked for gets made, and the "could not confirm, check Reports" look (D8) stays true. No server-side deadline either: N bounds the run, and the timed dogfood run in slice 02a is the gate that N is small enough | **LOCKED (maintainer, 2026-10-27; MQ-5 a, with MQ-1 a)** | 266 |
+| DDD-12 | **Usage events stay browser-sent** (F11). The domain-event bus was weighed for `ReportCreated` / `ReportDeleted` in bulk runs and rejected: consent and the per-browser proxy live in the browser, so a backend handler could neither honour the consent nor attribute the event. No other side effect of a run has a second consumer, so no domain event is introduced (YAGNI) | Decided | — |
+| DDD-13 | **Observability**: each owner's creation keeps its `report-creation-slow` line (10 s per report); the run adds one Information line `report-bulk-run` with action, owners asked, created/removed and refused counts and elapsed ms — no names, no ids of customers' owners beyond what existing report lines already log | Decided | 266 |
+| DDD-14 | **Reports page at `/reports`**, a navigation entry beside Features; read with a keyed TanStack query `["reports", "all"]` (`staleTime: 0`, as `useOwnerReports`), so any invalidation of the `["reports"]` prefix after a per-owner or bulk change refreshes it; looks through `WidgetShell` `status` | Decided | — |
+| DDD-15 | **`ReportList` serves both pages**: an optional owner column (kind in the instance's term + name) and an opt-in selection; the row icons are unchanged and follow the row's own owner (Admin of that row's owner through `useRbac()`, the rule `useMayEditReports` applies to one owner). `DataGridBase` gains opt-in `checkboxSelection`; a filter change clears the selection; select-all takes the filtered rows on every page (D16). (rev. after review) `useRbac()` answers "Admin everywhere" until my-summary arrives, so Remove, the Create button's Admin state and every row's Edit and Delete icons stay unavailable while `useRbac().isLoading`, as `useMayEditReports` already does for one owner | Decided | — |
+| DDD-16 | **The bulk wizard reuses the single wizard's steps** via `reportTypes.ts`: Type → the type's configuration steps (fed by the creation options instead of one owner's templates) → owner step → result. The window check runs per owner with `reportWindowCheck.ts` against each owner's `earliestStart` (the server's bounds, AC-4.6). The creation options are a keyed query `["reportCreationOptions"]` with `staleTime: 0`, read afresh at each wizard opening; a late answer from an earlier opening never fills a newer one. A bulk run invalidates the `["reports"]` prefix (the lists), not the options, which a run does not change | Decided | — |
+| DDD-17 | `useRbac()` gains a load-failed flag and a retry, used only by the owner step; every existing caller keeps today's permissive fallback | **LOCKED (maintainer, 2026-10-27; MQ-4 a)** | — |
+| DDD-18 | **Combined PDF = the same hidden print frame drawing several reports.** `PrintFrameHost` takes a list of (owner, report id) in the table's order and draws one `ReportPrintContent` per report, each starting on a new page with its own header and footer. A pure `bundleStateOf(states[])` is `ready` only when every report is; any failed report → no print, the failure look names it with Retry and "Leave it out" (D12). Reads run in parallel through the app's query cache (the browser caps connections per host). The frame's 30-second budget becomes 30 s plus 2 s per report beyond the first (a starting value; DELIVER measures it on the dev instance). One document title for the bundle. A `/print/reports?reports=team-3-12,portfolio-5-7` route mirrors it for the E2E print-media check and never prints by itself | Decided | 267 |
+| DDD-19 | **macOS desktop**: the selection's Export PDF reuses Bug 6425's predicate and copy (`utils/tauri`, `pdfExportCopy.ts`); no handling of its own (AC-7.6) | Decided | — |
+| DDD-20 | **Clients**: `lighthouse_report_list` (no input) and `lh report list` with neither `--team-id` nor `--portfolio-id` read `GET /api/latest/reports` with the caller's credential and relay the answer raw, a summary block naming each owner; an older Lighthouse answers 404 (F10), relayed as "upgrade Lighthouse" by the existing refusal reader | Decided | (247 extended) |
+| DDD-21 | **Premium gating in the browser** through the shared `useLicenseRestrictions` query (ADR-259): Create reports is disabled while the licence is unknown, disabled with `LicenseToolTip` on Community | Decided | — |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+```
+ DRIVING                                   APPLICATION / DOMAIN (Reports module)               DRIVEN
+ ───────                                   ────────────────────────────────────               ──────
+ Browser: ReportsPage /reports  (NEW) ┐
+   ReportList + selection     (EXT)   │    IReportQueries / ReportQueries           (EXT)
+   BulkReportWizard           (NEW)   ├──▶   ListAcross(readable owners)  (NEW op)   ┐
+     OwnerStep, BulkResult    (NEW)   │      CreationOptions(readable)    (NEW op)   │    IReportReader / ReportRepository (EXT)
+   RemoveSelected dialog      (NEW)   │      Templates/List/Get           (unch.)    ├──▶   ListForOwners, OwnerOf (NEW ops)
+   PrintFrameHost bundle      (EXT)   │    IReportBulkCommands / ReportBulkCommands (NEW)│
+ lh report list / MCP tool (NEW, 06)  │      CreateForEach, RemoveEach               ├──▶ IReportOwnerLookup / ReportOwnerLookup (EXT)
+        │                             │        └─ per owner: ReportCommands (unch.)  │      All(): kind, id, name, cutoff
+        ▼                             │    IReportOwnerWriteAccess (NEW port) ◀──────┘    ILicenseService (unch.)
+ API: ReportsController (NEW) ────────┘      bound per request by the API to           IRbacAdministrationService (unch.)
+   GET  reports                              IRbacAdministrationService.CanWrite*        SQLite / Postgres Reports table (unch.)
+   GET  reports/creation-options
+   POST reports/bulk        [LicenseGuard Premium]
+   POST reports/bulk-removal
+ Team/PortfolioReportsController (unch.)
+```
+
+- **NEW backend**: `ReportsController`; `IReportBulkCommands` + `ReportBulkCommands` (the loop, the per-owner unit of
+  work, the outcome list, the run log line); `IReportOwnerWriteAccess` + its API-side adapter; the outcome records
+  (`ReportOwnerOutcome`, `ReportRemovalOutcome`); bulk request DTOs (value types nullable, S6964).
+- **MODIFIED backend**: `IReportQueries`/`ReportQueries` (two operations), `IReportReader`/`ReportRepository` (two
+  reads), `IReportOwnerLookup`/`ReportOwnerLookup` (`All()`, a projection of id, name, cutoff — never the aggregates),
+  `ReportSummary` (+`OwnerName`), `ReportRefusalCodes` (+3), `IReportWriter`/`ReportRepository` (+`DiscardPendingChanges`), composition root.
+- **UNCHANGED backend**: `ReportCommands`, `ThenAndNowTemplate`, `ReportCapPolicy`, `ReportWindowPolicy`, the owner
+  controllers, `RbacGuard`, `LicenseGuard`, `IRbacAdministrationService`, the schema (no migration, D11 confirmed).
+- **NEW frontend**: `ReportsPage`, `useAllReports`, `useReportCreationOptions`, `BulkReportWizard`, `OwnerStep`,
+  `BulkResult`, `useBulkReportCreation`, `useBulkReportRemoval`, `RemoveSelectedDialog`, `ReportPrintBundle` +
+  `bundleStateOf`, `useReportsPdfExport`, `ReportService` bulk/cross-owner methods.
+- **MODIFIED frontend**: `App.tsx` (route + nav entry), `ReportList`, `DataGridBase` (opt-in selection),
+  `reportTypes.ts`, `reportWindowCheck.ts` (per owner), `reportRefusalCopy.ts` (+2 codes, history-start sentence),
+  `PrintFrameHost`, `ReportPrintContent` (tells its state to a holder; title left to the holder), `reportPrintRoutes`,
+  `useRbac` (MQ-4).
+- **Clients (06)**: `client` `getAllReports()`; `mcp-core` `lighthouse_report_list`; `cli` `lh report list` without an
+  owner; the `lighthouse` skill names both (drift test); changesets.
+
+## Wave: DESIGN / [REF] Driving and driven ports
+
+| Port | Kind | Contract | Guard |
+|---|---|---|---|
+| `GET api/latest/reports` | driving, read | `{ reports: [{ id, name, templateKey, ownerKind, ownerId, ownerName, createdOn, thenAndNow?: { thenRebuildable } }] }`, ordered by owner kind, owner name, report id; the browser sorts | signed in; rows filtered by Read on the server |
+| `GET api/latest/reports/creation-options` | driving, read | DDD-3 | signed in; owners filtered by Read |
+| `POST api/latest/reports/bulk` | driving, write | DDD-7, DDD-8; 400 on no owners or more than N; 403 on Community | Premium (`LicenseGuard`); Admin per owner inside the run |
+| `POST api/latest/reports/bulk-removal` | driving, write | DDD-9; 400 on no ids or more than N | Admin per report inside the run |
+| `IReportQueries.ListAcross`, `.CreationOptions` | application, read | take readable `ReportOwner`s; no user; reach persistence only through `IReportReader` and `IReportOwnerLookup` | — |
+| `IReportBulkCommands.CreateForEach`, `.RemoveEach` | application, write | owners/ids + configuration + `IReportOwnerWriteAccess`; one outcome per item, in the order given; each item through `IReportCommands`; a failed item is caught, its pending change discarded, answered `not-saved` (DDD-6) | — |
+| `IReportWriter.DiscardPendingChanges` (NEW member) | driven, write | drops whatever a failed save left tracked; nothing else | — |
+| `IReportOwnerWriteAccess.MayWriteAsync` | driven (capability) | bound to the caller; RBAC off/auth off → true (existing `CanWrite*` semantics) | — |
+| `IReportReader.ListForOwners`, `.OwnerOf` | driven, read | no write member (ADR-222 kept) | — |
+| `IReportOwnerLookup.All` | driven, read | projection; an owner deleted after it was read is met by `Find` returning null inside the run → `owner-not-found` | — |
+
+**Contract shapes**: the two reads are *pure* (return only). `CreateForEach` is *bounded change*: universe = Reports
+rows of the listed owners; delta = at most one new row per owner, exactly what `ReportCommands.Create` writes for the
+same inputs; nothing else. `RemoveEach`: universe = the listed report ids; delta = those rows gone where Admin holds.
+Earned trust: no new external dependency or adapter kind is introduced (same database, same RBAC service, same
+browser print), so no new `probe()`; the risky substrate behaviours are pinned by tests instead (Architectural
+enforcement).
+
+## Wave: DESIGN / [REF] State sketches (slow-connection rule; copy pinned at DISTILL's sketch walk)
+
+Reports page (`WidgetShell` status, `data-widget-status`):
+
+```
+LOADING (nothing yet)            LOADED                                                FAILED
+┌ Reports ───────────────────┐   ┌ Reports        [Create reports] [Remove] [Export PDF (3)] ┐   ┌ Reports ──────────────────────┐
+│                            │   │ ☐ Name                  Type        Owner        Created │   │ The reports couldn't be       │
+│          (spinner)         │   │ ☑ Then & Now — 90 d…   Then & Now  Team Gravity 27 Oct  │   │ loaded.            [Retry]    │
+│                            │   │ ☐ …                                         3 selected   │   │ (no table, no "no reports")   │
+└────────────────────────────┘   └──────────────────────────────────────────────────────────┘   └───────────────────────────────┘
+RE-READING after a change: the table dims under the small spinner (never shown as current while a newer answer is on its way).
+EMPTY (answered, none): "Reports are created on a Team's or Portfolio's Reports tab."
+```
+
+Owner step (creation options + `useRbac`; Create unavailable until both answered):
+
+```
+LOADING                          LOADED (slice 04 limits)                         FAILED (options)              LIMITS UNKNOWN (MQ-4 b only)
+┌ Owners ──────────────┐         ┌ Owners ────────────────────────────────────┐   ┌ Owners ──────────────────┐   n/a: limits travel with the
+│ (spinner)            │         │ Teams                                      │   │ Your Teams and Portfolios│   owners in one read, so they
+│                      │         │ ☑ Zenith   ☑ Gravity                       │   │ couldn't be loaded.      │   load or fail together
+│ [Create] disabled    │         │ ☐ Equinox  kept history starts 30 Jul 2026 │   │ [Retry]                  │
+└──────────────────────┘         │            — Then starts 1 May  [Settings] │   │ [Create] disabled        │
+                                 │ Portfolios                                 │   └──────────────────────────┘
+                                 │ ☑ Ocean Explorer                           │
+                                 │                    [Create 3 reports]      │
+                                 └────────────────────────────────────────────┘
+```
+
+Bulk result and bulk removal (one request each):
+
+```
+WORKING                              DONE                                                  NO ANSWER
+┌──────────────────────────────┐     ┌ 2 reports created, 1 not created ────────────────┐   ┌──────────────────────────────────┐
+│ (spinner)                    │     │ Team Zenith          Created          [Open]      │   │ It could not be confirmed which  │
+│ Creating 3 reports…          │     │ Team Gravity         Created          [Open]      │   │ reports were created.            │
+│ (dialog cannot be closed)    │     │ Team Equinox  Not created: its kept history       │   │ [Go to Reports]                  │
+└──────────────────────────────┘     │   starts 30 Jul 2026. Keep more history under     │   └──────────────────────────────────┘
+                                     │   Closed Items Cutoff in its settings.            │
+                                     └───────────────────────────────────────────────────┘
+Removal: same three looks — "Removing 3 reports…", "3 reports removed" / per-report "Not removed: …", "could not confirm what was removed".
+```
+
+Combined print (hidden frame; the selection's Export PDF button carries the waiting spinner, as single export):
+
+```
+PREPARING: Export PDF (9) shows the waiting spinner, disabled.     READY: the print dialog opens with all 9 reports.
+FAILED (a report):  snackbar/page — "Team Voyager's report couldn't be loaded, so no PDF was made."  [Retry] [Leave it out]
+FAILED (a part: fonts, terms, mark): "Part of the page couldn't be loaded, so no PDF was made." [Retry]
+```
+
+## Wave: DESIGN / [REF] Technology choices
+
+No new dependency. MUI X DataGrid community (MIT, already installed) for the checkbox column; TanStack Query (MIT,
+installed) for every read and both mutations; ASP.NET Core 10 and EF Core (MIT, installed). Rejected: server-sent
+progress (SSE/NDJSON) for the bulk run — a streaming transport for a ≤ 30 s request is a second protocol to keep
+honest across proxies and the Standalone app (MQ-1 c).
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+Default EXTEND. Contract shape · universe · delta · assertion the crafter uses.
+
+| # | Existing | Verdict | How it is used | Contract shape · assertion |
+|---|---|---|---|---|
+| R1 | `ReportCommands.Create` / `Delete` | REUSE | The only writer, per owner, for single and bulk | Bounded change · bulk-vs-single parity test (same inputs → same payload, metrics, name) |
+| R2 | `ReportQueries` | EXTEND | `ListAcross`, `CreationOptions` | Pure · golden per-owner bodies unchanged; new-op tests |
+| R3 | `IReportReader` / `ReportRepository` | EXTEND | `ListForOwners`, `OwnerOf`; no write member | Pure · SQL captured shows the owner filter in the database |
+| R4 | `IReportOwnerLookup` / `ReportOwnerLookup` | EXTEND | `All()` projection with name and cutoff | Pure · projection test (no Include) |
+| R5 | `DataGridBase` | EXTEND | Opt-in `checkboxSelection`, off by default | Unbounded preservation · every existing grid test green |
+| R6 | `ReportList` | EXTEND | Optional owner column, opt-in selection, row icons by the row's owner | Unbounded preservation for the Reports tab · `ReportsTab*.test.tsx` green |
+| R7 | `ReportWizard` steps, `TypeStep`, `reportTypes.ts`, `thenAndNow/*` | REUSE / EXTEND | Bulk wizard composes them; `reportTypes` names what a type configures without an owner | Pure render · single-wizard tests green |
+| R8 | `reportWindowCheck.ts` | EXTEND | Called per owner with its `earliestStart` | Pure · table tests incl. the server's bounds |
+| R9 | `reportRefusalCopy.ts` | EXTEND | +`owner-not-found`, `not-admin`; history-start sentence | Pure · copy table |
+| R10 | `useRbac()` | REUSE (+ EXTEND per MQ-4) | `isTeamAdmin` / `isPortfolioAdmin` filter the owner list and the Remove rule | Unbounded preservation for existing callers |
+| R11 | `useLicenseRestrictions`, `LicenseToolTip` | REUSE | Create reports gating | — |
+| R12 | `WidgetShell` / `WidgetBody` status, `widgetStatus.ts` | REUSE | Every look above | — |
+| R13 | `PrintFrameHost`, `ReportPrintContent`, `printPageStateOf`, `usePrintOnce`, `reportPrintRoutes` | EXTEND | Several reports per frame; per-report state rolled up by `bundleStateOf`; one more route | Unbounded preservation of single export · `ReportPrintPage*.test.tsx`, `ReportView.exportPdf*.test.tsx` green |
+| R14 | `pdfExportCopy.ts`, `utils/tauri` (Bug 6425) | REUSE | macOS disabled state | — |
+| R15 | `GetReadableTeamIdsAsync` / `GetReadablePortfolioIdsAsync`, `CanWriteTeamAsync` / `CanWritePortfolioAsync` | REUSE | Read filter; per-owner Admin check | — |
+| R16 | `LicenseGuardAttribute(RequirePremium)` | REUSE | Whole-run Community refusal | — |
+| R17 | `ReportCapPolicy` | REUSE | Mid-run lapse per owner | — |
+| R18 | Clients' `readReportRefusal`, `summariseReportList`, report command group | EXTEND | Cross-owner list tool and command | Unbounded preservation of the four per-owner tools |
+| N1 | **`ReportsController`** | CREATE NEW | No controller is keyed by no owner; the owner controllers' class-level Read guard needs a route id. Adding cross-owner actions there would make an owner controller answer for every owner | — |
+| N2 | **`ReportBulkCommands` + `IReportOwnerWriteAccess`** | CREATE NEW | No loop-with-outcomes exists; putting it in the controller would put a business rule (per-owner outcome, unit of work) in the API, and putting RBAC into `ReportCommands` breaks the module's "no user" rule (F4) | Bounded change (above) |
+| N3 | **`ReportsPage`, `BulkReportWizard`, `OwnerStep`, `BulkResult`, `RemoveSelectedDialog`, `ReportPrintBundle`** | CREATE NEW | No page lists across owners with a failure look (`FeaturesView` has none to copy), no owner picker, no per-owner result exists; each composes the reused pieces above | Pure render + keyed queries |
+
+Totals: 18 EXTEND/REUSE, 3 CREATE NEW groups.
+
+## Wave: DESIGN / [REF] Quality attributes
+
+| Attribute | Strategy | Check |
+|---|---|---|
+| Performance — page (G2 ≤ 2 s) | One request; RBAC filter in two calls; one indexed read; owner names by projection; no Now | Timed on `:5169` (DoD 7) |
+| Performance — bulk create | Sequential, ≈ 0.23–0.60 s per owner (S11): 30 owners ≈ 7–18 s; N caps one run at about 30 s worst case, under common proxy read timeouts (60 s) | Timed dogfood run (K3); `report-bulk-run` line |
+| Performance — combined PDF | Parallel reads, budget 30 s + 2 s per extra report | 50-report print by hand on Chrome and the Linux desktop app |
+| Reliability | A failed owner caught and discarded, answered `not-saved`; outcome for every item; lost answer said, never "nothing happened" | FK-race test; disconnect test |
+| Security | Read filter on the server; Admin per item at reach time; owner of a removed report resolved by the server; Premium on the server | RBAC 403-vs-filtered scenarios; Admin-lost-mid-run scenario with a stand-in |
+| Maintainability | Bulk is a loop over the single path; type-agnostic request | Parity test; ArchUnitNET rules |
+| Usability / a11y | Every fetching view has loading and failure looks; result as a list for screen readers; never colour alone | DISTILL scenarios; `data-widget-status` |
+
+## Wave: DESIGN / [REF] Architectural enforcement
+
+Style: ports-and-adapters inside the Reports module. Tools: ArchUnitNET (backend, already in use), Vitest source-tree
+tests (frontend, the existing `*.enforcement.test.ts` pattern).
+
+- ArchUnitNET: nothing in `Services.*.Reports` depends on `ClaimsPrincipal`, `HttpContext` or
+  `IRbacAdministrationService`; only `ReportCommands` calls `IReportWriter.Add` / `.Remove` (so bulk cannot write
+  around the single path); `ReportsController` depends on no repository and no `LighthouseAppContext`.
+- Behavioural: bulk-vs-single parity (same inputs, same stored report); an owner deleted between lookup and save fails
+  only its own row and the next owner is created; a non-Admin owner in a run is `not-admin` and nothing is written on
+  it; RBAC off → every owner allowed; golden bodies of the per-owner list, get and templates endpoints unchanged; SQL
+  captured for the cross-owner read shows the owner filter.
+- Frontend source tree: no file outside `hooks/useRbac.ts` and the RBAC service calls `getAuthorizationSummary` or
+  names `my-summary`; only `useBulkReportCreation` / `useBulkReportRemoval` call the bulk service methods;
+  `bundleStateOf` is a pure function covered by a state table; the Reports page object waits on
+  `data-widget-status="ready"`.
+
+## Wave: DESIGN / [REF] C4
+
+System Context (L1)
+
+```mermaid
+C4Context
+  title Every report in one place — System Context
+  Person(lead, "Delivery lead", "Reads every Team and Portfolio; takes one PDF to leadership")
+  Person(coach, "Flow coach", "Admin of several Teams and Portfolios; creates and removes reports in bulk")
+  Person(assistantUser, "Assistant user", "Asks an AI assistant which owners have a report")
+  System(lighthouse, "Lighthouse", "Stores reports per owner; lists, creates and removes them across owners")
+  System_Ext(printDialog, "Browser / webview print dialog", "Saves the combined PDF")
+  System_Ext(clients, "Lighthouse clients", "lh CLI and MCP servers")
+  System_Ext(assistant, "AI assistant", "Calls the MCP tools")
+  Rel(lead, lighthouse, "Lists and exports reports in")
+  Rel(coach, lighthouse, "Creates and removes reports in bulk in")
+  Rel(lighthouse, printDialog, "Hands several print-designed reports to")
+  Rel(assistantUser, assistant, "Asks")
+  Rel(assistant, clients, "Calls lighthouse_report_list of")
+  Rel(clients, lighthouse, "Reads every readable report from")
+```
+
+Container (L2)
+
+```mermaid
+C4Container
+  title Every report in one place — Containers
+  Person(user, "Lead or coach")
+  System_Boundary(lh, "Lighthouse") {
+    Container(spa, "React SPA", "React 19, MUI 9, TanStack Query", "Reports page, bulk wizard, removal, combined print frame")
+    Container(api, "Lighthouse API", "ASP.NET Core 10", "ReportsController: cross-owner list, creation options, bulk create, bulk removal; owner controllers unchanged")
+    ContainerDb(db, "Database", "SQLite / PostgreSQL", "Reports table, unchanged")
+  }
+  Container_Ext(clients, "lh CLI / MCP servers", "Node", "lighthouse_report_list, lh report list")
+  System_Ext(webview, "Browser or Standalone webview", "Print dialog")
+  Rel(user, spa, "Selects, creates, removes and exports reports in")
+  Rel(spa, api, "Reads the cross-owner list and sends bulk requests to")
+  Rel(api, db, "Reads and writes report rows in, one owner at a time")
+  Rel(spa, webview, "Prints the combined frame through")
+  Rel(clients, api, "Reads every readable report from")
+```
+
+L3 is not drawn: the new backend pieces are three (controller, bulk commands, a capability port), below the
+threshold where a component view earns its keep; the decomposition sketch above names them.
+
+## Wave: DESIGN / [REF] Usage data (placement only; DEVOPS designs the events)
+
+| Moment | Fires where | Note |
+|---|---|---|
+| Reports page opened | `ReportsPage`, once per history entry (the `useReportOpenedReporter` rule) | slice 01 |
+| Bulk creation run | Bulk wizard, on the Create click, before the request | fires for every run, including one that will create nothing (D19) |
+| `ReportCreated` (existing) | The result handler, once per `created` outcome when the answer arrives | a lost answer counts none — accepted |
+| Bulk removal run | Removal dialog, on the confirm click, before the request | slice 05 |
+| `ReportDeleted` (existing) | Once per `removed` outcome | — |
+| Several reports in one PDF | `useReportsPdfExport`, on the click, before the frame mounts | slice 07; a Retry counts nothing (as ADR-255) |
+| Clients list | The clients' consent-gated port, per their practice | slice 06 |
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+| Was (source) | Now | Why |
+|---|---|---|
+| "No `GetWritable*` exists; the Admin set is new" (S7, DISCUSS DESIGN-must-answer) | The Admin set is already in `useRbac()`; no new backend member | F1 |
+| An owner may not capture a chosen metric; such an owner gets `metric-not-captured` (D13 ext., AC-2.5, AC-3.4, AC-4.2) | Capture is per owner kind; today no owner can lack a metric; a kind-excluded metric would be refused as `unknown-metric` | F3; MQ-3; U-1, U-2 |
+| The owner step's Admin set may fail to load and say so (AC-2b.3) | Only true once `useRbac()` reports its failure | F2; MQ-4; U-3 |
+| A bulk run may be any size | At most N owners per run | MQ-2; U-4 |
+
+Back-propagation: `design/upstream-changes.md`.
+
+## Wave: DESIGN / [REF] Open questions (not the maintainer's; resolved downstream)
+
+- OQ-1 (DELIVER 01): the order of the cross-owner rows — server order is a stable default; the grid's default sort
+  (Created, newest first, or Owner) is a sketch-walk call.
+- OQ-2 (DELIVER 07): the frame budget per extra report (2 s) is a starting value; measure a 50-report print.
+- OQ-3 (DEVOPS): whether `ReportCreated` gains a closed `origin` {Wizard, Bulk} (DISCUSS checklist).
+- OQ-4 (DELIVER 06): the summary block's wording in the instance's terms, beside `summariseReportList`.
+
+## Wave: DESIGN / [REF] Questions for the maintainer
+
+*All five answered by the maintainer on 2026-10-27, each with the recommendation — see "Maintainer answers" below;
+the options are kept for the record.*
+
+1. **MQ-1 — How a bulk creation travels.** (a) One request, the server goes owner by owner and answers every outcome
+   at once; the dialog shows "Creating N reports…" with a spinner, no live progress; Community refused whole on the
+   server. (b) The browser calls the existing per-owner create once per owner, three at a time, ticking each row as it
+   lands (live progress, no new write endpoint) — but the server can no longer refuse a Community run as a whole
+   (AC-2.7 changes: on Community, owners holding no Then & Now would be created), and a dropped connection leaves only
+   the in-flight rows unknown. (c) As (a) plus streamed progress (server-sent events). **Recommendation: (a)** — it
+   keeps every rule on the server, one round trip on a slow connection, and N keeps the wait near 30 s at worst.
+2. **MQ-2 — The ceiling N** (selection for removal and PDF, and owners per bulk run). (a) 25; (b) 50; (c) 100.
+   **Recommendation: (b) 50**, with a gate in slice 07: if a 50-report print fails in the Linux desktop app, lower it
+   to 25. 50 covers a quarter and a month report for 25 owners; 100 risks a 300-page print and a bulk run past a
+   proxy's 60-second timeout.
+3. **MQ-3 — The metric half of slice 04.** (a) Drop it: AC-4.2 and its scenario go; `unknown-metric` keeps a plain
+   result wording as a safety net; slice 04 ≈ ¾d. (b) Build it per owner kind from the creation options, dormant
+   until a metric applies to one kind only. (c) Keep it as written (cannot be shown with real data). **Recommendation:
+   (a)** — nothing today could trigger it; (b) is cheap to add the day a kind-only metric arrives.
+4. **MQ-4 — When my-summary cannot be loaded.** (a) `useRbac()` also reports the failure and offers a retry; the owner
+   step shows could-not-load (AC-2b.3 as written); every existing caller keeps its fallback. (b) Keep failing open:
+   the owner step offers every readable owner and the server answers `not-admin` per owner (AC-2b.3 changes).
+   **Recommendation: (a)**, by a small margin: (b) costs nothing, touches no shared hook and is safe because the server
+   re-checks; it only shows a non-Admin a list they cannot create on, and tells them after Create.
+5. **MQ-5 — The browser stops listening mid-run.** (a) The run finishes on the server. (b) It stops before the next
+   owner. **Recommendation: (a)** — "check Reports" then finds everything asked for; (b) leaves a half-made set the
+   user cannot see the edge of.
+
+## Wave: DESIGN / [REF] Maintainer answers (2026-10-27)
+
+These settle MQ-1 to MQ-5; DDD-7, DDD-10, DDD-11 and DDD-17 are LOCKED. Applied upstream: `design/upstream-changes.md`.
+
+| MQ | Answer |
+|---|---|
+| MQ-1 How a bulk creation travels | **(a) One request**, owners processed one by one; a spinner, no live progress (DDD-7). |
+| MQ-2 The ceiling N | **N = 50**, shared by removal, the combined PDF and the owners of one bulk run; slice 07 gate: drop to 25 if a 50-report print fails in the Linux desktop app (DDD-10). |
+| MQ-3 The metric half of slice 04 | **(a) Dropped**: AC-4.2 and its scenario removed; re-add when a metric applies to one owner kind only (Out of Scope). |
+| MQ-4 my-summary cannot be loaded | **(a)** `useRbac()` reports the failure; the owner step shows could-not-load with Retry (DDD-17; AC-2b.3 as written). |
+| MQ-5 The browser stops listening | **(a) The run finishes on the server**, part of the MQ-1 answer (DDD-11). |
+
+## Wave: DESIGN / [REF] Peer review (2026-10-27)
+
+`nw-solution-architect-reviewer` (Sonnet): **approved with conditions**, no critical issue; F1–F6, F8 and F10 checked
+against the code and confirmed. Addressed in this revision: I-1 (the write-access port is asynchronous, DDD-5);
+I-2 and I-3 (the per-owner isolation is a caught failure plus a discarded pending change, code `not-saved`; the fresh
+scope per owner is rejected as service location, DDD-6, ADR-266); I-4 (Remove, Create's Admin state and the row icons
+wait for `useRbac()` to load, DDD-15); I-5 (the id-exists signal of `not-admin` accepted explicitly, DDD-9); I-6 (400
+rules, DDD-8); I-7 (no server deadline; N plus the timed dogfood run is the gate, DDD-11); I-8 (MQ-4 now states what
+(b) saves); I-9 (creation-options query key, DDD-16); I-10 (readable owners listed on purpose, ADR-265). I-11 (split
+ADR-266) not taken: its items are one decision seen from several sides. No second iteration was run.
+
+## Wave: DESIGN / [REF] Handoff
+
+To DEVOPS (`nw-platform-architect`): ADR-265, ADR-266, ADR-267 (Proposed); the usage placement table and D14/D19;
+the `report-bulk-run` log line (DDD-13); no new container, no migration, no new external system. External
+integrations: none new; `lighthouse-clients` consumes `GET /api/latest/reports` — a contract test on the client side
+(its existing socket-level tests against a stand-in Lighthouse) is recommended for the new row shape. Development
+paradigm: OOP. Then DISTILL with the sketch walk, with MQ-1 to MQ-5 answered (2026-10-27) and `design/upstream-changes.md` applied to the DISCUSS sections.

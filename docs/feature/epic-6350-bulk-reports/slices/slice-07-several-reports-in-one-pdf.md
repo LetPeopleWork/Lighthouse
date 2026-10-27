@@ -18,7 +18,7 @@ Epic 6298 PDF shows it — the leadership "big picture" in one file.
 - Order: the table's current order (D12, LOCKED, maintainer, 2026-10-27).
 - Any report that cannot be read → no PDF; the page names it, with Retry and "Leave it out" (D12, LOCKED, maintainer,
   2026-10-27; Q3).
-- The action names the exact count; above the ceiling DESIGN sets: "Pick at most N reports", N for example 50 (D16, PROPOSED; removal shares N — confirm
+- The action names the exact count; above the ceiling N = 50 (maintainer, 2026-10-27; drops to 25 if a 50-report print fails in the Linux desktop app): "Pick at most 50 reports" (D16; removal shares N — confirm
   at DISTILL sketch walk).
 - Preparing and failed looks as the single print page.
 - macOS desktop app: disabled with Bug 6425's reason (on `main`); this slice adds no macOS handling of its own.
@@ -40,7 +40,7 @@ Dev instance: every Team's quarter report in one PDF from Chrome and the Linux d
 
 ## DESIGN must answer
 
-A print page holding several reports (address, page breaks, fonts loaded once); the ceiling N; reads in parallel or in
+A print page holding several reports (address, page breaks, fonts loaded once); the ceiling N (answered: 50); reads in parallel or in
 turn; preparing and failure looks.
 
 ## DISTILL must sketch first

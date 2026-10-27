@@ -10824,3 +10824,67 @@ component view, loading and failure looks). Runs in parallel with Epic 6400 and 
   every Jira Release sweep writes one Information line of counts and time that names no customer. **Accepted
   2026-10-24.**
 - Relied on, unchanged: ADR-259 (Epic 6400's licence hook).
+
+## Application Architecture — epic-6350-bulk-reports (every report in one place, created and removed in bulk)
+
+Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 · Morgan, PROPOSE mode. Full design:
+`docs/feature/epic-6350-bulk-reports/feature-delta.md` (Wave: DESIGN, DDD-1..DDD-21, state sketches, MQ-1..MQ-5).
+
+### Key invariants introduced
+
+- **The Reports module has a cross-owner face and still never sees a user.** `ReportsController`
+  (`api/latest/reports`) filters by Read through `IRbacAdministrationService` and hands the module readable owners;
+  for writes it hands in a capability (`IReportOwnerWriteAccess.MayWriteAsync(owner)`) bound to the caller over
+  `CanWriteTeamAsync` / `CanWritePortfolioAsync`.
+- **A bulk run is a loop over the single path**: `ReportBulkCommands` calls `ReportCommands.Create` / `Delete` owner by
+  owner, sequentially; a failed owner is caught, its pending change discarded (`IReportWriter.DiscardPendingChanges`)
+  and answered `not-saved`; Admin (an async capability) checked when the run reaches that owner. One
+  outcome per owner or report, in the order asked; never all-or-nothing. Premium for creation by `LicenseGuard`; a
+  mid-run licence lapse is the existing cap refusal. Three refusal codes added: `owner-not-found`, `not-admin`,
+  `not-saved`.
+- **The Admin set is the browser's `useRbac()`**; the server re-checks every write. No component reads my-summary.
+- **Nothing new is stored**; no migration. `ReportSummary` gains an optional `OwnerName`, so per-owner bodies are
+  unchanged.
+- **Several reports print from the one hidden frame**, ready only when every report is; a shared ceiling N bounds
+  selections and owners per run.
+
+### Component changes
+
+- NEW, backend: `ReportsController` (`GET reports`, `GET reports/creation-options`, `POST reports/bulk`,
+  `POST reports/bulk-removal`), `IReportBulkCommands` / `ReportBulkCommands`, `IReportOwnerWriteAccess` and its
+  API-side adapter, outcome records, bulk request DTOs.
+- MODIFIED, backend: `IReportQueries` / `ReportQueries` (`ListAcross`, `CreationOptions`), `IReportReader` /
+  `ReportRepository` (`ListForOwners`, `OwnerOf`), `IReportOwnerLookup` / `ReportOwnerLookup` (`All()` projection),
+  `IReportWriter` / `ReportRepository` (`DiscardPendingChanges`), `ReportSummary`, `ReportRefusalCodes`, composition
+  root.
+- NEW, frontend: Reports page (`/reports`) and navigation entry, `useAllReports` (`["reports","all"]`),
+  `useReportCreationOptions`, bulk wizard with owner step and per-owner result, removal dialog, print bundle with a
+  pure roll-up state, `useReportsPdfExport`.
+- MODIFIED, frontend: `ReportList` (owner column, opt-in selection), `DataGridBase` (opt-in checkbox selection),
+  `reportTypes`, `reportWindowCheck` (per owner), `reportRefusalCopy`, `PrintFrameHost`, `ReportPrintContent`,
+  `reportPrintRoutes`, `useRbac` (load failure, if MQ-4 a).
+- Clients: `lighthouse_report_list`, `lh report list` with no owner.
+- UNCHANGED: `ReportCommands`, `ThenAndNowTemplate`, `ReportCapPolicy`, `ReportWindowPolicy`, the owner controllers,
+  `IRbacAdministrationService`, `RbacGuard`, `LicenseGuard`, the schema. L1/L2 C4: no new container or external system.
+
+### Architectural Enforcement (this feature)
+
+- ArchUnitNET: nothing in `Services.*.Reports` depends on `ClaimsPrincipal`, `HttpContext` or
+  `IRbacAdministrationService`; only `ReportCommands` calls `IReportWriter.Add` / `Remove`; `ReportsController`
+  depends on no repository or `LighthouseAppContext`.
+- Bulk-versus-single parity test; an owner deleted between lookup and save fails only its own row; golden bodies of the
+  per-owner endpoints; SQL captured for the cross-owner read.
+- Frontend source tree: only `useRbac` and the RBAC service reach my-summary; only the bulk hooks call the bulk service
+  methods; the roll-up print state has a state table.
+
+### ADR References (this feature)
+
+- [ADR-265](./adr-265-reports-across-owners-are-read-from-one-endpoint-filtered-on-the-server-with-each-row-naming-its-owner.md):
+  reports across owners are read from one endpoint, filtered on the server, each row naming its owner. **Proposed
+  2026-10-27.**
+- [ADR-266](./adr-266-a-bulk-report-run-is-one-request-answered-owner-by-owner-through-the-single-report-path.md): a
+  bulk report run is one request answered owner by owner, through the single report's path. **Proposed 2026-10-27.**
+- [ADR-267](./adr-267-several-reports-print-as-one-document-from-the-same-hidden-frame-ready-only-when-every-report-is.md):
+  several reports print as one document from the same hidden frame, ready only when every report is. **Proposed
+  2026-10-27.**
+- Relied on, unchanged: ADR-219 to ADR-222, ADR-245, ADR-246, ADR-247, ADR-255, ADR-259.

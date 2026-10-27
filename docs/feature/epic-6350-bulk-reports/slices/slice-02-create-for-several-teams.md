@@ -21,11 +21,13 @@ one run, and sees per Team whether it was created or why not, including every re
   (D7, D18). Count on the button ("Create 3 reports").
 - One name for every Team (D9, LOCKED); running again adds second copies, no de-duplication (D9's clause, PROPOSED —
   confirm at DISTILL sketch walk, Q11).
-- The server checks each Team when it reaches it: not (or no longer) Admin, Team deleted, history too short, metric not
-  captured, licence lapsed past the Community cap → one "Not created" row with its reason, never a whole-run failure. A
+- The server checks each Team when it reaches it: not (or no longer) Admin, Team deleted, history too short, not saved,
+  licence lapsed past the Community cap → one "Not created" row with its reason, never a whole-run failure. A
   run from a Community instance is refused as a whole with the licence reason.
 - Result: one row per picked Team — Created (opens it) or Not created with the reason; cutoff refusals name the
   kept-history start and point to Closed Items Cutoff (D1).
+- At most 50 owners per run (the shared ceiling N = 50, maintainer 2026-10-27); above it the owner step says so and
+  the server refuses the request (AC-2.12, added after DESIGN).
 - A run where every picked Team is refused: headline "0 reports created, {N} not created", every row with its reason.
 - A lost answer: "could not confirm which reports were created", link to Reports (D8).
 - Usage data: one bulk-run event per run (D14; DEVOPS designs), also for a run that created nothing and with no outcome
@@ -48,7 +50,7 @@ every Team; time it (K3). E2E: two demo Teams with the Premium licence fixture.
 
 ## DESIGN must answer
 
-The Admin set per user (no `GetWritable*` exists today) and how `useRbac()` exposes it; bulk endpoint with per-owner
+The Admin set per user (corrected after DESIGN: `useRbac()` already exposes it) and how `useRbac()` exposes it; bulk endpoint with per-owner
 outcomes vs one call per Team; per-owner checks when each Team is reached; Premium and a
 mid-run lapse on the server; time budget and progress for 20–30 Teams (10 s slow log); the result's loading and
 could-not-confirm looks.
@@ -60,7 +62,7 @@ all-refused headline. The sketch walk is a hard gate for D9's clause, D10 and D1
 
 ## Acceptance criteria
 
-AC-2.1 … AC-2.11 in `feature-delta.md` (US-02a).
+AC-2.1 … AC-2.12 in `feature-delta.md` (US-02a).
 
 ## Dependencies
 

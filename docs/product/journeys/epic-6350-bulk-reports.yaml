@@ -72,7 +72,8 @@ journeys:
           - Community licence - Create reports is shown disabled with a Premium hint (PROPOSED)
           - Premium, but the user is Admin of no owner - Create reports disabled with "You are not Admin of any Team or Portfolio" (PROPOSED)
           - The Admin set or the owners' limits are still loading - Create is not available; if they cannot be loaded, could-not-load with Retry
-          - An owner's kept history cannot hold the windows, or it does not capture a chosen metric - shown but not pickable (slice 04), and skipped with the reason if it gets through
+          - An owner's kept history cannot hold the windows - shown but not pickable (slice 04), and skipped with the reason if it gets through
+          - More than 50 owners picked - the owner step says to pick at most 50 (the shared ceiling)
           - Many owners selected - creation takes several seconds; the user sees it is working
         integration_checkpoint: >
           Every selected owner gets the same windows, metrics and name; only owners where the user is Admin can be
@@ -96,7 +97,6 @@ journeys:
           - The answer never arrives (connection dropped) - "could not confirm which reports were created", with a link to Reports; never a silent half
           - An owner was deleted or the user lost Admin meanwhile - one Not created row with that reason, never a whole-run failure
           - The licence lapsed meanwhile - Not created past the Community cap, with the licence reason; the rest created
-          - A chosen metric is not captured by an owner - Not created, "does not capture {metric}"
           - Every picked owner is refused - the headline reads "0 reports created, N not created", every row with its reason; never an empty or success-looking result
         integration_checkpoint: >
           The result has exactly one row per picked owner; every Created row opens a report that the Reports page
@@ -122,7 +122,7 @@ journeys:
         shared_artifacts: [report_values, report_windows, owner_name, report_name, generated_at, branding]
         failure_modes:
           - One selected report cannot be read - no PDF passes a missing report off as complete; the page names it with Retry and Leave it out
-          - More reports selected than the ceiling - "Pick at most N reports" (PROPOSED; N is DESIGN's)
+          - More reports selected than the ceiling - "Pick at most 50 reports" (N = 50, maintainer 2026-10-27; 25 if a 50-report print fails in the Linux desktop app)
           - Many reports selected - preparing takes a while; the page says it is preparing
           - macOS desktop app - printing is unavailable there (Bug 6425); the action is disabled with the same reason, or whatever single export does on main if Bug 6425 has not landed
         integration_checkpoint: >
@@ -155,7 +155,7 @@ journeys:
 
 shared_artifacts:
   readable_owners: {source: "the server's read-scope filter (RBAC), same as the per-owner Reports tabs", consumers: [Reports page, clients list]}
-  admin_owners: {source: "the server's write-scope (TeamWrite / PortfolioWrite); the UI through useRbac()", consumers: [owner picker, Remove enablement, server refusal]}
+  admin_owners: {source: "the UI through useRbac() (isTeamAdmin / isPortfolioAdmin, already carried by my-summary); the server re-checks TeamWrite / PortfolioWrite per owner", consumers: [owner picker, Remove enablement, server refusal]}
   report_name: {source: "Reports table (name)", consumers: [Reports page, result list, report view, PDF header, clients list]}
   report_created_on: {source: "Reports table (creation day)", consumers: [Reports page, per-owner Reports tab, clients list]}
   owner_name: {source: "Team / Portfolio record", consumers: [Reports page, result list, PDF header, clients list]}
@@ -179,3 +179,9 @@ changelog:
       Viewer export and ceiling (step 5), five wizard steps labelled as the pre-slice-04 state, contiguous windows,
       report_created_on added, owner_history_start source named as derived, second journey's emotional states and
       integration checkpoints.
+  - date: 2026-10-27
+    feature: epic-6350-bulk-reports
+    change: >
+      Revised after DESIGN and the maintainer's answers - the "does not capture a chosen metric" failure modes dropped
+      (metrics are captured per owner kind; every metric applies to both kinds today); ceiling N = 50, also for the
+      owners of one run; admin_owners source corrected (already in useRbac()).

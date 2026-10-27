@@ -45,11 +45,11 @@ owner step's loading and could-not-load looks (re-review; settles Q10).
 
 PROPOSED — confirm at DISTILL sketch walk (a **hard gate**: no scenario pins one of these before the maintainer
 confirms it there): **D9's clause** no de-duplication (Q11, never asked) · **D10** several windows = several runs (Q5,
-defaulted by the main session, not answered) · **D13 extension** owners not capturing a chosen metric shown but not
-pickable (Q7) · **D15** every row selectable; Export PDF for any selection; Remove only when all selected are
+defaulted by the main session, not answered) · ~~D13 extension~~ (dropped after DESIGN, 2026-10-27:
+metrics are captured per owner kind; Q7 withdrawn) · **D15** every row selectable; Export PDF for any selection; Remove only when all selected are
 removable, else disabled naming how many are not (Q6) · **D16** filter change clears the selection, select-all = rows
-the filter shows on all pages, exact counts, "Pick at most N reports" above DESIGN's ceiling, shared by the PDF and
-removal (Q8) · **D17** Create reports always shown; Community disabled with a Premium hint; Premium without Admin
+the filter shows on all pages, exact counts, "Pick at most 50 reports" above the ceiling N = 50 (LOCKED by the
+maintainer after DESIGN), shared by the PDF, removal and the owners of one run (Q8) · **D17** Create reports always shown; Community disabled with a Premium hint; Premium without Admin
 owner disabled with "You are not Admin of any Team or Portfolio" (Q9) · presets for mixed selections.
 
 PROPOSED for DEVOPS: **D19** the bulk-run event fires for every run, including one that created nothing, with no
@@ -92,7 +92,7 @@ documents are not edited.
 / Leave it out) · Q4 owners that cannot hold the windows (shown, not pickable).
 
 Open, each with a default marked PROPOSED — confirm at DISTILL sketch walk: Q5 several windows in one run (D10;
-default out, two runs) · Q6 selection rules (D15) · Q7 metrics an owner does not capture (D13 extension) · Q8 selection
+default out, two runs) · Q6 selection rules (D15) · Q7 metrics an owner does not capture (withdrawn after DESIGN) · Q8 selection
 under filter and the shared ceiling (D16) · Q9 "Create reports" states (D17) · Q11 running the same bulk creation
 twice (D9's clause; default no de-duplication). Q10 settled by the re-review (D18). Options in the feature delta.
 
