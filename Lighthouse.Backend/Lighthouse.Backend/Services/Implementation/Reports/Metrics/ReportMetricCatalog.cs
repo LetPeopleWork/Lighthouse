@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports.Metrics

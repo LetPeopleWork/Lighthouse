@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Interfaces.Reports;

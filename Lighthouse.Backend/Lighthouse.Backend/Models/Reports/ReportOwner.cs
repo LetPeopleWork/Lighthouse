@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Interfaces.Reports
+namespace Lighthouse.Backend.Models.Reports
 {
     public enum ReportOwnerKind
     {

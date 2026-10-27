@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.Reports;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Models.Reports

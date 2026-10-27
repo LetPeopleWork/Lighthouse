@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.Reports;
-
 namespace Lighthouse.Backend.Models.Reports
 {
     public class Report : IConcurrencyTokenEntity

@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models.Reports;
+
 namespace Lighthouse.Backend.Services.Interfaces.Reports
 {
     /// <summary>What the Reports module needs to know about an owner it does not own: that it exists, and how far back it keeps finished items.</summary>
