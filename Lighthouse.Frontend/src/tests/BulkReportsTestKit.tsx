@@ -10,7 +10,6 @@ import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { vi } from "vitest";
-import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import {
 	UsageDataConsentProvider,
 	useUsageDataConsentIfKnown,
@@ -390,14 +389,15 @@ export const renderTheReportsPage = (
 		defaultOptions: { queries: { retry: false } },
 	});
 
+	// Mounted bare, as App.tsx mounts the route: the page must bring its own error snackbar.
 	const app = (
-		<SnackbarErrorHandler>
+		<>
 			<Routes>
 				<Route path="/reports" element={<ReportsPage />} />
 				<Route path="*" element={<p>somewhere else</p>} />
 			</Routes>
 			<WhereTheReaderIs />
-		</SnackbarErrorHandler>
+		</>
 	);
 
 	const rendered = render(

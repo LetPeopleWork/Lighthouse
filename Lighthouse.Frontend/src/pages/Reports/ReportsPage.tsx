@@ -1,14 +1,12 @@
 import { Box, Container, Typography } from "@mui/material";
 import type React from "react";
-import type {
-	IReportListItem,
-	IReportOwner,
-} from "../../models/Reports/Report";
+import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import ReportList, {
 	type ReportListActions,
 } from "../Common/Reports/ReportList";
+import { ownerOfReport } from "../Common/Reports/reportOwner";
 import { useMayEditReportsOf } from "../Common/Reports/useMayEditReports";
 import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
@@ -20,12 +18,7 @@ const COULD_NOT_LOAD = "The reports couldn't be loaded.";
 const EMPTY = "Reports are created on a Team's or Portfolio's Reports tab.";
 const LIST_MIN_HEIGHT = 120;
 
-const ownerOf = (report: IReportListItem): IReportOwner => ({
-	kind: report.ownerKind,
-	id: report.ownerId,
-});
-
-const ReportsPage: React.FC = () => {
+const ReportsPageContent: React.FC = () => {
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
@@ -34,14 +27,14 @@ const ReportsPage: React.FC = () => {
 	const editing = useReportEditing(undefined);
 	const pdfExport = useReportPdfExport(undefined);
 	const actions: ReportListActions = {
-		onExportPdf: (report) => pdfExport.exportPdf(report, ownerOf(report)),
+		onExportPdf: (report) => pdfExport.exportPdf(report, ownerOfReport(report)),
 		preparingId: pdfExport.preparingId,
 		editor: {
-			onEdit: (report) => editing.ask(report, ownerOf(report)),
-			onDelete: (report) => deletion.ask(report, ownerOf(report)),
+			onEdit: (report) => editing.ask(report, ownerOfReport(report)),
+			onDelete: (report) => deletion.ask(report, ownerOfReport(report)),
 			readingId: editing.readingId,
 		},
-		mayEditRow: (report) => mayEdit(ownerOf(report)),
+		mayEditRow: (report) => mayEdit(ownerOfReport(report)),
 	};
 
 	return (
@@ -80,5 +73,11 @@ const ReportsPage: React.FC = () => {
 		</Container>
 	);
 };
+
+const ReportsPage: React.FC = () => (
+	<SnackbarErrorHandler>
+		<ReportsPageContent />
+	</SnackbarErrorHandler>
+);
 
 export default ReportsPage;
