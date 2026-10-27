@@ -31,8 +31,8 @@ testWithPortfolio(
 		const portfolioDetailPage = await overviewPage.goToPortfolio(
 			portfolio.name,
 		);
-		expect(portfolioDetailPage.page.url()).toContain(
-			`/portfolios/${portfolio.id}`,
-		);
+		await expect
+			.poll(() => portfolioDetailPage.page.url())
+			.toContain(`/portfolios/${portfolio.id}`);
 	},
 );

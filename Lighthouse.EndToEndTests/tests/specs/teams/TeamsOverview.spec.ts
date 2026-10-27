@@ -63,21 +63,27 @@ testWithTeams(
 		await test.step("Clicking a team opens its detail page", async () => {
 			const teamsPage = await overviewPage.lightHousePage.goToOverview();
 			const teamDetailPage = await teamsPage.goToTeam(team1.name);
-			expect(teamDetailPage.page.url()).toContain(`/teams/${team1.id}`);
+			await expect
+				.poll(() => teamDetailPage.page.url())
+				.toContain(`/teams/${team1.id}`);
 		});
 
 		await test.step("The Edit icon opens the team settings page", async () => {
 			const teamsPage = await overviewPage.lightHousePage.goToOverview();
 			const teamEditPage = await teamsPage.editTeam(team1.name);
-			expect(teamEditPage.page.url()).toContain(`/teams/${team1.id}/settings`);
+			await expect
+				.poll(() => teamEditPage.page.url())
+				.toContain(`/teams/${team1.id}/settings`);
 		});
 
 		await test.step("The Clone icon opens a pre-filled new-team page", async () => {
 			const teamsPage = await overviewPage.lightHousePage.goToOverview();
 			const teamEditPage = await teamsPage.cloneTeam(team1.name);
 
-			expect(teamEditPage.page.url()).toContain("/teams/new");
-			expect(teamEditPage.page.url()).toContain(`cloneFrom=${team1.id}`);
+			await expect.poll(() => teamEditPage.page.url()).toContain("/teams/new");
+			await expect
+				.poll(() => teamEditPage.page.url())
+				.toContain(`cloneFrom=${team1.id}`);
 
 			const nameField = await teamEditPage.getName();
 			expect(nameField).toBe(`Copy of ${team1.name}`);

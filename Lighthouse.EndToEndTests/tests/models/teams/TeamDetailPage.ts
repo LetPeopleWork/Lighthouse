@@ -190,6 +190,7 @@ export class TeamDetailPage {
 	// which the page keeps hoverable for exactly this reason.
 	async refinementTabTooltip(): Promise<Locator> {
 		await this.refinementTab.getByText("Refinement", { exact: true }).hover();
+		// biome-ignore lint/plugin: Only the hovered tab's tooltip is open at this point, so the match is single.
 		return this.page.getByRole("tooltip");
 	}
 

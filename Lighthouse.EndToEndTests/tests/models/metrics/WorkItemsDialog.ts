@@ -104,10 +104,13 @@ export class WorkItemsDialog {
 	}
 
 	staleTimeInStateBadgeFor(workItemReference: string): Locator {
-		return this.page
-			.getByRole("row")
-			.filter({ hasText: workItemReference })
-			.getByTestId("time-in-state-stale");
+		return (
+			this.page
+				.getByRole("row")
+				// biome-ignore lint/plugin: Not used by any spec yet. Scope the row to the dialog's table when it gets a caller.
+				.filter({ hasText: workItemReference })
+				.getByTestId("time-in-state-stale")
+		);
 	}
 
 	async countStaleTimeInStateBadges(): Promise<number> {

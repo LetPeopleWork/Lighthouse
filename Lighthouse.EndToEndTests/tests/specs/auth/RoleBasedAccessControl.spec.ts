@@ -230,6 +230,7 @@ test.describe("@rbac E2E", () => {
 				await overview.search(TEAM_NAME);
 				const systemAdminTeamRow = overview.page
 					.getByRole("row")
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					.filter({ hasText: TEAM_NAME });
 				await expect(
 					systemAdminTeamRow.getByRole("link", { name: "Edit" }),
@@ -282,6 +283,7 @@ test.describe("@rbac E2E", () => {
 				await overview.search(PORTFOLIO_NAME);
 				const systemAdminPortfolioRow = overview.page
 					.getByRole("row")
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					.filter({ hasText: PORTFOLIO_NAME });
 				await expect(
 					systemAdminPortfolioRow.getByRole("link", { name: "Edit" }),
@@ -356,6 +358,7 @@ test.describe("@rbac E2E", () => {
 				await overview.search(TEAM_NAME);
 				const teamReaderTeamRow = overview.page
 					.getByRole("row")
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					.filter({ hasText: TEAM_NAME });
 				await expect(
 					teamReaderTeamRow.getByRole("link", { name: "Details" }),
@@ -375,6 +378,7 @@ test.describe("@rbac E2E", () => {
 				// entire row is absent rather than rendered with read-only icons.
 				await overview.search(PORTFOLIO_NAME);
 				await expect(
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					overview.page.getByRole("row").filter({ hasText: PORTFOLIO_NAME }),
 				).toHaveCount(0);
 
@@ -440,6 +444,7 @@ test.describe("@rbac E2E", () => {
 				await overview.search(TEAM_NAME);
 				const teamAdminTeamRow = overview.page
 					.getByRole("row")
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					.filter({ hasText: TEAM_NAME });
 				await expect(
 					teamAdminTeamRow.getByRole("link", { name: "Edit" }),
@@ -456,6 +461,7 @@ test.describe("@rbac E2E", () => {
 				// out by the backend; entire row absent.
 				await overview.search(PORTFOLIO_NAME);
 				await expect(
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					overview.page.getByRole("row").filter({ hasText: PORTFOLIO_NAME }),
 				).toHaveCount(0);
 
@@ -534,6 +540,7 @@ test.describe("@rbac E2E", () => {
 				await overview.search(PORTFOLIO_NAME);
 				const portfolioAdminPortfolioRow = overview.page
 					.getByRole("row")
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					.filter({ hasText: PORTFOLIO_NAME });
 				await expect(
 					portfolioAdminPortfolioRow.getByRole("link", { name: "Edit" }),
@@ -550,6 +557,7 @@ test.describe("@rbac E2E", () => {
 				// out by the backend (GetReadableTeamIdsAsync); entire row absent.
 				await overview.search(TEAM_NAME);
 				await expect(
+					// biome-ignore lint/plugin: The page is searched for this exact name first, so its row is the only one left.
 					overview.page.getByRole("row").filter({ hasText: TEAM_NAME }),
 				).toHaveCount(0);
 

@@ -1,0 +1,4 @@
+`$page.getByRole("row").filter({ hasText: $text })` where {
+    $page <: r".*[pP]age",
+    register_diagnostic(span=$text, message="A page-wide row filtered by hasText: hasText is a substring match, so every row containing this text matches and strict mode fails. Scope the rows to their table, or narrow the page to this one name first and suppress with that reason.", severity="error")
+}

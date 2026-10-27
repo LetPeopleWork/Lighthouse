@@ -50,7 +50,9 @@ test.describe("@ProxyAuth E2E", () => {
 			}
 
 			await expect(overviewLink).toBeVisible();
-			expect(overviewPage.page.url()).toContain("https://localhost:8443");
+			await expect
+				.poll(() => overviewPage.page.url())
+				.toContain("https://localhost:8443");
 
 			const sessionCookie = (await context.cookies()).find((cookie) =>
 				cookie.name.startsWith(".Lighthouse.Session"),

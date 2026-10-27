@@ -1,0 +1,23 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"files": {
+		"includes": [
+			"tests/**",
+			"perf/**",
+			"playwright.config.ts",
+			"playwright.perf.config.ts"
+		]
+	},
+	"plugins": [
+		"./biome-plugins/no-container-page-locator.grit",
+		"./biome-plugins/no-bare-tooltip-role.grit",
+		"./biome-plugins/no-icon-test-id.grit",
+		"./biome-plugins/no-row-filter-has-text.grit",
+		"./biome-plugins/no-url-snapshot.grit"
+	],
+	"linter": {
+		"rules": {
+			"recommended": true
+		}
+	}
+}
