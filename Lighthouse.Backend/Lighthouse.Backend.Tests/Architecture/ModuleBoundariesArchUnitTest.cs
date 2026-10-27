@@ -11,7 +11,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ApiLayerPattern = @"^Lighthouse\.Backend\.API($|\..*)";
         private const string ServiceLayerPattern = @"^Lighthouse\.Backend\.Services($|\..*)";
-        private const string SharedKernelPattern = @"^Lighthouse\.Backend\.Models($|\..*)";
 
         internal const string WorkTrackingIntegrationPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
@@ -83,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void SharedKernel_DoesNotDependUpwardOnApi()
         {
-            Types().That().ResideInNamespaceMatching(SharedKernelPattern)
+            Types().That().ResideInNamespaceMatching(KernelRules.TheModels)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApiLayerPattern))
                 .Because(
                     "Models is the shared kernel at the bottom of the modular monolith; it must not depend " +
