@@ -42,3 +42,5 @@ if ! gitleaks protect --staged --redact --no-banner; then
 fi
 
 echo "✅ No secrets detected."
+
+python3 "$(git rev-parse --show-toplevel)/Scripts/ledger_check.py" --staged || exit 1

@@ -10,6 +10,8 @@ offending lines get fixed before the foot-gun ever enters git history.
 Running at commit time keeps the batch small (only the current staged diff) and
 needs no "since last push" bookkeeping.
 
+Run by hand, or from the git pre-commit hook, with ``--staged`` (no stdin).
+
 Bypass: include ``--no-verify`` in the commit command (developer override).
 """
 
@@ -41,10 +43,9 @@ def run(args):
 
 
 def project_dir():
-    env = os.environ.get("CLAUDE_PROJECT_DIR")
-    if env:
-        return env
-    return run(["git", "rev-parse", "--show-toplevel"]).strip()
+    # The checkout we run in wins: inside a worktree CLAUDE_PROJECT_DIR points at the main one.
+    toplevel = run(["git", "rev-parse", "--show-toplevel"]).strip()
+    return toplevel or os.environ.get("CLAUDE_PROJECT_DIR", "")
 
 
 def load_checks(ledger_path):
@@ -114,18 +115,20 @@ def added_lines(diff):
         # '-' lines do not advance the new-file line counter
 
 
-def main():
-    raw = sys.stdin.read()
+def command_from_stdin():
     try:
-        payload = json.loads(raw)
+        payload = json.loads(sys.stdin.read())
     except (ValueError, TypeError):
         sys.exit(0)
-
     command = (payload.get("tool_input") or {}).get("command", "")
-    if "git commit" not in command:
+    if "git commit" not in command or "--no-verify" in command:
         sys.exit(0)
-    if "--no-verify" in command:
-        sys.exit(0)
+    return command
+
+
+def main():
+    # --staged: run by hand or from .githooks/pre-commit, no tool-call JSON on stdin.
+    command = "git commit" if "--staged" in sys.argv[1:] else command_from_stdin()
 
     project = project_dir()
     if not project:
