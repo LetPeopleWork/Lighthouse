@@ -181,17 +181,43 @@ describe("useUsageDataEventDetector", () => {
 	// there before any of this ran.
 	it("keeps what it noticed in memory, writing to neither browser store", async () => {
 		localStorage.setItem(TOKEN_STORAGE_KEY, "this-browsers-token");
-		const writes = vi.spyOn(Storage.prototype, "setItem");
+		// The two stores need different spies. `localStorage` is a hand-made object in
+		// setupTests.ts, so only a spy on that object sees its writes (a prototype spy intercepts
+		// nothing there), and it carries the call history of every earlier test, hence the
+		// clear. `sessionStorage` is jsdom's own, which inherits `setItem` from `Storage.prototype`.
+		// `restoreAllMocks` does not undo the first, so both are put back by hand.
+		const localWrites = vi.spyOn(localStorage, "setItem");
+		const sessionWrites = vi.spyOn(Storage.prototype, "setItem");
+		localWrites.mockClear();
 
-		const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
-		await settle(usageDataService);
-		hideTheTab();
+		try {
+			localStorage.setItem("probe", "x");
+			sessionStorage.setItem("probe", "x");
+			expect(localWrites).toHaveBeenCalledTimes(1);
+			expect(sessionWrites).toHaveBeenCalledTimes(1);
+			localStorage.removeItem("probe");
+			sessionStorage.removeItem("probe");
+			localWrites.mockClear();
+			sessionWrites.mockClear();
 
-		await waitFor(() => expect(usageDataService.postEvents).toHaveBeenCalled());
-		expect(writes).not.toHaveBeenCalled();
-		expect(localStorage.length).toBe(1);
-		expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBe("this-browsers-token");
-		expect(sessionStorage.length).toBe(0);
+			const { usageDataService } = renderDetector(granted, "/teams/42/metrics");
+			await settle(usageDataService);
+			hideTheTab();
+
+			await waitFor(() =>
+				expect(usageDataService.postEvents).toHaveBeenCalled(),
+			);
+			expect(localWrites).not.toHaveBeenCalled();
+			expect(sessionWrites).not.toHaveBeenCalled();
+			expect(localStorage.length).toBe(1);
+			expect(localStorage.getItem(TOKEN_STORAGE_KEY)).toBe(
+				"this-browsers-token",
+			);
+			expect(sessionStorage.length).toBe(0);
+		} finally {
+			localWrites.mockRestore();
+			sessionWrites.mockRestore();
+		}
 	});
 
 	// The name and the page each say which kind of page it was, so they can contradict each other -

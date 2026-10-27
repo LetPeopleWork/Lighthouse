@@ -13,9 +13,10 @@ export const BlockedCountSnapshotSchema = z.object({
 export type BlockedCountSnapshot = z.infer<typeof BlockedCountSnapshotSchema>;
 
 /**
- * Schema for the full blockedCountHistory response array.
- * Validates at the trust boundary per rolling-adoption gate
- * from docs/ci-learnings.md (2026-06-07).
+ * Schema for the full blockedCountHistory response array. The response is checked where it enters
+ * the app, so a row with a missing or wrongly typed field is refused here instead of reaching a
+ * chart. It stays a string for the day, because coercing a missing date to a Date would turn it
+ * into 1970.
  */
 export const BlockedCountHistoryResponseSchema = z.array(
 	BlockedCountSnapshotSchema,

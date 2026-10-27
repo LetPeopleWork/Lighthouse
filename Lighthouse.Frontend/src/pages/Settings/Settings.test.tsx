@@ -9,7 +9,7 @@ import {
 	createMockApiServiceContext,
 	createMockRbacService,
 } from "../../tests/MockApiServiceProvider";
-import Settings from "./Settings";
+import Settings, { settingsTabTestIds, systemAdminTabValues } from "./Settings";
 
 // Mock the components used in the tabs
 vi.mock("./SystemInfo/SystemInfoSettings", () => ({
@@ -55,6 +55,14 @@ describe("Settings Component", () => {
 	afterEach(() => {
 		vi.resetAllMocks();
 	});
+
+	const expectNoSystemAdminTabs = () => {
+		for (const value of systemAdminTabValues) {
+			expect(
+				screen.queryByTestId(settingsTabTestIds[value]),
+			).not.toBeInTheDocument();
+		}
+	};
 
 	it("should render the initial tab correctly", () => {
 		renderWithRouter();
@@ -141,6 +149,26 @@ describe("Settings Component", () => {
 		expect(screen.getByTestId("configuration-panel")).not.toBeVisible();
 	});
 
+	it("shows every system-admin tab to a system admin", async () => {
+		const mockRbacService = createMockRbacService();
+		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
+			isRbacEnabled: true,
+			isSystemAdmin: true,
+			canCreateTeam: true,
+			canCreatePortfolio: true,
+		});
+
+		renderWithRouter(["/settings"], { rbacService: mockRbacService });
+
+		await waitFor(() => {
+			for (const value of systemAdminTabValues) {
+				expect(
+					screen.getByTestId(settingsTabTestIds[value]),
+				).toBeInTheDocument();
+			}
+		});
+	});
+
 	it("shows API Keys tab when user is not system admin (other system-admin tabs still hidden)", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
@@ -154,11 +182,7 @@ describe("Settings Component", () => {
 		renderWithRouter(["/settings"], { rbacService: mockRbacService });
 
 		await waitFor(() => {
-			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("demo-data-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("database-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
+			expectNoSystemAdminTabs();
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
 		});
@@ -180,9 +204,7 @@ describe("Settings Component", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
-			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
+			expectNoSystemAdminTabs();
 		});
 	});
 
@@ -200,7 +222,7 @@ describe("Settings Component", () => {
 		renderWithRouter(["/settings"], { rbacService: mockRbacService });
 
 		await waitFor(() => {
-			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
+			expectNoSystemAdminTabs();
 		});
 		expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 	});
@@ -221,9 +243,7 @@ describe("Settings Component", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("api-keys-tab")).toBeInTheDocument();
 			expect(screen.getByTestId("system-info-tab")).toBeInTheDocument();
-			expect(screen.queryByTestId("configuration-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("rbac-tab")).not.toBeInTheDocument();
-			expect(screen.queryByTestId("encryption-tab")).not.toBeInTheDocument();
+			expectNoSystemAdminTabs();
 		});
 	});
 
