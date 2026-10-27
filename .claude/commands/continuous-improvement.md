@@ -166,6 +166,8 @@ workspace. Everything in CLAUDE.md applies; the points that matter most for impr
   something visible changes, and then see the behaviour-free rule.
 - **DELIVER** opens by agreeing the rigor profile per slice; pass `model` on every dispatch.
 - In a worktree, give subagents **absolute** paths.
+- **ADR numbers come from `origin/main`**, not the local checkout: `git fetch` and take the highest
+  `adr-NNN` across both + 1, right before writing. Other sessions add ADRs while an item is in flight.
 
 **Holds**: stop and wait for the maintainer at each.
 
