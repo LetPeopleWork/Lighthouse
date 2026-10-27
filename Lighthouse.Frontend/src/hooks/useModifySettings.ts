@@ -57,7 +57,7 @@ function isConcurrencyConflict(error: unknown): boolean {
 	);
 }
 
-const NULLABLE_FIELDS = new Set([
+export const NULLABLE_FIELDS: ReadonlySet<string> = new Set([
 	"sizeEstimateAdditionalFieldDefinitionId",
 	"featureOwnerAdditionalFieldDefinitionId",
 	"parentOverrideAdditionalFieldDefinitionId",
@@ -67,6 +67,8 @@ const NULLABLE_FIELDS = new Set([
 	"owningTeam",
 	"forecastFilterRuleSetJson",
 	"blockedRuleSetJson",
+	"processBehaviourChartBaselineStartDate",
+	"processBehaviourChartBaselineEndDate",
 ]);
 
 function withToken<T extends ModifySettingsBase>(
