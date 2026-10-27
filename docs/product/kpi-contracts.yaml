@@ -2966,7 +2966,7 @@ outcomes:
         - "AllReportsListed (provisional 21), slice 01, name-only: the Reports page showed its list (empty included; a failed load counts nothing), once per history entry. Dwell per DVQ-1 (recommended: none)."
         - "ReportOpened (existing, epic-5878), source Browser: denominator and second numerator condition."
       derivation: "Numerator: distinct browsers with >= 1 AllReportsListed (source Browser) AND >= 1 ReportOpened (source Browser) in the window. Denominator: distinct browsers with >= 1 ReportOpened (source Browser)."
-      surfacing: ["docs/settings/usagedata.md row (slice 01)", "collector dashboard"]
+      surfacing: ["docs/settings/usagedata.md 'Every report was listed' row, browser-only wording (slice 01)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-6350-K1-reports-page-used - Vitest: consented, the Reports page reports AllReportsListed once per history entry when the list is shown, nothing on a failed load, nothing without consent. Backend: AllReportsListed appended after ReportPdfExportStarted = 20 with 0..20 fixed; Fits accepts it bare and refuses it with any part"
     measurement_window: "90 days from the release carrying slice 01"
     alerting: []
@@ -2989,7 +2989,7 @@ outcomes:
     measurement_window: "90 days from the release carrying slice 02a"
     alerting: []
     status: designed-not-shipped
-    caveat: "Tries, not successes (D19). A lost bulk answer sends no ReportCreated. A person on two browsers counts twice in the denominator."
+    caveat: "Tries, not successes (D19). A lost bulk answer sends no ReportCreated. A person on two browsers counts twice in the denominator. Events past the 1000/day instance budget are discarded, and a bulk run's burst (up to 51 events) makes that likelier: a dropped ReportBulkCreationStarted removes a browser from the numerator, so the share reads low."
 
   - id: OUT-6350-K4-combined-pdf-by-bulk-creators
     feature: epic-6350-bulk-reports
@@ -3006,7 +3006,7 @@ outcomes:
     measurement_window: "90 days from the release carrying slice 07"
     alerting: []
     status: designed-not-shipped
-    caveat: "Counts the choice, cancelled dialogs included. Cohort is Premium (bulk creation) though the combined PDF is Community; Community use is visible as a raw count only. Lower bound for people exporting from another browser."
+    caveat: "Counts the choice, cancelled dialogs included. Cohort is Premium (bulk creation) though the combined PDF is Community; Community use is visible as a raw count only. Lower bound for people exporting from another browser. Events past the 1000/day instance budget are discarded; a dropped ReportCombinedPdfExportStarted biases the numerator low."
 
   - id: OUT-6350-K5-all-reports-listed-by-clients
     feature: epic-6350-bulk-reports
@@ -3017,7 +3017,7 @@ outcomes:
       data_collection:
         - "AllReportsListed, source Cli / Mcp: a successful lh report list with neither --team-id nor --portfolio-id, or lighthouse_report_list, once per run or call, after consent. The per-owner list, 404 (older Lighthouse), 401/403 and failures report nothing."
       derivation: "Distinct identifiers with >= 1 AllReportsListed from source Cli or Mcp in the window."
-      surfacing: ["docs/settings/usagedata.md 'Every report was listed' row (slice 06 finalize)", "collector dashboard"]
+      surfacing: ["docs/settings/usagedata.md 'Every report was listed' row, extended at slice 06's finalize from the browser-only wording to name lh report list without a Team or Portfolio and lighthouse_report_list (listing one owner's reports is never reported)", "collector dashboard"]
     acceptance_scenarios: "@kpi-OUT-6350-K5-all-reports-listed-by-clients - clients tests: consented no-owner list reports AllReportsListed once with source Cli / Mcp; with an owner, on refusal and without consent nothing"
     measurement_window: "90 days from the clients release carrying slice 06"
     alerting: []
@@ -3069,8 +3069,28 @@ outcomes:
     log_fields:
       report-list-slow: ["Owners", "Rows", "ElapsedMs"]
       report-creation-options-slow: ["Owners", "ElapsedMs"]
-      report-bulk-run: ["Action", "TemplateKey", "ThenLengthDays", "NowLengthDays", "Asked", "Done", "NotDone", "RefusedByCode", "ElapsedMs"]
     measurement_window: "slice 01 DELIVER (reading); ongoing per instance"
     gate: soft
     alerting: []
     status: designed-not-shipped
+
+  - id: OUT-6350-K3-bulk-run-length
+    feature: epic-6350-bulk-reports
+    title: A Then & Now for 10 owners is set up in 2 minutes or less; a bulk run stays short (K3, run-length guardrail)
+    target: "K3: <= 2 min wall clock for 10 owners on the dev instance (baseline ~15 min). Guardrail: report-bulk-run-slow rare on real instances"
+    measurement_scope: per_instance
+    measured_by: >
+      K3 is read by hand against the wall clock on the dev instance (:5169) in slices 02a-04, from the Create reports
+      click to the result, so it includes the wizard steps and the browser. ElapsedMs on report-bulk-run is the
+      server's share only (first owner to last outcome) and is recorded beside the reading, never in place of it.
+      Per instance, the operator sees report-bulk-run on every run and report-bulk-run-slow (Warning) when a create run
+      exceeds 20 000 ms or a removal 10 000 ms; fixed thresholds, not scaled by N. The vendor sees them only if shared.
+    log_fields:
+      report-bulk-run: ["Action", "TemplateKey", "ThenLengthDays", "NowLengthDays", "Asked", "Done", "NotDone", "RefusedByCode", "ElapsedMs"]
+      report-bulk-run-slow: ["Action", "TemplateKey", "ThenLengthDays", "NowLengthDays", "Asked", "Done", "NotDone", "RefusedByCode", "ElapsedMs"]
+    measurement_window: "slices 02a-04 DELIVER (K3 reading); ongoing per instance (guardrail)"
+    gate: soft
+    alerting: []
+    acceptance_scenarios: "report-bulk-run fields via a captured logger: counts and codes only, no names; Warning above the thresholds"
+    status: designed-not-shipped
+    caveat: "ElapsedMs excludes the wizard, the network and the browser. No line carries a report, owner or user name."

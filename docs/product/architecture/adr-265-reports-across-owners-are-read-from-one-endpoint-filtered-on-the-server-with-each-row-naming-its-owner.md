@@ -23,7 +23,9 @@ filter state per Team, which makes it too heavy to serve as an owner list.
    so every per-owner list body is unchanged.
 3. `GET reports/creation-options` answers, without an owner: today, the minimum window length, each template with its
    metric keys per owner kind, and every readable owner with its kind, id, name and first kept day. The bulk wizard
-   reads it once for its Type, Metrics and owner steps; the owner step's limits come from it.
+   reads it once for its Type, Metrics and owner steps; the owner step's limits come from it. It is fetched when
+   Create reports is clicked, keyed per opening, and the wizard opens only once it is in, so no step shows half-filled
+   and a late answer never lands in a newer wizard.
 4. Owner names and kept-history cutoffs come from the Reports module's owner lookup, as a projection (id, name,
    cutoff), never by loading the owners themselves.
 5. The list computes no Now; it reads the frozen Then window only to say whether Then can still be rebuilt.

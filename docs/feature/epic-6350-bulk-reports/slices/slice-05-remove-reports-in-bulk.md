@@ -14,11 +14,13 @@ knowing which Then windows can no longer be rebuilt, with a per-report outcome.
 - Turns on 01's selection column and "N selected" count, unless 07 shipped first.
 - **Remove** acts on 01's selection. Enabled only when every selected report is on an owner where the user is Admin;
   otherwise disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are not Admin of" (D15,
-  PROPOSED — confirm at DISTILL sketch walk). Auth off or RBAC off: every report removable.
-- Confirm naming the exact count and which owners, plus the existing "can no longer be rebuilt" warning with a count
-  when it applies.
-- Result per report (D8): removed; already gone counts as removed (answered with `already-gone`, never counted as a deletion in usage data); lost Admin → not removed, with the reason; never a
-  whole-run failure.
+  LOCKED, NMD-2). Auth off or RBAC off: every report removable.
+- Confirm dialog (NMD-7): every selected report listed as "Name — Owner"; when it applies, "1 of them has a Then that
+  can no longer be rebuilt from the kept history; removing it loses it for good." (the count follows); [Cancel]
+  [Remove 3 reports] naming the exact count.
+- Result per report (D8, NMD-7), lines as NMD-12's table: a report whose owner the caller no longer administers is
+  "Not removed: you are no longer Admin of {owner}." (not-admin); one already gone, including with its deleted owner,
+  is removed (already-gone, never counted as a deletion in usage data); never a whole-run failure.
 - A lost answer: "could not confirm what was removed", link to Reports (D8, AC-5.7).
 - Shares the PDF's ceiling N = 50 (maintainer, 2026-10-27): above it, "Pick at most 50 reports" (AC-5.9; D16).
 - The server re-checks Admin per report. `ReportDeleted` per report this run removed (never already-gone); one `ReportBulkRemovalStarted` per sent

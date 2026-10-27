@@ -17,7 +17,7 @@
 
 schema_version: 1
 feature_id: epic-6350-bulk-reports
-updated: 2026-10-27
+updated: 2026-10-27 (rev. at the final wave review gate)
 wave: DEVOPS
 
 target_environments:
@@ -40,7 +40,7 @@ target_environments:
   - name: community
     description: >
       No licence. Reports page, opening, selection, bulk removal and the combined PDF work; Create reports is
-      shown disabled with the licence tooltip (D17, PROPOSED); POST reports/bulk answers 403 as a whole.
+      shown disabled with the licence tooltip (D17, LOCKED, NMD-4); POST reports/bulk answers 403 as a whole.
     platform: [linux]
 
   - name: db-sqlite
@@ -181,7 +181,7 @@ scenario_axes:
     slices: ["01", "02a", "05", "06", "07"]
     vary_over: [usage-data-consented]
     rationale: >
-      01: AllReportsListed once per history entry when the list is shown (dwell rule PROPOSED, see feature-delta).
+      01: AllReportsListed once per history entry when the list is shown (no dwell, DVQ-1 (a), LOCKED).
       02a: ReportBulkCreationStarted once per Create click that sends the request, then ReportCreated once per
       created outcome. 05: ReportBulkRemovalStarted once per confirm, then ReportDeleted once per outcome removed
       by this run (never for already-gone). 06: AllReportsListed from lh report list without an owner and
@@ -189,9 +189,9 @@ scenario_axes:
       with 2 or more selected; exactly 1 selected reports ReportPdfExportStarted with its type. Each with and
       without consent.
   terminology:
-    slices: ["01", "02a", "03", "04"]
+    slices: ["01", "02a", "03", "04", "05", "07"]
     vary_over: [clean, renamed-terminology]
-    rationale: "Owner column, owner step groups, history-start reason and result rows."
+    rationale: "Owner column, owner step groups, history-start reason and result rows (01-04); the removal confirm's owners and the 'Not removed: you are no longer Admin of {owner}' lines (05, NMD-12); the combined PDF's per-report headers and the could-not-load page naming a report's owner (07; header content reused from Epic 6298)."
   clients_versions:
     slices: ["06"]
     vary_over: [clients-vs-older-lighthouse, older-clients-vs-newer-lighthouse]

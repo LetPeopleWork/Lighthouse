@@ -239,6 +239,15 @@ export const aReportService = (
 	createReport: vi.fn().mockResolvedValue(ENGAGEMENT_START_ID),
 	editReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
 	deleteReport: vi.fn().mockResolvedValue(undefined),
+	getAllReports: vi.fn().mockResolvedValue({ reports: [] }),
+	getCreationOptions: vi.fn().mockResolvedValue({
+		today: TODAY_ON_THE_INSTANCE,
+		minimumLengthDays: 14,
+		templates: [],
+		owners: [],
+	}),
+	createReportsInBulk: vi.fn().mockResolvedValue([]),
+	removeReportsInBulk: vi.fn().mockResolvedValue([]),
 	...overrides,
 });
 

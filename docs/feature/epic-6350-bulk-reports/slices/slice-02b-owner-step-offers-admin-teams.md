@@ -13,10 +13,13 @@ Teams" while its owners are loading or could not be loaded.
 
 ## IN
 
-- Premium, no Admin owner: Create reports disabled with "You are not Admin of any Team or Portfolio" (D17, PROPOSED —
-  confirm at DISTILL sketch walk).
-- While the Admin set loads, the owner step shows a loading look and Create is not available.
-- If it cannot be loaded, could-not-load with Retry; Create is not available.
+- Premium, no Admin owner: Create reports disabled with "You are not Admin of any Team or Portfolio." (D17, LOCKED,
+  NMD-4).
+- While permissions load, Create reports is disabled.
+- If the permission load fails, Create reports is enabled (permissive fallback, DDD-17) and the owner step shows
+  "Your Teams and Portfolios couldn't be loaded." with Retry; Create is not available there.
+- Choosing Create reports first loads the creation options: spinner in the button, disabled; the wizard opens at step 1
+  only once they are ready, or on "What a report needs couldn't be loaded." with [Cancel] [Retry] (NMD-15).
 
 ## OUT
 
@@ -42,7 +45,7 @@ hard gate for D17.
 
 ## Acceptance criteria
 
-AC-2b.1 … AC-2b.3 in `feature-delta.md` (US-02b).
+AC-2b.1 … AC-2b.4 in `feature-delta.md` (US-02b).
 
 ## Dependencies
 

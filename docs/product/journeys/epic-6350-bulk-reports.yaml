@@ -29,16 +29,16 @@ journeys:
     steps:
       - id: 1
         name: Find and select reports
-        action: "Reports (top-level page) -> a table of every report the user can read: Name, Type, {team}/{portfolio}, Created -> open one, or select rows (every row selectable; filter change clears the selection; select-all = rows the filter shows, all pages)"
+        action: "Reports (top-level page) -> a table of every report the user can read: Name, Type, Owner (name with a {team}/{portfolio} icon; the accessible name carries the kind, NMD-11), Created, row icons (PDF for every reader; Edit and Delete only where Admin, NMD-16) -> open one, or select rows (every row selectable; filter change clears the selection; select-all = rows the filter shows, all pages)"
         tui_mockup: |
           +-- Reports ---------------------------------------- [Create reports] ---------+
           | Filter: "90 days to 29 Jul 2026"                           9 selected        |
-          | [x] Name                                  Type        Owner        Created   |
-          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Team Zenith  27 Oct    |
-          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Team Gravity 27 Oct    |
-          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Portfolio .. 27 Oct    |
+          | [x] Name                                 Type        Owner              Created     |
+          | [x] Then & Now — 90 days to 29 Jul 2026  Then & Now  [T] Zenith         27 Oct [PDF][Edit][Del] |
+          | [x] Then & Now — 90 days to 29 Jul 2026  Then & Now  [T] Gravity        27 Oct [PDF][Edit][Del] |
+          | [x] Then & Now — 90 days to 29 Jul 2026  Then & Now  [P] Ocean Explorer 27 Oct [PDF]  (Viewer)  |
           |  (selection built in slice 01 but hidden; the boxes and count show once     |
-          |   05 (Remove) or 07 (Export PDF) ships)                                     |
+          |   05 (Remove) or 07 (Export PDF) ships; the row icons ship in 01)           |
           +------------------------------------------------------------------------------+
         emotional_state: {entry: Burdened, exit: Oriented}
         shared_artifacts: [report_name, owner_name, report_type, report_created_on, readable_owners]
@@ -69,11 +69,13 @@ journeys:
         emotional_state: {entry: Hopeful, exit: Focused}
         shared_artifacts: [report_windows, report_name, admin_owners, licence_tier, owner_history_start]
         failure_modes:
-          - Community licence - Create reports is shown disabled with a Premium hint (PROPOSED)
-          - Premium, but the user is Admin of no owner - Create reports disabled with "You are not Admin of any Team or Portfolio" (PROPOSED)
-          - The Admin set or the owners' limits are still loading - Create is not available; if they cannot be loaded, could-not-load with Retry
+          - Community licence - Create reports is shown disabled with the existing Premium-licence tooltip (LOCKED, NMD-4)
+          - Premium, but the user is Admin of no owner - Create reports disabled with "You are not Admin of any Team or Portfolio." (LOCKED, NMD-4)
+          - Permissions still loading - Create reports is disabled
+          - Permissions could not be loaded - Create reports stays enabled (permissive fallback, DDD-17); the owner step shows "Your Teams and Portfolios couldn't be loaded." with Retry
+          - The creation options are on their way - the button spins and the wizard opens at step 1 only once they are ready; if they cannot be loaded, the wizard opens on "What a report needs couldn't be loaded." with [Cancel] [Retry] (NMD-15)
           - An owner's kept history cannot hold the windows - shown but not pickable (slice 04), and skipped with the reason if it gets through
-          - More than 50 owners picked - the owner step says to pick at most 50 (the shared ceiling)
+          - More than 50 owners picked - picking stays possible, the button names the count, Create is disabled with "Pick at most 50 Teams and Portfolios." (NMD-13); a group's Select all is not capped
           - Many owners selected - creation takes several seconds; the user sees it is working
         integration_checkpoint: >
           Every selected owner gets the same windows, metrics and name; only owners where the user is Admin can be
@@ -83,10 +85,10 @@ journeys:
         action: "Result list: one row per owner - Created (opens it) or Not created with the reason and where to fix it"
         tui_mockup: |
           +-- 3 reports created, 1 not created ----------------------------------------+
-          | Team Zenith              Created                         [Open]            |
-          | Team Gravity             Created                         [Open]            |
-          | Portfolio Ocean Explorer Created                         [Open]            |
-          | Team Equinox             Not created: its kept history starts 30 Jul 2026. |
+          | [T] Zenith               Created                         [Open]            |
+          | [T] Gravity              Created                         [Open]            |
+          | [P] Ocean Explorer       Created                         [Open]            |
+          | [T] Equinox              Not created: its kept history starts 30 Jul 2026. |
           |                          Keep more history: Closed Items Cutoff in its     |
           |                          settings.                                          |
           |                                                     [Back to Reports]      |
@@ -103,14 +105,14 @@ journeys:
           also lists.
       - id: 4
         name: Remove reports in bulk
-        action: "Reports page selection -> Remove (enabled only when every selected report is on an owner where the user is Admin; otherwise disabled, naming how many cannot be removed) -> confirm naming the exact count and the owners -> per-report outcome"
+        action: "Reports page selection -> Remove (enabled only when every selected report is on an owner where the user is Admin; otherwise disabled, naming how many cannot be removed) -> confirm listing every report as 'Name — Owner' with [Cancel] [Remove 3 reports] (NMD-7) -> per-report outcome"
         emotional_state: {entry: Cautious, exit: Relieved}
         shared_artifacts: [report_name, owner_name, admin_owners]
         failure_modes:
-          - The selection mixes reports the user may and may not remove - Remove disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are not Admin of" (PROPOSED)
-          - A selected report's Then can no longer be rebuilt - the confirm says so before removal
-          - A report was already removed by someone else - counted as removed, not as an error
-          - The user lost Admin on an owner meanwhile - that report is not removed, with the reason
+          - The selection mixes reports the user may and may not remove - Remove disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are not Admin of" (LOCKED, NMD-2)
+          - A selected report's Then can no longer be rebuilt - the confirm says "1 of them has a Then that can no longer be rebuilt from the kept history; removing it loses it for good." (NMD-7)
+          - A report was already removed by someone else, or went with its deleted owner - counted as removed (already-gone), not as an error
+          - The user lost Admin on an owner meanwhile - "Not removed: you are no longer Admin of {owner}." (not-admin, NMD-12)
           - The answer never arrives - "could not confirm what was removed", with a link to Reports
         integration_checkpoint: >
           Every removed report disappears from the Reports page and its owner's Reports tab; every not-removed report
@@ -121,7 +123,7 @@ journeys:
         emotional_state: {entry: Ready, exit: Confident}
         shared_artifacts: [report_values, report_windows, owner_name, report_name, generated_at, branding]
         failure_modes:
-          - One selected report cannot be read - no PDF passes a missing report off as complete; the page names it with Retry and Leave it out
+          - One selected report cannot be read - no PDF passes a missing report off as complete; a "No PDF was made" dialog names it with [Cancel] [Leave it out] [Retry] (NMD-8); Leave it out is not offered when leaving it out would empty the selection
           - More reports selected than the ceiling - "Pick at most 50 reports" (N = 50, maintainer 2026-10-27; 25 if a 50-report print fails in the Linux desktop app)
           - Many reports selected - preparing takes a while; the page says it is preparing
           - macOS desktop app - printing is unavailable there (Bug 6425); the action is disabled with the same reason, or whatever single export does on main if Bug 6425 has not landed
@@ -185,3 +187,11 @@ changelog:
       Revised after DESIGN and the maintainer's answers - the "does not capture a chosen metric" failure modes dropped
       (metrics are captured per owner kind; every metric applies to both kinds today); ceiling N = 50, also for the
       owners of one run; admin_owners source corrected (already in useRbac()).
+  - date: 2026-10-27
+    feature: epic-6350-bulk-reports
+    change: >
+      Revised at the final wave review gate, after the DISTILL walk (NMD-7, 8, 11-16) - owner cell is the name with a
+      kind icon (steps 1, 3); row icons on the Reports page in slice 01 (step 1); a failed permission load leaves
+      Create enabled with the owner step's could-not-load look, and the wizard waits for the creation options (step 2);
+      the more-than-50 copy (step 2); NMD-7's confirm copy (step 4); Leave it out not offered when it would empty the
+      selection (step 5).

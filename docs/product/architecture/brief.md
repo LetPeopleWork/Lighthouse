@@ -10842,6 +10842,14 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
   outcome per owner or report, in the order asked; never all-or-nothing. Premium for creation by `LicenseGuard`; a
   mid-run licence lapse is the existing cap refusal. Three refusal codes added: `owner-not-found`, `not-admin`,
   `not-saved`.
+- **A report already gone is answered removed with `already-gone`**: it has no owner left to check, so it skips the
+  Admin check on purpose, nothing is written, and the browser does not count it as a deletion.
+- **Slow runs and slow reads are logged**: one `report-bulk-run` line per run, written as Warning
+  `report-bulk-run-slow` above 30 s (create) or 10 s (remove); `report-list-slow` and `report-creation-options-slow`
+  above 2 s; each report keeps `report-creation-slow`.
+- **The wizard waits for what a report needs**: Create reports prefetches the creation options, keyed per opening
+  (`["reportCreationOptions", opening]`), with a spinner in the button; the wizard opens at step 1 only once they are
+  in, or on its could-not-load look with Cancel and Retry, so a late answer never lands in a newer wizard.
 - **The Admin set is the browser's `useRbac()`**; the server re-checks every write. No component reads my-summary.
 - **Nothing new is stored**; no migration. `ReportSummary` gains an optional `OwnerName`, so per-owner bodies are
   unchanged.
@@ -10862,7 +10870,7 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
   pure roll-up state, `useReportsPdfExport`.
 - MODIFIED, frontend: `ReportList` (owner column, opt-in selection), `DataGridBase` (opt-in checkbox selection),
   `reportTypes`, `reportWindowCheck` (per owner), `reportRefusalCopy`, `PrintFrameHost`, `ReportPrintContent`,
-  `reportPrintRoutes`, `useRbac` (load failure, if MQ-4 a).
+  `reportPrintRoutes`, `useRbac` (load failure).
 - Clients: `lighthouse_report_list`, `lh report list` with no owner.
 - UNCHANGED: `ReportCommands`, `ThenAndNowTemplate`, `ReportCapPolicy`, `ReportWindowPolicy`, the owner controllers,
   `IRbacAdministrationService`, `RbacGuard`, `LicenseGuard`, the schema. L1/L2 C4: no new container or external system.

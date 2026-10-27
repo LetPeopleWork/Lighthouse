@@ -1,7 +1,7 @@
 # Slice 01 — Every report in one place (walking skeleton)
 
-**Feature**: epic-6350-bulk-reports · **Epic**: #6350 · **Story**: US-01 (ADO: to be created) · **Estimate**: ~1.5d
-(rev. 2026-10-27 after review: was 1d; row selection moved here) · **Tier**: Community · **Ships alone**: yes ·
+**Feature**: epic-6350-bulk-reports · **Epic**: #6350 · **Story**: US-01 (ADO: to be created) · **Estimate**: ~1¾d
+(rev. 2026-10-27 at the final review gate: +¼d for the row icons of NMD-16; after review: was 1d, row selection moved here) · **Tier**: Community · **Ships alone**: yes ·
 `job_id: job-lead-compare-every-owner-against-its-own-past-in-one-go`
 
 ## Goal
@@ -13,24 +13,29 @@ on this slice only.
 ## IN
 
 - A Reports entry in the top navigation (beside the Features page precedent) opening a new page (address DESIGN's).
-- A table in the `DataGridBase` / `ReportList` style: Name, Type, owner (kind in the instance's term + name), Created;
-  the grid's own sorting and filtering.
+- A table in the `DataGridBase` / `ReportList` style: Name, Type, Owner, Created; the Owner cell shows the name only,
+  as a link, with a small Team or Portfolio icon, its accessible name carrying the kind ("Zenith, Team"; NMD-11); the
+  grid's own sorting and filtering (the filter still matches the kind).
+- Row icons (NMD-16, AC-1.11), reusing `ReportList`'s icons and its delete confirm: PDF for every reader (disabled on
+  the macOS desktop app, as today); Edit and Delete only on owners where the reader is Admin, held back while the
+  permissions load.
 - A row opens the existing report view at its owner address.
 - Only reports on owners the user can read, filtered by the server (read scope as `/features` uses).
-- Row selection (D15, D16 — PROPOSED, confirm at DISTILL sketch walk): every listed row selectable; the exact count
+- Row selection (D15, D16 — LOCKED in the DISTILL sketch walk, NMD-2 and NMD-3): every listed row selectable; the exact count
   shown; changing a filter clears the selection; sorting keeps it; select-all takes every row the filter shows, on all
   pages. Built and tested here, but **not shown**: no checkboxes and no "N selected" until the first slice with an
   action on the selection (05 or 07) ships and turns them on.
-- Loading look; could-not-load look with Retry; empty look pointing to the owners' Reports tabs; never stale rows
-  shown as current (keyed query).
+- Loading look; could-not-load look with Retry; empty look with NMD-1's sentence for this slice (pointing to the
+  owners' Reports tabs; from 02a the full sentence, unchanged on Community, AC-1.5); never stale rows shown as current
+  (keyed query).
 - A report of a type this version cannot show is listed and opens to the existing look.
 - Usage data: `AllReportsListed`, name-only, once per history entry as soon as the list shows, no dwell (DVQ-1 a);
   a failed load counts nothing; listed in `docs/settings/usagedata.md` here.
 
 ## OUT
 
-Create reports (02a), Remove (05), Export PDF of the selection (07) · row Edit/Delete/PDF icons on this page (the
-DISTILL sketch decides whether to reuse them) · changes to per-owner tabs or Overview chips.
+Create reports (02a), Remove (05), Export PDF of the selection (07) · ~~row Edit/Delete/PDF icons on this page~~
+(moved IN by NMD-16) · changes to per-owner tabs or Overview chips.
 
 ## Learning hypothesis
 
@@ -50,11 +55,11 @@ looks (`WidgetBody` states are the reuse candidate); selection across pages in `
 ## DISTILL must sketch first
 
 Navigation entry and label; columns and their order; the three non-loaded looks. (The selection column and count are
-sketched with 05 or 07, whichever ships first.) The sketch walk is a hard gate for the PROPOSED D15/D16.
+sketched with 05 or 07, whichever ships first.) The sketch walk settled D15/D16 (NMD-2, NMD-3, LOCKED 2026-10-27).
 
 ## Acceptance criteria
 
-AC-1.1 … AC-1.10 in `feature-delta.md` (US-01).
+AC-1.1 … AC-1.11 in `feature-delta.md` (US-01).
 
 ## Dependencies
 

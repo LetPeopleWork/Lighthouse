@@ -9,6 +9,13 @@ import {
 	ReportSchema,
 	ReportTemplatesSchema,
 } from "../../models/Reports/Report";
+import type {
+	INewReportsForOwners,
+	IReportCreationOptions,
+	IReportCreationOutcome,
+	IReportRemovalOutcome,
+	IReportsAcrossOwners,
+} from "../../models/Reports/ReportsAcrossOwners";
 import { BaseApiService } from "./BaseApiService";
 
 /** The reports of one Team or one Portfolio. Refusals arrive as an ApiError carrying the reason's code. */
@@ -24,6 +31,15 @@ export interface IReportService {
 		edit: IReportEdit,
 	): Promise<IReport>;
 	deleteReport(owner: IReportOwner, reportId: number): Promise<void>;
+	/** Every report the caller can read, on every Team and Portfolio. */
+	getAllReports(): Promise<IReportsAcrossOwners>;
+	getCreationOptions(): Promise<IReportCreationOptions>;
+	/** Answers one outcome per owner, in the order they were sent. */
+	createReportsInBulk(
+		request: INewReportsForOwners,
+	): Promise<IReportCreationOutcome[]>;
+	/** Answers one outcome per report, in the order they were sent. */
+	removeReportsInBulk(reportIds: number[]): Promise<IReportRemovalOutcome[]>;
 }
 
 const reportsOf = (owner: IReportOwner): string =>
@@ -86,5 +102,41 @@ export class ReportService extends BaseApiService implements IReportService {
 		return this.withErrorHandling(async () => {
 			await this.apiService.delete(`${reportsOf(owner)}/${reportId}`);
 		});
+	}
+
+	public getAllReports(): Promise<IReportsAcrossOwners> {
+		return this.withErrorHandling(() =>
+			Promise.reject(
+				new Error("SCAFFOLD: every report in one place is not built yet"),
+			),
+		);
+	}
+
+	public getCreationOptions(): Promise<IReportCreationOptions> {
+		return this.withErrorHandling(() =>
+			Promise.reject(
+				new Error("SCAFFOLD: creating for several owners is not built yet"),
+			),
+		);
+	}
+
+	public createReportsInBulk(
+		_request: INewReportsForOwners,
+	): Promise<IReportCreationOutcome[]> {
+		return this.withErrorHandling(() =>
+			Promise.reject(
+				new Error("SCAFFOLD: creating for several owners is not built yet"),
+			),
+		);
+	}
+
+	public removeReportsInBulk(
+		_reportIds: number[],
+	): Promise<IReportRemovalOutcome[]> {
+		return this.withErrorHandling(() =>
+			Promise.reject(
+				new Error("SCAFFOLD: removing reports in bulk is not built yet"),
+			),
+		);
 	}
 }

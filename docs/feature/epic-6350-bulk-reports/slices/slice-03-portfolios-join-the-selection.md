@@ -11,8 +11,8 @@ comparison.
 ## IN
 
 - Owner step grouped by kind ({Teams}, {Portfolios}) in the instance's terms; Portfolios where the user is Admin only.
-- Window presets that fit a mixed selection (PROPOSED: 30 / 90 / 180 and any number of days ≥ 14; settled in the
-  DISTILL sketch walk).
+- Window presets that fit a mixed selection (LOCKED, NMD-6: 30 / 90 / 180 days or a custom number ≥ 14; Now the same as
+  Then or custom).
 - Result rows name the owner kind ("Portfolio Ocean Explorer · Created"); every 02a reason applies. (Rev. after DESIGN,
   2026-10-27: the "does not capture a metric" reason was dropped; metrics are captured per owner kind and today every
   metric applies to both kinds.)

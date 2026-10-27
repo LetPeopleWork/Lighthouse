@@ -4,6 +4,7 @@ import { SessionExpiredPage } from "../auth/SessionExpiredPage";
 import { FeaturesPage } from "../features/FeaturesPage";
 import { OverviewPage } from "../overview/OverviewPage";
 import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
+import { AllReportsPage } from "../reports/AllReportsPage";
 import { SettingsPage } from "../settings/SettingsPage";
 import { AddTeamWizard } from "../teams/AddTeamWizard";
 
@@ -81,6 +82,12 @@ export class LighthousePage {
 		// address changes before the content does. Only the view's own help text says it has arrived.
 		await expect(featuresPage.helpText).toBeVisible();
 		return featuresPage;
+	}
+
+	/** The page is loaded on demand, so only its own ready table says it has arrived, not the address. */
+	async goToReports(): Promise<AllReportsPage> {
+		await this.mainNavigation.getByRole("link", { name: "Reports" }).click();
+		return new AllReportsPage(this.page).waitUntilReady();
 	}
 
 	async goToSettings(): Promise<SettingsPage> {

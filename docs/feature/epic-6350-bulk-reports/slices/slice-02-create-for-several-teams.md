@@ -14,20 +14,24 @@ one run, and sees per Team whether it was created or why not, including every re
 
 ## IN
 
-- **Create reports** on the Reports page; Premium. On Community shown disabled with a Premium hint (D17, PROPOSED).
+- **Create reports** on the Reports page; Premium. On Community shown disabled with the existing Premium-licence
+  tooltip (`LicenseToolTip`; D17, LOCKED, NMD-4). From this slice the empty page shows NMD-1's full sentence,
+  unchanged on Community (AC-1.5).
 - Type-agnostic flow (D4): Type (Then & Now only) → the single wizard's Then, Now, Metrics & name steps, once → owner
-  step → result.
+  step → result. Default "Then ends on" per NMD-14: Now ends today, Then ends the day before Now starts, following the
+  lengths until the user edits the date.
 - Owner step: only the Teams the user administers (`TeamWrite`, via `useRbac()`); every Team with RBAC or auth off
   (D7, D18). Count on the button ("Create 3 reports").
-- One name for every Team (D9, LOCKED); running again adds second copies, no de-duplication (D9's clause, PROPOSED —
-  confirm at DISTILL sketch walk, Q11).
+- One name for every Team (D9, LOCKED); running again adds second copies, no de-duplication (D9's clause, LOCKED,
+  NMD-10; Q11).
 - The server checks each Team when it reaches it: not (or no longer) Admin, Team deleted, history too short, not saved,
   licence lapsed past the Community cap → one "Not created" row with its reason, never a whole-run failure. A
   run from a Community instance is refused as a whole with the licence reason.
-- Result: one row per picked Team — Created (opens it) or Not created with the reason; cutoff refusals name the
-  kept-history start and point to Closed Items Cutoff (D1).
-- At most 50 owners per run (the shared ceiling N = 50, maintainer 2026-10-27); above it the owner step says so and
-  the server refuses the request (AC-2.12, added after DESIGN).
+- Result: one row per picked Team — Created (opens it) or Not created with the line NMD-12's table gives; cutoff
+  refusals name the kept-history start and point to Closed Items Cutoff (D1).
+- At most 50 owners per run (the shared ceiling N = 50, maintainer 2026-10-27): picking stays possible above it and
+  the button names the count, but Create is disabled with "Pick at most 50 Teams and Portfolios." (NMD-13); a group's
+  Select all is not capped; the server refuses the request (AC-2.12).
 - A run where every picked Team is refused: headline "0 reports created, {N} not created", every row with its reason.
 - A lost answer: "could not confirm which reports were created", link to Reports (D8).
 - Usage data: `ReportBulkCreationStarted`, name-only, once per sent run, also for a run that created nothing and with
@@ -58,7 +62,7 @@ could-not-confirm looks.
 ## DISTILL must sketch first
 
 Where Create reports sits and its Community state; the owner step; result wording for each refusal and the
-all-refused headline. The sketch walk is a hard gate for D9's clause, D10 and D17.
+all-refused headline. The sketch walk settled D9's clause, D10 and D17 (NMD-10, NMD-9, NMD-4, LOCKED 2026-10-27).
 
 ## Acceptance criteria
 

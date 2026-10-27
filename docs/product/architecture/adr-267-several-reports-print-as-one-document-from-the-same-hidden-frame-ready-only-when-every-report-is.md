@@ -18,8 +18,9 @@ frame through a pure page-state function, with a 30-second budget.
 1. The selection's Export PDF mounts the **same hidden print frame**, which draws one print content per selected
    report, in the table's order, each starting on a new page with its own header and footer.
 2. Each report's content works out its own state as today; a pure function rolls the states up: ready only when every
-   report is ready; any failed report means no print, and the failure look names which report failed, with Retry and
-   "Leave it out". A failed shared part (fonts, terms, the mark) fails the whole document as today.
+   report is ready; any failed report means no print, and a dialog titled "No PDF was made" names which report failed, with
+   [Cancel] [Leave it out] [Retry]; Leave it out deselects it and prints the rest, and is not offered when it would
+   empty the selection. No snackbar. A failed shared part (fonts, terms, the mark) fails the whole document as today.
 3. The reports are read in parallel through the app's query cache; the browser limits connections per host. The
    frame's budget grows with the number of reports (a starting value of 30 s plus 2 s per report beyond the first,
    measured in delivery).

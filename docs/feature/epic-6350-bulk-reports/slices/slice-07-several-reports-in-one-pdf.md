@@ -16,10 +16,11 @@ Epic 6298 PDF shows it — the leadership "big picture" in one file.
 - One print document; each report starts on a new page with Epic 6298's header, body and footer, its values read for
   this export (reuse `ReportPrintContent`).
 - Order: the table's current order (D12, LOCKED, maintainer, 2026-10-27).
-- Any report that cannot be read → no PDF; the page names it, with Retry and "Leave it out" (D12, LOCKED, maintainer,
-  2026-10-27; Q3).
-- The action names the exact count; above the ceiling N = 50 (maintainer, 2026-10-27; drops to 25 if a 50-report print fails in the Linux desktop app): "Pick at most 50 reports" (D16; removal shares N — confirm
-  at DISTILL sketch walk).
+- Any report that cannot be read → no PDF; a "No PDF was made" dialog names it with [Cancel] [Leave it out] [Retry]
+  (D12, LOCKED, maintainer, 2026-10-27; Q3; NMD-8). Leave it out is not offered when leaving the report out would
+  empty the selection (Retry and Cancel only).
+- The action names the exact count; above the ceiling N = 50 (maintainer, 2026-10-27; drops to 25 if a 50-report print
+  fails in the Linux desktop app): "Pick at most 50 reports" (D16, LOCKED, NMD-3; removal shares N).
 - Preparing and failed looks as the single print page.
 - macOS desktop app: disabled with Bug 6425's reason (on `main`); this slice adds no macOS handling of its own.
 - Usage data (DEVOPS): `ReportCombinedPdfExportStarted`, name-only, once per click with two or more selected;

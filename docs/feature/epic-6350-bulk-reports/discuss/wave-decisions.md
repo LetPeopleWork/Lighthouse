@@ -43,16 +43,17 @@ bulk create run, bulk remove run, several-report PDF (DEVOPS designs) · **D18**
 the user administers (all with RBAC/auth off), so 02a is releasable alone; 02b keeps only the no-Admin state and the
 owner step's loading and could-not-load looks (re-review; settles Q10).
 
-PROPOSED — confirm at DISTILL sketch walk (a **hard gate**: no scenario pins one of these before the maintainer
-confirms it there): **D9's clause** no de-duplication (Q11, never asked) · **D10** several windows = several runs (Q5,
-defaulted by the main session, not answered) · ~~D13 extension~~ (dropped after DESIGN, 2026-10-27:
+LOCKED in the DISTILL sketch walk (maintainer, 2026-10-27; recorded as NMD-1..NMD-10 at the end of the feature
+delta), each the default below: **D9's clause** no de-duplication (Q11 → NMD-10) · **D10** several windows = several runs (Q5 →
+NMD-9) · ~~D13 extension~~ (dropped after DESIGN, 2026-10-27:
 metrics are captured per owner kind; Q7 withdrawn) · **D15** every row selectable; Export PDF for any selection; Remove only when all selected are
-removable, else disabled naming how many are not (Q6) · **D16** filter change clears the selection, select-all = rows
+removable, else disabled naming how many are not (Q6 → NMD-2) · **D16** filter change clears the selection, select-all = rows
 the filter shows on all pages, exact counts, "Pick at most 50 reports" above the ceiling N = 50 (LOCKED by the
-maintainer after DESIGN), shared by the PDF, removal and the owners of one run (Q8) · **D17** Create reports always shown; Community disabled with a Premium hint; Premium without Admin
-owner disabled with "You are not Admin of any Team or Portfolio" (Q9) · presets for mixed selections.
+maintainer after DESIGN), shared by the PDF, removal and the owners of one run (Q8 → NMD-3) · **D17** Create reports always shown; Community disabled with a Premium hint; Premium without Admin
+owner disabled with "You are not Admin of any Team or Portfolio" (Q9 → NMD-4) · presets for mixed selections (NMD-6: 30 / 90 /
+180 or custom ≥ 14; Now same as Then or custom).
 
-PROPOSED for DEVOPS: **D19** the bulk-run event fires for every run, including one that created nothing, with no
+Decided by DEVOPS (DVO-2): **D19** the bulk-run event fires for every run, including one that created nothing, with no
 outcome property (K2 counts users who try bulk creation).
 
 Slice 01 builds the selection but shows no checkboxes or "N selected" until 05 or 07 ships.
@@ -91,7 +92,7 @@ documents are not edited.
 (Community) · Q2 names across owners (one name, owner beside it) · Q3 combined PDF when one report fails (no PDF, Retry
 / Leave it out) · Q4 owners that cannot hold the windows (shown, not pickable).
 
-Open, each with a default marked PROPOSED — confirm at DISTILL sketch walk: Q5 several windows in one run (D10;
+Answered in the DISTILL sketch walk (2026-10-27), each the default, LOCKED: Q5 several windows in one run (D10;
 default out, two runs) · Q6 selection rules (D15) · Q7 metrics an owner does not capture (withdrawn after DESIGN) · Q8 selection
 under filter and the shared ceiling (D16) · Q9 "Create reports" states (D17) · Q11 running the same bulk creation
 twice (D9's clause; default no de-duplication). Q10 settled by the re-review (D18). Options in the feature delta.
@@ -101,7 +102,8 @@ twice (D9's clause; default no de-duplication). Q10 settled by the re-review (D1
 Q1 (a) bulk removal Community · Q2 (a) one name for every owner, owner shown beside it · Q3 (a) no PDF when a report
 cannot be read; it names that report and offers Retry or "Leave it out" · Q4 (a) owners that cannot hold the windows
 are shown but not pickable, with history start and settings link. Q5 was defaulted by the main session, not answered,
-so D10 stays PROPOSED (corrected after the re-review).
+so D10 stayed PROPOSED until the DISTILL sketch walk LOCKED it (NMD-9), with Q6 → NMD-2, Q8 → NMD-3, Q9 → NMD-4,
+Q11 → NMD-10 and the presets → NMD-6.
 
 ## Peer review (2026-10-27)
 

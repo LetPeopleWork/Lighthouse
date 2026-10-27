@@ -30,7 +30,7 @@ database context, where the next save would try it again.
    RBAC or sign-in off it allows every owner, as those checks do. The module never sees the user.
 4. **Each owner stands alone**: a failed creation or removal (a database update failure, such as an owner deleted
    between lookup and save) is caught by the bulk loop, the failed pending change is discarded through a new writer
-   member, a Warning is logged with the exception, and that owner is answered with `not-saved`; the next owner
+   member (part of the run's bounded change: it removes only that item's own pending row, never anything saved), a Warning is logged naming the exception type only (never its message or stack, which can carry names), and that owner is answered with `not-saved`; the next owner
    proceeds and the response is still `200`.
 5. **Refusals**: the existing codes, plus `owner-not-found` (deleted before or during the run), `not-admin` and
    `not-saved`. The whole request is refused (400, nothing written) for an unknown owner kind, an owner list empty
@@ -40,7 +40,8 @@ database context, where the next save would try it again.
    from a Community instance is refused whole by `LicenseGuard(RequirePremium)`; a licence that lapses mid-run shows
    on owners already holding one as the existing cap refusal. For removal, the server finds each report's owner
    itself; a report already gone counts as removed and its outcome carries `code: "already-gone"`, so the browser
-   never counts it as a deletion in usage data, as the single path never counts a 404.
+   never counts it as a deletion in usage data, as the single path never counts a 404. It has no owner left to check,
+   so it skips the Admin check on purpose and nothing is written for it.
 6. **A ceiling N = 50** bounds the owners of one creation run and the reports of one removal (400 above it); the browser
    says so before sending.
 7. **A run finishes** even when the browser stops listening; the browser's "could not confirm, check Reports" stays

@@ -37,6 +37,11 @@ Decided:
 - **DDD-13** one `report-bulk-run` log line per run (fixed fields, no names), Warning `report-bulk-run-slow` above
   30 s create / 10 s remove; `report-list-slow` and `report-creation-options-slow` above 2 s (DU-4); per-report slow
   lines unchanged.
+- (rev. at the final review gate, 2026-10-27; NMD-8, NMD-11..16) **DDD-3/16** Create reports prefetches the creation
+  options keyed per opening and opens the wizard only once they are in, else on "What a report needs couldn't be
+  loaded." [Cancel] [Retry] · **DDD-15** Owner cell = name with a kind icon; row icons from slice 01, Edit/Delete by
+  `useRbac()` · **DDD-9** already-gone skips the Admin check on purpose · **R9** +3 codes incl. `not-saved`, copy from
+  NMD-12's table · combined-print failure = NMD-8's dialog · `DiscardPendingChanges` inside the run's bounded change.
 - **DDD-14–16** `/reports` page on a keyed query; `ReportList` + `DataGridBase` extended with an owner column and an
   opt-in selection; the bulk wizard composes the single wizard's steps.
 - **DDD-18/19** combined PDF = the hidden print frame drawing several reports, ready only when all are; macOS
