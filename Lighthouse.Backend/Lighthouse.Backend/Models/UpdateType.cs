@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
+namespace Lighthouse.Backend.Models
 {
     public enum UpdateType
     {

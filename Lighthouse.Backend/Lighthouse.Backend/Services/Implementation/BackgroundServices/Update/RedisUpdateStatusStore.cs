@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 using Lighthouse.Backend.Services.Interfaces.Update;

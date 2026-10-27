@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Models;
+
 namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 {
     using Lighthouse.Backend.Services.Interfaces;

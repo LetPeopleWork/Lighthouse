@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Microsoft.Extensions.Options;

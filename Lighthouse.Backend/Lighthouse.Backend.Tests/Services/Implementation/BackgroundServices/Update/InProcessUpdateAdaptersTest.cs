@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Update

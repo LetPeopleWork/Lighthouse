@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using NUnit.Framework;

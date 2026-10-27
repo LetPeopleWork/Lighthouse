@@ -1,4 +1,5 @@
-﻿using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+﻿using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Microsoft.Extensions.DependencyInjection;

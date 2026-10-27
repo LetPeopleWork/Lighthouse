@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;

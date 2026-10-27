@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager

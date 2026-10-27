@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using System.Globalization;

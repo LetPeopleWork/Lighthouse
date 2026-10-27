@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
