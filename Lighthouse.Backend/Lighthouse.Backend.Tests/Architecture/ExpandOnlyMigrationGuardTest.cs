@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] DropAndRenameTableOperations = { "DropTable", "RenameTable" };
 
+        private static readonly string[] TheFlagColumn = { "Flag" };
+
         private static readonly string[] MigrationProjectRelativePaths =
         {
             Path.Combine("Lighthouse.Migrations.Postgres", "Migrations"),
@@ -91,6 +93,47 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "(expand now, contract later) so old pods never depend on a dropped column during a rolling update. " +
                 "If a contract migration is genuinely intended, bump ExpandOnlyBaselineTimestamp past it and document the " +
                 "contract release. Offending migrations: " + string.Join("; ", violations));
+        }
+
+        [Test]
+        public void MigrationGuard_RequiredColumnWithoutDefault_FailsCheck()
+        {
+            var source = MigrationWith(
+                up: "migrationBuilder.AddColumn<bool>(\n    name: \"Flag\",\n    table: \"Teams\",\n    type: \"boolean\",\n    nullable: false);",
+                down: "// reverted elsewhere");
+
+            Assert.That(
+                ExpandOnlyMigrationGuard.FindRequiredAddColumnsWithoutDefaultInUp(source),
+                Is.EqualTo(TheFlagColumn));
+        }
+
+        [Test]
+        public void MigrationGuard_RequiredColumnWithDefaultAndNullableColumn_PassesCheck()
+        {
+            var source = MigrationWith(
+                up: "migrationBuilder.AddColumn<bool>(name: \"Flag\", table: \"Teams\", type: \"boolean\", nullable: false, defaultValue: false);\n" +
+                    "migrationBuilder.AddColumn<string>(name: \"Note\", table: \"Teams\", type: \"text\", nullable: false, defaultValueSql: \"''\");\n" +
+                    "migrationBuilder.AddColumn<string>(name: \"Other\", table: \"Teams\", type: \"text\", nullable: true);",
+                down: "// reverted elsewhere");
+
+            Assert.That(ExpandOnlyMigrationGuard.FindRequiredAddColumnsWithoutDefaultInUp(source), Is.Empty);
+        }
+
+        [Test]
+        public void RealMigrations_AddedAfterBaseline_GiveEveryRequiredColumnADefault()
+        {
+            var violations = MigrationFilesNewerThanBaseline()
+                .SelectMany(file => ExpandOnlyMigrationGuard
+                    .FindRequiredAddColumnsWithoutDefaultInUp(File.ReadAllText(file))
+                    .Select(column => $"{Path.GetFileName(file)}: {column}"))
+                .ToList();
+
+            Assert.That(
+                violations,
+                Is.Empty,
+                "A non-nullable column added without a default makes every INSERT from a pod still running the previous release fail " +
+                "during a rolling update. Give the property a CLR default that EF emits as defaultValue, or add defaultValue/defaultValueSql " +
+                "to the AddColumn in both providers. Offenders: " + string.Join("; ", violations));
         }
 
         private static List<string> MigrationFilesNewerThanBaseline()
