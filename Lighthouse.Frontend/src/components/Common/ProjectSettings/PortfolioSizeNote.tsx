@@ -22,6 +22,7 @@ const PortfolioSizeNote: React.FC<PortfolioSizeNoteProps> = ({
 		queryFn: () => portfolioService.getSize(portfolioId),
 		enabled: portfolioId > 0,
 		retry: false,
+		staleTime: 0,
 	});
 
 	const portfolio = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);

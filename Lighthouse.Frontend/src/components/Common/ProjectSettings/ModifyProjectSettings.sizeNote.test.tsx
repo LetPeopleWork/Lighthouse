@@ -106,7 +106,7 @@ const thePortfolioSettingsOpen = async (
 	return portfolioService;
 };
 
-describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more than 100 Features", () => {
+describe("The Portfolio's settings say when it holds more than 100 Features", () => {
 	it("a Portfolio holding 101 Features shows the note with its count, as information", async () => {
 		await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
