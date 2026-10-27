@@ -54,6 +54,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOutcome<ReportsAcrossOwners>.Done(new ReportsAcrossOwners([]));
             }
 
+            var started = timeProvider.GetTimestamp();
             var today = clock.Today;
             var summaries = reader.ListForOwners([.. named.Keys])
                 .Where(report => named.ContainsKey(report.OwnedBy()))
@@ -63,6 +64,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 .ThenBy(pair => pair.Report.Id)
                 .Select(pair => Summarise(pair.Report, pair.Row.Owner, new ReportCalendar(today, pair.Row.DoneItemsCutoffDays)) with { OwnerName = pair.Row.Name })
                 .ToList();
+
+            var elapsedMs = timeProvider.GetElapsedTime(started).TotalMilliseconds;
+            if (elapsedMs > SlowReadMilliseconds)
+            {
+                logger.LogWarning("report-list-slow: {Owners} owners with {Rows} reports took {ElapsedMs} ms to list", named.Count, summaries.Count, elapsedMs);
+            }
 
             return ReportOutcome<ReportsAcrossOwners>.Done(new ReportsAcrossOwners(summaries));
         }

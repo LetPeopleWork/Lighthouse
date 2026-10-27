@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] LoggedRefusedEditFields = ["ReportId", "OwnerKind", "OwnerId", "Reason"];
 
+        private const string OwnerName = "Lightspeed Crew";
+
         private const string NotInTheCatalog = "velocity";
 
         private static readonly string[] OnlyCycleTime = [CycleTimeReportMetric.MetricKey];
@@ -283,6 +285,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 Assert.That(line.Fields["OwnerId"], Is.EqualTo(42));
                 Assert.That(line.Message, Does.Not.Contain(SecretName));
             }
+        }
+
+        [Test]
+        public async Task A_list_above_two_seconds_is_a_report_list_slow_warning_with_counts_and_no_names()
+        {
+            await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            ListTakingMilliseconds(2_001);
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Message, Does.StartWith("report-list-slow"));
+                Assert.That(line.Fields["Owners"], Is.EqualTo(1));
+                Assert.That(line.Fields["Rows"], Is.EqualTo(1));
+                Assert.That(line.Fields["ElapsedMs"], Is.EqualTo(2001d));
+                Assert.That(line.Message, Does.Not.Contain(SecretName));
+                Assert.That(line.Message, Does.Not.Contain(OwnerName));
+            }
+        }
+
+        [Test]
+        public async Task A_list_below_two_seconds_logs_nothing()
+        {
+            await CreateTakingSeconds(0);
+            logger.Lines.Clear();
+
+            ListTakingMilliseconds(2_000);
+
+            Assert.That(logger.Lines, Is.Empty);
+        }
+
+        private void ListTakingMilliseconds(int milliseconds)
+        {
+            var reader = new Mock<IReportReader>();
+            reader.Setup(r => r.ListForOwners(It.IsAny<IReadOnlyCollection<ReportOwner>>()))
+                .Callback(() => timeProvider.Advance(TimeSpan.FromMilliseconds(milliseconds)))
+                .Returns([stored!]);
+            var owners = new Mock<IReportOwnerLookup>();
+            owners.Setup(o => o.All()).Returns([new ReportOwnerRow(Lightspeed, OwnerName, 365)]);
+            var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
+            var queries = new ReportQueries(reader.Object, owners.Object, [Template(clock)], Mock.Of<ILicenseService>(), clock, timeProvider, logger);
+
+            Assert.That(queries.ListAcross([Lightspeed]).Status, Is.EqualTo(ReportOutcomeStatus.Done));
         }
 
         private async Task ReadTakingMilliseconds(int milliseconds)

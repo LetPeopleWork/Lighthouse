@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task Every_report_on_every_owner_is_listed()
         {
             var gravity = ATeam("Gravity");

@@ -42,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task A_report_on_a_Portfolio_he_cannot_read_is_never_sent()
         {
             var apollo = APortfolio("Apollo");
@@ -57,10 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         // @driving_port @real-io @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
-        // The test RBAC service's batch Team read answers every id it is given; DELIVER scopes it to the caller's
-        // grants, as its Portfolio twin already is, before this scenario can tell a filter from no filter.
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task A_report_on_a_Team_he_cannot_read_is_never_sent()
         {
             var pulsar = ATeam("Pulsar");
@@ -76,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task An_instance_without_reports_answers_an_empty_list_not_a_failure()
         {
             ATeam("Gravity");
@@ -88,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task A_caller_who_can_read_no_owner_gets_an_empty_list()
         {
             var gravity = ATeam("Gravity");
@@ -102,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task A_report_of_a_type_this_version_cannot_show_is_still_listed()
         {
             var gravity = ATeam("Gravity");
@@ -117,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-01 @us-05 @slice-01 @edge @contract-shape:pure-function
         // The removal confirm counts the Thens that can no longer be rebuilt from this list, without opening each report.
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task Each_row_says_whether_its_Then_can_still_be_rebuilt()
         {
             var equinox = ATeam("Equinox");
