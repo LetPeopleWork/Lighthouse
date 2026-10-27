@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Implementation;
-
 namespace Lighthouse.Backend.Models.Forecast
 {
     /// <summary>

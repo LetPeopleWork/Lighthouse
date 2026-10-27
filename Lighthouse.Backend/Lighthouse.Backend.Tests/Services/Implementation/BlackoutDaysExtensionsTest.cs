@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {

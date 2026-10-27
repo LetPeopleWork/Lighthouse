@@ -1,5 +1,4 @@
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Services.Implementation;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

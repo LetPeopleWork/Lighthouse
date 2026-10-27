@@ -1,5 +1,4 @@
 ﻿﻿using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Lighthouse.Backend.Models

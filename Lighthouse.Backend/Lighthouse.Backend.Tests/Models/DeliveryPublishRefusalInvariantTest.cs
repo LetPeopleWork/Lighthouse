@@ -1,7 +1,6 @@
 using System.Runtime.CompilerServices;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
-using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Models
 {
