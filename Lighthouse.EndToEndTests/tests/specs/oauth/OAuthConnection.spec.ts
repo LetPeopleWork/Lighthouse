@@ -199,7 +199,7 @@ test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking sk
 				await popup.waitForEvent("close", { timeout: 15_000 });
 
 				await expect(editPage.reconnectBanner).toBeHidden();
-				expect(page.url()).toBe(editUrlBeforeReconnect);
+				await expect(page).toHaveURL(editUrlBeforeReconnect);
 				expect(openerNavigations).toEqual([]);
 			} finally {
 				page.off("framenavigated", onFrameNavigated);

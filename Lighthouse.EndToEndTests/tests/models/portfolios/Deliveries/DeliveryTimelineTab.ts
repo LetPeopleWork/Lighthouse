@@ -27,9 +27,12 @@ export class DeliveryTimelineTab {
 	}
 
 	private get deliveryTabs(): Locator {
-		return this.container
-			.page()
-			.getByRole("tablist", { name: "delivery view tabs" });
+		return (
+			this.container
+				.page()
+				// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
+				.getByRole("tablist", { name: "delivery view tabs" })
+		);
 	}
 
 	async openTimelineTab(): Promise<void> {
@@ -37,22 +40,27 @@ export class DeliveryTimelineTab {
 	}
 
 	get tab(): Locator {
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		return this.container.page().getByTestId(TIMELINE_TAB_TEST_ID);
 	}
 
 	get chart(): Locator {
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		return this.container.page().getByTestId(CHART_TEST_ID);
 	}
 
 	get unplaceableList(): Locator {
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		return this.container.page().getByTestId(UNPLACEABLE_TEST_ID);
 	}
 
 	get premiumNotice(): Locator {
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		return this.container.page().getByTestId(PREMIUM_NOTICE_TEST_ID);
 	}
 
 	get bars(): Locator {
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		return this.container.page().getByTestId(BAR_TEST_ID);
 	}
 

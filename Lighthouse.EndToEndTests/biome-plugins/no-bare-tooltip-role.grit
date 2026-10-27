@@ -1,0 +1,3 @@
+`$page.getByRole("tooltip")` where {
+    register_diagnostic(span=$page, message="A bare getByRole(\"tooltip\") also matches every other open popover on the page and fails in strict mode. Pass a name or filter by text.", severity="error")
+}

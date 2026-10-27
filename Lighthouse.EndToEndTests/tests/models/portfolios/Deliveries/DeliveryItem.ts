@@ -57,8 +57,8 @@ export class DeliveryItem {
 	 * relabel and lets a spec assert the copy itself.
 	 *
 	 * Scoped to the filled chip: the same AccordionSummary also renders one OUTLINED chip per
-	 * completion-date percentile, so an unqualified `.MuiChip-label` matches several (ci-learnings —
-	 * a shared locator on a page that hosts the component twice breaks in strict mode).
+	 * completion-date percentile, so an unqualified `.MuiChip-label` matches several, and a locator
+	 * that matches more than one element fails in strict mode.
 	 */
 	get forecastChip(): Locator {
 		return this.container.locator(".MuiChip-filled").first();
@@ -86,8 +86,8 @@ export class DeliveryItem {
 	 *
 	 * Page-scoped, and it has to be: `container` is the AccordionSummary, while the grid renders in the
 	 * sibling AccordionDetails, so a container-scoped locator finds nothing (verified live 2026-07-29).
-	 * That makes this an exception to the scope-to-container rule in docs/ci-learnings.md, and it holds
-	 * only because one delivery is expanded at a time - `toggleDetails()` establishes the single match.
+	 * So this locator is not scoped to the row's container like the others, and
+	 * it holds only because one delivery is expanded at a time - `toggleDetails()` establishes the single match.
 	 */
 	get likelihoodColumnHeader(): Locator {
 		return this.container
@@ -128,6 +128,7 @@ export class DeliveryItem {
 	async toggleDetails(): Promise<void> {
 		await this.container.click();
 
+		// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
 		await expect(this.container.page().getByText("Feature Name")).toBeVisible();
 	}
 

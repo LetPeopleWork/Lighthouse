@@ -82,9 +82,12 @@ export class DeliveryMetricsTab {
 	}
 
 	private get deliveryTabs(): Locator {
-		return this.container
-			.page()
-			.getByRole("tablist", { name: "delivery view tabs" });
+		return (
+			this.container
+				.page()
+				// biome-ignore lint/plugin: The tabs and grid render in the expanded delivery's details, a sibling of this container, so they are looked up page-wide; only one delivery is expanded at a time.
+				.getByRole("tablist", { name: "delivery view tabs" })
+		);
 	}
 
 	async openMetricsTab(): Promise<void> {

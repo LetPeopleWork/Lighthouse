@@ -1,0 +1,4 @@
+`$page.getByTestId($id)` where {
+    $id <: r"[\"'`][^\"'`]*Icon[\"'`]",
+    register_diagnostic(span=$id, message="MUI strips the data-testid from its icons, so this never matches and a page object may then read as 'not found'. Locate the icon through its parent or an aria-label.", severity="error")
+}

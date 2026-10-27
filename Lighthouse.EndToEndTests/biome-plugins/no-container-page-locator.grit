@@ -1,0 +1,4 @@
+`this.container.page().$method($args)` where {
+    $method <: r"getBy.*",
+    register_diagnostic(span=$method, message="Page-wide locator reached through this.container: it matches every repeat of the component on the page and fails in strict mode. Scope it to this.container, or suppress with the reason it must be page-wide.", severity="error")
+}

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
+// biome-ignore lint/complexity/noStaticOnlyClass: the constants are read as TestConfig.NAME across the suite
 export class TestConfig {
 	static readonly ADOTOKENNAME: string = "AzureDevOpsLighthouseE2ETestToken";
 	static readonly JIRATOKENNAME: string = "JiraLighthouseIntegrationTestToken";
@@ -25,11 +25,15 @@ export class TestConfig {
 	static readonly AUTH_TEST_USER_DISPLAY_NAME: string = "Test User";
 	static readonly AUTH_TEST_USER_PASSWORD: string = "Test123!!?lsdkaflaskdf";
 
-	static readonly AUTHZ_TEST_SYSTEMADMIN_USERNAME : string = "systemadmin@user.com";
-	static readonly AUTHZ_TEST_PORTFOLIOADMIN_USERNAME: string = "portfolioadmin@user.com";
-	static readonly AUTHZ_TEST_PORTFOLIOREADER_USERNAME: string = "portfolioreader@user.com";
+	static readonly AUTHZ_TEST_SYSTEMADMIN_USERNAME: string =
+		"systemadmin@user.com";
+	static readonly AUTHZ_TEST_PORTFOLIOADMIN_USERNAME: string =
+		"portfolioadmin@user.com";
+	static readonly AUTHZ_TEST_PORTFOLIOREADER_USERNAME: string =
+		"portfolioreader@user.com";
 	static readonly AUTHZ_TEST_TEAMADMIN_USERNAME: string = "teamadmin@user.com";
-	static readonly AUTHZ_TEST_TEAMREADER_USERNAME: string = "teamreader@user.com";
+	static readonly AUTHZ_TEST_TEAMREADER_USERNAME: string =
+		"teamreader@user.com";
 
 	static readonly SYSTEMADMIN_GROUP_NAME: string = "system-admins";
 	static readonly PORTFOLIOADMIN_GROUP_NAME: string = "portfolio-admins";
@@ -101,7 +105,7 @@ export default defineConfig({
 	forbidOnly: !!process.env.CI,
 	/* Retry on CI only */
 	retries: process.env.CI ? 2 : 0,
-	
+
 	workers: 1,
 
 	/* Reporter to use. See https://playwright.dev/docs/test-reporters */

@@ -1,0 +1,4 @@
+`expect($page.url())` where {
+    $page <: r".*[pP]age",
+    register_diagnostic(span=$page, message="page.url() is a one-off snapshot taken before the navigation settles. Use await expect(page).toHaveURL(...) or expect.poll(() => page.url()), which wait.", severity="error")
+}
