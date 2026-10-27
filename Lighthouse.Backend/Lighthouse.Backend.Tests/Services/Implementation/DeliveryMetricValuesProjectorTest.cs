@@ -205,10 +205,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
             subject.BlackoutPeriodsFor([delivery], clock.Today);
 
-            var forecastReach = FeatureForecastWindow.EndFor(clock.TodayAsUtcMidnight, [feature]);
+            // Day 40, doubled for weekends and the like, plus two weeks: 94 days after 17 March.
+            var forecastReach = new DateTime(2026, 6, 19, 0, 0, 0, DateTimeKind.Utc);
             blackoutPeriodServiceMock.Verify(
                 service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, It.Is<DateTime>(end => end >= forecastReach)),
                 Times.Once);
+        }
+
+        [Test]
+        public void BlackoutPeriodsFor_TwoTeamsWhoseTailsPushTheDeliveryPastEveryFeature_ReadsBlackoutDaysAsFarAsTheDeliveryReaches()
+        {
+            var first = FeatureOfATeamWithALongTail(teamId: 7, referenceId: "FTR-11");
+            var second = FeatureOfATeamWithALongTail(teamId: 8, referenceId: "FTR-12");
+            var delivery = new Delivery { Id = 3, Name = "Q1 Release", PortfolioId = PortfolioId, Date = clock.TodayAsUtcMidnight.AddDays(1) };
+            delivery.ReplaceFeatures([first, second]);
+
+            subject.BlackoutPeriodsFor([delivery], clock.Today);
+
+            // Each Feature is done by day 20 in 95% of runs, but both Teams must finish: the Delivery's
+            // 95th is day 100, which reads 214 days after 17 March (each Feature alone would read 54).
+            var deliveryReach = new DateTime(2026, 10, 17, 0, 0, 0, DateTimeKind.Utc);
+            blackoutPeriodServiceMock.Verify(
+                service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, It.Is<DateTime>(end => end >= deliveryReach)),
+                Times.Once);
+        }
+
+        private static Feature FeatureOfATeamWithALongTail(int teamId, string referenceId)
+        {
+            var team = new Team { Id = teamId, Name = $"Team {teamId}" };
+            var feature = new Feature([(team, 4, 10)]) { Id = teamId, ReferenceId = referenceId, Name = referenceId, Order = teamId.ToString() };
+            var simulationResult = new SimulationResult();
+            simulationResult.SimulationResults[20] = 95;
+            simulationResult.SimulationResults[100] = 5;
+            feature.SetFeatureForecasts([new WhenForecast(simulationResult, DateTime.UtcNow) { TeamId = team.Id, HasSufficientData = true }]);
+
+            return feature;
         }
 
         private async Task<DeliveryMetricSnapshot> WhatTheDailyRecorderWrites(Delivery delivery)
