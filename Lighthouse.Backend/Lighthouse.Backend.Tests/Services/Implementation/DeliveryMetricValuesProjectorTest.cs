@@ -230,6 +230,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Times.Once);
         }
 
+        [Test]
+        public void BlackoutPeriodsFor_TwoTeamsDeliveryAlongsideOneWithoutAForecast_ReadsAsFarAsTheFurthestDelivery()
+        {
+            var longTailed = new Delivery { Id = 3, Name = "Q1 Release", PortfolioId = PortfolioId, Date = clock.TodayAsUtcMidnight.AddDays(1) };
+            longTailed.ReplaceFeatures([FeatureOfATeamWithALongTail(teamId: 7, referenceId: "FTR-11"), FeatureOfATeamWithALongTail(teamId: 8, referenceId: "FTR-12")]);
+            var unforecast = UnforecastDeliveryDue(daysOut: 1, id: 4);
+
+            subject.BlackoutPeriodsFor([unforecast, longTailed], clock.Today);
+
+            var deliveryReach = new DateTime(2026, 10, 17, 0, 0, 0, DateTimeKind.Utc);
+            blackoutPeriodServiceMock.Verify(
+                service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, deliveryReach),
+                Times.Once);
+        }
+
+        [Test]
+        public void BlackoutPeriodsFor_DeliveriesWithoutForecasts_ReadsTwoWeeksPastTheLatestTargetDate()
+        {
+            var sooner = UnforecastDeliveryDue(daysOut: 30, id: 3);
+            var later = UnforecastDeliveryDue(daysOut: 60, id: 4);
+
+            subject.BlackoutPeriodsFor([later, sooner], clock.Today);
+
+            // The later target date, 60 days after 17 March, plus two weeks.
+            var targetReach = new DateTime(2026, 5, 30, 0, 0, 0, DateTimeKind.Utc);
+            blackoutPeriodServiceMock.Verify(
+                service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, targetReach),
+                Times.Once);
+        }
+
+        [Test]
+        public void BlackoutPeriodsFor_NoDeliveries_ReadsTwoWeeksFromToday()
+        {
+            subject.BlackoutPeriodsFor([], clock.Today);
+
+            var twoWeeksOut = new DateTime(2026, 3, 31, 0, 0, 0, DateTimeKind.Utc);
+            blackoutPeriodServiceMock.Verify(
+                service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, twoWeeksOut),
+                Times.Once);
+        }
+
+        private Delivery UnforecastDeliveryDue(int daysOut, int id)
+        {
+            var team = new Team { Id = 9, Name = TeamNames[0] };
+            var feature = new Feature([(team, 4, 10)]) { Id = 20 + id, ReferenceId = $"FTR-{20 + id}", Name = "Unforecast", Order = "9" };
+            var delivery = new Delivery { Id = id, Name = $"Release {id}", PortfolioId = PortfolioId, Date = clock.TodayAsUtcMidnight.AddDays(daysOut) };
+            delivery.ReplaceFeatures([feature]);
+
+            return delivery;
+        }
+
         private static Feature FeatureOfATeamWithALongTail(int teamId, string referenceId)
         {
             var team = new Team { Id = teamId, Name = $"Team {teamId}" };
