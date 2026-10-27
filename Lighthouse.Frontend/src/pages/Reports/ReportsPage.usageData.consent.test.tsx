@@ -9,7 +9,6 @@ import {
 import {
 	aReportOn,
 	everyReport,
-	pendingEpic6350,
 	QUARTER,
 	renderTheReportsPage,
 	theReportsTable,
@@ -26,8 +25,6 @@ import { aReportService } from "../../tests/ReportsTestKit";
  */
 
 const TOKEN_STORAGE_KEY = "lighthouse:usagedata:consent";
-
-const pending = pendingEpic6350("01");
 
 const theAnswerAboutThisBrowser = (
 	overrides: Partial<IUsageDataState>,
@@ -76,7 +73,7 @@ describe("The Reports page is counted only where this browser agreed", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @kpi-OUT-6350-every-report-found @contract-shape:bounded-change
-	it.skip(`counts the page, and nothing about its reports, from a browser that agreed (${pending})`, async () => {
+	it(`counts the page, and nothing about its reports, from a browser that agreed`, async () => {
 		await showingThePageWith(theAnswerAboutThisBrowser({}), "sending");
 
 		await waitFor(() =>
@@ -89,7 +86,7 @@ describe("The Reports page is counted only where this browser agreed", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`counts nothing from a browser that said no, token or not (${pending})`, async () => {
+	it(`counts nothing from a browser that said no, token or not`, async () => {
 		await showingThePageWith(
 			theAnswerAboutThisBrowser({ sending: false, decision: "Declined" }),
 			"not-sending",

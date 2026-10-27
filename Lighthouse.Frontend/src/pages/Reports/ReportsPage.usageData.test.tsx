@@ -66,7 +66,7 @@ describe("What the Reports page tells the usage data", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @kpi-OUT-6350-every-report-found @contract-shape:bounded-change
-	it.skip(`showing the page is told once, by name alone (${pendingEpic6350("01")})`, async () => {
+	it(`showing the page is told once, by name alone`, async () => {
 		renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport(zenithsQuarter)),
@@ -80,7 +80,7 @@ describe("What the Reports page tells the usage data", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`a page whose reports could not be loaded tells nothing (${pendingEpic6350("01")})`, async () => {
+	it(`a page whose reports could not be loaded tells nothing`, async () => {
 		renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi

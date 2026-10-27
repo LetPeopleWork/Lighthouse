@@ -14,6 +14,7 @@ import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import { useAllReports } from "./useAllReports";
+import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
 const EMPTY = "Reports are created on a Team's or Portfolio's Reports tab.";
@@ -27,6 +28,7 @@ const ownerOf = (report: IReportListItem): IReportOwner => ({
 const ReportsPage: React.FC = () => {
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
+	useAllReportsListedReporter(status === "ready" && data !== undefined);
 	const { mayEdit } = useMayEditReportsOf();
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);

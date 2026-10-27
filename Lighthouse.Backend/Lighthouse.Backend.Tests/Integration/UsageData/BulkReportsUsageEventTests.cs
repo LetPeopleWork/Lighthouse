@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         ];
 
         // @driving_port @real-io @kpi @contract-shape:bounded-change
-        [TestCase("AllReportsListed", Category = "us-01,slice-01", Ignore = PendingEpic6350.Slice01)]
+        [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
@@ -87,8 +87,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @driving_port @real-io @error @contract-shape:unbounded-preservation
-        [TestCase("AllReportsListed", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-01,slice-01", Ignore = PendingEpic6350.Slice01)]
-        [TestCase("AllReportsListed", ",\"route\":\"TeamDetail_Reports\"", Category = "us-01,slice-01", Ignore = PendingEpic6350.Slice01)]
+        [TestCase("AllReportsListed", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-01,slice-01")]
+        [TestCase("AllReportsListed", ",\"route\":\"TeamDetail_Reports\"", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
         [TestCase("ReportBulkCreationStarted", ",\"updates\":\"Now\"", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
         [TestCase("ReportBulkRemovalStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         /// <summary>The name is the contract and the number is whatever is next when the slice lands, so this pins the order, never the number.</summary>
         // @contract-shape:bounded-change
-        [TestCase("AllReportsListed", Category = "us-01,slice-01", Ignore = PendingEpic6350.Slice01)]
+        [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // Data leaving that the page does not describe is data nobody was told about.
         // @contract-shape:bounded-change
-        [TestCase("Every report was listed", Category = "us-01,slice-01", Ignore = PendingEpic6350.Slice01)]
+        [TestCase("Every report was listed", Category = "us-01,slice-01")]
         [TestCase("Reports were created for several Teams or Portfolios", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
         [TestCase("Several reports were removed at once", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("Several reports were exported as one PDF", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]

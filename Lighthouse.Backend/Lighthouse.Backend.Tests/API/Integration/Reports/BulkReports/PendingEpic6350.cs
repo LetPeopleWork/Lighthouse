@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// </summary>
     internal static class PendingEpic6350
     {
-        public const string Slice01 = "Pending: every report in one place (epic 6350, slice 01).";
-
         public const string Slice02a = "Pending: one comparison created for several Teams at once (epic 6350, slice 02a).";
 
         public const string Slice03 = "Pending: Portfolios join the bulk creation (epic 6350, slice 03).";

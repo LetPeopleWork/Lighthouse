@@ -54,5 +54,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// then cancelled counts too: nothing tells Lighthouse whether a file was saved.
         /// </summary>
         ReportPdfExportStarted = 20,
+
+        /// <summary>
+        /// Somebody opened the Reports page and it showed its list. It carries nothing, not even how many
+        /// reports there were.
+        /// </summary>
+        AllReportsListed = 21,
     }
 }
