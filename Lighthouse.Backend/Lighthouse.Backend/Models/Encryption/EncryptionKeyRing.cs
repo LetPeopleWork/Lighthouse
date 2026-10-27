@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.Encryption;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Lighthouse.Backend.Models.Encryption
@@ -73,11 +72,6 @@ namespace Lighthouse.Backend.Models.Encryption
             var kept = Array.FindAll(keys, key => !string.Equals(key.Id, keyId, StringComparison.Ordinal));
 
             return kept.Length == keys.Length ? this : new EncryptionKeyRing(Custody, kept);
-        }
-
-        public EncryptionKeyRing WithLegacyDefault()
-        {
-            return LegacyDefaultEncryptionKey.AppendedTo(this);
         }
 
         public bool TryGet(string keyId, [NotNullWhen(true)] out EncryptionKey? key)

@@ -30,6 +30,11 @@ namespace Lighthouse.Backend.Services.Implementation.Encryption
             return ring.WithRetired(new EncryptionKey(Id, Material));
         }
 
+        public static EncryptionKeyRing WithLegacyDefault(this EncryptionKeyRing ring)
+        {
+            return AppendedTo(ring);
+        }
+
         // Whether some other key is this one, asked of every key an operator supplies. A key's name is
         // derived from its own bytes and so says nothing about whose bytes they are, which is how this
         // key walked past every check that looked at names.
