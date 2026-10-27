@@ -86,7 +86,11 @@ If the report no longer exists, or was made by a newer version of Lighthouse, th
 
 ## Browsers and the Standalone App
 
-Export PDF works in Chrome, Firefox and the [Standalone app](../Installation/standalone.html). If printing does not work for you, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
+Export PDF works in Chrome, Firefox and the [Standalone app](../Installation/standalone.html) on Windows and Linux.
+
+In the Standalone app on macOS, Export PDF is not available: the button and the row's icon are greyed out, because the macOS desktop app cannot open the print dialog for a report. To export PDFs on a Mac, run Lighthouse with [Docker](../Installation/server.html#docker) and open it in your browser.
+
+If printing does not work for you, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
 # Who Can Do What
 

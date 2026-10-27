@@ -155,6 +155,10 @@ Standalone webviews, with no native code), **simplicity**.
 - Negative: subframe printing differs across engines. Chrome, Firefox and the Linux Standalone app are probed by hand
   in the spike that opens the rework (decision 9), and again before it closes; macOS stays the maintainer's post-release check (DVO-10). If an engine prints the app's
   page or nothing, the work stops for a maintainer decision, with no silent fallback.
+- Found after release (Bug #6425): the macOS Standalone webview ignores `print()` called on the frame, so nothing
+  happens (upstream tauri-apps/tauri#13451; there only the top-level window's print is routed to the host). The
+  maintainer chose not to rework printing for it: on the macOS desktop app Export PDF is greyed out with a pointer
+  to the Docker version. If the upstream issue is fixed, remove that branch and probe printing on macOS by hand.
 - Negative (simplicity): five moving parts are added, each with its simplest failure. The style-sheet copy can miss
   a sheet, so something prints in a fallback. The frame's style cache can be left out, so MUI styles land in the
   app's head and the print is unstyled. The portal can throw in a foreign document, which the frame's boundary
