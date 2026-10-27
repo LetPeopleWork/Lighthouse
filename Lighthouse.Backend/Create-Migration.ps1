@@ -13,7 +13,39 @@ function Stop-DockerContainer {
     docker rm $ContainerName 2>$null
 }
 
+function Assert-PortIsFree {
+    param (
+        [int]$Port
+    )
+
+    $client = [System.Net.Sockets.TcpClient]::new()
+    try {
+        $client.Connect("localhost", $Port)
+    }
+    catch {
+        return
+    }
+    finally {
+        $client.Dispose()
+    }
+
+    throw "Port $Port is already in use. A local PostgreSQL (or another container) would answer instead of the migration container, so the PostgreSQL migration would be generated against the wrong database. Stop it and run this script again."
+}
+
+function Invoke-Build {
+    param (
+        [string]$Target
+    )
+
+    dotnet build $Target
+    if ($LASTEXITCODE -ne 0) {
+        throw "Building $Target failed"
+    }
+}
+
 function Start-PostgresContainer {
+    Assert-PortIsFree -Port 5432
+
     Write-Output "Starting PostgreSQL container..."
     docker run --name lighthouse-postgres-migration `
         -e POSTGRES_DB=lighthouse `
@@ -27,6 +59,18 @@ function Start-PostgresContainer {
 }
 
 try {
+    # The migration projects reference each other's output by path, so they have to be built before the
+    # solution; otherwise dotnet ef reports pending model changes that are only a stale build.
+    Write-Host "Restoring and building..."
+    dotnet restore Lighthouse.sln
+    if ($LASTEXITCODE -ne 0) {
+        throw "Restore failed"
+    }
+
+    Invoke-Build -Target "Lighthouse.Migrations.Sqlite"
+    Invoke-Build -Target "Lighthouse.Migrations.Postgres"
+    Invoke-Build -Target "Lighthouse.sln"
+
     # Create SQLite Migration
     Write-Host "Creating SQLite Migration..."
     $env:Database__Provider = "sqlite"
