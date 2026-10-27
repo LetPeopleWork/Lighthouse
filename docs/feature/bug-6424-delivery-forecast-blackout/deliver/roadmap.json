@@ -1,0 +1,126 @@
+{
+  "roadmap": {
+    "project_id": "bug-6424-delivery-forecast-blackout",
+    "created_at": "2026-10-27",
+    "total_steps": 3,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6424. Backend only (Lighthouse.Backend): how far the list of blackout days reaches when a Delivery's forecast dates and a tracker write-back date are projected. No frontend, no UI, no migration.",
+    "goal": "Under a recurring blackout rule (e.g. Sat+Sun weekly, no end date) a Delivery's 70/85/95 dates, the per-Feature dates in its row, its daily snapshots/Jira Release forecast, and forecast dates written back to tracker fields equal the Feature's own forecast dates. Today the blackout list stops too early, so weekends beyond it count as working days and these dates come out too early.",
+    "paradigm_note": "C# .NET 10 / NUnit 4 / WebApplicationFactory integration tests. No DISTILL wave for a bugfix: RED is a crafter-authored regression test failing on today's code."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6306 / bug-6425 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-27",
+    "notes": "RCA approved by the maintainer. Fix sites verified by the orchestrator: DeliveriesController.ForecastWindowEnd (:756-767), DeliveryMetricValuesProjector.ForecastWindowEnd (:108-117), WriteBackTriggerService (:333-337), BlackoutPeriodService.GetEffectiveBlackoutDays (:24-35; one-off periods are returned whole, only recurring rules are clipped to the window)."
+  },
+  "user_decisions": [
+    "Root cause confirmed (2026-10-27).",
+    "The write-back window bug is fixed in this bug, as a separate commit.",
+    "Only recurring rules are affected; one-off blackout periods already match — pin that as an already-green case.",
+    "Rigor profile standard (crafter sonnet, reviewer haiku). Do not push."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6424-delivery-forecast-blackout/rca.md",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Making the blackout service own its own reach (a calendar that grows or throws past its end) — longer-term follow-up.",
+    "Docs and release notes (finalize, after the maintainer confirms)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Delivery and write-back dates honour recurring blackout rules beyond the target date",
+      "description": "Regression tests, then the minimal fix, one commit per fix site group.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A Delivery's forecast dates match its Feature's under a weekend rule when the forecast runs past the target date",
+          "description": "The Delivery's percentile dates, its FeatureLikelihoods[].CompletionDates, and the projector used by snapshots and Jira publishing all project against a blackout list that reaches at least as far as the Feature forecast window.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDeliveryIntegrationTest.cs",
+          "scenario_name": "GetDelivery_WeekendRuleWithoutEnd_DeliveryAndFeatureDatesMatchWhenForecastRunsPastTheTargetDate",
+          "red_to_green_tests": [
+            "RecurringBlackoutRulesDeliveryIntegrationTest :: weekly Sat+Sun rule with no end date, one Team, one Feature forecast at 30 working days, Delivery due in 1 day -> the Delivery's 85th-percentile date and FeatureLikelihoods.Single().CompletionDates[85] both equal an independently computed date (step from today skipping Sat/Sun until 30 working days are counted)",
+            "DeliveryMetricValuesProjectorTest :: the blackout list the projector asks for reaches at least FeatureForecastWindow's end for the Deliveries' Features (covers snapshot + Jira publishing path)",
+            "Already-green pin: a one-off blackout period after the target date, no recurring rule -> Delivery and Feature dates already match (must pass before and after)"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/API/FeatureForecastWindow.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryMetricValuesProjector.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDeliveryIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliveryMetricValuesProjectorTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "RED first: the integration regression test fails on today's code (record the wrong date it reads).",
+            "FeatureForecastWindow is `internal` in Lighthouse.Backend.API and the projector lives in Services. Services must not depend on the API layer: move the helper to a layer both can use (e.g. Lighthouse.Backend.Models.Forecast or a Services namespace — check the ArchUnit tests in the test project for layering rules) in a SEPARATE `refactor(forecast): ...` commit with no behaviour change, updating every existing caller and moving its two test classes alongside. Keep the class name unless the move makes it wrong.",
+            "One Delivery sizing rule: the controller's private ForecastWindowEnd and the projector's private ForecastWindowEnd become one. Prefer the controller asking the projector (it already injects or can inject it) or a single shared helper; delete the duplicate.",
+            "The window end = the later of (latest Delivery date, or today if later) + 14 days, and FeatureForecastWindow.EndFor(today, all Features of those Deliveries). Behaviour without any recurring rule is unchanged.",
+            "Likelihood % is unchanged (it is bounded by the target date already); no existing Delivery test changes its expectations unless it encoded the too-early dates — if one does, say so in the commit body.",
+            "Comments only where the why is not readable from code, plain language, no bug numbers or internal ids.",
+            "dotnet build zero warnings; filtered dotnet test green (see CLAUDE.md filter)."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md. Look at RecurringBlackoutRulesTestBase for the rule/feature/delivery builders (ForecastCompletingInWorkingDays, dueDateDaysOut). Use the test clock the base already uses; make the expected date independent of production code (a small loop in the test skipping Saturday/Sunday). Commits: `refactor(forecast): move FeatureForecastWindow where services can use it` then `fix(deliveries): project Delivery dates against blackout days as far out as the forecast reaches (bug 6424)`."
+        },
+        {
+          "id": "01-02",
+          "name": "A forecast date written back to a tracker field honours a weekend rule",
+          "description": "WriteBackTriggerService asks for blackout days today..today+daysAway calendar days but then counts daysAway WORKING days, so weekends past the list count as working days. Size the list with FeatureForecastWindow instead.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs",
+          "scenario_name": "a forecast date written back under a Sat+Sun recurring rule equals today plus N working days skipping weekends",
+          "red_to_green_tests": [
+            "WriteBackTriggerService test (or BlackoutForecastShiftWriteBackTest, whichever already drives this path with a blackout service) :: the blackout window requested reaches FeatureForecastWindow's end for the forecast, and the written date with a real recurring Sat+Sun rule equals the independently computed working-day date"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WriteBackTriggerServiceTest.cs"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "RED first: the regression test fails on today's code.",
+            "Replace `windowStart.AddDays(daysAway)` with FeatureForecastWindow's end for the forecast in hand (add an overload taking the forecast base type if the existing WhenForecast overload does not fit; reuse, do not duplicate the sizing rule).",
+            "Behaviour without recurring rules unchanged; existing write-back tests stay green unchanged.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md. Commit: `fix(writeback): project written-back forecast dates against blackout days as far out as the forecast reaches (bug 6424)`."
+        },
+        {
+          "id": "01-03",
+          "name": "Review revision: a multi-Team Delivery's own dates are covered, and the new tests can fail",
+          "description": "Opus review (NEEDS_REVISION). H1: across Teams the Delivery forecast is a product of CDFs, so its 95th can lie beyond every Feature's 95th; size the Delivery window on each Delivery's own aggregate as well. H2/M1: tests whose oracle is production code or that cannot fail. M2: write-back sizes by the percentile it writes, not the 95th. L1: EndFor accepts only When/Start forecasts.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDeliveryIntegrationTest.cs",
+          "scenario_name": "GetDelivery_WeekendRuleWithoutEnd_TwoTeamsWithLongTails_DeliveryDatesSkipEveryWeekend",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/DeliveryMetricValuesProjector.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WriteBackTriggerService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend/Models/Forecast/FeatureForecastWindow.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/RecurringBlackoutRulesDeliveryIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DeliveryMetricValuesProjectorTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlackoutForecastShiftWriteBackTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/cheerful-watching-gizmo/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Forecast/FeatureForecastWindowTest.cs"
+          ],
+          "dependencies": ["01-02"],
+          "criteria": [
+            "RED first: a two-Team Delivery with long-tailed forecasts under a Sat+Sun rule reads a Delivery 95th date that is too early on the current code; oracle independent of production code.",
+            "Delivery window end also covers each Delivery's own aggregate forecast (DeliveryCompletionForecast.Build(delivery.Features)); max with the existing ends.",
+            "The one-off-period pin and the projector window test assert against independent literals/oracles, not against production code.",
+            "Write-back sizes its window from the day it projects, not the 95th; no 10-year expansion when the 95th is beyond the horizon.",
+            "EndFor accepts only When/Start completion forecasts, not HowMany.",
+            "dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "Review findings in the orchestrator's dispatch. Commit(s): `fix(deliveries): ...` and `test(...)`/`fix(writeback): ...` as fits."
+        }
+      ]
+    }
+  ]
+}

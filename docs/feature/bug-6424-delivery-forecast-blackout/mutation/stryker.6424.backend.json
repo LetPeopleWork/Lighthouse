@@ -1,0 +1,29 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/Forecast/FeatureForecastWindow.cs",
+      "**/Services/Implementation/DeliveryMetricValuesProjector.cs",
+      "**/Services/Implementation/WriteBackTriggerService.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~FeatureForecastWindow|FullyQualifiedName~DeliveryMetricValuesProjector|FullyQualifiedName~WriteBack|FullyQualifiedName~BlackoutForecastShift)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~IntegrationTest&FullyQualifiedName!~Dogfood",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
