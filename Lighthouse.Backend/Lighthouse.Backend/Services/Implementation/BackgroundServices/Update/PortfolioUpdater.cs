@@ -125,6 +125,8 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
 
                     itemCount = project.Features.Count;
                     success = true;
+
+                    WarnWhenTheUpdateLeavesTheLargePortfolio(project, new PortfolioSize(itemCount));
                 }
                 catch (OperationCanceledException)
                 {
@@ -185,6 +187,18 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
             {
                 await CleanUpOrphanedFeatures();
             }
+        }
+
+        private void WarnWhenTheUpdateLeavesTheLargePortfolio(Portfolio project, PortfolioSize size)
+        {
+            if (!size.IsOverThreshold)
+            {
+                return;
+            }
+
+            Logger.LogWarning(
+                "Portfolio '{PortfolioName}' ({PortfolioId}) holds {FeatureCount} Features after its update, more than {Threshold}. Its pages and forecasts get slower; narrowing its query keeps them fast.",
+                project.Name, project.Id, size.FeatureCount, PortfolioSize.Threshold);
         }
 
         private async Task CleanUpOrphanedFeatures()

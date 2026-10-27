@@ -577,6 +577,57 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             }
         }
 
+        [TestCase(101, 1)]
+        [TestCase(100, 0)]
+        public void TriggerUpdate_RefreshSucceeds_WarnsOnceOnlyWhenThePortfolioHoldsMoreThan100Features(int featureCount, int expectedWarnings)
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            AddFeatures(project, featureCount);
+            SetupProjects(project);
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var warnings = loggerMock.Invocations
+                .Where(i => i.Arguments[0] is LogLevel.Warning)
+                .Select(i => i.Arguments[2]?.ToString() ?? string.Empty)
+                .ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warnings, Has.Count.EqualTo(expectedWarnings));
+                if (expectedWarnings > 0)
+                {
+                    Assert.That(warnings[0], Is.EqualTo(
+                        $"Portfolio 'Release 1' ({project.Id}) holds {featureCount} Features after its update, more than 100. "
+                        + "Its pages and forecasts get slower; narrowing its query keeps them fast."));
+                }
+            }
+        }
+
+        [Test]
+        public void TriggerUpdate_RefreshFails_WarnsNothingAboutSizeEvenForAPortfolioOver100Features()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            AddFeatures(project, 101);
+            SetupProjects(project);
+            workItemServiceMock.Setup(x => x.UpdateFeaturesForPortfolio(project)).ThrowsAsync(CreateRefusal());
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            Assert.That(
+                loggerMock.Invocations.Count(i => i.Arguments[0] is LogLevel.Warning
+                    && (i.Arguments[2]?.ToString() ?? string.Empty).Contains("Features after its update", StringComparison.Ordinal)),
+                Is.Zero);
+        }
+
+        private void AddFeatures(Portfolio project, int count)
+        {
+            var team = CreateTeam();
+            for (var index = 0; index < count; index++)
+            {
+                project.Features.Add(new Feature(team, 1) { Id = idCounter++ });
+            }
+        }
+
         [Test]
         public void TriggerUpdate_PortfolioNoLongerExists_DoesNothingAndDoesNotFail()
         {

@@ -365,6 +365,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 .GetRefreshLogs()
                 .Where(log => log.Type == type && log.EntityId == entityId)
                 .OrderByDescending(log => log.ExecutedAt)
+                .ThenByDescending(log => log.Id)
                 .FirstOrDefault();
         }
 

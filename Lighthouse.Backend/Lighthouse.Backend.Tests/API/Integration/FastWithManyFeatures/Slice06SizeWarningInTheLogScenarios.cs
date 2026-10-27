@@ -45,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task An_update_that_stores_101_Features_leaves_one_warning_naming_the_Portfolio_and_still_stores_them_all()
@@ -69,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("contract-shape:bounded-change")]
         public async Task The_size_warning_is_listed_once_in_Recent_Problems()
@@ -85,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:bounded-change")]
@@ -103,7 +100,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(TheRecordedRefreshFor(RefreshType.Portfolio, portfolioId)?.Success, Is.False, "The second update was to fail.");
-                Assert.That(TheSizeWarningsAt(LogEventLevel.Warning), Is.EqualTo(1),
+                Assert.That(TheSizeWarningsAt(LogEventLevel.Warning), Is.Zero,
                     "An update that stored nothing says nothing about the Portfolio's size. Warnings: " + string.Join(" | ", CapturedLogs.WarningsAsWritten));
             }
         }
