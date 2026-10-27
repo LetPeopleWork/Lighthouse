@@ -1,6 +1,5 @@
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Models;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

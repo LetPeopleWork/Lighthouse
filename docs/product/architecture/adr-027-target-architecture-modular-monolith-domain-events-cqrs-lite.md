@@ -149,7 +149,7 @@ Portfolio refresh scatters `InvalidatePortfolioMetrics` into the *updater* (the 
 
 - Architecture epic: **#5121**. Children: #5098, #5099, #5100, #5101, #5122.
 - Status note (2026-10-27): the `Models` shared kernel not depending on `Services` is now enforced by
-  `ModuleBoundariesArchUnitTest.SharedKernel_DoesNotDependOnServices`, with an empty exception list.
+  `ModuleBoundariesArchUnitTest.SharedKernel_DoesNotDependOnServices`, with no exceptions.
   See `docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md`; the rule
   convention is ADR-268.
 - Persistence sink: **#5017** (Event Store & Health KPI Completeness). Producer for Family E: **#5019**. Reaction sinks (future): #4754 / #4755 (notifications), #5102 (Track Actions / audit).
