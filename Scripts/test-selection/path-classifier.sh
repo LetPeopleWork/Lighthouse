@@ -19,7 +19,7 @@ GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tes
 #   - Connector-shared models (Models/WorkTrackingSystemConnection*, Models/OAuth/)
 #   - Program.cs (DI graph for every connector)
 #   - Solution + csproj files
-SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
+SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
 
 classify_jira()   { printf '%s\n' "$1" | grep -Eq "$JIRA_REGEX"   && echo true || echo false; }
 classify_ado()    { printf '%s\n' "$1" | grep -Eq "$ADO_REGEX"    && echo true || echo false; }
