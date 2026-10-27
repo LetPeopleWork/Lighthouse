@@ -436,3 +436,12 @@ N/A, because nothing user-visible changes.
   stub; run each once against a deliberately over-reporting helper to see it fail.
 - **Environmental:** in a worktree 2 Licensing tests fail without the gitignored licence fixture; the live-connector
   categories are not run.
+
+## Wave: DELIVER / [REF] Rigor profile (maintainer decision 2026-10-27)
+
+| Slices | Profile | Crafter model | Reviewer model |
+|---|---|---|---|
+| S04a-1, S04a-2, S04a-3, S04a-4, S04a-5, S04a-6, S05a-1 | standard | sonnet | haiku |
+| S05a-2 | thorough | opus | sonnet |
+
+Pace: all eight slices, refactor + review after each, then final review and mutation, then hold for the maintainer's review. Nothing is pushed.

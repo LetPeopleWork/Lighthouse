@@ -1,0 +1,482 @@
+{
+  "roadmap": {
+    "project_id": "stories-6367-6369-kernel-and-repository-ratchets",
+    "created_at": "2026-10-27T12:00:00Z",
+    "total_steps": 11,
+    "total_phases": 2,
+    "goal": "ADO #6367 (S04a) and #6369 (S05a) from Epic #6264. S04a: `Models` no longer depends on `Services`. Seven kernel-level types (IEntity, IConcurrencyTokenEntity, WorkTrackingSystems, ReportOwner + ReportOwnerKind, BlackoutDaysExtensions, UpdateType) move into `Models` by pure namespace-and-using commits; `EncryptionKeyRing.WithLegacyDefault()` becomes an extension method in `Services/Implementation/Encryption`; the rule `Models ↛ Services` lands with an EMPTY exception list and the ARCHITECTURE.md section 4 gap note and the prose caveat are deleted. S05a: two ratchets with inline file lists, never counts: `GetAllByPredicate` is called only from the 14 listed files outside `Services/Implementation/Repositories/**` (source scan, failure names file:line), and the `API` namespace depends on a repository only in the 23 listed types (ArchUnitNET). Done when all 31 pending DISTILL tests are un-ignored and green, every active test is green and unmodified (apart from tests that move with their code), no `// SCAFFOLD: true` of this batch remains, `dotnet build` has zero warnings and the filtered `dotnet test` is green. Behaviour-free: routes, DTOs, serialised responses, stored integer values and topologies unchanged. Mutation, docs and the final review belong to finalization and are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately: this is a behaviour-free ratchet batch on a C# .NET 10 backend with NUnit 4 and no property-testing library. DISTILL authored 31 example-based architecture-test scenarios, each `[Ignore(\"pending: <slice>\")]` and red through a `// SCAFFOLD: true` body that throws AssertionException. RED is removing the Ignore and watching the test fail on its assertion or its scaffold; GREEN is building the helper or the rule (S05a, S04a-4, S04a-6) or, for pure moves, keeping the existing suite green unmodified. Nothing is 'new behaviour' in a move slice, so there is no failing test to write for 01-01 to 01-03 and 01-05: the existing suite and the build are the guard, and the rule that finally proves the moves is `SharedKernel_DoesNotDependOnServices` in 01-06.",
+    "rigor_profile": {
+      "01-01 to 01-06 and 02-01 to 02-03": "standard (agent model sonnet, reviewer haiku)",
+      "02-04 and 02-05": "thorough (agent model opus, reviewer sonnet)",
+      "pace": "All eight slices (S05a-1 delivered as steps 02-01 to 02-03, S05a-2 as 02-04 and 02-05), refactor + review after each, then final review and mutation, then hold for the maintainer's review. Nothing is pushed."
+    },
+    "exit_gates": [
+      "End of every step: `dotnet build` zero warnings (stale `using` lines removed with tooling, Sonar S1128 / IDE0005); `dotnet test --filter FullyQualifiedName~Architecture` green with the stated number of tests un-ignored; the filtered `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green at the end of 01-06 and 02-05 (environmental signatures per CLAUDE.md are not regressions: 2 Licensing tests in a worktree). Never run the live-connector categories: a `using`-only change does not warrant it and the Linear key is shared with CI.",
+      "Pure-move steps: move commit(s) first (namespace + using only, no logic, no formatting churn), then a separate edit commit if the slice has one. Every commit leaves the build green. A large mechanical diff must not hide a logic edit.",
+      "Baselines are inline file lists; they are never loosened and never replaced by a count. Re-count `GetAllByPredicate` files (14) and `API` entries (23) at the end of phase 02.",
+      "Before 01-06 goes green, compare ArchUnitNET's `Models → Services` offender list with the eight types DESIGN lists (DISTILL already did: it matches exactly, 43 Models types, 8 Services types). Any extra type is a ninth decision to put to the maintainer, not to baseline silently.",
+      "Negative tests (`...IsNotACall`, `...IsNotADependency`, `...Passes`) are red today only through the scaffold: for each, run once against a deliberately over-reporting helper (throwaway mutation, reverted) to see it fail.",
+      "Push once, after 01-06 and 02-05 are green: the push carrying 01-02 touches the connector-shared paths, so CI runs every live-connector category. Push the S04a moves together so that happens once. Nothing is pushed before the maintainer's review.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no D-, DDD-, AC-, S04a-, ADR- numbers).",
+      "Commit via des-commit with `--owned-paths` written once with every path (do not repeat the flag); conventional commits with scope, e.g. `refactor(architecture): move ...`, `test(architecture): ...`."
+    ]
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md",
+    "red_classification": "docs/feature/stories-6367-6369-kernel-and-repository-ratchets/distill/red-classification.md",
+    "slices": "docs/feature/epic-6264-modular-monolith/slices/slice-11-s04a-close-models-services-gap.md, docs/feature/epic-6264-modular-monolith/slices/slice-13-s05a-ratchet-getallbypredicate-and-controller-repos.md",
+    "epic_feature_delta": "docs/feature/epic-6264-modular-monolith/feature-delta.md",
+    "pending_tests": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ (RepositoryLeakRatchetArchUnitTest.cs, KernelRulesCatchANewOffenderArchUnitTest.cs, ModuleBoundariesArchUnitTest.cs, ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs; scaffolds in KernelRules.cs and ProductionSource.cs)",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_stories": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6367, https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6369"
+  },
+  "user_decisions": [
+    "D1 - S04a: move six kernel-level types (seven names: IEntity, IConcurrencyTokenEntity, WorkTrackingSystems, ReportOwner, ReportOwnerKind, BlackoutDaysExtensions, UpdateType) into `Models`; invert LegacyDefaultEncryptionKey. `Models ↛ Services` starts with an empty exception list.",
+    "D2 - `LegacyDefaultEncryptionKey` is not kernel-level (needs SecretStateClassifier, SecretEnvelope, EncryptionKeyRingHolder, all Services): `EncryptionKeyRing.WithLegacyDefault()` becomes an extension method in `Services/Implementation/Encryption`; call syntax unchanged.",
+    "D3 - The `UpdateType` exception is dropped from `ModelsDoNotDependOnTheUpdateQueueArchUnitTest`; the test stays, narrower.",
+    "D4 - S05a detection is hybrid: `GetAllByPredicate` callers by source scan with an inline file list (failure names file:line); repository dependency by ArchUnitNET type dependencies.",
+    "D5 - Repository targets match by name (`IRepository<>`, `^I\\w*Repository$`) plus every type in `Services.Implementation.Repositories`; NOT by the `Services.Interfaces.Repositories` namespace (it also holds IFeatureListReader, IUserProfileLookup, RecordableDeliveries).",
+    "D6 - Rule scope is the whole `API` namespace, 23 entries (20 controllers + APIHelpers, OwnerSettingRefusals, PortfolioExtensions); 'depends' means any type dependency including generic arguments; nested compiler types normalise to their declaring type.",
+    "D7 - Test placement: S04a extends `ModuleBoundariesArchUnitTest`; S05a has one new class for both rules.",
+    "D8 - One new internal `ProductionSource` helper used by the new test only; the five private copies are not migrated.",
+    "D9 - ADR-268 (the ratchet convention) and the status note on ADR-027 were written and committed at DESIGN; no DELIVER step writes them.",
+    "DELIVER rigor (2026-10-27): standard for every slice except S05a-2 (thorough); crafter model sonnet except S05a-2 (steps 02-04, 02-05) opus; reviewers haiku / sonnet."
+  ],
+  "out_of_scope": [
+    "Migrating the five private source-scan helpers (ProductionSourceFiles / ProductionSourceOf / ProductionRoot in OverTimeReconstructionSeamArchUnitTest, SecretReadPathSourceStructureTest, SecretRotationWriteSurfaceTest, CalendarDayAnchorSeamArchUnitTest, JiraRouteLiteralsTest) to `ProductionSource`: a separate follow-up.",
+    "S04b (#6368 and the rest of the Models/kernel reduction) and any migration of a `GetAllByPredicate` caller or an `API` repository dependency off its baseline list: S05b to S05f. The lists shrink there, never here.",
+    "Finalize items: Stryker.NET mutation on frozen code per the DEVOPS scope (>= 80% on LegacyDefaultEncryptionKey.cs; BlackoutDaysExtensions.cs and ReportOwner.cs not lower than at their old paths), docs, the Epic KPI table, ADO state transitions, release notes (none: behaviour-free).",
+    "Usage-data event (N/A, behaviour-free), RBAC (N/A), Lighthouse-Clients (N/A, enums serialise by member name), website (N/A), UI sketches (N/A, nothing user-visible)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Models no longer depends on Services (#6367, S04a)",
+      "description": "Steps 01-01 to 01-05 relocate the kernel-level types and invert the encryption default so that `Models` reaches nothing in `Services`; 01-06 adds the rule that proves it, with an empty exception list, and deletes the documented gap. Releasable alone; no dependency on phase 02. The existing suite is the guard for 01-01 to 01-03 and 01-05 (no pending test of their own); the pending tests are un-ignored in 01-04 (3) and 01-06 (3). Pending-test ownership: S04a-4 owns TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType and the two update-queue fixture tests; S04a-6 owns SharedKernel_DoesNotDependOnServices and the two kernel fixture tests. `KernelRules.cs` carries ONE class-level `// SCAFFOLD: true` covering both factories: 01-04 implements the update-queue factory, 01-06 implements the services factory and removes the marker.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "S04a-1: IEntity and IConcurrencyTokenEntity live in Models",
+          "description": "Slice S04a-1. Pure move commit(s) first (namespace + using only), then a separate edit commit if the slice has one (none expected). Move `Services/Interfaces/IEntity.cs` and `Services/Interfaces/IConcurrencyTokenEntity.cs` to `Models`, namespace `Lighthouse.Backend.Models` (about 55 files touched; in `Models` the move deletes a `using`). No pending test of its own: the existing suite stays green unmodified is the guard, and `ModuleBoundariesArchUnitTest.SharedKernel_DoesNotDependOnServices` (un-ignored in 01-06) finally proves the move.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+          ],
+          "scenario_name": "the existing suite stays green unmodified",
+          "unskips": [],
+          "guards_kept_green": [
+            "Every active test in the backend test project, unmodified; `dotnet test --filter FullyQualifiedName~Architecture`; no PendingModelChanges (no entity namespace changes, so no snapshot churn expected)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IEntity.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/IEntity.cs (move - namespace Lighthouse.Backend.Models)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/IConcurrencyTokenEntity.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/IConcurrencyTokenEntity.cs (move - namespace Lighthouse.Backend.Models)",
+            "Every production and test file that names either type (using lines only; drop usings that become unused)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "IEntity and IConcurrencyTokenEntity are declared in namespace Lighthouse.Backend.Models; the 33 Models types that implement them no longer import a Services namespace for them.",
+            "The commit diff is namespace and using lines only; no logic, signature or formatting change.",
+            "dotnet build zero warnings (no stale usings); the architecture tests and the filtered dotnet test stay green, no test modified."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure move, no behaviour. Compile-driven or IDE-driven rename of the namespace; remove stale usings with tooling (IDE0005), not by hand. Both model snapshots carry no Services fully qualified name and no HasConversion, so no migration change. Pre-apply docs/ci-learnings.md. `refactor(architecture): move IEntity and IConcurrencyTokenEntity into Models`."
+        },
+        {
+          "id": "01-02",
+          "name": "S04a-2: WorkTrackingSystems lives in Models, and a change to it still forces the live-connector suites",
+          "description": "Slice S04a-2. Pure move commit(s) first (namespace + using only), then a separate edit commit for the classifier. Move `Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs` to `Models/WorkTrackingSystems.cs`, namespace `Lighthouse.Backend.Models` (up to about 276 files, mechanical; compile-driven or IDE0005); integer values untouched. No pending test of its own: the existing suite stays green unmodified is the guard (the stored order is already pinned by the active `ServiceNowConnectionConfigurationTest.ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder`). Edit commit in the same range: add `^Lighthouse\\.Backend/Lighthouse\\.Backend/Models/WorkTrackingSystems\\.cs$` to `SHARED_REGEX` in `Scripts/test-selection/path-classifier.sh`, with a DELIVER-authored scenario in `Scripts/test-selection/test-path-classifier.sh` (the script has no skip idiom, so it is not scaffolded): add the assert first and watch it fail, then extend the regex.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+            "Scripts/test-selection/test-path-classifier.sh"
+          ],
+          "scenario_name": "the existing suite stays green unmodified; and, for the classifier edit, `work-tracking-systems: shared=true` (authored in this step)",
+          "unskips": [],
+          "guards_kept_green": [
+            "Every active test in the backend test project, unmodified, incl. ServiceNowConnectionConfigurationTest's stored-order pin",
+            "Scripts/test-selection/test-path-classifier.sh: every existing assert stays green"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystems.cs (move - namespace Lighthouse.Backend.Models; integer values kept)",
+            "Every production and test file that names the enum, incl. the Jira, ADO, Linear and ServiceNow folders (using lines only; drop usings that become unused)",
+            "Scripts/test-selection/path-classifier.sh (edit, separate commit - SHARED_REGEX gains the Models/WorkTrackingSystems.cs path)",
+            "Scripts/test-selection/test-path-classifier.sh (edit, separate commit, written first - diff_work_tracking_systems scenario next to the 'shared models' scenario, `assert \"work-tracking-systems: shared=true\" \"$(classify_shared \"$diff_work_tracking_systems\")\" \"true\"`)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "WorkTrackingSystems is declared in namespace Lighthouse.Backend.Models with its stored integer values unchanged (AzureDevOps 0, Jira 1, Linear 2, Csv 3, ServiceNow 4).",
+            "A diff containing only Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystems.cs classifies as connector_shared=true; the new assert was seen failing before SHARED_REGEX changed, and test-path-classifier.sh exits 0 afterwards.",
+            "The move commit is namespace and using lines only; the classifier edit is a separate commit.",
+            "dotnet build zero warnings; architecture tests and filtered dotnet test green, no test modified."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure move plus a CI-path-classifier edit that keeps today's trigger coverage of the enum (not a behaviour change). The namespace must change, or the Models ↛ Services rule still flags the enum. The push carrying this step touches the connector-shared paths, so CI will run every live-connector suite: expected and accepted; push the S04a moves together. Do not run the connector categories locally. Remove stale usings in the move commit (Sonar S1128). Pre-apply docs/ci-learnings.md. `refactor(architecture): move WorkTrackingSystems into Models` then `ci(test-selection): keep WorkTrackingSystems a shared connector path`."
+        },
+        {
+          "id": "01-03",
+          "name": "S04a-3: ReportOwner, ReportOwnerKind and BlackoutDaysExtensions live in Models",
+          "description": "Slice S04a-3. Pure move commit(s) first (namespace + using only), then a separate edit commit if the slice has one (none expected). Two separate move commits: (1) `Services/Interfaces/Reports/ReportOwner.cs` (holds ReportOwner and ReportOwnerKind) to `Models/Reports`, namespace `Lighthouse.Backend.Models.Reports` (about 43 files); (2) `Services/Implementation/BlackoutDaysExtensions.cs` to `Models`, namespace `Lighthouse.Backend.Models` (17 files; its tests move with it if they sit beside the old path). No pending test of its own: the existing suite stays green unmodified is the guard, and `SharedKernel_DoesNotDependOnServices` (01-06) finally proves it.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+          ],
+          "scenario_name": "the existing suite stays green unmodified",
+          "unskips": [],
+          "guards_kept_green": [
+            "Every active test in the backend test project, unmodified (a test that moves with its code is the only allowed change); BlackoutDaysExtensions and ReportOwner tests keep their assertions"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Reports/ReportOwner.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/Reports/ReportOwner.cs (move - namespace Lighthouse.Backend.Models.Reports)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BlackoutDaysExtensions.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/BlackoutDaysExtensions.cs (move - namespace Lighthouse.Backend.Models)",
+            "Every production and test file that names these types (using lines only; the 'unresolved usings' in Delivery, Feature, ForecastPercentile and ReportReadModels resolve to BlackoutDaysExtensions or are dropped as unused)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "ReportOwner and ReportOwnerKind are declared in Lighthouse.Backend.Models.Reports; BlackoutDaysExtensions in Lighthouse.Backend.Models; no member changes.",
+            "Each move is its own commit and contains namespace and using lines only.",
+            "dotnet build zero warnings; architecture tests and filtered dotnet test green, no test modified."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: pure move. BlackoutDaysExtensions extends only BlackoutPeriod and ProcessBehaviourChart; ReportOwner is a dependency-free value object and enum. Mutation baselines for both are taken by file at finalization, not by line span. Pre-apply docs/ci-learnings.md. `refactor(architecture): move ReportOwner into Models` and `refactor(architecture): move BlackoutDaysExtensions into Models`."
+        },
+        {
+          "id": "01-04",
+          "name": "S04a-4: UpdateType lives in Models and no Model knows the update queue, not even by name",
+          "description": "Slice S04a-4. Pure move commit(s) first (namespace + using only), then a separate edit commit. Move commit: `Services/Implementation/BackgroundServices/Update/UpdateType.cs` to `Models`, namespace `Lighthouse.Backend.Models` (about 70 files, mostly using lines). Edit commit: implement the update-queue factory `KernelRules.ModelsDoNotDependOnTheUpdateQueue(models, updateQueue)` (it returns the rule with its Because text; the namespace patterns are the constants already on the class) and call it from the survivor test. SURVIVOR DECISION: DELETE the active test `TheDomainModel_KnowsNothingOfTheUpdateItRunsUnder` (ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs, about line 30; it re-declares its own patterns and keeps `AreNot(typeof(UpdateType))`); KEEP and un-ignore the pending `TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType` (about line 42). Drop the `UpdateType` exception and its doc paragraph. The file then holds one rule with one definition, the `KernelRules` factory. The active test stays untouched until UpdateType has moved, so it stays green until the delete. Also un-ignore the two `pending: S04a-4` fixture tests in KernelRulesCatchANewOffenderArchUnitTest.cs. The class-level `// SCAFFOLD: true` in KernelRules.cs STAYS: the services factory is still a scaffold until 01-06.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs"
+          ],
+          "scenario_name": "No Model depends on the update queue, not even on the name of an update type; a made-up offending Model is named, a made-up clean Model passes",
+          "unskips": [
+            "ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs :: TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType",
+            "KernelRulesCatchANewOffenderArchUnitTest.cs :: AModelThatReachesIntoTheUpdateQueue_FailsTheUpdateQueueRuleAndIsNamed",
+            "KernelRulesCatchANewOffenderArchUnitTest.cs :: AModelThatStaysInsideTheKernel_PassesTheUpdateQueueRule"
+          ],
+          "guards_kept_green": [
+            "Every other active architecture test, unmodified; every active test in the backend test project except the one duplicate this step deletes (`TheDomainModel_KnowsNothingOfTheUpdateItRunsUnder`)",
+            "The negative case `AModelThatStaysInsideTheKernel_PassesTheUpdateQueueRule`: run once against a deliberately over-reporting factory to see it fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BackgroundServices/Update/UpdateType.cs -> Lighthouse.Backend/Lighthouse.Backend/Models/UpdateType.cs (move - namespace Lighthouse.Backend.Models; member values unchanged, they feed the advisory lock key)",
+            "Every production and test file that names UpdateType (using lines only)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs (edit - implement ModelsDoNotDependOnTheUpdateQueue and its Because text; the class-level SCAFFOLD marker stays for the services factory)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs (edit - delete TheDomainModel_KnowsNothingOfTheUpdateItRunsUnder, drop the UpdateType exception and doc paragraph, un-ignore the surviving pending test and have it call the KernelRules factory)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs (edit - un-ignore the two update-queue tests)"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "UpdateType is declared in Lighthouse.Backend.Models with unchanged member values.",
+            "No Model depends on the update queue namespace; the rule has no exception for any type.",
+            "A made-up Model that names a made-up update-queue type fails the same rule and is named; a made-up Model that stays in the kernel passes.",
+            "ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs holds one rule with one definition (the KernelRules factory): `TheDomainModel_KnowsNothingOfTheUpdateItRunsUnder` is deleted, `TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType` survives and is active.",
+            "KernelRules.ModelsDoNotDependOnTheUpdateQueue is implemented; the class-level `// SCAFFOLD: true` in KernelRules.cs is still present (the services factory is not built until 01-06).",
+            "The move commit is namespace and using lines only; the rule edit is a separate commit. dotnet build zero warnings; filtered dotnet test green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: move plus an architecture rule. UpdateType is persisted only as an int in the advisory lock key and no reflection or type-name serialisation touches it. The update-queue offender fixture names an enum (`AFixtureUpdateKind`) in `Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures`; the factory's default update-queue pattern is what the production test uses. The fixtures live in the test assembly and the production architecture loads only the production assembly, so the production rule cannot see them. Pre-apply docs/ci-learnings.md. `refactor(architecture): move UpdateType into Models` then `test(architecture): Models know nothing of the update queue, not even UpdateType`."
+        },
+        {
+          "id": "01-05",
+          "name": "S04a-5: WithLegacyDefault is a Services extension, so Models no longer reaches the encryption service",
+          "description": "Slice S04a-5. Edit commit (not a pure move; there is no namespace-only move in this slice). `EncryptionKeyRing.WithLegacyDefault()` becomes an extension method in `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs`; the instance method leaves `Models/Encryption/EncryptionKeyRing.cs`; call syntax is unchanged. Re-count the callers of `WithLegacyDefault(` at step start (the review found 15 caller files), and add `using Lighthouse.Backend.Services.Implementation.Encryption;` only where one is missing (tests included; `EncryptionKeyRingBootstrapper` and `SecretCustodyService` keep their syntax). No pending test of its own: the existing suite stays green unmodified is the guard (the encryption and secret-custody tests exercise the default key), and `SharedKernel_DoesNotDependOnServices` (01-06) finally proves that Models no longer reaches Services.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "refactor",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+          ],
+          "scenario_name": "the existing suite stays green unmodified",
+          "unskips": [],
+          "guards_kept_green": [
+            "Every encryption, key-ring bootstrapper and secret-custody test, unmodified (only the added using line may differ); the default key still decrypts what the previous release encrypted"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Models/Encryption/EncryptionKeyRing.cs (edit - WithLegacyDefault removed, nothing else)",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs (edit - gains the WithLegacyDefault extension over EncryptionKeyRing; body unchanged)",
+            "Every file that calls `WithLegacyDefault(` and lacks the using (re-counted at step start, 15 caller files found by the review; tests included)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "`EncryptionKeyRing` in Models holds no reference to LegacyDefaultEncryptionKey, SecretStateClassifier, SecretEnvelope or EncryptionKeyRingHolder.",
+            "Every caller still writes `ring.WithLegacyDefault()` and gets the same ring as before; the caller-file count was re-taken at step start and the using added only where one was missing.",
+            "dotnet build zero warnings; encryption tests and filtered dotnet test green, no assertion modified."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: inversion by extension method, behaviour identical. This is the only S04a step with a logic-bearing edit: LegacyDefaultEncryptionKey.cs is in the DEVOPS mutation scope (>= 80%, ring not lower), so keep the extension body a straight lift of the old method. Pre-apply docs/ci-learnings.md. `refactor(encryption): WithLegacyDefault becomes a Services extension`."
+        },
+        {
+          "id": "01-06",
+          "name": "S04a-6: Models does not depend on Services, with an empty exception list",
+          "description": "Slice S04a-6. Edit commit(s) (not a pure move). Implement the services factory `KernelRules.ModelsDoNotDependOnServices(models, services)` (put the rule's Because text in the factory) and REMOVE the class-level `// SCAFFOLD: true` from KernelRules.cs (both factories are real by now). Make `ModuleBoundariesArchUnitTest.SharedKernel_DoesNotDependOnServices` run it over the real assembly with NO exception, delete the prose caveat in `SharedKernel_DoesNotDependUpwardOnApi`'s `.Because(...)`, delete the documented gap note in ARCHITECTURE.md section 4 (line 137), and un-ignore the three `pending: S04a-6` tests. Write the rule first and compare ArchUnitNET's offender list with the eight types DESIGN lists before it goes green; any extra type is a ninth decision to put to the maintainer. ADR-268 and the ADR-027 status note were already written and committed at DESIGN: this step only re-reads the ADR-027 note and, if its wording still says 'once ... lands', rewrites it to say the rule is now enforced.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs"
+          ],
+          "scenario_name": "SharedKernel_DoesNotDependOnServices, empty exception list, against the real assembly; a made-up Model that reaches a made-up Services type fails and is named; a made-up Model that stays inside the kernel passes",
+          "unskips": [
+            "ModuleBoundariesArchUnitTest.cs :: SharedKernel_DoesNotDependOnServices",
+            "KernelRulesCatchANewOffenderArchUnitTest.cs :: AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed",
+            "KernelRulesCatchANewOffenderArchUnitTest.cs :: AModelThatStaysInsideTheKernel_PassesTheKernelRule"
+          ],
+          "guards_kept_green": [
+            "Every other active architecture test (SharedKernel_DoesNotDependUpwardOnApi included, minus its prose caveat), unmodified",
+            "The negative case `AModelThatStaysInsideTheKernel_PassesTheKernelRule`: run once against a deliberately over-reporting factory to see it fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs (edit - implement ModelsDoNotDependOnServices and its Because text; remove the class-level SCAFFOLD marker)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs (edit - un-ignore SharedKernel_DoesNotDependOnServices, run the factory with no exception, delete the prose caveat)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRulesCatchANewOffenderArchUnitTest.cs (edit - un-ignore the two Services tests)",
+            "ARCHITECTURE.md (edit - delete the section 4 gap note)",
+            "docs/product/architecture/adr-027-*.md (edit only if its status note still says 'once ... lands': say the rule is now enforced)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "No type in Lighthouse.Backend.Models depends on any type in Lighthouse.Backend.Services, and the rule carries an empty exception list.",
+            "Adding a Models -> Services dependency fails the rule and names the offending Model and the Services type (proved by the made-up fixture Model).",
+            "ArchUnitNET's offender list before the moves equalled the eight types DESIGN lists (IEntity, IConcurrencyTokenEntity, WorkTrackingSystems, ReportOwner, ReportOwnerKind, BlackoutDaysExtensions, UpdateType, LegacyDefaultEncryptionKey); the comparison is noted in the commit body.",
+            "The prose caveat and the ARCHITECTURE.md section 4 gap note are gone; the ADR-027 status note does not say 'once ... lands'.",
+            "KernelRules.ModelsDoNotDependOnServices is implemented and the class-level `// SCAFFOLD: true` is removed from KernelRules.cs.",
+            "No `// SCAFFOLD: true` remains in the files this phase owns (KernelRules.cs, KernelRulesCatchANewOffenderArchUnitTest.cs, ModuleBoundariesArchUnitTest.cs, ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs).",
+            "dotnet build zero warnings; the full filtered dotnet test is green at the end of this step."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: architecture rule. Fixture Models live in `Lighthouse.Backend.Models.KernelFixtures.{Offending,Clean}` and the fixture service type in `Lighthouse.Backend.Services.KernelFixtures`; a second architecture loaded from test-assembly types works with ArchUnitNET and never mixes with LighthouseArchitecture.Production. Models file count (KPI 3) rises by 6 until S04b; the Epic KPI row already says so. Pre-apply docs/ci-learnings.md. `test(architecture): Models does not depend on Services` and `docs(architecture): drop the Models/Services gap note`."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Repository leaks are ratcheted: GetAllByPredicate callers and the API's repository dependencies (#6369, S05a)",
+      "description": "Two ratchets in one new test class, each with an inline baseline (14 files, 23 types) and a two-way comparison (a new offender fails and names itself; a listed entry that no longer offends fails and says delete). S05a-1 is delivered as 02-01 (ProductionSource + comparison), 02-02 (call-site scan and its edge tests) and 02-03 (the real-code 14-file test, last); S05a-2 as 02-04 (ArchUnitNET spike + DeclaringTypeOf) and 02-05 (RepositoryDependentsIn + the real-code 23-entry test). Independent of phase 01. Pending-test ownership, all in RepositoryLeakRatchetArchUnitTest.cs: 02-01 six, 02-02 eight, 02-03 one, 02-04 three, 02-05 seven (25 in total).",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "S05a-1a: ProductionSource finds the sources and the baseline comparison names a newcomer and a stale entry",
+          "description": "Slice S05a-1, first third. Edit commit(s). Implement the internal `ProductionSource` helper (`Files()` and `WithoutComments()`; the ProductionSourceFile record is real; blank comments while keeping line breaks so line numbers hold, using the idea in CalendarDayAnchorSeamArchUnitTest) and the private `AssertMatchesBaseline(actual, baseline, fixHint)` comparison in `RepositoryLeakRatchetArchUnitTest`. Un-ignore the six comparison tests. `Files()` must fail when it finds no sources. `GetAllByPredicateCallSites` stays a scaffold until 02-02.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs"
+          ],
+          "scenario_name": "a baseline that matches passes; a new offender fails naming itself with the fix hint; a stale entry fails naming itself and saying delete; both at once are both named; order and repeats do not matter; nothing against an empty list passes",
+          "unskips": [
+            "RepositoryLeakRatchetArchUnitTest.cs :: AListThatMatchesTheCodeExactly_Passes",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ANewOffenderNotOnTheList_FailsAndNamesIt",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AListedEntryThatNoLongerOffends_FailsAndNamesItUntilItIsDeleted",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ANewOffenderAndAStaleEntryAtOnce_AreBothNamedInOneFailure",
+            "RepositoryLeakRatchetArchUnitTest.cs :: TheOrderOfTheListsAndRepeatedEntries_DoNotMatter",
+            "RepositoryLeakRatchetArchUnitTest.cs :: NothingOffendingAgainstAnEmptyList_Passes"
+          ],
+          "guards_kept_green": [
+            "The 19 other pending S05a tests stay ignored; every other active architecture test stays green unmodified",
+            "`NothingOffendingAgainstAnEmptyList_Passes`: run once against a deliberately over-reporting comparison to see it fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs (edit - replace the Files and WithoutComments scaffolds)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs (edit - build AssertMatchesBaseline, un-ignore six tests)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A new offender not on the list fails, names itself and carries the fix hint; a listed entry that no longer offends fails, names itself and says delete; both at once are both named in one failure.",
+            "Order and repeated entries in the lists do not matter; an empty list against nothing offending passes.",
+            "ProductionSource.Files() fails when it finds no sources; WithoutComments keeps line breaks so line numbers hold.",
+            "dotnet build zero warnings; `dotnet test --filter FullyQualifiedName~Architecture` green with six more tests running."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: architecture-test helper, example-based (no property-testing library is a test dependency). `ProductionSource` is new and internal and is used by this test only; migrating the five private copies elsewhere is out of scope. The helpers are private statics in the test class. Pre-apply docs/ci-learnings.md. `test(architecture): baseline comparison and ProductionSource for the repository ratchets`."
+        },
+        {
+          "id": "02-02",
+          "name": "S05a-1b: the call-site scan reports a GetAllByPredicate call as file:line and ignores comments, strings and the declaration",
+          "description": "Slice S05a-1, second third. Edit commit(s). Implement `GetAllByPredicateCallSites(sources)` (returns `path:line`) over `ProductionSource.WithoutComments()` output and un-ignore the eight scan tests: a call in code, a line comment, a block comment, a `//` pair inside a string literal, an escaped quote before a `//` pair inside a string, a call on the line after its receiver, the declaration on the repository contract, and a call inside `Services/Implementation/Repositories/`.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs"
+          ],
+          "scenario_name": "a call is reported as file:line; comments, string literals, the contract declaration and the Repositories folder are not offenders; a call on the line after its receiver is reported at its own line",
+          "unskips": [
+            "RepositoryLeakRatchetArchUnitTest.cs :: ACallInCode_IsReportedWithItsFileAndLine",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AMentionInALineComment_IsNotACall",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AMentionInABlockComment_IsNotACall",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ASlashPairInsideAStringLiteral_DoesNotHideACallOnTheSameLine",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AnEscapedQuoteBeforeASlashPairInsideAString_DoesNotHideACallOnTheSameLine",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ACallWrittenOnTheLineAfterItsReceiver_IsReportedAtTheCallsLine",
+            "RepositoryLeakRatchetArchUnitTest.cs :: TheDeclarationOnTheRepositoryContract_IsNotACall",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ACallInsideTheRepositoriesFolder_IsAllowed"
+          ],
+          "guards_kept_green": [
+            "The six 02-01 tests stay green; the real-code test and the 10 `pending: S05a-2` tests stay ignored",
+            "The negative tests (`AMentionInALineComment_IsNotACall`, `AMentionInABlockComment_IsNotACall`, `TheDeclarationOnTheRepositoryContract_IsNotACall`, `ACallInsideTheRepositoriesFolder_IsAllowed`, the two string-literal tests): run each once against a deliberately over-reporting scan to see it fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs (edit - build GetAllByPredicateCallSites, un-ignore eight tests)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ProductionSource.cs (edit only if a string-literal case needs WithoutComments to change)"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "criteria": [
+            "A call in code is reported as `path:line`; a call written on the line after its receiver is reported at the call's own line, and a comment mentioning the name just above does not count.",
+            "A mention in a line comment or a block comment is not a call; `//` or `/*` inside a string literal, also after an escaped quote, does not hide a call later on the same line.",
+            "The declaration on the repository contract is not a call; a call inside `Services/Implementation/Repositories/` is allowed.",
+            "dotnet build zero warnings; `dotnet test --filter FullyQualifiedName~Architecture` green with eight more tests running."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: textual scan, example-based. The scan is textual: a string or alias could fool it, accepted at DESIGN. Pre-apply docs/ci-learnings.md. `test(architecture): scan production source for GetAllByPredicate calls`."
+        },
+        {
+          "id": "02-03",
+          "name": "S05a-1c: GetAllByPredicate is called only from the 14 listed files",
+          "description": "Slice S05a-1, last third. Edit commit. Un-ignore `GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList`: the real-code test that runs the scan over the production tree and compares it with the 14-file baseline (already filled in from today's tree) through `AssertMatchesBaseline`. Re-count the files against the tree first; if the count differs, the list is wrong, not the rule.",
+          "agent": "nw-software-crafter",
+          "model": "sonnet",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs"
+          ],
+          "scenario_name": "GetAllByPredicate is called only from the 14 listed files outside Services/Implementation/Repositories, and the list is unique",
+          "unskips": [
+            "RepositoryLeakRatchetArchUnitTest.cs :: GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList"
+          ],
+          "guards_kept_green": [
+            "The 14 tests un-ignored in 02-01 and 02-02 stay green; the 10 `pending: S05a-2` tests stay ignored"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs (edit - un-ignore the real-code test)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "criteria": [
+            "The production tree's GetAllByPredicate callers outside Services/Implementation/Repositories/** equal the 14 listed files exactly; the list has no repeated entry.",
+            "A new caller fails naming file:line; a listed file that stops calling fails until removed (both proved through the shared comparison by the 02-01 tests).",
+            "dotnet build zero warnings; `dotnet test --filter FullyQualifiedName~Architecture` green; no `// SCAFFOLD: true` remains for ProductionSource, AssertMatchesBaseline or GetAllByPredicateCallSites."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: real-code ratchet over the source tree; the list never grows and is never replaced by a count. Renaming or moving a listed file touches the baseline list. Pre-apply docs/ci-learnings.md. `test(architecture): ratchet GetAllByPredicate callers`."
+        },
+        {
+          "id": "02-04",
+          "name": "S05a-2a: spike how ArchUnitNET reports compiler-made types, then DeclaringTypeOf maps them to the type that wrote them",
+          "description": "Slice S05a-2, first half (thorough, opus). OPENS WITH THE SPIKE, before any production-shaped code: write a probe against the fixtures (compiled into the test assembly and loaded into their own architecture, never mixed with LighthouseArchitecture.Production) and establish how ArchUnitNET attributes lambda display classes and async state machines, and whether a generic argument such as `GetRequiredService<IRepository<Team>>()` shows as a dependency. WRITE THE FINDING into feature-delta.md as a DELIVER note BEFORE 02-05 starts. If ArchUnitNET cannot attribute lambdas and async state machines, 02-05 switches to the DESIGN FALLBACK: a source scan (through ProductionSource) for the same 23-entry list. Then build `DeclaringTypeOf(typeFullName)` (compiler-made nested names map to the declaring type; user-written nested types keep their name) and un-ignore its three tests.",
+          "agent": "nw-software-crafter",
+          "model": "opus",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+            "docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md"
+          ],
+          "scenario_name": "a compiler-made nested type maps to its declaring type; a nested type someone wrote keeps its own name; an ordinary type name is left alone",
+          "unskips": [
+            "RepositoryLeakRatchetArchUnitTest.cs :: ACompilerMadeNestedType_NormalisesToItsDeclaringType",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ANestedTypeSomeoneWrote_KeepsItsOwnName",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AnOrdinaryTypeName_IsLeftAlone"
+          ],
+          "guards_kept_green": [
+            "All 15 tests un-ignored in phase 02 so far stay green; the seven `pending: S05a-2` tests of 02-05 stay ignored",
+            "`ACompilerMadeNestedType_NormalisesToItsDeclaringType`: its guard proves a `<`-named nested type really exists in the fixtures and its expected answer comes from reflection `DeclaringType`, so a no-op normalisation fails it",
+            "`ANestedTypeSomeoneWrote_KeepsItsOwnName` and `AnOrdinaryTypeName_IsLeftAlone`: run once against a name-stripping helper to see them fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs (edit - build DeclaringTypeOf, un-ignore three tests; spike probe is throwaway and not committed)",
+            "docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md (edit - DELIVER note with the spike's finding and the 02-05 route chosen)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "criteria": [
+            "The spike's finding is written into feature-delta.md before 02-05 starts: how ArchUnitNET attributes lambda display classes and async state machines, whether a generic argument shows as a dependency, and which 02-05 route follows (ArchUnitNET, or the source-scan fallback).",
+            "A compiler-made nested type maps to its declaring type; a nested type someone wrote keeps its own name; an ordinary type name is left alone.",
+            "dotnet build zero warnings; `dotnet test --filter FullyQualifiedName~Architecture` green with three more tests running."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: spike plus a small pure helper. Same-reduction trap: do not derive the expected value from the code under test. Pre-apply docs/ci-learnings.md. `test(architecture): nested compiler types report against their declaring type`."
+        },
+        {
+          "id": "02-05",
+          "name": "S05a-2b: the API depends on a repository only in the 23 listed types",
+          "description": "Slice S05a-2, second half (thorough, opus). Read the 02-04 finding first. Build `RepositoryDependentsIn(architecture, namespacePattern)` (returns normalised full type names via DeclaringTypeOf; matches `IRepository<>`, `^I\\w*Repository$` and every type in `Services.Implementation.Repositories`, NOT the `Services.Interfaces.Repositories` namespace) and un-ignore the seven tests: constructor parameter, generic argument, concrete repository, lambda, async method, a service contract in the Repositories namespace that is not a dependency, and the real-code `TheApi_DependsOnARepositoryOnlyInTheTypesOnTheList` last once the 23-entry baseline is true. If 02-04 found that ArchUnitNET cannot attribute lambdas and async state machines, take the DESIGN fallback instead: a source scan through ProductionSource for the same 23-entry list, keeping the tests' intent, and record the choice in the commit body. Confirm the `Services.Implementation.Repositories` branch is empty for `API` today.",
+          "agent": "nw-software-crafter",
+          "model": "opus",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs"
+          ],
+          "scenario_name": "the API depends on a repository only in the 23 listed types; a constructor parameter, a generic argument, a concrete repository, a lambda and an async method are all dependencies reported against the type that wrote them",
+          "unskips": [
+            "RepositoryLeakRatchetArchUnitTest.cs :: AConstructorParameterOnARepository_IsADependency",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ARepositoryNamedOnlyAsAGenericArgument_IsADependency",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AConcreteRepositoryClass_IsADependency",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ALambdaThatAsksForARepository_IsReportedAgainstTheTypeThatWroteIt",
+            "RepositoryLeakRatchetArchUnitTest.cs :: AnAsyncMethodThatAsksForARepository_IsReportedAgainstTheTypeThatWroteIt",
+            "RepositoryLeakRatchetArchUnitTest.cs :: ATypeThatReadsThroughAServiceContractInTheRepositoriesNamespace_IsNotADependency",
+            "RepositoryLeakRatchetArchUnitTest.cs :: TheApi_DependsOnARepositoryOnlyInTheTypesOnTheList"
+          ],
+          "guards_kept_green": [
+            "All 18 tests un-ignored earlier in phase 02 stay green; every other active architecture test stays green unmodified",
+            "`ATypeThatReadsThroughAServiceContractInTheRepositoriesNamespace_IsNotADependency`: run once against a deliberately over-reporting helper to see it fail, then revert"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs (edit - build RepositoryDependentsIn, un-ignore seven tests; the 23-entry list and the RatchetFixtures types are already final)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "criteria": [
+            "A new `API` type that depends on a repository in any shape (constructor parameter, generic argument, concrete class, lambda, async method) and is not on the 23-entry list fails and names the declaring type.",
+            "A listed `API` type that no longer depends on a repository fails, names itself and says delete.",
+            "`IFeatureListReader` and other non-repository types in the same namespace are not dependencies.",
+            "The route taken (ArchUnitNET or the source-scan fallback) follows the 02-04 finding and is stated in the commit body; the Services.Implementation.Repositories branch is confirmed empty for API.",
+            "No `// SCAFFOLD: true` remains in the files this phase owns (RepositoryLeakRatchetArchUnitTest.cs, ProductionSource.cs); `git grep \"SCAFFOLD: true\"` over the Architecture folder lists nothing from these Stories.",
+            "dotnet build zero warnings; the full filtered dotnet test is green at the end of this step."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: architecture rule over a compiled assembly (or its source-scan fallback). Fixtures are compiled into the test assembly and loaded into their own architecture, never mixed with LighthouseArchitecture.Production. Mutation (Stryker) is NOT run on this test-only step; it runs last on frozen production code at finalization. Pre-apply docs/ci-learnings.md. `test(architecture): ratchet repository dependencies in the API`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (haiku), needs_revision with no blocker; every finding addressed in the revision and checked by the orchestrator on 2026-10-27 (integrity exit 0, automated gate clean, 31 of 31 pending tests claimed once)",
+    "notes": "Draft, revised after review (needs_revision, no blocker). Pending-test coverage: 31 pending DISTILL tests, each claimed by exactly one step (01-04: 3, 01-06: 3, 02-01: 6, 02-02: 8, 02-03: 1, 02-04: 3, 02-05: 7); 01-01, 01-02, 01-03 and 01-05 un-skip nothing and use the existing suite as their guard. No orphan pending test."
+  }
+}
