@@ -17,8 +17,8 @@ namespace Lighthouse.Backend.API
             var teamIds = everyOwner.Where(row => row.Owner.Kind == ReportOwnerKind.Team).Select(row => row.Owner.Id).ToArray();
             var portfolioIds = everyOwner.Where(row => row.Owner.Kind == ReportOwnerKind.Portfolio).Select(row => row.Owner.Id).ToArray();
 
-            var readableTeamIds = await rbacAdministrationService.GetReadableTeamIdsAsync(User, teamIds, HttpContext.RequestAborted) ?? teamIds;
-            var readablePortfolioIds = await rbacAdministrationService.GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext.RequestAborted) ?? portfolioIds;
+            var readableTeamIds = await rbacAdministrationService.GetReadableTeamIdsAsync(User, teamIds, HttpContext.RequestAborted);
+            var readablePortfolioIds = await rbacAdministrationService.GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext.RequestAborted);
 
             IReadOnlyCollection<ReportOwner> readable = [.. readableTeamIds.Select(ReportOwner.Team), .. readablePortfolioIds.Select(ReportOwner.Portfolio)];
 
