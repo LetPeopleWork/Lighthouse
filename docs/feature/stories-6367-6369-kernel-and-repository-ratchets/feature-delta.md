@@ -478,3 +478,12 @@ only works in Debug lets a newcomer through in CI. The pending fixture tests cal
 `RepositoryDependentsIn(ArchitectureModel, …)` on compiled fixtures, so they need re-shaping for source text before
 02-05 starts; that is a test-design change for the acceptance designer. `DeclaringTypeOf` stays built and tested, but
 the source-scan route does not need it.
+
+## Wave: DELIVER / [REF] Route for the API repository ratchet (02-05)
+
+ArchUnitNET's dependency graph was set aside: in the Release build CI tests, it loses a repository used inside an `async` body.
+The design's textual fallback was not taken either: finding the type that wrote a dependency needs brace tracking, the scan
+breaks on interpolated strings, and it would orphan `DeclaringTypeOf`. `RepositoryDependentsIn` reads the compiled IL with
+Mono.Cecil (0.11.6, already brought in by ArchUnitNET, no new package), walks the compiler-made lambda and async types and
+reports them against the writing type, so D4's "type dependencies" detection stands. Release check, run before building it:
+Cecil sees `RatchetFixtures.AsyncDependent`'s `IRepository<Team>` edge in `<ResolveAsync>d__0` with `-c Release`.
