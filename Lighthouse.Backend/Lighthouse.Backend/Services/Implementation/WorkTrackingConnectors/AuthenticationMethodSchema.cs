@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.OAuth;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors

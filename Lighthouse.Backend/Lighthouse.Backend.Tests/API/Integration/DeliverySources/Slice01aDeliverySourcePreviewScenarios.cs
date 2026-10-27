@@ -1,5 +1,5 @@
+using Lighthouse.Backend.Models;
 using System.Net;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources

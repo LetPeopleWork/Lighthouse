@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira

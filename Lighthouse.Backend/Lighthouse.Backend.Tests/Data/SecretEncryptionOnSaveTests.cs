@@ -4,7 +4,6 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;

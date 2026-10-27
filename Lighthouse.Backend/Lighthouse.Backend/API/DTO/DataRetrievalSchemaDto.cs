@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.API.DTO
 {

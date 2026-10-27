@@ -1,4 +1,3 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Models
 {

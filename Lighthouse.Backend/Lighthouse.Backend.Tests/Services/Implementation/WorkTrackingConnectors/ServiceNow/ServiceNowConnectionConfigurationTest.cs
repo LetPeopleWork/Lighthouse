@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Microsoft.Extensions.Logging;
 using Moq;
 

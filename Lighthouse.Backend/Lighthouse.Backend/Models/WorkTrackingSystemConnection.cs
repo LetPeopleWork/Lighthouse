@@ -1,6 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using Lighthouse.Backend.Models.WriteBack;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Models
 {

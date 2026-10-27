@@ -3,7 +3,6 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Tests.TestHelpers;
 using NUnit.Framework;
 

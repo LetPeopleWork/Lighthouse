@@ -1,5 +1,4 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO

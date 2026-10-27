@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
+﻿namespace Lighthouse.Backend.Models
 {
     public enum WorkTrackingSystems
     {

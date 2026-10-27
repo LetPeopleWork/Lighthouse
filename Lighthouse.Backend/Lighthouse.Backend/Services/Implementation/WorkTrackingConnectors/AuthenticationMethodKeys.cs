@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Models;
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors
 {
     public static class AuthenticationMethodKeys

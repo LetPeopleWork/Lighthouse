@@ -1,6 +1,6 @@
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 ﻿using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.OAuth;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;

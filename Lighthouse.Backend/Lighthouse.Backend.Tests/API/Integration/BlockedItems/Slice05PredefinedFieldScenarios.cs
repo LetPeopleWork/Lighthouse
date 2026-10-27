@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Models;
 using NUnit.Framework;
 using static Lighthouse.Backend.Tests.API.Integration.BlockedItems.BlockedItemsJson;
 

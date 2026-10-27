@@ -2,7 +2,6 @@ using System.Globalization;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Data.Converters;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.Architecture;
 using Lighthouse.Backend.Tests.TestHelpers;

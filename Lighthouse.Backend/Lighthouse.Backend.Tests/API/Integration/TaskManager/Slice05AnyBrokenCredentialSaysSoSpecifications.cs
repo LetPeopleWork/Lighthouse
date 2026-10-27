@@ -3,7 +3,6 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
