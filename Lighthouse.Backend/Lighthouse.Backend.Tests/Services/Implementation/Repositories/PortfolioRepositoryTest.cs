@@ -317,6 +317,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        [Test]
+        public void FeatureCountOf_OnARelationalDatabase_IsOneCountThatReadsNoFeature()
+        {
+            using var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+            var sent = new CommandsSentToTheStore();
+            var options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite(connection)
+                .AddInterceptors(sent)
+                .Options;
+
+            using var context = new LighthouseAppContext(options, new Mock<ICryptoService>().Object, Mock.Of<ILogger<LighthouseAppContext>>());
+            context.Database.EnsureCreated();
+            var wanted = new Portfolio { Name = "Wanted", WorkTrackingSystemConnection = CreateConnection() };
+            wanted.Features.Add(new Feature { Name = "One", Order = "1" });
+            wanted.Features.Add(new Feature { Name = "Two", Order = "2" });
+            var other = new Portfolio { Name = "Other", WorkTrackingSystemConnection = CreateConnection() };
+            other.Features.Add(new Feature { Name = "Three", Order = "3" });
+            context.Portfolios.AddRange(wanted, other);
+            context.SaveChanges();
+            context.ChangeTracker.Clear();
+            sent.Clear();
+
+            var count = new PortfolioRepository(context, Mock.Of<ILogger<PortfolioRepository>>()).FeatureCountOf(wanted.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(count, Is.EqualTo(2));
+                Assert.That(sent.Commands, Has.Count.EqualTo(1));
+                Assert.That(sent.Commands.Single(), Does.Contain("COUNT(*)"));
+            }
+        }
+
         private sealed class CommandsSentToTheStore : DbCommandInterceptor
         {
             private readonly List<string> commands = [];

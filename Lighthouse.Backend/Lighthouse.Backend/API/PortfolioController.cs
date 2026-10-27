@@ -194,6 +194,18 @@ namespace Lighthouse.Backend.API
             });
         }
 
+        [HttpGet("size")]
+        [RbacGuard(RbacGuardRequirement.PortfolioRead, ScopeIdRouteKey = "portfolioId")]
+        public ActionResult<PortfolioSizeDto> GetPortfolioSize(int portfolioId)
+        {
+            if (!portfolioRepository.Exists(portfolioId))
+            {
+                return NotFound();
+            }
+
+            return Ok(new PortfolioSizeDto(new PortfolioSize(portfolioRepository.FeatureCountOf(portfolioId))));
+        }
+
         // The Portfolio is read for its names and counts only, so no forecast comes with it.
         private async Task<ActionResult<TResult>> ReadPortfolio<TResult>(int portfolioId, Func<Portfolio, Task<TResult>> describe)
         {

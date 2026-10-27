@@ -72,6 +72,11 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .ToList();
         }
 
+        public int FeatureCountOf(int portfolioId)
+        {
+            return Context.Features.Count(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId));
+        }
+
         public IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds)
         {
             return Context.Features

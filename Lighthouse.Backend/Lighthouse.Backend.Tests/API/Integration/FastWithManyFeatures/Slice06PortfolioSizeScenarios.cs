@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         private static string TheSizeOf(int portfolioId) => $"/api/latest/portfolios/{portfolioId}/size";
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("contract-shape:pure-function")]
         public async Task A_Portfolio_whose_last_update_stored_101_Features_is_over_the_threshold_of_100()
@@ -44,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("edge")]
         [Category("contract-shape:pure-function")]
@@ -80,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("kpi-OUT-6400-first-feature-row")]
         [Category("contract-shape:pure-function")]

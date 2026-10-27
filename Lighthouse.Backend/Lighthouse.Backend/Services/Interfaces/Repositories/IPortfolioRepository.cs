@@ -37,6 +37,12 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyCollection<int> TeamIdsOf(int portfolioId);
 
         /// <summary>
+        /// How many Features this portfolio holds as its last update stored them, in one COUNT that reads none
+        /// of them. Zero when it holds none or there is no such portfolio.
+        /// </summary>
+        int FeatureCountOf(int portfolioId);
+
+        /// <summary>
         /// The ids of the portfolios any of the given teams does work for, each once, in one read.
         /// </summary>
         IReadOnlyCollection<int> GetPortfolioIdsForTeams(IReadOnlyCollection<int> teamIds);
