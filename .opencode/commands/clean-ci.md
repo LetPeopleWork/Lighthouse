@@ -1,5 +1,5 @@
 ---
-description: Watch the latest "Build And Deploy Lighthouse" run on main, diagnose and fix any failures (including SonarCloud quality gates), and append durable learnings so the same mistake doesn't repeat.
+description: Watch the latest "Build And Deploy Lighthouse" run on main, diagnose and fix any failures (including SonarCloud quality gates), and turn every new failure into an automated check (Biome, Roslyn severity, banned symbol, test, or a LEDGER-CHECKS pattern) — adding a ledger rule only when no tool can catch it.
 ---
 
 # /clean-ci — keep CI green
@@ -15,13 +15,13 @@ You are the on-duty CI minder for the Lighthouse repo. Your job is to verify the
 - **SonarCloud project keys**:
   - Backend (C#/.NET): `LetPeopleWork_Lighthouse`
   - Frontend (TS/React): `LetPeopleWork_Lighthouse_Frontend`
-- **Learnings ledger**: `docs/ci-learnings.md` — read it at the start, append to it whenever you fix something new.
+- **Learnings ledger**: `docs/ci-learnings.md` — the rules no tool can enforce, plus the `LEDGER-CHECKS` grep patterns. Read it at the start. Automate a new learning first; add a rule only when automation is impossible.
 
 `$ARGUMENTS` may optionally be a workflow run ID (a number) to inspect a specific run, or a branch name. If empty, target the latest run on `main`.
 
 ## Step 0 — load prior learnings (always)
 
-Read `docs/ci-learnings.md` so you don't re-derive rules already captured. If the file is missing, that's a bug — recreate it from the template at the bottom of this command.
+Read `docs/ci-learnings.md` so you don't re-derive rules already captured, and skim `Lighthouse.Frontend/biome.json` and the promotion block in `Lighthouse.Backend/.editorconfig` so you know what is already enforced. If the ledger is missing, recreate it from the template at the bottom of this command.
 
 ## Step 1 — locate the run
 
@@ -145,32 +145,52 @@ The `sonar-gates` job (`ci_sonar_gates.yml`) is the gate. Diagnose it with the *
 
 7. Apply fixes per Step 4's TDD/commit discipline. Then **wait for the next push to re-run Sonar** — don't re-trigger CI manually unless asked.
 
-## Step 6 — record the learning (every fix, no exceptions)
+## Step 6 — make it impossible to repeat (every fix, no exceptions)
 
-Append to `docs/ci-learnings.md` under the correct section. Each entry follows this format:
+A failure that CI found once must be caught **before the next push** by a tool, not by memory. Work down
+this list and stop at the first that applies:
 
-```markdown
-### YYYY-MM-DD — <short title>
-- **Symptom**: what CI / Sonar reported (rule key, error excerpt, job name).
-- **Root cause**: the actual reason, in one sentence.
-- **Fix**: what was changed (file:line is enough; the commit has the diff).
-- **Rule going forward**: a single declarative sentence future-Claude can apply BEFORE writing similar code. Phrase as a do/don't.
-```
+1. **Already enforced?** If a local tool already reports it (the build, Biome, a test, a hook) and
+   CI still found it, the tool did not run. Fix that (hook wiring, a worktree, a skipped `pnpm build`)
+   rather than writing a rule.
+2. **Frontend Sonar rule with a Biome equivalent** → turn it on at `error` in
+   `Lighthouse.Frontend/biome.json` (or `Lighthouse.EndToEndTests/biome.json`). No direct rule → a GritQL
+   plugin under `biome-plugins/`, registered in that `biome.json`'s `plugins`.
+3. **Backend rule that is info-level or disabled locally** → add
+   `dotnet_diagnostic.<ID>.severity = warning` to `Lighthouse.Backend/.editorconfig` (and `= none` in the
+   test project's `.editorconfig` when SonarCloud does not run it on test sources). **Prove the promotion
+   bites**: re-introduce the violation once and watch `dotnet build` fail.
+4. **A forbidden API** → `Lighthouse.Backend/BannedSymbols.txt` (RS0030 build error).
+5. **A structural or architectural rule** → an ArchUnit or source-scan test in
+   `Lighthouse.Backend.Tests/Architecture/` (or a Vitest test for the frontend).
+6. **A single-line pattern a regex can see with few false positives** → a line in the `LEDGER-CHECKS`
+   block, format `<rule-key> ::: <exts> ::: <regex> ::: <fix hint>`. Check it against the source first;
+   it only judges *added* lines, but a noisy pattern trains people to `--no-verify`.
+7. **None of the above** → add one bullet to the right section of `docs/ci-learnings.md`
+   (`## Frontend`, `## Backend`, `## Pipeline & infra`):
 
-Discipline:
-- One entry per distinct root cause, not per file touched.
-- Update an existing entry rather than duplicating it if the same rule resurfaces — bump the date, add a `Recurrence: N` count.
-- Keep "Rule going forward" short and actionable. Bad: "Be careful with async". Good: "C# async methods returning Task must accept and forward a CancellationToken; CI fails with rule csharpsquid:S4462 otherwise."
-- If the failure was a pipeline-infra hiccup (not a code defect), still log it under `## Infra & flakes` so we can spot patterns.
+   `- **<Rule id or short name>**: <cause>. Fix: <how>. Not automated because: <reason>.`
 
-After appending, briefly tell the user what rule you added so they can sanity-check it.
+   No dates, no run ids, no incident story — those go in the commit message. If a rule for the same
+   cause exists, sharpen that bullet instead of adding another; never add a "Recurrence" count. A
+   recurrence of a rule that is in the ledger is a signal to look again at automating it.
+
+When a tool takes over a ledger rule (yours or an older one), **delete the bullet** in the same commit,
+and remove any `LEDGER-CHECKS` line the tool now covers.
+
+Pipeline and infrastructure hiccups (runner provisioning, registry outages, SonarCloud API errors) get a
+bullet only when they teach a *new* way to tell infrastructure from a regression. Do not log each
+occurrence.
+
+After the change, tell the user in one line what now catches the failure (rule id plus file), or, if
+it is a ledger bullet, why it could not be automated.
 
 ## Step 7 — final report
 
 End the session with a 3-line summary:
 1. Run state (green / waiting on release gate / fixed and re-pushed / blocked).
 2. What you changed, if anything (file count + commit SHA, or "no changes").
-3. Any rule(s) appended to `docs/ci-learnings.md`.
+3. What now prevents a repeat: the automation added (file and rule), or the ledger rule added and why it could not be automated.
 
 ## Guardrails
 
@@ -187,19 +207,21 @@ If `docs/ci-learnings.md` does not exist, create it with this skeleton (and noth
 ```markdown
 # CI Learnings
 
-Durable rules derived from CI / SonarCloud failures on `Build And Deploy Lighthouse`. Append a new entry every time `/clean-ci` resolves a failure. Read this file before touching code in the related area.
+Rules for the CI and SonarCloud failures that no tool can catch for us. Automate first (Biome or a
+GritQL plugin, an `.editorconfig` severity, `BannedSymbols.txt`, an ArchUnit or source-scan test, a
+`LEDGER-CHECKS` pattern, a hook). Add a rule here only when none of those can do the job, and say why.
+Delete a rule once a tool enforces it.
 
-## Formatting & linting
+Format: `- **<Rule id or short name>**: <cause>. Fix: <how>. Not automated because: <reason>.`
 
-## Build & compile
+## Machine-checked patterns
 
-## Tests
+<!-- LEDGER-CHECKS:START -->
+<!-- LEDGER-CHECKS:END -->
 
-## SonarCloud — Backend (LetPeopleWork_Lighthouse)
+## Frontend
 
-## SonarCloud — Frontend (LetPeopleWork_Lighthouse_Frontend)
+## Backend
 
-## EF migrations
-
-## Infra & flakes
+## Pipeline & infra
 ```

@@ -61,7 +61,9 @@ are reviewed is complete.
    Stop at the end of the steps — **do not** run DELIVER's own finalize or push.
    **At the end of every slice** (the last step of a roadmap phase is committed), before the next
    slice's first step:
-   1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched.
+   1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched. End it
+      with the static checks (`pnpm build` for the frontend and E2E projects, `dotnet build` for the
+      backend) and fix what they report before the review.
    2. **Adversarial review** of the slice, with the same rules as the final review below (the rigor
       profile's reviewer model, verbatim quotes, one revision pass, blockers fixed and proven).
    3. **Review window — 5 minutes.** Post a slice summary (what the slice delivered, its commits, the
@@ -75,7 +77,7 @@ are reviewed is complete.
         window is remote input: apply it, then continue as soon as the window closes.
       - Delete or ignore the timer's notification once the window is already settled.
 6. **Final quality gates, after the last slice**, in this order:
-   1. **Refactor** (L1–L6, `nw-refactor`) across the whole feature.
+   1. **Refactor** (L1–L6, `nw-refactor`) across the whole feature, ending with the same static checks.
    2. **Adversarial review** of the whole feature, on the model the agreed rigor profile names for
       reviewers (pass it explicitly; never pick a model of your own); demand a
       verbatim quote for every cited line and spot-check any citation before acting on it. One revision
