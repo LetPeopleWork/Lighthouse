@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IPortfolioSize } from "../../../models/Portfolio/PortfolioSize";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -30,6 +30,7 @@ const anAppLikeClient = () =>
 const theNoteOpenedOn = (
 	queryClient: QueryClient,
 	getSize: () => Promise<IPortfolioSize>,
+	portfolioId = NORTHWIND_PLATFORM,
 ) => {
 	const portfolioService = {
 		...createMockPortfolioService(),
@@ -44,7 +45,7 @@ const theNoteOpenedOn = (
 				})}
 			>
 				<TerminologyProvider>
-					<PortfolioSizeNote portfolioId={NORTHWIND_PLATFORM} />
+					<PortfolioSizeNote portfolioId={portfolioId} />
 				</TerminologyProvider>
 			</ApiServiceContext.Provider>
 		</QueryClientProvider>
@@ -67,6 +68,44 @@ describe("The Portfolio size note", () => {
 		);
 		await waitFor(() =>
 			expect(screen.queryByText(/holds 150/)).not.toBeInTheDocument(),
+		);
+	});
+
+	it("a Portfolio under the threshold shows no note, neither while its size is on the way nor once it is known", async () => {
+		const { portfolioService, ui } = theNoteOpenedOn(anAppLikeClient(), () =>
+			Promise.resolve(aSize(40)),
+		);
+
+		render(ui);
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		await waitFor(() => expect(portfolioService.getSize).toHaveBeenCalled());
+		await act(async () => {});
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+	});
+
+	it("moving to another Portfolio asks for that Portfolio's size", async () => {
+		const queryClient = anAppLikeClient();
+		const { portfolioService, ui } = theNoteOpenedOn(queryClient, () =>
+			Promise.resolve(aSize(40)),
+		);
+		const { portfolioService: serviceForAnother, ui: uiForAnother } =
+			theNoteOpenedOn(
+				queryClient,
+				() => Promise.resolve(aSize(40)),
+				NORTHWIND_PLATFORM + 1,
+			);
+
+		const { rerender } = render(ui);
+		await waitFor(() =>
+			expect(portfolioService.getSize).toHaveBeenCalledWith(NORTHWIND_PLATFORM),
+		);
+		rerender(uiForAnother);
+
+		await waitFor(() =>
+			expect(serviceForAnother.getSize).toHaveBeenCalledWith(
+				NORTHWIND_PLATFORM + 1,
+			),
 		);
 	});
 

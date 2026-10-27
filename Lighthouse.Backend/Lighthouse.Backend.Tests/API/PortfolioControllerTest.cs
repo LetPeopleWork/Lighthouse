@@ -760,6 +760,35 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(tokenSeen, Is.EqualTo(aborted.Token));
         }
 
+        [Test]
+        public void GetPortfolioSize_PortfolioExists_ReturnsItsFeatureCountAgainstTheThreshold()
+        {
+            portfolioRepoMock.Setup(x => x.Exists(42)).Returns(true);
+            portfolioRepoMock.Setup(x => x.FeatureCountOf(42)).Returns(PortfolioSize.Threshold + 1);
+
+            var result = CreateSubject().GetPortfolioSize(42);
+
+            var size = (result.Result as OkObjectResult)?.Value as PortfolioSizeDto;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(size, Is.Not.Null);
+                Assert.That(size.FeatureCount, Is.EqualTo(PortfolioSize.Threshold + 1));
+                Assert.That(size.Threshold, Is.EqualTo(PortfolioSize.Threshold));
+                Assert.That(size.IsOverThreshold, Is.True);
+            }
+        }
+
+        [Test]
+        public void GetPortfolioSize_NoSuchPortfolio_ReturnsNotFoundWithoutCounting()
+        {
+            portfolioRepoMock.Setup(x => x.Exists(42)).Returns(false);
+
+            var result = CreateSubject().GetPortfolioSize(42);
+
+            Assert.That(result.Result, Is.InstanceOf<NotFoundResult>());
+            portfolioRepoMock.Verify(x => x.FeatureCountOf(It.IsAny<int>()), Times.Never);
+        }
+
         private PortfolioController CreateSubject()
         {
             return new PortfolioController(
