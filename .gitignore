@@ -461,6 +461,8 @@ reports/mutation/
 # patterns are safe alongside the exception above because the two are named apart throughout this
 # repository - a config is stryker.5837.frontend.json, a report is stryker-5837-frontend.json.
 **/mutation/stryker-*.json
+# A config with a dot before its kind (stryker-6046-slice-02.frontend.json) is a record, not a report.
+!**/mutation/stryker-*.*.json
 Lighthouse.Frontend/stryker-*.json
 Lighthouse.Backend/**/mutation-report.json
 
