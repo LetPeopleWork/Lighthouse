@@ -1,0 +1,4 @@
+`$date.toISOString().split($sep)` where {
+    $sep <: r"[\"'`]T[\"'`]",
+    register_diagnostic(span=$sep, message="toISOString() goes through UTC and shifts the calendar day for anyone east or west of Greenwich. Turn a date into a day key with the helpers in src/utils/date/localDate.ts.", severity="error")
+}

@@ -1,0 +1,4 @@
+JsTemplateElement(expression = $e) where {
+    $e <: contains JsTemplateExpression() as $inner,
+    register_diagnostic(span=$inner, message="A template literal inside another template literal's ${...} is hard to read. Build the inner string in a named local or helper first.", severity="error")
+}

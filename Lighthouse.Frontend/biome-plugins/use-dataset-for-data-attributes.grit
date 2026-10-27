@@ -1,0 +1,9 @@
+or {
+    `$el.getAttribute($name)`,
+    `$el.setAttribute($name, $value)`,
+    `$el.hasAttribute($name)`,
+    `$el.removeAttribute($name)`
+} where {
+    $name <: r"[\"'`]data-.*",
+    register_diagnostic(span=$name, message="Read and write data-* attributes through element.dataset (data-field-name is dataset.fieldName), not get/set/has/removeAttribute. A CSS selector string such as [data-field=\"x\"] is fine.", severity="error")
+}
