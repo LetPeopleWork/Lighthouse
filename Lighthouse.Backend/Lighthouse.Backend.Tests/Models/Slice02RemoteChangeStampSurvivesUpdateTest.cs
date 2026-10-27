@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.Models
     /// the copy path silently drops members that are not plain settable properties, and a dropped remote
     /// change stamp degrades every later refresh back to a full download while every other test in the
     /// suite stays green. The repository has already been bitten once by this shape — a `[NotMapped]`
-    /// init-only member dropped by the copy constructor (docs/ci-learnings.md, work-item-sync).
+    /// init-only member dropped by the copy constructor.
     /// </summary>
     [TestFixture]
     [Category("epic-5687-faster-updates")]

@@ -2,8 +2,8 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Auth
 {
-    // S107 fires at the sixth constructor parameter. The pragma must wrap the declaration that
-    // triggers it — anywhere else it silently does nothing (docs/ci-learnings.md, 2026-05-16).
+    // S107 (too many constructor parameters) is reported on the declaration itself, so the pragma
+    // has to wrap that declaration; placed anywhere else it silently does nothing.
 #pragma warning disable S107
     public class WorkTrackingAuthStrategyFactory(
         PatAuthStrategy patAuthStrategy,

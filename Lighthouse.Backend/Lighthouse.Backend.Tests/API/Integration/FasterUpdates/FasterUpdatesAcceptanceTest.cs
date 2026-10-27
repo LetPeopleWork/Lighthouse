@@ -911,8 +911,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// <summary>
         /// Saves the team's settings the way the Settings screen does. Round-tripping the DTO the GET
         /// returned rather than hand-building one is deliberate: a hand-built payload that misses a
-        /// [JsonRequired] field is a deterministic 400 that reads like a scenario failure
-        /// (docs/ci-learnings.md 2026-07-07).
+        /// [JsonRequired] field is a deterministic 400 that reads like a scenario failure.
         /// </summary>
         protected void TheOperatorSavesTheTeamsSettings(int teamId, TeamSettingDto settings)
         {
