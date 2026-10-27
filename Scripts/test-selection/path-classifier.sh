@@ -14,9 +14,10 @@ GITHUB_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tes
 # A change in any of these locations must force every integration category to
 # run (a regression here can break any connector):
 #   - Connector base subfolders (Auth/, OAuth/) under production OR tests
-#   - Top-level WorkTrackingConnectors/*.cs in production (schema, keys, enum)
+#   - Top-level WorkTrackingConnectors/*.cs in production (schema, keys)
 #   - Connector-shared interfaces (Services/Interfaces/WorkTrackingConnectors/I*.cs)
 #   - Connector-shared models (Models/WorkTrackingSystemConnection*, Models/OAuth/)
+#   - Models/WorkTrackingSystems.cs, the enum every connector switches on
 #   - Program.cs (DI graph for every connector)
 #   - Solution + csproj files
 SHARED_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'

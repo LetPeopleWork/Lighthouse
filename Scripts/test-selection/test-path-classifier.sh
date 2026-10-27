@@ -66,8 +66,9 @@ assert "shared-iface: shared=true"       "$(classify_shared "$diff_shared_iface"
 diff_shared_model=$'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemConnection.cs'
 assert "shared-model: shared=true"       "$(classify_shared "$diff_shared_model")" "true"
 
-diff_work_tracking_systems=$'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystems.cs'
-assert "work-tracking-systems: shared=true" "$(classify_shared "$diff_work_tracking_systems")" "true"
+# Scenario 8b: the connector enum counts as shared
+diff_shared_enum=$'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystems.cs'
+assert "shared-enum: shared=true"        "$(classify_shared "$diff_shared_enum")"  "true"
 
 # Scenario 9: Program.cs counts as shared (DI for all connectors)
 diff_program=$'Lighthouse.Backend/Lighthouse.Backend/Program.cs'
