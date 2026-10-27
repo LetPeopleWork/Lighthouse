@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.DeliverySources;
 using Lighthouse.Backend.Services.Factories;

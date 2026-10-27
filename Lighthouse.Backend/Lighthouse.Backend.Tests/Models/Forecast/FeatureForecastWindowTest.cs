@@ -1,8 +1,7 @@
-using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.Models.Forecast
 {
     /// <summary>
     /// The window blackout days are read for runs from today to twice the working days of the latest

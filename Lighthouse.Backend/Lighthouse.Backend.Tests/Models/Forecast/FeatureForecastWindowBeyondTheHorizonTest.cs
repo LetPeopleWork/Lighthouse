@@ -1,8 +1,7 @@
-using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 
-namespace Lighthouse.Backend.Tests.API
+namespace Lighthouse.Backend.Tests.Models.Forecast
 {
     /// <summary>
     /// Blackout days are read for a window sized by the latest percentile a screen shows. When that

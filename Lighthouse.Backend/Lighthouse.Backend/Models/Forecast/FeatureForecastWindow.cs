@@ -1,7 +1,4 @@
-using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Models.Forecast;
-
-namespace Lighthouse.Backend.API
+namespace Lighthouse.Backend.Models.Forecast
 {
     internal static class FeatureForecastWindow
     {
