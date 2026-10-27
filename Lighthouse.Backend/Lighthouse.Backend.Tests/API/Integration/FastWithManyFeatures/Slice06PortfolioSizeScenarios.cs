@@ -91,23 +91,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("error")]
         [Category("rbac")]
         [Category("contract-shape:pure-function")]
-        public async Task A_reader_who_may_not_open_the_Portfolio_is_refused_its_size()
+        public async Task A_reader_who_may_not_open_the_Portfolio_cannot_tell_it_from_a_missing_one()
         {
             var platform = GivenAPortfolioHoldingFeatures(NorthwindPlatform, 101);
             var payments = GivenAPortfolio("Northwind Payments");
 
             var status = await TheStatusOf(TheSizeOf(platform), AViewerOfThePortfolio(payments));
 
-            Assert.That(status, Is.EqualTo(HttpStatusCode.Forbidden));
+            Assert.That(status, Is.EqualTo(HttpStatusCode.NotFound));
         }
 
         [Test]
-        [Ignore(PendingEpic6400.Slice06)]
         [Category("driving_port")]
         [Category("error")]
         [Category("contract-shape:pure-function")]
