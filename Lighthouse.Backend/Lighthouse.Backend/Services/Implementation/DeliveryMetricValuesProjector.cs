@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 
 namespace Lighthouse.Backend.Services.Implementation
@@ -112,8 +113,14 @@ namespace Lighthouse.Backend.Services.Implementation
                 : deliveries.Max(delivery => delivery.Date.Date);
 
             var horizon = latestDeliveryDate > today ? latestDeliveryDate : today;
+            var aroundTargetDates = horizon.AddDays(CalendarHeadroomDays);
 
-            return horizon.AddDays(CalendarHeadroomDays);
+            // A Delivery's dates run as far as its Features' forecasts do, which can be well past the
+            // target date. Recurring rules are only expanded inside the window, so a shorter one would
+            // count every weekend beyond it as a working day.
+            var reachOfTheForecasts = FeatureForecastWindow.EndFor(today, deliveries.SelectMany(delivery => delivery.Features));
+
+            return reachOfTheForecasts > aroundTargetDates ? reachOfTheForecasts : aroundTargetDates;
         }
     }
 }

@@ -352,7 +352,6 @@ namespace Lighthouse.Backend.Tests.API
                 deliveryRuleServiceMock.Object,
                 rbacAdministrationServiceMock.Object,
                 deliveryMetricSnapshotRepositoryMock.Object,
-                blackoutPeriodServiceMock.Object,
                 new DeliveryMetricValuesProjector(blackoutPeriodServiceMock.Object),
                 clock,
                 deliverySourceResolverMock.Object);

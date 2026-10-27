@@ -95,6 +95,75 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "GetLikelhoodForDate counts working days excluding recurring-rule days; the 2 recurring days consume 2 of the 11 calendar days, leaving 9 working days. Half the forecast trials complete in 9 days and half in 11, so the likelihood is 50 — without the recurring days the full 11-day window would yield 100.");
         }
 
+        [Test]
+        public async Task GetDelivery_WeekendRuleWithoutEnd_DeliveryAndFeatureDatesMatchWhenForecastRunsPastTheTargetDate()
+        {
+            const int workingDays = 30;
+            await ConfigureWeekendRuleWithoutEnd();
+
+            var portfolioId = await SeedPortfolioWithForecast(ForecastCompletingInWorkingDays(workingDays));
+            await CreateDelivery(portfolioId, dueDateDaysOut: 1);
+
+            var delivery = await GetSingleDelivery(portfolioId);
+
+            var expected = WorkingDaysAfterToday(workingDays);
+            var deliveryDate = delivery.CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
+            var featureDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureDate, Is.EqualTo(expected), "the Feature's own date");
+                Assert.That(deliveryDate, Is.EqualTo(expected), "the Delivery's date");
+            }
+        }
+
+        [Test]
+        public async Task GetDelivery_OneOffPeriodAfterTheTargetDate_DeliveryAndFeatureDatesMatch()
+        {
+            const int workingDays = 12;
+            ConfigureOneOffBlackoutPeriod(DateOnly.FromDateTime(Today.AddDays(5)), DateOnly.FromDateTime(Today.AddDays(8)));
+
+            var portfolioId = await SeedPortfolioWithForecast(ForecastCompletingInWorkingDays(workingDays));
+            await CreateDelivery(portfolioId, dueDateDaysOut: 1);
+
+            var delivery = await GetSingleDelivery(portfolioId);
+
+            var deliveryDate = delivery.CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
+            var featureDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
+            Assert.That(deliveryDate, Is.EqualTo(featureDate));
+        }
+
+        private DateTime WorkingDaysAfterToday(int workingDays)
+        {
+            var day = Today;
+            var counted = 0;
+            while (counted < workingDays)
+            {
+                day = day.AddDays(1);
+                if (day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+                {
+                    counted++;
+                }
+            }
+
+            return day;
+        }
+
+        private async Task ConfigureWeekendRuleWithoutEnd()
+        {
+            Client.AsSystemAdmin();
+            var rule = new
+            {
+                weekdays = new[] { nameof(DayOfWeek.Saturday), nameof(DayOfWeek.Sunday) },
+                intervalWeeks = 1,
+                start = DateOnly.FromDateTime(Today.AddDays(-14)).ToString("yyyy-MM-dd"),
+                description = "Weekend",
+            };
+
+            var response = await Client.PostAsJsonAsync("/api/latest/recurring-blackout-rules", rule);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Created),
+                await response.Content.ReadAsStringAsync());
+        }
+
         private async Task ConfigureRecurringRuleCovering(DateOnly firstDay, DateOnly secondDay)
         {
             Client.AsSystemAdmin();

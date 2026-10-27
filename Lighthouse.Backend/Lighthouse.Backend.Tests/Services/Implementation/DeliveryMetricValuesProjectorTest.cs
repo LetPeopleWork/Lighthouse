@@ -192,6 +192,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
+        [Test]
+        public void BlackoutPeriodsFor_ForecastRunningPastTheTargetDate_ReadsBlackoutDaysAsFarAsTheFeaturesForecastReaches()
+        {
+            var team = new Team { Id = 7, Name = TeamNames[0] };
+            var feature = new Feature([(team, 4, 10)]) { Id = 11, ReferenceId = "FTR-11", Name = "Checkout", Order = "1" };
+            var simulationResult = new SimulationResult();
+            simulationResult.SimulationResults[40] = 100;
+            feature.SetFeatureForecasts([new WhenForecast(simulationResult, DateTime.UtcNow) { TeamId = team.Id, HasSufficientData = true }]);
+            var delivery = new Delivery { Id = 3, Name = "Q1 Release", PortfolioId = PortfolioId, Date = clock.TodayAsUtcMidnight.AddDays(1) };
+            delivery.ReplaceFeatures([feature]);
+
+            subject.BlackoutPeriodsFor([delivery], clock.Today);
+
+            var forecastReach = FeatureForecastWindow.EndFor(clock.TodayAsUtcMidnight, [feature]);
+            blackoutPeriodServiceMock.Verify(
+                service => service.GetEffectiveBlackoutDays(clock.TodayAsUtcMidnight, It.Is<DateTime>(end => end >= forecastReach)),
+                Times.Once);
+        }
+
         private async Task<DeliveryMetricSnapshot> WhatTheDailyRecorderWrites(Delivery delivery)
         {
             var snapshot = new DeliveryMetricSnapshot { DeliveryId = delivery.Id, RecordedDay = clock.Today };

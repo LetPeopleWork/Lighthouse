@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.API
         IDeliveryRuleService deliveryRuleService,
         IRbacAdministrationService rbacAdministrationService,
         IDeliveryMetricSnapshotRepository deliveryMetricSnapshotRepository,
-        IBlackoutPeriodService blackoutPeriodService,
         DeliveryMetricValuesProjector deliveryMetricValuesProjector,
         ILighthouseClock clock,
         IDeliverySourceResolver deliverySourceResolver)
@@ -57,9 +56,7 @@ namespace Lighthouse.Backend.API
         /// </summary>
         private List<DeliveryWithLikelihoodDto> ActiveRows(List<Delivery> deliveries)
         {
-            var forecastWindowStart = clock.TodayAsUtcMidnight;
-            var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                forecastWindowStart, ForecastWindowEnd(deliveries, forecastWindowStart));
+            var blackoutPeriods = deliveryMetricValuesProjector.BlackoutPeriodsFor(deliveries, clock.Today);
             var deliveryDtos = deliveries
                 .Select(delivery => DeliveryWithLikelihoodDto.FromDelivery(delivery, clock.Today, blackoutPeriods))
                 .ToList();
@@ -752,18 +749,5 @@ namespace Lighthouse.Backend.API
         }
 
         private const string SourceCouldNotBeAsked = "The system holding the source could not be reached";
-
-        private static DateTime ForecastWindowEnd(List<Delivery> deliveries, DateTime today)
-        {
-            const int CalendarHeadroomDays = 14;
-
-            var latestDeliveryDate = deliveries.Count == 0
-                ? today
-                : deliveries.Max(delivery => delivery.Date.Date);
-
-            var horizon = latestDeliveryDate > today ? latestDeliveryDate : today;
-
-            return horizon.AddDays(CalendarHeadroomDays);
-        }
     }
 }
