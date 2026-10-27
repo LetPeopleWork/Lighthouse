@@ -170,7 +170,7 @@ Each is at most one day. Pure-move commits change namespaces and `using` lines o
 | Slice | Commits | Satisfies |
 |---|---|---|
 | S04a-1 | move: `IEntity` + `IConcurrencyTokenEntity` | AC: kernel types live in `Models` |
-| S04a-2 | move: `WorkTrackingSystems` (up to ~276 files, mechanical; IDE0005 or compile-driven) | same |
+| S04a-2 | move: `WorkTrackingSystems` (up to ~276 files, mechanical; IDE0005 or compile-driven); edit (same commit range, separate commit): add `Models/WorkTrackingSystems.cs` to `SHARED_REGEX` in `Scripts/test-selection/path-classifier.sh`, with a scenario in `test-path-classifier.sh` (added at DEVOPS) | same, plus: a change to the enum still forces the live-connector suites |
 | S04a-3 | move: `ReportOwner` + `ReportOwnerKind`; separate move: `BlackoutDaysExtensions` | same |
 | S04a-4 | move: `UpdateType`; edit: drop the exception in `ModelsDoNotDependOnTheUpdateQueueArchUnitTest` | same |
 | S04a-5 | edit: `WithLegacyDefault` becomes a `Services` extension | `Models` no longer reaches the encryption service |
@@ -242,3 +242,64 @@ Quoted from the same table, KPI row 5:
 - DELIVER: confirm ArchUnitNET's offender list for `Models → Services` equals the eight types before the rule commit.
 - DELIVER: confirm the exact `Services.Implementation.Repositories` type list is empty for `API` today (expected, the 23 entries are all interface dependencies).
 - Follow-up (not this batch): migrate the five private source-scan helpers to `ProductionSource`.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-10-27)
+
+Every platform decision is the project's existing one; this batch changes none of them. Behaviour-free
+test-and-namespace work: no deployment, image, chart, configuration, migration or external call changes.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | Unchanged: Standalone, Docker, Helm/cluster via the regular release pipeline. Nothing to deploy beyond the next release. |
+| CI/CD platform | GitHub Actions, existing workflows. No new job, no new workflow. |
+| Branching | Trunk-based on `main`. |
+| Observability | N/A, because no runtime behaviour changes. No log line, metric or trace is added. |
+| Continuous learning / flags | N/A, because there is nothing a user can see to roll out. |
+| Mutation testing | Per-feature (CLAUDE.md), last, on frozen code. See below. |
+| Usage-data event | **N/A, because the batch is behaviour-free**: nothing a user does changes, so there is no use to count. |
+
+## Wave: DEVOPS / [REF] CI pipeline outline
+
+- **Where the new rules run:** `Lighthouse.Backend.Tests/Architecture/` tests carry no `Integration` category, so
+  `ci_backend.yml`'s always-on `Category!=Integration` part runs all three new rules on every push. Locally:
+  `dotnet test --filter FullyQualifiedName~Architecture` for the loop, and the CLAUDE.md filter before push.
+- **Force-full exposure (finding):** `Scripts/test-selection/path-classifier.sh` treats top-level
+  `Services/Implementation/WorkTrackingConnectors/*.cs` and `Models/WorkTrackingSystemConnection*` as shared connector paths.
+  The push carrying **S04a-2** touches both (the enum's old file is deleted, the entity's `using` changes), plus `using`
+  lines inside the Jira, ADO, Linear and ServiceNow folders. That push therefore runs every live-connector suite. Expected
+  and accepted: one slow, more flake-exposed CI run, nothing to change in CI for it. Push the S04a moves together so it
+  happens once, not per slice. Do not run the connector categories locally for a `using`-only change (the Linear key is
+  shared with CI).
+- **Classifier gap (finding → DELIVER step in S04a-2):** after the move the enum lives at `Models/WorkTrackingSystems.cs`,
+  which `SHARED_REGEX` does not match, so a later change to the enum would no longer force the connector suites. S04a-2
+  extends `SHARED_REGEX` with `^Lighthouse\.Backend/Lighthouse\.Backend/Models/WorkTrackingSystems\.cs$` and adds a
+  scenario to `Scripts/test-selection/test-path-classifier.sh`, in the same commit range as the move.
+- **Sonar:** move commits must drop stale `using`s (S1128 / IDE0005), or the gate reports new code smells.
+
+## Wave: DEVOPS / [REF] Mutation testing scope
+
+Stryker.NET on production code only (the new tests and `ProductionSource` are test code). Run once, last, after S05a-2,
+on frozen code. Moved files' line ranges shift, so baselines are taken by file, not by line span.
+
+| File | Why it is in scope | Gate |
+|---|---|---|
+| `Models/BlackoutDaysExtensions.cs` (moved) | Logic moved with its tests | Score not lower than at its old path |
+| `Models/Encryption/EncryptionKeyRing.cs` + the new `Services/Implementation/Encryption` extension | S04a-5 edits logic | ≥ 80% on the new extension; ring not lower |
+| `Models/Reports/ReportOwner.cs` (moved) | Value object with logic | Not lower |
+| Enums and marker interfaces (`IEntity`, `IConcurrencyTokenEntity`, `WorkTrackingSystems`, `UpdateType`) | No mutants of interest | N/A, because Stryker produces no meaningful mutants for them |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+See `environments.yaml`: one environment (`clean`, CI ubuntu-latest + the developer machine), since nothing installs or
+runs differently. Coexistence: the Docker images, Helm chart, Standalone builds, Lighthouse-Clients and both migration
+assemblies must not change; the latter is evidenced at DESIGN (no snapshot churn) and checked by `dotnet build` showing no
+`PendingModelChanges`.
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+Quoted from this file's DESIGN slice table, S04a-2 as written at DESIGN:
+
+> move: `WorkTrackingSystems` (up to ~276 files, mechanical; IDE0005 or compile-driven)
+
+**Changed:** S04a-2 also extends the CI path classifier, because the enum's move would otherwise drop it from the
+connector-suite trigger. The slice row now says so.

@@ -1,0 +1,39 @@
+# Environment inventory - stories-6367-6369-kernel-and-repository-ratchets
+# Consumed by DISTILL for environmental realism.
+#
+# Behaviour-free: type moves between namespaces, one extension-method inversion, and three architecture tests.
+# No migration, configuration key, image, chart, dependency or external call changes. The only axis is the build
+# itself: the rules read the compiled production assembly (ArchUnitNET) and its source tree (source scan).
+
+target_environments:
+  - name: clean
+    description: >
+      A checkout built with `dotnet build`, tests run with the CLAUDE.md filter. Both the source scan and ArchUnitNET
+      read the checkout, so CI and a developer machine see the same thing. In a git worktree the gitignored
+      licence fixture is absent (2 Licensing failures, environmental, unrelated).
+    platform: [linux, macos, windows]
+    preconditions:
+      - "Production sources present next to the test project (the source scan resolves them relative to the test output)"
+
+coexistence_matrix:
+  - tool: EF migration assemblies (SQLite, PostgreSQL)
+    must_not_break: true
+    note: "No snapshot churn, no PendingModelChanges: no entity namespace changes and the moved enums persist as ints"
+  - tool: Docker images, Helm chart, Standalone builds
+    must_not_break: true
+    note: "Nothing changes in them"
+  - tool: lighthouse-clients (lh CLI, MCP)
+    must_not_break: true
+    note: "Enums serialise by member name; no payload changes"
+  - tool: CI path classifier (Scripts/test-selection/path-classifier.sh)
+    must_not_break: true
+    note: "Extended in S04a-2 so Models/WorkTrackingSystems.cs still forces the live-connector suites"
+  - tool: lefthook pre-commit (secret scan, Biome)
+    must_not_break: true
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest (ci_backend, sonar gates)]
+
+deployment_assumptions:
+  - "Ships with the next regular Lighthouse release; no flag, no configuration, nothing a user sees"
+  - "Rollback is the previous release; nothing is persisted differently"
