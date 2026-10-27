@@ -145,7 +145,7 @@ export const PREMIUM_LICENSE_TOOLTIP =
 	/^This feature requires a premium license\./;
 export const OWNERS_AT_MOST_50 = "Pick at most 50 Teams and Portfolios.";
 export const OPTIONS_COULD_NOT_LOAD = "What a report needs couldn't be loaded.";
-/** Not worded by any maintainer decision; DELIVER shows it at the slice 07 sketch. */
+/** Provisional wording: the maintainer has not confirmed it yet. */
 export const NOTHING_SELECTED_TO_EXPORT = "Select at least one report.";
 export const DELETE = "Delete";
 
@@ -168,7 +168,6 @@ export const notRemovedBecause = {
 const kindWordOf = (owner: Owner) =>
 	owner.kind === "team" ? defaultTerms.team : defaultTerms.portfolio;
 
-/** The owner as the Owner column reads it: its kind in the instance's words, then its name. */
 /** What the Owner cell shows: the name alone, as the link to the owner, behind a Team or Portfolio icon. */
 export const ownerCellOf = (owner: Owner) => owner.name;
 
