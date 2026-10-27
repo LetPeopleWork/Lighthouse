@@ -958,8 +958,9 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					{!isEditMode && (
 						<Grid size={{ xs: 12, md: 6 }}>
 							<FormControl fullWidth>
-								<InputLabel>{`Select ${workTrackingSystemTerm}`}</InputLabel>
+								<InputLabel id="connection-work-tracking-system-label">{`Select ${workTrackingSystemTerm}`}</InputLabel>
 								<Select
+									labelId="connection-work-tracking-system-label"
 									value={selectedWorkTrackingSystem?.workTrackingSystem ?? ""}
 									onChange={handleSystemChange}
 									label={`Select ${workTrackingSystemTerm}`}

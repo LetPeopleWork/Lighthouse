@@ -7,11 +7,12 @@ import type { GridRowId } from "@mui/x-data-grid";
 import { useGridApiContext } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useState } from "react";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import { PREMIUM_UPGRADE_TOOLTIP } from "../../../utils/premiumUpgradeTooltip";
 import type { DataGridExportTable, DataGridToolbarProps } from "./types";
 
 const generateFileName = (exportFileName?: string): string => {
-	const timestamp = new Date().toISOString().split("T")[0];
+	const timestamp = formatLocalDate(new Date());
 	return exportFileName
 		? `${exportFileName}_${timestamp}`
 		: `data_export_${timestamp}`;
@@ -36,6 +37,18 @@ const formatCellValue = (value: unknown): string => {
 	if (value === null || value === undefined) return "";
 	if (typeof value === "object") return JSON.stringify(value);
 	return typeof value === "string" ? value : JSON.stringify(value);
+};
+
+const headerCellHtml = (header: string): string =>
+	`<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;">${escapeHtml(header)}</th>`;
+
+const dataRowHtml = (row: string[]): string => {
+	const cells = row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("");
+	return `
+							<tr>
+								${cells}
+							</tr>
+						`;
 };
 
 const useDataGridExport = (
@@ -87,19 +100,11 @@ const useDataGridExport = (
 				<table border="1" cellpadding="4" cellspacing="0" style="border-collapse: collapse;">
 					<thead>
 						<tr>
-							${headers.map((h) => `<th style="background-color: #30574E; color: white; font-weight: bold; text-align: left;">${escapeHtml(h)}</th>`).join("")}
+							${headers.map((h) => headerCellHtml(h)).join("")}
 						</tr>
 					</thead>
 					<tbody>
-						${dataRows
-							.map(
-								(row) => `
-							<tr>
-								${row.map((cell) => `<td>${escapeHtml(cell)}</td>`).join("")}
-							</tr>
-						`,
-							)
-							.join("")}
+						${dataRows.map((row) => dataRowHtml(row)).join("")}
 					</tbody>
 				</table>
 			`.trim();

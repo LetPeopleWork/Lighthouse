@@ -8,6 +8,7 @@ import { HowManyForecast } from "../../models/Forecasts/HowManyForecast";
 import { ManualForecast } from "../../models/Forecasts/ManualForecast";
 import type { RealityCheckResult } from "../../models/Forecasts/RealityCheckResult";
 import { WhenForecast } from "../../models/Forecasts/WhenForecast";
+import { formatLocalDate } from "../../utils/date/localDate";
 import { BaseApiService } from "./BaseApiService";
 
 export interface IForecastService {
@@ -173,7 +174,7 @@ export class ForecastService
 	}
 
 	private formatDateOnly(date: Date): string {
-		return date.toISOString().split("T")[0];
+		return formatLocalDate(date);
 	}
 
 	private static deserializeBacktestResult(data: unknown): BacktestResult {

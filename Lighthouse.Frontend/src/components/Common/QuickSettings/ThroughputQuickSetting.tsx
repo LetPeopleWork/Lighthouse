@@ -15,6 +15,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { formatLocalDate } from "../../../utils/date/localDate";
 
 type ThroughputQuickSettingProps = {
 	useFixedDates: boolean;
@@ -85,7 +86,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 		}
 
 		if (initialUseFixedDates && initialStartDate && initialEndDate) {
-			return `${throughputTerm}: Fixed dates ${initialStartDate.toISOString().split("T")[0]} to ${initialEndDate.toISOString().split("T")[0]}`;
+			return `${throughputTerm}: Fixed dates ${formatLocalDate(initialStartDate)} to ${formatLocalDate(initialEndDate)}`;
 		}
 
 		return `${throughputTerm}: Rolling ${initialThroughputHistory} days`;
@@ -293,7 +294,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 									label="Start Date"
 									type="date"
 									fullWidth
-									value={startDate ? startDate.toISOString().split("T")[0] : ""}
+									value={startDate ? formatLocalDate(startDate) : ""}
 									onChange={(e) =>
 										setStartDate(
 											e.target.value ? new Date(e.target.value) : null,
@@ -308,7 +309,7 @@ const ThroughputQuickSetting: React.FC<ThroughputQuickSettingProps> = ({
 									label="End Date"
 									type="date"
 									fullWidth
-									value={endDate ? endDate.toISOString().split("T")[0] : ""}
+									value={endDate ? formatLocalDate(endDate) : ""}
 									onChange={(e) =>
 										setEndDate(e.target.value ? new Date(e.target.value) : null)
 									}

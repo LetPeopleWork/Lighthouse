@@ -297,6 +297,7 @@ const LighthouseVersion: React.FC = () => {
 				>
 					<FormControl size="small" sx={{ minWidth: 180 }}>
 						<Typography
+							id="notification-preference-label"
 							variant="caption"
 							color="text.secondary"
 							sx={{ mb: 0.5, fontSize: "0.7rem" }}
@@ -304,6 +305,7 @@ const LighthouseVersion: React.FC = () => {
 							Notification preference:
 						</Typography>
 						<Select
+							labelId="notification-preference-label"
 							value={notificationPreference}
 							onChange={(e) => setNotificationPreference(e.target.value)}
 							variant="outlined"

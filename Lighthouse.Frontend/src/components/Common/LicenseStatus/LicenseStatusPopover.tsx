@@ -25,6 +25,7 @@ import { useContext, useEffect, useId, useRef, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { formatLocalDate } from "../../../utils/date/localDate";
 import {
 	errorColor,
 	successColor,
@@ -218,12 +219,12 @@ const LicenseStatusPopover: React.FC<LicenseStatusPopoverProps> = ({
 		let validFrom: string;
 		if (expiryDate <= now) {
 			// License is expired - use today
-			validFrom = now.toISOString().split("T")[0];
+			validFrom = formatLocalDate(now);
 		} else {
 			// License is expiring soon - use day after expiry
 			const nextDay = new Date(expiryDate);
 			nextDay.setDate(nextDay.getDate() + 1);
-			validFrom = nextDay.toISOString().split("T")[0];
+			validFrom = formatLocalDate(nextDay);
 		}
 
 		// Build URL with query parameters
