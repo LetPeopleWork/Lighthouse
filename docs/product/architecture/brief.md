@@ -10905,7 +10905,7 @@ Backend-only, behaviour-free. Two ratchets from Epic 6264: the `Models` shared k
 Before: `Models` imported `IEntity`, `WorkTrackingSystems`, `UpdateType`, `ReportOwner`,
 `BlackoutDaysExtensions` and the encryption service from `Services`; the rule existed only as prose.
 After: those types live in `Models`, the one encryption method is an extension on the `Services` side, and
-an architecture test enforces `Models ↛ Services` with an empty exception list.
+an architecture test enforces `Models ↛ Services` with no exceptions.
 
 ```mermaid
 C4Container
@@ -10928,10 +10928,10 @@ Before, the diagram had one more arrow: `Models` depends on `Services`.
 |---|---|
 | Six kernel types | Moved into `Models` |
 | `LegacyDefaultEncryptionKey` | Stays in `Services`; `WithLegacyDefault` becomes an extension there |
-| `GetAllByPredicate` callers | Source scan, 14-file list, failure names file and line |
-| `API` types on repositories | ArchUnitNET, 23-entry list, nested compiler types normalised |
+| `GetAllByPredicate` callers | Source scan, 15-file list (14 at DESIGN, plus `ReportOwnerLookup` from Epic 6350 on landing), failure names file and line |
+| `API` types on repositories and the kernel rules | Compiled IL read with Mono.Cecil (`IlDependencies`), 23-entry list, lambda and async types reported against the type that wrote them; ArchUnitNET's graph drops async-body edges in a Release build |
 | Convention | ADR-268; status note on ADR-027 |
 
 No external integrations are touched, so no contract-test recommendation applies. Enforcement tooling is
-ArchUnitNET plus a source scan, both already in the test suite. Workspace:
+an IL walk with Mono.Cecil (already a dependency of ArchUnitNET) plus a source scan. Workspace:
 `docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md`.
