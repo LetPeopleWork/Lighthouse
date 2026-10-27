@@ -36,6 +36,16 @@ describe("PortfolioService", () => {
 		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios");
 	});
 
+	it("should get the size of a portfolio", async () => {
+		const size = { featureCount: 101, threshold: 100, isOverThreshold: true };
+		mockedAxios.get.mockResolvedValueOnce({ data: size });
+
+		const result = await portfolioService.getSize(7);
+
+		expect(result).toEqual(size);
+		expect(mockedAxios.get).toHaveBeenCalledWith("/portfolios/7/size");
+	});
+
 	it("should get a project by id", async () => {
 		const project = new Portfolio();
 		project.name = "Project 1";

@@ -37,6 +37,7 @@ import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import DependenciesComponent from "./Advanced/DependenciesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
+import PortfolioSizeNote from "./PortfolioSizeNote";
 
 interface ModifyProjectSettingsProps {
 	title: string;
@@ -204,6 +205,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 						<Grid size={{ xs: 12 }}>
 							<Typography variant="h4">{title}</Typography>
 						</Grid>
+
+						<PortfolioSizeNote portfolioId={projectSettings.id} />
 
 						<GeneralSettingsComponent
 							settings={projectSettings}

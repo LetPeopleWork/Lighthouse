@@ -107,19 +107,21 @@ const thePortfolioSettingsOpen = async (
 };
 
 describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more than 100 Features", () => {
-	it.skip("a Portfolio holding 101 Features shows the note with its count, as information", async () => {
+	it("a Portfolio holding 101 Features shows the note with its count, as information", async () => {
 		await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			Promise.resolve(aSize(101)),
 		);
 
-		expect(await screen.findByText(theNoteFor(101))).toBeInTheDocument();
-		const note = screen.getByRole("alert");
+		const note = (await screen.findByText(theNoteFor(101))).closest(
+			'[role="alert"]',
+		);
+		expect(note).not.toBeNull();
 		expect(note).toHaveTextContent(theNoteFor(101));
 		expect(note).toHaveClass("MuiAlert-colorInfo");
 	});
 
-	it.skip("the note asks for the size of the Portfolio being edited", async () => {
+	it("the note asks for the size of the Portfolio being edited", async () => {
 		const portfolioService = await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			Promise.resolve(aSize(101)),
@@ -129,7 +131,7 @@ describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more
 		expect(portfolioService.getSize).toHaveBeenCalledWith(NORTHWIND_PLATFORM);
 	});
 
-	it.skip("when the size cannot be checked, the page says so and stays usable", async () => {
+	it("when the size cannot be checked, the page says so and stays usable", async () => {
 		await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			Promise.reject(new Error("the network dropped")),
@@ -139,7 +141,7 @@ describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more
 		expect(screen.getByText("GeneralSettingsComponent")).toBeInTheDocument();
 	});
 
-	it.skip("the note uses the instance's own words for Features and Portfolios", async () => {
+	it("the note uses the instance's own words for Features and Portfolios", async () => {
 		await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			Promise.resolve(aSize(240)),
@@ -153,7 +155,7 @@ describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more
 		).toBeInTheDocument();
 	});
 
-	it.skip("the could-not-check message uses the instance's own word for Portfolios", async () => {
+	it("the could-not-check message uses the instance's own word for Portfolios", async () => {
 		await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			Promise.reject(new Error("the network dropped")),
@@ -165,7 +167,7 @@ describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more
 		).toBeInTheDocument();
 	});
 
-	it.skip("a Portfolio holding exactly 100 Features shows no note", async () => {
+	it("a Portfolio holding exactly 100 Features shows no note", async () => {
 		const size = Promise.resolve(aSize(100));
 		const portfolioService = await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
@@ -185,7 +187,7 @@ describe("Story 6410 (slice 06): the Portfolio's settings say when it holds more
 		expect(screen.queryByText(COULD_NOT_CHECK)).not.toBeInTheDocument();
 	});
 
-	it.skip("while the size is on its way the page shows no note and no warning", async () => {
+	it("while the size is on its way the page shows no note and no warning", async () => {
 		const portfolioService = await thePortfolioSettingsOpen(
 			NORTHWIND_PLATFORM,
 			deferred<IPortfolioSize>().promise,

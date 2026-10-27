@@ -20,6 +20,8 @@ import {
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
+vi.mock("./PortfolioSizeNote", () => ({ default: () => null }));
+
 vi.mock("../BaseSettings/GeneralSettingsComponent", () => ({
 	__esModule: true,
 	default: ({

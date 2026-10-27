@@ -56,9 +56,13 @@ export class PortfolioService
 		}
 	}
 
-	// SCAFFOLD: replaced in DELIVER by the read of the Portfolio's size endpoint.
-	getSize(_id: number): Promise<IPortfolioSize> {
-		return Promise.reject(new Error("Not yet implemented: getSize"));
+	getSize(id: number): Promise<IPortfolioSize> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<IPortfolioSize>(
+				`/portfolios/${id}/size`,
+			);
+			return response.data;
+		});
 	}
 
 	deletePortfolio(id: number): Promise<void> {
