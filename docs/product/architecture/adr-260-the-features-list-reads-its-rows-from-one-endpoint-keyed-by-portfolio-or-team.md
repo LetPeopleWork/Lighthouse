@@ -1,6 +1,6 @@
 # ADR-260: The Features list reads its rows from one endpoint keyed by Portfolio or Team
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review).
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review).
 **Feature**: `epic-6400-fast-with-many-features` (Story #6408, slice 04)
 **Relies on**: [ADR-258](./adr-258-reads-that-show-no-forecast-dates-never-load-forecast-histograms.md) (histogram-free
 dependency graph, in-progress by reference id), ADR-135 (global positions), the RBAC guard attribute

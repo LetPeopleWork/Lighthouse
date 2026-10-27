@@ -1,6 +1,6 @@
 # ADR-259: Licence restrictions are one shared query, and refuse creation while they cannot be told
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review). The create-only
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review). The create-only
 refusal is listed for the maintainer (Q-M1).
 **Feature**: `epic-6400-fast-with-many-features` (Story #6406, slice 02)
 **Relies on**: the server-side `LicenseGuard` (creation and update limits are enforced by the API whatever the UI

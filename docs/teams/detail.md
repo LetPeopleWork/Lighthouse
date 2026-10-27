@@ -45,6 +45,17 @@ For every feature, you can see the following details.
 ## Hide Completed Features
 If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features. The setting is stored for this specific team, so next time you won't have to toggle it again.
 
+## While the List Loads, and When It Cannot
+The list is read in one request, so it appears in one go, even for a Team involved in hundreds of Features. The page tells you which of these four states you are looking at:
+
+- **Loading**: placeholder rows under a small spinner until the first answer arrives. After an update completes, the rows you already see stay, dimmed and not clickable under a small spinner, until the new answer replaces them.
+- **Could not be loaded**: *The Features couldn't be loaded.* with a **Retry** button. If a refresh fails after rows were shown, the page shows this message too, instead of keeping the old rows on screen, because rows from an earlier answer would look current when they are not.
+- **Empty**: *This Team has no Features yet.* No Portfolio the Team is involved in holds a Feature this Team has work for.
+- **All hidden**: *All 12 Features are completed. Turn off Hide Completed Features to see them.* Every Feature listed is completed, and [Hide Completed Features](#hide-completed-features) is on. The number is how many completed Features the Team has.
+
+{: .note}
+The names in these messages follow your [Terminology](../settings/configuration.html#terminology-configuration) settings, so they read as your own words for Feature and Team.
+
 ## Feature Order
 The Features are listed in the order Lighthouse forecasts them — this Team's slice of an instance-wide sequence, so the Features of Portfolios this Team does not work on sit invisibly in between. The [Features page](../features/features.html) shows the whole sequence.
 

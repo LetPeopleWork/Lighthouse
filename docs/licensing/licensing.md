@@ -123,6 +123,9 @@ There are two kind of "Premium Features" that you unlock with a license. Some fe
 {: .important}
 If you have more than the maximum amount of teams or portfolios, the continuous update for **all** teams and portfolios will stop, until you will get under the limit again.
 
+{: .note}
+Lighthouse checks your license and your current number of Teams and Portfolios once per page and shares the answer with every button that creates a Team or a Portfolio: the *Add Team* and *Add Portfolio* buttons, the Get Started steps, the create wizards and *Create*/*Save* on a new or copied Team or Portfolio. While the check is still loading, these stay disabled. If it could not be done, they stay disabled and say *Couldn't check your license. Reload the page to try again.* (on a copied Team or Portfolio, the save indicator at the top reads *Not saved: Couldn't check your license. Reload the page to try again.*). At the free limit they are disabled with a note that free users can only create up to the limit. Changing the settings of an existing Team or Portfolio is never blocked by the check.
+
 On top of those permanent constraints on the free version, there will be some features that become available to premium users first, and eventually will make their way to the free tier.
 
 {: .note}

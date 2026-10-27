@@ -1,6 +1,6 @@
 # ADR-258: Reads that show no forecast dates never load forecast histograms
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode).
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode).
 **Feature**: `epic-6400-fast-with-many-features` (Stories #6406 and #6407, slices 02 and 03)
 **Relies on**: ADR-135 (a Feature's position is global), the dependency decision's single projection
 (`DependencyFacts`), ADR-163 (narrowed repository readers; Epic 6264 generalises it).

@@ -1,6 +1,6 @@
 # ADR-257: A forecast round runs on its own threads, off the request thread pool
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode under the maintainer's "continue autonomously").
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode under the maintainer's "continue autonomously").
 **Feature**: `epic-6400-fast-with-many-features` (Story #6404, slice 01)
 **Relies on**: [ADR-248](./adr-248-a-forecast-simulation-runs-on-at-most-half-the-cores-whoever-asked-for-it.md) (each
 simulation runs on at most half the cores; this ADR takes up the fallback ADR-248 named: "dedicated threads … kept as

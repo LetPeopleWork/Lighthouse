@@ -1,6 +1,6 @@
 # ADR-262: A Portfolio's size note is decided on the server, from its stored Features
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review). The failure look is
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review). The failure look is
 listed for the maintainer (Q-M3).
 **Feature**: `epic-6400-fast-with-many-features` (Story #6410, slice 06)
 

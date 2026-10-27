@@ -41,6 +41,17 @@ For every portfolio, all the features are listed with additional details.
 ### Hide Completed Features
 If you have many Features that are already completed, you may not want to show all of them. In such a scenario, you can hide the completed features. The setting is stored for this specific portfolio, so next time you won't have to toggle it again.
 
+### While the List Loads, and When It Cannot
+The list is read in one request, so it appears in one go, even for a Portfolio holding hundreds of Features. The page tells you which of these four states you are looking at:
+
+- **Loading**: placeholder rows under a small spinner until the first answer arrives. After a refresh completes, the rows you already see stay, dimmed and not clickable under a small spinner, until the new answer replaces them.
+- **Could not be loaded**: *The Features couldn't be loaded.* with a **Retry** button. If a refresh fails after rows were shown, the page shows this message too, instead of keeping the old rows on screen, because rows from an earlier answer would look current when they are not.
+- **Empty**: *This Portfolio has no Features yet.* The Portfolio has not brought in any Feature so far, for example because it was never updated.
+- **All hidden**: *All 12 Features are completed. Turn off Hide Completed Features to see them.* Every Feature the Portfolio holds is completed, and [Hide Completed Features](#hide-completed-features) is on. The number is how many completed Features the Portfolio holds.
+
+{: .note}
+The names in these messages follow your [Terminology](../settings/configuration.html#terminology-configuration) settings, so they read as your own words for Feature and Portfolio.
+
 ### Feature Order
 Features are ordered based on the [order in your Work Tracking System](../../concepts/concepts.html#feature-order). To change it, adjust your Work Tracking System and [Refresh the Features](#refresh-features).
 

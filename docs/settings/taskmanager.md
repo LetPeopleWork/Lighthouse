@@ -128,6 +128,8 @@ Lighthouse keeps the most recent 200 of them in memory. That is enough for about
 {: .note}
 The number is configurable if 200 does not suit your instance: `RecentProblems:Capacity` in `appsettings.json`, or the environment variable `RecentProblems__Capacity`. See [Configuration](../Installation/configuration.html) for the ways to pass settings to Lighthouse.
 
+A [Portfolio](../portfolios/edit.html#large-portfolios) that holds more than 100 Features adds one warning to this list for every successful update of it, saying that its pages and forecasts get slower.
+
 If nothing has gone wrong since the instance started, it says so. **Open the full log** takes you to [System Info](systeminfo.html), where the complete log lives along with the log level setting.
 
 {: .note}

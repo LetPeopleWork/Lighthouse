@@ -1,6 +1,6 @@
 # ADR-261: A forecast round reads without histograms, and loads them only when it must
 
-**Status**: Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review).
+**Status**: Accepted, built on main 2026-10-27 (not yet released). Proposed (DESIGN, 2026-10-23, PROPOSE mode; revised after the architecture review).
 **Feature**: `epic-6400-fast-with-many-features` (Story #6409, slice 05)
 **Relies on**: [ADR-256](./adr-256-an-unchanged-portfolio-forecast-is-confirmed-not-recomputed-unless-a-person-asked.md)
 (the fingerprint and the skip), [ADR-257](./adr-257-a-forecast-round-runs-on-its-own-threads-off-the-request-thread-pool.md)

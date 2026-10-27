@@ -38,6 +38,21 @@ See the [Jira](../../concepts/worktrackingsystems/jira.html#portfolios) and [Azu
 
 If you chose a file-based Work Tracking system (like CSV), you will see an upload dialog instead of a query, which will allow you to upload the datasource.
 
+## Large Portfolios
+A Portfolio that holds more than **100 Features** gets slower: its pages take longer to open and its forecasts take longer to run. When you open the settings of such a Portfolio, an information note at the top says so:
+
+*This Portfolio holds 238 Features (as of its last update). Above 100, its pages and forecasts get slower. If you don't plan with all of them, narrow the query.*
+
+- The number is what the Portfolio held after its last update, not what the [Work Item Query](#work-item-query) would return right now. Change the query and the number follows after the next update.
+- Exactly 100 is not noted. A Portfolio that was never updated shows no note.
+- If Lighthouse could not check the size, the note says *Couldn't check this Portfolio's size.* instead. That is not a sign the Portfolio is small, only that the check did not come back. Reload the page to try again.
+- The note does not stop you from saving, and nothing is limited. It only tells you what the size costs.
+
+Every successful update of a Portfolio over 100 Features also writes one warning to the log: *Portfolio 'Northwind Platform' (3) holds 238 Features after its update, more than 100. Its pages and forecasts get slower; narrowing its query keeps them fast.* Because it is a warning, it also shows under [Recent problems](../settings/taskmanager.html#recent-problems) in the Task Manager, one entry per update, so a large Portfolio updated often can fill that list. Raising the log level to *Error* hides it.
+
+{: .recommendation}
+If you do not plan with every one of those Features, narrow the query, for example to the current quarter or to the Teams that matter. A smaller Portfolio opens faster and forecasts sooner.
+
 ## Cut Off Days
 The *Cut Off Days* setting controls how far back in time Lighthouse will look when fetching features. Features that were closed *before* this date will be ignored. This helps to speed up the update and forecast process.
 
