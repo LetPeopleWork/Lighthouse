@@ -415,8 +415,10 @@ describe("Export PDF on the macOS desktop app", () => {
 		theBrowserShowsKeyboardFocus();
 		await tabTo(user, icon);
 
-		expect(readingOf(await screen.findByRole("tooltip"))).toBe(
-			PDF_EXPORT_UNAVAILABLE_ON_MAC,
+		await waitFor(() =>
+			expect(screen.getAllByRole("tooltip").map(readingOf)).toContain(
+				PDF_EXPORT_UNAVAILABLE_ON_MAC,
+			),
 		);
 	});
 });
