@@ -39,6 +39,7 @@ import {
 	theThenLengthField,
 	theWizard,
 } from "../../../tests/ReportsTestKit";
+import { useAllReports } from "../../Reports/useAllReports";
 import ReportsTab from "./ReportsTab";
 import { reportsQueryKeyOf } from "./reportOwner";
 
@@ -108,6 +109,12 @@ const onToTheLastStep = async () => {
 
 const theCreateButton = async () =>
 	within(await theWizard()).findByRole("button", { name: CREATE });
+
+/** The Reports page's list of every report, mounted beside the tab so a refresh of it can be seen. */
+const TheReportsPageList = () => {
+	useAllReports();
+	return null;
+};
 
 describe("Step one: the Type of report", () => {
 	beforeEach(() => {
@@ -964,6 +971,33 @@ describe("Creating the report", () => {
 
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 		expect(reportService.getReports).toHaveBeenCalledTimes(listsAskedFor + 1);
+	});
+
+	it("has the Reports page's list of every report read again once the report is created", async () => {
+		const reportService = aReportService({
+			getReports: vi.fn().mockResolvedValue(aReportList([])),
+		});
+		renderWithReports(
+			<>
+				<ReportsTab owner={LIGHTSPEED} />
+				<TheReportsPageList />
+			</>,
+			{ reportService, owner: LIGHTSPEED },
+		);
+		await waitFor(() =>
+			expect(reportService.getAllReports).toHaveBeenCalledTimes(1),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Create Report" }),
+		);
+		await theWizard();
+		await onToTheLastStep();
+
+		await userEvent.click(await theCreateButton());
+
+		await waitFor(() =>
+			expect(reportService.getAllReports).toHaveBeenCalledTimes(2),
+		);
 	});
 
 	it.each([

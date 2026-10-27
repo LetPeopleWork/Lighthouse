@@ -26,6 +26,7 @@ import {
 	theThenLengthField,
 	theWizard,
 } from "../../../tests/ReportsTestKit";
+import { useAllReports } from "../../Reports/useAllReports";
 import ReportView from "./ReportView";
 import { reportQueryKeyOf } from "./reportOwner";
 import { useOwnerReports } from "./useOwnerReports";
@@ -99,6 +100,12 @@ const onToTheLastStep = async () => {
 /** The Reports tab's list, mounted beside the report so a refresh of it can be seen. */
 const TheReportList = () => {
 	useOwnerReports(LIGHTSPEED);
+	return null;
+};
+
+/** The Reports page's list of every report, mounted beside the report so a refresh of it can be seen. */
+const TheReportsPageList = () => {
+	useAllReports();
 	return null;
 };
 
@@ -412,6 +419,33 @@ describe("Editing a report", () => {
 
 		await waitFor(() =>
 			expect(reportService.getReports).toHaveBeenCalledTimes(2),
+		);
+	});
+
+	it("has the Reports page's list of every report read again after the save", async () => {
+		const reportService = aReportService({
+			getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
+			editReport: vi.fn().mockResolvedValue(renamed()),
+		});
+		renderWithReports(
+			<>
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />
+				<TheReportsPageList />
+			</>,
+			{ reportService, viewer: "admin" },
+		);
+		await waitFor(() =>
+			expect(reportService.getAllReports).toHaveBeenCalledTimes(1),
+		);
+		await userEvent.click(
+			await screen.findByRole("button", { name: "Edit report" }),
+		);
+		await onToTheLastStep();
+
+		await userEvent.click(await theSaveButton());
+
+		await waitFor(() =>
+			expect(reportService.getAllReports).toHaveBeenCalledTimes(2),
 		);
 	});
 });

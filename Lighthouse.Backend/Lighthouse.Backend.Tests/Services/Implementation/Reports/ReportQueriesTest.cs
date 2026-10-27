@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private Mock<ILogger<ReportQueries>> logger = null!;
 
+        private Mock<IReportReader> reader = null!;
+
         [SetUp]
         public void SetUp()
         {
@@ -135,6 +137,29 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(Subject().ListAcross([]).Value!.Reports, Is.Empty);
         }
 
+        [Test]
+        public void Reports_across_no_readable_owner_are_not_read_at_all()
+        {
+            Stored(PayloadOf(ThenInsideTheKeptYear));
+
+            Subject().ListAcross([ReportOwner.Team(99)]);
+
+            reader.Verify(r => r.ListForOwners(It.IsAny<IReadOnlyCollection<ReportOwner>>()), Times.Never);
+        }
+
+        [Test]
+        public void Reports_across_Teams_come_by_owner_name_ignoring_case_and_a_Teams_reports_oldest_first()
+        {
+            var ofBravo = Stored(PayloadOf(ThenInsideTheKeptYear), ReportOwner.Team(1));
+            var firstOfAlpha = Stored(PayloadOf(ThenInsideTheKeptYear), ReportOwner.Team(2));
+            var secondOfAlpha = Stored(PayloadOf(ThenInsideTheKeptYear), ReportOwner.Team(2));
+            var rows = new[] { new ReportOwnerRow(ReportOwner.Team(1), "Bravo", KeepsAYear), new ReportOwnerRow(ReportOwner.Team(2), "alpha", KeepsAYear) };
+
+            var listed = Subject(rows).ListAcross([ReportOwner.Team(1), ReportOwner.Team(2)]).Value!.Reports;
+
+            Assert.That(listed.Select(summary => summary.Id), Is.EqualTo(new[] { firstOfAlpha.Id, secondOfAlpha.Id, ofBravo.Id }));
+        }
+
         private Report Stored(string payloadJson, ReportOwner? owner = null)
         {
             var report = Report.For(owner ?? Lightspeed, ThenAndNowTemplate.TemplateKey, $"Report {stored.Count + 1}", Now.UtcDateTime);
@@ -147,17 +172,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private static string PayloadOf(ReportWindow thenWindow)
             => new ThenAndNowPayload { ThenWindow = thenWindow, NowLengthDays = 30 }.ToJson();
 
-        private ReportQueries Subject()
+        private ReportQueries Subject(IReadOnlyList<ReportOwnerRow>? ownerRows = null)
         {
             var clock = new FakeLighthouseClock(Now);
 
-            var reader = new Mock<IReportReader>();
+            reader = new Mock<IReportReader>();
             reader.Setup(r => r.ListForOwner(Lightspeed)).Returns(() => stored);
             reader.Setup(r => r.GetForOwner(Lightspeed, It.IsAny<int>())).Returns((ReportOwner _, int id) => stored.Find(report => report.Id == id));
 
             var owners = new Mock<IReportOwnerLookup>();
             owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(KeepsAYear));
-            owners.Setup(o => o.All()).Returns([new ReportOwnerRow(Apollo, "Apollo", KeepsAYear), new ReportOwnerRow(Lightspeed, "Lightspeed", KeepsAYear)]);
+            owners.Setup(o => o.All()).Returns(ownerRows ?? [new ReportOwnerRow(Apollo, "Apollo", KeepsAYear), new ReportOwnerRow(Lightspeed, "Lightspeed", KeepsAYear)]);
             reader.Setup(r => r.ListForOwners(It.IsAny<IReadOnlyCollection<ReportOwner>>()))
                 .Returns((IReadOnlyCollection<ReportOwner> asked) => [.. stored.Where(report => asked.Contains(report.OwnedBy()))]);
 
