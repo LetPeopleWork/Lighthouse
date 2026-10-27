@@ -12,8 +12,8 @@ import {
 	reportQueryKeyOf,
 	reportsQueryKeyOf,
 } from "./reportOwner";
+import { CANNOT_BE_REBUILT } from "./thenRebuildCopy";
 
-const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
 const COULD_NOT_DELETE = "This report couldn't be deleted. Try again.";
 
 /** What deleting needs to know of a report, whether it comes from the list or from its own page. */

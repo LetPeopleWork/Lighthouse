@@ -1,5 +1,14 @@
-import type { IReportOwner } from "../../../models/Reports/Report";
+import type {
+	IReportListItem,
+	IReportOwner,
+} from "../../../models/Reports/Report";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+
+/** The owner a listed report is on. */
+export const ownerOfReport = (report: IReportListItem): IReportOwner => ({
+	kind: report.ownerKind,
+	id: report.ownerId,
+});
 
 export const reportsPathOf = (owner: IReportOwner): string =>
 	`/${owner.kind}s/${owner.id}/reports`;

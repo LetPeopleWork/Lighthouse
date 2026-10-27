@@ -25,7 +25,8 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { parseLocalDate } from "../../../utils/date/localDate";
 import { isTauriOnMac } from "../../../utils/tauri";
 import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
-import { ownerTermKeyOf, reportPathOf } from "./reportOwner";
+import { ownerOfReport, ownerTermKeyOf, reportPathOf } from "./reportOwner";
+import { CANNOT_BE_REBUILT } from "./thenRebuildCopy";
 import { isShownByThisVersion, reportTypeTitleOf } from "./wizard/reportTypes";
 
 /** What somebody who may change the reports can do from a row. */
@@ -169,7 +170,7 @@ const OwnerLink: React.FC<{ readonly report: IReportAcrossOwners }> = ({
 	report,
 }) => {
 	const { getTerm } = useTerminology();
-	const owner: IReportOwner = { kind: report.ownerKind, id: report.ownerId };
+	const owner = ownerOfReport(report);
 	const KindIcon = owner.kind === "team" ? GroupsIcon : FolderSpecialIcon;
 	return (
 		<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -184,14 +185,31 @@ const OwnerLink: React.FC<{ readonly report: IReportAcrossOwners }> = ({
 	);
 };
 
+const NameCell: React.FC<{ readonly report: IReportListItem }> = ({
+	report,
+}) => (
+	<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+		<StyledLink to={reportPathOf(ownerOfReport(report), report.id)}>
+			{report.name}
+		</StyledLink>
+		{report.thenAndNow?.thenRebuildable === false && (
+			<Tooltip title={CANNOT_BE_REBUILT}>
+				<HistoryToggleOffIcon
+					fontSize="small"
+					color="warning"
+					aria-label={CANNOT_BE_REBUILT}
+				/>
+			</Tooltip>
+		)}
+	</Box>
+);
+
 const ownerColumn: DataGridColumn<IReportListItem> = {
 	field: "ownerName",
 	headerName: "Owner",
 	width: 200,
 	renderCell: ({ row }) => <OwnerLink report={row as IReportAcrossOwners} />,
 };
-
-const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
 
 const FILTER_LABEL = "Filter: name / owner / type";
 
@@ -200,7 +218,7 @@ const matchesFilter = (
 	needle: string,
 	ownerKindWord: (owner: IReportOwner) => string,
 ): boolean => {
-	const owner: IReportOwner = { kind: report.ownerKind, id: report.ownerId };
+	const owner = ownerOfReport(report);
 	const { ownerName = "" } = report as Partial<IReportAcrossOwners>;
 	return [
 		report.name,
@@ -235,27 +253,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				headerName: "Name",
 				flex: 1,
 				hideable: false,
-				renderCell: ({ row }) => (
-					<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-						<StyledLink
-							to={reportPathOf(
-								{ kind: row.ownerKind, id: row.ownerId },
-								row.id,
-							)}
-						>
-							{row.name}
-						</StyledLink>
-						{row.thenAndNow?.thenRebuildable === false && (
-							<Tooltip title={CANNOT_BE_REBUILT}>
-								<HistoryToggleOffIcon
-									fontSize="small"
-									color="warning"
-									aria-label={CANNOT_BE_REBUILT}
-								/>
-							</Tooltip>
-						)}
-					</Box>
-				),
+				renderCell: ({ row }) => <NameCell report={row} />,
 			},
 			{
 				field: "templateKey",
