@@ -52,8 +52,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 					settings.blockedStalenessThresholdDays,
 				);
 				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
-			} catch (err) {
-				console.error("Error fetching portfolio settings:", err);
+			} catch (error) {
+				console.error("Error fetching portfolio settings:", error);
 			}
 		};
 

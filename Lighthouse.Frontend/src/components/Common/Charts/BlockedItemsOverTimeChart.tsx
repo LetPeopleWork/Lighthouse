@@ -6,6 +6,7 @@ import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot"
 import type { IFeature } from "../../../models/Feature";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { errorColor } from "../../../utils/theme/colors";
 import WorkItemsDialog from "../WorkItemsDialog/WorkItemsDialog";
 import type { WorkItemsDialogOwnerKind } from "../WorkItemsDialog/workItemsDialogContexts";
@@ -97,7 +98,9 @@ const BlockedItemsOverTimeChart: React.FC<BlockedItemsOverTimeChartProps> = ({
 						onItemClick={(_event, params) => {
 							const clicked = dataset[params.dataIndex];
 							if (clicked) {
-								void openBlockedItemsForDate(clicked.label, clicked.value);
+								fireAndForget(
+									openBlockedItemsForDate(clicked.label, clicked.value),
+								);
 							}
 						}}
 						yAxis={[

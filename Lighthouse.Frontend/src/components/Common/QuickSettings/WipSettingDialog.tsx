@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import { fireAndForget } from "../../../utils/fireAndForget";
 
 interface WipSettingIconButtonProps {
 	tooltipText: string;
@@ -183,7 +184,7 @@ export function useWipSaveHandlers<T>({
 	const handleKeyDown = (event: React.KeyboardEvent) => {
 		if (event.key === "Enter") {
 			event.preventDefault();
-			void handleSave();
+			fireAndForget(handleSave());
 		} else if (event.key === "Escape") {
 			event.preventDefault();
 			onClose();
@@ -193,7 +194,7 @@ export function useWipSaveHandlers<T>({
 	const handleDialogClose = (_event?: unknown, reason?: string) => {
 		if (reason === "backdropClick") {
 			if (checkIsDirty()) {
-				void handleSave();
+				fireAndForget(handleSave());
 			} else {
 				onClose();
 			}

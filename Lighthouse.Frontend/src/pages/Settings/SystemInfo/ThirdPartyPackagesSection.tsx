@@ -80,10 +80,10 @@ const ThirdPartyPackagesSection: React.FC = () => {
 				const backendPackages = parseCdxComponents(backendSbom);
 				const frontendPackages = parseCdxComponents(frontendSbom);
 				setPackages([...backendPackages, ...frontendPackages]);
-			} catch (err) {
+			} catch (error_) {
 				setError(
-					err instanceof Error
-						? err.message
+					error_ instanceof Error
+						? error_.message
 						: "Failed to load package information",
 				);
 			} finally {

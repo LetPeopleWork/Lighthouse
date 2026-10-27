@@ -35,6 +35,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useFeaturesHeldForUsageData } from "../../../services/UsageData/usageDataFeaturesHeld";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import ReportsTab from "../../Common/Reports/ReportsTab";
 import ReportView from "../../Common/Reports/ReportView";
@@ -411,13 +412,13 @@ const PortfolioDetail: React.FC = () => {
 	useEffect(() => {
 		if (pendingPortfolioRefresh && activeView !== "settings") {
 			setPendingPortfolioRefresh(false);
-			void fetchPortfolio();
+			fireAndForget(fetchPortfolio());
 		}
 	}, [activeView, pendingPortfolioRefresh, fetchPortfolio]);
 
 	useEffect(() => {
 		if (activeView === "access" && portfolio) {
-			void loadPortfolioMembers(portfolio.id);
+			fireAndForget(loadPortfolioMembers(portfolio.id));
 		}
 	}, [activeView, portfolio, loadPortfolioMembers]);
 

@@ -239,15 +239,13 @@ describe("ArchivedDelivery", () => {
 	});
 
 	it("refuses a row that is missing a number it is supposed to have pinned", () => {
-		const { totalWork, ...withoutTotalWork } = wireRow;
-		void totalWork;
+		const withoutTotalWork = { ...wireRow, totalWork: undefined };
 
 		expect(() => ArchivedDeliverySchema.parse(withoutTotalWork)).toThrow();
 	});
 
 	it("refuses a row that arrives without the Feature rows it was closed with", () => {
-		const { featureBreakdown, ...withoutRows } = wireRow;
-		void featureBreakdown;
+		const withoutRows = { ...wireRow, featureBreakdown: undefined };
 
 		expect(() => ArchivedDeliverySchema.parse(withoutRows)).toThrow();
 	});

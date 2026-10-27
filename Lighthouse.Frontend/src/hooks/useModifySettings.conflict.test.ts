@@ -69,7 +69,7 @@ const makeArgs = (
 	validateForm: vi
 		.fn()
 		.mockImplementation((s: TokenedSettings) =>
-			s.name !== "" ? [] : ["Enter a Name"],
+			s.name === "" ? ["Enter a Name"] : [],
 		),
 	getSchemaForSystem: vi
 		.fn()

@@ -19,6 +19,7 @@ import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../utils/featureName";
+import { fireAndForget } from "../../../utils/fireAndForget";
 
 const NO_FEATURES: IFeature[] = [];
 
@@ -109,7 +110,7 @@ const PortfolioFeatureList: React.FC<PortfolioFeatureListProps> = ({
 					`All ${count} ${featuresTerm} are completed. Turn off Hide Completed ${featuresTerm} to see them.`
 				}
 				failureMessage={`The ${featuresTerm} couldn't be loaded.`}
-				onRetry={() => void featureList.refetch()}
+				onRetry={() => fireAndForget(featureList.refetch())}
 				getActiveWorkTeams={getActiveWorkTeams}
 				showPosition
 				// A move renumbers the whole instance, so the places every row shows are re-read, not patched.

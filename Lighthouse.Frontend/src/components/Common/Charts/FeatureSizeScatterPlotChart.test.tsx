@@ -218,8 +218,8 @@ vi.mock("@mui/x-charts", () => {
 			y?: number;
 			lineStyle?: { stroke: string };
 		}) => {
-			const axis = x !== undefined ? "x" : "y";
-			const value = x !== undefined ? x : y;
+			const axis = x === undefined ? "y" : "x";
+			const value = x === undefined ? y : x;
 			return (
 				<div
 					data-testid={`reference-line-${label}`}

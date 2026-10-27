@@ -29,6 +29,7 @@ import type {
 	RbacUser,
 } from "../../../models/Authorization/RbacModels";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 
 const RbacSettings: React.FC = () => {
 	const { rbacService, authService } = useContext(ApiServiceContext);
@@ -72,7 +73,7 @@ const RbacSettings: React.FC = () => {
 	}, [rbacService]);
 
 	useEffect(() => {
-		void load();
+		fireAndForget(load());
 	}, [load]);
 
 	useEffect(() => {

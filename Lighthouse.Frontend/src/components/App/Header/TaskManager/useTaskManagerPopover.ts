@@ -3,6 +3,7 @@ import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import type { IConnectionHealth } from "../../../../services/Api/ConnectionHealthService";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
 import type { IUpdateTask } from "../../../../services/UpdateSubscriptionService";
+import { fireAndForget } from "../../../../utils/fireAndForget";
 import { canBeStopped, taskKey } from "./ActivitySection";
 
 /**
@@ -212,16 +213,16 @@ export const useTaskManagerPopover = (enabled: boolean) => {
 		let gone = false;
 		const reread = () => {
 			if (!gone) {
-				void refresh();
+				fireAndForget(refresh());
 			}
 		};
 
 		reread();
-		void updateSubscriptionService.subscribeToAllUpdates(reread);
+		fireAndForget(updateSubscriptionService.subscribeToAllUpdates(reread));
 
 		return () => {
 			gone = true;
-			void updateSubscriptionService.unsubscribeFromAllUpdates();
+			fireAndForget(updateSubscriptionService.unsubscribeFromAllUpdates());
 		};
 	}, [enabled, refresh, updateSubscriptionService]);
 

@@ -56,8 +56,8 @@ const DatabaseManagementSettings: React.FC = () => {
 		try {
 			const capabilityStatus = await databaseManagementService.getStatus();
 			setStatus(capabilityStatus);
-		} catch (err) {
-			console.error("Failed to fetch database capability status:", err);
+		} catch (error_) {
+			console.error("Failed to fetch database capability status:", error_);
 		}
 	}, [databaseManagementService]);
 
@@ -95,8 +95,8 @@ const DatabaseManagementSettings: React.FC = () => {
 			);
 			setSuccess("Backup created and downloaded successfully.");
 			setBackupPassword("");
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Backup failed.");
+		} catch (error_) {
+			setError(error_ instanceof Error ? error_.message : "Backup failed.");
 		} finally {
 			setOperationLoading(null);
 			await fetchStatus();
@@ -143,8 +143,8 @@ const DatabaseManagementSettings: React.FC = () => {
 			if (fileInputRef.current) {
 				fileInputRef.current.value = "";
 			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Restore failed.");
+		} catch (error_) {
+			setError(error_ instanceof Error ? error_.message : "Restore failed.");
 		} finally {
 			setOperationLoading(null);
 			await fetchStatus();
@@ -166,8 +166,8 @@ const DatabaseManagementSettings: React.FC = () => {
 			}
 
 			setSuccess("Database cleared and reset successfully.");
-		} catch (err) {
-			setError(err instanceof Error ? err.message : "Clear failed.");
+		} catch (error_) {
+			setError(error_ instanceof Error ? error_.message : "Clear failed.");
 		} finally {
 			setOperationLoading(null);
 			await fetchStatus();

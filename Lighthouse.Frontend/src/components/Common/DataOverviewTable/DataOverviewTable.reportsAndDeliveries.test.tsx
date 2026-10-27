@@ -29,6 +29,7 @@ import {
 	aReportService,
 } from "../../../tests/ReportsTestKit";
 import { openManageColumns } from "../../../tests/WorkItemsDialogTestKit";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import DataOverviewTable from "./DataOverviewTable";
 
 /**
@@ -480,9 +481,11 @@ describe("Reports on the Overview", () => {
 		await whenReady("Lightspeed", "reports");
 
 		act(() => {
-			void queryClient.invalidateQueries({
-				queryKey: reportsQueryKeyOf(LIGHTSPEED),
-			});
+			fireAndForget(
+				queryClient.invalidateQueries({
+					queryKey: reportsQueryKeyOf(LIGHTSPEED),
+				}),
+			);
 		});
 
 		const cell = theCellOf("Lightspeed", "reports");
@@ -748,9 +751,11 @@ describe("Deliveries on the Overview", () => {
 		await whenReady("Apollo", "deliveries");
 
 		act(() => {
-			void queryClient.invalidateQueries({
-				queryKey: ["deliveries", "portfolio", APOLLO.id],
-			});
+			fireAndForget(
+				queryClient.invalidateQueries({
+					queryKey: ["deliveries", "portfolio", APOLLO.id],
+				}),
+			);
 		});
 
 		const cell = theCellOf("Apollo", "deliveries");
@@ -921,9 +926,11 @@ describe("What the Overview's chip columns offer", () => {
 		expect(stack).toHaveStyle({ display: "flex", flexDirection: "column" });
 
 		act(() => {
-			void queryClient.invalidateQueries({
-				queryKey: ["deliveries", "portfolio", APOLLO.id],
-			});
+			fireAndForget(
+				queryClient.invalidateQueries({
+					queryKey: ["deliveries", "portfolio", APOLLO.id],
+				}),
+			);
 		});
 
 		const cell = theCellOf("Apollo", "deliveries");

@@ -87,6 +87,7 @@ import {
 	sleRiskColumnHeaderName,
 } from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { appColors } from "../../../utils/theme/colors";
 import BlockedOverviewWidget from "./BlockedOverviewWidget";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
@@ -405,16 +406,16 @@ function buildWidgetFooters(
 			inputs.terms,
 		),
 		percentiles:
-			inputs.percentilesScopeDefinitionId !== null
-				? {
-						ragStatus: "none",
-						tipText: `${inputs.terms.sle} applies to the Default ${inputs.terms.cycleTime}. Named ${inputs.terms.cycleTime}s have no ${inputs.terms.sle} target.`,
-					}
-				: computeCycleTimePercentilesRag(
+			inputs.percentilesScopeDefinitionId === null
+				? computeCycleTimePercentilesRag(
 						inputs.sle,
 						inputs.cycleTimes,
 						inputs.terms,
-					),
+					)
+				: {
+						ragStatus: "none",
+						tipText: `${inputs.terms.sle} applies to the Default ${inputs.terms.cycleTime}. Named ${inputs.terms.cycleTime}s have no ${inputs.terms.sle} target.`,
+					},
 		totalWorkItemAge:
 			inputs.totalWorkItemAge === null
 				? undefined
@@ -1511,27 +1512,31 @@ export const BaseMetricsView = <
 				setScopedPercentilesInfo(null);
 			};
 
-			void metricsService
-				.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
-				.then((values) => {
-					if (isCurrent()) {
-						setScopedPercentileValues(values);
-					}
-				})
-				.catch(revertToDefault);
-			void metricsService
-				.getCycleTimePercentilesInfo(
-					entity.id,
-					startDate,
-					endDate,
-					definitionId,
-				)
-				.then((info) => {
-					if (isCurrent()) {
-						setScopedPercentilesInfo(info);
-					}
-				})
-				.catch(revertToDefault);
+			fireAndForget(
+				metricsService
+					.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
+					.then((values) => {
+						if (isCurrent()) {
+							setScopedPercentileValues(values);
+						}
+					})
+					.catch(revertToDefault),
+			);
+			fireAndForget(
+				metricsService
+					.getCycleTimePercentilesInfo(
+						entity.id,
+						startDate,
+						endDate,
+						definitionId,
+					)
+					.then((info) => {
+						if (isCurrent()) {
+							setScopedPercentilesInfo(info);
+						}
+					})
+					.catch(revertToDefault),
+			);
 		},
 		[metricsService, entity.id, startDate, endDate],
 	);

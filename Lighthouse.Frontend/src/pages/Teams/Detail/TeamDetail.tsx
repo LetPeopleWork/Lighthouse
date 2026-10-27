@@ -42,6 +42,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import { useFeaturesHeldForUsageData } from "../../../services/UsageData/usageDataFeaturesHeld";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { reportFailedNavigation } from "../../../utils/navigation";
 import ReportsTab from "../../Common/Reports/ReportsTab";
 import ReportView from "../../Common/Reports/ReportView";
@@ -415,13 +416,13 @@ const TeamDetail: React.FC = () => {
 	useEffect(() => {
 		if (pendingTeamRefresh && activeView !== "settings") {
 			setPendingTeamRefresh(false);
-			void fetchTeam();
+			fireAndForget(fetchTeam());
 		}
 	}, [activeView, pendingTeamRefresh, fetchTeam]);
 
 	useEffect(() => {
 		if (activeView === "access" && team) {
-			void loadTeamMembers(team.id);
+			fireAndForget(loadTeamMembers(team.id));
 		}
 	}, [activeView, team, loadTeamMembers]);
 

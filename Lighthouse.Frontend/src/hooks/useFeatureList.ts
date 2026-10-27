@@ -2,6 +2,7 @@ import { QueryClientContext, useQuery } from "@tanstack/react-query";
 import { useCallback, useContext, useMemo } from "react";
 import type { FeatureListOwner } from "../models/FeatureList";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { fireAndForget } from "../utils/fireAndForget";
 import type { ParentWorkItem } from "./useParentWorkItems";
 
 export type FeatureListLook = "loading" | "ready" | "error";
@@ -51,8 +52,10 @@ export const useRefreshFeatureList = (owner: FeatureListOwner) => {
 	const { kind, id } = owner;
 
 	return useCallback(() => {
-		void queryClient?.invalidateQueries({
-			queryKey: featureListKey({ kind, id }),
-		});
+		fireAndForget(
+			queryClient?.invalidateQueries({
+				queryKey: featureListKey({ kind, id }),
+			}),
+		);
 	}, [queryClient, kind, id]);
 };

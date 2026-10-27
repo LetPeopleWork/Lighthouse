@@ -13,6 +13,7 @@ import { useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import ActivitySection, {
 	CancelAllButton,
 } from "./TaskManager/ActivitySection";
@@ -60,7 +61,7 @@ const TaskManagerIcon = () => {
 		// a minute ago is missing from this box until the page is reloaded. Opening it is the moment
 		// somebody wants the answer to be current, and the only moment worth spending a read on - a box
 		// nobody opened needs no fresh answer.
-		void refresh();
+		fireAndForget(refresh());
 	};
 
 	if (!isSystemAdmin) {
@@ -119,7 +120,7 @@ const TaskManagerIcon = () => {
 						<CancelAllButton
 							tasks={tasks}
 							cancelling={cancellingAll}
-							onCancelAll={() => void cancelAll()}
+							onCancelAll={() => fireAndForget(cancelAll())}
 						/>
 					}
 				>
@@ -129,7 +130,7 @@ const TaskManagerIcon = () => {
 				<ActivitySection
 					tasks={tasks}
 					stopAsked={stopAsked}
-					onCancel={(task) => void cancel(task)}
+					onCancel={(task) => fireAndForget(cancel(task))}
 					cancelAllFailed={cancelAllFailed}
 				/>
 
@@ -144,7 +145,7 @@ const TaskManagerIcon = () => {
 
 				<ConnectionsSection
 					connections={connections}
-					onTest={(connection) => void test(connection)}
+					onTest={(connection) => fireAndForget(test(connection))}
 				/>
 
 				<RecentProblemsSection problems={problems} />

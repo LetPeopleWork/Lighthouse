@@ -19,6 +19,7 @@ import {
 	createMockUpdateSubscriptionService,
 } from "../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../tests/renderWithQueryClient";
+import { fireAndForget } from "../../utils/fireAndForget";
 import { ApiServiceContext } from "../Api/ApiServiceContext";
 import type { IUsageDataService } from "../Api/UsageDataService";
 import {
@@ -97,7 +98,7 @@ const Detector = () => {
 	withdrawConsent = () => decide("declined");
 	const navigate = useNavigate();
 	navigateTo = (path) => {
-		void navigate(path);
+		fireAndForget(navigate(path));
 	};
 	return null;
 };

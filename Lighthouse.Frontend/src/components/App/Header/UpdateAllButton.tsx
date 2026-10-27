@@ -6,6 +6,7 @@ import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useUpdateAll } from "../../../hooks/useUpdateAll";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { fireAndForget } from "../../../utils/fireAndForget";
 import { LicenseTooltip } from "../License/LicenseToolTip";
 
 interface UpdateAllButtonProps {
@@ -34,7 +35,7 @@ const UpdateAllButton: React.FC<UpdateAllButtonProps> = ({ className }) => {
 				<IconButton
 					size="large"
 					color="inherit"
-					onClick={() => void handleUpdateAll()}
+					onClick={() => fireAndForget(handleUpdateAll())}
 					disabled={isDisabled}
 					aria-label={`Update All ${teamsTerm} and ${portfoliosTerm}`}
 					data-testid="update-all-button"
