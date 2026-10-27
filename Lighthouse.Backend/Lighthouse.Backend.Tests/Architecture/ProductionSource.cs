@@ -11,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </summary>
     internal static class ProductionSource
     {
-        private const string ProductionProjectDirectory = "Lighthouse.Backend/Lighthouse.Backend";
+        private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
         private static readonly string[] BuildOutputSegments = ["/bin/", "/obj/"];
 

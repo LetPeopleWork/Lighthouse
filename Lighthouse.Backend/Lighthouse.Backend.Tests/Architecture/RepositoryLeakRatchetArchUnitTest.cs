@@ -24,8 +24,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [Category("slice-s05a")]
     public partial class RepositoryLeakRatchetArchUnitTest
     {
-        private const string PendingGetAllByPredicate = "pending: S05a-1";
-
         private const string PendingApiDependency = "pending: S05a-2";
 
         private const string RepositoriesFolder = "Services/Implementation/Repositories/";
@@ -102,7 +100,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // ---- The real code: the lists equal what was verified when they were written ----
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList()
         {
             Assert.That(FilesThatCallGetAllByPredicate, Has.Length.EqualTo(14).And.Unique);
