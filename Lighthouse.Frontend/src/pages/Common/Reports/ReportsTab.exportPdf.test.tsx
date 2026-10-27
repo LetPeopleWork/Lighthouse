@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	aMomentLater,
@@ -91,6 +91,11 @@ const theActionsOf = async (name: string): Promise<string[]> =>
 
 const exportsReported = () =>
 	reportUsage.mock.calls.filter(([use]) => use.name === PDF_EXPORT_STARTED);
+
+const MAC_USER_AGENT =
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15";
+const PDF_UNAVAILABLE_ON_MAC =
+	"PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.";
 
 const Q2_BASELINE = "Q2 Baseline";
 
@@ -338,5 +343,35 @@ describe("When Export PDF from the list cannot make the PDF", () => {
 		await user.click(theSnackbarsRetry(snackbar) as HTMLElement);
 
 		expect(thePdfIconOf(ENGAGEMENT_START)).toHaveFocus();
+	});
+
+	describe("on the macOS desktop app", () => {
+		beforeEach(() => {
+			vi.stubGlobal("__TAURI_INTERNALS__", {});
+			vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_USER_AGENT);
+		});
+
+		afterEach(() => {
+			vi.restoreAllMocks();
+		});
+
+		it(`disables the row's PDF icon, explains why on hover and starts no export when it is clicked`, async () => {
+			const frames = aPrintFrameBrowser();
+			const { user } = onTheList();
+			const icon = await screen.findByLabelText(
+				exportAsPdfLabelOf(ENGAGEMENT_START),
+			);
+
+			expect(icon).toBeDisabled();
+			await user.hover(icon.parentElement as HTMLElement);
+			expect(readingOf(await screen.findByRole("tooltip"))).toBe(
+				PDF_UNAVAILABLE_ON_MAC,
+			);
+			fireEvent.click(icon);
+
+			expect(frames.framesThatPrinted()).toEqual([]);
+			expect(thePrintFrames()).toHaveLength(0);
+			expect(exportsReported()).toHaveLength(0);
+		});
 	});
 });

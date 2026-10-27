@@ -1,4 +1,10 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
@@ -65,6 +71,10 @@ vi.mock(
 	}),
 );
 
+const MAC_USER_AGENT =
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15";
+const PDF_UNAVAILABLE_ON_MAC =
+	"PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.";
 const OUTLINED = "MuiButton-outlined";
 const WHITE = "rgb(255, 255, 255)";
 /** A style sheet the app is built with, and a rule of the app's own that no Emotion cache wrote. */
@@ -498,5 +508,33 @@ describe("The print frame goes once the dialog is done with it", () => {
 			"aria-busy",
 			"true",
 		);
+	});
+
+	describe("on the macOS desktop app", () => {
+		beforeEach(() => {
+			vi.stubGlobal("__TAURI_INTERNALS__", {});
+			vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_USER_AGENT);
+		});
+
+		afterEach(() => {
+			vi.restoreAllMocks();
+		});
+
+		it(`disables Export PDF, explains why on hover and starts no export when it is clicked`, async () => {
+			const frames = aPrintFrameBrowser();
+			const { user } = onTheReportAlone();
+			const button = await theExportButton();
+
+			expect(button).toBeDisabled();
+			await user.hover(button.parentElement as HTMLElement);
+			expect(readingOf(await screen.findByRole("tooltip"))).toBe(
+				PDF_UNAVAILABLE_ON_MAC,
+			);
+			fireEvent.click(button);
+
+			expect(frames.timesAFramePrinted()).toBe(0);
+			expect(thePrintFrames()).toHaveLength(0);
+			expect(exportsReported()).toHaveLength(0);
+		});
 	});
 });

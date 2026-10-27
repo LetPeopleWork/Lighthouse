@@ -5,10 +5,15 @@ import {
 	CircularProgress,
 	Link,
 	Stack,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import type React from "react";
 import { Link as RouterLink } from "react-router";
+import {
+	isTauriOnMac,
+	PDF_EXPORT_UNAVAILABLE_ON_MAC,
+} from "../../../utils/tauri";
 
 interface ThenAndNowHeaderProps {
 	reportsPath: string;
@@ -37,19 +42,28 @@ const ExportPdfButton: React.FC<{
 	readonly onExport: () => void;
 	readonly waiting: boolean;
 	readonly preparing: boolean;
-}> = ({ onExport, waiting, preparing }) => (
-	<Button
-		variant="outlined"
-		onClick={preparing ? undefined : onExport}
-		disabled={waiting}
-		aria-disabled={preparing ? "true" : undefined}
-		aria-busy={preparing ? "true" : undefined}
-		startIcon={preparing ? <CircularProgress size={20} /> : undefined}
-		sx={preparing ? PREPARING_LOOK : undefined}
-	>
-		Export PDF
-	</Button>
-);
+}> = ({ onExport, waiting, preparing }) =>
+	isTauriOnMac() ? (
+		<Tooltip title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
+			<span>
+				<Button variant="outlined" disabled>
+					Export PDF
+				</Button>
+			</span>
+		</Tooltip>
+	) : (
+		<Button
+			variant="outlined"
+			onClick={preparing ? undefined : onExport}
+			disabled={waiting}
+			aria-disabled={preparing ? "true" : undefined}
+			aria-busy={preparing ? "true" : undefined}
+			startIcon={preparing ? <CircularProgress size={20} /> : undefined}
+			sx={preparing ? PREPARING_LOOK : undefined}
+		>
+			Export PDF
+		</Button>
+	);
 
 const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 	reportsPath,
