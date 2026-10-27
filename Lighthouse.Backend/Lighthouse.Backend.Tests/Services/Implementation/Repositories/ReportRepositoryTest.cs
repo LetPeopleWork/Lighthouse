@@ -64,6 +64,27 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        [Test]
+        public async Task Several_owners_of_both_kinds_list_their_reports_in_one_read_leaving_other_owners_out()
+        {
+            var team = await Stored(ReportOwner.Team(SharedId), "The Team's");
+            var portfolio = await Stored(ReportOwner.Portfolio(SharedId + 1), "The Portfolio's");
+            await Stored(ReportOwner.Team(SharedId + 1), "Another Team's");
+            await Stored(ReportOwner.Portfolio(SharedId), "Another Portfolio's");
+
+            var listed = subject.ListForOwners([ReportOwner.Team(SharedId), ReportOwner.Portfolio(SharedId + 1)]);
+
+            Assert.That(listed.Select(report => report.Id), Is.EqualTo((int[])[team.Id, portfolio.Id]));
+        }
+
+        [Test]
+        public async Task No_owners_list_no_reports()
+        {
+            await Stored(ReportOwner.Team(SharedId), "The Team's");
+
+            Assert.That(subject.ListForOwners([]), Is.Empty);
+        }
+
         private async Task<Report> Stored(ReportOwner owner, string name)
         {
             var report = Report.For(owner, "then-and-now", name, CreatedAt);

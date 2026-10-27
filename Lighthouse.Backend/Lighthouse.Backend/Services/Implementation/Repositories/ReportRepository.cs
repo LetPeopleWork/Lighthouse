@@ -13,6 +13,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         public IReadOnlyList<Report> ListForOwner(ReportOwner owner)
             => [.. OwnedBy(owner).AsNoTracking().OrderBy(report => report.Id)];
 
+        public IReadOnlyList<Report> ListForOwners(IReadOnlyCollection<ReportOwner> owners)
+        {
+            var teamIds = owners.Where(owner => owner.Kind == ReportOwnerKind.Team).Select(owner => (int?)owner.Id).ToList();
+            var portfolioIds = owners.Where(owner => owner.Kind == ReportOwnerKind.Portfolio).Select(owner => (int?)owner.Id).ToList();
+
+            return [.. context.Reports.AsNoTracking()
+                .Where(report => teamIds.Contains(report.TeamId) || portfolioIds.Contains(report.PortfolioId))
+                .OrderBy(report => report.Id)];
+        }
+
         public int CountOfTemplate(ReportOwner owner, string templateKey)
             => OwnedBy(owner).Count(report => report.TemplateKey == templateKey);
 

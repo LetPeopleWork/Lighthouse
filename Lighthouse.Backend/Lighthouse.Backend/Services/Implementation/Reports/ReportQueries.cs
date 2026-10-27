@@ -46,6 +46,27 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcome<ReportList>.Done(new ReportList(summaries, creationBlocked, ReportCapPolicy.CommunityCap));
         }
 
+        public ReportOutcome<ReportsAcrossOwners> ListAcross(IReadOnlyCollection<ReportOwner> readable)
+        {
+            var named = owners.All().Where(row => readable.Contains(row.Owner)).ToDictionary(row => row.Owner);
+            if (named.Count == 0)
+            {
+                return ReportOutcome<ReportsAcrossOwners>.Done(new ReportsAcrossOwners([]));
+            }
+
+            var today = clock.Today;
+            var summaries = reader.ListForOwners([.. named.Keys])
+                .Where(report => named.ContainsKey(report.OwnedBy()))
+                .Select(report => (Row: named[report.OwnedBy()], Report: report))
+                .OrderBy(pair => pair.Row.Owner.Kind)
+                .ThenBy(pair => pair.Row.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(pair => pair.Report.Id)
+                .Select(pair => Summarise(pair.Report, pair.Row.Owner, new ReportCalendar(today, pair.Row.DoneItemsCutoffDays)) with { OwnerName = pair.Row.Name })
+                .ToList();
+
+            return ReportOutcome<ReportsAcrossOwners>.Done(new ReportsAcrossOwners(summaries));
+        }
+
         public ReportOutcome<ReportRead> Get(ReportOwner owner, int reportId)
         {
             var started = timeProvider.GetTimestamp();

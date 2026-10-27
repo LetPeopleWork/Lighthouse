@@ -35,8 +35,13 @@ namespace Lighthouse.Backend.Models.Reports
 
     public sealed record ReportList(IReadOnlyList<ReportSummary> Reports, bool CreationBlockedByCap, int CommunityCap);
 
+    public sealed record ReportsAcrossOwners(IReadOnlyList<ReportSummary> Reports);
+
     public sealed record ReportSummary(int Id, string Name, string TemplateKey, ReportOwnerKind OwnerKind, int OwnerId, DateOnly CreatedOn)
     {
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? OwnerName { get; init; }
+
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public ThenAndNowSummary? ThenAndNow { get; init; }
     }

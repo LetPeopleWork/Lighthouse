@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using Lighthouse.Backend.API;
@@ -12,10 +13,12 @@ using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using ArchUnitNET.Domain.Dependencies;
 using ArchUnitNET.NUnit;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
@@ -235,6 +238,29 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "the rule finds the reports controllers by their base; without them it guards nothing");
                 Assert.That(unguarded, Is.Empty);
             }
+        }
+
+        [Test]
+        public void The_list_across_every_owner_is_not_one_of_the_owner_controllers_and_reaches_no_data_store()
+        {
+            Assert.That(typeof(ReportsController).BaseType, Is.EqualTo(typeof(ControllerBase)),
+                "the owner controllers share a base whose writes are pinned to the owner's write right; the list across owners writes nothing and has no single owner");
+
+            Types().That().HaveFullNameMatching(NameAndNestedTypesOf(typeof(ReportsController)))
+                .Should().NotDependOnAny(typeof(LighthouseAppContext), typeof(ReportRepository), typeof(IReportReader), typeof(IReportWriter))
+                .AndShould().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryPortPattern))
+                .Because("the list across owners reads through the query port and the owner lookup; a repository in the controller would be a second way to read reports.")
+                .Check(Architecture);
+        }
+
+        [Test]
+        public void The_Reports_module_never_sees_who_is_asking()
+        {
+            Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.ReportsPattern)
+                .Or().ResideInNamespaceMatching(ReportModelsPattern)
+                .Should().NotDependOnAny(typeof(ClaimsPrincipal), typeof(HttpContext), typeof(IRbacAdministrationService))
+                .Because("who may read which owner is decided once, in the API layer, and handed in as the owners to read; the module only ever receives those owners.")
+                .Check(Architecture);
         }
 
         private static bool IsGuardedForWriting(Type controller, MethodInfo action)

@@ -22,6 +22,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             var portfolios = new Mock<IRepository<Portfolio>>();
             portfolios.Setup(repository => repository.GetById(SharedId)).Returns(new Portfolio { Id = SharedId, Name = "Project Apollo", DoneItemsCutoffDays = 365 });
 
+            teams.Setup(repository => repository.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<Team, bool>>>()))
+                .Returns(new[] { new Team { Id = SharedId, Name = "Team Lightspeed", DoneItemsCutoffDays = 180 } }.AsQueryable());
+            portfolios.Setup(repository => repository.GetAllByPredicate(It.IsAny<System.Linq.Expressions.Expression<Func<Portfolio, bool>>>()))
+                .Returns(new[] { new Portfolio { Id = SharedId, Name = "Project Apollo", DoneItemsCutoffDays = 365 } }.AsQueryable());
+
             subject = new ReportOwnerLookup(teams.Object, portfolios.Object);
         }
 
@@ -35,6 +40,16 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         public void A_Portfolio_is_found_among_the_Portfolios_never_as_the_Team_sharing_its_id()
         {
             Assert.That(subject.Find(ReportOwner.Portfolio(SharedId)), Is.EqualTo(new ReportOwnerFacts(365)));
+        }
+
+        [Test]
+        public void Every_owner_is_listed_with_its_kind_id_name_and_cutoff_without_loading_the_owners()
+        {
+            Assert.That(subject.All(), Is.EqualTo(new[]
+            {
+                new ReportOwnerRow(ReportOwner.Team(SharedId), "Team Lightspeed", 180),
+                new ReportOwnerRow(ReportOwner.Portfolio(SharedId), "Project Apollo", 365),
+            }));
         }
 
         [Test]

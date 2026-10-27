@@ -19,6 +19,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly ReportOwner Lightspeed = ReportOwner.Team(42);
 
+        private static readonly ReportOwner Apollo = ReportOwner.Portfolio(42);
+
         private static readonly DateTimeOffset Now = new(2026, 10, 2, 7, 0, 0, TimeSpan.Zero);
 
         private static readonly ReportWindow ThenInsideTheKeptYear = new(new DateOnly(2026, 7, 5), new DateOnly(2026, 10, 2), 90);
@@ -108,9 +110,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(read.ShownMetricKeys, Is.Empty);
         }
 
-        private Report Stored(string payloadJson)
+        [Test]
+        public void Reports_across_owners_name_their_owner_and_come_Teams_before_Portfolios_then_by_owner_name()
         {
-            var report = Report.For(Lightspeed, ThenAndNowTemplate.TemplateKey, $"Report {stored.Count + 1}", Now.UtcDateTime);
+            var ofApollo = Stored(PayloadOf(ThenInsideTheKeptYear), Apollo);
+            var ofLightspeed = Stored(PayloadOf(ThenInsideTheKeptYear));
+            var unreadable = Stored(PayloadOf(ThenInsideTheKeptYear), ReportOwner.Team(99));
+
+            var listed = Subject().ListAcross([Apollo, Lightspeed]).Value!.Reports;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(listed.Select(summary => (summary.Id, summary.OwnerKind, summary.OwnerName)),
+                    Is.EqualTo(new[] { (ofLightspeed.Id, ReportOwnerKind.Team, "Lightspeed"), (ofApollo.Id, ReportOwnerKind.Portfolio, "Apollo") }));
+                Assert.That(listed.Select(summary => summary.Id), Does.Not.Contain(unreadable.Id));
+            }
+        }
+
+        [Test]
+        public void Reports_across_no_readable_owner_are_an_empty_list()
+        {
+            Stored(PayloadOf(ThenInsideTheKeptYear));
+
+            Assert.That(Subject().ListAcross([]).Value!.Reports, Is.Empty);
+        }
+
+        private Report Stored(string payloadJson, ReportOwner? owner = null)
+        {
+            var report = Report.For(owner ?? Lightspeed, ThenAndNowTemplate.TemplateKey, $"Report {stored.Count + 1}", Now.UtcDateTime);
             report.Id = stored.Count + 1;
             report.TemplatePayloadJson = payloadJson;
             stored.Add(report);
@@ -130,6 +157,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
             var owners = new Mock<IReportOwnerLookup>();
             owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(KeepsAYear));
+            owners.Setup(o => o.All()).Returns([new ReportOwnerRow(Apollo, "Apollo", KeepsAYear), new ReportOwnerRow(Lightspeed, "Lightspeed", KeepsAYear)]);
+            reader.Setup(r => r.ListForOwners(It.IsAny<IReadOnlyCollection<ReportOwner>>()))
+                .Returns((IReadOnlyCollection<ReportOwner> asked) => [.. stored.Where(report => asked.Contains(report.OwnedBy()))]);
 
             var series = new Mock<IReportMetricSeries>();
             series.Setup(s => s.CycleTimePercentiles(Lightspeed, It.IsAny<ReportWindow>())).Returns(new CycleTimePercentiles(6, 11, 21, 30, 20));

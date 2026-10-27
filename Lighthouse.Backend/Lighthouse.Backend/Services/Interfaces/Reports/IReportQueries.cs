@@ -8,6 +8,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
 
         ReportOutcome<ReportList> List(ReportOwner owner);
 
+        ReportOutcome<ReportsAcrossOwners> ListAcross(IReadOnlyCollection<ReportOwner> readable);
+
         ReportOutcome<ReportRead> Get(ReportOwner owner, int reportId);
     }
 }

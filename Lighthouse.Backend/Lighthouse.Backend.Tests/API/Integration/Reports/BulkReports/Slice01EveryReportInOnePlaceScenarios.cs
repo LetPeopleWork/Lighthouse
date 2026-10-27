@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-6350-K1-reports-page-used @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task A_lead_reads_every_report_he_can_read_with_its_owner_on_a_Community_instance()
         {
             var gravity = ATeam("Gravity");
@@ -148,7 +147,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice01)]
         public async Task Each_row_names_its_owners_kind_id_and_name_beside_the_report()
         {
             var gravity = ATeam("Gravity");

@@ -7,5 +7,7 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
         Report? GetForOwner(ReportOwner owner, int reportId);
 
         IReadOnlyList<Report> ListForOwner(ReportOwner owner);
+
+        IReadOnlyList<Report> ListForOwners(IReadOnlyCollection<ReportOwner> owners);
     }
 }
