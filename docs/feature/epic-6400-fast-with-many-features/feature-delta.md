@@ -3221,3 +3221,96 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
 - **Slice 06 runs at `standard`** (maintainer, 2026-10-27): sonnet crafter, haiku reviewer, refactor pass; the whole
   slice in AFK mode with no hold between steps. The note's copy and placement stay as settled at DISTILL (decisions
   8–10); nothing is re-sketched.
+
+## Wave: DELIVER / [REF] End-of-Epic reading
+
+Taken 2026-10-27, after slice 06, by the same harness. The raw tables stay in
+`perf/out/runs/2026-10-27T09-20-55-514Z-sqlite-main-fea77a004/` (not in git). This is the one before/after reading the
+maintainer chose on 2026-10-26: slices 01 to 06 together against the baseline, with no per-slice shares.
+
+- **Set-up**: SQLite, `main` at `fea77a004` (slices 01 to 06, not yet pushed). The backend and the frontend bundle were
+  built from that commit. The seed was the same as the baseline's: a copy of the 920 scale point's database (*Northwind
+  Platform*, 1,420 Features, 8 Teams, no fillers). The backend was pinned to 4 cores (`taskset -c 0-3`,
+  `DOTNET_PROCESSOR_COUNT=4`) on the 12-core host. Opens are the median of 3 after 1 warm-up, and windows are 300 s
+  each, lasting until their round ended. The raised pool minimum for C and C0 was 64.
+- **A quiet machine throughout.** Every open and window found no foreign test or Stryker process, and the load was
+  between 2.1 and 3.6 at each start. Two earlier attempts the same morning were stopped from outside (low memory, then
+  a stop signal while another worktree ran its suites), so this run started only once that work had finished.
+- **The window traffic now includes the Portfolio tab.** Slice 04 made the 920 list loadable, so the Portfolio tab
+  takes part in the opens and the windows. In the baseline it answered 414 and was left out. That puts more page
+  traffic into T, RT and C0 than the baseline had, not less.
+
+### Opens
+
+The baseline's opens came from its disturbed first run (load 6 to 24 with Stryker running), and this run was quiet.
+So the Overview and Settings columns compare unequal machines. For the Team tab, slice 01's quiet reading (T and RT)
+is the fairer "before".
+
+| open, first mark | baseline idle | baseline during a round | slice 01 (quiet) idle / during | end idle | end during a computed round |
+| --- | --- | --- | --- | --- | --- |
+| Overview, first contentful paint | 176 ms | 192 ms | — | **160 ms** | **196 ms** |
+| Overview → Settings, configuration usable | 248 ms | 360 ms (313–3,151) | — | **248 ms** | **247 ms** |
+| Portfolio Features tab (920), first row | never: HTTP 414 | never: HTTP 414 | never: HTTP 414 | **5.0 s** (4.95–5.21) | **6.8 s** (6.01–6.95) |
+| Team Features tab (*Granite*, 397), first row | 15.4 s | 36.8 s | 15.3 s / 20.1 s | **4.2 s** (3.99–4.29) | **5.0 s** (4.92–5.26) |
+
+- **The Portfolio tab** moves about 2.9 MB per open across 34 API requests, against 1.1 MB for the Team tab. Its
+  server time is about 4.5 s idle and about 18 s during a round, summed over the open's requests.
+- **The "skipped" opens** took a block of their own. They ran while three Features updates were in the queue, not
+  during a skipped forecast round. They read 176 ms, 266 ms, 6.7 s and 5.6 s, close to the computed-round column.
+
+### Windows
+
+| window | pool minimum | length | heartbeat warnings | pool queue integral (baseline) | max pool threads (baseline) | GC pause share (baseline) | throttled | round |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| T | default | 303 s | 0 | **6** (327) | 10 (22) | **4.1%** (14.8%) | 0/0 | none |
+| R | default | 372 s | 0 | 9 (27) | 8 (14) | 5.4% (6.9%) | 0/0 | 368 s (448 s) |
+| RT | default | 431 s | 0 | **60** (1,879) | 11 (28) | **8.9%** (10.4%) | 0/0 | **425 s** (543 s) |
+| C | 64 | 417 s | 0 | 21 (79) | 15 (14) | 9.6% (11.2%) | 0/0 | 412 s (570 s) |
+| C0 | 64 | 300 s | 0 | 3 (28) | 10 (12) | 4.8% (15.4%) | 0/0 | none |
+
+**Round split** (Debug line), against the baseline's round alone (R): gather 1.4 s (3.6 s), simulate 277.0 s
+(275.8 s), save **89.1 s** (165.5 s), publish 0.04 s (3.4 s). With page traffic (RT), simulate takes 337.2 s and save
+86.3 s. The computed round the opens ran inside lasted 416 s.
+
+### Ratios and classification
+
+| reading | baseline | end |
+| --- | --- | --- |
+| Q_r, heartbeat delay = R ÷ RT | undefined (0 ÷ 0) | undefined (0 ÷ 0) |
+| Q_r, pool queue = R ÷ RT | 0.01 | 0.15 |
+| RT ÷ T, pool queue | 5.7 | 10 (60 ÷ 6; both small) |
+| S_q, EF ÷ request time inside RT's round | 0.228 | 0.243 |
+| Pool starvation | holds on the pool-queue reading only | not decidable: there is no heartbeat delay, and RT's queue is 3% of the baseline's |
+| GC | holds narrowly (10.4%) | **does not hold** (8.9%, no warnings) |
+| CPU quota | cannot be confirmed (no quota) | cannot be confirmed (no quota) |
+
+### Against the targets
+
+- **K1** (first paint < 1 s, Settings usable < 1 s, idle and during a round): **met.** The Overview paints in 160 to
+  196 ms, and Settings is usable in about 250 ms in every state.
+- **K2** (first Feature row < 2 s at 920 Features on 4 cores, idle and during a round): **not met, but the 920 list now
+  loads.**
+  - The Portfolio tab went from never (414) to 5.0 s idle and 6.8 s during a round.
+  - The Team tab went from 15.3 s to 4.2 s idle (about 3.6× faster), and from 20.1 s to 5.0 s during a round.
+  - Both are still more than twice the target.
+- **K3** (K1 and K2 hold during a round, and no heartbeat warning): **half met.**
+  - K1 holds during a round. There was no heartbeat warning in any window, as in the baseline, so this machine still
+    cannot show K3's own measure.
+  - During a round the Team tab is 1.18× its idle time, below the 1.2× slice 01 left open; the Portfolio tab is 1.36×.
+  - K2 itself does not hold, idle or during a round.
+- **K4** (length of a computed round and of a skipped one, at 8 Teams): the figure is set from this reading.
+  - **Computed**: 368 s alone, against 448 s (−18%), and 425 s with page traffic, against 543 s (−22%). The gain is
+    all in save, which takes 89 s instead of 166 s. Simulate is unchanged at about 277 s alone.
+  - **Skipped**: not read. No skipped round started inside a window, so there is no skipped-round length to give.
+- **Dissent B** (S_q > 0.3): **not triggered.** S_q is 0.243.
+
+### What the reading says is left
+
+- **The Features lists are the remaining gap to K2.** A list of 920 still takes about 5 s idle. The open's requests
+  spend about 4.5 s of server time, of which only about 0.24 s is EF command time, and carry 2.9 MB. So the time goes
+  in shaping and sending the list, not in the database: a candidate follow-up Epic, not a gap in this one's slices.
+- **During a round, the server answers more slowly** (an open's server time is 3 to 4× idle), while the pool queue
+  stays small. With GC under its threshold and S_q under 0.3, what remains is CPU shared with the round's simulation on
+  4 cores.
+- **The round's simulate phase** (about 277 s for 920 Features) is untouched by this Epic, by design. It is the
+  largest part of K4 and the next lever for round length.
