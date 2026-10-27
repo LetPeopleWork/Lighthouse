@@ -127,25 +127,75 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var delivery = await GetSingleDelivery(portfolioId);
 
+            var firstBlackoutDay = Today.AddDays(5);
+            var lastBlackoutDay = Today.AddDays(8);
+            var expected = DateAfterWorkingDays(workingDays, day => day >= firstBlackoutDay && day <= lastBlackoutDay);
             var deliveryDate = delivery.CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
             var featureDate = delivery.FeatureLikelihoods.Single().CompletionDates.Single(d => d.Probability == 85).ExpectedDate;
-            Assert.That(deliveryDate, Is.EqualTo(featureDate));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureDate, Is.EqualTo(expected), "the Feature's own date");
+                Assert.That(deliveryDate, Is.EqualTo(expected), "the Delivery's date");
+            }
+        }
+
+        [Test]
+        public async Task GetDelivery_WeekendRuleWithoutEnd_TwoTeamsWithLongTails_DeliveryDatesSkipEveryWeekend()
+        {
+            const int usualWorkingDays = 20;
+            const int tailWorkingDays = 100;
+            await ConfigureWeekendRuleWithoutEnd();
+
+            // Each Team is done by day 20 in 95 of 100 runs and by day 100 in the rest. Both Teams must
+            // finish, so only 0.95 * 0.95 = 90.25% of Delivery runs are done by day 20: the Delivery's
+            // 95th percentile is day 100 while each Feature's own is day 20.
+            var portfolioId = await SeedPortfolioWithForecasts(
+                ForecastDoneByDayWithTail(usualWorkingDays, tailWorkingDays),
+                ForecastDoneByDayWithTail(usualWorkingDays, tailWorkingDays));
+            await CreateDelivery(portfolioId, dueDateDaysOut: 1);
+
+            var delivery = await GetSingleDelivery(portfolioId);
+
+            var featureDates = delivery.FeatureLikelihoods
+                .Select(feature => feature.CompletionDates.Single(d => d.Probability == 95).ExpectedDate)
+                .ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(featureDates, Is.All.EqualTo(WorkingDaysAfterToday(usualWorkingDays)), "each Feature's own 95th");
+                Assert.That(delivery.CompletionDates.Single(d => d.Probability == 85).ExpectedDate,
+                    Is.EqualTo(WorkingDaysAfterToday(usualWorkingDays)), "the Delivery's 85th");
+                Assert.That(delivery.CompletionDates.Single(d => d.Probability == 95).ExpectedDate,
+                    Is.EqualTo(WorkingDaysAfterToday(tailWorkingDays)), "the Delivery's 95th");
+            }
         }
 
         private DateTime WorkingDaysAfterToday(int workingDays)
+        {
+            return DateAfterWorkingDays(workingDays, day => day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday);
+        }
+
+        private DateTime DateAfterWorkingDays(int workingDays, Func<DateTime, bool> isBlackoutDay)
         {
             var day = Today;
             var counted = 0;
             while (counted < workingDays)
             {
                 day = day.AddDays(1);
-                if (day.DayOfWeek is not (DayOfWeek.Saturday or DayOfWeek.Sunday))
+                if (!isBlackoutDay(day))
                 {
                     counted++;
                 }
             }
 
             return day;
+        }
+
+        private static WhenForecast ForecastDoneByDayWithTail(int usualWorkingDays, int tailWorkingDays)
+        {
+            var simulation = new SimulationResult();
+            simulation.SimulationResults[usualWorkingDays] = 95;
+            simulation.SimulationResults[tailWorkingDays] = 5;
+            return new WhenForecast(simulation, DateTime.UtcNow) { HasSufficientData = true };
         }
 
         private async Task ConfigureWeekendRuleWithoutEnd()
@@ -219,26 +269,37 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return SeedPortfolioWithForecast(ForecastCompletingInWorkingDays(WorkingDaysToCompletion));
         }
 
-        private async Task<int> SeedPortfolioWithForecast(WhenForecast forecast)
+        private Task<int> SeedPortfolioWithForecast(WhenForecast forecast)
+        {
+            return SeedPortfolioWithForecasts(forecast);
+        }
+
+        // One Feature per forecast, each owned by a Team of its own.
+        private async Task<int> SeedPortfolioWithForecasts(params WhenForecast[] forecasts)
         {
             using var scope = Factory.Services.CreateScope();
 
             var connection = new WorkTrackingSystemConnection { Name = $"Connection {Guid.NewGuid():N}", WorkTrackingSystem = WorkTrackingSystems.Jira };
-            var team = new Team { Name = $"Delivery Team {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection };
-
             var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
-            teamRepository.Add(team);
-            await teamRepository.Save();
+            var features = new List<Feature>();
 
-            var feature = new Feature(team, 5) { Name = "Feature", Order = "12" };
+            foreach (var forecast in forecasts)
+            {
+                var team = new Team { Name = $"Delivery Team {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection };
+                teamRepository.Add(team);
+                await teamRepository.Save();
 
-            // The row has to name its team: since Story #5587 the delivery rollup enumerates FROM
-            // FeatureWork and LEFT JOINs Forecasts, so a row naming no team covers no contributing pair.
-            forecast.TeamId = team.Id;
-            feature.SetFeatureForecasts([forecast]);
+                var feature = new Feature(team, 5) { Name = $"Feature {features.Count + 1}", Order = (12 + features.Count).ToString() };
+
+                // The row has to name its team: since Story #5587 the delivery rollup enumerates FROM
+                // FeatureWork and LEFT JOINs Forecasts, so a row naming no team covers no contributing pair.
+                forecast.TeamId = team.Id;
+                feature.SetFeatureForecasts([forecast]);
+                features.Add(feature);
+            }
 
             var portfolio = new Portfolio { Name = $"Test Portfolio {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection };
-            portfolio.UpdateFeatures([feature]);
+            portfolio.UpdateFeatures(features);
 
             var portfolioRepository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);

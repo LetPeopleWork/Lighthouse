@@ -120,7 +120,14 @@ namespace Lighthouse.Backend.Services.Implementation
             // count every weekend beyond it as a working day.
             var reachOfTheForecasts = FeatureForecastWindow.EndFor(today, deliveries.SelectMany(delivery => delivery.Features));
 
-            return reachOfTheForecasts > aroundTargetDates ? reachOfTheForecasts : aroundTargetDates;
+            // Across Teams a Delivery is done only when every Team is, so its own percentiles can lie
+            // well beyond those of any single Feature.
+            var reachOfTheDeliveries = deliveries
+                .Select(delivery => FeatureForecastWindow.EndFor(today, DeliveryCompletionForecast.Build(delivery.Features.ToList())))
+                .DefaultIfEmpty(today)
+                .Max();
+
+            return new[] { aroundTargetDates, reachOfTheForecasts, reachOfTheDeliveries }.Max();
         }
     }
 }
