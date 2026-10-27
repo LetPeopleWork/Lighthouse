@@ -365,6 +365,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Encryption
             }
         }
 
+        [Test]
+        public void Ring_AskedToHoldNoKeyAsRetired_IsRefused()
+        {
+            var ring = new EncryptionKeyRing(KeyWith(ActiveKeyId));
+
+            Assert.That(() => ring.WithRetired(null!), Throws.ArgumentNullException);
+        }
+
+        [Test]
+        public void Ring_AskedToLetGoOfItsActiveKey_ExplainsThatNothingWrittenUnderItCouldBeRead()
+        {
+            var ring = new EncryptionKeyRing(KeyWith(ActiveKeyId), KeyWith(RetiredKeyId));
+
+            Assert.That(() => ring.Without(ActiveKeyId),
+                Throws.ArgumentException.With.Message.Contains("cannot be taken off the ring"));
+        }
+
         private static string ActiveKeyIdAfterInvoking(MethodInfo producer, KeyCustody custody)
         {
             var ring = new EncryptionKeyRing(custody, KeyWith(ActiveKeyId), KeyWith(RetiredKeyId));

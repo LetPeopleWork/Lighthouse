@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Metrics;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
@@ -228,6 +229,68 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 new DateTime(2025, 1, 30, 0, 0, 0, DateTimeKind.Utc));
 
             Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void HasOverlapWithDateRange_BlackoutEndsOnFirstDayOfRange_ReturnsTrue()
+        {
+            var blackoutPeriods = new[]
+            {
+                new BlackoutPeriod { Start = new DateOnly(2024, 12, 25), End = new DateOnly(2025, 1, 1) }
+            };
+
+            var result = blackoutPeriods.HasOverlapWithDateRange(
+                new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                new DateTime(2025, 1, 30, 0, 0, 0, DateTimeKind.Utc));
+
+            Assert.That(result, Is.True);
+        }
+
+        private static ProcessBehaviourChart ChartWithPointsOn(params string[] days)
+        {
+            return new ProcessBehaviourChart
+            {
+                DataPoints = [.. days.Select(day => new ProcessBehaviourChartDataPoint(day, 1.0, [], []))],
+            };
+        }
+
+        [Test]
+        public void AnnotateBlackoutDays_ChartWithoutDataPoints_ReturnsTheSameChart()
+        {
+            var chart = new ProcessBehaviourChart();
+            var blackoutPeriods = new[]
+            {
+                new BlackoutPeriod { Start = new DateOnly(2025, 1, 1), End = new DateOnly(2025, 1, 5) }
+            };
+
+            Assert.That(blackoutPeriods.AnnotateBlackoutDays(chart), Is.SameAs(chart));
+        }
+
+        [Test]
+        public void AnnotateBlackoutDays_NoBlackoutPeriods_ReturnsTheSameChart()
+        {
+            var chart = ChartWithPointsOn("2025-01-02");
+
+            Assert.That(Array.Empty<BlackoutPeriod>().AnnotateBlackoutDays(chart), Is.SameAs(chart));
+        }
+
+        [Test]
+        public void AnnotateBlackoutDays_MarksOnlyThePointsFallingInABlackout()
+        {
+            var chart = ChartWithPointsOn("2025-01-01", "2025-01-02", "2025-01-03");
+            var blackoutPeriods = new[]
+            {
+                new BlackoutPeriod { Start = new DateOnly(2025, 1, 2), End = new DateOnly(2025, 1, 2) }
+            };
+
+            var result = blackoutPeriods.AnnotateBlackoutDays(chart);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.DataPoints[0].IsBlackout, Is.False);
+                Assert.That(result.DataPoints[1].IsBlackout, Is.True);
+                Assert.That(result.DataPoints[2].IsBlackout, Is.False);
+            }
         }
 
         [Test]
