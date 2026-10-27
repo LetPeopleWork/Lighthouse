@@ -131,14 +131,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         // ---- The two-way comparison, driven with made-up lists ----
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void AListThatMatchesTheCodeExactly_Passes()
         {
             Assert.DoesNotThrow(() => AssertMatchesBaseline(["a.cs", "b.cs"], ["a.cs", "b.cs"], "hint"));
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ANewOffenderNotOnTheList_FailsAndNamesIt()
         {
             var failure = Assert.Throws<AssertionException>(
@@ -151,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void AListedEntryThatNoLongerOffends_FailsAndNamesItUntilItIsDeleted()
         {
             var failure = Assert.Throws<AssertionException>(
@@ -161,7 +158,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void ANewOffenderAndAStaleEntryAtOnce_AreBothNamedInOneFailure()
         {
             var failure = Assert.Throws<AssertionException>(
@@ -171,14 +167,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void TheOrderOfTheListsAndRepeatedEntries_DoNotMatter()
         {
             Assert.DoesNotThrow(() => AssertMatchesBaseline(["b.cs", "a.cs", "a.cs"], ["a.cs", "b.cs"], "hint"));
         }
 
         [Test]
-        [Ignore(PendingGetAllByPredicate)]
         public void NothingOffendingAgainstAnEmptyList_Passes()
         {
             Assert.DoesNotThrow(() => AssertMatchesBaseline([], [], "hint"));
@@ -364,9 +358,31 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // ---- Scaffolds: built in the slice named on each pending test ----
 
-        // SCAFFOLD: true
         private static void AssertMatchesBaseline(IEnumerable<string> actual, IEnumerable<string> baseline, string fixHint)
-            => throw new AssertionException("SCAFFOLD: AssertMatchesBaseline is not built yet");
+        {
+            var offending = actual.ToHashSet(StringComparer.Ordinal);
+            var listed = baseline.ToHashSet(StringComparer.Ordinal);
+
+            var newcomers = offending.Except(listed).Order(StringComparer.Ordinal).ToList();
+            var stale = listed.Except(offending).Order(StringComparer.Ordinal).ToList();
+
+            var problems = new List<string>();
+
+            if (newcomers.Count > 0)
+            {
+                problems.Add($"Not on the list, and offending: {string.Join(", ", newcomers)}. {fixHint}");
+            }
+
+            if (stale.Count > 0)
+            {
+                problems.Add($"On the list, but no longer offending: {string.Join(", ", stale)}. Good - delete {(stale.Count == 1 ? "it" : "them")} from the list so it cannot come back unseen.");
+            }
+
+            if (problems.Count > 0)
+            {
+                Assert.Fail(string.Join(Environment.NewLine, problems));
+            }
+        }
 
         // SCAFFOLD: true
         private static IReadOnlyList<string> GetAllByPredicateCallSites(IEnumerable<ProductionSourceFile> sources)
