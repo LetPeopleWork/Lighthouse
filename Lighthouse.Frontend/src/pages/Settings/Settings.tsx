@@ -27,6 +27,25 @@ import RbacSettings from "./Rbac/RbacSettings";
 import SystemSettingsTab from "./System/SystemSettingsTab";
 import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
 
+/** Tabs only a system administrator sees. */
+export const systemAdminTabValues: ReadonlySet<string> = new Set([
+	"20",
+	"25",
+	"30",
+	"45",
+	"50",
+]);
+
+export const settingsTabTestIds: Readonly<Record<string, string>> = {
+	"20": "configuration-tab",
+	"25": "demo-data-tab",
+	"30": "database-tab",
+	"40": "api-keys-tab",
+	"45": "encryption-tab",
+	"50": "rbac-tab",
+	"99": "system-info-tab",
+};
+
 const Settings: React.FC = () => {
 	const [value, setValue] = useState("20");
 	const [mounted, setMounted] = useState(false);
@@ -86,13 +105,11 @@ const Settings: React.FC = () => {
 		}
 	};
 
-	const systemAdminTabValues = new Set(["20", "25", "30", "45", "50"]);
-
 	const tabConfig = [
 		{
 			value: "20",
 			label: "Configuration",
-			testId: "configuration-tab",
+			testId: settingsTabTestIds["20"],
 			panelTestId: "configuration-panel",
 			icon: <SettingsSystemDaydreamIcon />,
 			component: <SystemSettingsTab />,
@@ -100,7 +117,7 @@ const Settings: React.FC = () => {
 		{
 			value: "25",
 			label: "Demo Data",
-			testId: "demo-data-tab",
+			testId: settingsTabTestIds["25"],
 			panelTestId: "demo-data-panel",
 			icon: <DatasetIcon />,
 			component: <DemoDataSettings />,
@@ -108,7 +125,7 @@ const Settings: React.FC = () => {
 		{
 			value: "30",
 			label: "Database",
-			testId: "database-tab",
+			testId: settingsTabTestIds["30"],
 			panelTestId: "database-panel",
 			icon: <StorageIcon />,
 			component: <DatabaseManagementSettings />,
@@ -116,7 +133,7 @@ const Settings: React.FC = () => {
 		{
 			value: "40",
 			label: "API Keys",
-			testId: "api-keys-tab",
+			testId: settingsTabTestIds["40"],
 			panelTestId: "api-keys-panel",
 			icon: <KeyIcon />,
 			component: <ApiKeysSettings />,
@@ -124,7 +141,7 @@ const Settings: React.FC = () => {
 		{
 			value: "45",
 			label: "Encryption",
-			testId: "encryption-tab",
+			testId: settingsTabTestIds["45"],
 			panelTestId: "encryption-panel",
 			icon: <LockIcon />,
 			component: <EncryptionPanel />,
@@ -132,7 +149,7 @@ const Settings: React.FC = () => {
 		{
 			value: "50",
 			label: "System Admins",
-			testId: "rbac-tab",
+			testId: settingsTabTestIds["50"],
 			panelTestId: "rbac-panel",
 			icon: <ManageAccountsIcon />,
 			component: <RbacSettings />,
@@ -140,7 +157,7 @@ const Settings: React.FC = () => {
 		{
 			value: "99",
 			label: "System Info",
-			testId: "system-info-tab",
+			testId: settingsTabTestIds["99"],
 			panelTestId: "system-info-panel",
 			icon: <ArticleIcon />,
 			component: <SystemInfoSettings />,

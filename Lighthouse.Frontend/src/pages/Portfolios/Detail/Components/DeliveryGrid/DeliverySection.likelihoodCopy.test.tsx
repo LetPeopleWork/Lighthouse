@@ -138,9 +138,9 @@ describe("DeliverySection joint/marginal copy (Story #5587 slice-03)", () => {
 		renderSection(delivery);
 
 		// The literal is pinned on purpose. A test that rebuilds the expected string from the same
-		// consts the component uses is self-satisfying — blanking the copy to "" survives it
-		// (ci-learnings, mutation section). The date comes from getFormattedDate(), the SAME call the
-		// "Delivery Date:" text beside it makes, so the two can never disagree (AC-03.8).
+		// consts the component uses is self-satisfying — blanking the copy to "" survives it,
+		// because both sides go blank together. The date comes from getFormattedDate(), the SAME call the
+		// "Delivery Date:" text beside it makes, so the two can never disagree.
 		expect(
 			screen.getByText(`All Features by ${delivery.getFormattedDate()}: 72%`),
 		).toBeInTheDocument();
