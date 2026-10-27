@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	aMomentLater,
@@ -14,12 +14,14 @@ import {
 	reportsPathFor,
 	THE_REPORT_COULD_NOT_BE_LOADED,
 	THEN_AND_NOW,
+	theBrowserShowsKeyboardFocus,
 	theErrorSnackbar,
 	theFontsAreStillLoading,
 	theFontsHaveLoaded,
 	theFramesHavePrinted,
 	thePrintFrame,
 	thePrintFrames,
+	theReaderIsOn,
 	theReadersHistory,
 	theSnackbarsRetry,
 	whereTheReaderIs,
@@ -35,6 +37,7 @@ import {
 	readingOf,
 	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
+import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
 
 /**
  * Export PDF from the Reports list. A PDF icon leads every row's actions, for everyone who can read the
@@ -91,11 +94,6 @@ const theActionsOf = async (name: string): Promise<string[]> =>
 
 const exportsReported = () =>
 	reportUsage.mock.calls.filter(([use]) => use.name === PDF_EXPORT_STARTED);
-
-const MAC_USER_AGENT =
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15";
-const PDF_UNAVAILABLE_ON_MAC =
-	"PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.";
 
 const Q2_BASELINE = "Q2 Baseline";
 
@@ -344,34 +342,118 @@ describe("When Export PDF from the list cannot make the PDF", () => {
 
 		expect(thePdfIconOf(ENGAGEMENT_START)).toHaveFocus();
 	});
+});
 
-	describe("on the macOS desktop app", () => {
-		beforeEach(() => {
-			vi.stubGlobal("__TAURI_INTERNALS__", {});
-			vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_USER_AGENT);
-		});
+/** Walks the keyboard through the page until the control has the focus, as a keyboard reader would. */
+const tabTo = async (
+	user: ReturnType<typeof onTheList>["user"],
+	control: HTMLElement,
+	presses = 20,
+): Promise<void> => {
+	if (document.activeElement === control) {
+		return;
+	}
+	expect(presses, "the keyboard never reached the control").toBeGreaterThan(0);
+	await user.tab();
+	await tabTo(user, control, presses - 1);
+};
 
-		afterEach(() => {
-			vi.restoreAllMocks();
-		});
+describe("Export PDF on the macOS desktop app", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		localStorage.clear();
+		theFontsHaveLoaded();
+		aPrintDialog();
+		theReaderIsOn("the macOS desktop app");
+	});
 
-		it(`disables the row's PDF icon, explains why on hover and starts no export when it is clicked`, async () => {
+	afterEach(() => {
+		localStorage.clear();
+		forgetTheBrowser();
+	});
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it(`greys the row's PDF icon out for assistive technology yet keeps it focusable, and starts no export when it is clicked`, async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = onTheList();
+		const icon = await screen.findByLabelText(
+			exportAsPdfLabelOf(ENGAGEMENT_START),
+		);
+
+		expect(icon).toHaveAttribute("aria-disabled", "true");
+		expect(icon).not.toBeDisabled();
+		await user.click(icon);
+		await aMomentLater();
+
+		expect(frames.timesAFramePrinted()).toBe(0);
+		expect(thePrintFrames()).toHaveLength(0);
+		expect(exportsReported()).toHaveLength(0);
+	});
+
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	it(`explains why on hover and describes the icon with it, keeping the icon's name`, async () => {
+		const { user } = onTheList();
+		const icon = await screen.findByLabelText(
+			exportAsPdfLabelOf(ENGAGEMENT_START),
+		);
+
+		await user.hover(icon);
+
+		const tooltip = await screen.findByRole("tooltip");
+		expect(readingOf(tooltip)).toBe(PDF_EXPORT_UNAVAILABLE_ON_MAC);
+		expect(icon).toHaveAccessibleDescription(PDF_EXPORT_UNAVAILABLE_ON_MAC);
+		expect(icon).toHaveAccessibleName(exportAsPdfLabelOf(ENGAGEMENT_START));
+	});
+
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	it(`explains why when the icon gets the keyboard focus`, async () => {
+		const { user } = onTheList();
+		const icon = await screen.findByLabelText(
+			exportAsPdfLabelOf(ENGAGEMENT_START),
+		);
+
+		theBrowserShowsKeyboardFocus();
+		await tabTo(user, icon);
+
+		expect(readingOf(await screen.findByRole("tooltip"))).toBe(
+			PDF_EXPORT_UNAVAILABLE_ON_MAC,
+		);
+	});
+});
+
+describe("Export PDF in the Reports list on every other host", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		localStorage.clear();
+		theFontsHaveLoaded();
+		aPrintDialog();
+	});
+
+	afterEach(() => {
+		localStorage.clear();
+		forgetTheBrowser();
+	});
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it.each([
+		"a browser on a Mac",
+		"the Linux desktop app",
+		"the Windows desktop app",
+	] as const)(
+		`keeps the row's PDF icon enabled and starts the export on %s`,
+		async (host) => {
+			theReaderIsOn(host);
 			const frames = aPrintFrameBrowser();
 			const { user } = onTheList();
 			const icon = await screen.findByLabelText(
 				exportAsPdfLabelOf(ENGAGEMENT_START),
 			);
 
-			expect(icon).toBeDisabled();
-			await user.hover(icon.parentElement as HTMLElement);
-			expect(readingOf(await screen.findByRole("tooltip"))).toBe(
-				PDF_UNAVAILABLE_ON_MAC,
-			);
-			fireEvent.click(icon);
+			expect(icon).not.toHaveAttribute("aria-disabled");
+			await user.click(icon);
 
-			expect(frames.framesThatPrinted()).toEqual([]);
-			expect(thePrintFrames()).toHaveLength(0);
-			expect(exportsReported()).toHaveLength(0);
-		});
-	});
+			await theFramesHavePrinted(frames);
+			expect(exportsReported()).toHaveLength(1);
+		},
+	);
 });

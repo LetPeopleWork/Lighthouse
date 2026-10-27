@@ -19,7 +19,7 @@ import {
 	useLocation,
 	useParams,
 } from "react-router";
-import { expect, vi } from "vitest";
+import { expect, type MockInstance, vi } from "vitest";
 import SnackbarErrorHandler from "../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import {
 	UsageDataConsentProvider,
@@ -560,9 +560,62 @@ const theBrowsersStandIns = () => ({
 	loadPicture: (source: string) => thePictures(source),
 });
 
+const MAC_USER_AGENT =
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15";
+const LINUX_USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15";
+const WINDOWS_USER_AGENT =
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/605.1.15";
+
+/** The hosts Lighthouse runs on, as the page tells them apart: the desktop app carries Tauri's internals. */
+export const THE_HOSTS = {
+	"the macOS desktop app": { userAgent: MAC_USER_AGENT, desktopApp: true },
+	"a browser on a Mac": { userAgent: MAC_USER_AGENT, desktopApp: false },
+	"the Linux desktop app": { userAgent: LINUX_USER_AGENT, desktopApp: true },
+	"the Windows desktop app": {
+		userAgent: WINDOWS_USER_AGENT,
+		desktopApp: true,
+	},
+} as const;
+
+export type HostName = keyof typeof THE_HOSTS;
+
+let userAgentSpy: MockInstance<() => string> | undefined;
+
+/** Makes the page run on the given host until forgetTheBrowser. */
+export const theReaderIsOn = (host: HostName) => {
+	const { userAgent, desktopApp } = THE_HOSTS[host];
+	userAgentSpy = vi
+		.spyOn(navigator, "userAgent", "get")
+		.mockReturnValue(userAgent);
+	if (desktopApp) {
+		vi.stubGlobal("__TAURI_INTERNALS__", {});
+	}
+};
+
+let focusVisibleSpy: MockInstance<Element["matches"]> | undefined;
+
+/**
+ * Makes the page answer as a real browser does: the control a keyboard reader has tabbed to matches
+ * :focus-visible. jsdom never says so for a button, so a tooltip that opens on keyboard focus stays shut.
+ */
+export const theBrowserShowsKeyboardFocus = () => {
+	const matches = Element.prototype.matches;
+	focusVisibleSpy = vi
+		.spyOn(Element.prototype, "matches")
+		.mockImplementation(function (this: Element, selector: string) {
+			return selector === ":focus-visible"
+				? this === document.activeElement
+				: matches.call(this, selector);
+		});
+};
+
 export const forgetTheBrowser = () => {
 	theFonts = undefined;
 	thePictures = recordingPictureLoads(() => Promise.resolve("loaded")).load;
+	userAgentSpy?.mockRestore();
+	userAgentSpy = undefined;
+	focusVisibleSpy?.mockRestore();
+	focusVisibleSpy = undefined;
 	vi.unstubAllGlobals();
 	forgetThePrintFrames();
 };

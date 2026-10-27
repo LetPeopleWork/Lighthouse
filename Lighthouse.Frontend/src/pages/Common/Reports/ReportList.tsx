@@ -12,10 +12,8 @@ import type {
 	IReportOwner,
 } from "../../../models/Reports/Report";
 import { parseLocalDate } from "../../../utils/date/localDate";
-import {
-	isTauriOnMac,
-	PDF_EXPORT_UNAVAILABLE_ON_MAC,
-} from "../../../utils/tauri";
+import { isTauriOnMac } from "../../../utils/tauri";
+import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
 import { reportPathOf } from "./reportOwner";
 import { isShownByThisVersion, reportTypeTitleOf } from "./wizard/reportTypes";
 
@@ -52,16 +50,15 @@ const ExportPdfButton: React.FC<{
 	const isHeldBack = actions.preparingId !== undefined;
 	if (isTauriOnMac()) {
 		return (
-			<Tooltip title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
-				<span>
-					<IconButton
-						aria-label={`Export ${report.name} as PDF`}
-						color="primary"
-						disabled
-					>
-						<PictureAsPdfIcon />
-					</IconButton>
-				</span>
+			<Tooltip describeChild title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
+				<IconButton
+					aria-label={`Export ${report.name} as PDF`}
+					aria-disabled="true"
+					color="primary"
+					sx={HELD_BACK_LOOK}
+				>
+					<PictureAsPdfIcon />
+				</IconButton>
 			</Tooltip>
 		);
 	}

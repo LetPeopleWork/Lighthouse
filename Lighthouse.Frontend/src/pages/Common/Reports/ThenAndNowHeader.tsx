@@ -10,10 +10,8 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { Link as RouterLink } from "react-router";
-import {
-	isTauriOnMac,
-	PDF_EXPORT_UNAVAILABLE_ON_MAC,
-} from "../../../utils/tauri";
+import { isTauriOnMac } from "../../../utils/tauri";
+import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
 
 interface ThenAndNowHeaderProps {
 	reportsPath: string;
@@ -42,16 +40,17 @@ const ExportPdfButton: React.FC<{
 	readonly onExport: () => void;
 	readonly waiting: boolean;
 	readonly preparing: boolean;
-}> = ({ onExport, waiting, preparing }) =>
-	isTauriOnMac() ? (
-		<Tooltip title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
-			<span>
-				<Button variant="outlined" disabled>
+}> = ({ onExport, waiting, preparing }) => {
+	if (isTauriOnMac()) {
+		return (
+			<Tooltip describeChild title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
+				<Button variant="outlined" aria-disabled="true" sx={PREPARING_LOOK}>
 					Export PDF
 				</Button>
-			</span>
-		</Tooltip>
-	) : (
+			</Tooltip>
+		);
+	}
+	return (
 		<Button
 			variant="outlined"
 			onClick={preparing ? undefined : onExport}
@@ -64,6 +63,7 @@ const ExportPdfButton: React.FC<{
 			Export PDF
 		</Button>
 	);
+};
 
 const ThenAndNowHeader: React.FC<Readonly<ThenAndNowHeaderProps>> = ({
 	reportsPath,

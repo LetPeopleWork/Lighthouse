@@ -9,9 +9,6 @@ export const isTauriEnv = (): boolean =>
 export const isTauriOnMac = (): boolean =>
 	isTauriEnv() && /Macintosh|Mac OS X/i.test(navigator.userAgent);
 
-export const PDF_EXPORT_UNAVAILABLE_ON_MAC =
-	"PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.";
-
 export const hasTauriBackendUrl = (): boolean =>
 	!!globalThis.sessionStorage.getItem("TAURI_BACKEND_URL");
 

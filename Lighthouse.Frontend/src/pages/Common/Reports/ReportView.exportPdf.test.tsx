@@ -1,10 +1,4 @@
-import {
-	act,
-	fireEvent,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deferred } from "../../../tests/HeldMetricsService";
 import {
@@ -20,6 +14,7 @@ import {
 	renderTheExportScene,
 	reportPathFor,
 	THEN_AND_NOW,
+	theBrowserShowsKeyboardFocus,
 	theErrorSnackbarIsShown,
 	theExportButtonOnceItCanBePressed,
 	theFontsAreStillLoading,
@@ -28,6 +23,7 @@ import {
 	theFramesPage,
 	thePrintFrame,
 	thePrintFrames,
+	theReaderIsOn,
 	theReadersHistory,
 	theTermsAnswer,
 	whereTheReaderIs,
@@ -46,6 +42,7 @@ import {
 	readingOf,
 	theEngagementStartReport,
 } from "../../../tests/ReportsTestKit";
+import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
 
 /**
  * Export PDF on the report view. Anyone who can read a report sees it as the first outlined button of the
@@ -71,10 +68,6 @@ vi.mock(
 	}),
 );
 
-const MAC_USER_AGENT =
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15";
-const PDF_UNAVAILABLE_ON_MAC =
-	"PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.";
 const OUTLINED = "MuiButton-outlined";
 const WHITE = "rgb(255, 255, 255)";
 /** A style sheet the app is built with, and a rule of the app's own that no Emotion cache wrote. */
@@ -509,32 +502,102 @@ describe("The print frame goes once the dialog is done with it", () => {
 			"true",
 		);
 	});
+});
 
-	describe("on the macOS desktop app", () => {
-		beforeEach(() => {
-			vi.stubGlobal("__TAURI_INTERNALS__", {});
-			vi.spyOn(navigator, "userAgent", "get").mockReturnValue(MAC_USER_AGENT);
-		});
+/** Walks the keyboard through the page until the control has the focus, as a keyboard reader would. */
+const tabTo = async (
+	user: ReturnType<typeof onTheReportAlone>["user"],
+	control: HTMLElement,
+	presses = 20,
+): Promise<void> => {
+	if (document.activeElement === control) {
+		return;
+	}
+	expect(presses, "the keyboard never reached the control").toBeGreaterThan(0);
+	await user.tab();
+	await tabTo(user, control, presses - 1);
+};
 
-		afterEach(() => {
-			vi.restoreAllMocks();
-		});
+describe("Export PDF on the macOS desktop app", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		theFontsHaveLoaded();
+		aPrintDialog();
+		theReaderIsOn("the macOS desktop app");
+	});
 
-		it(`disables Export PDF, explains why on hover and starts no export when it is clicked`, async () => {
+	afterEach(forgetTheBrowser);
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it(`greys Export PDF out for assistive technology yet keeps it focusable, and starts no export when it is clicked`, async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = onTheReportAlone();
+		const button = await theExportButton();
+
+		expect(button).toHaveAttribute("aria-disabled", "true");
+		expect(button).not.toBeDisabled();
+		await user.click(button);
+		await aMomentLater();
+
+		expect(frames.timesAFramePrinted()).toBe(0);
+		expect(thePrintFrames()).toHaveLength(0);
+		expect(exportsReported()).toHaveLength(0);
+	});
+
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	it(`explains why on hover and describes the button with it, keeping the button's name`, async () => {
+		const { user } = onTheReportAlone();
+		const button = await theExportButton();
+
+		await user.hover(button);
+
+		expect(readingOf(await screen.findByRole("tooltip"))).toBe(
+			PDF_EXPORT_UNAVAILABLE_ON_MAC,
+		);
+		expect(button).toHaveAccessibleDescription(PDF_EXPORT_UNAVAILABLE_ON_MAC);
+		expect(button).toHaveAccessibleName(EXPORT_PDF);
+	});
+
+	// @us-01 @slice-01 @contract-shape:bounded-change
+	it(`explains why when Export PDF gets the keyboard focus`, async () => {
+		const { user } = onTheReportAlone();
+		const button = await theExportButton();
+
+		theBrowserShowsKeyboardFocus();
+		await tabTo(user, button);
+
+		expect(readingOf(await screen.findByRole("tooltip"))).toBe(
+			PDF_EXPORT_UNAVAILABLE_ON_MAC,
+		);
+	});
+});
+
+describe("Export PDF on the report view on every other host", () => {
+	beforeEach(() => {
+		reportUsage.mockClear();
+		theFontsHaveLoaded();
+		aPrintDialog();
+	});
+
+	afterEach(forgetTheBrowser);
+
+	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
+	it.each([
+		"a browser on a Mac",
+		"the Linux desktop app",
+		"the Windows desktop app",
+	] as const)(
+		`keeps Export PDF enabled and starts the export on %s`,
+		async (host) => {
+			theReaderIsOn(host);
 			const frames = aPrintFrameBrowser();
 			const { user } = onTheReportAlone();
-			const button = await theExportButton();
 
-			expect(button).toBeDisabled();
-			await user.hover(button.parentElement as HTMLElement);
-			expect(readingOf(await screen.findByRole("tooltip"))).toBe(
-				PDF_UNAVAILABLE_ON_MAC,
-			);
-			fireEvent.click(button);
+			expect(await theExportButton()).not.toHaveAttribute("aria-disabled");
+			await user.click(await theExportButtonOnceItCanBePressed());
 
-			expect(frames.timesAFramePrinted()).toBe(0);
-			expect(thePrintFrames()).toHaveLength(0);
-			expect(exportsReported()).toHaveLength(0);
-		});
-	});
+			await theFramesHavePrinted(frames);
+			expect(exportsReported()).toHaveLength(1);
+		},
+	);
 });
