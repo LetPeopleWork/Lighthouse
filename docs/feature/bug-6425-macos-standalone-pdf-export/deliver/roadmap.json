@@ -1,0 +1,80 @@
+{
+  "roadmap": {
+    "project_id": "bug-6425-macos-standalone-pdf-export",
+    "created_at": "2026-10-27",
+    "total_steps": 1,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6425. Frontend only (Lighthouse.Frontend): Tauri-on-macOS detection plus the two Export PDF controls. No backend, no Tauri host (Rust/capabilities) change.",
+    "goal": "In the macOS Standalone app, Export PDF silently does nothing (WKWebView ignores print() on the hidden print iframe, tauri#13451). Instead of a no-op, the control is disabled there with a tooltip pointing Mac users at the Docker version in a browser. Browser, Linux and Windows Standalone keep today's behaviour exactly.",
+    "paradigm_note": "TypeScript / React 19 / MUI / Vitest + RTL. No DISTILL wave for a bugfix: RED is a crafter-authored regression test through the rendered UI (ReportsTab / ReportView) with a Tauri-on-macOS environment stubbed, failing on today's code because the control is enabled."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6306 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-27",
+    "notes": "RCA approved by the maintainer; sketch, copy and rigor approved. Fix sites verified: ReportList.tsx ExportPdfButton (:44-66), ThenAndNowHeader.tsx ExportPdfButton (:36-52), utils/tauri.ts isTauriEnv (:5)."
+  },
+  "user_decisions": [
+    "Root cause confirmed; do not route printing through the Tauri host, disable on macOS Standalone instead (2026-10-27).",
+    "Tooltip copy: 'PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.'",
+    "Rigor profile standard."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6425-macos-standalone-pdf-export/rca.md",
+    "docs/feature/bug-6425-macos-standalone-pdf-export/feature-delta.md",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Making printing work on macOS Standalone (host print, PDFKit) — revisit when tauri#13451 is fixed upstream.",
+    "Tauri capability / Rust changes.",
+    "Docs and release notes (finalize, after the maintainer confirms)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Export PDF is disabled with an explanation on the macOS Standalone app",
+      "description": "Regression tests through the rendered report list and report view, then the minimal fix.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "On the macOS Standalone app both Export PDF controls are disabled and explain why",
+          "description": "Under Tauri on macOS, the report list PDF icon and the report header Export PDF button render disabled, never start an export, and show the agreed tooltip. Everywhere else they are unchanged.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+          "scenario_name": "On the macOS desktop app Export PDF is disabled and points to the Docker version",
+          "red_to_green_tests": [
+            "ReportsTab.exportPdf.test.tsx :: on the macOS desktop app the report list's PDF icon is disabled, shows the tooltip, and clicking it starts no export",
+            "ReportView.exportPdf.test.tsx :: on the macOS desktop app the report header's Export PDF button is disabled, shows the tooltip, and clicking it starts no export",
+            "utils/tauri.test.ts :: the macOS-desktop check is true only with Tauri internals present AND a Mac user agent; false in a browser on a Mac, and in Tauri on Linux / Windows"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/utils/tauri.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/utils/tauri.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/pages/Common/Reports/ReportList.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/pages/Common/Reports/ThenAndNowHeader.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/jaunty-gathering-wren/Lighthouse.Frontend/src/pages/Common/Reports/ReportView.exportPdf.test.tsx"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "utils/tauri.ts gains one exported predicate (e.g. isTauriOnMac) = isTauriEnv() && the user agent names a Mac (/Macintosh|Mac OS X/i on navigator.userAgent). No new dependency (do NOT add @tauri-apps/plugin-os). No navigator.platform (deprecated, Sonar flags it).",
+            "RED first: with __TAURI_INTERNALS__ stubbed on globalThis and a Mac user agent, the new UI tests fail on today's code because the controls are enabled.",
+            "ReportList ExportPdfButton: on the macOS desktop app the IconButton is truly disabled (disabled prop), wrapped in a <span> so the Tooltip still shows (same pattern as EditButton in the same file), and the Tooltip title is exactly: 'PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser.' Its aria-label stays 'Export <name> as PDF'.",
+            "ThenAndNowHeader ExportPdfButton: on the macOS desktop app the 'Export PDF' Button is disabled, wrapped in <span> under a Tooltip with the same exact text. The copy is defined once and shared by both controls.",
+            "Clicking either disabled control never calls the export (useReportPdfExport.exportPdf / onExportPdf is not called).",
+            "Off macOS desktop (browser on any OS incl. a Mac user agent without Tauri internals; Tauri on Linux and Windows user agents) both controls behave exactly as today: same tooltip 'Export PDF' on the icon, no extra tooltip on the header button, held-back/preparing looks unchanged. Existing exportPdf tests stay green unchanged.",
+            "Test stubs restore globalThis/navigator after each test (vi.stubGlobal + vi.unstubAllGlobals, or equivalent) so no other test sees Tauri.",
+            "No comments citing the bug number or internal ids; if a comment is needed it says the why in plain language (WebKit on macOS ignores print from the print frame).",
+            "pnpm test green; pnpm build zero errors/warnings (runs biome check --write as prebuild; check git diff afterwards for unrelated rewrites)."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (frontend rules). Prefer one parametrised it.each for the off-macOS cases. Read the predicate once per render; it is environment-constant so no state/effect is needed. Commit: fix(reports): disable Export PDF on the macOS desktop app, where it cannot print (bug 6425)"
+        }
+      ]
+    }
+  ]
+}
