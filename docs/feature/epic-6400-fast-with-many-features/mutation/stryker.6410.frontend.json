@@ -1,0 +1,23 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.6410.mutation.ts", "related": false },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6410.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports", "/StrykerOutput"],
+  "mutate": [
+    "src/services/Api/PortfolioService.ts:59-65",
+    "src/components/Common/ProjectSettings/PortfolioSizeNote.tsx",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:208-208"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6410-frontend.json" },
+  "tempDirName": ".stryker-tmp-6410"
+}
