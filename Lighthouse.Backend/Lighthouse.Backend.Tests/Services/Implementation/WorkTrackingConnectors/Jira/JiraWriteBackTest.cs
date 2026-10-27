@@ -537,7 +537,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             // Jira Cloud's JQL search index is eventually consistent and lags a field write by up to
             // seconds. Poll the read-back until the just-written value appears rather than asserting on a
-            // single immediate read (see docs/ci-learnings.md 2026-07-23 read-after-write race).
+            // single immediate read, which can miss the write.
             for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
             {
                 var features = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);
@@ -588,8 +588,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var connectionWithField = CloneConnectionWithAdditionalField(connection, additionalFieldDef);
             team.WorkTrackingSystemConnection = connectionWithField;
 
-            // JQL index lag: poll the read-back rather than asserting on a single immediate read
-            // (see docs/ci-learnings.md 2026-07-23 read-after-write race).
+            // JQL search is eventually consistent, so a single immediate read can miss the write:
+            // poll the read-back instead.
             for (var attempt = 0; attempt < ReadBackMaxAttempts; attempt++)
             {
                 var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);

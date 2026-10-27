@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Models
         private const int TailDay = 20;
 
         // Hoisted rather than inline: CA1861 fires on constant arrays inside assertions, and the Sonar
-        // gate is zero new issues of any severity (docs/ci-learnings.md).
+        // gate allows zero new issues of any severity.
         private static readonly double?[] ExpectedMarginalRowLikelihoods = [72, 95];
 
         // Cumulative probability at TargetDay: .90 / .80 / .95 - the three-way fixture from DISCUSS.

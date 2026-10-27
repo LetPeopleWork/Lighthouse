@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "backend-test-speed (#5258): a test fixture carries [NonParallelizable] but is not on the inherently-serial " +
                 "allowlist. Fix its shared-state root cause (per-fixture WebApplicationFactory/DB or per-test mocks, ADR-074) and " +
                 "remove the attribute. Add it to the allowlist ONLY if the test is genuinely serial (process-global state / " +
-                "deliberate concurrency) — with a reason, per docs/ci-learnings.md. Off-allowlist offenders: " + string.Join(", ", offenders));
+                "deliberate concurrency) — with a reason in the allowlist entry. Off-allowlist offenders: " + string.Join(", ", offenders));
         }
 
         [Test]
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 staleEntries,
                 Is.Empty,
                 "backend-test-speed (#5258): an allowlist entry no longer carries [NonParallelizable] — its shared-state root " +
-                "cause was fixed. Remove it from the allowlist so the serial residue stays honest (see docs/ci-learnings.md). " +
+                "cause was fixed. Remove it from the allowlist so the serial residue stays honest. " +
                 "Stale entries: " + string.Join(", ", staleEntries));
         }
 
