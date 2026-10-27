@@ -8,7 +8,7 @@ Layer leaks in `Lighthouse.Frontend/src` fail the build and name the file. Today
 
 ## IN
 
-- Tool, decided at DESIGN: Biome `noRestrictedImports` via a new `biome.json`, or dependency-cruiser. There is no `biome.json` and no ESLint today (verified 2026-10-22). It must run inside `pnpm build` (the `prebuild` hook) or `pnpm test`, so CI enforces it.
+- Tool, decided at DESIGN: Biome `noRestrictedImports` in the existing `Lighthouse.Frontend/biome.json`, dependency-cruiser, or [Fallow](https://fallow.tools/) (see Notes for DESIGN). Biome already runs in `prebuild` with the Sonar-mirroring rules; there is still no ESLint. The check must run inside `pnpm build` (the `prebuild` hook) or `pnpm test`, so CI enforces it.
 - Rules: components ↛ pages, hooks ↛ pages/components, services ↛ hooks, models ↛ pages, utils ↛ services.
 - Allow-list baseline of **16** (survey 2026-10-22, re-counted by the tool at DESIGN):
   - components → pages (7): ModifyConnectionSettings → pages/Settings/Connections/*; ModifyTeamSettings → pages/Teams/Edit/ForecastSettingsComponent; RefinementBandSettings → pages/Teams/Detail/Refinement/*; ModifyProjectSettings → pages/Common/AdvancedInputs; DateRangeSelector and DateRangePresets → pages/Common/MetricsView/dateWindow; ReportsChips → pages/Common/Reports/*.
@@ -39,6 +39,16 @@ None.
 
 - `prebuild` runs `biome check --write`, not read-only, so mind the docs-symlink hazard.
 - A new dev dependency (dependency-cruiser) must respect pnpm's minimum release age, and overrides live in `pnpm-workspace.yaml`.
+
+- **Fallow is a third candidate** (maintainer, 2026-10-27). It is an MIT-licensed analyser for TypeScript and JavaScript that builds one module graph and reports boundary violations, import cycles, unused files, exports and dependencies, duplication and complexity. It runs as `npx fallow` with an optional `.fallowrc.json`, and has plugins for Vite, Vitest, Playwright, pnpm, Biome and TypeScript path aliases. Boundaries are zones made of globs, with rules for which zone may import which; it has presets (`layered`, `hexagonal`, `feature-sliced`) and `autoDiscover`, which makes every child folder its own zone. That last one is a fit for FE2's module public entries. Its dead-code, cycle and duplication reports are something neither Biome nor dependency-cruiser gives us.
+- Settle these for Fallow with a short read-only trial on `Lighthouse.Frontend` before choosing it:
+  1. **The named list.** Its docs show boundary exceptions only as inline `fallow-ignore` comments, not as a central list. FE1 needs one list in one place that fails in both directions and only shrinks, like the backend ratchets. Committed baselines exist for dead code, duplication and health; check whether they cover boundary violations, and whether a fixed entry fails until it is pruned.
+  2. **Does it find the same 16 violations** as the survey above?
+  3. **Noise.** How many dead-code findings does a first run give, and how many are false?
+  4. **Speed.** Can it run inside `prebuild` without slowing the build beyond noise?
+  5. **Maturity.** It comes from a small company founded in 2026, so check the version, release cadence and adoption on its GitHub repo (`fallow-rs/fallow`) and changelog. It would be a new dev dependency in every CI run, under pnpm's minimum release age.
+  6. **Overlap with Biome.** If it is chosen, it gets a clear job next to Biome rather than reporting the same things twice. Its `fallow mutation` is not needed; Stryker already does that.
+- If Fallow passes for boundaries but not for the named list, a thin test can still own the list. It reads Fallow's machine-readable output and compares it with an inline list, the way the backend ratchets compare a scan with theirs.
 
 ## Slicing
 

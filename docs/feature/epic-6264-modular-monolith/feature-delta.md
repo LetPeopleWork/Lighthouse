@@ -421,7 +421,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 - infrastructure_rationale: no boundary tooling exists (no `biome.json`, no ESLint, verified 2026-10-22), so layer leaks compile silently. The baseline makes them visible and stops new ones.
 - Elevator Pitch. **Before**: `components/Common/ModifyTeamSettings` importing `pages/Teams/Edit/ForecastSettingsComponent` compiles fine. **After**: `pnpm build` (Biome `noRestrictedImports` in `prebuild`) or a dependency-cruiser step fails with "components → pages: ModifyTeamSettings.tsx imports pages/Teams/…", unless the file is on the allow-list. Removing a leak forces the list to shrink. **Decision enabled**: FE2 can move features into folders inside an enforced boundary.
 - AC:
-  - [ ] Tool chosen at DESIGN (Biome `noRestrictedImports` via a new `biome.json`, or dependency-cruiser). It runs in `pnpm build` or `pnpm test` so CI enforces it.
+  - [ ] Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow (a short read-only trial first; see the Story brief). It runs in `pnpm build` or `pnpm test` so CI enforces it.
   - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1.
   - [ ] A new violation fails naming file and import. A fixed one fails until removed from the list.
   - [ ] Zero Biome errors and warnings stays true. The build is not slower beyond noise.
