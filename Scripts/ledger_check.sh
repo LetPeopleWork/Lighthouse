@@ -12,5 +12,6 @@ case "$input" in
 	;;
 esac
 
-root="${CLAUDE_PROJECT_DIR:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+# The checkout the commit runs in (a worktree has its own), not the one Claude was started from.
+root="$(git rev-parse --show-toplevel 2>/dev/null || echo "${CLAUDE_PROJECT_DIR:-}")"
 printf '%s' "$input" | python3 "$root/Scripts/ledger_check.py"
