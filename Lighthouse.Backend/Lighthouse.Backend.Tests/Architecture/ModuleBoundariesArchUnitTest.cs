@@ -95,6 +95,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        [Ignore("pending: S04a-6")]
+        public void SharedKernel_DoesNotDependOnServices()
+        {
+            KernelRules.ModelsDoNotDependOnServices().Check(Architecture);
+        }
+
+        [Test]
         public void WorkTrackingIntegration_IsALeafInputAdapter()
         {
             Types().That().Are(WorkTrackingIntegrationModule)

@@ -37,5 +37,12 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "under, which nothing testing the Model on its own would ever see.")
                 .Check(Architecture);
         }
+
+        [Test]
+        [Ignore("pending: S04a-4")]
+        public void TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType()
+        {
+            KernelRules.ModelsDoNotDependOnTheUpdateQueue().Check(Architecture);
+        }
     }
 }

@@ -241,7 +241,7 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 
 `@infrastructure` · job_id: infrastructure-only · **Size M** · Depends on: S05a (hard); **may be absorbed by S02, and S02's DESIGN decides and records it** · Brief: `slices/slice-18-s05f-metrics-services-off-getallbypredicate.md`
 
-- infrastructure_rationale: 27 of the 53 calls outside the persistence adapters are in `TeamMetricsService` / `PortfolioMetricsService`, including `.Any()` evaluated per Feature. EF InMemory in tests translates nothing, so a predicate SQLite or Postgres cannot translate still passes there.
+- infrastructure_rationale: 27 of the 52 calls outside the persistence adapters are in `TeamMetricsService` / `PortfolioMetricsService`, including `.Any()` evaluated per Feature. EF InMemory in tests translates nothing, so a predicate SQLite or Postgres cannot translate still passes there.
 - Elevator Pitch. **Before**: `PortfolioMetricsService` chains `.Where/.Any` on `featureRepository.GetAllByPredicate(...)` 13 times. **After**: it calls named read-port methods (e.g. `featuresOf(portfolio).closedBetween(from, to)`), and both files leave the S05a baseline. **Decision enabled**: S05g can protect `GetAllByPredicate`.
 - AC:
   - [ ] Both metrics services leave the S05a baseline. The read ports are provider-translatable, proven on a provider-backed test.
@@ -533,8 +533,8 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 |---|---|---|---|---|---|
 | 1 | Files under `Services/Interfaces` + `Services/Implementation` | loose: brief 41 + 56 → **42 + 58**; total **155 + 352 = 507** | **0** | `find Lighthouse.Backend/Lighthouse.Backend/Services/{Interfaces,Implementation} -name '*.cs' \| wc -l` | S02, S03a–h |
 | 2 | Contexts packaged under their own folder with namespace rules | **0 of 9** (Metrics is a type-set) | **9 of 9** (or 8 + Platform as composition root, per S01) | ArchUnit rule count per context, folder tree | S02, S03* |
-| 3 | `Models` file count | brief ~218 → **242** (temporarily +6 from S04a's kernel moves, verified 2026-10-27; S04b reduces) | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
-| 4 | Files calling `GetAllByPredicate` outside persistence adapters | brief 12 → **14** (53 calls) | **0**, then `protected` | S05a guard list length | S05a–g |
+| 3 | `Models` file count | brief ~218 → **242** (2026-10-22) → **246** (2026-10-27); S04a will add 6 kernel files, S04b reduces | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
+| 4 | Files calling `GetAllByPredicate` outside persistence adapters | brief 12 → **14** (52 calls; 2026-10-22 counted a comment) | **0**, then `protected` | S05a guard list length | S05a–g |
 | 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
 | 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |

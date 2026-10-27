@@ -32,13 +32,13 @@ No ADR from S01 exists yet; S05a's "persistence adapters" therefore means
 | DoR item | Status | Evidence |
 |---|---|---|
 | 1 Problem statement, domain language | PASS | Both briefs name the smell: the documented `Models ↛ Services` gap (`ModuleBoundariesArchUnitTest.SharedKernel_DoesNotDependUpwardOnApi` carries it as prose), and an unguarded `GetAllByPredicate` / repository-in-controller leak. |
-| 2 Persona | PASS | `lighthouse-maintainer` + the CI build. |
+| 2 Persona | PASS | `lighthouse-maintainer`, who today can add a `Models → Services` dependency or a new `GetAllByPredicate` caller with nothing failing; and the CI build that will fail instead. |
 | 3 ≥ 3 domain examples, real data | PASS | Real file lists below, re-counted today. |
-| 4 UAT Given/When/Then | PASS | S04a: 3 AC, S05a: 4 AC, both G/W/T-phrased; full scenarios at DISTILL. |
+| 4 UAT Given/When/Then | PASS | S04a: 3 AC (2 G/W/T, 1 behaviour constraint); S05a: 4 AC (2 G/W/T, 2 constraints). The constraints become scenarios at DISTILL. |
 | 5 AC derived from UAT | PASS | 1:1 with each brief's Elevator Pitch "After". |
-| 6 Right-sized | PASS | S + S; carpaccio at DESIGN. |
-| 7 Technical notes + cross-cutting | PASS | See checklist below; Epic answers stand (all N/A, behaviour-free). |
-| 8 Dependencies tracked | PASS | None for either item. |
+| 6 Right-sized | PASS | Briefs size both S. DESIGN found S04a is nearer M (eight types, six slices, most of them mechanical moves); every slice is still ≤ 1 day. |
+| 7 Technical notes + cross-cutting | PASS | Cross-cutting answered for this batch in the checklist below (all N/A, with reasons). |
+| 8 Dependencies tracked | PASS | Neither item has a hard or soft dependency (graph and both briefs agree). S04a is a hard dependency of S04b; S05a of S05b–S05f. |
 | 9 Outcome KPIs, measurable | PASS | KPIs 3, 4, 5; re-counted below. |
 
 **S04a's hypothesis is disproved at pick-up** (see re-count): the gap is held open by more than the two
@@ -73,13 +73,13 @@ the exact type-level list at DESIGN):
 
 ### S05a — `GetAllByPredicate` outside `Services/Implementation/Repositories/**` (KPI 4)
 
-**14 files, 53 calls**: unchanged in total since 2026-10-22, with one shift: FeaturesController 3 → 2,
-DemoBlockedHistoryBackfillHandler 1 → 2.
+**14 files, 52 calls** (2026-10-22 said 53): FeaturesController 3 → 2. One match in
+DemoBlockedHistoryBackfillHandler is inside a comment, so it has one call, not two.
 
 TeamMetricsService 14 · PortfolioMetricsService 13 · ConnectionSaveService 5 · WorkItemService 4 ·
 WorkTrackingSystemConnectionUsage 3 · RefreshLogService 2 · DemoPercentilesBackfillHandler 2 ·
-DemoBlockedHistoryBackfillHandler 2 · OverTimeFillTarget 2 · FeaturesController 2 ·
-WriteBackTriggerService 1 · RefinementList 1 · BlockedCountSeriesBuilder 1 · TeamMetricsController 1
+OverTimeFillTarget 2 · FeaturesController 2 ·
+DemoBlockedHistoryBackfillHandler 1 · WriteBackTriggerService 1 · RefinementList 1 · BlockedCountSeriesBuilder 1 · TeamMetricsController 1
 
 ### S05a — `API` files referencing `IRepository<>` / `I*Repository` (KPI 5)
 
@@ -115,7 +115,7 @@ Epic per-Story checklist (How to pick up a Story):
 - [ ] ARCHITECTURE.md updated in the same change (§4).
 - [ ] One context at a time (N/A, because these items move no context; they add rules).
 - [ ] Terminology follows the seeded defaults (no S01 glossary yet).
-- [ ] Cross-cutting re-check: RBAC, Lighthouse-Clients, Website, usage-data event, UI sketch, each answered for this batch.
+- [x] Cross-cutting re-check, answered 2026-10-27: RBAC N/A, because no endpoint or permission changes. Lighthouse-Clients N/A, because no payload changes (enums serialise by member name). Website N/A, because nothing user-visible changes. Usage-data event N/A, because the batch is behaviour-free (DEVOPS). UI sketch N/A, because no UI is touched.
 
 ## Wave: DESIGN / [REF] Decisions (2026-10-27, propose mode, maintainer decided)
 
@@ -138,11 +138,11 @@ Paths are under `Lighthouse.Backend/Lighthouse.Backend/` (production) and `Light
 | Path | Change | Note |
 |---|---|---|
 | `Services/Interfaces/IEntity.cs`, `IConcurrencyTokenEntity.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | ~55 files touched; in `Models` it deletes a `using` |
-| `Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs` | Moved to `Models`, same namespace | integer values kept |
+| `Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | integer values kept; the namespace must change, or the rule still flags it |
 | `Services/Interfaces/Reports/ReportOwner.cs` (holds `ReportOwnerKind` too) | Moved to `Models/Reports`, namespace `Lighthouse.Backend.Models.Reports` | ~43 files |
 | `Services/Implementation/BlackoutDaysExtensions.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | 17 files |
 | `Services/Implementation/BackgroundServices/Update/UpdateType.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | ~70 files, mostly `using` lines |
-| `Models/Encryption/EncryptionKeyRing.cs`, `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs` | Edit: instance method becomes an extension | callers keep the syntax |
+| `Models/Encryption/EncryptionKeyRing.cs`, `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs` | Edit: instance method becomes an extension | callers keep the call syntax but need a `using Lighthouse.Backend.Services.Implementation.Encryption` where they lack one (16 files hold calls, tests included) |
 | `Tests/Architecture/ModuleBoundariesArchUnitTest.cs` | Edit: add `SharedKernel_DoesNotDependOnServices`, delete the prose caveat | |
 | `Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs` | Edit: drop the `UpdateType` exception and its doc paragraph | |
 | `Tests/Architecture/ProductionSource.cs` | New, internal | finds production sources, strips comments |
@@ -157,7 +157,7 @@ Paths are under `Lighthouse.Backend/Lighthouse.Backend/` (production) and `Light
 | `ModelsDoNotDependOnTheUpdateQueueArchUnitTest` | holds the only `UpdateType` exception | EXTEND (edit) |
 | `LighthouseArchitecture.Production` | shared loaded architecture | REUSE |
 | `ProductionSourceFiles` / `ProductionSourceOf` / `ProductionRoot` | private copies in `OverTimeReconstructionSeamArchUnitTest`, `SecretReadPathSourceStructureTest`, `SecretRotationWriteSurfaceTest`, `CalendarDayAnchorSeamArchUnitTest`, `JiraRouteLiteralsTest` | CREATE one shared helper rather than a sixth copy; migrating the five is out of scope |
-| Baseline comparison | existing idiom is `Is.EqualTo` on an exact list, with one message for both directions | CREATE a small comparison with separate "new offender" and "stale entry" messages, inside the new class |
+| Baseline comparison | `PostgresContainerSharingGuardTest`, `BackendTestParallelizationGuardTest` and `CalendarDayAnchorSeamArchUnitTest` already check both directions, as two tests with separate new-offender and stale-entry messages | CREATE one small comparison inside the new class, copying their message pattern; three rules sharing one helper beats six near-identical test pairs |
 | Ratchet test class | nothing existing is about repository leaks | CREATE |
 | `OverTimeReconstructionSeamArchUnitTest.OnlyTheReconciler_AsksTheFillerForDays` | the closest source-scan analogue | pattern reused, code not shared |
 
@@ -173,7 +173,7 @@ Each is at most one day. Pure-move commits change namespaces and `using` lines o
 | S04a-2 | move: `WorkTrackingSystems` (up to ~276 files, mechanical; IDE0005 or compile-driven); edit (same commit range, separate commit): add `Models/WorkTrackingSystems.cs` to `SHARED_REGEX` in `Scripts/test-selection/path-classifier.sh`, with a scenario in `test-path-classifier.sh` (added at DEVOPS) | same, plus: a change to the enum still forces the live-connector suites |
 | S04a-3 | move: `ReportOwner` + `ReportOwnerKind`; separate move: `BlackoutDaysExtensions` | same |
 | S04a-4 | move: `UpdateType`; edit: drop the exception in `ModelsDoNotDependOnTheUpdateQueueArchUnitTest` | same |
-| S04a-5 | edit: `WithLegacyDefault` becomes a `Services` extension | `Models` no longer reaches the encryption service |
+| S04a-5 | edit: `WithLegacyDefault` becomes a `Services` extension, plus the `using` in the calling files that lack it | `Models` no longer reaches the encryption service |
 | S04a-6 | edit: add `Models ↛ Services` with an empty exception list, delete the prose caveat, delete the `ARCHITECTURE.md` §4 gap note | AC: the rule fails on a new `Models → Services` dependency; the gap note is gone |
 
 Before S04a-6 goes green, write the rule first and compare ArchUnitNET's offender list with the eight types in the evidence table below; any extra type is a ninth decision.
@@ -207,6 +207,8 @@ Behaviour-freedom evidence:
 - **Serialization and reflection:** no `Type.GetType`, `AssemblyQualifiedName`, `TypeNameHandling` or `JsonPolymorphic` touches them. Enums serialize by member name, and `UpdateType` is persisted only as an int in the advisory lock key, whose member values do not change. Swagger uses short type names, and none of the moved names clashes with an existing type. DataProtection does not use type names.
 
 ## Wave: DESIGN / [REF] Changed Assumptions
+
+**S04a AC1** ("Given the two types are in the kernel") now reads as: given the seven kernel-level types are in `Models` and `WithLegacyDefault` lives in `Services`. **S05a AC3** ("controllers may not depend on…") now covers the whole `API` namespace, 23 entries; maintainer decision 2026-10-27.
 
 Quoted from `docs/feature/epic-6264-modular-monolith/slices/slice-11-s04a-close-models-services-gap.md`, as written at DISCUSS:
 
@@ -261,13 +263,14 @@ test-and-namespace work: no deployment, image, chart, configuration, migration o
 ## Wave: DEVOPS / [REF] CI pipeline outline
 
 - **Where the new rules run:** `Lighthouse.Backend.Tests/Architecture/` tests carry no `Integration` category, so
-  `ci_backend.yml`'s always-on `Category!=Integration` part runs all three new rules on every push. Locally:
+  `ci_backend.yml`'s always-on `Category!=Integration` part runs all three new rules on every push that touches the backend (`ci_changes.yml` sets `backend=true`). Locally:
   `dotnet test --filter FullyQualifiedName~Architecture` for the loop, and the CLAUDE.md filter before push.
 - **Force-full exposure (finding):** `Scripts/test-selection/path-classifier.sh` treats top-level
   `Services/Implementation/WorkTrackingConnectors/*.cs` and `Models/WorkTrackingSystemConnection*` as shared connector paths.
   The push carrying **S04a-2** touches both (the enum's old file is deleted, the entity's `using` changes), plus `using`
   lines inside the Jira, ADO, Linear and ServiceNow folders. That push therefore runs every live-connector suite. Expected
-  and accepted: one slow, more flake-exposed CI run, nothing to change in CI for it. Push the S04a moves together so it
+  and accepted: one slow, more flake-exposed CI run, nothing to change in CI for it. The classifier edit in S04a-2 is not a
+  behaviour change: it keeps today's trigger coverage of the enum, so CI wall time on later pushes is as it is today. Push the S04a moves together so it
   happens once, not per slice. Do not run the connector categories locally for a `using`-only change (the Linear key is
   shared with CI).
 - **Classifier gap (finding → DELIVER step in S04a-2):** after the move the enum lives at `Models/WorkTrackingSystems.cs`,
@@ -284,7 +287,7 @@ on frozen code. Moved files' line ranges shift, so baselines are taken by file, 
 | File | Why it is in scope | Gate |
 |---|---|---|
 | `Models/BlackoutDaysExtensions.cs` (moved) | Logic moved with its tests | Score not lower than at its old path |
-| `Models/Encryption/EncryptionKeyRing.cs` + the new `Services/Implementation/Encryption` extension | S04a-5 edits logic | ≥ 80% on the new extension; ring not lower |
+| `Models/Encryption/EncryptionKeyRing.cs` (loses `WithLegacyDefault`) + `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs` (gains the `WithLegacyDefault` extension; callers in `EncryptionKeyRingBootstrapper` and `SecretCustodyService` keep their syntax) | S04a-5 edits logic | ≥ 80% on `LegacyDefaultEncryptionKey.cs`; ring not lower |
 | `Models/Reports/ReportOwner.cs` (moved) | Value object with logic | Not lower |
 | Enums and marker interfaces (`IEntity`, `IConcurrencyTokenEntity`, `WorkTrackingSystems`, `UpdateType`) | No mutants of interest | N/A, because Stryker produces no meaningful mutants for them |
 
@@ -303,3 +306,133 @@ Quoted from this file's DESIGN slice table, S04a-2 as written at DESIGN:
 
 **Changed:** S04a-2 also extends the CI path classifier, because the enum's move would otherwise drop it from the
 connector-suite trigger. The slice row now says so.
+
+## Wave: DISTILL / [REF] Scenario list
+
+The "driving port" is the architecture test suite (`dotnet test --filter FullyQualifiedName~Architecture`); the
+observable is pass or fail and the failure message, which names the offending file or type. Behaviour-freedom is
+guarded by the existing suites staying green unmodified, so no scenario repeats it. Every new test is
+`[Ignore("pending: <slice>")]`; DELIVER un-ignores one at a time. 31 new tests. Edge or error cases: 23 of 31 (74%). Strict count of tests that prove a violation fires and is named: 5 (a new
+offender, a stale entry, both at once, and one offending fixture Model for each of the two kernel rules), plus 5 that prove a
+dependency is detected in each shape (constructor, generic argument, concrete repository, lambda, async method).
+FsCheck is not a test dependency and none was added, so the comparison and the scan are example-based.
+
+Tags are NUnit `[Category]` (`stories-6367-6369`, `slice-s05a` on the new class). Kind: H happy, E error, B boundary or edge.
+
+| Rule / unit | Scenario | Kind | Slice |
+|---|---|---|---|
+| `GetAllByPredicate` | called only from the 14 listed files, list unique | H | S05a-1 |
+| comparison | a list matching the code passes | H | S05a-1 |
+| comparison | a new offender fails, names itself and carries the fix hint | E | S05a-1 |
+| comparison | a listed entry that no longer offends fails, names itself, says delete | E | S05a-1 |
+| comparison | newcomer and stale entry at once: both named in one failure | E | S05a-1 |
+| comparison | order and repeats do not matter | B | S05a-1 |
+| comparison | nothing offending against an empty list passes | B | S05a-1 |
+| source scan | a call in code is reported as file:line | H | S05a-1 |
+| source scan | a mention in a line comment, and in a block comment, is not a call | B, B | S05a-1 |
+| source scan | the declaration on `IRepository.cs` is not a call | B | S05a-1 |
+| source scan | a call inside `Services/Implementation/Repositories/` is allowed | B | S05a-1 |
+| `API` ↛ repositories | `API` depends on a repository only in the 23 listed types, list unique | H | S05a-2 |
+| `API` ↛ repositories | a constructor parameter on `IRepository<>` is a dependency | H | S05a-2 |
+| `API` ↛ repositories | `IRepository<>` named only as a generic argument (`GetRequiredService<IRepository<Team>>()`) is a dependency | E | S05a-2 |
+| `API` ↛ repositories | a concrete repository class is a dependency | E | S05a-2 |
+| `API` ↛ repositories | a lambda asking for a repository is reported against the type that wrote it | B | S05a-2 |
+| `API` ↛ repositories | an async method asking for one is reported against the type that wrote it | B | S05a-2 |
+| `API` ↛ repositories | `IFeatureListReader` (same namespace, not a repository) and an unrelated type are not dependencies | B | S05a-2 |
+| normalisation | a real compiler-made nested type maps to its declaring type; a guard first proves such a type exists, so the test can fail | B | S05a-2 |
+| normalisation | a nested type someone wrote (`Outer+Inner`) keeps its own name; a name-stripping helper fails this | B | S05a-2 |
+| normalisation | an ordinary type name is left alone | B | S05a-2 |
+| source scan | `//` and `/*` inside a string literal (a URL) do not hide a call later on the same line | B | S05a-1 |
+| source scan | a call on the line after its receiver is reported at the call's line; a comment mentioning the name just above does not count | B | S05a-1 |
+| `Models` ↛ `Services` | `SharedKernel_DoesNotDependOnServices`, empty exception list, against the real assembly | H/E | S04a-6 |
+| `Models` ↛ `Services` | a made-up Model that reaches a made-up Services type fails the same rule and is named | E | S04a-6 |
+| `Models` ↛ `Services` | a made-up Model that stays inside the kernel passes | H | S04a-6 |
+| `Models` ↛ update queue | `UpdateType` exception removed: no Model depends on the update queue namespace | E | S04a-4 |
+| `Models` ↛ update queue | made-up offending Model fails and is named; made-up clean Model passes | E, H | S04a-4 |
+| path classifier | `Models/WorkTrackingSystems.cs` gives `connector_shared=true` | H | S04a-2, DELIVER step (below) |
+
+The two-way proof for the real rules rests on the comparison tests: the real `GetAllByPredicate` and `API` tests run
+the same `AssertMatchesBaseline`, so "a new offender fails and names itself" and "a stale entry fails and names itself"
+hold for them through the pure unit. `Models ↛ Services` and `Models ↛ update queue` have no list, so only the first
+half applies; each rule is defined once in `KernelRules` and run over the real assembly and over fixture types in the
+test assembly (a second architecture loaded from them works with ArchUnitNET).
+
+The stored integer values of `WorkTrackingSystems` are already pinned by an active test
+(`ServiceNowConnectionConfigurationTest.ServiceNow_SitsAtTheEndOfTheStoredWorkTrackingSystemOrder`, all five members),
+so none was added.
+
+Same-reduction trap: the nested-type test takes its input from reflection over fixture types the compiler made and its
+expected answer from `DeclaringType`, two independent routes, so a no-op normalisation fails it.
+
+## Wave: DISTILL / [REF] Walking skeleton
+
+N/A, because this is a behaviour-free ratchet batch with no user journey. What replaces it: the three real-code tests
+(`GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList`, `TheApi_DependsOnARepositoryOnlyInTheTypesOnTheList`,
+`SharedKernel_DoesNotDependOnServices`) each run the whole path from the source tree or the compiled assembly to a
+verdict on the real code. They are the last test un-ignored in each rule's slice, once the baseline is true.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+The source tree (read through `ProductionSource`) and the compiled production assembly (read by ArchUnitNET) are the
+only adapters, both real I/O. Real-code tests: `GetAllByPredicate_…` (source tree), `TheApi_…` and `SharedKernel_…`
+(assembly). The synthetic scenarios use made-up source text and fixture types compiled into the test assembly
+(`RatchetFixtures`, loaded into their own architecture model, never mixed with `LighthouseArchitecture.Production`).
+They cannot model a string or alias fooling the textual scan (accepted at DESIGN), nor ArchUnitNET's handling of
+production types beyond what the fixtures reproduce.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+All marked `// SCAFFOLD: true`, all throw `AssertionException` (RED, not BROKEN), all compile.
+
+| Scaffold | Where | Built in |
+|---|---|---|
+| `ProductionSource.Files()`, `ProductionSource.WithoutComments()` (the `ProductionSourceFile` record is real) | `Architecture/ProductionSource.cs`, new, internal | S05a-1 |
+| `AssertMatchesBaseline(actual, baseline, fixHint)` | private static in `RepositoryLeakRatchetArchUnitTest` | S05a-1 |
+| `GetAllByPredicateCallSites(sources)`, returns `path:line` | same | S05a-1 |
+| `RepositoryDependentsIn(architecture, namespacePattern)`, returns normalised full type names | same | S05a-2 |
+| `DeclaringTypeOf(typeFullName)`: compiler-made nested names map to the declaring type, user-written nested types keep their name | same | S05a-2 |
+| `KernelRules.ModelsDoNotDependOnServices(models, services)` and `KernelRules.ModelsDoNotDependOnTheUpdateQueue(models, updateQueue)`; return the rule with its `Because` text; the namespace patterns are the constants already on the class | `Architecture/KernelRules.cs`, new, internal | S04a-6, S04a-4 |
+
+`SharedKernel_DoesNotDependOnServices` and the update-queue test now call the `KernelRules` factories, so they are red
+through the scaffold; with a probe body they fail on the real code as listed in `red-classification.md`. The fixture
+types (`Lighthouse.Backend.Models.KernelFixtures.*`, `Lighthouse.Backend.Services.KernelFixtures.AServiceType`) are final.
+The two baseline lists (14 files, 23 types) are already filled in from today's tree, and the
+`RatchetFixtures` types are final. The helpers are private statics in the test class; if DELIVER prefers a reusable
+type, moving `AssertMatchesBaseline` out is a refactor with the tests unchanged.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/`, as DESIGN placed it: new `RepositoryLeakRatchetArchUnitTest.cs`
+`ProductionSource.cs`, `KernelRules.cs` and `KernelRulesCatchANewOffenderArchUnitTest.cs`; edits to `ModuleBoundariesArchUnitTest.cs`
+and `ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs`.
+Pending reasons have the form `pending: <slice id>`. RED evidence: `distill/red-classification.md`. At hand-off
+`dotnet test --filter FullyQualifiedName~Architecture` is 238 passed, 31 skipped, 0 failed.
+
+## Wave: DISTILL / [REF] UI sketches
+
+N/A, because nothing user-visible changes.
+
+## Wave: DISTILL / [REF] Open items for DELIVER
+
+- **S04a-2, classifier scenario (not scaffolded):** `Scripts/test-selection/test-path-classifier.sh` is a flat list of
+  `assert` lines with no skip idiom, so a pending scenario would turn the script red. In the S04a-2 commit range add
+  `diff_work_tracking_systems=$'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystems.cs'` and
+  `assert "work-tracking-systems: shared=true" "$(classify_shared "$diff_work_tracking_systems")" "true"` next to the
+  "shared models" scenario. Add the assert first and see it fail, then extend `SHARED_REGEX`.
+- **S04a-4:** once the exception is gone from `TheDomainModel_KnowsNothingOfTheUpdateItRunsUnder`, it and the new
+  `…NotEvenTheNameOfAnUpdateType` are the same rule; delete one. The doc paragraph about `UpdateType` goes too.
+- **S04a-4, one rule, one definition:** replace the active test (it re-declares its own patterns and keeps
+  `AreNot(typeof(UpdateType))`) with the `KernelRules.ModelsDoNotDependOnTheUpdateQueue()` one and delete the duplicate. The
+  active test stays untouched until `UpdateType` has moved, so it stays green.
+- **S04a-6:** the offender list was compared at DISTILL (with a probe body): it names exactly the eight types DESIGN lists,
+  so no ninth decision today; re-check at the rule commit. Put the rule's `Because` text in the `KernelRules` factory, and
+  delete the prose caveat in `SharedKernel_DoesNotDependUpwardOnApi`'s `.Because(...)`.
+- **S05a-1:** implement `ProductionSource` (the comment-blanking idea is in `CalendarDayAnchorSeamArchUnitTest`; keep
+  line breaks so line numbers hold). The scan must fail when it finds no sources.
+- **S05a-2:** spike first how ArchUnitNET attributes lambda display classes and async state machines; the fixtures cover
+  both. If it attributes them to the nested type, `DeclaringTypeOf` maps them; if it drops them, the fallback is a
+  source scan (DESIGN risk). Confirm the `Services.Implementation.Repositories` branch is empty for `API` today.
+- **Whole batch:** the negative tests (`…IsNotACall`, `…IsNotADependency`, `…Passes`) are red today only through the
+  stub; run each once against a deliberately over-reporting helper to see it fail.
+- **Environmental:** in a worktree 2 Licensing tests fail without the gitignored licence fixture; the live-connector
+  categories are not run.
