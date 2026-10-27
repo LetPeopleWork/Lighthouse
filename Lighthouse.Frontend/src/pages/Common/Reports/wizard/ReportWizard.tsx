@@ -19,6 +19,7 @@ import {
 import { reportFailedNavigation } from "../../../../utils/navigation";
 import { queryStatusOf } from "../../MetricsView/widgetStatus";
 import {
+	ALL_REPORTS_QUERY_KEY,
 	reportPathOf,
 	reportQueryKeyOf,
 	reportsQueryKeyOf,
@@ -150,9 +151,10 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			name: "ReportCreated",
 			reportTemplate: usageDataReportTemplateFor(chosen),
 		});
-		await queryClient.invalidateQueries({
-			queryKey: reportsQueryKeyOf(owner),
-		});
+		await Promise.all([
+			queryClient.invalidateQueries({ queryKey: reportsQueryKeyOf(owner) }),
+			queryClient.invalidateQueries({ queryKey: ALL_REPORTS_QUERY_KEY }),
+		]);
 		onClose();
 		reportFailedNavigation(navigate(reportPathOf(owner, reportId)));
 	};
@@ -178,6 +180,9 @@ const ReportWizard: React.FC<Readonly<ReportWizardProps>> = ({
 			.catch(() => undefined);
 		queryClient
 			.invalidateQueries({ queryKey: reportsQueryKeyOf(owner) })
+			.catch(() => undefined);
+		queryClient
+			.invalidateQueries({ queryKey: ALL_REPORTS_QUERY_KEY })
 			.catch(() => undefined);
 		onClose();
 	};

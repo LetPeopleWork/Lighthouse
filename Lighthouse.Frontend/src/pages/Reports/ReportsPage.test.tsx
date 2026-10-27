@@ -27,10 +27,13 @@ import {
 } from "../../tests/BulkReportsTestKit";
 import {
 	A_LATER_TYPE,
+	aRefusal,
 	aReportService,
 	CANNOT_BE_REBUILT,
 	defaultTerms,
+	NO_LONGER_EXISTS,
 	NOT_SUPPORTED_IN_THIS_VERSION,
+	theEngagementStartReport,
 } from "../../tests/ReportsTestKit";
 
 /**
@@ -317,5 +320,72 @@ describe("The icons on each row", () => {
 		expect(deleteReport).toHaveBeenCalledTimes(1);
 		await waitFor(() => expect(theReportNamesListed()).toEqual([QUARTER]));
 		expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument();
+	});
+});
+
+describe("Editing from a row", () => {
+	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
+	it(`a saved edit shows the report's new name on the list`, async () => {
+		const renamed = "Since August";
+		const read = theEngagementStartReport({
+			id: zenithsQuarter.id,
+			name: QUARTER,
+			ownerId: ZENITH.id,
+		});
+		const getAllReports = vi
+			.fn()
+			.mockResolvedValueOnce(everyReport(zenithsQuarter))
+			.mockResolvedValue(everyReport({ ...zenithsQuarter, name: renamed }));
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports,
+				getReport: vi.fn().mockResolvedValue(read),
+				editReport: vi.fn().mockResolvedValue({ ...read, name: renamed }),
+			}),
+		});
+		await theReportsTable();
+
+		await user.click(
+			within(rowOf(QUARTER, ZENITH)).getByRole("button", {
+				name: `Edit ${QUARTER}`,
+			}),
+		);
+		const wizard = await screen.findByRole("dialog");
+		await user.click(
+			await within(wizard).findByRole("button", { name: "Next" }),
+		);
+		const name = await within(wizard).findByRole("textbox", { name: "Name" });
+		await user.clear(name);
+		await user.type(name, renamed);
+		await user.click(within(wizard).getByRole("button", { name: "Save" }));
+
+		await waitFor(() => expect(theReportNamesListed()).toEqual([renamed]));
+	});
+
+	// @us-01 @slice-01 @error @contract-shape:bounded-change
+	it(`Edit on a report that no longer exists says so and takes its row off the list`, async () => {
+		const getAllReports = vi
+			.fn()
+			.mockResolvedValueOnce(everyReport(zenithsQuarter, gravitysQuarter))
+			.mockResolvedValue(everyReport(gravitysQuarter));
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports,
+				getReport: vi.fn().mockRejectedValue(aRefusal(404, "not-found")),
+			}),
+		});
+		await theReportsTable();
+
+		await user.click(
+			within(rowOf(QUARTER, ZENITH)).getByRole("button", {
+				name: `Edit ${QUARTER}`,
+			}),
+		);
+
+		expect(await screen.findByText(NO_LONGER_EXISTS)).toBeVisible();
+		await waitFor(() => expect(theReportNamesListed()).toEqual([QUARTER]));
+		expect(
+			screen.queryByRole("link", { name: ownerLinkNameOf(ZENITH) }),
+		).toBeNull();
 	});
 });

@@ -5,7 +5,11 @@ import { useContext, useState } from "react";
 import type { IReport, IReportOwner } from "../../../models/Reports/Report";
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import { reportQueryKeyOf, reportsQueryKeyOf } from "./reportOwner";
+import {
+	ALL_REPORTS_QUERY_KEY,
+	reportQueryKeyOf,
+	reportsQueryKeyOf,
+} from "./reportOwner";
 import ReportWizard from "./wizard/ReportWizard";
 import {
 	COULD_NOT_LOAD_REPORT,
@@ -56,9 +60,12 @@ export const useReportEditing = (
 			}
 			setFailure(NO_LONGER_EXISTS);
 			queryClient.removeQueries({ queryKey, exact: true });
-			await queryClient.invalidateQueries({
-				queryKey: reportsQueryKeyOf(reportOwner),
-			});
+			await Promise.all([
+				queryClient.invalidateQueries({
+					queryKey: reportsQueryKeyOf(reportOwner),
+				}),
+				queryClient.invalidateQueries({ queryKey: ALL_REPORTS_QUERY_KEY }),
+			]);
 		} finally {
 			setReadingId(undefined);
 		}
