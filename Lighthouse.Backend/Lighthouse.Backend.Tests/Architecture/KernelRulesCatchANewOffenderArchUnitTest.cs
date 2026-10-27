@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore("pending: S04a-4")]
         public void AModelThatReachesIntoTheUpdateQueue_FailsTheUpdateQueueRuleAndIsNamed()
         {
             var rule = KernelRules.ModelsDoNotDependOnTheUpdateQueue(OffendingModels);
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore("pending: S04a-4")]
         public void AModelThatStaysInsideTheKernel_PassesTheUpdateQueueRule()
         {
             var rule = KernelRules.ModelsDoNotDependOnTheUpdateQueue(CleanModels);

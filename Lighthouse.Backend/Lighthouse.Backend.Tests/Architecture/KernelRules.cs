@@ -1,4 +1,5 @@
 using ArchUnitNET.Fluent;
+using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -21,6 +22,12 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>No type in the Models reaches a type in the update queue's namespace, not even its enum.</summary>
         public static IArchRule ModelsDoNotDependOnTheUpdateQueue(string models = TheModels, string updateQueue = TheUpdateQueue)
-            => throw new AssertionException("SCAFFOLD: KernelRules.ModelsDoNotDependOnTheUpdateQueue is not built yet");
+            => Types().That().ResideInNamespaceMatching(models)
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(updateQueue))
+                .Because(
+                    "stopping a forecast is the update's business: it hands the forecast a token to stop on. A " +
+                    "Model that reads the update queue's own state, or even names one of its types, decides " +
+                    "things by which update it runs under, which nothing testing the Model on its own would " +
+                    "ever see.");
     }
 }
