@@ -3218,3 +3218,6 @@ baseline's during-round figure (36.8 s) came from its disturbed first run, so it
   save-state indicator. A new or copied Portfolio is gated by the create answer, not the edit answer.
 - **At the free limit, the create wizards' Create is disabled with the premium tooltip** (maintainer, 2026-10-26),
   like "+ Add Team" / "+ Add Portfolio", with the same "Free users can only create up to …" wording.
+- **Slice 06 runs at `standard`** (maintainer, 2026-10-27): sonnet crafter, haiku reviewer, refactor pass; the whole
+  slice in AFK mode with no hold between steps. The note's copy and placement stay as settled at DISTILL (decisions
+  8–10); nothing is re-sketched.
