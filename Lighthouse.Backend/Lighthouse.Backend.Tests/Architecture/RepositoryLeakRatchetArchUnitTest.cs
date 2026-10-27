@@ -6,7 +6,6 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.Architecture.RatchetFixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -94,9 +93,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string[] TheWrappedCallSite = ["Services/Implementation/Wrapped.cs:7"];
 
-        private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => ReadModule(typeof(ConstructorDependent).Assembly));
+        private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(ConstructorDependent).Assembly));
 
-        private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => ReadModule(typeof(Team).Assembly));
+        private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Team).Assembly));
 
         private static readonly Lazy<List<string>> FixtureDependents = new(() => RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace));
 
@@ -332,7 +331,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             foreach (var type in nested)
             {
-                Assert.That(DeclaringTypeOf(type.FullName!), Is.EqualTo(type.DeclaringType!.FullName), type.FullName);
+                Assert.That(IlDependencies.DeclaringTypeOf(type.FullName!), Is.EqualTo(type.DeclaringType!.FullName), type.FullName);
             }
         }
 
@@ -341,13 +340,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ANestedTypeSomeoneWrote_KeepsItsOwnName()
         {
-            Assert.That(DeclaringTypeOf(typeof(OuterWithAnInnerType.Inner).FullName!), Is.EqualTo(typeof(OuterWithAnInnerType.Inner).FullName));
+            Assert.That(IlDependencies.DeclaringTypeOf(typeof(OuterWithAnInnerType.Inner).FullName!), Is.EqualTo(typeof(OuterWithAnInnerType.Inner).FullName));
         }
 
         [Test]
         public void AnOrdinaryTypeName_IsLeftAlone()
         {
-            Assert.That(DeclaringTypeOf(typeof(ConstructorDependent).FullName!), Is.EqualTo(typeof(ConstructorDependent).FullName));
+            Assert.That(IlDependencies.DeclaringTypeOf(typeof(ConstructorDependent).FullName!), Is.EqualTo(typeof(ConstructorDependent).FullName));
         }
 
         // ---- The two-way comparison and the two scans it is fed from ----
@@ -397,63 +396,15 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Read from the compiled IL rather than from ArchUnitNET's dependency graph: in a Release build,
         // which is what CI tests, ArchUnitNET loses a repository used only inside an async method.
-        // Lambdas and async methods compile to nested types, so those are walked too and reported
-        // against the type that wrote them.
         private static List<string> RepositoryDependentsIn(ModuleDefinition module, string namespacePattern)
-            => module.Types
-                .Where(type => Regex.IsMatch(type.Namespace, namespacePattern, RegexOptions.None, TimeSpan.FromSeconds(1)))
-                .SelectMany(TypeAndItsNestedTypes)
-                .Where(type => ReferencedTypes(type).Any(IsRepository))
-                .Select(type => DeclaringTypeOf(type.FullName.Replace('/', '+')))
-                .Distinct(StringComparer.Ordinal)
+            => IlDependencies.DependentsIn(module, namespacePattern, IsRepository)
+                .Select(dependent => dependent.TypeName)
                 .ToList();
-
-        private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
-            => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
-
-        private static IEnumerable<TypeReference> ReferencedTypes(TypeDefinition type)
-            => type.Interfaces.Select(implemented => implemented.InterfaceType)
-                .Prepend(type.BaseType)
-                .OfType<TypeReference>()
-                .Concat(type.Fields.Select(field => field.FieldType))
-                .Concat(type.Methods.SelectMany(TypesInMethod))
-                .SelectMany(Unwrapped);
-
-        private static IEnumerable<TypeReference> TypesInMethod(MethodDefinition method)
-            => method.HasBody
-                ? TypesInSignature(method)
-                    .Concat(method.Body.Variables.Select(variable => variable.VariableType))
-                    .Concat(method.Body.Instructions.SelectMany(TypesInOperand))
-                : TypesInSignature(method);
-
-        private static IEnumerable<TypeReference> TypesInSignature(MethodReference method)
-            => [method.ReturnType, .. method.Parameters.Select(parameter => parameter.ParameterType)];
-
-        private static IEnumerable<TypeReference> TypesInOperand(Instruction instruction)
-            => instruction.Operand switch
-            {
-                TypeReference type => [type],
-                GenericInstanceMethod generic => [generic.DeclaringType, .. generic.GenericArguments, .. TypesInSignature(generic)],
-                MethodReference method => [method.DeclaringType, .. TypesInSignature(method)],
-                FieldReference field => [field.DeclaringType, field.FieldType],
-                _ => [],
-            };
-
-        private static IEnumerable<TypeReference> Unwrapped(TypeReference type)
-            => type switch
-            {
-                GenericInstanceType generic => [generic.ElementType, .. generic.GenericArguments.SelectMany(Unwrapped)],
-                TypeSpecification wrapper => Unwrapped(wrapper.ElementType),
-                _ => [type],
-            };
 
         // The repositories namespace under Services.Interfaces also holds service contracts that are
         // not repositories, so a contract counts by its name; a concrete repository counts by where it lives.
         private static bool IsRepository(TypeReference type)
-            => NamespaceOf(type) == ConcreteRepositoriesNamespace || RepositoryContractName().IsMatch(WithoutGenericArity(type.Name));
-
-        private static string NamespaceOf(TypeReference type)
-            => type.DeclaringType is null ? type.Namespace : NamespaceOf(type.DeclaringType);
+            => IlDependencies.NamespaceOf(type) == ConcreteRepositoriesNamespace || RepositoryContractName().IsMatch(WithoutGenericArity(type.Name));
 
         private static string WithoutGenericArity(string typeName)
         {
@@ -464,18 +415,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [GeneratedRegex(@"^I\w*Repository$")]
         private static partial Regex RepositoryContractName();
-
-        private static ModuleDefinition ReadModule(Assembly assembly)
-            => ModuleDefinition.ReadModule(assembly.Location, new ReaderParameters { InMemory = true });
-
-        // The compiler names the nested types it makes (lambda closures, async state machines) starting
-        // with '<', which no hand-written type can, so the name is cut where the first such level begins.
-        private static string DeclaringTypeOf(string typeFullName)
-        {
-            var firstCompilerMadeLevel = typeFullName.IndexOf("+<", StringComparison.Ordinal);
-
-            return firstCompilerMadeLevel < 0 ? typeFullName : typeFullName[..firstCompilerMadeLevel];
-        }
     }
 }
 

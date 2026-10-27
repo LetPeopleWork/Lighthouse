@@ -1,5 +1,5 @@
-using ArchUnitNET.NUnit;
-using ArchitectureModel = ArchUnitNET.Domain.Architecture;
+using Lighthouse.Backend.Services.Implementation;
+using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -14,12 +14,21 @@ namespace Lighthouse.Backend.Tests.Architecture
     [Category("slice-02")]
     public class ModelsDoNotDependOnTheUpdateQueueArchUnitTest
     {
-        private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
+        private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
+
+        [OneTimeTearDown]
+        public void DisposeModule()
+        {
+            if (ProductionModule.IsValueCreated)
+            {
+                ProductionModule.Value.Dispose();
+            }
+        }
 
         [Test]
         public void TheDomainModel_KnowsNothingOfTheUpdateQueue_NotEvenTheNameOfAnUpdateType()
         {
-            KernelRules.ModelsDoNotDependOnTheUpdateQueue().Check(Architecture);
+            KernelRules.ModelsDoNotDependOnTheUpdateQueue(ProductionModule.Value).Check();
         }
     }
 }

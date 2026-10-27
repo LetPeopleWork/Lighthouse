@@ -1,9 +1,9 @@
-using ArchUnitNET.Loader;
-using ArchUnitNET.NUnit;
+using Lighthouse.Backend.Models.KernelFixtures.Clean;
 using Lighthouse.Backend.Models.KernelFixtures.Offending;
+using Lighthouse.Backend.Models.KernelFixtures.OffendingInAnAsyncBody;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures;
 using Lighthouse.Backend.Services.KernelFixtures;
-using ArchitectureModel = ArchUnitNET.Domain.Architecture;
+using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -21,18 +21,27 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string CleanModels = @"^Lighthouse\.Backend\.Models\.KernelFixtures\.Clean(\.|$)";
 
+        private const string AsyncOnlyModels = @"^Lighthouse\.Backend\.Models\.KernelFixtures\.OffendingInAnAsyncBody(\.|$)";
+
         private const string FixtureServices = @"^Lighthouse\.Backend\.Services\.KernelFixtures(\.|$)";
 
-        private static readonly Lazy<ArchitectureModel> FixtureArchitecture = new(() => new ArchLoader()
-            .LoadAssemblies(typeof(OffendingModel).Assembly)
-            .Build());
+        private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(OffendingModel).Assembly));
+
+        [OneTimeTearDown]
+        public void DisposeModule()
+        {
+            if (FixtureModule.IsValueCreated)
+            {
+                FixtureModule.Value.Dispose();
+            }
+        }
 
         [Test]
         public void AModelThatReachesIntoServices_FailsTheKernelRuleAndIsNamed()
         {
-            var rule = KernelRules.ModelsDoNotDependOnServices(OffendingModels, FixtureServices);
+            var verdict = KernelRules.ModelsDoNotDependOnServices(FixtureModule.Value, OffendingModels, FixtureServices);
 
-            var failure = Assert.Throws<AssertionException>(() => rule.Check(FixtureArchitecture.Value));
+            var failure = Assert.Throws<AssertionException>(verdict.Check);
 
             Assert.That(failure!.Message, Does.Contain(typeof(OffendingModel).FullName));
         }
@@ -40,17 +49,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AModelThatStaysInsideTheKernel_PassesTheKernelRule()
         {
-            var rule = KernelRules.ModelsDoNotDependOnServices(CleanModels, FixtureServices);
+            var verdict = KernelRules.ModelsDoNotDependOnServices(FixtureModule.Value, CleanModels, FixtureServices);
 
-            Assert.DoesNotThrow(() => rule.Check(FixtureArchitecture.Value));
+            Assert.That(verdict.Examined, Does.Contain(typeof(CleanModel).FullName), "the rule must have looked at the clean Model, or passing proves nothing");
+            Assert.DoesNotThrow(verdict.Check);
         }
 
         [Test]
         public void AModelThatReachesIntoTheUpdateQueue_FailsTheUpdateQueueRuleAndIsNamed()
         {
-            var rule = KernelRules.ModelsDoNotDependOnTheUpdateQueue(OffendingModels);
+            var verdict = KernelRules.ModelsDoNotDependOnTheUpdateQueue(FixtureModule.Value, OffendingModels);
 
-            var failure = Assert.Throws<AssertionException>(() => rule.Check(FixtureArchitecture.Value));
+            var failure = Assert.Throws<AssertionException>(verdict.Check);
 
             Assert.That(
                 failure!.Message,
@@ -59,11 +69,32 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void AModelThatReachesIntoServicesOnlyInsideAnAsyncMethod_FailsTheKernelRuleAndIsNamed()
+        {
+            var verdict = KernelRules.ModelsDoNotDependOnServices(FixtureModule.Value, AsyncOnlyModels, FixtureServices);
+
+            var failure = Assert.Throws<AssertionException>(verdict.Check);
+
+            Assert.That(failure!.Message, Does.Contain(typeof(ServicesOnlyInAnAsyncBodyModel).FullName));
+        }
+
+        [Test]
+        public void AModelThatReachesIntoTheUpdateQueueOnlyInsideAnAsyncMethod_FailsTheUpdateQueueRuleAndIsNamed()
+        {
+            var verdict = KernelRules.ModelsDoNotDependOnTheUpdateQueue(FixtureModule.Value, AsyncOnlyModels);
+
+            var failure = Assert.Throws<AssertionException>(verdict.Check);
+
+            Assert.That(failure!.Message, Does.Contain(typeof(UpdateQueueOnlyInAnAsyncBodyModel).FullName));
+        }
+
+        [Test]
         public void AModelThatStaysInsideTheKernel_PassesTheUpdateQueueRule()
         {
-            var rule = KernelRules.ModelsDoNotDependOnTheUpdateQueue(CleanModels);
+            var verdict = KernelRules.ModelsDoNotDependOnTheUpdateQueue(FixtureModule.Value, CleanModels);
 
-            Assert.DoesNotThrow(() => rule.Check(FixtureArchitecture.Value));
+            Assert.That(verdict.Examined, Does.Contain(typeof(CleanModel).FullName), "the rule must have looked at the clean Model, or passing proves nothing");
+            Assert.DoesNotThrow(verdict.Check);
         }
     }
 }
@@ -92,6 +123,27 @@ namespace Lighthouse.Backend.Models.KernelFixtures.Offending
         public AServiceType Service { get; } = service;
 
         public AFixtureUpdateKind Kind { get; } = kind;
+    }
+}
+
+namespace Lighthouse.Backend.Models.KernelFixtures.OffendingInAnAsyncBody
+{
+    internal sealed class ServicesOnlyInAnAsyncBodyModel
+    {
+        public async Task<int> AnswerAsync()
+        {
+            await Task.Yield();
+            return new AServiceType().Answer;
+        }
+    }
+
+    internal sealed class UpdateQueueOnlyInAnAsyncBodyModel
+    {
+        public async Task<int> CountAsync()
+        {
+            await Task.Yield();
+            return Enum.GetValues<AFixtureUpdateKind>().Length;
+        }
     }
 }
 

@@ -1,5 +1,7 @@
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
 using ArchUnitNET.NUnit;
+using Lighthouse.Backend.Services.Implementation;
+using Mono.Cecil;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -43,6 +45,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
+        private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
+
         private static readonly GivenTypesConjunctionWithDescription WorkTrackingIntegrationModule =
             Types().That().ResideInNamespaceMatching(WorkTrackingIntegrationPattern).As("WorkTracking-Integration");
 
@@ -67,14 +71,23 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly GivenTypesConjunctionWithDescription PlatformPersistenceModule =
             Types().That().ResideInNamespaceMatching(PlatformPersistencePattern).As("Platform/Persistence");
 
+        [OneTimeTearDown]
+        public void DisposeModule()
+        {
+            if (ProductionModule.IsValueCreated)
+            {
+                ProductionModule.Value.Dispose();
+            }
+        }
+
         [Test]
         public void ServiceLayer_DoesNotDependOnApiLayer()
         {
             Types().That().ResideInNamespaceMatching(ServiceLayerPattern)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApiLayerPattern))
                 .Because(
-                    "ADR-027 D3/D5 hexagonal seam: the application core (Services.Implementation + Interfaces) " +
-                    "must not depend on the API driving adapter; DTOs the core returns live in Models.* not API.DTO.")
+                    "the application core (Services.Implementation and Interfaces) is driven by the API, so it " +
+                    "must not depend back on it; the DTOs the core returns live in the Models, not in API.DTO.")
                 .Check(Architecture);
         }
 
@@ -92,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void SharedKernel_DoesNotDependOnServices()
         {
-            KernelRules.ModelsDoNotDependOnServices().Check(Architecture);
+            KernelRules.ModelsDoNotDependOnServices(ProductionModule.Value).Check();
         }
 
         [Test]
@@ -155,6 +168,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(Types().That().ResideInNamespaceMatching(StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
+                foreach (var kernelPattern in new[] { KernelRules.TheModels, KernelRules.TheServices, KernelRules.TheUpdateQueue })
+                {
+                    Assert.That(IlDependencies.TypesIn(ProductionModule.Value, kernelPattern), Is.Not.Empty, kernelPattern);
+                }
+
                 foreach (var kernelType in ParentPlacementKernelTypes)
                 {
                     Assert.That(Types().That().HaveFullName(kernelType).GetObjects(Architecture), Is.Not.Empty, kernelType);
