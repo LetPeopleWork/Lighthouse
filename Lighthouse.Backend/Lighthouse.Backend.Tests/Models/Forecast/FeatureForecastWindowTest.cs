@@ -34,13 +34,11 @@ namespace Lighthouse.Backend.Tests.Models.Forecast
         }
 
         [Test]
-        public void A_start_forecast_is_sized_by_the_same_rule_as_a_completion_forecast()
+        public void A_day_count_reads_twice_that_plus_the_headroom()
         {
-            var start = new StartForecast(new Dictionary<int, int> { [12] = Runs }, DateTime.UtcNow);
+            var end = FeatureForecastWindow.EndFor(Today, 12);
 
-            var end = FeatureForecastWindow.EndFor(Today, start);
-
-            Assert.That(end, Is.EqualTo(Today.AddDays((12 * 2) + TwoWeeksOfHeadroom)));
+            Assert.That(end, Is.EqualTo(Today.AddDays(38)));
         }
 
         [Test]

@@ -332,7 +332,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             var windowStart = clock.TodayAsUtcMidnight;
             var blackoutPeriods = blackoutPeriodService.GetEffectiveBlackoutDays(
-                windowStart, FeatureForecastWindow.EndFor(windowStart, forecast));
+                windowStart, FeatureForecastWindow.EndFor(windowStart, daysAway));
 
             return Format(mapping, blackoutPeriods.ProjectWorkingDays(windowStart, daysAway));
         }

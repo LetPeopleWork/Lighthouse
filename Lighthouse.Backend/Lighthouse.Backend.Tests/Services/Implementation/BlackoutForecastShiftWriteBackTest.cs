@@ -148,6 +148,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(capturedUpdates.Single().Value, Is.EqualTo("2026-03-24"));
         }
 
+        [Test]
+        public void ForecastWriteBackPlan_50thWrittenWhile95thIsBeyondTheHorizon_ReadsBlackoutsOnlyAsFarAsTheDayBeingWritten()
+        {
+            var requestedWindows = new List<(DateTime Start, DateTime End)>();
+            blackoutPeriodServiceMock
+                .Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Callback<DateTime, DateTime>((start, end) => requestedWindows.Add((start, end)))
+                .Returns([]);
+            var portfolio = PortfolioWithForecastedFeature(
+                new WhenForecast(new Dictionary<int, int> { [WorkingDaysToCompletion] = 60 }) { TotalTrials = 100, HasSufficientData = true },
+                WriteBackValueSource.ForecastPercentile50);
+
+            capturedUpdates = [.. subject.ResolveForecastWriteBackForPortfolio(portfolio)];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(capturedUpdates.Single().Value, Is.EqualTo("2026-03-20"));
+                Assert.That(requestedWindows.Single(), Is.EqualTo((Today, new DateTime(2026, 3, 10, 0, 0, 0, DateTimeKind.Utc).AddDays(34))),
+                    "10 working days away: 10 * 2 + 14 calendar days from today, not the 5 years the 95th stands for");
+            }
+        }
+
         private static WhenForecast DeterministicForecast(int workingDays)
         {
             var simulation = new SimulationResult();
@@ -157,12 +179,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
 
         private static Portfolio PortfolioWithForecastedFeature(int workingDays)
         {
+            return PortfolioWithForecastedFeature(DeterministicForecast(workingDays), WriteBackValueSource.ForecastPercentile85);
+        }
+
+        private static Portfolio PortfolioWithForecastedFeature(WhenForecast forecast, WriteBackValueSource valueSource)
+        {
             var connection = new WorkTrackingSystemConnection { Name = "Connection" };
             var additionalField = new AdditionalFieldDefinition { Reference = FieldReference, DisplayName = "Forecast" };
             connection.AdditionalFieldDefinitions.Add(additionalField);
             connection.WriteBackMappingDefinitions.Add(new WriteBackMappingDefinition
             {
-                ValueSource = WriteBackValueSource.ForecastPercentile85,
+                ValueSource = valueSource,
                 AppliesTo = WriteBackAppliesTo.Portfolio,
                 AdditionalFieldDefinition = additionalField,
                 TargetValueType = WriteBackTargetValueType.Date,
@@ -176,7 +203,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 ReferenceId = "FEAT-1",
                 StateCategory = StateCategories.Doing,
             };
-            feature.SetFeatureForecasts([DeterministicForecast(workingDays)]);
+            feature.SetFeatureForecasts([forecast]);
 
             var portfolio = new Portfolio { Name = "Test Portfolio", WorkTrackingSystemConnection = connection };
             portfolio.UpdateFeatures([feature]);
