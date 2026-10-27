@@ -445,3 +445,36 @@ N/A, because nothing user-visible changes.
 | S05a-2 | thorough | opus | sonnet |
 
 Pace: all eight slices, refactor + review after each, then final review and mutation, then hold for the maintainer's review. Nothing is pushed.
+
+## Wave: DELIVER / [REF] ArchUnitNET spike finding (02-04)
+
+Probed with a throwaway test (not committed), the fixtures loaded into their own architecture and the production
+architecture loaded separately. Run in both build configurations, because CI runs `dotnet test -c Release`.
+
+- **a. Lambda.** ArchUnitNET loads no compiler-made types at all: zero types whose name holds `<`, in the fixture
+  architecture and in the whole production architecture. The lambda's edge is folded onto the type that wrote it:
+  `RatchetFixtures.LambdaDependent` reports `BodyTypeMember -> IRepository`1`, in Debug and in Release.
+- **b. Async method.** In Debug the state machine's edge is folded onto the writing type too:
+  `RatchetFixtures.AsyncDependent` reports `BodyTypeMember -> IRepository`1`. **In Release the edge is gone**:
+  `AsyncDependent` reports no repository dependency at all. A dependency written only inside an `async` body is
+  invisible to ArchUnitNET in the build CI runs (the ledger's "edges inside `async` bodies exist in Debug only").
+- **c. Generic argument.** Yes: `RatchetFixtures.GenericArgumentDependent` (`GetRequiredService<IRepository<Team>>()`)
+  reports `BodyTypeMember -> IRepository`1`, in Debug and in Release.
+- **d. Real code.** `API.ApiHelpers.GetEntityByIdAndExecuteActionInternal` is `async` and calls `repo.GetById(id)`. In
+  Debug ArchUnitNET reports `MethodCall -> IRepository`1` on `ApiHelpers`, origin member that method; in Release that
+  edge disappears and only the parameter's `MethodSignature` edge is left. The fixture result holds on real code.
+  Today all 23 API types also carry a constructor or parameter edge, so the Release set is still the 23 by luck, not
+  by design. No API type depends on anything in `Services.Implementation.Repositories`; the hits in
+  `Services.Interfaces.Repositories` beyond the list are `IUserProfileLookup` (`EmbedEntryController`) and
+  `FeatureParent` (`FeatureListRows`), service-contract types the rule leaves out.
+- **Separator.** ArchUnitNET writes a nested type as `Outer+Inner` (`RatchetFixtures.OuterWithAnInnerType+Inner`), the
+  same `+` as reflection's `FullName`; `DeclaringTypeOf` splits on `+`.
+- **Naming.** The type is `Lighthouse.Backend.API.ApiHelpers` (file `APIHelpers.cs`); the list says `…API.APIHelpers`,
+  which the ordinal comparison will report as both a newcomer and a stale entry. Fix the entry in 02-05.
+
+**Route for 02-05: the DESIGN FALLBACK, a source scan through `ProductionSource`** for the same 23-entry list, because
+in the Release build CI runs, ArchUnitNET cannot see a repository asked for inside an `async` method, and a ratchet that
+only works in Debug lets a newcomer through in CI. The pending fixture tests call
+`RepositoryDependentsIn(ArchitectureModel, …)` on compiled fixtures, so they need re-shaping for source text before
+02-05 starts; that is a test-design change for the acceptance designer. `DeclaringTypeOf` stays built and tested, but
+the source-scan route does not need it.

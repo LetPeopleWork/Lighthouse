@@ -314,7 +314,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // The nested type used here is a real one the compiler made, so the test fails if the
         // normalisation does nothing: the input differs from the expected answer.
         [Test]
-        [Ignore(PendingApiDependency)]
         public void ACompilerMadeNestedType_NormalisesToItsDeclaringType()
         {
             var nested = typeof(LambdaDependent).GetNestedTypes(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
@@ -333,14 +332,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         // A type the code's author nested on purpose is a type in its own right; only the names the compiler
         // makes stand for the method that caused them.
         [Test]
-        [Ignore(PendingApiDependency)]
         public void ANestedTypeSomeoneWrote_KeepsItsOwnName()
         {
             Assert.That(DeclaringTypeOf(typeof(OuterWithAnInnerType.Inner).FullName!), Is.EqualTo(typeof(OuterWithAnInnerType.Inner).FullName));
         }
 
         [Test]
-        [Ignore(PendingApiDependency)]
         public void AnOrdinaryTypeName_IsLeftAlone()
         {
             Assert.That(DeclaringTypeOf(typeof(ConstructorDependent).FullName!), Is.EqualTo(typeof(ConstructorDependent).FullName));
@@ -395,9 +392,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static IReadOnlyCollection<string> RepositoryDependentsIn(ArchitectureModel architecture, string namespacePattern)
             => throw new AssertionException("SCAFFOLD: RepositoryDependentsIn is not built yet");
 
-        // SCAFFOLD: true
+        // The compiler names the nested types it makes (lambda closures, async state machines) starting
+        // with '<', which no hand-written type can, so the name is cut where the first such level begins.
         private static string DeclaringTypeOf(string typeFullName)
-            => throw new AssertionException("SCAFFOLD: DeclaringTypeOf is not built yet");
+        {
+            var firstCompilerMadeLevel = typeFullName.IndexOf("+<", StringComparison.Ordinal);
+
+            return firstCompilerMadeLevel < 0 ? typeFullName : typeFullName[..firstCompilerMadeLevel];
+        }
     }
 }
 
