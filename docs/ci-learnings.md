@@ -15,34 +15,36 @@ What already runs, so you know what you can leave to it:
 
 - **Frontend**: `pnpm build` runs `biome check --write ./src` (prebuild), then `tsc -b`.
   `Lighthouse.Frontend/biome.json` turns on, at `error`, every Biome rule that matches a rule in the
-  Sonar TS profile. Biome does **not** run on pre-push or on `Lighthouse.EndToEndTests/`.
+  Sonar TS profile, and its GritQL plugins in `biome-plugins/` cover Sonar rules Biome lacks (S7761,
+  S7770, S7727 for reducers, S4624, S3358 in templates, S6754 setter prefix, MUI `Select` labels, local
+  day keys in production code). Vitest pins the zone and checks `NULLABLE_FIELDS` and the E2E test ids.
+  `Lighthouse.EndToEndTests/` has its own `biome.json` and plugins (`pnpm run lint`, `pnpm run
+  typecheck`, run in CI). Biome does **not** run on pre-push: it belongs to the refactor gate.
 - **Backend**: `Directory.Build.props` adds SonarAnalyzer.CSharp to every non-migration project, with
   `TreatWarningsAsErrors`. Sonar-way rules (S2139, S2325, S3218, S4136, S6667, S6964, S3236, S6618,
   S8969, …) already break `dotnet build`. `.editorconfig` raises the imported Roslyn and NUnit rules that
-  have failed the gate (CA1859, CA1861, CA1825, CA1834, CA1865, CA2016, NUnit1028, NUnit2045, NUnit2056,
-  NUnit4002) to `warning`. `BannedSymbols.txt` bans the ambient clock (RS0030). `Architecture/*Test.cs`
+  have failed the gate (CA1806, CA1825, CA1834, CA1859, CA1861, CA1865, CA1869, CA2012, CA2016, SYSLIB1045,
+  ASP0015, CS9236, NUnit1028, NUnit2010, NUnit2045, NUnit2046, NUnit2056, NUnit4002) to `warning`, and
+  turns on S107, S3776 and S1192, which the NuGet analyzer ships disabled (off again for tests, as on
+  SonarCloud). `BannedSymbols.txt` bans the ambient clock and `AsSplitQuery` (RS0030). Tests guard
+  pending EF model changes, required columns without a default, the settings DTO round trip, demo-data
+  `ReferenceId` uniqueness, and `StartFreshAsync` outside its allowlist. `Architecture/*Test.cs` also
   covers the parallelisation allowlist, calendar-day anchoring, zoned timestamp parsing and Jira route
   literals.
 - **Hooks**: `.githooks/pre-commit` runs gitleaks. `.githooks/pre-push` runs the SonarQube CLI
-  secret scan, which skips silently when `sonar` is not installed. `Scripts/ledger_check.py` (a Claude
-  Code `PreToolUse` hook on `git commit`) checks the staged added lines against the block below.
+  secret scan, which skips silently when `sonar` is not installed. The patterns below run from
+  `.githooks/pre-commit` for every committer and from the Claude Code `PreToolUse` hook on `git commit`.
 
 ## Machine-checked patterns
 
 `Scripts/ledger_check.py` blocks a commit whose staged **added** lines match a pattern. Format:
 `<rule-key> ::: <comma-separated extensions> ::: <Python regex> ::: <fix hint>`. Remove a line once
-Biome, Roslyn or a banned symbol enforces the rule. Until `Scripts/ledger_check.sh` resolves the
-repository from the working directory, the hook does nothing inside a git worktree, so check by hand
-there (see follow-ups).
+Biome, Roslyn or a banned symbol enforces the rule. Both hooks resolve the checkout through git, so they
+work in worktrees. Run them by hand with `python3 Scripts/ledger_check.py --staged` (exit 2 means a
+staged line matches). A worktree's git hooks are the main checkout's (`core.hooksPath`), so a change to
+`.githooks/` only takes effect there once it is on `main`.
 
 <!-- LEDGER-CHECKS:START -->
-external_roslyn:NUnit2046 ::: cs ::: Assert\.That\([^,;]*\.(Count|Length)[ ,)] ::: NUnit2046 — assert `Assert.That(collection, Has.Count.EqualTo(N))` / `Has.Length.EqualTo(N)`, never on the raw `.Count`/`.Length`.
-dotnet-nunit:NUnit2010 ::: cs ::: Assert\.That\(.*\.Equals\( ::: NUnit2010 — use the `Is.EqualTo` / `Is.Not.EqualTo` constraint, not `.Equals()` inside `Assert.That`.
-csharpsquid:S8733 ::: cs ::: \.AsSplitQuery\( ::: Never call `.AsSplitQuery()`. Split queries are configured globally per provider (`DatabaseConfigurator`), and the call breaks the InMemory fixtures. If S8733 fires, use a narrow `#pragma warning disable S8733` that says splitting is configured globally.
-typescript:S7735 ::: ts,tsx ::: (!==|!=)\s*(undefined|null)\s*\? ::: S7735 — no negated condition in a ternary. Flip it: `x === undefined ? fallback : value`.
-typescript:S7761 ::: ts,tsx ::: (get|set|has|remove)Attribute\(\s*["'`]data- ::: S7761 — use `el.dataset.camelName`, never `getAttribute("data-…")`. A CSS selector string such as `[data-field="x"]` is fine.
-typescript:S3358 ::: ts,tsx ::: ^\s*[?:]\s.*\$\{[^}]*\s\?\s ::: S3358 — a ternary inside a `${…}` slot on a ternary branch counts as nested. Extract a helper with an early return.
-typescript:S4624 ::: ts,tsx ::: \$\{[^}`]*` ::: S4624 — no template literal nested inside another one's `${…}`. Build the inner string in a named local or helper first.
 typescript:S4782 ::: ts,tsx ::: \w\?\s*:\s*[^;=(){}]*\|\s*undefined\b ::: S4782 — an optional member (`name?:`) already includes `undefined`. Drop the `| undefined`, or drop the `?` if callers must pass it.
 vitest:storage-prototype-spy ::: ts,tsx ::: spyOn\(\s*Storage\.prototype ::: `vi.spyOn(Storage.prototype, …)` intercepts nothing in this jsdom setup, so the test passes against code without the guard. Spy on the storage object itself (`localStorage`), and restore it by hand in `afterEach`.
 mui-x:series-class ::: ts,tsx ::: MuiLineElement-series- ::: MUI-X 9 emits no per-series class. Target `& .MuiLineChart-line[data-series="<id>"]`, as `DeliveryBurnupChart.tsx` does.
@@ -73,18 +75,18 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
 - **S4144 (two functions with identical bodies)**: this happens when a new mock-service factory is
   copied from a sibling. Fix: extract a shared helper and delegate to it. Not automated because: Biome
   cannot compare function bodies.
-- **S7770 vs S7727 (passing a function by reference)**: pass a built-in unary function directly:
-  `.map(Number)`, not `.map((x) => Number(x))` (S7770). Wrap one of our own named functions in an arrow
-  that forwards exactly the arguments it takes: `.reduce((acc, x) => add(acc, x), 0)`, not
-  `.reduce(add, 0)` (S7727). Not automated because: the two rules pull in opposite directions, so the
-  line between them needs a decision before a plugin can encode it (proposal P-F3).
+- **S7727 for single-argument callbacks (`.map(ownFn)`)**: pass built-in unary functions directly
+  (`.map(Number)`, enforced by the `iterator-callbacks` plugin) and wrap our own reducers (enforced by
+  `wrap-own-reducer`). Wrap an own single-argument callback too when Sonar asks. Not automated because:
+  about 160 existing `.map(ownFn)` calls pass the gate, so a plugin for them would flag code Sonar accepts.
 - **S8786 (super-linear regex)**: a presence-check regex that opens with an unanchored `\d+` ahead of
   optional parts or an alternation. Fix: start at the first literal word, or anchor with `^`. Use
   `(?:…)` when nothing reads the capture. Not automated because: Biome does not analyse regex
   complexity.
 - **S6754 (`useState` pair naming)**: the pair must be `[thing, setThing]`, even when a hook exports
-  a wrapped setter. Give the wrapper its own verb (`chooseBackground`). Not automated because: no
-  Biome rule exists yet (a GritQL plugin is proposed, P-F3).
+  a wrapped setter. Give the wrapper its own verb (`chooseBackground`). The `use-state-pair-naming`
+  plugin checks the `set` prefix. Not automated because: GritQL cannot capitalise, so it cannot check
+  that the setter matches the state's name.
 - **Promise handling that Biome cannot see (S9383, S6544)**: Biome does not recognise react-router's
   `navigate(...)` as a promise, and it misses a promise-returning function assigned to a `void`-typed
   slot. Fix: send every `navigate(...)` through `reportFailedNavigation` (or await it), and declare
@@ -129,20 +131,16 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   Otherwise a server-side refresh never reaches an open view. A spec that is green on SQLite and red on
   Postgres is a timing hint, not a flake. Not automated because: what changes an entity is domain
   knowledge.
-- **A nullable settings field must be in `NULLABLE_FIELDS`**: otherwise `useModifySettings` swallows a
-  `null` write without any error. Fix: add the key in the same change that first nulls the field. Not
-  automated **yet**: proposal P-F6 (a test that derives the set from the settings type) would replace
-  this rule.
-- **Dates crossing a boundary use `src/utils/date/localDate.ts`**: never `toISOString().split("T")[0]`
-  or `new Date("YYYY-MM-DD")`. The suites run at `TZ=Europe/Zurich`, set on the script (Vitest's `env`
-  block is too late), because at UTC the bug cancels out. Not automated **yet**: proposal P-F5 (a
-  plugin ban plus an assertion that the zone pin is live).
+- **Dates crossing a boundary in tests use `src/utils/date/localDate.ts`** too: plugins ban
+  `toISOString().split("T")` and `new Date("YYYY-MM-DD")` in production code only. Not automated
+  because: test files use these forms on purpose in hundreds of places, so the ban would be noise there.
 
 ### E2E (Playwright page objects)
 
-`Lighthouse.EndToEndTests/` has no linter and no type-check step, and `tsc -b` and `pnpm test` in the
-frontend never compile it. Proposal P-E1 adds Biome with GritQL plugins there, which would take over
-the bannable shapes marked below.
+`Lighthouse.EndToEndTests/` runs Biome and `tsc` (`pnpm run lint`, `pnpm run typecheck`), and its
+plugins ban `this.container.page().getBy…`, a bare `getByRole("tooltip")`, `getByTestId("…Icon")`, a
+page-wide row `filter({ hasText })` and `expect(page.url())`. A page-wide lookup that is right on purpose
+carries a `// biome-ignore lint/plugin: <reason>`.
 
 - **Scope every locator to the component that owns it**: a page-wide `getByTestId`, `getByLabel`,
   `getByRole("tooltip")`, a row matched by `filter({ hasText })` (rows carry dependency names too), or
@@ -150,19 +148,20 @@ the bannable shapes marked below.
   with a strict-mode error the day a second instance renders, or a section renders sooner. Fix: scope to
   the owning card, heading, row or name cell (`[data-field="name"]`), and pass `{ exact: true }` for
   short or prefix-colliding names. Not automated because: whether a locator is unique depends on the
-  pages and data at run time (the `.page()` and bare-tooltip shapes are bannable, P-E1).
-- **Renaming copy or a `data-testid` breaks a page object in another project**: a `data-testid`,
-  accessible name or label prefix that a page object keys on fails silently or vacuously (`toHaveCount(0)`
-  on a dead selector passes). The `@screenshot` suite is excluded from the normal E2E run. Fix: in the
-  same edit, `grep -rn "<old text or id>" Lighthouse.EndToEndTests/`. Also grep for any page object that
-  parses a value whose display format you change (a `~`/`>` prefix, capping, units). Not automated
-  **yet**: proposal P-E2 (a test that every test id used in E2E exists in the frontend source) covers the
-  test-id half.
+  pages and data at run time; the plugins catch only the fixed shapes.
+- **Renaming copy breaks a page object in another project**: an accessible name or label prefix that a
+  page object keys on fails silently or vacuously (`toHaveCount(0)` on a dead selector passes). The
+  `@screenshot` suite is excluded from the normal E2E run. Fix: in the same edit,
+  `grep -rn "<old text>" Lighthouse.EndToEndTests/`, and grep for any page object that parses a value
+  whose display format you change (a `~`/`>` prefix, capping, units). Test ids are checked by
+  `src/tests/e2eTestIds.test.ts`. Not automated because: copy is matched by text and regex in too many
+  shapes to resolve statically.
 - **A page object must not map "not found" to a real value**: a getter returning `0`, `""` or `"none"`
   for "not rendered yet" makes one-sided assertions pass on the loading sample. MUI also strips
   `data-testid` from icons in production builds. Fix: wait for something that only the target renders,
   bound measurements on both sides, return a distinct `"unknown"`, and never key on an icon test id.
-  Not automated because: it is about what the assertion means (the icon test-id ban is bannable, P-E1).
+  Not automated because: it is about what the assertion means (the icon test-id shape is banned by a
+  plugin).
 - **Wait for the settled state, not a snapshot**: after a redirect, `waitForURL` the final pattern, or
   use `expect(page).toHaveURL`. A `goTo*` waits for content only the target view renders, and a baseline
   is captured only after its data has loaded (`expect.poll`). Postgres runs are slower and expose every
@@ -170,11 +169,10 @@ the bannable shapes marked below.
   automated because: what counts as "settled" differs from view to view.
 - **A spec sets its own preconditions, and demo-data defaults are global**: a spec that depends on the
   absence of a setting must set it absent itself. Changing a `DemoDataFactory` default, or demo
-  throughput or types, changes every E2E that loads demo data. Demo `ReferenceId`s must be unique per
-  team. Never pin a spec to a live work-item id on the real board. Fix: grep
+  throughput or types, changes every E2E that loads demo data. Never pin a spec to a live work-item id on the real board. Fix: grep
   `Lighthouse.EndToEndTests/` for the setting before pushing, and run the specs that depend on the data
   live. Not automated because: which spec depends on which piece of demo data is not written down
-  anywhere a tool can read (the uniqueness of `ReferenceId`s is automatable, P-B9).
+  anywhere a tool can read (`ReferenceId` uniqueness has a test).
 - **Run a new spec or page object against a live Lighthouse before committing it**: `pnpm build`
   only proves it type-checks. When a new E2E test is green on its first run, break its expectation once
   to prove it can fail. A modal that opens by itself is suppressed in `playwright.config.ts`, not in
@@ -191,7 +189,7 @@ the bannable shapes marked below.
   new-code period. They redden the gate on files nobody touched, and S9129 and S8733 do not fire in a
   local build even when raised to `warning` (probed against SonarAnalyzer 10.35). Fix: check the rule's
   `createdAt` (`curl` the public `/api/rules/show` API, because the `sonar` CLI is not installed), fix
-  the hits anyway, and for S8733 use a narrow pragma, never `.AsSplitQuery()`. Not automated because:
+  the hits anyway, and for S8733 use a narrow pragma (`.AsSplitQuery()` is a banned symbol). Not automated because:
   the rule only exists on the server.
 - **Adopting a Sonar or analyzer version bump**: a Dependabot `SonarAnalyzer.CSharp` bump can add
   error-severity rules (S8969/S8970) that redden `Package App` but not `Verify Backend`. Fix: apply the
@@ -206,10 +204,10 @@ the bannable shapes marked below.
   have been required since the type shipped, and then every sender must send it. Not automated because:
   both forms satisfy the analyzer, so choosing between them takes judgement.
 - **A new settings field goes through the whole path**: `SettingsOwnerDtoBase` → the `Sync*With*Settings`
-  helper → any hand-built `JsonObject` PUT payload in the tests → any pinned payload-shape test
-  (`grep -rn "PropertyNames" Lighthouse.Backend.Tests`). A missed step shows up only as an E2E or
-  integration failure. Not automated **yet**: proposal P-B8 (a reflection round-trip test over the DTO)
-  covers the sync step.
+  helper (checked by `SettingsOwnerDtoRoundTripTest`) → any hand-built `JsonObject` PUT payload in the
+  tests → any pinned payload-shape test (`grep -rn "PropertyNames" Lighthouse.Backend.Tests`). Not
+  automated because: the hand-built payloads are test data, and which of them must carry the field is a
+  judgement.
 - **`[FromQuery]` / `[FromRoute]` parameters are required by default**: under nullable reference
   types, model binding returns 400 before the action runs. Fix: declare the parameter nullable when the
   action handles its absence (OAuth callbacks, for example). Not automated because: whether a parameter
@@ -220,9 +218,9 @@ the bannable shapes marked below.
   it (CS0535), but only one build later, and the rule is there to save that build.
 - **An awaited `Save()` in async handlers**: a domain-event handler that calls a repository `Save()`
   from a `void` helper and returns `Task.CompletedTask` desyncs Npgsql. It shows up as a Postgres-only
-  flake. Fix: `await` it, in a genuinely `async Task` method. Not automated because: no enabled analyzer
-  reports a synchronous call to a method that saves (proposal P-B10 looks into CA2012/VSTHRD-style
-  rules).
+  flake. Fix: `await` it, in a genuinely `async Task` method. Not automated because: S3168 and CS4014 catch
+  `async void` and an un-awaited call inside an async method, but nothing flags a `Save()` dropped inside a
+  plain `void` method.
 - **A queue that dedups by key must coalesce, not drop**: a trigger raised while the same key is in
   flight carries intent the running job has not read. A status handover must never pass through a
   terminal status. Fix: park the trigger and run once more on completion, and decide the follow-up
@@ -285,10 +283,6 @@ the bannable shapes marked below.
   `StopApplication()`. A host shared by a fixture may hold per-test state only in objects the fixture
   resets in `[SetUp]`, never in a DI registration that closes over a per-test field. Not automated
   because: what counts as per-test state differs from fixture to fixture.
-- **A Postgres test class shares one container**: start it lazily through `SharedPostgresContainer`,
-  give each case its own database (`ConnectionStringToANewDatabase()`), and dispose it in
-  `[OneTimeTearDown]`. Only server-level tests get a server per case, with a comment saying why. Not
-  automated **yet**: proposal P-B7 (a guard on `StartFreshAsync` with an allowlist).
 - **FK-dependent behaviour runs on SQLite**: EF InMemory does not enforce foreign keys or cascades.
   Fix: a test asserting an FK violation or a cascade must not use `UseInMemoryDatabase`. Not automated
   because: telling which tests depend on FKs takes understanding what they assert.
@@ -319,19 +313,14 @@ the bannable shapes marked below.
 
 ### EF migrations
 
-- **Generate migrations with `Create-Migration.ps1` after a full solution build**: the script needs
-  the migrations DLLs in the backend's output folder and port 5432 free, and it says neither. After
-  generating, rebuild the migrations projects and then the solution with `--no-incremental` before
-  verifying, or the backend still loads the old snapshot. Not automated **yet**: proposal P-B5 (let
-  the script do its own ordered build).
-- **A new NOT NULL column needs a default in both providers**: the backup-restore E2E replays the
-  migrations onto old data. The EF scaffolder omits defaults for Postgres arrays, so add
-  `defaultValueSql: "ARRAY[]::text[]"` by hand. Not automated **yet**: proposal P-B4 (extend
-  `ExpandOnlyMigrationGuard`).
+- **Generate migrations with `Create-Migration.ps1`, never a bare `dotnet ef`**: the script builds the
+  migrations projects and the solution first and checks port 5432. After generating, rebuild the
+  migrations projects and then the solution with `--no-incremental` before verifying, or the backend
+  still loads the old snapshot. Not automated because: a hand-run `dotnet ef` cannot be intercepted.
 - **No non-default CLR initialiser on a persisted property** (`= true`, `= string.Empty` on a
   `string?`): EF reads it as the sentinel and the model differ never settles. Fix: leave the property
-  bare and put defaults on the DTO or in the frontend. Not automated **yet**: the pending-model test in
-  P-B3 catches the symptom.
+  bare and put defaults on the DTO or in the frontend. Not automated because: no analyzer knows EF's
+  sentinel rules; `NoPendingModelChangesTest` catches the symptom.
 
 ### Mutation testing (Stryker)
 
@@ -383,7 +372,7 @@ the bannable shapes marked below.
   move the change-detection base back by weeks. Check `Found last successful run:` in Detect Changes.
   Adding a line to `Program.cs`, a csproj, the `.sln` or a shared interface really does run every live
   connector suite (about 258 more tests, quotas spent, and Sonar skipped if one goes red). Not automated
-  **yet**: proposal P-I3 (Detect Changes verifies how recent its base is).
+  because: the maintainer keeps Detect Changes as it is.
 - **ServiceNow integration failures: `curl` the instance root first**. A 502 from `snow_adc` means the
   instance was reclaimed and must be rebuilt (`Scripts/DemoEnv/README.md`). Its 401s are byte-identical
   whatever the cause. Not automated because: it is an external environment.
@@ -399,8 +388,8 @@ the bannable shapes marked below.
   bump arrives.
 - **CI's pnpm and `packageManager` must agree**: reproduce `ERR_PNPM_LOCKFILE_CONFIG_MISMATCH` with
   the workflow's exact pnpm (in a `node:24` container), because other versions accept both lockfile
-  shapes. Not automated because: the mismatch is between a workflow file and `package.json` (a
-  consistency check is possible, see P-I4).
+  shapes. Not automated because: the mismatch is between a workflow file and `package.json`, and the
+  maintainer chose not to add a cross-file check.
 - **A new top-level directory of non-C# scripts goes into `sonar.exclusions`** (`ci_backend.yml`).
   The backend scanner indexes everything that is not excluded, so a Python or shell helper can fail the
   backend gate. `.ps1` files under `Lighthouse.Backend/` are still analysed: use `Write-Output`,
@@ -410,8 +399,8 @@ the bannable shapes marked below.
   `[Category("XIntegration")]`, the output in `ci_changes.yml` and the input in `ci_backend.yml`, and
   mirror it in `dev-test.{sh,ps1}`. Not automated because: it is wiring across workflow files.
 - **Test-time budget**: a test file (frontend) or test class (backend) over its budget is a failure to
-  fix, although `check_budget.py --warn-only` only warns today. Not automated **yet**: proposal P-I1
-  (remove `--warn-only`).
+  fix, although `check_budget.py --warn-only` only warns today. Not automated because: the
+  maintainer keeps the budget warn-only.
 - **Installing a just-published package by exact version**: poll the registry first, never a fixed
   sleep. Not automated because: it is a race with an external registry.
 
@@ -419,13 +408,13 @@ the bannable shapes marked below.
 
 - **Shell scripts under `set -o pipefail`**: never pipe a variable or a long output into `grep -q`
   or `head`. Use a here-string, or capture first. Never chain `[[ ]] && [[ ]] || …`. CI's shellcheck
-  is 0.9.0, so check with `koalaman/shellcheck:v0.9.0`, not `:stable`. Not automated **yet**: proposal
-  P-I2 (pinned shellcheck in pre-commit for `chart/**/*.sh`).
+  is 0.9.0, so check with `koalaman/shellcheck:v0.9.0`, not `:stable`. Not automated because: the
+  maintainer chose not to add shellcheck to pre-commit.
 - **Chart tests hold appVersion fixed** across the upgrade they test. Bump appVersion locally once
   before calling a chart test done. The workload never binds a port below 1024. `chart/README.md` is
   generated by helm-docs. A job that pushes to `main` after waiting at an environment gate rebases
   first. Not automated because: these are about how the chart tests are designed and how the release
-  flow is built (the rebase is proposal P-I5).
+  flow is built.
 - **Local verification traps**: never chain `dotnet test --no-build` after a build that may have
   failed. Assert `0 Error(s)` first. A concurrent `dotnet build` rewrites `bin/` under a running suite.
   A stale `node_modules` in a worktree runs an old Biome (compare `pnpm biome --version` with the pin).

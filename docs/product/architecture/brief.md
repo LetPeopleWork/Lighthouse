@@ -8134,7 +8134,7 @@ the default cycle-time definition).
 | A retired stored preference paints nothing and raises nothing | Vitest seeding `risk`, asserted separately from the unrecognised-value case so neither test covers for the other |
 | The one legacy preference translation survives | The pre-existing `"true"` → Pace test, unmodified |
 | A risk is coloured identically wherever it still appears | The pre-existing `WorkItemsDialog` and In Progress suites, unmodified by the deletion's commits |
-| No private member and no import is orphaned by the deletion | `dotnet build` under `TreatWarningsAsErrors` plus the mandatory `dotnet format analyzers … --severity info` pre-push run (S1144 / S2325 are a deletion's characteristic Sonar failure); Biome via `prebuild` on the frontend |
+| No private member and no import is orphaned by the deletion | `dotnet build` under `TreatWarningsAsErrors`, which runs SonarAnalyzer.CSharp and the promoted Roslyn rules (S1144 / S2325 are a deletion's characteristic Sonar failure); Biome via `prebuild` on the frontend |
 | No schema, migration or provider file is touched | The commit set reaches no `Migrations/` path |
 
 C4 Container diagram — the SLE-risk surfaces after the removal, with the deleted edge marked — lives in
@@ -8310,7 +8310,7 @@ the age filter idiom is copied, not extracted, because the two reads differ else
 | A comparable set of zero inside the target reads 0 | Unit test. A named branch, never a division that happens to work out |
 | Risk never decreases as an item ages | Property-style test walking the age from 1 past `R` |
 | No sentinel string survives | An anchored grep over both stacks, the E2E project and `docs/`, excluding `docs/evolution/` — a review gate read by a person before the first push. The evolution archives keep their copies and must |
-| No member is orphaned | `dotnet build` under `TreatWarningsAsErrors` plus the mandatory `dotnet format analyzers … --severity info` pre-push run. S1144 / S2325 are a deletion's characteristic Sonar failure, and this slice deletes a public const, a record struct and a specification helper with one caller |
+| No member is orphaned | `dotnet build` under `TreatWarningsAsErrors`, which runs SonarAnalyzer.CSharp and the promoted Roslyn rules. S1144 / S2325 are a deletion's characteristic Sonar failure, and this slice deletes a public const, a record struct and a specification helper with one caller |
 | `Program.cs`, `Migrations/` untouched | The commit set reaches neither |
 
 C4 Container diagram, the full decision set (DDD-15 … DDD-30), the Reuse Analysis with contract shapes,
