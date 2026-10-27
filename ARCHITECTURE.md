@@ -136,7 +136,7 @@ graph TD
 ### Enforced dependency rules (ArchUnitNET, run in `dotnet test`)
 
 - **`Services` (the whole application core) ↛ `API`** — the hexagonal seam. DTOs the core returns live in `Models.*`, never `API.DTO`. *(Green; the metrics/forecast/blackout/oauth-health DTOs were relocated to `Models.*` to make this hold.)*
-- **`Models` (kernel) ↛ `API`** — the kernel never depends upward on the driving adapter. *(`Models ↛ Services` is a known, documented gap: `IEntity` and the `WorkTrackingSystems` enum still live under `Services.*`; relocating them is a separate follow-up.)*
+- **`Models` (kernel) ↛ `API`** — the kernel never depends upward on the driving adapter.
 - **WorkTracking-Integration is a leaf input adapter** — it must not depend on Forecasting, Portfolio/Delivery, or WorkItems/Sync.
 - **The domain-event dispatcher and its handlers must not call `IServiceProvider.GetRequiredService`** — the seam must not re-introduce the service-locator it removes (§5).
 - A handful of feature-specific seam rules (e.g. metrics read transitions only via repository ports; `WorkItemService` is the sole writer of transitions; every caller that orders Features goes through the one `FeatureOrdering` comparer rather than sorting for itself — ADR-132/134/187, with the choice itself stored as a row in the behaviour-settings table rather than as an `AppSetting` — see §10) live alongside.
