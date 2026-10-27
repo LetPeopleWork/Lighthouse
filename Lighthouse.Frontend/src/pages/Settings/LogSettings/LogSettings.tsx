@@ -108,8 +108,9 @@ const LogSettings: React.FC = () => {
 			<Grid container spacing={2}>
 				<Grid size={{ xs: 12 }}>
 					<FormControl fullWidth margin="normal">
-						<InputLabel>Log Level</InputLabel>
+						<InputLabel id="log-level-label">Log Level</InputLabel>
 						<Select
+							labelId="log-level-label"
 							value={logLevel}
 							onChange={onLogLevelChanged}
 							label="Log Level"

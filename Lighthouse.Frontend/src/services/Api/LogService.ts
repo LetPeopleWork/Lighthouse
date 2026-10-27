@@ -1,3 +1,4 @@
+import { formatLocalDate } from "../../utils/date/localDate";
 import { BaseApiService } from "./BaseApiService";
 
 /**
@@ -79,7 +80,7 @@ export class LogService extends BaseApiService implements ILogService {
 		const fileUrl = URL.createObjectURL(response.data);
 		const link = document.createElement("a");
 		link.href = fileUrl;
-		link.download = `Lighthouse_Log_${new Date().toISOString().split("T")[0]}.txt`;
+		link.download = `Lighthouse_Log_${formatLocalDate(new Date())}.txt`;
 		document.body.appendChild(link);
 		link.click();
 		link.remove();

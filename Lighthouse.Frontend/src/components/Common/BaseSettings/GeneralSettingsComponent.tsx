@@ -145,8 +145,9 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 			{showWorkTrackingSystemSelection && (
 				<Grid size={{ xs: 12 }}>
 					<FormControl fullWidth margin="normal">
-						<InputLabel>{`Select ${workTrackingSystemTerm}`}</InputLabel>
+						<InputLabel id="general-work-tracking-system-label">{`Select ${workTrackingSystemTerm}`}</InputLabel>
 						<Select
+							labelId="general-work-tracking-system-label"
 							value={selectedWorkTrackingSystem?.name ?? ""}
 							onChange={handleWorkTrackingSystemChange}
 							label={`Select ${workTrackingSystemTerm}`}
