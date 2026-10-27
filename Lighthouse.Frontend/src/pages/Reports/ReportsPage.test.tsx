@@ -132,7 +132,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`with no report anywhere it says where reports are created (${pending})`, async () => {
+	it(`with no report anywhere it says where reports are created (${pending})`, async () => {
 		renderTheReportsPage({ reportService: aReportServiceListing() });
 
 		expect(
@@ -141,7 +141,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
-	it.skip(`while the reports are on their way it shows a loading look and no table (${pending})`, async () => {
+	it(`while the reports are on their way it shows a loading look and no table (${pending})`, async () => {
 		renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn(() => neverAnswered()),
@@ -160,7 +160,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it.skip(`when the reports cannot be loaded it says so, shows no empty table, and Retry loads them (${pending})`, async () => {
+	it(`when the reports cannot be loaded it says so, shows no empty table, and Retry loads them (${pending})`, async () => {
 		const getAllReports = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
@@ -183,7 +183,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`a report of a type this version cannot show is listed and says so (${pending})`, async () => {
+	it(`a report of a type this version cannot show is listed and says so (${pending})`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
 				aReportOn(PULSAR, "Signals", {
@@ -200,7 +200,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`a report whose Then can no longer be rebuilt is marked on its row (${pending})`, async () => {
+	it(`a report whose Then can no longer be rebuilt is marked on its row (${pending})`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
 				aReportOn(GRAVITY, QUARTER, {

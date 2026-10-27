@@ -2,6 +2,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import FolderSpecialIcon from "@mui/icons-material/FolderSpecial";
 import GroupsIcon from "@mui/icons-material/Groups";
+import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
 	Box,
@@ -187,6 +188,8 @@ const ownerColumn: DataGridColumn<IReportListItem> = {
 	renderCell: ({ row }) => <OwnerLink report={row as IReportAcrossOwners} />,
 };
 
+const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
+
 const FILTER_LABEL = "Filter: name / owner / type";
 
 const matchesFilter = (
@@ -230,11 +233,25 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<StyledLink
-						to={reportPathOf({ kind: row.ownerKind, id: row.ownerId }, row.id)}
-					>
-						{row.name}
-					</StyledLink>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+						<StyledLink
+							to={reportPathOf(
+								{ kind: row.ownerKind, id: row.ownerId },
+								row.id,
+							)}
+						>
+							{row.name}
+						</StyledLink>
+						{row.thenAndNow?.thenRebuildable === false && (
+							<Tooltip title={CANNOT_BE_REBUILT}>
+								<HistoryToggleOffIcon
+									fontSize="small"
+									color="warning"
+									aria-label={CANNOT_BE_REBUILT}
+								/>
+							</Tooltip>
+						)}
+					</Box>
 				),
 			},
 			{

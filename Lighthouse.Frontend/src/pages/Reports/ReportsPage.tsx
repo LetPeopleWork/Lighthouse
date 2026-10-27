@@ -6,6 +6,7 @@ import ReportList from "../Common/Reports/ReportList";
 import { useAllReports } from "./useAllReports";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
+const EMPTY = "Reports are created on a Team's or Portfolio's Reports tab.";
 const LIST_MIN_HEIGHT = 120;
 
 const ReportsPage: React.FC = () => {
@@ -34,9 +35,12 @@ const ReportsPage: React.FC = () => {
 					failureMessage={COULD_NOT_LOAD}
 					onRetry={() => refetch()}
 				>
-					{data !== undefined && (
-						<ReportList reports={data.reports} showOwner />
-					)}
+					{data !== undefined &&
+						(data.reports.length === 0 ? (
+							<Typography color="text.secondary">{EMPTY}</Typography>
+						) : (
+							<ReportList reports={data.reports} showOwner />
+						))}
 				</WidgetBody>
 			</Box>
 		</Container>
