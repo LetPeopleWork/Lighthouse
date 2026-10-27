@@ -3,3 +3,4 @@ P:System.DateTime.UtcNow;Reads the clock directly, so no test can stop it. Injec
 P:System.DateTime.Today;Reads the machine's local day, which is not the instance's day. Inject ILighthouseClock and use Today or TodayAsUtcMidnight.
 P:System.DateTimeOffset.Now;Reads the machine's local clock and zone. Inject TimeProvider for an instant, or ILighthouseClock for a calendar day in the instance's time zone.
 P:System.DateTimeOffset.UtcNow;Reads the clock directly, so no test can stop it. Inject TimeProvider for an instant, or ILighthouseClock for a calendar day in the instance's time zone.
+M:Microsoft.EntityFrameworkCore.RelationalQueryableExtensions.AsSplitQuery``1(System.Linq.IQueryable{``0});Split queries are already the default for every provider (set in DatabaseConfigurator), and AsSplitQuery is relational-only so it breaks the InMemory test fixtures. Do not add it.

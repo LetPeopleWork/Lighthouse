@@ -75,6 +75,20 @@ dotnet_diagnostic.NUnit2056.severity = warning
 dotnet_diagnostic.NUnit4002.severity = warning
 dotnet_diagnostic.CA1865.severity = warning
 dotnet_diagnostic.CA1834.severity = warning
+dotnet_diagnostic.CA1869.severity = warning
+dotnet_diagnostic.CA1806.severity = warning
+dotnet_diagnostic.SYSLIB1045.severity = warning
+dotnet_diagnostic.ASP0015.severity = warning
+dotnet_diagnostic.CS9236.severity = warning
+dotnet_diagnostic.NUnit2046.severity = warning
+dotnet_diagnostic.NUnit2010.severity = warning
+
+# The Sonar gate runs these three with their default thresholds (more than 7 parameters,
+# cognitive complexity above 15, a string literal repeated 3 times). The NuGet analyzer ships
+# them disabled, so without this neither the build nor the info sweep can see them.
+dotnet_diagnostic.S107.severity = warning
+dotnet_diagnostic.S3776.severity = warning
+dotnet_diagnostic.S1192.severity = warning
 
 # EF writes the migration files and we do not hand-edit them, so the same rules stay advisory
 # there rather than making a generated file unbuildable.
