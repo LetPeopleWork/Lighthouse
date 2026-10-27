@@ -2,6 +2,7 @@ using ArchUnitNET.Loader;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models.KernelFixtures.Offending;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures;
+using Lighthouse.Backend.Services.KernelFixtures;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -9,7 +10,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// The two kernel rules hold on the real code with no list of exceptions, so the real code alone cannot show
     /// that a new offender would fail. Here the same rules run over made-up types: a Model that reaches into
-    /// Services must fail and be named, and one that does not must pass.
+    /// Services or the update queue must fail and be named, and one that does not must pass.
     /// </summary>
     [TestFixture]
     [Category("stories-6367-6369")]
@@ -86,13 +87,11 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.K
 
 namespace Lighthouse.Backend.Models.KernelFixtures.Offending
 {
-    internal sealed class OffendingModel(
-        Lighthouse.Backend.Services.KernelFixtures.AServiceType service,
-        Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures.AFixtureUpdateKind kind)
+    internal sealed class OffendingModel(AServiceType service, AFixtureUpdateKind kind)
     {
-        public Lighthouse.Backend.Services.KernelFixtures.AServiceType Service { get; } = service;
+        public AServiceType Service { get; } = service;
 
-        public Lighthouse.Backend.Services.Implementation.BackgroundServices.Update.KernelFixtures.AFixtureUpdateKind Kind { get; } = kind;
+        public AFixtureUpdateKind Kind { get; } = kind;
     }
 }
 

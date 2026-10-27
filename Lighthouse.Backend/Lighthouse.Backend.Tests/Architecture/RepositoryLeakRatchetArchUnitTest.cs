@@ -98,6 +98,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => ReadModule(typeof(Team).Assembly));
 
+        private static readonly Lazy<List<string>> FixtureDependents = new(() => RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace));
+
         [OneTimeTearDown]
         public void DisposeModules()
         {
@@ -272,25 +274,25 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AConstructorParameterOnARepository_IsADependency()
         {
-            Assert.That(RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace), Does.Contain(typeof(ConstructorDependent).FullName));
+            Assert.That(FixtureDependents.Value, Does.Contain(typeof(ConstructorDependent).FullName));
         }
 
         [Test]
         public void ARepositoryNamedOnlyAsAGenericArgument_IsADependency()
         {
-            Assert.That(RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace), Does.Contain(typeof(GenericArgumentDependent).FullName));
+            Assert.That(FixtureDependents.Value, Does.Contain(typeof(GenericArgumentDependent).FullName));
         }
 
         [Test]
         public void AConcreteRepositoryClass_IsADependency()
         {
-            Assert.That(RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace), Does.Contain(typeof(ConcreteRepositoryDependent).FullName));
+            Assert.That(FixtureDependents.Value, Does.Contain(typeof(ConcreteRepositoryDependent).FullName));
         }
 
         [Test]
         public void ALambdaThatAsksForARepository_IsReportedAgainstTheTypeThatWroteIt()
         {
-            var dependents = RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace);
+            var dependents = FixtureDependents.Value;
 
             Assert.That(dependents, Does.Contain(typeof(LambdaDependent).FullName));
             Assert.That(dependents, Has.None.Contain("+<"), "a compiler-made nested type must never be reported by its own name");
@@ -299,7 +301,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AnAsyncMethodThatAsksForARepository_IsReportedAgainstTheTypeThatWroteIt()
         {
-            var dependents = RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace);
+            var dependents = FixtureDependents.Value;
 
             Assert.That(dependents, Does.Contain(typeof(AsyncDependent).FullName));
             Assert.That(dependents, Has.None.Contain("+<"), "a compiler-made nested type must never be reported by its own name");
@@ -308,7 +310,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ATypeThatReadsThroughAServiceContractInTheRepositoriesNamespace_IsNotADependency()
         {
-            var dependents = RepositoryDependentsIn(FixtureModule.Value, FixtureNamespace);
+            var dependents = FixtureDependents.Value;
 
             Assert.That(dependents, Does.Not.Contain(typeof(ReadContractDependent).FullName));
             Assert.That(dependents, Does.Not.Contain(typeof(UnrelatedType).FullName));
@@ -319,8 +321,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ACompilerMadeNestedType_NormalisesToItsDeclaringType()
         {
-            var nested = typeof(LambdaDependent).GetNestedTypes(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public)
-                .Concat(typeof(AsyncDependent).GetNestedTypes(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public))
+            const BindingFlags EveryNestedType = BindingFlags.NonPublic | BindingFlags.Public;
+
+            var nested = typeof(LambdaDependent).GetNestedTypes(EveryNestedType)
+                .Concat(typeof(AsyncDependent).GetNestedTypes(EveryNestedType))
                 .Where(type => type.Name.StartsWith('<'))
                 .ToList();
 
@@ -346,7 +350,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(DeclaringTypeOf(typeof(ConstructorDependent).FullName!), Is.EqualTo(typeof(ConstructorDependent).FullName));
         }
 
-        // ---- Scaffolds: built in the slice named on each pending test ----
+        // ---- The two-way comparison and the two scans it is fed from ----
 
         private static void AssertMatchesBaseline(IEnumerable<string> actual, IEnumerable<string> baseline, string fixHint)
         {
@@ -389,7 +393,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static IEnumerable<string> CallLines(string path, string code)
             => GetAllByPredicateCall().Matches(code)
                 .Select(match => code.IndexOf("GetAllByPredicate", match.Index, StringComparison.Ordinal))
-                .Select(nameIndex => $"{path}:{code.Take(nameIndex).Count(character => character == '\n') + 1}");
+                .Select(nameIndex => $"{path}:{code.AsSpan(0, nameIndex).Count('\n') + 1}");
 
         // Read from the compiled IL rather than from ArchUnitNET's dependency graph: in a Release build,
         // which is what CI tests, ArchUnitNET loses a repository used only inside an async method.
