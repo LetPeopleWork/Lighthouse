@@ -17,8 +17,9 @@ moment updating stops. So it stores them, and this is what happens to them:
 - **They are encrypted before they are written to the database.**
 - **They are never sent back to the browser** — not to you, not to an administrator, not to anyone,
   whatever they are allowed to do.
-- **They never leave your instance.** Lighthouse is software you run. It talks to the work tracking
-  systems you configured and to nothing else.
+- **They never leave your instance.** Lighthouse is software you run. Your credentials go to the work
+  tracking systems you configured and nowhere else. [What leaves the instance](#what-leaves-the-instance)
+  lists every outbound connection.
 - **You can revoke one at the source at any time** — in Jira, Azure DevOps, ServiceNow, Linear — and
   Lighthouse loses that access immediately, without asking anyone's permission.
 
@@ -100,10 +101,25 @@ that credential at the source.
 
 ### What leaves the instance
 
-Nothing, unless you configure it. Lighthouse makes outbound connections to the work tracking systems you
-configured, to check for a new version, and — only if you enable it — to the metrics and log endpoint you
-name yourself, which carries operational telemetry and no credentials. There is no vendor collection and
-no phone-home.
+None of your data. Lighthouse makes these outbound connections, and no others:
+
+| To | Why | What travels |
+| --- | --- | --- |
+| The work tracking systems you configured | To read your work items, and to write forecasts back if you switch that on | Your credential for that system, and the queries you configured |
+| GitHub's public API (`api.github.com`) | To check whether a newer version is out | Nothing beyond the request itself. It is unauthenticated and carries nothing about your instance |
+| The metrics and log endpoint you name yourself | Operational telemetry, **only if you configure one** | Metrics and logs, no credentials |
+| PostHog Cloud EU (`eu.i.posthog.com`) | [Usage data](settings/usagedata.html): which parts of Lighthouse get used | **Only after a person on the instance has agreed**, and only a closed list of events that carry no names, no work items and no content. Kept for one year |
+
+Usage data is **off until somebody agrees to it**, and anyone can take that back with one click. With a
+licence, an administrator can also switch on **Never send usage data** under Settings → System, which
+stops it for the whole instance and means nobody is asked at all. The [Usage Data](settings/usagedata.html)
+page lists every event and every field.
+
+The licence itself is checked on your instance against a signature. Activating or renewing one makes no
+connection to us.
+
+What Lighthouse stores, and whether any of it is personal data, is in
+[Data Protection](dataprotection.html).
 
 ### Compliance material
 
