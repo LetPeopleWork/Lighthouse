@@ -31,7 +31,16 @@ See `docs/product/architecture/brief.md` for full architecture documentation.
 
 ## CI Learnings
 
-**Before writing or changing ANY code, consult `docs/ci-learnings.md` and pre-apply every rule it lists.** It's the durable ledger of rules harvested from prior CI / SonarCloud failures — many of these sit below build-warning severity and only ever surface in CI, never in a local build. Re-introducing a rule already in the ledger burns a CI cycle. The `/clean-ci` command maintains this file; treat it as the source of truth rather than duplicating its contents here.
+Most CI and SonarCloud rules are enforced locally: Biome runs in `pnpm build`'s `prebuild` (with
+`Lighthouse.Frontend/biome.json` mirroring the Sonar TS profile, plus GritQL plugins for Sonar rules Biome
+lacks), and `dotnet build` fails on the SonarAnalyzer and promoted Roslyn/NUnit rules via
+`TreatWarningsAsErrors`. **So run `pnpm build` and `dotnet build` before pushing, and treat a clean run as the
+real check.**
+
+`docs/ci-learnings.md` holds only the rules no tool can enforce (judgement, test design, pipeline behaviour),
+each with the reason it cannot be automated. **Before writing or changing code, read the section for the
+stack you are touching and apply it.** When CI or Sonar catches something new, `/clean-ci` turns it into an
+automated check first and writes a ledger rule only as a last resort.
 
 ## ADO Work-Item Sync
 
@@ -152,7 +161,7 @@ A change is **not done** until every gate below passes locally. CI enforces them
 
 - `pnpm test` — must pass. This is the baseline prerequisite; nothing else counts as done while tests are red.
 - `pnpm build` — must complete with zero errors and zero warnings (runs `tsc -b` then `vite build`).
-- Biome — zero errors and zero warnings on `./src`. `pnpm biome check ./src` runs as the `prebuild` hook, so a clean `pnpm build` implies a clean Biome check.
+- Biome — zero errors and zero warnings on `./src`. `pnpm build`'s `prebuild` runs `pnpm biome check --write ./src`, so a clean `pnpm build` implies a clean Biome check (and may have rewritten files — check `git status` afterwards).
 
 ### Backend (`Lighthouse.Backend/`)
 
@@ -189,5 +198,12 @@ A change is **not done** until every gate below passes locally. CI enforces them
 ### SonarQube Cloud (both stacks)
 
 - CI runs SonarQube Cloud analysis on every PR. Do not introduce new issues of any severity (bugs, vulnerabilities, code smells, security hotspots) — the gate fails on new violations even if existing debt remains.
-- Common Sonar rule families to watch are tracked in `docs/ci-learnings.md` (see CI Learnings above) — that ledger is the canonical list, not this section.
+- Sonar rules are mirrored locally where a tool exists: `Lighthouse.Frontend/biome.json` and
+  `Lighthouse.EndToEndTests/biome.json` (with their GritQL plugins), and `Lighthouse.Backend/.editorconfig`
+  plus `Directory.Build.props` and `BannedSymbols.txt` (backend). The Sonar rules with no local equivalent
+  are listed in `docs/ci-learnings.md`. Neither this section nor the ledger lists rules that a build already
+  enforces.
+- **The static checks are part of the refactor gate.** There is no pre-push lint hook: the last refactor
+  pass of a slice or fix ends with `pnpm build` (Biome + `tsc`) for the frontend and E2E projects and
+  `dotnet build` for the backend, and its findings are fixed right there, before review and push.
 - If a Sonar rule conflicts with a deliberate decision, suppress narrowly at the call site with a justification, not project-wide.
