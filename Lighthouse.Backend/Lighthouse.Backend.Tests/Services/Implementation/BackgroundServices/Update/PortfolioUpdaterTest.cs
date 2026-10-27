@@ -613,10 +613,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
             CreateSubject().TriggerUpdate(project.Id);
 
-            Assert.That(
-                loggerMock.Invocations.Count(i => i.Arguments[0] is LogLevel.Warning
-                    && (i.Arguments[2]?.ToString() ?? string.Empty).Contains("Features after its update", StringComparison.Ordinal)),
-                Is.Zero);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(recordedRefresh?.Success, Is.False, "The refresh has to have run and failed for the silence to mean anything.");
+                Assert.That(
+                    loggerMock.Invocations.Count(i => i.Arguments[0] is LogLevel.Warning
+                        && (i.Arguments[2]?.ToString() ?? string.Empty).Contains("Features after its update", StringComparison.Ordinal)),
+                    Is.Zero);
+            }
         }
 
         private void AddFeatures(Portfolio project, int count)

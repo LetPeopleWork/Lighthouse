@@ -350,6 +350,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             }
         }
 
+        [Test]
+        public void FeatureCountOf_AFeatureInTwoPortfolios_IsCountedOnceByEach()
+        {
+            using var connection = new SqliteConnection("DataSource=:memory:");
+            connection.Open();
+            var options = new DbContextOptionsBuilder<LighthouseAppContext>().UseSqlite(connection).Options;
+
+            using var context = new LighthouseAppContext(options, new Mock<ICryptoService>().Object, Mock.Of<ILogger<LighthouseAppContext>>());
+            context.Database.EnsureCreated();
+            var shared = new Feature { Name = "Shared", Order = "1" };
+            var first = new Portfolio { Name = "First", WorkTrackingSystemConnection = CreateConnection() };
+            first.Features.Add(shared);
+            first.Features.Add(new Feature { Name = "Only first", Order = "2" });
+            var second = new Portfolio { Name = "Second", WorkTrackingSystemConnection = CreateConnection() };
+            second.Features.Add(shared);
+            context.Portfolios.AddRange(first, second);
+            context.SaveChanges();
+            context.ChangeTracker.Clear();
+
+            var repository = new PortfolioRepository(context, Mock.Of<ILogger<PortfolioRepository>>());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(repository.FeatureCountOf(first.Id), Is.EqualTo(2));
+                Assert.That(repository.FeatureCountOf(second.Id), Is.EqualTo(1));
+            }
+        }
+
         private sealed class CommandsSentToTheStore : DbCommandInterceptor
         {
             private readonly List<string> commands = [];
