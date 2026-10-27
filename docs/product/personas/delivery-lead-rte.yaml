@@ -36,6 +36,7 @@ primary_jobs:
   - job-lead-answer-when-every-initiative-lands  # epic-5806-initiatives (2026-09-29, #5806): every Initiative on one page with the date all its Features are likely done
   - job-lead-say-whether-each-initiative-is-on-track  # epic-5806-initiatives (2026-09-29, #5806): target date per Initiative, joint likelihood, status word
   - job-lead-name-the-strategic-level-in-our-own-words  # epic-5806-initiatives (2026-09-29, #5806): configurable term for the level above Feature, seeded "Initiative"
+  - job-lead-compare-every-owner-against-its-own-past-in-one-go  # epic-6350-bulk-reports (2026-10-27, #6350): every report in one place, created and removed in bulk, several in one PDF
 
 goals:
   - Identify which workflow state(s) consume the most of the team's collective time over a

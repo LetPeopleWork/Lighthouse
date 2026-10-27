@@ -1,0 +1,53 @@
+# Slice 05 — Remove reports in bulk
+
+**Feature**: epic-6350-bulk-reports · **Epic**: #6350 · **Story**: US-05 (ADO: to be created) · **Estimate**: 1d ·
+**Tier**: Community (LOCKED, maintainer, 2026-10-27; Q1) · **Ships alone**: yes (on 01) ·
+`job_id: job-lead-compare-every-owner-against-its-own-past-in-one-go`
+
+## Goal
+
+Remove the reports selected on the Reports page (slice 01's selection) in one go, only where the user is Admin,
+knowing which Then windows can no longer be rebuilt, with a per-report outcome.
+
+## IN
+
+- Turns on 01's selection column and "N selected" count, unless 07 shipped first.
+- **Remove** acts on 01's selection. Enabled only when every selected report is on an owner where the user is Admin;
+  otherwise disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are not Admin of" (D15,
+  PROPOSED — confirm at DISTILL sketch walk). Auth off or RBAC off: every report removable.
+- Confirm naming the exact count and which owners, plus the existing "can no longer be rebuilt" warning with a count
+  when it applies.
+- Result per report (D8): removed; already gone counts as removed; lost Admin → not removed, with the reason; never a
+  whole-run failure.
+- A lost answer: "could not confirm what was removed", link to Reports (D8, AC-5.7).
+- Shares the PDF's ceiling N (DESIGN sets N): above it, "Pick at most N reports" (AC-5.9; D16, PROPOSED).
+- The server re-checks Admin per report. `ReportDeleted` per report as today; one bulk-removal-run event (D14).
+
+## OUT
+
+Bulk editing · removing through the clients · undo.
+
+## Learning hypothesis
+
+**Disproves "bulk removal is needed once bulk creation exists"** if, a month after release, no dogfood or opted-in
+run uses it.
+
+## Data and dogfood moment
+
+Dev instance: remove the trial reports left by slices 02a–04's dogfood runs.
+
+## DESIGN must answer
+
+Bulk endpoint vs one call per report; what the page shows while removal runs and if the answer never arrives; N.
+
+## DISTILL must sketch first
+
+Remove's disabled state and reason; the confirm; the result and the could-not-confirm look.
+
+## Acceptance criteria
+
+AC-5.1 … AC-5.9 in `feature-delta.md` (US-05).
+
+## Dependencies
+
+Slice 01 only.

@@ -8630,3 +8630,50 @@ jobs:
       rationale: >
         Importance 3 - it silently bounds every metric and report. Satisfaction 1 - only the report's
         refusal explains it, and the docs do not. Gap 2. Single informant.
+  - id: job-lead-compare-every-owner-against-its-own-past-in-one-go
+    title: Show leadership how every Team and Portfolio moved, set up once and read together
+    persona: "delivery-lead-rte (also flow-coach)"
+    feature_context: epic-6350-bulk-reports
+    ado: "Epic #6350 Every report in one place, created and removed in bulk"
+    created: 2026-10-27
+    note: >
+      NEW in DISCUSS of epic-6350-bulk-reports. DISCOVER and DIVERGE skipped by maintainer decision. Evidence is
+      one informant, a consultant and early adopter: setting up a Then & Now report per Team by hand was a big
+      pain, and his leaders wanted the big picture, so he ran his own script over every Team to get each metric
+      90 days ago against now (month against month, quarter against quarter), and asked for several copies of a
+      report (a 90-day and a 30-day window) exported as PDF. Builds on job-flow-coach-show-whether-flow-changed
+      (one owner, one report) and hands its result on through job-share-numbers-outside-lighthouse (the PDF).
+      Scores are desk estimates by the product owner.
+    job_story: >
+      When I lead or coach several Teams and Portfolios and leadership asks whether flow got better across them,
+      I want the same before-and-after comparison for each of them, set up once and read side by side,
+      so I can answer for the whole group without configuring every Team by hand or running my own script.
+    dimensions:
+      functional: >
+        One place listing every report I can read across Teams and Portfolios; reports with the same windows
+        created for many owners in one go, each owner's outcome stated; unwanted ones removed in one go; and the
+        chosen reports in one PDF.
+      emotional: >
+        From "another evening clicking through fourteen wizards, or my script" to "one setup, and the whole
+        group is in front of me".
+      social: >
+        The lead walks into the steering group with every Team on the same windows, so nobody can say the
+        comparison was cherry-picked.
+    forces:
+      push: >
+        One wizard per Team and Portfolio; reports only findable per owner's Reports tab; an own script to get
+        the cross-Team view.
+      pull: >
+        Then & Now already freezes a trustworthy "before", and Epic 6298 already prints a report as a PDF.
+      anxiety: >
+        "Will it create half the reports and leave me guessing which?" (No; every owner's outcome is listed, with
+        the reason when one was not created.) "Can I wipe someone else's reports?" (No; only where I am Admin.)
+      habit: >
+        Running the script, or creating reports for the two Teams that matter and ignoring the rest.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - leaders ask for the cross-Team view and the informant wrote code to get it; not 5 on one
+        informant. Satisfaction 1 - only per-owner setup and per-owner reading exist. Single informant.

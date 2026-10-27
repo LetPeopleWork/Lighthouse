@@ -1,0 +1,181 @@
+schema_version: 1
+feature_id: epic-6350-bulk-reports
+updated: 2026-10-27
+ado: "#6350 Every report in one place, created and removed in bulk"
+note: >
+  Created in DISCUSS (2026-10-27). DISCOVER and DIVERGE skipped by the maintainer. Evidence is one informant, a
+  consultant and early adopter, who ran his own script over every Team to show leaders each metric 90 days ago
+  against now, and asked for several copies of a report (90-day and 30-day) as PDF. Extends
+  show-what-changed-since-the-engagement-started (epic-5878-baseline.yaml) from one owner to many, and
+  take-a-report-to-people-who-will-not-open-lighthouse (epic-6298-report-pdf-export.yaml) from one report to
+  several. Terms in braces ({team}, {portfolio}, {cycle time}, ...) render as the instance's configured words.
+
+journeys:
+
+  - name: show-leadership-how-every-owner-moved
+    goal: >
+      A delivery lead or flow coach sets up the same Then & Now comparison for many Teams and Portfolios at once,
+      finds every report in one place, clears out the ones no longer wanted, and hands leadership one PDF holding
+      the chosen reports.
+    persona: "delivery-lead-rte (Martin Achterberg); flow-coach (Elena Kovacs) as the Admin who creates"
+    jobs:
+      - job-lead-compare-every-owner-against-its-own-past-in-one-go
+      - job-flow-coach-show-whether-flow-changed      # each created report
+      - job-share-numbers-outside-lighthouse          # the PDF step
+    emotional_arc:
+      start: Burdened - "Fourteen wizards, or my own script, again."
+      middle: Focused - "One setup; I can see which owners got a report and why the others did not."
+      end: Confident - "Every Team on the same windows, in one place and one PDF."
+    steps:
+      - id: 1
+        name: Find and select reports
+        action: "Reports (top-level page) -> a table of every report the user can read: Name, Type, {team}/{portfolio}, Created -> open one, or select rows (every row selectable; filter change clears the selection; select-all = rows the filter shows, all pages)"
+        tui_mockup: |
+          +-- Reports ---------------------------------------- [Create reports] ---------+
+          | Filter: "90 days to 29 Jul 2026"                           9 selected        |
+          | [x] Name                                  Type        Owner        Created   |
+          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Team Zenith  27 Oct    |
+          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Team Gravity 27 Oct    |
+          | [x] Then & Now — 90 days to 29 Jul 2026   Then & Now  Portfolio .. 27 Oct    |
+          |  (selection built in slice 01 but hidden; the boxes and count show once     |
+          |   05 (Remove) or 07 (Export PDF) ships)                                     |
+          +------------------------------------------------------------------------------+
+        emotional_state: {entry: Burdened, exit: Oriented}
+        shared_artifacts: [report_name, owner_name, report_type, report_created_on, readable_owners]
+        failure_modes:
+          - The list is still on its way - a loading look, never an empty table that reads as "no reports"
+          - The list cannot be loaded - a could-not-load look with Retry, never stale rows passed off as current
+          - The user can read no report yet - an empty look that says where reports are created
+          - A report of a type this version cannot show - listed, opens to the existing "cannot be shown" look
+          - The user lost read access to an owner since the last visit - its reports are no longer listed
+          - The filter changes with rows selected - the selection clears, so nothing selected is out of sight
+        integration_checkpoint: >
+          The page lists exactly the reports the per-owner Reports tabs list for owners the user can read, with the
+          same names, types and created days, and opens the same report view. The selected count equals the rows
+          ticked under the current filter.
+      - id: 2
+        name: Create reports for many owners
+        action: "Create reports (Premium) -> Type (Then & Now) -> Then -> Now -> Metrics & name -> Owners ({teams} and {portfolios} where the user is Admin) -> Create"
+        tui_mockup: |
+          +-- Create reports · Then & Now · step 5 of 5: Owners -----------------------+
+          |  (state before slice 04: every Admin owner pickable; 04 marks those that   |
+          |   cannot take the report as not pickable, with the reason)                 |
+          | Then 1 May – 29 Jul 2026 (90 days) · Now last 90 days                       |
+          | Name: Then & Now — 90 days to 29 Jul 2026                                   |
+          | {Teams}       [x] Zenith  [x] Gravity  [x] Equinox  [ ] Voyager              |
+          | {Portfolios}  [x] Ocean Explorer                                             |
+          |                                         [Back]  [Create 4 reports]          |
+          +-----------------------------------------------------------------------------+
+        emotional_state: {entry: Hopeful, exit: Focused}
+        shared_artifacts: [report_windows, report_name, admin_owners, licence_tier, owner_history_start]
+        failure_modes:
+          - Community licence - Create reports is shown disabled with a Premium hint (PROPOSED)
+          - Premium, but the user is Admin of no owner - Create reports disabled with "You are not Admin of any Team or Portfolio" (PROPOSED)
+          - The Admin set or the owners' limits are still loading - Create is not available; if they cannot be loaded, could-not-load with Retry
+          - An owner's kept history cannot hold the windows, or it does not capture a chosen metric - shown but not pickable (slice 04), and skipped with the reason if it gets through
+          - Many owners selected - creation takes several seconds; the user sees it is working
+        integration_checkpoint: >
+          Every selected owner gets the same windows, metrics and name; only owners where the user is Admin can be
+          picked (from slice 02a; every owner with RBAC or auth off), and the server refuses any other per owner.
+      - id: 3
+        name: Read each owner's outcome
+        action: "Result list: one row per owner - Created (opens it) or Not created with the reason and where to fix it"
+        tui_mockup: |
+          +-- 3 reports created, 1 not created ----------------------------------------+
+          | Team Zenith              Created                         [Open]            |
+          | Team Gravity             Created                         [Open]            |
+          | Portfolio Ocean Explorer Created                         [Open]            |
+          | Team Equinox             Not created: its kept history starts 30 Jul 2026. |
+          |                          Keep more history: Closed Items Cutoff in its     |
+          |                          settings.                                          |
+          |                                                     [Back to Reports]      |
+          +-----------------------------------------------------------------------------+
+        emotional_state: {entry: Anxious, exit: Confident}
+        shared_artifacts: [owner_name, refusal_reason, owner_history_start]
+        failure_modes:
+          - The answer never arrives (connection dropped) - "could not confirm which reports were created", with a link to Reports; never a silent half
+          - An owner was deleted or the user lost Admin meanwhile - one Not created row with that reason, never a whole-run failure
+          - The licence lapsed meanwhile - Not created past the Community cap, with the licence reason; the rest created
+          - A chosen metric is not captured by an owner - Not created, "does not capture {metric}"
+          - Every picked owner is refused - the headline reads "0 reports created, N not created", every row with its reason; never an empty or success-looking result
+        integration_checkpoint: >
+          The result has exactly one row per picked owner; every Created row opens a report that the Reports page
+          also lists.
+      - id: 4
+        name: Remove reports in bulk
+        action: "Reports page selection -> Remove (enabled only when every selected report is on an owner where the user is Admin; otherwise disabled, naming how many cannot be removed) -> confirm naming the exact count and the owners -> per-report outcome"
+        emotional_state: {entry: Cautious, exit: Relieved}
+        shared_artifacts: [report_name, owner_name, admin_owners]
+        failure_modes:
+          - The selection mixes reports the user may and may not remove - Remove disabled with "{n} of the {m} selected reports are on a Team or Portfolio you are not Admin of" (PROPOSED)
+          - A selected report's Then can no longer be rebuilt - the confirm says so before removal
+          - A report was already removed by someone else - counted as removed, not as an error
+          - The user lost Admin on an owner meanwhile - that report is not removed, with the reason
+          - The answer never arrives - "could not confirm what was removed", with a link to Reports
+        integration_checkpoint: >
+          Every removed report disappears from the Reports page and its owner's Reports tab; every not-removed report
+          is still listed in both.
+      - id: 5
+        name: Hand leadership one PDF
+        action: "Reports page selection (any readable rows, Viewer included) -> Export PDF ({n}) -> one print document, each report on its own page(s) -> Save as PDF"
+        emotional_state: {entry: Ready, exit: Confident}
+        shared_artifacts: [report_values, report_windows, owner_name, report_name, generated_at, branding]
+        failure_modes:
+          - One selected report cannot be read - no PDF passes a missing report off as complete; the page names it with Retry and Leave it out
+          - More reports selected than the ceiling - "Pick at most N reports" (PROPOSED; N is DESIGN's)
+          - Many reports selected - preparing takes a while; the page says it is preparing
+          - macOS desktop app - printing is unavailable there (Bug 6425); the action is disabled with the same reason, or whatever single export does on main if Bug 6425 has not landed
+        integration_checkpoint: >
+          Each report in the combined PDF shows exactly what its own single-report PDF (Epic 6298) shows when read
+          at the same moment, in the Reports page's order.
+
+  - name: list-every-report-from-an-assistant
+    goal: >
+      An assistant connected through MCP, or a script using lh, lists every report the user can read across Teams
+      and Portfolios without asking for each owner first, then reads one with the existing tools.
+    persona: delivery-lead-rte
+    jobs: [job-lead-compare-every-owner-against-its-own-past-in-one-go]
+    emotional_arc: {start: Wary, middle: Engaged, end: Confident}
+    steps:
+      - id: 1
+        name: List every report
+        action: "lh report list with no owner (the contract), or the MCP tool DESIGN names (stdio and HTTP) -> id, name, type, owner kind, owner id and name, created"
+        emotional_state: {entry: Wary, exit: Engaged}
+        shared_artifacts: [report_name, owner_name, report_type, report_created_on, readable_owners]
+        failure_modes:
+          - A Lighthouse older than this Epic - "upgrade Lighthouse", as the per-owner reads already say
+          - No credential or no access - the existing relays
+        integration_checkpoint: >
+          The list holds the same reports as the Reports page for the same user.
+      - id: 2
+        name: Read one
+        action: "Existing lighthouse_{team,portfolio}_report_get / lh report get (Epic 6298)"
+        emotional_state: {entry: Engaged, exit: Confident}
+        shared_artifacts: [report_values]
+
+shared_artifacts:
+  readable_owners: {source: "the server's read-scope filter (RBAC), same as the per-owner Reports tabs", consumers: [Reports page, clients list]}
+  admin_owners: {source: "the server's write-scope (TeamWrite / PortfolioWrite); the UI through useRbac()", consumers: [owner picker, Remove enablement, server refusal]}
+  report_name: {source: "Reports table (name)", consumers: [Reports page, result list, report view, PDF header, clients list]}
+  report_created_on: {source: "Reports table (creation day)", consumers: [Reports page, per-owner Reports tab, clients list]}
+  owner_name: {source: "Team / Portfolio record", consumers: [Reports page, result list, PDF header, clients list]}
+  report_type: {source: "report templateKey, shown as Type", consumers: [Reports page, type step, clients list]}
+  report_windows: {source: "the bulk wizard's one configuration, frozen per report at creation", consumers: [every created report, PDF header]}
+  owner_history_start: {source: "derived earliest kept day per owner (today minus its Closed Items Cutoff; the server's earliestStart on refusal)", consumers: [result reasons, owner-step limits]}
+  refusal_reason: {source: "server refusal codes (ReportRefusalCodes), worded by the frontend", consumers: [result list]}
+  licence_tier: {source: "licence status", consumers: [Create reports action]}
+  report_values: {source: "report read endpoint", consumers: [report view, combined PDF]}
+  generated_at: {source: "the moment the PDF's reads completed", consumers: [PDF header]}
+  branding: {source: "Epic 6298 print frame", consumers: [combined PDF]}
+
+changelog:
+  - date: 2026-10-27
+    feature: epic-6350-bulk-reports
+    change: Created in DISCUSS.
+  - date: 2026-10-27
+    feature: epic-6350-bulk-reports
+    change: >
+      Revised after peer review - selection born on the Reports page (step 1), Remove rule and lost answer (step 4),
+      Viewer export and ceiling (step 5), five wizard steps labelled as the pre-slice-04 state, contiguous windows,
+      report_created_on added, owner_history_start source named as derived, second journey's emotional states and
+      integration checkpoints.
