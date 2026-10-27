@@ -222,7 +222,7 @@ describe("What the Reports page tells the usage data", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`deleting one report from its row is told as one deleted report, as on the owner's tab (${pendingEpic6350("01")})`, async () => {
+	it(`deleting one report from its row is told as one deleted report, as on the owner's tab (${pendingEpic6350("01")})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi

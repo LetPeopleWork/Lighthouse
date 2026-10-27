@@ -7,7 +7,11 @@ import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
-import { reportQueryKeyOf, reportsQueryKeyOf } from "./reportOwner";
+import {
+	ALL_REPORTS_QUERY_KEY,
+	reportQueryKeyOf,
+	reportsQueryKeyOf,
+} from "./reportOwner";
 
 const CANNOT_BE_REBUILT = "This Then window can no longer be rebuilt.";
 const COULD_NOT_DELETE = "This report couldn't be deleted. Try again.";
@@ -21,7 +25,7 @@ interface DeletableReport {
 
 export interface ReportDeletion {
 	/** Opens the confirmation for this report; nothing is sent until somebody confirms. */
-	ask: (report: DeletableReport) => void;
+	ask: (report: DeletableReport, forOwner?: IReportOwner) => void;
 	dialog: React.ReactNode;
 }
 
@@ -43,19 +47,25 @@ const ignore = () => undefined;
  * and says so, and while a delete is on its way the dialog can be neither confirmed again nor dismissed.
  */
 export const useReportDeletion = (
-	owner: IReportOwner,
+	owner: IReportOwner | undefined,
 	onDeleted: () => void = () => undefined,
 ): ReportDeletion => {
 	const { reportService } = useContext(ApiServiceContext);
 	const queryClient = useQueryClient();
 	const reportUsage = useUsageDataReporter();
-	const [toDelete, setToDelete] = useState<DeletableReport | null>(null);
+	const [toDelete, setToDelete] = useState<{
+		report: DeletableReport;
+		owner: IReportOwner;
+	} | null>(null);
 	const [failure, setFailure] = useState<string | undefined>();
 	const [isDeleting, setIsDeleting] = useState(false);
 
-	const ask = (report: DeletableReport) => {
+	const ask = (report: DeletableReport, forOwner = owner) => {
+		if (forOwner === undefined) {
+			return;
+		}
 		setFailure(undefined);
-		setToDelete(report);
+		setToDelete({ report, owner: forOwner });
 	};
 
 	const close = () => {
@@ -64,9 +74,12 @@ export const useReportDeletion = (
 		setIsDeleting(false);
 	};
 
-	const send = async (reportId: number): Promise<DeleteOutcome> => {
+	const send = async (
+		from: IReportOwner,
+		reportId: number,
+	): Promise<DeleteOutcome> => {
 		try {
-			await reportService.deleteReport(owner, reportId);
+			await reportService.deleteReport(from, reportId);
 			return "deleted";
 		} catch (error_) {
 			return isNotFound(error_) ? "already-gone" : "failed";
@@ -78,7 +91,8 @@ export const useReportDeletion = (
 			return;
 		}
 		setIsDeleting(true);
-		const outcome = await send(toDelete.id);
+		const { report, owner: reportOwner } = toDelete;
+		const outcome = await send(reportOwner, report.id);
 		if (outcome === "failed") {
 			setFailure(COULD_NOT_DELETE);
 			setIsDeleting(false);
@@ -88,22 +102,25 @@ export const useReportDeletion = (
 			reportUsage({ name: UsageDataEventName.ReportDeleted });
 		}
 		queryClient.removeQueries({
-			queryKey: reportQueryKeyOf(owner, toDelete.id),
+			queryKey: reportQueryKeyOf(reportOwner, report.id),
 			exact: true,
 		});
 		close();
 		onDeleted();
-		await queryClient.invalidateQueries({
-			queryKey: reportsQueryKeyOf(owner),
-		});
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: reportsQueryKeyOf(reportOwner),
+			}),
+			queryClient.invalidateQueries({ queryKey: ALL_REPORTS_QUERY_KEY }),
+		]);
 	};
 
 	const dialog =
 		toDelete === null ? null : (
 			<DeleteConfirmationDialog
 				open
-				itemName={toDelete.name}
-				warning={rebuildWarningOf(toDelete)}
+				itemName={toDelete.report.name}
+				warning={rebuildWarningOf(toDelete.report)}
 				errorMessage={failure}
 				confirmDisabled={isDeleting}
 				onConfirm={confirm}

@@ -42,6 +42,8 @@ export interface ReportListActions {
 	/** The report whose PDF is being prepared, whose icon waits while every other PDF icon is held back. */
 	preparingId: number | undefined;
 	editor?: ReportListEditorActions;
+	/** Narrows the editor's icons to the rows it may change, when the rows have different owners. */
+	mayEditRow?: (report: IReportListItem) => boolean;
 }
 
 interface ReportListProps {
@@ -136,7 +138,8 @@ const RowActions: React.FC<{
 	readonly report: IReportListItem;
 	readonly actions: ReportListActions;
 }> = ({ report, actions }) => {
-	const { editor } = actions;
+	const editor =
+		actions.mayEditRow?.(report) === false ? undefined : actions.editor;
 	const isShown = isShownByThisVersion(report.templateKey);
 	return (
 		<>

@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useContext } from "react";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
-
-/** Named for the whole "reports" family so that any change to a report refreshes this list too. */
-export const ALL_REPORTS_QUERY_KEY = ["reports", "all"] as const;
+import { ALL_REPORTS_QUERY_KEY } from "../Common/Reports/reportOwner";
 
 export const useAllReports = () => {
 	const { reportService } = useContext(ApiServiceContext);

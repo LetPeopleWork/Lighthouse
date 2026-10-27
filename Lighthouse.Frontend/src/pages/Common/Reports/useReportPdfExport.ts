@@ -35,7 +35,7 @@ const useExportCounter = () => {
 
 export interface ReportPdfExport {
 	/** Prints the report from a hidden frame on this page; a second choice while one is prepared does nothing. */
-	readonly exportPdf: (report: Exported) => void;
+	readonly exportPdf: (report: Exported, forOwner?: IReportOwner) => void;
 	/** The report whose PDF is being prepared, until its print dialog has been asked for. */
 	readonly preparingId: number | undefined;
 	/** The hidden frame the report is printed from, while there is one. */
@@ -43,6 +43,7 @@ export interface ReportPdfExport {
 }
 
 interface Exporting {
+	readonly owner: IReportOwner;
 	readonly reportId: number;
 	/** Each export draws into a frame of its own, even for the same report. */
 	readonly attempt: number;
@@ -76,7 +77,9 @@ const useExportMessage = () => {
  * then the report is printed from a hidden frame, which goes again a turn after its dialog closes. When no PDF can be
  * made the frame goes too, and the error snackbar says why, offering Retry where asking again may help.
  */
-export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
+export const useReportPdfExport = (
+	owner: IReportOwner | undefined,
+): ReportPdfExport => {
 	const countTheExport = useExportCounter();
 	const message = useExportMessage();
 	const attempts = useRef(0);
@@ -92,21 +95,28 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 	const exportStarter = useRef<HTMLElement | null>(null);
 
 	// Retry finishes the export the reader already asked for, so it starts a fresh frame and counts nothing.
-	const printFromAFreshFrame = (reportId: number) => {
+	const printFromAFreshFrame = (
+		reportOwner: IReportOwner,
+		reportId: number,
+	) => {
 		attempts.current += 1;
 		setPreparingId(reportId);
-		setExporting({ reportId, attempt: attempts.current });
+		setExporting({
+			owner: reportOwner,
+			reportId,
+			attempt: attempts.current,
+		});
 	};
 
-	const exportPdf = (report: Exported) => {
-		if (preparingId !== undefined) return;
+	const exportPdf = (report: Exported, forOwner = owner) => {
+		if (forOwner === undefined || preparingId !== undefined) return;
 		message.takeBack();
 		exportStarter.current =
 			document.activeElement instanceof HTMLElement
 				? document.activeElement
 				: null;
 		countTheExport(report);
-		printFromAFreshFrame(report.id);
+		printFromAFreshFrame(forOwner, report.id);
 	};
 
 	// Never inside the dialog's own closing: some browsers say it closed before print() has returned.
@@ -119,7 +129,7 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 	};
 
 	const tellFor =
-		({ reportId, attempt }: Exporting) =>
+		({ owner: reportOwner, reportId, attempt }: Exporting) =>
 		(outcome: PrintOutcome): void => {
 			setPreparingId(undefined);
 			if (outcome.kind !== "printing") removeTheFrameOf(attempt);
@@ -131,7 +141,7 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 							label: RETRY,
 							onClick: () => {
 								exportStarter.current?.focus();
-								printFromAFreshFrame(reportId);
+								printFromAFreshFrame(reportOwner, reportId);
 							},
 						}
 					: undefined,
@@ -143,7 +153,7 @@ export const useReportPdfExport = (owner: IReportOwner): ReportPdfExport => {
 			? null
 			: createElement(PrintFrameHost, {
 					key: exporting.attempt,
-					owner,
+					owner: exporting.owner,
 					reportId: exporting.reportId,
 					tell: tellFor(exporting),
 				});

@@ -15,7 +15,6 @@ import {
 	ownerCellOf,
 	ownerLinkNameOf,
 	PULSAR,
-	pendingEpic6350,
 	QUARTER,
 	REPORTS,
 	RETRY,
@@ -40,8 +39,6 @@ import {
  * the same Edit, Delete and PDF icons as an owner's Reports tab. The server decides what the reader can read; the
  * page shows what it answers.
  */
-
-const pending = pendingEpic6350("01");
 
 const zenithsQuarter = aReportOn(ZENITH, QUARTER);
 const gravitysQuarter = aReportOn(GRAVITY, QUARTER);
@@ -86,7 +83,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
-	it(`the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio (${pending})`, async () => {
+	it(`the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
 		});
@@ -108,7 +105,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it(`the owner's kind is announced in the instance's own word (${pending})`, async () => {
+	it(`the owner's kind is announced in the instance's own word`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter),
 			terms: { ...defaultTerms, [TERMINOLOGY_KEYS.TEAM]: "Squad" },
@@ -121,7 +118,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
-	it(`two reports of the same name on different owners are both listed and told apart by owner (${pending})`, async () => {
+	it(`two reports of the same name on different owners are both listed and told apart by owner`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, gravitysQuarter),
 		});
@@ -132,7 +129,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it(`with no report anywhere it says where reports are created (${pending})`, async () => {
+	it(`with no report anywhere it says where reports are created`, async () => {
 		renderTheReportsPage({ reportService: aReportServiceListing() });
 
 		expect(
@@ -141,7 +138,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
-	it(`while the reports are on their way it shows a loading look and no table (${pending})`, async () => {
+	it(`while the reports are on their way it shows a loading look and no table`, async () => {
 		renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn(() => neverAnswered()),
@@ -160,7 +157,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
-	it(`when the reports cannot be loaded it says so, shows no empty table, and Retry loads them (${pending})`, async () => {
+	it(`when the reports cannot be loaded it says so, shows no empty table, and Retry loads them`, async () => {
 		const getAllReports = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
@@ -183,7 +180,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it(`a report of a type this version cannot show is listed and says so (${pending})`, async () => {
+	it(`a report of a type this version cannot show is listed and says so`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
 				aReportOn(PULSAR, "Signals", {
@@ -200,7 +197,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it(`a report whose Then can no longer be rebuilt is marked on its row (${pending})`, async () => {
+	it(`a report whose Then can no longer be rebuilt is marked on its row`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
 				aReportOn(GRAVITY, QUARTER, {
@@ -220,7 +217,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @contract-shape:pure-function
-	it(`the filter narrows the rows by owner name (${pending})`, async () => {
+	it(`the filter narrows the rows by owner name`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(
 				zenithsQuarter,
@@ -236,7 +233,7 @@ describe("Every report in one place", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it(`the filter still matches an owner's kind, though the cell shows only its name (${pending})`, async () => {
+	it(`the filter still matches an owner's kind, though the cell shows only its name`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
 		});
@@ -250,7 +247,7 @@ describe("Every report in one place", () => {
 
 describe("The icons on each row", () => {
 	// @driving_port @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
-	it.skip(`Edit and Delete show only on rows the reader is Admin of; PDF shows on every row (${pending})`, async () => {
+	it(`Edit and Delete show only on rows the reader is Admin of; PDF shows on every row`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, pulsarsQuarter),
 			permissions: { adminOf: [ZENITH] },
@@ -273,7 +270,7 @@ describe("The icons on each row", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
-	it.skip(`while permissions are on their way no row offers Edit or Delete, and every row offers PDF (${pending})`, async () => {
+	it(`while permissions are on their way no row offers Edit or Delete, and every row offers PDF`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter),
 			permissions: "loading",
@@ -289,7 +286,7 @@ describe("The icons on each row", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`Delete on a row asks the owner tab's confirmation, deletes that report alone and takes it off the list (${pending})`, async () => {
+	it(`Delete on a row asks the owner tab's confirmation, deletes that report alone and takes it off the list`, async () => {
 		const getAllReports = vi
 			.fn()
 			.mockResolvedValueOnce(everyReport(zenithsQuarter, gravitysQuarter))

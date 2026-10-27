@@ -14,7 +14,7 @@ import {
 
 export interface ReportEditing {
 	/** Reads the report, then opens Edit report on it; a second press while it is being read does nothing. */
-	ask: (report: { id: number }) => void;
+	ask: (report: { id: number }, forOwner?: IReportOwner) => void;
 	/** The report being read before its edit can open, if any. */
 	readingId: number | undefined;
 	/** The edit wizard, or what went wrong reading the report for it. */
@@ -29,22 +29,26 @@ const isNotFound = (error: unknown): boolean =>
  * afresh first, since an edit is saved over the report as it was read; one that is gone is forgotten and the
  * owner's list read again.
  */
-export const useReportEditing = (owner: IReportOwner): ReportEditing => {
+export const useReportEditing = (
+	owner: IReportOwner | undefined,
+): ReportEditing => {
 	const { reportService } = useContext(ApiServiceContext);
 	const queryClient = useQueryClient();
 	const [readingId, setReadingId] = useState<number | undefined>();
-	const [editing, setEditing] = useState<IReport | null>(null);
+	const [editing, setEditing] = useState<{
+		report: IReport;
+		owner: IReportOwner;
+	} | null>(null);
 	const [failure, setFailure] = useState<string | undefined>();
 
-	const read = async (reportId: number) => {
-		const queryKey = reportQueryKeyOf(owner, reportId);
+	const read = async (reportOwner: IReportOwner, reportId: number) => {
+		const queryKey = reportQueryKeyOf(reportOwner, reportId);
 		try {
-			setEditing(
-				await queryClient.query({
-					queryKey,
-					queryFn: () => reportService.getReport(owner, reportId),
-				}),
-			);
+			const report = await queryClient.query({
+				queryKey,
+				queryFn: () => reportService.getReport(reportOwner, reportId),
+			});
+			setEditing({ report, owner: reportOwner });
 		} catch (error) {
 			if (!isNotFound(error)) {
 				setFailure(COULD_NOT_LOAD_REPORT);
@@ -53,20 +57,20 @@ export const useReportEditing = (owner: IReportOwner): ReportEditing => {
 			setFailure(NO_LONGER_EXISTS);
 			queryClient.removeQueries({ queryKey, exact: true });
 			await queryClient.invalidateQueries({
-				queryKey: reportsQueryKeyOf(owner),
+				queryKey: reportsQueryKeyOf(reportOwner),
 			});
 		} finally {
 			setReadingId(undefined);
 		}
 	};
 
-	const ask = (report: { id: number }) => {
-		if (readingId !== undefined) {
+	const ask = (report: { id: number }, forOwner = owner) => {
+		if (forOwner === undefined || readingId !== undefined) {
 			return;
 		}
 		setFailure(undefined);
 		setReadingId(report.id);
-		read(report.id).catch(() => undefined);
+		read(forOwner, report.id).catch(() => undefined);
 	};
 
 	const failureAlert =
@@ -81,8 +85,8 @@ export const useReportEditing = (owner: IReportOwner): ReportEditing => {
 			failureAlert
 		) : (
 			<ReportWizard
-				owner={owner}
-				editing={editing}
+				owner={editing.owner}
+				editing={editing.report}
 				onClose={() => setEditing(null)}
 			/>
 		);
