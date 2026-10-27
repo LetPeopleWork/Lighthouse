@@ -24,10 +24,14 @@ A ratchet guard is an architecture test with an inline list of the offenders tha
 - The Story that fixes an offender deletes its entry **in the same change**.
 - A rule with no remaining offenders has an empty list and stays as a plain rule.
 
-**Source scan or ArchUnitNET.** Use ArchUnitNET when the question is about what a type depends on
-(constructor parameters, fields, generic arguments). Use a source scan with a file list when the
-question is who calls one member, because lambdas and async methods compile into nested
-compiler-generated types and the failure should name the file and line. Both feed the same two-way
+**Compiled IL or a source scan.** Answer a question about what a type depends on (constructor
+parameters, fields, generic arguments, what its methods use) from the compiled IL with Mono.Cecil.
+The walk includes the nested types the compiler makes for lambdas and async methods, and reports
+what they use against the type that wrote them. Start from the shared helper `IlDependencies` in the
+architecture tests. ArchUnitNET's dependency graph is not safe for these questions: in a Release
+build, which is what CI tests, it drops what an async method uses, so a dependency written only
+inside an `async` body passes unseen. Use a source scan with a file list when the question is who
+calls one member, because the failure should name the file and line. Both feed the same two-way
 comparison. Source scans share one internal helper that finds the production sources and strips
 comments.
 
