@@ -75,6 +75,7 @@ dotnet_diagnostic.NUnit2056.severity = warning
 dotnet_diagnostic.NUnit4002.severity = warning
 dotnet_diagnostic.CA1865.severity = warning
 dotnet_diagnostic.CA1834.severity = warning
+dotnet_diagnostic.CA2012.severity = warning
 dotnet_diagnostic.CA1869.severity = warning
 dotnet_diagnostic.CA1806.severity = warning
 dotnet_diagnostic.SYSLIB1045.severity = warning
