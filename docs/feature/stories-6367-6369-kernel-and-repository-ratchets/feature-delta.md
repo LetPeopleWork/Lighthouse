@@ -116,3 +116,129 @@ Epic per-Story checklist (How to pick up a Story):
 - [ ] One context at a time (N/A, because these items move no context; they add rules).
 - [ ] Terminology follows the seeded defaults (no S01 glossary yet).
 - [ ] Cross-cutting re-check: RBAC, Lighthouse-Clients, Website, usage-data event, UI sketch, each answered for this batch.
+
+## Wave: DESIGN / [REF] Decisions (2026-10-27, propose mode, maintainer decided)
+
+Paths are under `Lighthouse.Backend/Lighthouse.Backend/` (production) and `Lighthouse.Backend/Lighthouse.Backend.Tests/` (tests).
+
+| # | Decision | Verdict |
+|---|---|---|
+| D1 | S04a: move or baseline | Move six kernel-level types into `Models`; invert one. `Models ↛ Services` starts with an **empty** exception list. |
+| D2 | `LegacyDefaultEncryptionKey` | Not kernel-level (it needs the classifier, envelope and ring holder, all `Services`). `EncryptionKeyRing.WithLegacyDefault()` becomes an extension method in `Services/Implementation/Encryption`; call syntax unchanged. |
+| D3 | `UpdateType` exception | Dropped from `ModelsDoNotDependOnTheUpdateQueueArchUnitTest`; the test stays, narrower message and all. |
+| D4 | S05a detection | Hybrid. `GetAllByPredicate` callers: source scan, inline file list, failure names file:line. Repository dependency: ArchUnitNET on type dependencies. |
+| D5 | Repository targets | Match by name (`IRepository<>`, `^I\w*Repository$`) plus every type in `Services.Implementation.Repositories`. Not by the `Services.Interfaces.Repositories` namespace, which also holds `IFeatureListReader`, `IUserProfileLookup` and `RecordableDeliveries`. |
+| D6 | Rule scope | The whole `API` namespace, 23 entries (20 controllers + 3 helpers). "Depends" means any type dependency, including generic arguments such as `GetRequiredService<IRepository<Team>>()`. Nested compiler types normalise to their declaring type. |
+| D7 | Test placement | S04a extends `ModuleBoundariesArchUnitTest`; S05a creates one new class for both rules. |
+| D8 | Shared source-scan helper | One new internal `ProductionSource` used by the new test only. Migrating the five private copies is a separate follow-up. |
+| D9 | ADR | New ADR-268 for the ratchet convention; status note on ADR-027. |
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Path | Change | Note |
+|---|---|---|
+| `Services/Interfaces/IEntity.cs`, `IConcurrencyTokenEntity.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | ~55 files touched; in `Models` it deletes a `using` |
+| `Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs` | Moved to `Models`, same namespace | integer values kept |
+| `Services/Interfaces/Reports/ReportOwner.cs` (holds `ReportOwnerKind` too) | Moved to `Models/Reports`, namespace `Lighthouse.Backend.Models.Reports` | ~43 files |
+| `Services/Implementation/BlackoutDaysExtensions.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | 17 files |
+| `Services/Implementation/BackgroundServices/Update/UpdateType.cs` | Moved to `Models`, namespace `Lighthouse.Backend.Models` | ~70 files, mostly `using` lines |
+| `Models/Encryption/EncryptionKeyRing.cs`, `Services/Implementation/Encryption/LegacyDefaultEncryptionKey.cs` | Edit: instance method becomes an extension | callers keep the syntax |
+| `Tests/Architecture/ModuleBoundariesArchUnitTest.cs` | Edit: add `SharedKernel_DoesNotDependOnServices`, delete the prose caveat | |
+| `Tests/Architecture/ModelsDoNotDependOnTheUpdateQueueArchUnitTest.cs` | Edit: drop the `UpdateType` exception and its doc paragraph | |
+| `Tests/Architecture/ProductionSource.cs` | New, internal | finds production sources, strips comments |
+| `Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs` | New | both S05a rules, one two-way comparison helper |
+| `ARCHITECTURE.md` §4 (line 137) | Edit: delete the gap note | same change as the rule |
+
+## Wave: DESIGN / [REF] Reuse analysis
+
+| Existing component | Evidence | Decision |
+|---|---|---|
+| `ModuleBoundariesArchUnitTest` | has `ServiceLayerPattern`, `SharedKernelPattern`, and carries the caveat | EXTEND |
+| `ModelsDoNotDependOnTheUpdateQueueArchUnitTest` | holds the only `UpdateType` exception | EXTEND (edit) |
+| `LighthouseArchitecture.Production` | shared loaded architecture | REUSE |
+| `ProductionSourceFiles` / `ProductionSourceOf` / `ProductionRoot` | private copies in `OverTimeReconstructionSeamArchUnitTest`, `SecretReadPathSourceStructureTest`, `SecretRotationWriteSurfaceTest`, `CalendarDayAnchorSeamArchUnitTest`, `JiraRouteLiteralsTest` | CREATE one shared helper rather than a sixth copy; migrating the five is out of scope |
+| Baseline comparison | existing idiom is `Is.EqualTo` on an exact list, with one message for both directions | CREATE a small comparison with separate "new offender" and "stale entry" messages, inside the new class |
+| Ratchet test class | nothing existing is about repository leaks | CREATE |
+| `OverTimeReconstructionSeamArchUnitTest.OnlyTheReconciler_AsksTheFillerForDays` | the closest source-scan analogue | pattern reused, code not shared |
+
+## Wave: DESIGN / [REF] Slices
+
+Each is at most one day. Pure-move commits change namespaces and `using` lines only; edit commits change logic or tests. Every commit leaves the build green. The two stories are independent.
+
+### S04a (Story 6367)
+
+| Slice | Commits | Satisfies |
+|---|---|---|
+| S04a-1 | move: `IEntity` + `IConcurrencyTokenEntity` | AC: kernel types live in `Models` |
+| S04a-2 | move: `WorkTrackingSystems` (up to ~276 files, mechanical; IDE0005 or compile-driven) | same |
+| S04a-3 | move: `ReportOwner` + `ReportOwnerKind`; separate move: `BlackoutDaysExtensions` | same |
+| S04a-4 | move: `UpdateType`; edit: drop the exception in `ModelsDoNotDependOnTheUpdateQueueArchUnitTest` | same |
+| S04a-5 | edit: `WithLegacyDefault` becomes a `Services` extension | `Models` no longer reaches the encryption service |
+| S04a-6 | edit: add `Models ↛ Services` with an empty exception list, delete the prose caveat, delete the `ARCHITECTURE.md` §4 gap note | AC: the rule fails on a new `Models → Services` dependency; the gap note is gone |
+
+Before S04a-6 goes green, write the rule first and compare ArchUnitNET's offender list with the eight types in the evidence table below; any extra type is a ninth decision.
+
+### S05a (Story 6369)
+
+| Slice | Commits | Satisfies |
+|---|---|---|
+| S05a-1 | edit: `ProductionSource` helper and the `GetAllByPredicate` source scan with its 14-file list | AC: a new caller fails naming file:line; a listed file that stops calling fails until removed |
+| S05a-2 | edit: the `API` repository-dependency guard with its 23-entry list. **First spike** how ArchUnitNET attributes lambda display classes and async state machines, and normalise nested types to the declaring type. | AC: the same two behaviours for the `API` rule |
+
+Baselines to put in the lists (re-count at the PR):
+- 14 files: `TeamMetricsService`, `PortfolioMetricsService`, `ConnectionSaveService`, `WorkItemService`, `WorkTrackingSystemConnectionUsage`, `RefreshLogService`, `DemoPercentilesBackfillHandler`, `DemoBlockedHistoryBackfillHandler`, `OverTimeFillTarget`, `FeaturesController`, `WriteBackTriggerService`, `RefinementList`, `BlockedCountSeriesBuilder`, `TeamMetricsController`.
+- 23 `API` entries: the 20 controllers listed above, plus `APIHelpers`, `OwnerSettingRefusals`, `PortfolioExtensions`.
+
+## Wave: DESIGN / [REF] S04a evidence per type
+
+`Models` imports a `Services` namespace in 39 files, and has no fully qualified references or global usings, so the list is complete: 33 files for the two markers, plus `SupportedConnectionDefaults`, `EncryptionKeyRing`, `RefreshSubject`, `ReportReadModels`, `Feature`, `ForecastPercentile`.
+
+| Type | What it is | Verdict |
+|---|---|---|
+| `IEntity`, `IConcurrencyTokenEntity` | markers; 33 `Models` types implement them | move |
+| `WorkTrackingSystems` | dependency-free enum on the connection entity | move |
+| `ReportOwner`, `ReportOwnerKind` | dependency-free value object and enum, used by `Report` and `ReportReadModels` | move |
+| `BlackoutDaysExtensions` | extension methods over `BlackoutPeriod` and `ProcessBehaviourChart` only; used by `Delivery`, `Feature`, `ForecastPercentile` (the "unresolved usings") | move |
+| `UpdateType` | five-member enum, used by `RefreshSubject` | move |
+| `LegacyDefaultEncryptionKey` | depends on `SecretStateClassifier`, `SecretEnvelope`, `EncryptionKeyRingHolder` | invert, do not move |
+
+Behaviour-freedom evidence:
+- **Migrations:** both model snapshots contain no `Services` fully qualified name and no `HasConversion`; the migration files reference none of these types. EF stores the enum as an int. No `PendingModelChanges` and no snapshot churn expected, because no entity namespace changes.
+- **Serialization and reflection:** no `Type.GetType`, `AssemblyQualifiedName`, `TypeNameHandling` or `JsonPolymorphic` touches them. Enums serialize by member name, and `UpdateType` is persisted only as an int in the advisory lock key, whose member values do not change. Swagger uses short type names, and none of the moved names clashes with an existing type. DataProtection does not use type names.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+Quoted from `docs/feature/epic-6264-modular-monolith/slices/slice-11-s04a-close-models-services-gap.md`, as written at DISCUSS:
+
+> Relocate `IEntity` (`Services/Interfaces/IEntity.cs`) and `WorkTrackingSystems` (`Services/Implementation/WorkTrackingConnectors/WorkTrackingSystems.cs`) into `Models`.
+
+**Disproved: the two-type hypothesis.** Eight types keep the gap open: `IEntity`, `IConcurrencyTokenEntity`, `WorkTrackingSystems`, `ReportOwner`, `ReportOwnerKind`, `BlackoutDaysExtensions`, `UpdateType` and `LegacyDefaultEncryptionKey`. Seven move; `LegacyDefaultEncryptionKey` is inverted.
+
+Quoted from `docs/feature/epic-6264-modular-monolith/feature-delta.md`, KPI table row 3:
+
+> `Models` file count | brief ~218 → **242** | only S01's kernel allow-list
+
+**Changed:** S04a adds six files to `Models` (`IEntity`, `IConcurrencyTokenEntity`, `WorkTrackingSystems`, `ReportOwner`, `BlackoutDaysExtensions`, `UpdateType`), so the count rises by 6 until S04b reduces it. The KPI row now says so.
+
+Quoted from the same table, KPI row 5:
+
+> Controllers depending on `IRepository<>` / `I*Repository` | brief 5 → **≈20** (re-count at S05a DESIGN)
+
+**Changed:** the scope is the `API` driving adapter, not controllers only: 20 controllers plus 3 helpers (`APIHelpers`, `OwnerSettingRefusals`, `PortfolioExtensions`) make 23, because a helper taking a repository is the same leak.
+
+## Wave: DESIGN / [REF] Risks
+
+- The `Models` file count (KPI 3) goes up before it comes down; recorded in the Epic table.
+- Stale `using` lines may fail the build if Sonar S1128 is enforced; remove them with tooling in each move commit.
+- ArchUnitNET's handling of compiler-generated nested types is unverified; spiked first in S05a-2. Fallback: a source scan for the same list.
+- The source scan is textual: a string or alias could fool it. Comments are stripped; the risk is accepted.
+- A large mechanical diff can hide a logic edit; that is why moves and edits are separate commits.
+- Renaming or moving a listed file touches the baseline list.
+
+## Wave: DESIGN / [REF] Open questions for DISTILL and DELIVER
+
+- DISTILL: the scenarios are architecture-test scenarios (a new offender fails and names itself; a stale entry fails and names itself) for each of the three rules. No UI is touched, so no sketch is owed.
+- DELIVER: propose the rigor profile per slice and record it here before the first dispatch.
+- DELIVER: confirm ArchUnitNET's offender list for `Models → Services` equals the eight types before the rule commit.
+- DELIVER: confirm the exact `Services.Implementation.Repositories` type list is empty for `API` today (expected, the 23 entries are all interface dependencies).
+- Follow-up (not this batch): migrate the five private source-scan helpers to `ProductionSource`.

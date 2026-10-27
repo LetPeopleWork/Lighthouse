@@ -10896,3 +10896,42 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
   several reports print as one document from the same hidden frame, ready only when every report is. **Proposed
   2026-10-27.**
 - Relied on, unchanged: ADR-219 to ADR-222, ADR-245, ADR-246, ADR-247, ADR-255, ADR-259.
+
+## Application Architecture — stories-6367-6369-kernel-and-repository-ratchets
+
+Backend-only, behaviour-free. Two ratchets from Epic 6264: the `Models` shared kernel stops depending on
+`Services`, and two repository leaks are frozen in named lists that only shrink (ADR-268).
+
+Before: `Models` imported `IEntity`, `WorkTrackingSystems`, `UpdateType`, `ReportOwner`,
+`BlackoutDaysExtensions` and the encryption service from `Services`; the rule existed only as prose.
+After: those types live in `Models`, the one encryption method is an extension on the `Services` side, and
+an architecture test enforces `Models ↛ Services` with an empty exception list.
+
+```mermaid
+C4Container
+  title Backend containers: Models / Services / API / Repositories, after
+  Container(api, "API", "ASP.NET Core controllers", "Driving adapter")
+  Container(services, "Services", "C#", "Application core")
+  Container(repos, "Repositories", "EF Core", "Persistence adapters")
+  Container(models, "Models", "C#", "Shared kernel, now owns its marker, enum and calendar types")
+  Rel(api, services, "Calls application services of")
+  Rel(api, repos, "Still reads through, 23 listed types, shrinking")
+  Rel(services, repos, "Reads and writes through")
+  Rel(services, models, "Depends on")
+  Rel(repos, models, "Persists")
+  Rel(api, models, "Depends on")
+```
+
+Before, the diagram had one more arrow: `Models` depends on `Services`.
+
+| Decision | Verdict |
+|---|---|
+| Six kernel types | Moved into `Models` |
+| `LegacyDefaultEncryptionKey` | Stays in `Services`; `WithLegacyDefault` becomes an extension there |
+| `GetAllByPredicate` callers | Source scan, 14-file list, failure names file and line |
+| `API` types on repositories | ArchUnitNET, 23-entry list, nested compiler types normalised |
+| Convention | ADR-268; status note on ADR-027 |
+
+No external integrations are touched, so no contract-test recommendation applies. Enforcement tooling is
+ArchUnitNET plus a source scan, both already in the test suite. Workspace:
+`docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md`.

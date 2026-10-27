@@ -148,4 +148,8 @@ Portfolio refresh scatters `InvalidatePortfolioMetrics` into the *updater* (the 
 ### Cross-reference (addendum)
 
 - Architecture epic: **#5121**. Children: #5098, #5099, #5100, #5101, #5122.
+- Status note (2026-10-27): the `Models` shared kernel not depending on `Services` is enforced by an
+  architecture test once Story 6367 lands. Until then the rule was carried as prose. See
+  `docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md`; the ratchet
+  convention is ADR-268.
 - Persistence sink: **#5017** (Event Store & Health KPI Completeness). Producer for Family E: **#5019**. Reaction sinks (future): #4754 / #4755 (notifications), #5102 (Track Actions / audit).

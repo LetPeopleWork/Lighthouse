@@ -533,9 +533,9 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 |---|---|---|---|---|---|
 | 1 | Files under `Services/Interfaces` + `Services/Implementation` | loose: brief 41 + 56 → **42 + 58**; total **155 + 352 = 507** | **0** | `find Lighthouse.Backend/Lighthouse.Backend/Services/{Interfaces,Implementation} -name '*.cs' \| wc -l` | S02, S03a–h |
 | 2 | Contexts packaged under their own folder with namespace rules | **0 of 9** (Metrics is a type-set) | **9 of 9** (or 8 + Platform as composition root, per S01) | ArchUnit rule count per context, folder tree | S02, S03* |
-| 3 | `Models` file count | brief ~218 → **242** | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
+| 3 | `Models` file count | brief ~218 → **242** (temporarily +6 from S04a's kernel moves, verified 2026-10-27; S04b reduces) | only S01's kernel allow-list | `find …/Models -name '*.cs' \| wc -l` + kernel rule | S04b |
 | 4 | Files calling `GetAllByPredicate` outside persistence adapters | brief 12 → **14** (53 calls) | **0**, then `protected` | S05a guard list length | S05a–g |
-| 5 | Controllers depending on `IRepository<>` / `I*Repository` | brief 5 → **≈20** (re-count at S05a DESIGN) | **0** | S05a sibling-rule list length | S05c–e, S12* |
+| 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
 | 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |
 | 8 | Frontend import-boundary violations | **16** (survey) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
