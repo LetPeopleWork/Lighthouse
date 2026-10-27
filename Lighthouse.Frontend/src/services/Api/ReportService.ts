@@ -115,7 +115,7 @@ export class ReportService extends BaseApiService implements IReportService {
 	public getCreationOptions(): Promise<IReportCreationOptions> {
 		return this.withErrorHandling(() =>
 			Promise.reject(
-				new Error("SCAFFOLD: creating for several owners is not built yet"),
+				new Error("SCAFFOLD: what a report needs is not read yet"),
 			),
 		);
 	}

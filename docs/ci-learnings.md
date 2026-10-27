@@ -73,8 +73,10 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   automated because: Biome has no rule for it. A GritQL plugin could cover the inline-type case; it is
   listed as a low-priority proposal.
 - **S4144 (two functions with identical bodies)**: this happens when a new mock-service factory is
-  copied from a sibling. Fix: extract a shared helper and delegate to it. Not automated because: Biome
-  cannot compare function bodies.
+  copied from a sibling, or when DISTILL scaffolds two service methods that throw the same `SCAFFOLD:`
+  message. Fix: extract a shared helper and delegate to it; give every scaffold its own message (name
+  what that method is for). Not automated because: Biome cannot compare function bodies, and the
+  installed `typescript` 7 is the native build with no JS compiler API for a source-scan test.
 - **S7727 for single-argument callbacks (`.map(ownFn)`)**: pass built-in unary functions directly
   (`.map(Number)`, enforced by the `iterator-callbacks` plugin) and wrap our own reducers (enforced by
   `wrap-own-reducer`). Wrap an own single-argument callback too when Sonar asks. Not automated because:
