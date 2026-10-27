@@ -7,6 +7,7 @@ interface StyledLinkProps {
 	children: React.ReactNode;
 	variant?: "body1" | "body2" | "subtitle1" | "subtitle2";
 	className?: string;
+	"aria-label"?: string;
 }
 
 const StyledLink: React.FC<StyledLinkProps> = ({
@@ -14,6 +15,7 @@ const StyledLink: React.FC<StyledLinkProps> = ({
 	children,
 	variant = "body2",
 	className,
+	"aria-label": ariaLabel,
 }) => {
 	const theme = useTheme();
 
@@ -23,6 +25,7 @@ const StyledLink: React.FC<StyledLinkProps> = ({
 			to={to}
 			variant={variant}
 			className={className}
+			aria-label={ariaLabel}
 			sx={{
 				textDecoration: "none",
 				color: theme.palette.primary.main,

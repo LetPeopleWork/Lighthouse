@@ -11,10 +11,12 @@ import type {
 	IReportListItem,
 	IReportOwner,
 } from "../../../models/Reports/Report";
+import type { IReportAcrossOwners } from "../../../models/Reports/ReportsAcrossOwners";
+import { useTerminology } from "../../../services/TerminologyContext";
 import { parseLocalDate } from "../../../utils/date/localDate";
 import { isTauriOnMac } from "../../../utils/tauri";
 import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
-import { reportPathOf } from "./reportOwner";
+import { ownerTermKeyOf, reportPathOf } from "./reportOwner";
 import { isShownByThisVersion, reportTypeTitleOf } from "./wizard/reportTypes";
 
 /** What somebody who may change the reports can do from a row. */
@@ -34,9 +36,13 @@ export interface ReportListActions {
 }
 
 interface ReportListProps {
-	owner: IReportOwner;
+	/** The owner whose Reports tab this is; absent on the page that lists every owner's reports. */
+	owner?: IReportOwner;
 	reports: IReportListItem[];
-	actions: ReportListActions;
+	/** Without them a row offers no icons. */
+	actions?: ReportListActions;
+	/** Adds a column naming the Team or Portfolio each report is on. */
+	showOwner?: boolean;
 }
 
 // Held back only in look while one PDF is prepared: a truly disabled icon would throw a keyboard reader's focus to
@@ -147,10 +153,33 @@ const actionsColumn = (
 	renderCell: ({ row }) => <RowActions report={row} actions={actions} />,
 });
 
+const OwnerLink: React.FC<{ readonly report: IReportAcrossOwners }> = ({
+	report,
+}) => {
+	const { getTerm } = useTerminology();
+	const owner: IReportOwner = { kind: report.ownerKind, id: report.ownerId };
+	return (
+		<StyledLink
+			to={`/${owner.kind}s/${owner.id}`}
+			aria-label={`${report.ownerName}, ${getTerm(ownerTermKeyOf(owner))}`}
+		>
+			{report.ownerName}
+		</StyledLink>
+	);
+};
+
+const ownerColumn: DataGridColumn<IReportListItem> = {
+	field: "ownerName",
+	headerName: "Owner",
+	width: 200,
+	renderCell: ({ row }) => <OwnerLink report={row as IReportAcrossOwners} />,
+};
+
 const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	owner,
 	reports,
 	actions,
+	showOwner = false,
 }) => {
 	const columns: DataGridColumn<IReportListItem>[] = useMemo(() => {
 		const shown: DataGridColumn<IReportListItem>[] = [
@@ -160,7 +189,11 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				flex: 1,
 				hideable: false,
 				renderCell: ({ row }) => (
-					<StyledLink to={reportPathOf(owner, row.id)}>{row.name}</StyledLink>
+					<StyledLink
+						to={reportPathOf({ kind: row.ownerKind, id: row.ownerId }, row.id)}
+					>
+						{row.name}
+					</StyledLink>
 				),
 			},
 			{
@@ -170,6 +203,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				valueGetter: (_value, row) =>
 					reportTypeTitleOf(row.templateKey) ?? "Not supported in this version",
 			},
+			...(showOwner ? [ownerColumn] : []),
 			{
 				field: "createdOn",
 				headerName: "Created",
@@ -178,14 +212,14 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 					parseLocalDate(row.createdOn)?.toLocaleDateString(),
 			},
 		];
-		return [...shown, actionsColumn(actions)];
-	}, [owner, actions]);
+		return actions === undefined ? shown : [...shown, actionsColumn(actions)];
+	}, [actions, showOwner]);
 
 	return (
 		<DataGridBase
 			rows={reports}
 			columns={columns}
-			storageKey={`reports-${owner.kind}`}
+			storageKey={owner === undefined ? "reports-all" : `reports-${owner.kind}`}
 		/>
 	);
 };

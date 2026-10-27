@@ -73,7 +73,7 @@ describe("Header — the way in to the Features view", () => {
 		});
 	});
 
-	it("sits between Overview and System Settings", async () => {
+	it("sits between Overview and Reports", async () => {
 		renderHeaderWhereFeaturesAreCalled("Features");
 
 		await waitFor(() => {
@@ -89,6 +89,7 @@ describe("Header — the way in to the Features view", () => {
 		expect(navigationLabels).toEqual([
 			"Overview",
 			"Features",
+			"Reports",
 			"System Settings",
 		]);
 	});

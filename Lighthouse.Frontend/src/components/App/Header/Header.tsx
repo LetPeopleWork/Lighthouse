@@ -62,6 +62,7 @@ const Header: React.FC<HeaderProps> = ({
 		{ path: "/", text: "Overview" },
 		// D16: the instance's own word for its Features, never a hard-coded "Features".
 		{ path: "/features", text: getTerm(TERMINOLOGY_KEYS.FEATURES) },
+		{ path: "/reports", text: "Reports" },
 		{ path: "/settings", text: "System Settings" },
 	];
 

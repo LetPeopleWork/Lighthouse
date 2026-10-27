@@ -5,7 +5,6 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
-import { pendingEpic6350 } from "../../../tests/BulkReportsTestKit";
 import {
 	createMockApiServiceContext,
 	createMockRbacService,
@@ -24,8 +23,6 @@ vi.mock("../../../hooks/useUpdateAll", () => ({
 }));
 
 /** The way in to every report: a Reports entry in the header, for every signed-in reader whatever their role. */
-
-const pending = pendingEpic6350("01");
 
 const WhereTheReaderIs = () => (
 	<output aria-label="where the reader is" data-path={useLocation().pathname} />
@@ -68,7 +65,7 @@ const theNavigationLabels = () =>
 
 describe("Header — the way in to every report", () => {
 	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`Reports sits between Features and System Settings (${pending})`, async () => {
+	it("Reports sits between Features and System Settings", async () => {
 		renderTheHeader();
 
 		await waitFor(() =>
@@ -82,7 +79,7 @@ describe("Header — the way in to every report", () => {
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
-	it.skip(`Reports opens the Reports page (${pending})`, async () => {
+	it("Reports opens the Reports page", async () => {
 		renderTheHeader();
 		const user = userEvent.setup();
 
@@ -98,7 +95,7 @@ describe("Header — the way in to every report", () => {
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:pure-function
-	it.skip(`a reader who is Admin of nothing still finds Reports (${pending})`, async () => {
+	it("a reader who is Admin of nothing still finds Reports", async () => {
 		const rbacService = createMockRbacService();
 		rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,

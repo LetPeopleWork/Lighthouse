@@ -53,6 +53,7 @@ const EditPortfolio = lazy(
 	() => import("./pages/Portfolios/Edit/EditPortfolio"),
 );
 const FeaturesView = lazy(() => import("./pages/Features/FeaturesView"));
+const ReportsPage = lazy(() => import("./pages/Reports/ReportsPage"));
 const TeamDetail = lazy(() => import("./pages/Teams/Detail/TeamDetail"));
 const EditTeam = lazy(() => import("./pages/Teams/Edit/EditTeam"));
 
@@ -278,6 +279,7 @@ const App: React.FC = () => {
 										<Route path="new" element={<EditPortfolio />} />
 									</Route>
 									<Route path="/features" element={<FeaturesView />} />
+									<Route path="/reports" element={<ReportsPage />} />
 									<Route path="/settings" element={<Settings />} />
 								</Route>
 								{reportPrintRoutes()}

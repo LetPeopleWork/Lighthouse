@@ -158,18 +158,18 @@ export const ReportTemplatesSchema: z.ZodType<IReportTemplates> = z.object({
 	),
 });
 
+export const ReportListItemSchema = z.object({
+	id: z.number(),
+	name: z.string(),
+	templateKey: z.string(),
+	ownerKind,
+	ownerId: z.number(),
+	createdOn: day,
+	thenAndNow: z.object({ thenRebuildable: z.boolean() }).optional(),
+});
+
 export const ReportListSchema: z.ZodType<IReportList> = z.object({
-	reports: z.array(
-		z.object({
-			id: z.number(),
-			name: z.string(),
-			templateKey: z.string(),
-			ownerKind,
-			ownerId: z.number(),
-			createdOn: day,
-			thenAndNow: z.object({ thenRebuildable: z.boolean() }).optional(),
-		}),
-	),
+	reports: z.array(ReportListItemSchema),
 	creationBlockedByCap: z.boolean(),
 	communityCap: z.number(),
 });

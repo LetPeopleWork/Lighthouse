@@ -1,8 +1,10 @@
-import type {
-	INewReport,
-	IReportListItem,
-	ReportMetricKey,
-	ReportTemplateKey,
+import { z } from "zod";
+import {
+	type INewReport,
+	type IReportListItem,
+	ReportListItemSchema,
+	type ReportMetricKey,
+	type ReportTemplateKey,
 } from "./Report";
 
 /** A report on the Reports page, which lists every Team's and Portfolio's reports in one place. */
@@ -13,6 +15,11 @@ export interface IReportAcrossOwners extends IReportListItem {
 export interface IReportsAcrossOwners {
 	reports: IReportAcrossOwners[];
 }
+
+export const ReportsAcrossOwnersSchema: z.ZodType<IReportsAcrossOwners> =
+	z.object({
+		reports: z.array(ReportListItemSchema.extend({ ownerName: z.string() })),
+	});
 
 /** An owner the caller is Admin of and so may create a report on; `earliestStart` is null when it keeps every finished item. */
 export interface IReportCreationOwner {

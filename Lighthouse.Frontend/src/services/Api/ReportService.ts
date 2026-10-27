@@ -9,12 +9,13 @@ import {
 	ReportSchema,
 	ReportTemplatesSchema,
 } from "../../models/Reports/Report";
-import type {
-	INewReportsForOwners,
-	IReportCreationOptions,
-	IReportCreationOutcome,
-	IReportRemovalOutcome,
-	IReportsAcrossOwners,
+import {
+	type INewReportsForOwners,
+	type IReportCreationOptions,
+	type IReportCreationOutcome,
+	type IReportRemovalOutcome,
+	type IReportsAcrossOwners,
+	ReportsAcrossOwnersSchema,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { BaseApiService } from "./BaseApiService";
 
@@ -105,11 +106,10 @@ export class ReportService extends BaseApiService implements IReportService {
 	}
 
 	public getAllReports(): Promise<IReportsAcrossOwners> {
-		return this.withErrorHandling(() =>
-			Promise.reject(
-				new Error("SCAFFOLD: every report in one place is not built yet"),
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>("/reports");
+			return BaseApiService.parse(ReportsAcrossOwnersSchema, response.data);
+		});
 	}
 
 	public getCreationOptions(): Promise<IReportCreationOptions> {

@@ -153,6 +153,37 @@ describe("ReportService", () => {
 		},
 	);
 
+	it("lists every report the caller can read from one call, each with its owner's name", async () => {
+		const everyReport = {
+			reports: [
+				{ ...aListedReport(), ownerName: "Lightspeed" },
+				{
+					...aListedReportOfALaterType(),
+					ownerKind: "Portfolio",
+					ownerId: 3,
+					ownerName: "Apollo",
+				},
+			],
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: everyReport });
+
+		const result = await subject.getAllReports();
+
+		expect(mockedAxios.get).toHaveBeenCalledWith("/reports");
+		expect(result.reports.map((r) => [r.ownerKind, r.ownerName])).toEqual([
+			["team", "Lightspeed"],
+			["portfolio", "Apollo"],
+		]);
+	});
+
+	it("refuses a cross-owner list in which a report has no owner name", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: { reports: [aListedReport()] },
+		});
+
+		await expect(subject.getAllReports()).rejects.toBeInstanceOf(ApiError);
+	});
+
 	it("reads the report types with no earliest start when every finished item is kept", async () => {
 		const templates = aTemplateList(null);
 		mockedAxios.get.mockResolvedValueOnce({ data: templates });

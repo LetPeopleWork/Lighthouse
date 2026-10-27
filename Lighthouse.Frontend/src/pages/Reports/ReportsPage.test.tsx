@@ -57,7 +57,7 @@ const theFilter = () => screen.getByRole("textbox", { name: FILTER });
 
 describe("Every report in one place", () => {
 	// @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-6350-every-report-found @contract-shape:pure-function
-	it.skip(`a coach finds the reports of two Teams and a Portfolio on one page and opens one (${pending})`, async () => {
+	it("a coach finds the reports of two Teams and a Portfolio on one page and opens one", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(
 				zenithsQuarter,
