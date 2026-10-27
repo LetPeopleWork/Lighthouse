@@ -1281,7 +1281,7 @@ describe("Work Item Age Band column", () => {
 			// before checking that the bands, and only the bands, are what a coach can pick from.
 			const offeredBands = screen
 				.getAllByRole("option")
-				.filter((option) => option.getAttribute("data-value") !== "");
+				.filter((option) => option.dataset.value !== "");
 
 			expect(offeredBands.map((option) => option.textContent)).toEqual(
 				bandOptionLabels,

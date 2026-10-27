@@ -595,7 +595,7 @@ describe("PercentilesOverTimeWidget", () => {
 
 		// [ Age | 30 days | 60 days | 90 days ] — Age leads the row.
 		const chips = within(screen.getByRole("group")).getAllByRole("button");
-		expect(chips.map((chip) => chip.getAttribute("data-testid"))).toEqual([
+		expect(chips.map((chip) => chip.dataset.testid)).toEqual([
 			"percentiles-selection-age",
 			"percentiles-horizon-30",
 			"percentiles-horizon-60",

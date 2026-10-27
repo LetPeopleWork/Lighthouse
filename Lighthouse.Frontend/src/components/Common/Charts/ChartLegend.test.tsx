@@ -129,9 +129,9 @@ describe("ChartLegend", () => {
 	it("turns its arrow round when it opens", () => {
 		const { container } = renderLegend();
 
-		const closed = container.querySelector("svg")?.getAttribute("data-testid");
+		const closed = container.querySelector("svg")?.dataset.testid;
 		expand();
-		const open = container.querySelector("svg")?.getAttribute("data-testid");
+		const open = container.querySelector("svg")?.dataset.testid;
 
 		expect(closed).toBeTruthy();
 		expect(open).not.toBe(closed);

@@ -428,8 +428,7 @@ const theButton = (label: string) =>
 
 const frameOf = (widgetKey: string) =>
 	screen.getByTestId(`widget-shell-${widgetKey}`);
-const statusOf = (widgetKey: string) =>
-	frameOf(widgetKey).getAttribute("data-widget-status");
+const statusOf = (widgetKey: string) => frameOf(widgetKey).dataset.widgetStatus;
 
 function expectThroughputToRead(total: number): void {
 	expect(
@@ -440,9 +439,7 @@ function expectThroughputToRead(total: number): void {
 const widgetsOnScreen = () =>
 	screen
 		.queryAllByTestId(/^dashboard-item-/)
-		.map((item) =>
-			item.getAttribute("data-testid")?.replace("dashboard-item-", ""),
-		);
+		.map((item) => item.dataset.testid?.replace("dashboard-item-", ""));
 
 // Estimation vs. Cycle Time appears only once its data says to show it. Every other chart, Feature
 // Size included, is framed from the first render.

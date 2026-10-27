@@ -45,10 +45,10 @@ describe("DeliveryBurnupChart painting", () => {
 		const doneArea = paths.findIndex(
 			(node) =>
 				node.getAttribute("class")?.includes("MuiLineChart-area") &&
-				node.getAttribute("data-series") === "done",
+				node.dataset.series === "done",
 		);
 		const estimatedLine = paths.findIndex(
-			(node) => node.getAttribute("data-series") === "estimated",
+			(node) => node.dataset.series === "estimated",
 		);
 
 		expect(doneArea).toBeGreaterThanOrEqual(0);
@@ -61,7 +61,7 @@ describe("DeliveryBurnupChart painting", () => {
 		);
 
 		const doneArea = pathsOf(container).find(
-			(node) => node.getAttribute("data-series") === "done",
+			(node) => node.dataset.series === "done",
 		);
 		const fillOpacity = Number(
 			getComputedStyle(doneArea as Element).getPropertyValue("fill-opacity"),
@@ -90,12 +90,10 @@ describe("DeliveryBurnupChart painting", () => {
 		);
 
 		const paths = pathsOf(container);
-		expect(
-			paths.some((node) => node.getAttribute("data-series") === "estimated"),
-		).toBe(true);
-		const doneArea = paths.find(
-			(node) => node.getAttribute("data-series") === "done",
+		expect(paths.some((node) => node.dataset.series === "estimated")).toBe(
+			true,
 		);
+		const doneArea = paths.find((node) => node.dataset.series === "done");
 		expect(
 			Number(
 				getComputedStyle(doneArea as Element).getPropertyValue("fill-opacity"),
@@ -109,7 +107,7 @@ describe("DeliveryBurnupChart painting", () => {
 		);
 
 		const estimated = pathsOf(container).find(
-			(node) => node.getAttribute("data-series") === "estimated",
+			(node) => node.dataset.series === "estimated",
 		);
 
 		expect(getComputedStyle(estimated as Element).strokeDasharray).toBe("2 4");
@@ -123,7 +121,7 @@ describe("DeliveryBurnupChart painting", () => {
 		const doneArea = pathsOf(container).find(
 			(node) =>
 				node.getAttribute("class")?.includes("MuiLineChart-area") &&
-				node.getAttribute("data-series") === "done",
+				node.dataset.series === "done",
 		);
 
 		expect(doneArea).toBeDefined();

@@ -6299,7 +6299,7 @@ describe("BaseMetricsView component", () => {
 		const testIdSuffixes = (prefix: string) =>
 			screen
 				.queryAllByTestId(new RegExp(`^${prefix}`))
-				.map((element) => element.getAttribute("data-testid") ?? "")
+				.map((element) => element.dataset.testid ?? "")
 				.map((id) => id.slice(prefix.length))
 				.sort();
 

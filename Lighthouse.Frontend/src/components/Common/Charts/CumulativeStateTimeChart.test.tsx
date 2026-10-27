@@ -66,7 +66,7 @@ describe("CumulativeStateTimeChart", () => {
 		render(<CumulativeStateTimeChart data={{ states: threeStatesInOrder }} />);
 
 		const chart = screen.getByTestId("mock-bar-chart");
-		const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
+		const xAxis = JSON.parse(chart.dataset.xAxis ?? "[]");
 
 		expect(xAxis[0].data).toEqual(["Backlog", "Review", "Doing"]);
 	});
@@ -86,7 +86,7 @@ describe("CumulativeStateTimeChart", () => {
 		);
 
 		const chart = screen.getByTestId("mock-bar-chart");
-		const series = JSON.parse(chart.getAttribute("data-series") ?? "[]");
+		const series = JSON.parse(chart.dataset.series ?? "[]");
 
 		const stackIds = new Set(series.map((s: { stack?: string }) => s.stack));
 		expect(stackIds.size).toBe(1);
@@ -166,8 +166,8 @@ describe("CumulativeStateTimeChart", () => {
 		render(<CumulativeStateTimeChart data={{ states: threeStatesInOrder }} />);
 
 		const chart = screen.getByTestId("mock-bar-chart");
-		const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
-		const series = JSON.parse(chart.getAttribute("data-series") ?? "[]");
+		const xAxis = JSON.parse(chart.dataset.xAxis ?? "[]");
+		const series = JSON.parse(chart.dataset.series ?? "[]");
 
 		expect(JSON.stringify(xAxis)).toContain("w");
 		expect(series[0].unit ?? series[0].label).toBeDefined();
@@ -256,7 +256,7 @@ describe("CumulativeStateTimeChart flow-efficiency figure", () => {
 
 const seriesOf = (): { label?: string }[] => {
 	const chart = screen.getByTestId("mock-bar-chart");
-	return JSON.parse(chart.getAttribute("data-series") ?? "[]");
+	return JSON.parse(chart.dataset.series ?? "[]");
 };
 
 const completedChip = (): HTMLElement =>
@@ -446,7 +446,7 @@ interface RenderedSeries {
 
 const fullSeriesOf = (): RenderedSeries[] => {
 	const chart = screen.getByTestId("mock-bar-chart");
-	return JSON.parse(chart.getAttribute("data-series") ?? "[]");
+	return JSON.parse(chart.dataset.series ?? "[]");
 };
 
 const stateIndex = (state: string): number =>
@@ -595,7 +595,7 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		);
 
 		const chart = screen.getByTestId("mock-bar-chart");
-		const xAxis = JSON.parse(chart.getAttribute("data-x-axis") ?? "[]");
+		const xAxis = JSON.parse(chart.dataset.xAxis ?? "[]");
 		expect(xAxis[0]?.colorMap).toBeUndefined();
 		expect(
 			container.querySelector("pattern#cumulative-state-time-wait-pattern"),
@@ -647,7 +647,7 @@ describe("CumulativeStateBarTooltip 2-row presentation (US-04-04)", () => {
 		const tooltip = screen.getByTestId(testId);
 		return within(tooltip)
 			.getAllByTestId(/^cumulative-state-bar-tooltip-row-/)
-			.map((node) => node.getAttribute("data-testid") ?? "");
+			.map((node) => node.dataset.testid ?? "");
 	};
 
 	it("renders exactly two rows — Completed and Ongoing — for a wait bar with the bar colour", () => {
