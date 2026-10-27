@@ -1,0 +1,8 @@
+or {
+    `$list.$method($param => $fn($param))`,
+    `$list.$method(($param) => $fn($param))`
+} where {
+    $method <: r"map|filter|flatMap|some|every|find|findIndex|findLast|findLastIndex",
+    $fn <: or { `Boolean`, `Number`, `String`, `BigInt` },
+    register_diagnostic(span=$fn, message="Pass a built-in conversion directly: .filter(Boolean), .map(Number). Wrapping it in an arrow adds nothing.", severity="error")
+}

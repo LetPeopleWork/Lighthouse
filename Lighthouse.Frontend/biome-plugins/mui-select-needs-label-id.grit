@@ -1,0 +1,4 @@
+or { `<Select $props>$children</Select>`, `<Select $props />` } where {
+    $props <: not r"[\s\S]*(?:\blabelId=|aria-label|aria-labelledby)[\s\S]*",
+    register_diagnostic(span=$props, message="A MUI <Select> needs an accessible name: labelId pointing at the id of its <InputLabel>, or an aria-label through SelectDisplayProps or inputProps.", severity="error")
+}

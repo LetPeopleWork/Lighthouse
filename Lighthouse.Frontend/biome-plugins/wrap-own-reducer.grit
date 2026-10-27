@@ -1,0 +1,5 @@
+`$list.$method($fn, $init)` where {
+    $method <: r"reduce|reduceRight",
+    $fn <: r"[A-Za-z_$][A-Za-z0-9_$]*",
+    register_diagnostic(span=$fn, message="Wrap your own reducer in an arrow that forwards exactly the arguments it takes: .reduce((acc, x) => add(acc, x), 0), not .reduce(add, 0). The iterator also passes the index and the array, which a bare reference silently receives.", severity="error")
+}

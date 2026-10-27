@@ -1,0 +1,7 @@
+JsConditionalExpression(consequent = $yes, alternate = $no) where {
+    or {
+        and { $yes <: JsTemplateExpression() as $template, $template <: contains JsTemplateElement(expression = $slot), $slot <: JsConditionalExpression() },
+        and { $no <: JsTemplateExpression() as $template, $template <: contains JsTemplateElement(expression = $slot), $slot <: JsConditionalExpression() }
+    },
+    register_diagnostic(span=$slot, message="A ternary inside a template literal that is itself a ternary branch counts as nested. Pull the inner choice into a named local or a helper with an early return.", severity="error")
+}

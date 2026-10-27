@@ -1,5 +1,14 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"plugins": [
+		"./biome-plugins/iterator-callbacks.grit",
+		"./biome-plugins/mui-select-needs-label-id.grit",
+		"./biome-plugins/no-nested-template-literal.grit",
+		"./biome-plugins/no-ternary-in-template-in-ternary.grit",
+		"./biome-plugins/use-dataset-for-data-attributes.grit",
+		"./biome-plugins/use-state-pair-naming.grit",
+		"./biome-plugins/wrap-own-reducer.grit"
+	],
 	"linter": {
 		"rules": {
 			"recommended": true,
@@ -180,5 +189,20 @@
 				"useNamespaceKeyword": "error"
 			}
 		}
-	}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/**",
+				"!src/**/*.test.ts",
+				"!src/**/*.test.tsx",
+				"!src/tests/**",
+				"!src/utils/date/localDate.ts"
+			],
+			"plugins": [
+				"./biome-plugins/no-iso-string-day-key.grit",
+				"./biome-plugins/no-date-from-day-string.grit"
+			]
+		}
+	]
 }
