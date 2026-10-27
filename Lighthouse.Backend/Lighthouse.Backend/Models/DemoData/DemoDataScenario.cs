@@ -1,6 +1,4 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
-
-namespace Lighthouse.Backend.Models.DemoData
+﻿namespace Lighthouse.Backend.Models.DemoData
 {
     public class DemoDataScenario : IEntity
     {

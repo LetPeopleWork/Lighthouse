@@ -1,6 +1,4 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
-
-namespace Lighthouse.Backend.Models
+﻿namespace Lighthouse.Backend.Models
 {
     public interface IWorkItemQueryOwner : IWorkTrackingSystemOptionsOwner, IEntity
     {

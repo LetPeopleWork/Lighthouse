@@ -1,6 +1,4 @@
-﻿using Lighthouse.Backend.Services.Interfaces;
-
-namespace Lighthouse.Backend.Models.OptionalFeatures
+﻿namespace Lighthouse.Backend.Models.OptionalFeatures
 {
     public class OptionalFeature : IEntity
     {
