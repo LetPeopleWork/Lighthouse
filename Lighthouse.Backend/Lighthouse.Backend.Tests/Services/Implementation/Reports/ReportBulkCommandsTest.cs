@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -22,7 +23,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
 
         private static readonly string[] RunFields = ["Action", "TemplateKey", "ThenLengthDays", "NowLengthDays", "Asked", "Done", "NotDone", "RefusedByCode", "ElapsedMs"];
 
+        private static readonly DateOnly Today = new(2026, 10, 27);
+
         private Mock<IReportCommands> commands = null!;
+        private Mock<IReportOwnerLookup> owners = null!;
+        private Mock<IReportTemplate> thenAndNow = null!;
+        private Mock<ILighthouseClock> clock = null!;
+        private Mock<IReportOwnerWriteAccess> writeAccess = null!;
         private FakeTimeProvider timeProvider = null!;
         private RecordingLogger<ReportBulkCommands> logger = null!;
         private TimeSpan eachCreateTakes;
@@ -41,6 +48,82 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                     timeProvider.Advance(eachCreateTakes);
                     return ReportOutcome<ReportRead>.Done(new ReportRead(nextId++, request.Name, request.TemplateKey, owner.Kind, owner.Id, new DateOnly(2026, 10, 27)));
                 });
+            owners = new Mock<IReportOwnerLookup>();
+            thenAndNow = new Mock<IReportTemplate>();
+            thenAndNow.Setup(template => template.Key).Returns(ThenAndNowTemplate.TemplateKey);
+            clock = new Mock<ILighthouseClock>();
+            clock.Setup(instance => instance.Today).Returns(Today);
+            writeAccess = new Mock<IReportOwnerWriteAccess>();
+            writeAccess.Setup(access => access.MayWriteAsync(It.IsAny<ReportOwner>())).ReturnsAsync(true);
+        }
+
+        [Test]
+        public async Task An_owner_gone_by_the_time_the_run_reaches_it_is_answered_owner_not_found_and_the_run_goes_on()
+        {
+            commands.Setup(port => port.Create(Zenith, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.NotFound());
+
+            var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
+
+            Assert.That(outcomes, Is.EqualTo(new[]
+            {
+                ReportOwnerOutcome.NotCreated(Zenith, ReportRefusalCodes.OwnerNotFound),
+                ReportOwnerOutcome.Created(Gravity, 100),
+            }));
+        }
+
+        [TestCase(ReportRefusalCodes.ThenBeforeCutoff)]
+        [TestCase(ReportRefusalCodes.NowBeforeCutoff)]
+        public async Task A_window_reaching_before_the_owners_kept_history_names_the_day_that_history_starts(string code)
+        {
+            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts(90));
+            commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.Refused(code));
+
+            var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
+
+            Assert.That(outcomes[1], Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, code, new DateOnly(2026, 7, 29))));
+        }
+
+        [Test]
+        public async Task Another_refusal_names_no_day_even_when_the_owner_keeps_a_short_history()
+        {
+            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts(90));
+            commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.Refused(ReportRefusalCodes.ReportCapReached));
+
+            var outcomes = await Subject().CreateForEach([Gravity], TheQuarter, writeAccess.Object);
+
+            Assert.That(outcomes.Single(), Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, ReportRefusalCodes.ReportCapReached)));
+        }
+
+        [Test]
+        public async Task The_right_to_write_an_owner_is_asked_when_the_run_reaches_it_not_before_the_run_starts()
+        {
+            var zenithCreated = false;
+            commands.Setup(port => port.Create(Zenith, It.IsAny<NewReport>()))
+                .Callback(() => zenithCreated = true)
+                .ReturnsAsync(ReportOutcome<ReportRead>.Done(new ReportRead(100, SecretName, ThenAndNowTemplate.TemplateKey, Zenith.Kind, Zenith.Id, Today)));
+            writeAccess.Setup(access => access.MayWriteAsync(Gravity)).ReturnsAsync(() => !zenithCreated);
+
+            var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportOwnerOutcome.Created(Zenith, 100),
+                    ReportOwnerOutcome.NotCreated(Gravity, ReportRefusalCodes.NotAdmin),
+                }));
+                commands.Verify(port => port.Create(Gravity, It.IsAny<NewReport>()), Times.Never);
+            }
+        }
+
+        [Test]
+        public async Task A_template_key_the_instance_does_not_offer_is_logged_as_unknown()
+        {
+            var forged = TheQuarter with { TemplateKey = "then-and-now\nreport-bulk-run: forged line" };
+
+            await Subject().CreateForEach([Zenith], forged, writeAccess.Object);
+
+            Assert.That(logger.Everything.Single().Properties["TemplateKey"], Is.EqualTo("unknown"));
         }
 
         [Test]
@@ -147,7 +230,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(logger.Everything.Single().Level, Is.EqualTo(LogLevel.Information));
         }
 
-        private ReportBulkCommands Subject() => new(commands.Object, timeProvider, logger);
+        private ReportBulkCommands Subject() => new(commands.Object, owners.Object, [thenAndNow.Object], clock.Object, timeProvider, logger);
 
         private static IReportOwnerWriteAccess MayWriteEvery()
         {

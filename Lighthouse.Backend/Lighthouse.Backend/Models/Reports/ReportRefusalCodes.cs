@@ -34,5 +34,7 @@ namespace Lighthouse.Backend.Models.Reports
         public const string ReportCapReached = "report-cap-reached";
 
         public const string NotAdmin = "not-admin";
+
+        public const string OwnerNotFound = "owner-not-found";
     }
 }

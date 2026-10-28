@@ -82,7 +82,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_Team_whose_kept_history_is_too_short_is_skipped_with_the_day_its_history_starts()
         {
             TheInstanceHasAPremiumLicence();
@@ -106,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @edge @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_run_where_every_Team_is_refused_answers_each_with_its_reason_and_writes_nothing()
         {
             TheInstanceHasAPremiumLicence();
@@ -128,7 +126,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_Team_she_only_reads_is_not_created_on_and_the_others_are()
         {
             TheInstanceHasAPremiumLicence();
@@ -151,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
         // A Team deleted, an Admin right lost and a licence lapsing while the run is under way each cost one row.
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task Changes_during_the_run_are_refused_owner_by_owner()
         {
             TheInstanceHasAPremiumLicence();
