@@ -138,7 +138,10 @@ const byRole = (scope: ParentNode, role: string): HTMLElement[] => [
 ];
 
 export const theDialog = (): HTMLElement => {
-	const dialogs = byRole(document, "dialog");
+	// The grid's filter panel is a dialog too, but not a modal one.
+	const dialogs = byRole(document, "dialog").filter(
+		(dialog) => dialog.getAttribute("aria-modal") === "true",
+	);
 	if (dialogs.length !== 1) {
 		assert.fail(`Expected one dialog, found ${dialogs.length}`);
 	}
