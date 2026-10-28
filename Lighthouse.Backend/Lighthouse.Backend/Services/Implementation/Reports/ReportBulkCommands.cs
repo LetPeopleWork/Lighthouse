@@ -1,10 +1,11 @@
 using Lighthouse.Backend.Models.Reports;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
-    public class ReportBulkCommands(IReportCommands commands, IReportOwnerLookup ownerLookup, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportBulkCommands> logger) : IReportBulkCommands
+    public class ReportBulkCommands(IReportCommands commands, IReportWriter writer, IReportOwnerLookup ownerLookup, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportBulkCommands> logger) : IReportBulkCommands
     {
         public const double SlowCreationRunMilliseconds = 20_000;
 
@@ -19,13 +20,19 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             var started = timeProvider.GetTimestamp();
 
             var outcomes = new List<ReportOwnerOutcome>(owners.Count);
-            foreach (var owner in owners)
+            try
             {
-                outcomes.Add(await CreateFor(owner, request, writeAccess));
-            }
+                foreach (var owner in owners)
+                {
+                    outcomes.Add(await CreateFor(owner, request, writeAccess));
+                }
 
-            LogCreationRun(request, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
-            return outcomes;
+                return outcomes;
+            }
+            finally
+            {
+                LogCreationRun(request, owners.Count, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
+            }
         }
 
         private async Task<ReportOwnerOutcome> CreateFor(ReportOwner owner, NewReport request, IReportOwnerWriteAccess writeAccess)
@@ -35,7 +42,20 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.NotAdmin);
             }
 
-            var created = await commands.Create(owner, request);
+            ReportOutcome<ReportRead> created;
+            try
+            {
+                created = await commands.Create(owner, request);
+            }
+            catch (DbUpdateException failure)
+            {
+                return NotSaved(owner, failure);
+            }
+            catch (ReportOwnerGoneException failure)
+            {
+                return NotSaved(owner, failure);
+            }
+
             return created switch
             {
                 { Status: ReportOutcomeStatus.Done, Value: ReportRead read } => ReportOwnerOutcome.Created(owner, read.Id),
@@ -45,10 +65,21 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             };
         }
 
+        private ReportOwnerOutcome NotSaved(ReportOwner owner, Exception failure)
+        {
+            writer.DiscardPendingChanges();
+
+            // A database error's message can quote stored values or connection details, so only the type names are logged.
+            logger.LogWarning("Report creation for {OwnerKind} {OwnerId} was not saved with {Reason}: {ExceptionType} ({InnerExceptionType})",
+                owner.Kind, owner.Id, ReportRefusalCodes.NotSaved, failure.GetType().Name, failure.InnerException?.GetType().Name);
+
+            return ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.NotSaved);
+        }
+
         private DateOnly? EarliestStartOf(ReportOwner owner)
             => ownerLookup.Find(owner) is ReportOwnerFacts facts ? ReportWindowPolicy.EarliestStart(clock.Today, facts.DoneItemsCutoffDays) : null;
 
-        private void LogCreationRun(NewReport request, List<ReportOwnerOutcome> outcomes, double elapsedMs)
+        private void LogCreationRun(NewReport request, int asked, List<ReportOwnerOutcome> outcomes, double elapsedMs)
         {
             var templateKey = offeredTemplateKeys.Contains(request.TemplateKey) ? request.TemplateKey : UnknownTemplate;
             var thenLengthDays = request.ThenAndNow?.ThenLengthDays;
@@ -62,12 +93,12 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             if (elapsedMs > SlowCreationRunMilliseconds)
             {
                 logger.LogWarning("report-bulk-run-slow: {Action} with template {TemplateKey}, Then {ThenLengthDays} days and Now {NowLengthDays} days, {Asked} asked, {Done} done, {NotDone} not done, refused {RefusedByCode}, took {ElapsedMs} ms",
-                    CreateAction, templateKey, thenLengthDays, nowLengthDays, outcomes.Count, done, outcomes.Count - done, refusedByCode, elapsedMs);
+                    CreateAction, templateKey, thenLengthDays, nowLengthDays, asked, done, asked - done, refusedByCode, elapsedMs);
                 return;
             }
 
             logger.LogInformation("report-bulk-run: {Action} with template {TemplateKey}, Then {ThenLengthDays} days and Now {NowLengthDays} days, {Asked} asked, {Done} done, {NotDone} not done, refused {RefusedByCode}, in {ElapsedMs} ms",
-                CreateAction, templateKey, thenLengthDays, nowLengthDays, outcomes.Count, done, outcomes.Count - done, refusedByCode, elapsedMs);
+                CreateAction, templateKey, thenLengthDays, nowLengthDays, asked, done, asked - done, refusedByCode, elapsedMs);
         }
     }
 }

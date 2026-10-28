@@ -45,6 +45,21 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public Task Save() => context.SaveChangesAsync();
 
+        public void DiscardPendingChanges()
+        {
+            foreach (var entry in context.ChangeTracker.Entries<Report>().Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted).ToList())
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.State = EntityState.Detached;
+                    continue;
+                }
+
+                entry.CurrentValues.SetValues(entry.OriginalValues);
+                entry.State = EntityState.Unchanged;
+            }
+        }
+
         private Report? Tracked(ReportOwner owner, int reportId)
             => OwnedBy(owner).SingleOrDefault(report => report.Id == reportId);
 

@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 throw new ArgumentException($"Only a Team's series can be read here, not a {owner.Kind}'s", nameof(owner));
             }
 
-            return teams.GetById(owner.Id) ?? throw new InvalidOperationException($"Team {owner.Id} does not exist");
+            return teams.GetById(owner.Id) ?? throw new ReportOwnerGoneException(owner);
         }
     }
 }

@@ -19,5 +19,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
         Report? Remove(ReportOwner owner, int reportId);
 
         Task Save();
+
+        /// <summary>Forgets the report changes a failed save left waiting, so the next save does not try to write them again.</summary>
+        void DiscardPendingChanges();
     }
 }

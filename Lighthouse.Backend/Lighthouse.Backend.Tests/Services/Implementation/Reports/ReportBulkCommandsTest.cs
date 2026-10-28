@@ -3,6 +3,7 @@ using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
@@ -26,6 +27,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private static readonly DateOnly Today = new(2026, 10, 27);
 
         private Mock<IReportCommands> commands = null!;
+        private Mock<IReportWriter> writer = null!;
         private Mock<IReportOwnerLookup> owners = null!;
         private Mock<IReportTemplate> thenAndNow = null!;
         private Mock<ILighthouseClock> clock = null!;
@@ -48,6 +50,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                     timeProvider.Advance(eachCreateTakes);
                     return ReportOutcome<ReportRead>.Done(new ReportRead(nextId++, request.Name, request.TemplateKey, owner.Kind, owner.Id, new DateOnly(2026, 10, 27)));
                 });
+            writer = new Mock<IReportWriter>();
             owners = new Mock<IReportOwnerLookup>();
             thenAndNow = new Mock<IReportTemplate>();
             thenAndNow.Setup(template => template.Key).Returns(ThenAndNowTemplate.TemplateKey);
@@ -69,6 +72,85 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
                 ReportOwnerOutcome.NotCreated(Zenith, ReportRefusalCodes.OwnerNotFound),
                 ReportOwnerOutcome.Created(Gravity, 100),
             }));
+        }
+
+        [Test]
+        public async Task An_owner_whose_save_fails_is_answered_not_saved_its_pending_change_is_discarded_and_the_run_goes_on()
+        {
+            commands.Setup(port => port.Create(Zenith, It.IsAny<NewReport>())).ThrowsAsync(new DbUpdateException("FOREIGN KEY constraint failed"));
+            writer.Setup(port => port.DiscardPendingChanges())
+                .Callback(() => commands.Verify(port => port.Create(Gravity, It.IsAny<NewReport>()), Times.Never));
+
+            var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportOwnerOutcome.NotCreated(Zenith, ReportRefusalCodes.NotSaved),
+                    ReportOwnerOutcome.Created(Gravity, 100),
+                }));
+                writer.Verify(port => port.DiscardPendingChanges(), Times.Once);
+            }
+        }
+
+        [Test]
+        public async Task An_owner_gone_while_its_report_is_being_made_is_answered_not_saved_and_the_run_goes_on()
+        {
+            commands.Setup(port => port.Create(Zenith, It.IsAny<NewReport>())).ThrowsAsync(new ReportOwnerGoneException(Zenith));
+
+            var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportOwnerOutcome.NotCreated(Zenith, ReportRefusalCodes.NotSaved),
+                    ReportOwnerOutcome.Created(Gravity, 100),
+                }));
+                writer.Verify(port => port.DiscardPendingChanges(), Times.Once);
+                Assert.That(logger.Everything.Single(line => line.Level == LogLevel.Warning).Properties["ExceptionType"], Is.EqualTo(nameof(ReportOwnerGoneException)));
+            }
+        }
+
+        [Test]
+        public async Task A_run_ended_by_an_unexpected_failure_still_logs_its_run_line_with_the_counts_so_far()
+        {
+            commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ThrowsAsync(new TimeoutException());
+
+            Assert.That(async () => await Subject().CreateForEach([Zenith, Gravity, OceanExplorer], TheQuarter, writeAccess.Object), Throws.TypeOf<TimeoutException>());
+
+            var line = logger.Everything.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Message, Does.StartWith("report-bulk-run:"));
+                Assert.That(line.Properties["Asked"], Is.EqualTo(3));
+                Assert.That(line.Properties["Done"], Is.EqualTo(1));
+                Assert.That(line.Properties["NotDone"], Is.EqualTo(2));
+            }
+        }
+
+        [Test]
+        public async Task A_save_that_fails_is_warned_with_the_owner_and_the_exception_types_never_the_database_message()
+        {
+            const string DatabaseMessage = "duplicate value 'Gravity' on host db.internal";
+            var failure = new DbUpdateException(DatabaseMessage, new InvalidOperationException(DatabaseMessage));
+            commands.Setup(port => port.Create(Zenith, It.IsAny<NewReport>())).ThrowsAsync(failure);
+
+            await Subject().CreateForEach([Zenith], TheQuarter, writeAccess.Object);
+
+            var warning = logger.Everything.Single(line => line.Level == LogLevel.Warning);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warning.Properties["OwnerKind"], Is.EqualTo(ReportOwnerKind.Team));
+                Assert.That(warning.Properties["OwnerId"], Is.EqualTo(Zenith.Id));
+                Assert.That(warning.Properties["Reason"], Is.EqualTo(ReportRefusalCodes.NotSaved));
+                Assert.That(warning.Properties["ExceptionType"], Is.EqualTo(nameof(DbUpdateException)));
+                Assert.That(warning.Properties["InnerExceptionType"], Is.EqualTo(nameof(InvalidOperationException)));
+                Assert.That(warning.Failure, Is.Null);
+                Assert.That(warning.Message, Does.Not.Contain(DatabaseMessage));
+                Assert.That(warning.Properties.Values, Has.None.EqualTo(DatabaseMessage));
+            }
         }
 
         [TestCase(ReportRefusalCodes.ThenBeforeCutoff)]
@@ -230,7 +312,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(logger.Everything.Single().Level, Is.EqualTo(LogLevel.Information));
         }
 
-        private ReportBulkCommands Subject() => new(commands.Object, owners.Object, [thenAndNow.Object], clock.Object, timeProvider, logger);
+        private ReportBulkCommands Subject() => new(commands.Object, writer.Object, owners.Object, [thenAndNow.Object], clock.Object, timeProvider, logger);
 
         private static IReportOwnerWriteAccess MayWriteEvery()
         {

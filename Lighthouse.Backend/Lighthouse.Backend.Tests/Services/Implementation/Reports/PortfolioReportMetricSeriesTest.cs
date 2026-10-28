@@ -50,6 +50,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void A_Portfolio_that_no_longer_exists_is_named_gone_by_kind_and_id()
+        {
+            var gone = ReportOwner.Portfolio(SharedId + 1);
+
+            Assert.That(() => subject.CycleTimePercentiles(gone, Window),
+                Throws.TypeOf<ReportOwnerGoneException>().With.Property(nameof(ReportOwnerGoneException.Owner)).EqualTo(gone));
+        }
+
+        [Test]
         public void A_Portfolio_with_no_finished_Features_reads_no_percentiles_and_no_finished_Features()
         {
             metrics.Setup(service => service.GetCycleTimePercentilesForPortfolio(portfolio, FirstDay, LastDay)).Returns([]);

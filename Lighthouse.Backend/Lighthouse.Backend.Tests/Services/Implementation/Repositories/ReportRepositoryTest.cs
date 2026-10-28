@@ -84,6 +84,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
             Assert.That(subject.ListForOwners([]), Is.Empty);
         }
 
+        [Test]
+        public async Task Discarding_pending_changes_forgets_what_was_not_saved_and_keeps_what_was()
+        {
+            var stored = await Stored(ReportOwner.Team(SharedId), "Stored");
+            stored.Name = "Renamed but never saved";
+            subject.Add(Report.For(ReportOwner.Team(SharedId), "then-and-now", "Never saved", CreatedAt));
+
+            subject.DiscardPendingChanges();
+            await subject.Save();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.ListForOwner(ReportOwner.Team(SharedId)).Select(report => report.Name), Is.EqualTo((string[])["Stored"]));
+                Assert.That(context.ChangeTracker.Entries<Report>().Select(entry => (entry.Entity.Id, entry.State)), Is.EqualTo(new[] { (stored.Id, EntityState.Unchanged) }));
+            }
+        }
+
+        [Test]
+        public async Task Discarding_pending_changes_leaves_a_report_marked_for_removal_in_place()
+        {
+            var stored = await Stored(ReportOwner.Team(SharedId), "Stored");
+            subject.Remove(ReportOwner.Team(SharedId), stored.Id);
+
+            subject.DiscardPendingChanges();
+            await subject.Save();
+
+            Assert.That(subject.ListForOwner(ReportOwner.Team(SharedId)).Select(report => report.Id), Is.EqualTo(new[] { stored.Id }));
+        }
+
         private async Task<Report> Stored(ReportOwner owner, string name)
         {
             var report = Report.For(owner, "then-and-now", name, CreatedAt);

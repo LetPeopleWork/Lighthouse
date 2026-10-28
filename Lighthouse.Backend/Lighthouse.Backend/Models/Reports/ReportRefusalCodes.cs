@@ -36,5 +36,7 @@ namespace Lighthouse.Backend.Models.Reports
         public const string NotAdmin = "not-admin";
 
         public const string OwnerNotFound = "owner-not-found";
+
+        public const string NotSaved = "not-saved";
     }
 }

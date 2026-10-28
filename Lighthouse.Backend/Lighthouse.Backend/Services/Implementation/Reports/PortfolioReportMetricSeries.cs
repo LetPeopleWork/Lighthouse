@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 throw new ArgumentException($"Only a Portfolio's series can be read here, not a {owner.Kind}'s", nameof(owner));
             }
 
-            return portfolios.GetById(owner.Id) ?? throw new InvalidOperationException($"Portfolio {owner.Id} does not exist");
+            return portfolios.GetById(owner.Id) ?? throw new ReportOwnerGoneException(owner);
         }
     }
 }

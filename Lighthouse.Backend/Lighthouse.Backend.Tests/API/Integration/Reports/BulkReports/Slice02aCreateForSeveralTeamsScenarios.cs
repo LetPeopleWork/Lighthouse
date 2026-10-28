@@ -182,7 +182,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02a @slice-02a @error @adapter-integration @contract-shape:bounded-change
         // Needs a database that holds its foreign keys: on one that does not, the orphan row would simply be saved.
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task An_owner_deleted_between_lookup_and_save_fails_only_its_own_row()
         {
             TheInstanceHasAPremiumLicence();
