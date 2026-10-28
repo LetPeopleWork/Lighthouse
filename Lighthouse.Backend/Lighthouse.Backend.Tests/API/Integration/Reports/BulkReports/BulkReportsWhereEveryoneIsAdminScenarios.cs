@@ -32,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task Every_Team_may_be_created_on_in_one_run()
         {
             TheInstanceHasAPremiumLicence();
@@ -43,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var run = await CreateForEach(TheQuartersComparison, gravity, pulsar);
             var outcomes = await TheOutcomesOf(run);
 
-            Assert.That(outcomes.Select(outcome => outcome.Status), Has.All.EqualTo(Created).And.Count.EqualTo(2));
+            Assert.That(outcomes.Select(outcome => outcome.Status), Is.EqualTo(new[] { Created, Created }));
         }
 
         // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
@@ -74,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             using var run = await RemoveEach(onGravity, onApollo);
             var outcomes = await TheOutcomesOf(run);
 
-            Assert.That(outcomes.Select(outcome => outcome.Status), Has.All.EqualTo(Removed).And.Count.EqualTo(2));
+            Assert.That(outcomes.Select(outcome => outcome.Status), Is.EqualTo(new[] { Removed, Removed }));
         }
 
         /// <summary>The caller as this instance sees them when it enforces no roles.</summary>
