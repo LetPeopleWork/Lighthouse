@@ -41,9 +41,9 @@ namespace Lighthouse.Backend.API
                 return ValidationProblem(NewReportRequest.ThenAndNowIncomplete);
             }
 
-            if (OwnersOf(request) is not List<ReportOwner> asked)
+            if (OwnersOf(request) is not { Count: > 0 } asked)
             {
-                return ValidationProblem("Every owner needs its kind and its id.");
+                return ValidationProblem("A run names at least one owner, and every owner needs a known kind and its id.");
             }
 
             if (asked.Count > IReportBulkCommands.MostOwnersPerRun)
@@ -55,12 +55,16 @@ namespace Lighthouse.Backend.API
             return Ok(new ReportBulkCreation(outcomes));
         }
 
+        /// <summary>
+        /// The owners asked for, each once at the place it was first named, so the ceiling counts distinct owners;
+        /// null when one lacks its id or names a kind that is neither Team nor Portfolio.
+        /// </summary>
         private static List<ReportOwner>? OwnersOf(NewReportsForOwnersRequest request)
         {
             var asked = new List<ReportOwner>();
             foreach (var owner in request.Owners ?? [])
             {
-                if (owner is not { OwnerKind: ReportOwnerKind kind, OwnerId: int id })
+                if (owner is not { OwnerKind: ReportOwnerKind kind, OwnerId: int id } || !Enum.IsDefined(kind))
                 {
                     return null;
                 }
@@ -68,7 +72,7 @@ namespace Lighthouse.Backend.API
                 asked.Add(new ReportOwner(kind, id));
             }
 
-            return asked;
+            return [.. asked.Distinct()];
         }
     }
 }

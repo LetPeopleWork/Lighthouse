@@ -46,5 +46,17 @@ namespace Lighthouse.Backend.Tests.API
                 rbac.VerifyNoOtherCalls();
             }
         }
+
+        [Test]
+        public void An_owner_of_no_known_kind_is_never_answered_as_a_Portfolio()
+        {
+            var access = new ReportOwnerWriteAccess(rbac.Object, caller);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => access.MayWriteAsync(new ReportOwner((ReportOwnerKind)99, 7)), Throws.InstanceOf<ArgumentOutOfRangeException>());
+                rbac.VerifyNoOtherCalls();
+            }
+        }
     }
 }

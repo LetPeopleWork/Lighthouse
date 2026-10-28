@@ -254,7 +254,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_Team_named_twice_is_created_once_and_answered_in_the_order_first_asked()
         {
             TheInstanceHasAPremiumLicence();
@@ -276,7 +275,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         [TestCase("no owner at all")]
         [TestCase("an owner of no known kind")]
         [TestCase("a Then & Now without its Then")]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_malformed_run_is_refused_whole_and_nothing_is_written(string whatIsWrong)
         {
             TheInstanceHasAPremiumLicence();
@@ -303,7 +301,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task Running_the_same_creation_twice_gives_every_Team_a_second_copy()
         {
             TheInstanceHasAPremiumLicence();

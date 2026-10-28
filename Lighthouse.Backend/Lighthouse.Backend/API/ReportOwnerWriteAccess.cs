@@ -12,8 +12,11 @@ namespace Lighthouse.Backend.API
     public sealed class ReportOwnerWriteAccess(IRbacAdministrationService rbacAdministrationService, ClaimsPrincipal caller) : IReportOwnerWriteAccess
     {
         public Task<bool> MayWriteAsync(ReportOwner owner)
-            => owner.Kind == ReportOwnerKind.Team
-                ? rbacAdministrationService.CanWriteTeamAsync(caller, owner.Id)
-                : rbacAdministrationService.CanWritePortfolioAsync(caller, owner.Id);
+            => owner.Kind switch
+            {
+                ReportOwnerKind.Team => rbacAdministrationService.CanWriteTeamAsync(caller, owner.Id),
+                ReportOwnerKind.Portfolio => rbacAdministrationService.CanWritePortfolioAsync(caller, owner.Id),
+                _ => throw new ArgumentOutOfRangeException(nameof(owner), owner.Kind, "A report owner is a Team or a Portfolio."),
+            };
     }
 }
