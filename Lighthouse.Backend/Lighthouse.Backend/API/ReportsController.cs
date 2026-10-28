@@ -14,6 +14,13 @@ namespace Lighthouse.Backend.API
     {
         [HttpGet]
         public async Task<ActionResult<ReportsAcrossOwners>> GetReports()
+            => Ok(queries.ListAcross(await ReadableOwners()).Value);
+
+        [HttpGet("creation-options")]
+        public async Task<ActionResult<ReportCreationOptions>> GetCreationOptions()
+            => Ok(queries.CreationOptions(await ReadableOwners()).Value);
+
+        private async Task<IReadOnlyCollection<ReportOwner>> ReadableOwners()
         {
             var everyOwner = owners.All();
             var teamIds = everyOwner.Where(row => row.Owner.Kind == ReportOwnerKind.Team).Select(row => row.Owner.Id).ToArray();
@@ -22,9 +29,7 @@ namespace Lighthouse.Backend.API
             var readableTeamIds = await rbacAdministrationService.GetReadableTeamIdsAsync(User, teamIds, HttpContext.RequestAborted);
             var readablePortfolioIds = await rbacAdministrationService.GetReadablePortfolioIdsAsync(User, portfolioIds, HttpContext.RequestAborted);
 
-            IReadOnlyCollection<ReportOwner> readable = [.. readableTeamIds.Select(ReportOwner.Team), .. readablePortfolioIds.Select(ReportOwner.Portfolio)];
-
-            return Ok(queries.ListAcross(readable).Value);
+            return [.. readableTeamIds.Select(ReportOwner.Team), .. readablePortfolioIds.Select(ReportOwner.Portfolio)];
         }
 
         [HttpPost("bulk")]

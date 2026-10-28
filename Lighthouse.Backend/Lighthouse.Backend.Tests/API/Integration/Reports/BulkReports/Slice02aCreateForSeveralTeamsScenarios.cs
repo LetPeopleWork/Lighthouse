@@ -353,7 +353,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @us-04 @slice-02a @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task The_creation_options_offer_the_type_its_metrics_the_window_bounds_and_every_readable_owner()
         {
             var zenith = ATeam("Zenith");
@@ -376,7 +375,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task The_creation_options_leave_out_an_owner_the_caller_cannot_read()
         {
             var oceanExplorer = APortfolio("Ocean Explorer");

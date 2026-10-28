@@ -160,6 +160,43 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(listed.Select(summary => summary.Id), Is.EqualTo(new[] { firstOfAlpha.Id, secondOfAlpha.Id, ofBravo.Id }));
         }
 
+        [Test]
+        public void The_creation_options_offer_each_type_with_its_metrics_per_owner_kind_today_and_the_shortest_window()
+        {
+            var options = Subject().CreationOptions([]).Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(options.Today, Is.EqualTo(new DateOnly(2026, 10, 2)));
+                Assert.That(options.MinimumLengthDays, Is.EqualTo(14));
+                Assert.That(options.Templates.Select(template => template.TemplateKey), Is.EqualTo(new[] { ThenAndNowTemplate.TemplateKey }));
+                Assert.That(options.Templates.Single().MetricKeysByOwnerKind[ReportOwnerKind.Team], Is.EqualTo(CycleTimeShown));
+                Assert.That(options.Templates.Single().MetricKeysByOwnerKind[ReportOwnerKind.Portfolio], Is.EqualTo(CycleTimeShown));
+                Assert.That(options.Owners, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void The_creation_options_name_each_readable_owner_with_the_first_day_it_keeps_Teams_first_then_by_name()
+        {
+            var rows = new[]
+            {
+                new ReportOwnerRow(Apollo, "Apollo", KeepsAYear),
+                new ReportOwnerRow(ReportOwner.Team(7), "nebula", 0),
+                new ReportOwnerRow(ReportOwner.Team(9), "Not readable", KeepsAYear),
+                new ReportOwnerRow(Lightspeed, "Lightspeed", KeepsAYear),
+            };
+
+            var owners = Subject(rows).CreationOptions([Apollo, ReportOwner.Team(7), Lightspeed]).Value!.Owners;
+
+            Assert.That(owners, Is.EqualTo(new[]
+            {
+                new ReportCreationOwner(ReportOwnerKind.Team, 42, "Lightspeed", new DateOnly(2025, 10, 2)),
+                new ReportCreationOwner(ReportOwnerKind.Team, 7, "nebula", null),
+                new ReportCreationOwner(ReportOwnerKind.Portfolio, 42, "Apollo", new DateOnly(2025, 10, 2)),
+            }));
+        }
+
         private Report Stored(string payloadJson, ReportOwner? owner = null)
         {
             var report = Report.For(owner ?? Lightspeed, ThenAndNowTemplate.TemplateKey, $"Report {stored.Count + 1}", Now.UtcDateTime);

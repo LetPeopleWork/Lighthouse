@@ -319,6 +319,42 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(logger.Lines, Is.Empty);
         }
 
+        [Test]
+        public void Creation_options_above_two_seconds_are_a_report_creation_options_slow_warning_with_counts_and_no_names()
+        {
+            CreationOptionsTakingMilliseconds(2_001);
+
+            var line = logger.Lines.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Message, Does.StartWith("report-creation-options-slow"));
+                Assert.That(line.Fields["Owners"], Is.EqualTo(1));
+                Assert.That(line.Fields["ElapsedMs"], Is.EqualTo(2001d));
+                Assert.That(line.Message, Does.Not.Contain(OwnerName));
+            }
+        }
+
+        [Test]
+        public void Creation_options_taking_two_seconds_log_nothing()
+        {
+            CreationOptionsTakingMilliseconds(2_000);
+
+            Assert.That(logger.Lines, Is.Empty);
+        }
+
+        private void CreationOptionsTakingMilliseconds(int milliseconds)
+        {
+            var owners = new Mock<IReportOwnerLookup>();
+            owners.Setup(o => o.All())
+                .Callback(() => timeProvider.Advance(TimeSpan.FromMilliseconds(milliseconds)))
+                .Returns([new ReportOwnerRow(Lightspeed, OwnerName, 365), new ReportOwnerRow(ReportOwner.Team(43), "Not readable", 365)]);
+            var clock = new FakeLighthouseClock(timeProvider.GetUtcNow(), InstanceZone);
+            var queries = new ReportQueries(Mock.Of<IReportReader>(), owners.Object, [Template(clock)], Mock.Of<ILicenseService>(), clock, timeProvider, logger);
+
+            Assert.That(queries.CreationOptions([Lightspeed]).Status, Is.EqualTo(ReportOutcomeStatus.Done));
+        }
+
         private void ListTakingMilliseconds(int milliseconds)
         {
             var reader = new Mock<IReportReader>();

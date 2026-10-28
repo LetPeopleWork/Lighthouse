@@ -74,6 +74,29 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOutcome<ReportsAcrossOwners>.Done(new ReportsAcrossOwners(summaries));
         }
 
+        public ReportOutcome<ReportCreationOptions> CreationOptions(IReadOnlyCollection<ReportOwner> readable)
+        {
+            var started = timeProvider.GetTimestamp();
+            var today = clock.Today;
+            var offered = templates
+                .Select(template => new ReportCreationTemplate(template.Key, Enum.GetValues<ReportOwnerKind>().ToDictionary(kind => kind, template.MetricKeysFor)))
+                .ToList();
+            var readableOwners = owners.All()
+                .Where(row => readable.Contains(row.Owner))
+                .OrderBy(row => row.Owner.Kind)
+                .ThenBy(row => row.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(row => new ReportCreationOwner(row.Owner.Kind, row.Owner.Id, row.Name, ReportWindowPolicy.EarliestStart(today, row.DoneItemsCutoffDays)))
+                .ToList();
+
+            var elapsedMs = timeProvider.GetElapsedTime(started).TotalMilliseconds;
+            if (elapsedMs > SlowReadMilliseconds)
+            {
+                logger.LogWarning("report-creation-options-slow: {Owners} owners took {ElapsedMs} ms to gather", readableOwners.Count, elapsedMs);
+            }
+
+            return ReportOutcome<ReportCreationOptions>.Done(new ReportCreationOptions(today, ReportWindowPolicy.MinimumLengthDays, offered, readableOwners));
+        }
+
         public ReportOutcome<ReportRead> Get(ReportOwner owner, int reportId)
         {
             var started = timeProvider.GetTimestamp();

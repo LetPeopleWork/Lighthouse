@@ -36,6 +36,14 @@ namespace Lighthouse.Backend.Models.Reports
 
     public sealed record ReportsAcrossOwners(IReadOnlyList<ReportSummary> Reports);
 
+    /// <summary>What creating a report for any of several owners needs, read once: the types on offer, the window bounds, and every owner the caller may read.</summary>
+    public sealed record ReportCreationOptions(DateOnly Today, int MinimumLengthDays, IReadOnlyList<ReportCreationTemplate> Templates, IReadOnlyList<ReportCreationOwner> Owners);
+
+    public sealed record ReportCreationTemplate(string TemplateKey, IReadOnlyDictionary<ReportOwnerKind, IReadOnlyList<string>> MetricKeysByOwnerKind);
+
+    /// <summary>One owner a report may be created for, with the first day it still holds finished items for, or null when it keeps them all.</summary>
+    public sealed record ReportCreationOwner(ReportOwnerKind OwnerKind, int OwnerId, string OwnerName, DateOnly? EarliestStart);
+
     public sealed record ReportSummary(int Id, string Name, string TemplateKey, ReportOwnerKind OwnerKind, int OwnerId, DateOnly CreatedOn)
     {
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
