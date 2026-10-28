@@ -1337,6 +1337,7 @@ namespace Lighthouse.Backend
             services.AddScoped<IReportTemplate, ThenAndNowTemplate>();
             services.AddScoped<IReportQueries, ReportQueries>();
             services.AddScoped<IReportCommands, ReportCommands>();
+            services.AddScoped<IReportBulkCommands, ReportBulkCommands>();
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)

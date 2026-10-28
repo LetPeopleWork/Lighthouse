@@ -1,4 +1,6 @@
+using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Reports;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +10,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/reports")]
     [Route("api/latest/reports")]
     [ApiController]
-    public class ReportsController(IReportQueries queries, IReportOwnerLookup owners, IRbacAdministrationService rbacAdministrationService) : ControllerBase
+    public class ReportsController(IReportQueries queries, IReportOwnerLookup owners, IReportBulkCommands bulkCommands, IRbacAdministrationService rbacAdministrationService) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<ReportsAcrossOwners>> GetReports()
@@ -23,6 +25,40 @@ namespace Lighthouse.Backend.API
             IReadOnlyCollection<ReportOwner> readable = [.. readableTeamIds.Select(ReportOwner.Team), .. readablePortfolioIds.Select(ReportOwner.Portfolio)];
 
             return Ok(queries.ListAcross(readable).Value);
+        }
+
+        [HttpPost("bulk")]
+        [LicenseGuard(RequirePremium = true)]
+        public async Task<ActionResult<ReportBulkCreation>> CreateForEach([FromBody] NewReportsForOwnersRequest request)
+        {
+            if (request.ToNewReport() is not NewReport newReport)
+            {
+                return ValidationProblem(NewReportRequest.ThenAndNowIncomplete);
+            }
+
+            if (OwnersOf(request) is not List<ReportOwner> asked)
+            {
+                return ValidationProblem("Every owner needs its kind and its id.");
+            }
+
+            var outcomes = await bulkCommands.CreateForEach(asked, newReport, new ReportOwnerWriteAccess(rbacAdministrationService, User));
+            return Ok(new ReportBulkCreation(outcomes));
+        }
+
+        private static List<ReportOwner>? OwnersOf(NewReportsForOwnersRequest request)
+        {
+            var asked = new List<ReportOwner>();
+            foreach (var owner in request.Owners ?? [])
+            {
+                if (owner is not { OwnerKind: ReportOwnerKind kind, OwnerId: int id })
+                {
+                    return null;
+                }
+
+                asked.Add(new ReportOwner(kind, id));
+            }
+
+            return asked;
         }
     }
 }

@@ -32,5 +32,7 @@ namespace Lighthouse.Backend.Models.Reports
         public const string MetricNotCaptured = "metric-not-captured";
 
         public const string ReportCapReached = "report-cap-reached";
+
+        public const string NotAdmin = "not-admin";
     }
 }

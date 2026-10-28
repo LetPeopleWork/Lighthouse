@@ -17,16 +17,10 @@ namespace Lighthouse.Backend.API
 
         protected async Task<ActionResult<ReportRead>> Create(ReportOwner owner, NewReportRequest request)
         {
-            var thenAndNow = request.ThenAndNow is { ThenEndDate: DateOnly thenEndDate, ThenLengthDays: int thenLengthDays }
-                ? new NewThenAndNow(thenEndDate, thenLengthDays, request.ThenAndNow.NowLengthDays)
-                : null;
-
-            if (thenAndNow is null && request.TemplateKey == ThenAndNowTemplate.TemplateKey)
+            if (request.ToNewReport() is not NewReport newReport)
             {
-                return ValidationProblem("A report needs the day Then ends and how many days it spans.");
+                return ValidationProblem(NewReportRequest.ThenAndNowIncomplete);
             }
-
-            var newReport = new NewReport(request.TemplateKey ?? string.Empty, request.Name ?? string.Empty, request.ShownMetricKeys ?? [], thenAndNow);
 
             var created = await commands.Create(owner, newReport);
             if (created is { Status: ReportOutcomeStatus.Done, Value: ReportRead read })

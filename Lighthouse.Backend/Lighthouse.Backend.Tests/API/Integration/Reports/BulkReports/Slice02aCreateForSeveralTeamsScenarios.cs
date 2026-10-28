@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @kpi-OUT-6350-K2-bulk-creation-used @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_coach_creates_the_same_comparison_for_two_Teams_in_one_go()
         {
             TheInstanceHasAPremiumLicence();
@@ -62,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         // @driving_port @real-io @us-02a @slice-02a @contract-shape:bounded-change
         // The run must make exactly the report the single wizard makes, so the comparison reads the same whichever way it was set up.
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task Each_report_made_in_bulk_equals_the_one_the_single_wizard_makes_from_the_same_inputs()
         {
             TheInstanceHasAPremiumLicence();
@@ -339,7 +337,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @contract-shape:pure-function
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_created_row_names_the_new_report_which_opens_at_its_owner()
         {
             TheInstanceHasAPremiumLicence();

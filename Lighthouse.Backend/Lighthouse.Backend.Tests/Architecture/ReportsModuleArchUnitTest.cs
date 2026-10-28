@@ -20,6 +20,8 @@ using ArchUnitNET.Domain.Dependencies;
 using ArchUnitNET.NUnit;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Mono.Cecil;
+using Mono.Cecil.Cil;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
@@ -41,6 +43,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] WritingMemberPrefixes = ["Add", "Insert", "Create", "Update", "Upsert", "Remove", "Delete", "Save"];
 
         private static readonly string[] ForbiddenReadMemberNames = ["then", "now"];
+
+        private static readonly string[] AddAndRemoveMembers = [nameof(IReportWriter.Add), nameof(IReportWriter.Remove)];
+
+        private static readonly TimeSpan PatternTimeout = TimeSpan.FromSeconds(1);
 
         private static readonly Type[] WriteVerbs = [typeof(HttpPostAttribute), typeof(HttpPutAttribute), typeof(HttpPatchAttribute), typeof(HttpDeleteAttribute)];
 
@@ -262,6 +268,46 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Because("who may read which owner is decided once, in the API layer, and handed in as the owners to read; the module only ever receives those owners.")
                 .Check(Architecture);
         }
+
+        // Read from the compiled IL so that calls made inside async methods and lambdas are caught too, which
+        // the type-level rules miss in a Release build. Member level, because a run may still use the writer to
+        // drop what a failed save left behind.
+        [Test]
+        public void Only_the_single_report_commands_add_or_remove_a_report()
+        {
+            using var module = IlDependencies.ReadModule(typeof(Program).Assembly);
+
+            var callers = module.Types
+                .SelectMany(TypeAndItsNestedTypes)
+                .Where(type => type.Methods.Any(method => method.HasBody && method.Body.Instructions.Any(CallsAddOrRemoveOnTheWriter)))
+                .Select(type => IlDependencies.DeclaringTypeOf(type.FullName.Replace('/', '+')))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(callers, Is.EqualTo(new[] { typeof(ReportCommands).FullName }),
+                "a report is added or removed only through the single create and delete, so a bulk run cannot write around their checks");
+        }
+
+        [Test]
+        public void The_owner_write_access_is_built_in_the_API()
+        {
+            var adapters = Implementations(typeof(IReportOwnerWriteAccess));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(adapters, Is.Not.Empty, "the rule checks where the adapter lives; without one it guards nothing");
+                Assert.That(adapters.Where(adapter => !Regex.IsMatch(adapter.Namespace ?? string.Empty, ApiLayerPattern, RegexOptions.None, PatternTimeout)), Is.Empty,
+                    "who is asking is known only in the API; an adapter inside the Reports module would need the caller handed to the module");
+            }
+        }
+
+        private static bool CallsAddOrRemoveOnTheWriter(Instruction instruction)
+            => instruction.Operand is MethodReference call
+                && call.DeclaringType.FullName == typeof(IReportWriter).FullName
+                && AddAndRemoveMembers.Contains(call.Name, StringComparer.Ordinal);
+
+        private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
+            => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
 
         private static bool IsGuardedForWriting(Type controller, MethodInfo action)
         {
