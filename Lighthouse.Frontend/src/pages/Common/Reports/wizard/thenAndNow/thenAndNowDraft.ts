@@ -6,7 +6,10 @@ import type {
 	ReportChange,
 	ReportMetricKey,
 } from "../../../../../models/Reports/Report";
-import { parseLocalDate } from "../../../../../utils/date/localDate";
+import {
+	formatLocalDate,
+	parseLocalDate,
+} from "../../../../../utils/date/localDate";
 import { panelFor } from "../../panels/reportPanelRegistry";
 import {
 	type EnteredReportWindow,
@@ -25,6 +28,8 @@ export interface ThenAndNowDraft {
 	shownMetricKeys: ReportMetricKey[] | null;
 	/** The metrics a report being edited captured when it was created; a new report captures every one offered. */
 	capturedMetricKeys?: ReportMetricKey[];
+	/** Until its day is entered, Then ends the day before Now starts instead of today, so the windows sit back to back. */
+	thenEndsBeforeNow?: boolean;
 }
 
 export const newThenAndNowDraft = (): ThenAndNowDraft => ({
@@ -33,6 +38,12 @@ export const newThenAndNowDraft = (): ThenAndNowDraft => ({
 	nowLength: null,
 	name: null,
 	shownMetricKeys: null,
+});
+
+/** A draft for several owners at once, whose Then ends the day before Now starts until its day is entered. */
+export const newBackToBackDraft = (): ThenAndNowDraft => ({
+	...newThenAndNowDraft(),
+	thenEndsBeforeNow: true,
 });
 
 /** The report as it was read, with every field entered, so nothing follows a default that the server's today would move. */
@@ -54,10 +65,26 @@ export const isCaptured = (
 	draft.capturedMetricKeys === undefined ||
 	draft.capturedMetricKeys.includes(key);
 
+const dayBeforeNowStarts = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): string => {
+	const today = parseLocalDate(templates.today);
+	const nowLengthDays = lengthOf(nowLengthOf(draft));
+	if (today === null || nowLengthDays === null) return templates.today;
+	const day = subDays(today, nowLengthDays);
+	return isValid(day) ? formatLocalDate(day) : templates.today;
+};
+
 export const thenEndOf = (
 	draft: ThenAndNowDraft,
 	templates: IReportTemplates,
-): string => draft.thenEnd ?? templates.today;
+): string => {
+	if (draft.thenEnd !== null) return draft.thenEnd;
+	return draft.thenEndsBeforeNow === true
+		? dayBeforeNowStarts(draft, templates)
+		: templates.today;
+};
 
 const wholeDaysOf = (text: string): number | null => {
 	const days = Number(text);
@@ -187,6 +214,22 @@ export const newReportOf = (
 		nowLengthDays: lengthOf(nowLengthOf(draft)),
 	},
 });
+
+/** The report as several owners get it: a Now left following Then is sent as such, so each owner's Now follows its Then. */
+export const newReportForOwnersOf = (
+	draft: ThenAndNowDraft,
+	templates: IReportTemplates,
+): INewReport => {
+	const report = newReportOf(draft, templates);
+	return {
+		...report,
+		thenAndNow: {
+			...report.thenAndNow,
+			nowLengthDays:
+				draft.nowLength === null ? null : lengthOf(draft.nowLength),
+		},
+	};
+};
 
 /** What saving an edit changes; Then is left out, it stays as it was frozen. Only called once every step is complete. */
 export const reportChangeOf = (

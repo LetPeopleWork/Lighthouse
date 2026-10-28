@@ -468,6 +468,8 @@ export const toTheOwnerStep = async (
 	{ thenPreset = "90 days" }: { thenPreset?: string } = {},
 ) => {
 	await user.click(await screen.findByRole("button", { name: CREATE_REPORTS }));
+	// The wizard opens on the Type step; the Then presets are one Next further on.
+	await user.click(await screen.findByRole("button", { name: "Next" }));
 	await user.click(await screen.findByRole("button", { name: thenPreset }));
 	await nextUntil(user, () => screen.queryByText(OWNER_STEP) !== null);
 };

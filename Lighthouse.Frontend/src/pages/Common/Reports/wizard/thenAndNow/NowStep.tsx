@@ -18,6 +18,7 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	draft,
 	onChange,
 	disabled,
+	windowPresets,
 }) => {
 	const nowLength = nowLengthOf(draft);
 	const nowDays = resolvedThenDays(templates.today, lengthOf(nowLength));
@@ -28,6 +29,7 @@ const NowStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 		<Stack spacing={2}>
 			<WindowLengthControl
 				owner={owner}
+				presets={windowPresets}
 				length={nowLength}
 				onChange={(length) => onChange({ ...draft, nowLength: length })}
 				disabled={disabled}

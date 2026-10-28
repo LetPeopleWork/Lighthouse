@@ -18,6 +18,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	draft,
 	onChange,
 	disabled,
+	windowPresets,
 	frozen = false,
 }) => {
 	const end = thenEndOf(draft, templates);
@@ -44,6 +45,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 			/>
 			<WindowLengthControl
 				owner={owner}
+				presets={windowPresets}
 				length={draft.thenLength}
 				onChange={(thenLength) => onChange({ ...draft, thenLength })}
 				disabled={locked}

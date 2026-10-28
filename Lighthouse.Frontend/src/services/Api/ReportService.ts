@@ -15,6 +15,8 @@ import {
 	type IReportCreationOutcome,
 	type IReportRemovalOutcome,
 	type IReportsAcrossOwners,
+	ReportCreationOptionsSchema,
+	ReportCreationOutcomesSchema,
 	ReportsAcrossOwnersSchema,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { BaseApiService } from "./BaseApiService";
@@ -113,21 +115,28 @@ export class ReportService extends BaseApiService implements IReportService {
 	}
 
 	public getCreationOptions(): Promise<IReportCreationOptions> {
-		return this.withErrorHandling(() =>
-			Promise.reject(
-				new Error("SCAFFOLD: what a report needs is not read yet"),
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<unknown>(
+				"/reports/creation-options",
+			);
+			return BaseApiService.parse(ReportCreationOptionsSchema, response.data);
+		});
 	}
 
 	public createReportsInBulk(
-		_request: INewReportsForOwners,
+		request: INewReportsForOwners,
 	): Promise<IReportCreationOutcome[]> {
-		return this.withErrorHandling(() =>
-			Promise.reject(
-				new Error("SCAFFOLD: creating for several owners is not built yet"),
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<unknown>("/reports/bulk", {
+				...request,
+				owners: request.owners.map((owner) => ({
+					ownerKind: owner.ownerKind === "team" ? "Team" : "Portfolio",
+					ownerId: owner.ownerId,
+				})),
+			});
+			return BaseApiService.parse(ReportCreationOutcomesSchema, response.data)
+				.outcomes;
+		});
 	}
 
 	public removeReportsInBulk(

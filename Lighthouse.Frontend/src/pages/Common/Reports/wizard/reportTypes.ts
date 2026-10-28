@@ -7,6 +7,7 @@ import type {
 	ReportChange,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
+import type { IReportCreationOptions } from "../../../../models/Reports/ReportsAcrossOwners";
 import { parseLocalDate } from "../../../../utils/date/localDate";
 import MetricsAndNameStep from "./thenAndNow/MetricsAndNameStep";
 import NowStep from "./thenAndNow/NowStep";
@@ -14,6 +15,8 @@ import ThenStep from "./thenAndNow/ThenStep";
 import {
 	lengthOf,
 	nameOf,
+	newBackToBackDraft,
+	newReportForOwnersOf,
 	newReportOf,
 	newThenAndNowDraft,
 	nowLengthOf,
@@ -34,6 +37,8 @@ export interface ReportTypeStepProps<TDraft> {
 	disabled: boolean;
 	/** Shown as the report was created and never changed, because the report is being edited. */
 	frozen?: boolean;
+	/** The window lengths offered with one click, when they are not the owner's own. */
+	windowPresets?: readonly number[];
 }
 
 export interface ReportTypeStep<TDraft> {
@@ -52,6 +57,12 @@ export interface ReportTypeDefinition<TDraft> {
 	toNewReport: (draft: TDraft, templates: IReportTemplates) => INewReport;
 	draftOf: (report: IReport) => TDraft;
 	toChange: (draft: TDraft, templates: IReportTemplates) => ReportChange;
+	/** What the type configures before any owner is picked, when one report is created for several owners. */
+	forOwners: {
+		newDraft: () => TDraft;
+		windowPresets: readonly number[];
+		toNewReport: (draft: TDraft, templates: IReportTemplates) => INewReport;
+	};
 }
 
 interface DraftByType {
@@ -93,8 +104,34 @@ export const reportTypes: {
 		toNewReport: newReportOf,
 		draftOf: thenAndNowDraftOf,
 		toChange: reportChangeOf,
+		forOwners: {
+			newDraft: newBackToBackDraft,
+			windowPresets: [30, 90, 180],
+			toNewReport: newReportForOwnersOf,
+		},
 	},
 };
+
+/**
+ * What a report needs, read for several owners at once, in the shape the steps read for one owner. No owner's
+ * kept history is known yet, so none bounds the windows here; every metric any kind of owner offers is offered.
+ */
+export const templatesForOwnersOf = (
+	options: IReportCreationOptions,
+): IReportTemplates => ({
+	today: options.today,
+	earliestStart: null,
+	minimumLengthDays: options.minimumLengthDays,
+	templates: options.templates.map((template) => ({
+		templateKey: template.templateKey,
+		metrics: [
+			...new Set([
+				...template.metricKeysByOwnerKind.team,
+				...template.metricKeysByOwnerKind.portfolio,
+			]),
+		].map((key) => ({ key })),
+	})),
+});
 
 /** The title of a Type as the server names it, or undefined for one this version does not know. */
 export const reportTypeTitleOf = (templateKey: string): string | undefined =>

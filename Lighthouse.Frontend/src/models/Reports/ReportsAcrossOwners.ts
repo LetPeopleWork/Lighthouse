@@ -2,6 +2,7 @@ import { z } from "zod";
 import {
 	type INewReport,
 	type IReportListItem,
+	ownerKind,
 	ReportListItemSchema,
 	type ReportMetricKey,
 	type ReportTemplateKey,
@@ -59,3 +60,58 @@ export interface IReportRemovalOutcome {
 	status: "removed" | "notRemoved";
 	code?: string;
 }
+
+const optionalOnTheWire = <T extends z.ZodType>(schema: T) =>
+	schema.nullish().transform((value) => value ?? undefined);
+
+/** The server keys the metrics by the owner kind's capitalised name; a kind it leaves out offers none. */
+const metricKeysByOwnerKind = z
+	.record(
+		z.string(),
+		z.array(z.custom<ReportMetricKey>((key) => typeof key === "string")),
+	)
+	.transform((byKind) => {
+		const lowerCased = new Map(
+			Object.entries(byKind).map(([kind, keys]) => [kind.toLowerCase(), keys]),
+		);
+		return {
+			team: lowerCased.get("team") ?? [],
+			portfolio: lowerCased.get("portfolio") ?? [],
+		};
+	});
+
+export const ReportCreationOptionsSchema: z.ZodType<IReportCreationOptions> =
+	z.object({
+		today: z.string(),
+		minimumLengthDays: z.number(),
+		templates: z.array(
+			z.object({
+				templateKey: z.literal("then-and-now"),
+				metricKeysByOwnerKind,
+			}),
+		),
+		owners: z.array(
+			z.object({
+				ownerKind,
+				ownerId: z.number(),
+				ownerName: z.string(),
+				earliestStart: z.string().nullable(),
+			}),
+		),
+	});
+
+export const ReportCreationOutcomesSchema: z.ZodType<{
+	outcomes: IReportCreationOutcome[];
+}> = z.object({
+	outcomes: z.array(
+		z.object({
+			ownerKind,
+			ownerId: z.number(),
+			ownerName: optionalOnTheWire(z.string()),
+			status: z.enum(["created", "notCreated"]),
+			reportId: optionalOnTheWire(z.number()),
+			code: optionalOnTheWire(z.string()),
+			earliestStart: z.string().nullish(),
+		}),
+	),
+});

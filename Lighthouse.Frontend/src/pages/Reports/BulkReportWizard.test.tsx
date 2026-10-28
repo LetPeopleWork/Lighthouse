@@ -98,7 +98,7 @@ const offering = (...owners: Owner[]) =>
 
 describe("Create reports for several Teams", () => {
 	// @walking_skeleton @driving_port @us-02a @slice-02a @kpi-OUT-6350-bulk-creation-used @contract-shape:bounded-change
-	it.skip(`a coach creates the same comparison for Zenith and Gravity and finds both listed (${pending})`, async () => {
+	it(`a coach creates the same comparison for Zenith and Gravity and finds both listed`, async () => {
 		const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 501 });
 		const gravitysQuarter = aReportOn(GRAVITY, QUARTER, { id: 502 });
 		const getAllReports = vi
@@ -129,7 +129,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @driving_port @us-02a @slice-02a @contract-shape:bounded-change
-	it.skip(`every Team picked gets the same comparison, in the order the step lists them (${pending})`, async () => {
+	it(`every Team picked gets the same comparison, in the order the step lists them`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([created(GRAVITY, 1), created(ZENITH, 2)]);
@@ -160,12 +160,12 @@ describe("Create reports for several Teams", () => {
 
 	// Today is 27 Oct 2026. Now ends today, and Then ends the day before Now starts, so the windows sit back to back.
 	// @us-02a @slice-02a @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		["30 days", 30, "2026-09-27"],
 		["90 days", 90, "2026-07-29"],
 		["180 days", 180, "2026-04-30"],
 	])(
-		`with %s left as it opens, Then ends the day before Now starts (${pending})`,
+		`with %s left as it opens, Then ends the day before Now starts`,
 		async (preset, days, thenEndDate) => {
 			const createReportsInBulk = vi
 				.fn()

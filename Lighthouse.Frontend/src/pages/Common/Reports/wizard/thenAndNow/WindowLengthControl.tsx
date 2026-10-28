@@ -20,6 +20,7 @@ interface WindowLengthControlProps {
 	minimumLengthDays: number;
 	leadingLabel?: string;
 	customLabel: string;
+	presets?: readonly number[];
 }
 
 /** A window's length: the owner's presets with one click, beside a field for any number of days. */
@@ -33,9 +34,9 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 	minimumLengthDays,
 	leadingLabel,
 	customLabel,
+	presets = reportWindowPresetsFor(owner),
 }) => {
 	const lengthDays = lengthOf(length);
-	const presets = reportWindowPresetsFor(owner);
 
 	return (
 		<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

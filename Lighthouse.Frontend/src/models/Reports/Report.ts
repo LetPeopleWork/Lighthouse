@@ -139,7 +139,7 @@ export type ReportChange = Omit<IReportEdit, "concurrencyToken">;
 
 const day = z.string();
 /** The server names the owner kind by its capitalised enum name; the browser reads it lower-case, as its routes do. */
-const ownerKind = z
+export const ownerKind = z
 	.enum(["Team", "Portfolio", "team", "portfolio"])
 	.transform((kind) => kind.toLowerCase() as IReportOwner["kind"]);
 

@@ -238,6 +238,164 @@ describe("ReportService", () => {
 		expect(report.ownerKind).toBe("portfolio");
 	});
 
+	it("reads what creating a report needs, owner kinds lower-cased as the browser names them", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: {
+				today: "2026-10-27",
+				minimumLengthDays: 14,
+				templates: [
+					{
+						templateKey: "then-and-now",
+						metricKeysByOwnerKind: {
+							Team: ["cycle-time", "throughput"],
+							Portfolio: ["wip"],
+						},
+					},
+				],
+				owners: [
+					{
+						ownerKind: "Team",
+						ownerId: 21,
+						ownerName: "Zenith",
+						earliestStart: null,
+					},
+					{
+						ownerKind: "Portfolio",
+						ownerId: 31,
+						ownerName: "Ocean Explorer",
+						earliestStart: "2026-07-30",
+					},
+				],
+			},
+		});
+
+		const options = await subject.getCreationOptions();
+
+		expect(mockedAxios.get).toHaveBeenCalledWith("/reports/creation-options");
+		expect(options).toEqual({
+			today: "2026-10-27",
+			minimumLengthDays: 14,
+			templates: [
+				{
+					templateKey: "then-and-now",
+					metricKeysByOwnerKind: {
+						team: ["cycle-time", "throughput"],
+						portfolio: ["wip"],
+					},
+				},
+			],
+			owners: [
+				{
+					ownerKind: "team",
+					ownerId: 21,
+					ownerName: "Zenith",
+					earliestStart: null,
+				},
+				{
+					ownerKind: "portfolio",
+					ownerId: 31,
+					ownerName: "Ocean Explorer",
+					earliestStart: "2026-07-30",
+				},
+			],
+		});
+	});
+
+	it("creates one report for several owners in one request and answers each owner's outcome in order", async () => {
+		const report: INewReport = {
+			templateKey: "then-and-now",
+			name: ENGAGEMENT_START,
+			shownMetricKeys: ["cycle-time"],
+			thenAndNow: {
+				thenEndDate: "2026-07-29",
+				thenLengthDays: 90,
+				nowLengthDays: null,
+			},
+		};
+		mockedAxios.post.mockResolvedValueOnce({
+			data: {
+				outcomes: [
+					{
+						ownerKind: "Team",
+						ownerId: 21,
+						ownerName: "Zenith",
+						status: "created",
+						reportId: 501,
+						code: null,
+						earliestStart: null,
+					},
+					{
+						ownerKind: "Portfolio",
+						ownerId: 31,
+						ownerName: null,
+						status: "notCreated",
+						reportId: null,
+						code: "not-admin",
+						earliestStart: null,
+					},
+				],
+			},
+		});
+
+		const outcomes = await subject.createReportsInBulk({
+			...report,
+			owners: [
+				{ ownerKind: "team", ownerId: 21 },
+				{ ownerKind: "portfolio", ownerId: 31 },
+			],
+		});
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/reports/bulk", {
+			...report,
+			owners: [
+				{ ownerKind: "Team", ownerId: 21 },
+				{ ownerKind: "Portfolio", ownerId: 31 },
+			],
+		});
+		expect(outcomes).toEqual([
+			{
+				ownerKind: "team",
+				ownerId: 21,
+				ownerName: "Zenith",
+				status: "created",
+				reportId: 501,
+				code: undefined,
+				earliestStart: null,
+			},
+			{
+				ownerKind: "portfolio",
+				ownerId: 31,
+				ownerName: undefined,
+				status: "notCreated",
+				reportId: undefined,
+				code: "not-admin",
+				earliestStart: null,
+			},
+		]);
+	});
+
+	it("refuses an answer to a bulk run that names an outcome it does not know", async () => {
+		mockedAxios.post.mockResolvedValueOnce({
+			data: {
+				outcomes: [{ ownerKind: "Team", ownerId: 21, status: "maybe" }],
+			},
+		});
+
+		await expect(
+			subject.createReportsInBulk({
+				templateKey: "then-and-now",
+				name: ENGAGEMENT_START,
+				shownMetricKeys: ["cycle-time"],
+				thenAndNow: {
+					thenEndDate: "2026-07-29",
+					thenLengthDays: 90,
+					nowLengthDays: null,
+				},
+				owners: [{ ownerKind: "team", ownerId: 21 }],
+			}),
+		).rejects.toBeInstanceOf(ApiError);
+	});
+
 	it("refuses a list that is not the shape the server promises", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
 			data: { reports: [{ id: 1, name: null }] },
