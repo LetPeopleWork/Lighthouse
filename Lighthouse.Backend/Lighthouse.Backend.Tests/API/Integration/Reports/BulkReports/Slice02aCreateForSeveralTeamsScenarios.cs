@@ -204,7 +204,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_Community_instance_is_refused_the_whole_run_and_nothing_is_written()
         {
             TheInstanceHasNoPremiumLicence();
@@ -220,7 +219,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @edge @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task More_than_50_owners_in_one_run_are_refused_whole()
         {
             TheInstanceHasAPremiumLicence();
@@ -235,7 +233,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task Exactly_50_owners_are_answered_owner_by_owner()
         {
             TheInstanceHasAPremiumLicence();

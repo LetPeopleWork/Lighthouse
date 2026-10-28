@@ -46,6 +46,11 @@ namespace Lighthouse.Backend.API
                 return ValidationProblem("Every owner needs its kind and its id.");
             }
 
+            if (asked.Count > IReportBulkCommands.MostOwnersPerRun)
+            {
+                return ValidationProblem($"A run holds at most {IReportBulkCommands.MostOwnersPerRun} Teams and Portfolios.");
+            }
+
             var outcomes = await bulkCommands.CreateForEach(asked, newReport, new ReportOwnerWriteAccess(rbacAdministrationService, User));
             return Ok(new ReportBulkCreation(outcomes));
         }

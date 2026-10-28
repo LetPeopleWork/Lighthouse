@@ -47,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
         [Test]
-        [Ignore(PendingEpic6350.Slice02a)]
         public async Task A_Community_instance_is_still_refused_the_whole_run()
         {
             TheInstanceHasNoPremiumLicence();
