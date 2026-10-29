@@ -196,3 +196,45 @@ Quoted from the same AC:
 > Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow … It runs in `pnpm build` or `pnpm test` so CI enforces it.
 
 **Settled:** Fallow, in `pnpm test` (D1, D4). dependency-cruiser is out because it does not support TypeScript 7.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-10-29, AFK, recommended options taken)
+
+Every platform decision is the project's existing one. FE1 adds a dev dependency, a config file and a test;
+nothing is deployed, built or served differently.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | Unchanged. `fallow` is a dev dependency; Vite does not bundle it, so the Docker image, Helm chart and Standalone builds are unchanged. |
+| CI/CD platform | GitHub Actions, existing workflows. No new job, no new workflow step. |
+| Branching | Trunk-based on `main`. |
+| Observability | N/A, because no runtime behaviour changes. |
+| Continuous learning / flags | N/A, because there is nothing a user can see to roll out. |
+| Mutation testing | **N/A, because FE1 adds no production code**: StrykerJS mutates `src/**` production files, and FE1 adds only a test and a config. Recorded at the final gate rather than run on an empty mutate set. |
+| Usage-data event | **N/A, because FE1 is a build check**: nothing a user does changes, so there is no use to count. |
+
+## Wave: DEVOPS / [REF] CI pipeline outline
+
+- **Where the check runs:** `ci_frontend.yml` → `.github/actions/build-frontend` with `run-tests: 'true'`, which runs
+  `pnpm test`, and so the new enforcement test. `ci_changes.yml` sets `frontend=true` for any path under
+  `Lighthouse.Frontend/`, which covers `.fallowrc.json`, `package.json` and the test. No change to either workflow.
+- **Install:** `fallow` brings its native binary as a per-platform optional dependency (`@fallow-cli/<platform>`) and
+  runs no install script, so `onlyBuiltDependencies` in `pnpm-workspace.yaml` stays as it is. Every runner that installs
+  the frontend's dependencies (Linux CI, and the Windows and macOS Standalone packaging jobs) has a published binary.
+- **Minimum release age:** pnpm 12 checks every lockfile entry against 24 h, and Renovate waits 7 days. Pin a version at
+  least a day old when adding it (3.36.0 was used in the trial).
+- **Time:** the boundary check took 0.4 s in the trial. DELIVER FE1-2 times `pnpm test` before and after; a change beyond
+  noise is a finding.
+- **Sonar:** the new test is test code. The Sonar TS profile is mirrored by Biome, so `pnpm build` must stay clean.
+
+## Wave: DEVOPS / [REF] Risks for DISTILL and DELIVER
+
+- **Generated folders.** Fallow must not scan `.stryker-tmp/`, `dist/`, `coverage/` or `reports/` copies of `src/`. A
+  mutation run leaves sandboxes under `.stryker-tmp/`, and a scan that included them would report each leak several
+  times. DELIVER FE1-1 checks that Fallow honours `.gitignore`, or sets `ignorePatterns` in `.fallowrc.json`.
+- **Running inside StrykerJS.** A mutation run of another feature runs this test in a sandbox copy. The test resolves
+  paths from its own location, so it scans the sandbox, which holds the same imports. Accepted.
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+One environment: CI `ubuntu-latest` plus the developer machines (Linux, macOS, Windows). Nothing installs or runs
+differently between them, apart from which `@fallow-cli/*` binary pnpm picks.
