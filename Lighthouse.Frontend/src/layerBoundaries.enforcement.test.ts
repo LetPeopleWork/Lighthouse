@@ -217,7 +217,7 @@ describe("the frontend layers", () => {
 			});
 		});
 
-		it.skip("lets the frontend cross its layers only in the twenty-one listed places, and in all of them", () => {
+		it("lets the frontend cross its layers only in the twenty-one listed places, and in all of them", () => {
 			const drift = compareWithAllowList(
 				findLeaks(frontendRoot),
 				[...ALLOWED_LEAKS].sort(bySortOrder),
@@ -365,7 +365,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("each remaining layer rule is in force", () => {
-		it.skip.each([
+		it.each([
 			{
 				rule: "a hook reaching into a page",
 				importer: "src/hooks/useThing.ts",

@@ -14,6 +14,22 @@
 			{
 				"from": "components",
 				"allow": ["context", "hooks", "models", "services", "utils"]
+			},
+			{
+				"from": "hooks",
+				"allow": ["context", "models", "services", "utils"]
+			},
+			{
+				"from": "services",
+				"allow": ["components", "context", "models", "pages", "utils"]
+			},
+			{
+				"from": "models",
+				"allow": ["components", "context", "hooks", "services", "utils"]
+			},
+			{
+				"from": "utils",
+				"allow": ["components", "context", "hooks", "models", "pages"]
 			}
 		]
 	}
