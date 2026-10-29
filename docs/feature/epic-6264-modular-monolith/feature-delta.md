@@ -418,11 +418,11 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 
 `@infrastructure` · job_id: infrastructure-only · **Size S–M** · Depends on: none (G0; should go first on the frontend) · Brief: `slices/slice-33-fe1-import-boundary-enforcement.md`
 
-- infrastructure_rationale: no boundary tooling exists (no `biome.json`, no ESLint, verified 2026-10-22), so layer leaks compile silently. The baseline makes them visible and stops new ones.
+- infrastructure_rationale: no layer-boundary rule exists (Biome is configured in `biome.json` but has no import-graph rule; no ESLint, verified 2026-10-22), so layer leaks compile silently. The baseline makes them visible and stops new ones.
 - Elevator Pitch. **Before**: `components/Common/ModifyTeamSettings` importing `pages/Teams/Edit/ForecastSettingsComponent` compiles fine. **After**: `pnpm build` (Biome `noRestrictedImports` in `prebuild`) or a dependency-cruiser step fails with "components → pages: ModifyTeamSettings.tsx imports pages/Teams/…", unless the file is on the allow-list. Removing a leak forces the list to shrink. **Decision enabled**: FE2 can move features into folders inside an enforced boundary.
 - AC:
   - [ ] Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow (a short read-only trial first; see the Story brief). It runs in `pnpm build` or `pnpm test` so CI enforces it.
-  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1.
+  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1. *Re-counted 2026-10-29: 21 imports in 16 files (components→pages 12 in 8, hooks 5 in 4, services→hooks 2, models→pages 1, utils→services 1); the list holds imports. See the Story 6389 workspace.*
   - [ ] A new violation fails naming file and import. A fixed one fails until removed from the list.
   - [ ] Zero Biome errors and warnings stays true. The build is not slower beyond noise.
 

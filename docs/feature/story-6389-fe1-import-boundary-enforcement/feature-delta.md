@@ -29,17 +29,19 @@ Read these in the Epic's `feature-delta.md`; they are not copied here.
 | 1 Problem statement, domain language | PASS | 16 production files leak across layers today, and nothing stops a 17th. |
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` and the CI build. |
 | 3 ≥ 3 domain examples, real data | PASS | Re-counted list below, e.g. `ModifyTeamSettings` → `pages/Teams/Edit/ForecastSettingsComponent`, `useMetricsData` → `pages/Common/MetricsView/widgetStatus`, `deliveryArchivedRefusal` → `services/Api/ApiError`. |
-| 4 UAT Given/When/Then | PASS | The brief's three AC are Given/When/Then; DISTILL writes the scenarios. |
+| 4 UAT Given/When/Then | PASS | The brief's first two AC are Given/When/Then; the third is a quality bar, restated here as: *Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings and the test run is not slower beyond noise.* DISTILL writes the scenarios (12+). |
 | 5 AC derived from UAT | PASS | AC map to the Elevator Pitch "After". |
-| 6 Right-sized | PASS | S–M; DESIGN cuts it to ≤ 1-day slices (tool + one rule first, then the rest). |
+| 6 Right-sized | PASS by waiver (D-6264-4) | S–M sizing; carpaccio into ≤ 1-day slices is deferred to this Story's DESIGN. |
 | 7 Technical notes + cross-cutting | PASS | Brief's Notes for DESIGN (docs-symlink hazard, pnpm minimum release age, Fallow trial questions); cross-cutting answered below. |
 | 8 Dependencies tracked | PASS | None, hard or soft. |
-| 9 Outcome KPIs, measurable | PASS | KPI 8: 16 → 0, measured by the allow-list length. |
+| 9 Outcome KPIs, measurable | PASS | KPI 8: 21 imports in 16 files → 0, measured by the allow-list length (one entry per import). |
 
 ## Wave: PICK-UP / [REF] Baseline re-count (2026-10-29)
 
-Counted by resolving relative imports in production `.ts`/`.tsx` files (tests excluded) under each layer. The
-DESIGN tool re-counts; a difference there is a finding, not an error.
+Counted by hand, resolving relative imports in production `.ts`/`.tsx` files (tests excluded) under each layer.
+Fallow, Biome and dependency-cruiser each reproduced the same 21 imports in 16 files at DESIGN (2026-10-29). This
+supersedes the Epic FE1 AC's and the brief's "16 violations (components→pages 7, hooks 5)", which counted files and
+miscounted hooks; the Epic's KPI 8 row says so.
 
 | Measure | Brief (2026-10-22) | Today |
 |---|---|---|
@@ -79,7 +81,7 @@ Continuous-improvement rules:
 - [ ] Ratchet in the same change: the boundary rule lands with its allow-list in the commit range that makes it pass. Inline file list, never a count; fails in both directions (ADR-268). Nothing loosened.
 - [ ] Moves separate from edits (N/A unless DESIGN decides to move code; FE1's OUT says fixing the 16 belongs to FE2/FE3/FE5).
 - [ ] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
-- [ ] Mutation last, on frozen code; touched area not lower (StrykerJS, if FE1 adds testable code such as a list-comparison helper).
+- [ ] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
 - [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (tool choice: new ADR or ADR-268 amendment, decided at DESIGN).
 - [ ] Payoff claim: build time within noise, measured before and after (`pnpm build`, and the new step on its own).
 - [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
@@ -92,8 +94,8 @@ Epic per-Story checklist (How to pick up a Story):
 - [ ] Moves separate from edits.
 - [ ] ARCHITECTURE.md updated in the same change (§12).
 - [ ] One context at a time (N/A, because FE1 sets layer rules, not module boundaries).
-- [ ] Terminology follows the seeded defaults (no S01 glossary yet).
-- [x] Cross-cutting re-check, answered 2026-10-29: RBAC N/A, because no endpoint, permission or `useRbac()` gating changes. Lighthouse-Clients N/A, because no route or payload changes. Website N/A, because nothing user-visible changes. Usage-data event provisionally N/A, because FE1 adds a build check, not a feature (DEVOPS confirms). UI sketch N/A, because no UI changes.
+- [x] Terminology follows the seeded defaults: N/A, because FE1 adds no user-visible or documented product term; the test and config use folder names only.
+- [x] Cross-cutting re-check, answered 2026-10-29: RBAC N/A, because no endpoint, permission or `useRbac()` gating changes. Lighthouse-Clients N/A, because no route or payload changes. Website N/A, because nothing user-visible changes. Usage-data event provisionally N/A, because FE1 adds a build check, not a feature (DEVOPS confirms). UI sketch N/A, because no UI changes. Terminology N/A, because no user-visible or documented product term is added.
 
 ## Wave: DESIGN / [REF] Decisions (2026-10-29, propose mode, maintainer decided)
 
@@ -105,12 +107,28 @@ for a Story this size.
 | D1 | Tool | **Fallow** (`fallow architecture --boundaries`), pinned exactly as a dev dependency. Trial below. |
 | D2 | Where the named list lives | **Inline in one Vitest enforcement test**, `src/layerBoundaries.enforcement.test.ts`. It runs Fallow with `-f json` and compares the result with the list through `toEqual`, so Vitest's diff names a newcomer and a stale entry alike. Not Fallow's own baseline file: that would be a second mechanism over the same list, and it ignores stale entries. |
 | D3 | Granularity | **One entry per leaking import**, `from → to` (21 today), not per file (16): a listed file must not gain a second leak unnoticed. |
-| D4 | Where it runs | `pnpm test` (the frontend CI job runs it). Not in `prebuild`: the test already gates, and a second run there adds time and nothing else. |
-| D5 | Zones and rules | `.fallowrc.json` declares a zone per top-level `src/` layer (`components`, `context`, `hooks`, `models`, `pages`, `services`, `utils`). Fallow rules are allow-lists, so each constrained layer allows every other zone except the ones it must not reach: components ↛ pages, hooks ↛ pages/components, services ↛ hooks, models ↛ pages, utils ↛ services. `--production` leaves test files out. |
-| D6 | How the test calls Fallow | `execFileSync(process.execPath, [require.resolve("fallow/bin/fallow"), …])` from the frontend root: the launcher is a Node script, so this works on Windows too, and the parsed JSON is typed by `fallow/types`. |
+| D4 | Where it runs | The Vitest suite: `pnpm test` locally; CI's frontend job runs the same suite as `pnpm run sonarreport` (Vitest with coverage). Not in `prebuild`: the test already gates, and a second run there adds time and nothing else. |
+| D5 | Zones and rules | `.fallowrc.json` declares a zone per top-level `src/` layer folder, with root-anchored patterns (`src/components/**`, …): `components`, `context`, `hooks`, `models`, `pages`, `services`, `utils`. Fallow rules are allow-lists, so each constrained layer allows every other zone except the ones it must not reach (table below). Imports within a zone are always allowed. Imports into a file that belongs to no zone are not checked. `--production` leaves test files out. The rules check direct imports only; reaching a page through an unzoned file is out of scope. |
+| D6 | How the test calls Fallow | `spawnSync(process.execPath, [launcher, …])`, with the launcher found through `createRequire(import.meta.url).resolve("fallow/bin/fallow")` (the frontend is an ES module, so there is no bare `require`). The launcher is a Node script, so this works on Windows too. Fallow exits **0** with no violation, **1** with violations and **2** on an error such as a missing config (checked 2026-10-29); the test parses stdout on 0 or 1 and throws, quoting stderr, on anything else. The JSON is typed by a local two-field interface (`from_path`, `to_path`); swapping in the package's shipped types is optional. |
 | D7 | Renovate | Defaults: exact pin, the repo's 7-day minimum release age and automerge. No new rule. |
 | D8 | What Fallow is used for | Boundaries only. Its dead-code, duplication and health reports are not enforced; the trial's dead-code findings are noted for a later item, not fixed here. |
 | D9 | ADR | New **ADR-269** (frontend layer rules with Fallow, list in an enforcement test); status note on ADR-268 that the convention now covers the frontend. |
+
+## Wave: DESIGN / [REF] Zone allow-lists
+
+| Zone | May import | Must not import |
+|---|---|---|
+| `components` | `context`, `hooks`, `models`, `services`, `utils` | `pages` |
+| `hooks` | `context`, `models`, `services`, `utils` | `pages`, `components` |
+| `services` | `components`, `context`, `models`, `pages`, `utils` | `hooks` |
+| `models` | `components`, `context`, `hooks`, `services`, `utils` | `pages` |
+| `utils` | `components`, `context`, `hooks`, `models`, `pages` | `services` |
+| `pages`, `context` | everything (no rule) | — |
+
+Top-level `src/` entries with no zone, and why: `tests/` (test kits and helpers, test code), `assets/` (no TypeScript),
+`App.tsx`, `main.tsx` and `App.css` (the composition root, which wires every layer), `vite-env.d.ts` (ambient types),
+`layerBoundaries.enforcement.test.ts` (test code). `services`, `models` and `utils` keep the imports they have today
+toward `components` and `pages`; only the five survey rules are in FE1's scope.
 
 ## Wave: DESIGN / [REF] Tool trial (2026-10-29)
 
@@ -133,7 +151,7 @@ The brief's six Fallow questions:
 3. **Noise.** A first `dead-code --production` run reports 212 findings in 90 ms. Some are real: the dependencies `camelcase-keys`, `lodash.debounce` and `lorem-ipsum` are imported nowhere, and `ImageComponent` and `LicenseStatusDialog` are used only by their own tests. Some are false: test kits and test-only exports count as unused in production mode, and so does `public/sw.js`.
 4. **Speed.** 0.4 s for the boundary check over the whole frontend.
 5. **Maturity.** First release 2026-03-17, 236 releases since (about weekly or faster), 5.3k GitHub stars, 13 open issues. The cadence is handled by the 7-day minimum release age and automerge (D7).
-6. **Overlap with Biome.** None for boundaries: Biome does not build an import graph. Fallow's `mutation` is not used (Stryker does that).
+6. **Overlap with Biome.** None for boundaries: Biome's `noRestrictedImports` matches import strings per file (seen in the trial), so it cannot say which zone a resolved import lands in. Fallow's `mutation` is not used (Stryker does that).
 
 ## Wave: DESIGN / [REF] Component decomposition
 
@@ -151,19 +169,22 @@ The brief's six Fallow questions:
 
 | Existing component | Evidence | Decision |
 |---|---|---|
-| `*.enforcement.test.ts` pattern | `ganttAdapterBoundary`, `reportPrint`, `bundledTypeface`, `oneStalenessRule`, `licenseStatusOneAsker`: an inline expectation compared through `toEqual` | EXTEND the pattern: one more enforcement test |
+| `*.enforcement.test.ts` pattern | `ganttAdapterBoundary`, `reportPrint`, `bundledTypeface`, `oneStalenessRule`, `licenseStatusOneAsker`: an inline expectation compared through `toEqual` | CREATE NEW file, reusing the pattern: a new `*.enforcement.test.ts` with no shared code (the existing ones each guard one vendor or call) |
 | Their private `sourceFilesUnder` scans | text search for one vendor or one call | not reused: an import graph with path resolution is what Fallow is for; a seventh hand-written resolver is what D1 avoids |
 | Biome `prebuild` and its GritQL plugins | Sonar-mirroring lint, per-file | unchanged: no import graph, kept for what it does |
 | Backend ratchets (ADR-268) | inline list, both directions | convention reused, code not shared (different stack) |
 
 ## Wave: DESIGN / [REF] Slices
 
-Each slice is at most a day, leaves `pnpm test` and `pnpm build` green, and changes no production file.
+Each slice is at most a day (estimates: FE1-1 half a day, FE1-2 half a day), leaves `pnpm test` and `pnpm build` green, and
+changes no production file. The test's list holds all 21 entries from DISTILL on; in FE1-1, with only the components
+rule configured, the test compares the `src/components/` entries both ways, so the two-way rule holds for every rule
+that exists; FE1-2 switches the comparison to the whole list.
 
 | Slice | Change | Satisfies |
 |---|---|---|
-| FE1-1 | Add `fallow` (exact pin); `.fallowrc.json` with all zones and the **components ↛ pages** rule; the enforcement test with that rule's 12 entries | AC: a new `components → pages` import fails naming file and import; a delisted fixed one fails until removed |
-| FE1-2 | The other four rules (hooks, services, models, utils) and their 9 entries; ADR-269, the ADR-268 note, ARCHITECTURE.md §12; time `pnpm test` before and after | AC: the same for every rule; the build is not slower beyond noise |
+| FE1-1 | Add `fallow` (exact pin); `.fallowrc.json` with all zones and the **components ↛ pages** rule; unskip the components scenarios (its 12 entries compared both ways); ARCHITECTURE.md §12 bullet, since the rule lands here | AC: a new `components → pages` import fails naming file and import; a delisted fixed one fails until removed |
+| FE1-2 | The other four rules (hooks, services, models, utils); unskip their scenarios and the whole-list comparison (all 21 entries); extend the §12 bullet to the five rules; time `pnpm test` before and after (ADR-269 and the ADR-268 note landed at DESIGN) | AC: the same for every rule; the build is not slower beyond noise |
 
 ## Wave: DESIGN / [REF] Before → after
 
@@ -175,7 +196,9 @@ After: `pnpm test` fails on any import across the five rules that is not one of 
 
 - **Fallow changes its JSON shape.** The test parses `boundary_violations[].from_path/to_path`, typed by `fallow/types`; a Renovate bump that breaks it goes red in CI, not silently green, because an empty or failed parse cannot equal a 21-entry list.
 - **A zone added later without a rule.** A new top-level `src/` folder is unconstrained until FE2 adds module zones. Accepted; Fallow's `coverage.requireAllFiles` is the tool for that if it starts to matter.
-- **Binary availability.** The platform binary comes as an optional dependency; a platform without one fails the test loudly. CI is Linux x64, and developers use Linux, macOS and Windows, all published.
+- **Binary availability.** The platform binary comes as an optional dependency. Published for 3.36.0: `darwin-arm64`, `darwin-x64`, `linux-arm64-gnu`, `linux-arm64-musl`, `linux-x64-gnu`, `linux-x64-musl`, `win32-arm64-msvc`, `win32-x64-msvc`, which covers every CI runner and developer platform here. On a platform without one, pnpm skips the optional package and installs fine; only the test fails, loudly.
+- **Config or rule semantics change between releases.** Fallow releases about weekly. The exact pin plus the enforcement test is the mitigation: a bump that changes the config schema or what a rule reports makes the test red, and Renovate's automerge waits for green.
+- **Observed JSON (trial, 3.36.0):** `boundary_violations[]` with `from_path`, `to_path` (relative to the root, e.g. `src/components/Common/Team/ModifyTeamSettings.tsx`), `from_zone`, `to_zone`, `line`, `col`, `finding_id`.
 
 ## Wave: DESIGN / [REF] Open questions for DISTILL and DELIVER
 
@@ -204,23 +227,28 @@ nothing is deployed, built or served differently.
 
 | Decision | Answer |
 |---|---|
-| Deployment target, orchestration, strategy | Unchanged. `fallow` is a dev dependency; Vite does not bundle it, so the Docker image, Helm chart and Standalone builds are unchanged. |
+| Deployment target, orchestration, strategy | The shipped artifacts are unchanged: `fallow` is a dev dependency and Vite does not bundle it. The build steps do change slightly: every path that installs the frontend now installs `fallow`, and every `tsc -b` (CI build, the Docker `node-builder` stage, the Standalone builds) type-checks the new test. FE1-1 confirms `pnpm exec tsc -b` passes. |
+| Security | Audit scope unchanged: `pnpm audit --prod` in the Sonar gates leaves dev dependencies out, as for every other one. Controls for `fallow`: exact pin, Renovate's 7-day minimum release age, automerge only on green CI, MIT licence, and no install script (checked in the trial). Engines `node >=22`; the repo pins Node 24 (`.nvmrc`), so `engineStrict` is satisfied. |
 | CI/CD platform | GitHub Actions, existing workflows. No new job, no new workflow step. |
 | Branching | Trunk-based on `main`. |
 | Observability | N/A, because no runtime behaviour changes. |
 | Continuous learning / flags | N/A, because there is nothing a user can see to roll out. |
-| Mutation testing | **N/A, because FE1 adds no production code**: StrykerJS mutates `src/**` production files, and FE1 adds only a test and a config. Recorded at the final gate rather than run on an empty mutate set. |
+| Mutation testing | **N/A, because FE1 adds no production code.** Frontend StrykerJS configs are per feature (`stryker.config.story-*.mjs`) and list the production files they mutate; FE1 adds only a test and a config. The comparison helper stays inside the test file on purpose: it exists only to serve this one check. Recorded at the final gate rather than run on an empty mutate set. |
 | Usage-data event | **N/A, because FE1 is a build check**: nothing a user does changes, so there is no use to count. |
 
 ## Wave: DEVOPS / [REF] CI pipeline outline
 
 - **Where the check runs:** `ci_frontend.yml` → `.github/actions/build-frontend` with `run-tests: 'true'`, which runs
-  `pnpm test`, and so the new enforcement test. `ci_changes.yml` sets `frontend=true` for any path under
+  `pnpm run sonarreport` (the same Vitest suite as `pnpm test`, with coverage), and so the new enforcement test. `ci_changes.yml` sets `frontend=true` for any path under
   `Lighthouse.Frontend/`, which covers `.fallowrc.json`, `package.json` and the test. No change to either workflow.
 - **Install:** `fallow` brings its native binary as a per-platform optional dependency (`@fallow-cli/<platform>`) and
-  runs no install script, so `onlyBuiltDependencies` in `pnpm-workspace.yaml` stays as it is. Every runner that installs
-  the frontend's dependencies (Linux CI, and the Windows and macOS Standalone packaging jobs) has a published binary.
-- **Minimum release age:** pnpm 12 checks every lockfile entry against 24 h, and Renovate waits 7 days. Pin a version at
+  runs no install script, so `onlyBuiltDependencies` in `pnpm-workspace.yaml` stays as it is. Every place that installs
+  the frontend's dependencies has a published binary: `build-frontend` (frontend CI and app packaging), `ci_sbom.yml`, the
+  Linux, macOS and Windows Standalone packaging jobs, the E2E and verify workflows (`ci_e2e`, `ci_verifyauth`,
+  `ci_verifypostgres`, `ci_verifysqlite`), and the Dockerfile's `node-builder` stage (Debian, glibc). A platform without a
+  binary would still install; only the test would fail there.
+- **Minimum release age:** pnpm 12 checks every lockfile entry against its default 24 h (`pnpm-workspace.yaml` sets no
+  value of its own), and Renovate waits 7 days. Pin a version at
   least a day old when adding it (3.36.0 was used in the trial).
 - **Time:** the boundary check took 0.4 s in the trial. DELIVER FE1-2 times `pnpm test` before and after; a change beyond
   noise is a finding.
@@ -236,8 +264,9 @@ nothing is deployed, built or served differently.
 
 ## Wave: DEVOPS / [REF] Environment matrix
 
-One environment: CI `ubuntu-latest` plus the developer machines (Linux, macOS, Windows). Nothing installs or runs
-differently between them, apart from which `@fallow-cli/*` binary pnpm picks.
+CI runners `ubuntu-latest`, `macos-latest`, `windows-latest` and the Docker `node-builder` stage, plus the developer
+machines (Linux, macOS, Windows). Nothing installs or runs differently between them, apart from which `@fallow-cli/*`
+binary pnpm picks. The test itself runs only where Vitest runs: the frontend CI job and developer machines.
 
 ## Wave: DISTILL / [REF] Pre-check (2026-10-29, before dispatch)
 

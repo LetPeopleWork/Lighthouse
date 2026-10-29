@@ -10959,7 +10959,11 @@ C4Container
   Rel(pages, components, "Imports")
   Rel(components, hooks, "Imports")
   Rel(hooks, services, "Imports")
-  Rel(check, components, "Checks the five layer rules over")
+  Rel(check, components, "Checks components ↛ pages")
+  Rel(check, hooks, "Checks hooks ↛ pages, components")
+  Rel(check, services, "Checks services ↛ hooks")
+  Rel(check, models, "Checks models ↛ pages")
+  Rel(check, utils, "Checks utils ↛ services")
 ```
 
 | Decision | Verdict |
