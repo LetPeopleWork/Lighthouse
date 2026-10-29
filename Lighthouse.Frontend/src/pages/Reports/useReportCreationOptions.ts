@@ -14,5 +14,6 @@ export const useReportCreationOptions = (opening: number | null) => {
 		enabled: opening !== null,
 		staleTime: 0,
 		refetchOnWindowFocus: false,
+		refetchOnReconnect: false,
 	});
 };

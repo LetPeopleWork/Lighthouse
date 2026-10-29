@@ -9,7 +9,7 @@ import {
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
-import { vi } from "vitest";
+import { expect, vi } from "vitest";
 import {
 	UsageDataConsentProvider,
 	useUsageDataConsentIfKnown,
@@ -355,6 +355,7 @@ export const renderTheReportsPage = (
 ): RenderResult & {
 	user: ReturnType<typeof userEvent.setup>;
 	reportService: IReportService;
+	queryClient: QueryClient;
 } => {
 	const reportService = scene.reportService ?? aReportService();
 	const permissions = scene.permissions ?? {
@@ -416,7 +417,7 @@ export const renderTheReportsPage = (
 		</QueryClientProvider>,
 	);
 
-	return { ...rendered, user: userEvent.setup(), reportService };
+	return { ...rendered, user: userEvent.setup(), reportService, queryClient };
 };
 
 // --- Reading the page ---
@@ -465,7 +466,12 @@ export const toTheOwnerStep = async (
 	user: ReturnType<typeof userEvent.setup>,
 	{ thenPreset = "90 days" }: { thenPreset?: string } = {},
 ) => {
-	await user.click(await screen.findByRole("button", { name: CREATE_REPORTS }));
+	const createReports = await screen.findByRole("button", {
+		name: CREATE_REPORTS,
+	});
+	// It is enabled only once the licence and the viewer's roles have arrived.
+	await waitFor(() => expect(createReports).toBeEnabled());
+	await user.click(createReports);
 	// The wizard opens on the Type step; the Then presets are one Next further on.
 	await user.click(await screen.findByRole("button", { name: "Next" }));
 	await user.click(await screen.findByRole("button", { name: thenPreset }));
