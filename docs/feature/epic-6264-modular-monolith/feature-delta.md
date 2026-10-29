@@ -580,7 +580,7 @@ Validated at **catalogue level** (D-6264-3). Every Story's DoR is **re-checked w
 | 1 Problem statement, domain language | PASS | Every Story has an `infrastructure_rationale` naming the concrete smell (file, count, rule). |
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` (existing persona) plus the CI build. All Stories `@infrastructure`. |
 | 3 ≥ 3 domain examples, real data | PASS (catalogue) | Real file and type names and verified counts in AC and briefs (e.g. the 14 `GetAllByPredicate` files, the 20 connector throws, the 16 frontend violations). The per-Story DESIGN adds slice-level examples. |
-| 4 UAT Given/When/Then (3–7) | PASS (catalogue) | 2–6 testable AC per Story, CI-observable. Ratchet Stories phrased Given/When/Then. Full G/W/T scenarios are written at each Story's DISTILL. |
+| 4 UAT Given/When/Then (3–7) | PASS (catalogue) | 2–6 testable AC per Story, CI-observable. Ratchet Stories phrased Given/When/Then (for FE1 the Given/When/Then form is restated in the Story 6389 pick-up). Full G/W/T scenarios are written at each Story's DISTILL. |
 | 5 AC derived from UAT | PASS | AC map 1:1 to the Elevator Pitch "After". |
 | 6 Right-sized | PASS **by waiver** | Stories sized S/M/L, and carpaccio into ≤ 1-day slices happens at each Story's DESIGN (D-6264-4). L Stories flagged. |
 | 7 Technical notes + cross-cutting | PASS | Cross-Cutting Impact Checklist (RBAC, Clients, Website, usage data, sketches, Terminology) answered explicitly. Constraints in Wave Decisions. |

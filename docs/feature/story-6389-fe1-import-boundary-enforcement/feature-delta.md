@@ -29,40 +29,43 @@ Items 1–8 are the nWave Definition of Ready; item 9 (outcome KPIs) is this pro
 The Story's acceptance criteria, restated in Given/When/Then with the trigger DESIGN chose (the brief's AC 1 said
 `pnpm build`, its AC 2 had no When, and its AC 3 was a quality bar):
 
-1. Given a production file in `components/` imports from `pages/` and is not on the list, when `pnpm test` runs, then
+1. Given every production file pair that crosses a layer rule is on the list, when `pnpm test` runs, then the check
+   passes.
+2. Given a production file in `components/` imports from `pages/` and is not on the list, when `pnpm test` runs, then
    it fails naming the importing file and the imported one (and likewise for the other four rules).
-2. Given a listed file pair no longer leaks, when `pnpm test` runs, then it fails naming the stale entry until the
+3. Given a listed file pair no longer leaks, when `pnpm test` runs, then it fails naming the stale entry until the
    entry is deleted.
-3. Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings
-   and the test run is not slower beyond noise.
+4. Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings,
+   and the median of three `pnpm test` runs after the change is within the range of three runs before it.
 
 | DoR item | Status | Evidence for FE1 |
 |---|---|---|
 | 1 Problem statement, domain language | PASS | 16 production files leak across layers today, and nothing stops a 17th. |
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` and the CI build. |
 | 3 ≥ 3 domain examples, real data | PASS | Re-counted list below, e.g. `ModifyTeamSettings` → `pages/Teams/Edit/ForecastSettingsComponent`, `useMetricsData` → `pages/Common/MetricsView/widgetStatus`, `deliveryArchivedRefusal` → `services/Api/ApiError`. |
-| 4 UAT Given/When/Then (3–7) | PASS | Three acceptance criteria, each in Given/When/Then, restated above. The executable scenarios DISTILL derives from them are tests, not UAT, and are counted there. |
+| 4 UAT Given/When/Then (3–7) | PASS | Four acceptance criteria in Given/When/Then, restated above: one happy path (1), two failure paths (2, 3) and a quality bar (4). DISTILL's executable scenarios are tests derived from these; they are not counted against the 3–7 UAT range (see item 6). |
 | 5 AC derived from UAT | PASS | AC map to the Elevator Pitch "After". |
-| 6 Right-sized | PASS by waiver (D-6264-4) | S–M sizing; carpaccio into ≤ 1-day slices is deferred to this Story's DESIGN. |
+| 6 Right-sized | PASS | Effort: DESIGN cut it into two half-day slices (FE1-1, FE1-2). One outcome: the four AC above. Scenarios: 4 UAT criteria, within 3–7. DISTILL derived 17 executable tests from them, because acceptance criterion 2 holds for each of the five layer rules and each failure path needs its own fixture; that test count is a DISTILL design choice reviewed there, not a sizing signal. |
 | 7 Technical notes + cross-cutting | PASS | Brief's Notes for DESIGN (docs-symlink hazard, pnpm minimum release age, Fallow trial questions); cross-cutting answered below. |
 | 8 Dependencies tracked | PASS | None, hard or soft. |
-| 9 Outcome KPIs, measurable | PASS | KPI 8: 21 imports in 16 files → 0, measured by the allow-list length (one entry per importing file and imported file pair). |
+| 9 Outcome KPIs, measurable | PASS | Epic KPI 8 reads "**21 file pairs in 16 files**" → **0**, measured by the allow-list length (one import per pair today). |
 
 ## Wave: PICK-UP / [REF] Baseline re-count (2026-10-29)
 
 Counted by hand, resolving relative imports in production `.ts`/`.tsx` files (tests excluded) under each layer.
-Fallow, Biome and dependency-cruiser each reproduced the same 21 imports in 16 files at DESIGN (2026-10-29). This
-supersedes the 16-violation baseline in the Epic FE1 AC and in the brief (components→pages 7, hooks→pages/components 5),
-which counted files and miscounted hooks; the Epic's KPI 8 row says so.
+Fallow, Biome and dependency-cruiser each reproduced the same 21 file pairs in 16 files at DESIGN (2026-10-29). This
+supersedes the 16-violation baseline in the Epic FE1 AC and in the brief (components→pages 7, hooks→pages/components 5).
+The brief's figures mixed units: its hooks figure of 5 is right in pairs, while its components figure of 7 matches
+neither unit today (8 files, 12 pairs). The list counts pairs; the Epic's KPI 8 row says so.
 
-| Measure | Brief (2026-10-22) | Today |
-|---|---|---|
-| KPI 8, the list length (file pairs) | 16 (counted as files) | **21** file pairs, in 16 files |
-| components → pages | 7 | **8**: new `FeatureListDataGrid` → `pages/Common/MetricsView/WidgetShell` |
-| hooks → pages/components | 5 | **4**: the brief names four hooks (`useMetricsData`, `useCreateWizard`, `useRuleRowDraft`, `useUsageDataConsent`); its 5 was a miscount |
-| services → hooks | 2 | 2 |
-| models → pages | 1 | 1 |
-| utils → services | 1 | 1 |
+| Rule | Brief (2026-10-22) | Today: files | Today: file pairs (the list) |
+|---|---|---|---|
+| components → pages | 7 | 8 (new: `FeatureListDataGrid` → `WidgetShell`) | **12** |
+| hooks → pages/components | 5 | 4 (`useMetricsData`, `useCreateWizard`, `useRuleRowDraft`, `useUsageDataConsent`) | **5** |
+| services → hooks | 2 | 2 | **2** |
+| models → pages | 1 | 1 | **1** |
+| utils → services | 1 | 1 | **1** |
+| **Total (KPI 8)** | 16 | 16 | **21** |
 
 Today's list:
 
