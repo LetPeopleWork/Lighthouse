@@ -46,6 +46,16 @@ const whileThePageHears = (change: () => unknown) =>
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	});
 
+/**
+ * A wizard button keeps its spinner for at least 300 ms after a press, and its Next is gone the moment the
+ * step changes, so nothing on the page shows when that wait is over. Each test sits it out before it ends;
+ * otherwise the last press comes due after the page has been taken down and fails the whole run.
+ */
+const theLastPressSettles = () =>
+	act(() => new Promise((resolve) => setTimeout(resolve, 350)));
+
+afterEach(theLastPressSettles);
+
 const theWizardStillHolds = (owner: Owner) => {
 	const wizard = screen.getByRole("dialog");
 	expect(
