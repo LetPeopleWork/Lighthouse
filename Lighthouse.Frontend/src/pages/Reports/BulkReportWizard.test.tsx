@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IReportService } from "../../services/Api/ReportService";
 import {
@@ -594,11 +594,17 @@ describe("When Create reports can be pressed", () => {
 
 	// @us-02b @slice-02a @edge @contract-shape:pure-function
 	it(`while permissions are on their way it is disabled (${pending})`, async () => {
-		renderTheReportsPage({ permissions: "loading" });
+		const { queryClient } = renderTheReportsPage({ permissions: "loading" });
+		// Before the Premium licence has answered the button is disabled anyway, so only a check after it proves
+		// that the permissions still on their way are what holds it.
+		await waitFor(() =>
+			expect(queryClient.getQueryState(["licenseStatus"])?.status).toBe(
+				"success",
+			),
+		);
+		await act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
-		expect(
-			await screen.findByRole("button", { name: CREATE_REPORTS }),
-		).toBeDisabled();
+		expect(screen.getByRole("button", { name: CREATE_REPORTS })).toBeDisabled();
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:pure-function
