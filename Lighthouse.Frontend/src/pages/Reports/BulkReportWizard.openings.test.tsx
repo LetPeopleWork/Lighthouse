@@ -1,19 +1,25 @@
 import { onlineManager } from "@tanstack/react-query";
-import { act, screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import type { IReportCreationOptions } from "../../models/Reports/ReportsAcrossOwners";
 import {
 	anOwnerToCreateOn,
+	CANCEL,
 	creationOptionsFor,
 	everyReport,
+	fromTheTypeStepToTheOwnerStep,
 	GRAVITY,
 	neverAnswered,
 	type Owner,
 	PULSAR,
 	pickOwner,
+	pressCreateReports,
+	RETRY,
 	renderTheReportsPage,
 	toTheOwnerStep,
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
+import { deferred } from "../../tests/HeldMetricsService";
 import { aReportService } from "../../tests/ReportsTestKit";
 
 /**
@@ -88,5 +94,48 @@ describe("Once open, the wizard stays until it is closed", () => {
 
 		expect(getCreationOptions).toHaveBeenCalledTimes(2);
 		theWizardStillHolds(ZENITH);
+	});
+});
+
+describe("Every press of Create reports is its own opening", () => {
+	it("an answer to an earlier, cancelled opening never fills the wizard opened after it", async () => {
+		const earlier = deferred<IReportCreationOptions>();
+		const later = deferred<IReportCreationOptions>();
+		const getCreationOptions = vi
+			.fn()
+			.mockRejectedValueOnce(new Error("the network dropped"))
+			.mockReturnValueOnce(earlier.promise)
+			.mockReturnValueOnce(later.promise);
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions,
+			}),
+		});
+		await pressCreateReports(user);
+		const couldNotLoad = await screen.findByRole("dialog");
+		await user.click(within(couldNotLoad).getByRole("button", { name: RETRY }));
+		await user.click(
+			within(couldNotLoad).getByRole("button", { name: CANCEL }),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+
+		await pressCreateReports(user);
+		await whileThePageHears(() => {
+			earlier.resolve(creationOptionsFor(anOwnerToCreateOn(GRAVITY)));
+			later.resolve(creationOptionsFor(anOwnerToCreateOn(ZENITH)));
+		});
+		await fromTheTypeStepToTheOwnerStep(user);
+
+		const wizard = screen.getByRole("dialog");
+		expect(
+			within(wizard).queryByRole("checkbox", { name: GRAVITY.name }),
+		).not.toBeInTheDocument();
+		expect(
+			within(wizard).getByRole("checkbox", { name: ZENITH.name }),
+		).toBeInTheDocument();
+		expect(getCreationOptions).toHaveBeenCalledTimes(3);
 	});
 });

@@ -7,7 +7,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
@@ -46,6 +46,8 @@ const isAdminOfAny = ({
 
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
 const useBulkCreation = (rbac: RbacState) => {
+	// Counts every opening and never goes back, so no opening shares its key, or an earlier answer, with another.
+	const openings = useRef(0);
 	const [opening, setOpening] = useState<number | null>(null);
 	const [retrying, setRetrying] = useState(false);
 	const options = useReportCreationOptions(opening);
@@ -54,7 +56,8 @@ const useBulkCreation = (rbac: RbacState) => {
 	const lacksAdmin = !rbac.isLoading && !isAdminOfAny(rbac);
 	const open = () => {
 		setRetrying(false);
-		setOpening((opening ?? 0) + 1);
+		openings.current += 1;
+		setOpening(openings.current);
 	};
 	const close = () => {
 		setRetrying(false);

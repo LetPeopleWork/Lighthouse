@@ -461,18 +461,32 @@ export const theReportNamesListed = (): string[] =>
 			(row) => within(row).queryAllByRole("link")[0]?.textContent?.trim() ?? "",
 		);
 
-/** Opens the wizard and walks it to the owner step with the given Then window chosen. */
-export const toTheOwnerStep = async (
+/** Presses Create reports once the licence and the viewer's roles have arrived and enabled it. */
+export const pressCreateReports = async (
 	user: ReturnType<typeof userEvent.setup>,
-	{ thenPreset = "90 days" }: { thenPreset?: string } = {},
 ) => {
 	const createReports = await screen.findByRole("button", {
 		name: CREATE_REPORTS,
 	});
-	// It is enabled only once the licence and the viewer's roles have arrived.
 	await waitFor(() => expect(createReports).toBeEnabled());
 	await user.click(createReports);
-	// The wizard opens on the Type step; the Then presets are one Next further on.
+};
+
+/** Opens the wizard and walks it to the owner step with the given Then window chosen. */
+export const toTheOwnerStep = async (
+	user: ReturnType<typeof userEvent.setup>,
+	options: { thenPreset?: string } = {},
+) => {
+	await pressCreateReports(user);
+	await fromTheTypeStepToTheOwnerStep(user, options);
+};
+
+/** Walks an open wizard from its Type step to the owner step with the given Then window chosen. */
+export const fromTheTypeStepToTheOwnerStep = async (
+	user: ReturnType<typeof userEvent.setup>,
+	{ thenPreset = "90 days" }: { thenPreset?: string } = {},
+) => {
+	// The Then presets are one Next further on from the Type step.
 	await user.click(await screen.findByRole("button", { name: "Next" }));
 	await user.click(await screen.findByRole("button", { name: thenPreset }));
 	await nextUntil(user, () => screen.queryByText(OWNER_STEP) !== null);
