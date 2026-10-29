@@ -1,0 +1,30 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Reports/ReportBulkCommands.cs",
+      "**/API/ReportsController.cs",
+      "**/Models/Reports/ReportOwnerGoneException.cs",
+      "**/Services/Implementation/Repositories/ReportRepository.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Services.Implementation.Reports.ReportBulkCommandsTest|FullyQualifiedName~Tests.API.ReportsControllerTest|FullyQualifiedName~Services.Implementation.Reports.TeamReportMetricSeriesTest|FullyQualifiedName~Repositories.ReportRepositoryTest|FullyQualifiedName~Slice02aCreateForSeveralTeamsScenarios)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

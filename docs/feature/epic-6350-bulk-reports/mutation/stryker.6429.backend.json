@@ -1,0 +1,30 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/Reports/ReportBulkCommands.cs",
+      "**/API/ReportsController.cs",
+      "**/API/ReportsControllerBase.cs",
+      "**/API/ReportOwnerWriteAccess.cs",
+      "**/Services/Implementation/Reports/ReportQueries.cs",
+      "**/Services/Implementation/Repositories/ReportRepository.cs",
+      "**/API/DTO/Reports/NewReportRequest.cs",
+      "**/API/DTO/Reports/NewReportsForOwnersRequest.cs",
+      "**/Models/Reports/ReportBulkOutcomes.cs",
+      "**/Models/Reports/ReportRefusalCodes.cs",
+      "**/Models/Reports/ReportOwnerGoneException.cs",
+      "**/Models/Reports/ReportReadModels.cs",
+      "**/Services/Implementation/Reports/TeamReportMetricSeries.cs",
+      "**/Services/Implementation/Reports/PortfolioReportMetricSeries.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Services.Implementation.Reports.ReportBulkCommandsTest|FullyQualifiedName~Tests.API.ReportsControllerTest|FullyQualifiedName~Tests.API.TeamReportsControllerTest|FullyQualifiedName~Tests.API.ReportOwnerWriteAccessTest|FullyQualifiedName~Services.Implementation.Reports.ReportQueriesTest|FullyQualifiedName~Services.Implementation.Reports.ReportLoggingTest|FullyQualifiedName~Services.Implementation.Reports.ReportCommandsTest|FullyQualifiedName~Services.Implementation.Reports.TeamReportMetricSeriesTest|FullyQualifiedName~Services.Implementation.Reports.PortfolioReportMetricSeriesTest|FullyQualifiedName~Repositories.ReportRepositoryTest|FullyQualifiedName~Models.Reports|FullyQualifiedName~Slice02aCreateForSeveralTeamsScenarios)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
