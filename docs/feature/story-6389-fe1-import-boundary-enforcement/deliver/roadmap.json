@@ -1,0 +1,122 @@
+{
+  "roadmap": {
+    "project_id": "story-6389-fe1-import-boundary-enforcement",
+    "created_at": "2026-10-29",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story 6389 (FE1): enforce the frontend layer import boundaries in the Vitest suite. Fallow (exact-pinned dev dependency) reads Lighthouse.Frontend/.fallowrc.json (seven root-anchored zones, five forbidden directions) and src/layerBoundaries.enforcement.test.ts compares its findings both ways with the frozen 21-entry allow-list: a new leak fails naming file and import, a fixed leak still listed fails until its entry is deleted. Behaviour-free: no src production file changes, the 21 existing leaks are frozen, not fixed. DISTILL is the canonical author of the test file; DELIVER unskips scenarios and makes them green with the dependency and the config."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "FE1-1: Fallow and the components -> pages rule",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Walking skeleton: Fallow installed, zones configured, components leaks compared both ways",
+          "description": "Read /storage/repos/Lighthouse/.claude/worktrees/velvety-floating-fog/docs/ci-learnings.md (frontend section) first and pre-apply its rules. Install `fallow` as an exact-pinned devDependency (3.36.0, at least 24 h old under pnpm 12's minimum release age; no caret or tilde) with pnpm in Lighthouse.Frontend, so package.json and pnpm-lock.yaml change. Create Lighthouse.Frontend/.fallowrc.json with all seven root-anchored zones (components, context, hooks, models, pages, services, utils) and only the components -> pages rule (the other four rules are FE1-2). Unskip walking-skeleton #1 in the enforcement test. This is the first execution of the test's findLeaks helper: a failure that is BROKEN (cannot resolve fallow, exit 2) rather than RED is a test or setup bug to fix before any RED is trusted; do not rewrite the scenario's intent. Before relying on #17 later, confirm here that `fallow/bin/fallow` resolves through the installed package and that a missing config exits 2 with JSON on stdout naming the config path. Cut note: the DISTILL table puts 10 scenarios (#3-#11, #17) in the rest of FE1-1, over the 8-scenario cap, so they are split into 01-02 and 01-03. No src production file changes. The slice ends with `pnpm build` (runs `biome check --write` + tsc + vite) and `pnpm test` green in Lighthouse.Frontend; check git status afterwards for files biome rewrote.",
+          "criteria": [
+            "The enforcement test runs the installed Fallow (its launcher resolves through the package) and gets a result",
+            "With only the components -> pages rule configured, the twelve src/components entries of the allow-list are found, no more and no fewer, so the two-way comparison reports no newcomers and no stale entries",
+            "fallow is pinned to an exact version in package.json, with no range prefix",
+            "No file under Lighthouse.Frontend/src other than the enforcement test changes",
+            "`pnpm exec tsc -b`, `pnpm build` and `pnpm test` pass in Lighthouse.Frontend"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/pnpm-lock.yaml",
+            "Lighthouse.Frontend/.fallowrc.json",
+            "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+          "scenario_name": "the frontend layers > today's leaks > lets components reach into pages only in the twelve listed places, and in all of them",
+          "dependencies": []
+        },
+        {
+          "id": "01-02",
+          "name": "A new component-to-page import is refused; test files and repeated imports behave",
+          "description": "Read /storage/repos/Lighthouse/.claude/worktrees/velvety-floating-fog/docs/ci-learnings.md (frontend section) first. Unskip scenarios #3-#6 (four scenarios: #3 new leak refused, #4 and #5 the .test.ts / .test.tsx importer, #6 one report per file pair). They go BROKEN-then-RED only if setup is wrong; once 01-01 is in place the components rule already exists, so they should go green on unskip: if one does not, fix the config or the helper, not the scenario's intent. #4 and #5 pin that the production-only run excludes test files; #6 pins Fallow's one-edge-per-file-pair behaviour. Also confirm, by hand or a temporary check that is not committed, that a stray sandbox copy of a leaking component (e.g. a copy under `.stryker-tmp/`) is not reported by the check, so no ignorePatterns is needed; if it is reported, add the narrowest ignore to .fallowrc.json and say so in the commit body. No src production file changes. The slice ends with `pnpm build` (runs `biome check --write` + tsc + vite) and `pnpm test` green in Lighthouse.Frontend.",
+          "criteria": [
+            "A component importing a page is reported as exactly one new leak, naming the component and the page",
+            "A .test.ts or .test.tsx file under src/components that imports a page is not reported; the control leak still is",
+            "A component importing the same page in three ways (two imports and a re-export) is reported once",
+            "A stray copy of a leaking component under a sandbox directory such as .stryker-tmp is not reported; evidence (the command run and the Fallow output) is quoted in the step's commit body, and the copy is removed before committing",
+            "No file under Lighthouse.Frontend/src other than the enforcement test changes (checked with `git status` after `pnpm build`, whose Biome pass may rewrite files)",
+            "`pnpm build` and `pnpm test` pass in Lighthouse.Frontend"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+            "Lighthouse.Frontend/.fallowrc.json"
+          ],
+          "test_file": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+          "scenario_name": "the frontend layers > a component reaching into a page > is refused as a new leak, naming the component and the page; the frontend layers > a component reaching into a page > is not reported when it is only a .test.ts file that does so; the frontend layers > a component reaching into a page > is not reported when it is only a .test.tsx file that does so; the frontend layers > a component reaching into a page > is reported once, however many times the component imports that page",
+          "dependencies": [
+            "01-01"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Stale and duplicate entries are refused; allowed directions are silent; a check that cannot run fails loudly",
+          "description": "Read /storage/repos/Lighthouse/.claude/worktrees/velvety-floating-fog/docs/ci-learnings.md (frontend section) first. Unskip scenarios #7-#11 and #17 (six scenarios). #7, #8 and #17 are guards that are green on arrival (they protect the counted comparison and the exit-status check; there is no production code to make them red), so unskip the positive scenario work from 01-02 first, then these; #9, #10 and #11 need the components rule and should be green on unskip. #9 proves a fixed leak that is still listed is reported stale by name; #10 and #11 prove the rule is silent for components using hooks and pages using components, with the control leak as the only entry; #17 proves findLeaks throws quoting Fallow's output when the config is missing (status 2 and the config path) instead of returning no leaks. Add the frontend bullet for the components rule to ARCHITECTURE.md at the repo root (section 12, frontend): the layer rule in plain language, where the allow-list and `.fallowrc.json` live, and that a fixed leak must also be deleted from the list. Keep it to the one rule that exists in this slice (FE1-2 extends it to five). No src production file changes. The slice ends with `pnpm build` (runs `biome check --write` + tsc + vite) and `pnpm test` green in Lighthouse.Frontend.",
+          "criteria": [
+            "Finding the same leak twice while it is listed once is refused as a new leak",
+            "Listing a leak twice while it is found only once is refused as stale",
+            "A listed leak whose import has been removed is refused as stale, naming the entry, until the entry is deleted",
+            "A component using a hook and a page using a component are not reported; only the control leak appears",
+            "When the boundary check cannot run (missing config), the test fails with a message that quotes what Fallow printed, never an empty leak list",
+            "ARCHITECTURE.md section 12 describes the components -> pages rule and where its allow-list lives",
+            "No file under Lighthouse.Frontend/src other than the enforcement test changes (checked with `git status` after `pnpm build`, whose Biome pass may rewrite files)",
+            "`pnpm build` and `pnpm test` pass in Lighthouse.Frontend"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+            "ARCHITECTURE.md"
+          ],
+          "test_file": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+          "scenario_name": "the frontend layers > a leak that is listed once > is refused as a new leak when the same entry turns up a second time; the frontend layers > a leak that is listed once > is refused as stale when it is listed twice but found only once; the frontend layers > a listed leak that has been fixed > is refused as stale until its entry is deleted, naming the entry; the frontend layers > directions the layers allow > report nothing for a component using a hook; the frontend layers > directions the layers allow > report nothing for a page using a component; the frontend layers > a boundary check that cannot run > fails the test, quoting what it printed, instead of reporting no leaks",
+          "dependencies": [
+            "01-02"
+          ]
+        }
+      ],
+      "description": "Timing gate (acceptance criterion 4), owned by the orchestrator, not a crafter step: the median of three `pnpm test` runs is compared with the range of three runs taken before step 01-01 (baseline taken 2026-10-29 before any FE1 code change). Measured after step 01-03 (end of FE1-1) and recorded in feature-delta.md."
+    },
+    {
+      "id": "02",
+      "name": "FE1-2: the other four rules and the whole 21-entry list",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Hooks, services, models and utils rules in force; whole 21-entry list compared both ways",
+          "description": "Read /storage/repos/Lighthouse/.claude/worktrees/velvety-floating-fog/docs/ci-learnings.md (frontend section) first. Add the other four rules to Lighthouse.Frontend/.fallowrc.json: hooks must not import pages or components, services must not import hooks, models must not import pages, utils must not import services (per the DESIGN zone allow-lists). Unskip #12-#16 (the five-row 'each remaining layer rule is in force' table, one rule per row: BROKEN-free, RED until its rule is added, GREEN after) and #2 (whole frontend, twenty-one entries). Expected small test-file adjustment, intent unchanged: the FE1-1 walking skeleton #1 compares through `leaksUnder(\"components\", ...)`; with all five rules in force the comparison switches to the whole list, and #2 is that whole-list comparison, and #1 stays as the components-scoped skeleton the DISTILL table names (decided at roadmap review); do not remove or merge it. Extend the ARCHITECTURE.md section 12 bullet from the one rule to all five. No src production file changes: the 21 leaks stay frozen. The timing gate is the orchestrator's, not this step's (see the phase descriptions). The slice ends with `pnpm build` (runs `biome check --write` + tsc + vite) and `pnpm test` green in Lighthouse.Frontend.",
+          "criteria": [
+            "A hook importing a page, a hook importing a component, a service importing a hook, a model importing a page and a utility importing a service are each reported as one new leak naming both ends",
+            "The whole frontend crosses its layers only in the twenty-one listed places, and in all of them: no newcomers and no stale entries",
+            "No file under Lighthouse.Frontend/src other than the enforcement test changes (checked with `git status` after `pnpm build`, whose Biome pass may rewrite files); the 21 leaks remain",
+            "ARCHITECTURE.md section 12 describes all five layer rules",
+            "Walking skeleton #1 stays as the components-scoped stage (its twelve entries compared both ways); #2 adds the whole-list comparison beside it",
+            "`pnpm build` and `pnpm test` pass in Lighthouse.Frontend"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/.fallowrc.json",
+            "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+            "ARCHITECTURE.md"
+          ],
+          "test_file": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+          "scenario_name": "the frontend layers > today's leaks > lets the frontend cross its layers only in the twenty-one listed places, and in all of them; the frontend layers > each remaining layer rule is in force > refuses a hook reaching into a page, naming both ends; the frontend layers > each remaining layer rule is in force > refuses a hook reaching into a component, naming both ends; the frontend layers > each remaining layer rule is in force > refuses a service reaching into a hook, naming both ends; the frontend layers > each remaining layer rule is in force > refuses a model reaching into a page, naming both ends; the frontend layers > each remaining layer rule is in force > refuses a utility reaching into a service, naming both ends",
+          "dependencies": [
+            "01-03"
+          ]
+        }
+      ],
+      "description": "Timing gate (acceptance criterion 4), owned by the orchestrator, not a crafter step: the median of three `pnpm test` runs is compared with the range of three runs taken before step 01-01 (baseline taken 2026-10-29 before any FE1 code change). Measured again after step 02-01 (end of FE1-2) and recorded in feature-delta.md. Mutation testing is N/A for FE1 (no production code; DEVOPS decision), recorded at the final gate, outside this roadmap."
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (haiku) + orchestrator revision",
+    "reviewed_at": "2026-10-29",
+    "notes": "Review verdict NEEDS_REVISION with one blocker (timing gate had no owner or schedule); revised by the orchestrator: timing gate owned by the orchestrator with baseline before 01-01 and measurements after 01-03 and 02-01; #4/#5 named by their expanded titles; scenario names normalised to the full describe chain; stray-copy evidence quoted in the commit body; src-unchanged criterion on every step; #1 kept as the components-scoped skeleton; mutation N/A noted. All 17 scenarios map to exactly one step; no step exceeds 6."
+  }
+}
