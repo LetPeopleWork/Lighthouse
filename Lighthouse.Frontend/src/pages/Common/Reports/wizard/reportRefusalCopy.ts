@@ -19,7 +19,10 @@ export type ReportRefusalCode =
 	| "unknown-metric"
 	| "metric-not-captured"
 	| "template-not-supported"
-	| "report-cap-reached";
+	| "report-cap-reached"
+	| "owner-not-found"
+	| "not-admin"
+	| "not-saved";
 
 /** What a refusal's sentence may name: the server's bounds and the instance's own words. */
 export interface RefusalWords {
@@ -95,7 +98,46 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 		"template-not-supported": () =>
 			"This Type of report can't be created by this version of Lighthouse.",
 		"report-cap-reached": (words) => capSentenceFor(words.ownerTerm),
+		"owner-not-found": (words) => `This ${words.ownerTerm} no longer exists.`,
+		"not-admin": (words) =>
+			`You are no longer Admin of this ${words.ownerTerm}.`,
+		"not-saved": () => COULD_NOT_SAVE,
 	};
+
+/** What one owner's line of a bulk run names: the refusal's words, and that owner. */
+export interface NotCreatedWords extends RefusalWords {
+	ownerName: string;
+}
+
+const historyStartSentence = (words: NotCreatedWords): string =>
+	`its kept history starts ${oldestKeptDay(words.earliestStart)}. Keep more history under Closed Items Cutoff in its settings.`;
+
+/** Where a bulk line words a refusal for its owner rather than repeat the single wizard's sentence. */
+const NOT_CREATED_REASON: Partial<
+	Record<ReportRefusalCode, (words: NotCreatedWords) => string>
+> = {
+	"not-admin": (words) => `you are no longer Admin of ${words.ownerName}.`,
+	"owner-not-found": (words) => `${words.ownerName} no longer exists.`,
+	"report-cap-reached": (words) =>
+		`${words.ownerName} already has its one Then & Now report; Premium lifts this limit.`,
+	"then-before-cutoff": historyStartSentence,
+	"now-before-cutoff": historyStartSentence,
+	"not-saved": () => "it couldn't be saved. Try again.",
+};
+
+const notCreatedReasonOf = (
+	code: string | undefined,
+	words: NotCreatedWords,
+): string => {
+	if (code === undefined || !isRefusalCode(code)) return COULD_NOT_CREATE;
+	return (NOT_CREATED_REASON[code] ?? REFUSAL_COPY[code])(words);
+};
+
+/** The line for an owner a bulk run did not create a report on, saying why in plain words. */
+export const notCreatedLineFor = (
+	code: string | undefined,
+	words: NotCreatedWords,
+): string => `Not created: ${notCreatedReasonOf(code, words)}`;
 
 /** The sentence for a window the wizard itself refuses, worded as the server's refusal would be. */
 export const windowRefusalCopyFor = (

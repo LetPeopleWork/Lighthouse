@@ -1,17 +1,20 @@
 import {
-	Box,
 	Button,
 	CircularProgress,
 	DialogActions,
 	DialogContent,
+	List,
+	ListItem,
 	Stack,
 	Typography,
 } from "@mui/material";
 import type React from "react";
 import { Link } from "react-router";
 import type { IReportCreationOutcome } from "../../models/Reports/ReportsAcrossOwners";
+import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { ownerTermKeyOf, reportPathOf } from "../Common/Reports/reportOwner";
+import { notCreatedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
 
 const NOT_CONFIRMED_CREATED =
 	"It could not be confirmed which reports were created.";
@@ -30,36 +33,73 @@ const headlineOf = (outcomes: readonly IReportCreationOutcome[]): string => {
 	return `${created} ${reportsWord(created)} created, ${outcomes.length - created} not created`;
 };
 
-const OutcomeLine: React.FC<{ outcome: IReportCreationOutcome }> = ({
-	outcome,
-}) => {
+const ownerOf = (outcome: IReportCreationOutcome) => ({
+	kind: outcome.ownerKind,
+	id: outcome.ownerId,
+});
+
+const CreatedStatus: React.FC<
+	Readonly<{ outcome: IReportCreationOutcome; reportId: number }>
+> = ({ outcome, reportId }) => (
+	<>
+		<Typography color="success.main">Created</Typography>
+		<Button
+			component={Link}
+			to={reportPathOf(ownerOf(outcome), reportId)}
+			size="small"
+		>
+			Open
+		</Button>
+	</>
+);
+
+const NotCreatedStatus: React.FC<
+	Readonly<{
+		outcome: IReportCreationOutcome;
+		ownerTerm: string;
+		minimumLengthDays: number;
+	}>
+> = ({ outcome, ownerTerm, minimumLengthDays }) => {
 	const { getTerm } = useTerminology();
-	const owner = { kind: outcome.ownerKind, id: outcome.ownerId };
-	const reportId = outcome.status === "created" ? outcome.reportId : undefined;
-	const isCreated = reportId !== undefined;
 	return (
-		<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+		<Typography color="error">
+			{notCreatedLineFor(outcome.code, {
+				minimumLengthDays,
+				earliestStart: outcome.earliestStart ?? null,
+				ownerTerm,
+				workItemsTerm: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+				ownerName: outcome.ownerName ?? `this ${ownerTerm}`,
+			})}
+		</Typography>
+	);
+};
+
+const OutcomeLine: React.FC<
+	Readonly<{ outcome: IReportCreationOutcome; minimumLengthDays: number }>
+> = ({ outcome, minimumLengthDays }) => {
+	const { getTerm } = useTerminology();
+	const ownerTerm = getTerm(ownerTermKeyOf(ownerOf(outcome)));
+	return (
+		<ListItem disableGutters sx={{ gap: 2 }}>
 			<Typography sx={{ flex: 1 }}>
-				{`${getTerm(ownerTermKeyOf(owner))} ${outcome.ownerName ?? ""}`.trim()}
+				{`${ownerTerm} ${outcome.ownerName ?? ""}`.trim()}
 			</Typography>
-			<Typography color={isCreated ? "success.main" : "error"}>
-				{isCreated ? "Created" : "Not created"}
-			</Typography>
-			{isCreated && (
-				<Button
-					component={Link}
-					to={reportPathOf(owner, reportId)}
-					size="small"
-				>
-					Open
-				</Button>
+			{outcome.status === "created" && outcome.reportId !== undefined ? (
+				<CreatedStatus outcome={outcome} reportId={outcome.reportId} />
+			) : (
+				<NotCreatedStatus
+					outcome={outcome}
+					ownerTerm={ownerTerm}
+					minimumLengthDays={minimumLengthDays}
+				/>
 			)}
-		</Box>
+		</ListItem>
 	);
 };
 
 interface BulkResultProps {
 	count: number;
+	minimumLengthDays: number;
 	run: BulkRun;
 	onDone: () => void;
 }
@@ -67,6 +107,7 @@ interface BulkResultProps {
 /** How the run went: while it works, then one line per owner, or that no answer came. */
 const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 	count,
+	minimumLengthDays,
 	run,
 	onDone,
 }) => {
@@ -97,17 +138,18 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 	return (
 		<>
 			<DialogContent>
-				<Stack spacing={1}>
-					<Typography variant="h6" component="p">
-						{headlineOf(run.outcomes)}
-					</Typography>
+				<Typography variant="h6" component="p">
+					{headlineOf(run.outcomes)}
+				</Typography>
+				<List dense>
 					{run.outcomes.map((outcome) => (
 						<OutcomeLine
 							key={`${outcome.ownerKind}:${outcome.ownerId}`}
 							outcome={outcome}
+							minimumLengthDays={minimumLengthDays}
 						/>
 					))}
-				</Stack>
+				</List>
 			</DialogContent>
 			<DialogActions>
 				<Button variant="contained" onClick={onDone}>

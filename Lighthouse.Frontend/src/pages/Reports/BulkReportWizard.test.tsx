@@ -193,9 +193,10 @@ describe("Create reports for several Teams", () => {
 	);
 
 	// @us-02a @slice-02a @edge @contract-shape:unbounded-preservation
-	it.skip(`while the run is under way the result says so and cannot be closed (${pending})`, async () => {
+	it(`while the run is under way the result says so and cannot be closed (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(vi.fn(() => neverAnswered())),
+			permissions: { adminOf: [ZENITH, GRAVITY, PULSAR] },
 		});
 
 		await toTheOwnerStep(user);
@@ -217,7 +218,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
-	it.skip(`a Team refused is named with its reason while the others are created and can be opened (${pending})`, async () => {
+	it(`a Team refused is named with its reason while the others are created and can be opened (${pending})`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -227,6 +228,7 @@ describe("Create reports for several Teams", () => {
 			]);
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(createReportsInBulk),
+			permissions: { adminOf: [ZENITH, GRAVITY, PULSAR] },
 		});
 
 		await toTheOwnerStep(user);
@@ -254,7 +256,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @error @contract-shape:bounded-change
-	it.skip(`when every Team is refused the headline says none was created and each line says why (${pending})`, async () => {
+	it(`when every Team is refused the headline says none was created and each line says why (${pending})`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -264,6 +266,7 @@ describe("Create reports for several Teams", () => {
 			]);
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(createReportsInBulk),
+			permissions: { adminOf: [ZENITH, GRAVITY, PULSAR] },
 		});
 
 		await toTheOwnerStep(user);
@@ -288,7 +291,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @error @contract-shape:pure-function
-	it.skip.each([
+	it.each([
 		[
 			"the Community cap after the licence lapsed",
 			notCreated(PULSAR, "report-cap-reached"),
@@ -302,7 +305,9 @@ describe("Create reports for several Teams", () => {
 	])(
 		`a Team refused for %s gets its own line (${pending})`,
 		async (_why, outcome, line) => {
+			const refused = outcome.ownerId === PULSAR.id ? PULSAR : EQUINOX;
 			const { user } = renderTheReportsPage({
+				permissions: { adminOf: [ZENITH, refused] },
 				reportService: aReportService({
 					getAllReports: vi.fn().mockResolvedValue(everyReport()),
 					getCreationOptions: vi
@@ -322,7 +327,7 @@ describe("Create reports for several Teams", () => {
 
 			await toTheOwnerStep(user, { thenPreset: "30 days" });
 			await pickOwner(user, ZENITH);
-			await pickOwner(user, outcome.ownerId === PULSAR.id ? PULSAR : EQUINOX);
+			await pickOwner(user, refused);
 			await user.click(screen.getByRole("button", { name: createCount(2) }));
 
 			expect(await theLineSaying(line)).toBeInTheDocument();
@@ -330,7 +335,7 @@ describe("Create reports for several Teams", () => {
 	);
 
 	// @us-02a @slice-02a @error @contract-shape:unbounded-preservation
-	it.skip(`when no answer arrives it says it cannot confirm what was created and leads back to Reports (${pending})`, async () => {
+	it(`when no answer arrives it says it cannot confirm what was created and leads back to Reports (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(
 				vi.fn().mockRejectedValue(new Error("the network dropped")),
@@ -354,7 +359,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @edge @contract-shape:bounded-change
-	it.skip(`creating the same report twice creates it twice, with no warning (${pending})`, async () => {
+	it(`creating the same report twice creates it twice, with no warning (${pending})`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValueOnce([created(ZENITH, 701)])

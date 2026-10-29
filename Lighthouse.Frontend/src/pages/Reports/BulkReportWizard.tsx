@@ -223,7 +223,12 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 					/>
 				</WizardStepperFrame>
 			) : (
-				<BulkResult count={pickedTeams.length} run={run} onDone={onClose} />
+				<BulkResult
+					count={pickedTeams.length}
+					minimumLengthDays={options.minimumLengthDays}
+					run={run}
+					onDone={onClose}
+				/>
 			)}
 		</Dialog>
 	);

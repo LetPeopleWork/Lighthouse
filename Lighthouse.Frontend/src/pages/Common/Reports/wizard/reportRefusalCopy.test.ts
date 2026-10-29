@@ -59,6 +59,9 @@ describe("refusalCopyFor", () => {
 			"report-cap-reached",
 			"Community includes 1 Then & Now report per Team. Delete it, or use Premium for unlimited reports.",
 		],
+		["owner-not-found", "This Team no longer exists."],
+		["not-admin", "You are no longer Admin of this Team."],
+		["not-saved", "The report couldn't be saved. Try again."],
 	])("words %s as %j", (code, expected) => {
 		expect(refusalCopyFor(refusal(code), words)).toBe(expected);
 	});
