@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // @driving_port @real-io @kpi @contract-shape:bounded-change
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
-        [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
+        [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
         public async Task The_event_travels_with_its_name_and_nothing_else(string name)
@@ -89,8 +89,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // @driving_port @real-io @error @contract-shape:unbounded-preservation
         [TestCase("AllReportsListed", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-01,slice-01")]
         [TestCase("AllReportsListed", ",\"route\":\"TeamDetail_Reports\"", Category = "us-01,slice-01")]
-        [TestCase("ReportBulkCreationStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
-        [TestCase("ReportBulkCreationStarted", ",\"updates\":\"Now\"", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
+        [TestCase("ReportBulkCreationStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-02a,slice-02a")]
+        [TestCase("ReportBulkCreationStarted", ",\"updates\":\"Now\"", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportBulkRemovalStarted", ",\"refinementVerdict\":\"In\"", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportCombinedPdfExportStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// <summary>The name is the contract and the number is whatever is next when the slice lands, so this pins the order, never the number.</summary>
         // @contract-shape:bounded-change
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
-        [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
+        [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
         public void The_event_is_appended_after_the_PDF_export_never_inserted(string name)
@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         // Data leaving that the page does not describe is data nobody was told about.
         // @contract-shape:bounded-change
         [TestCase("Every report was listed", Category = "us-01,slice-01")]
-        [TestCase("Reports were created for several Teams or Portfolios", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
+        [TestCase("Reports were created for several Teams or Portfolios", Category = "us-02a,slice-02a")]
         [TestCase("Several reports were removed at once", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("Several reports were exported as one PDF", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
         public void The_usage_data_page_has_one_row_for_the_event_saying_nothing_travels_with_it(string rowSays)
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // @contract-shape:bounded-change
-        [TestCase("A report was created", "Create reports", Category = "us-02a,slice-02a", Ignore = PendingEpic6350.Slice02a)]
+        [TestCase("A report was created", "Create reports", Category = "us-02a,slice-02a")]
         [TestCase("A report was deleted", "already gone", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("A report was exported as a PDF", "one report selected", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
         public void The_usage_data_page_says_what_the_bulk_actions_add_to_an_existing_event(string rowSays, string itNowSays)

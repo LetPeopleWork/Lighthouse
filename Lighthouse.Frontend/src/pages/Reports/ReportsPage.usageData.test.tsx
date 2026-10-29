@@ -94,7 +94,7 @@ describe("What the Reports page tells the usage data", () => {
 	});
 
 	// @driving_port @us-02a @slice-02a @kpi-OUT-6350-bulk-creation-used @contract-shape:bounded-change
-	it.skip(`a bulk creation is told once, and one created report per report actually created (${pendingEpic6350("02a")})`, async () => {
+	it(`a bulk creation is told once, and one created report per report actually created`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),

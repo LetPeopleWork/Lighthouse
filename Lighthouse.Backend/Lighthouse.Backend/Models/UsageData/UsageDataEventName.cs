@@ -60,5 +60,12 @@ namespace Lighthouse.Backend.Models.UsageData
         /// reports there were.
         /// </summary>
         AllReportsListed = 21,
+
+        /// <summary>
+        /// Somebody chose Create in Create reports and the request was sent, whether or not any report was made.
+        /// It carries nothing: not how many Teams or Portfolios, not which, not how many reports were made. Each
+        /// report made is counted as <see cref="ReportCreated"/> as well.
+        /// </summary>
+        ReportBulkCreationStarted = 22,
     }
 }
