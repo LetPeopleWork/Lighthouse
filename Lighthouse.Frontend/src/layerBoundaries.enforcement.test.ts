@@ -145,7 +145,7 @@ const describeDrift = (drift: ReturnType<typeof compareWithAllowList>) =>
 
 const trees: string[] = [];
 
-/** Writes a small project to a throwaway folder; nothing under src/ has to hold a deliberate leak. */
+/** Writes a small project to a throwaway folder, removed after each test. */
 const projectWith = (files: Record<string, string>): string => {
 	const root = mkdtempSync(join(tmpdir(), "layer-boundaries-"));
 	trees.push(root);
