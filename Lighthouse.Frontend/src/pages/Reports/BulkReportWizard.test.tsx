@@ -30,7 +30,6 @@ import {
 	type Owner,
 	PREMIUM_LICENSE_TOOLTIP,
 	PULSAR,
-	pendingEpic6350,
 	pickOwner,
 	QUARTER,
 	RETRY,
@@ -50,8 +49,6 @@ import { aReportService } from "../../tests/ReportsTestKit";
  * several Teams in one go. The wizard opens only once what a report needs has arrived. The server answers each
  * Team on its own, created or not with the reason, and the result names every one of them. Creating is Premium.
  */
-
-const pending = pendingEpic6350("02a");
 
 /** The single wizard's first step, which the bulk wizard reuses unchanged. */
 const THE_TYPE_STEP =
@@ -196,7 +193,7 @@ describe("Create reports for several Teams", () => {
 	);
 
 	// @us-02a @slice-02a @edge @contract-shape:unbounded-preservation
-	it(`while the run is under way the result says so and cannot be closed (${pending})`, async () => {
+	it(`while the run is under way the result says so and cannot be closed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(vi.fn(() => neverAnswered())),
 			permissions: { adminOf: [ZENITH, GRAVITY, PULSAR] },
@@ -221,7 +218,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
-	it(`a Team refused is named with its reason while the others are created and can be opened (${pending})`, async () => {
+	it(`a Team refused is named with its reason while the others are created and can be opened`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -259,7 +256,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @error @contract-shape:bounded-change
-	it(`when every Team is refused the headline says none was created and each line says why (${pending})`, async () => {
+	it(`when every Team is refused the headline says none was created and each line says why`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -305,40 +302,37 @@ describe("Create reports for several Teams", () => {
 			notCreated(EQUINOX, "then-before-cutoff", "2026-07-30"),
 			notCreatedBecause.historyTooShort("30 Jul 2026"),
 		],
-	])(
-		`a Team refused for %s gets its own line (${pending})`,
-		async (_why, outcome, line) => {
-			const refused = outcome.ownerId === PULSAR.id ? PULSAR : EQUINOX;
-			const { user } = renderTheReportsPage({
-				permissions: { adminOf: [ZENITH, refused] },
-				reportService: aReportService({
-					getAllReports: vi.fn().mockResolvedValue(everyReport()),
-					getCreationOptions: vi
-						.fn()
-						.mockResolvedValue(
-							creationOptionsFor(
-								anOwnerToCreateOn(ZENITH),
-								anOwnerToCreateOn(PULSAR),
-								anOwnerToCreateOn(EQUINOX),
-							),
+	])(`a Team refused for %s gets its own line`, async (_why, outcome, line) => {
+		const refused = outcome.ownerId === PULSAR.id ? PULSAR : EQUINOX;
+		const { user } = renderTheReportsPage({
+			permissions: { adminOf: [ZENITH, refused] },
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions: vi
+					.fn()
+					.mockResolvedValue(
+						creationOptionsFor(
+							anOwnerToCreateOn(ZENITH),
+							anOwnerToCreateOn(PULSAR),
+							anOwnerToCreateOn(EQUINOX),
 						),
-					createReportsInBulk: vi
-						.fn()
-						.mockResolvedValue([created(ZENITH, 1), outcome]),
-				}),
-			});
+					),
+				createReportsInBulk: vi
+					.fn()
+					.mockResolvedValue([created(ZENITH, 1), outcome]),
+			}),
+		});
 
-			await toTheOwnerStep(user, { thenPreset: "30 days" });
-			await pickOwner(user, ZENITH);
-			await pickOwner(user, refused);
-			await user.click(screen.getByRole("button", { name: createCount(2) }));
+		await toTheOwnerStep(user, { thenPreset: "30 days" });
+		await pickOwner(user, ZENITH);
+		await pickOwner(user, refused);
+		await user.click(screen.getByRole("button", { name: createCount(2) }));
 
-			expect(await theLineSaying(line)).toBeInTheDocument();
-		},
-	);
+		expect(await theLineSaying(line)).toBeInTheDocument();
+	});
 
 	// @us-02a @slice-02a @error @contract-shape:unbounded-preservation
-	it(`when no answer arrives it says it cannot confirm what was created and leads back to Reports (${pending})`, async () => {
+	it(`when no answer arrives it says it cannot confirm what was created and leads back to Reports`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(
 				vi.fn().mockRejectedValue(new Error("the network dropped")),
@@ -362,7 +356,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @edge @contract-shape:bounded-change
-	it(`creating the same report twice creates it twice, with no warning (${pending})`, async () => {
+	it(`creating the same report twice creates it twice, with no warning`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValueOnce([created(ZENITH, 701)])
@@ -387,7 +381,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @edge @contract-shape:pure-function
-	it(`with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike (${pending})`, async () => {
+	it(`with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike`, async () => {
 		renderTheReportsPage({ licence: "community" });
 
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
@@ -397,7 +391,7 @@ describe("Create reports for several Teams", () => {
 describe("At most 50 Teams and Portfolios in one run", () => {
 	// @us-02a @slice-02a @error @edge @contract-shape:pure-function
 	it(
-		`Select all picks all 60 Teams, the button counts them, and Create says at most 50 (${pending})`,
+		`Select all picks all 60 Teams, the button counts them, and Create says at most 50`,
 		async () => {
 			const { user } = renderTheReportsPage({
 				reportService: offering(...sixtyTeams),
@@ -427,7 +421,7 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 
 	// @us-02a @slice-02a @edge @contract-shape:pure-function
 	it(
-		`exactly 50 picked may still be created, with no ceiling message (${pending})`,
+		`exactly 50 picked may still be created, with no ceiling message`,
 		async () => {
 			const fifty = sixtyTeams.slice(0, 50);
 			const { user } = renderTheReportsPage({
@@ -569,7 +563,7 @@ describe("The wizard waits for what a report needs", () => {
 
 describe("When Create reports can be pressed", () => {
 	// @us-02a @slice-02a @error @contract-shape:pure-function
-	it(`on Community it is shown but disabled, with the Premium licence tooltip (${pending})`, async () => {
+	it(`on Community it is shown but disabled, with the Premium licence tooltip`, async () => {
 		const { user } = renderTheReportsPage({ licence: "community" });
 
 		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
@@ -581,7 +575,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:pure-function
-	it(`for someone who is Admin of no Team or Portfolio it is disabled and says why (${pending})`, async () => {
+	it(`for someone who is Admin of no Team or Portfolio it is disabled and says why`, async () => {
 		const { user } = renderTheReportsPage({ permissions: { adminOf: [] } });
 
 		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
@@ -593,7 +587,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @edge @contract-shape:pure-function
-	it(`while permissions are on their way it is disabled (${pending})`, async () => {
+	it(`while permissions are on their way it is disabled`, async () => {
 		const { queryClient } = renderTheReportsPage({ permissions: "loading" });
 		// Before the Premium licence has answered the button is disabled anyway, so only a check after it proves
 		// that the permissions still on their way are what holds it.
@@ -608,7 +602,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:pure-function
-	it(`when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong (${pending})`, async () => {
+	it(`when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong`, async () => {
 		renderTheReportsPage({ permissions: "failing" });
 
 		await waitFor(async () =>
@@ -619,7 +613,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02a @slice-02a @contract-shape:pure-function
-	it(`where roles are not enforced anyone may press it on Premium (${pending})`, async () => {
+	it(`where roles are not enforced anyone may press it on Premium`, async () => {
 		renderTheReportsPage({ permissions: "rolesNotEnforced" });
 
 		await waitFor(async () =>
@@ -630,7 +624,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02a @slice-02a @contract-shape:pure-function
-	it(`an Admin of one Team on Premium may press it (${pending})`, async () => {
+	it(`an Admin of one Team on Premium may press it`, async () => {
 		renderTheReportsPage({ permissions: { adminOf: [LIGHTSPEED_TEAM] } });
 
 		await waitFor(async () =>
