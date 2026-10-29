@@ -54,6 +54,38 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task A_run_naming_no_owners_at_all_is_refused_saying_a_run_needs_one()
+        {
+            var noOwners = ARunFor([], []);
+            noOwners.Owners = null;
+
+            var answer = await Subject().CreateForEach(noOwners);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DetailOf(answer), Does.StartWith("A run names at least one owner"));
+                bulkCommands.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
+        public async Task A_run_over_the_ceiling_is_refused_naming_the_ceiling()
+        {
+            var tooMany = Enumerable.Range(1, IReportBulkCommands.MostOwnersPerRun + 1).ToList();
+
+            var answer = await Subject().CreateForEach(ARunFor(tooMany.Select(_ => (ReportOwnerKind?)ReportOwnerKind.Team), tooMany));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DetailOf(answer), Is.EqualTo($"A run holds at most {IReportBulkCommands.MostOwnersPerRun} Teams and Portfolios."));
+                bulkCommands.VerifyNoOtherCalls();
+            }
+        }
+
+        private static string? DetailOf(ActionResult<ReportBulkCreation> answer)
+            => ((answer.Result as ObjectResult)?.Value as ProblemDetails)?.Detail;
+
         private static NewReportsForOwnersRequest ARunFor(IEnumerable<ReportOwnerKind?> kinds, IEnumerable<int> ids)
             => new()
             {

@@ -65,6 +65,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public void A_gone_Team_is_described_by_its_kind_and_id_alone()
+        {
+            var gone = ReportOwner.Team(SharedId + 1);
+
+            Assert.That(() => subject.CycleTimePercentiles(gone, Window),
+                Throws.TypeOf<ReportOwnerGoneException>().With.Message.EqualTo($"Team {SharedId + 1} does not exist"));
+        }
+
+        [Test]
         public void A_Portfolio_never_reads_the_series_of_the_Team_sharing_its_id()
         {
             using (Assert.EnterMultipleScope())

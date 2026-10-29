@@ -312,6 +312,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             Assert.That(logger.Everything.Single().Level, Is.EqualTo(LogLevel.Information));
         }
 
+        [Test]
+        public async Task A_slow_run_warns_with_how_many_owners_were_and_were_not_done()
+        {
+            eachCreateTakes = TimeSpan.FromSeconds(11);
+            commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.Refused(ReportRefusalCodes.ReportCapReached));
+
+            await Subject().CreateForEach([Zenith, Gravity, OceanExplorer], TheQuarter, MayWriteEvery());
+
+            var line = logger.Everything.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Properties["Asked"], Is.EqualTo(3));
+                Assert.That(line.Properties["Done"], Is.EqualTo(2));
+                Assert.That(line.Properties["NotDone"], Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task A_run_whose_Now_length_was_not_given_logs_Now_as_long_as_Then()
+        {
+            var sameLengths = TheQuarter with { ThenAndNow = new NewThenAndNow(new DateOnly(2026, 7, 29), 90, null) };
+
+            await Subject().CreateForEach([Zenith], sameLengths, MayWriteEvery());
+
+            Assert.That(logger.Everything.Single().Properties["NowLengthDays"], Is.EqualTo(90));
+        }
+
         private ReportBulkCommands Subject() => new(commands.Object, writer.Object, owners.Object, [thenAndNow.Object], clock.Object, timeProvider, logger);
 
         private static IReportOwnerWriteAccess MayWriteEvery()
