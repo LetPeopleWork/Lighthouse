@@ -24,19 +24,27 @@ Read these in the Epic's `feature-delta.md`; they are not copied here.
 
 ## Wave: PICK-UP / [REF] DoR re-run (2026-10-29)
 
-Items 1–8 are the nWave Definition of Ready; item 9 (outcome KPIs) is this project's addition. Result: 8/8, plus item 9.
+Items 1–8 are the nWave Definition of Ready; item 9 (outcome KPIs) is this project's addition. Result: 8/8 (item 6 by
+the maintainer's waiver below), plus item 9. This is the pick-up re-check, revised after DESIGN and DISTILL work existed
+(during the DISTILL review gate); it gates DELIVER, not DESIGN.
+
+**Maintainer waiver, 2026-10-29 (DoR item 6).** The rule "Fail: >7 scenarios" is waived for this Story. DISTILL wrote
+17 executable tests (counted from the `it`/`it.each` rows in `layerBoundaries.enforcement.test.ts`), because the
+failure criterion holds for each of five layer rules and each failure path needs its own fixture. The Story has one
+outcome and two half-day slices, so splitting it would not make it smaller in any way that matters.
 
 The Story's acceptance criteria, restated in Given/When/Then with the trigger DESIGN chose (the brief's AC 1 said
 `pnpm build`, its AC 2 had no When, and its AC 3 was a quality bar):
 
-1. Given every production file pair that crosses a layer rule is on the list, when `pnpm test` runs, then the check
-   passes.
+1. Given a production file imports only across layers the rules allow, or every file pair that crosses a rule is on
+   the list, when `pnpm test` runs, then the check passes.
 2. Given a production file in `components/` imports from `pages/` and is not on the list, when `pnpm test` runs, then
    it fails naming the importing file and the imported one (and likewise for the other four rules).
 3. Given a listed file pair no longer leaks, when `pnpm test` runs, then it fails naming the stale entry until the
    entry is deleted.
 4. Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings,
-   and the median of three `pnpm test` runs after the change is within the range of three runs before it.
+   and the median of three `pnpm test` runs after the change is within the range of three runs before it. This is a
+   quality constraint on the outcome, not a second outcome.
 
 | DoR item | Status | Evidence for FE1 |
 |---|---|---|
@@ -44,21 +52,22 @@ The Story's acceptance criteria, restated in Given/When/Then with the trigger DE
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` and the CI build. |
 | 3 ≥ 3 domain examples, real data | PASS | Re-counted list below, e.g. `ModifyTeamSettings` → `pages/Teams/Edit/ForecastSettingsComponent`, `useMetricsData` → `pages/Common/MetricsView/widgetStatus`, `deliveryArchivedRefusal` → `services/Api/ApiError`. |
 | 4 UAT Given/When/Then (3–7) | PASS | Four acceptance criteria in Given/When/Then, restated above: one happy path (1), two failure paths (2, 3) and a quality bar (4). DISTILL's executable scenarios are tests derived from these; they are not counted against the 3–7 UAT range (see item 6). |
-| 5 AC derived from UAT | PASS | AC map to the Elevator Pitch "After". |
-| 6 Right-sized | PASS | Effort: DESIGN cut it into two half-day slices (FE1-1, FE1-2). One outcome: the four AC above. Scenarios: 4 UAT criteria, within 3–7. DISTILL derived 17 executable tests from them, because acceptance criterion 2 holds for each of the five layer rules and each failure path needs its own fixture; that test count is a DISTILL design choice reviewed there, not a sizing signal. |
+| 5 AC derived from UAT | PASS | The Epic's Elevator Pitch "After" now reads "the Vitest enforcement test `src/layerBoundaries.enforcement.test.ts`, run by `pnpm test`, fails …", and criteria 2 and 3 above are that sentence in Given/When/Then. |
+| 6 Right-sized | PASS by waiver (maintainer, 2026-10-29) | Effort: two half-day slices (FE1-1, FE1-2). One outcome, with criterion 4 as its quality constraint. Scenarios: 17 executable tests, above the rule's 7; waived as recorded above. |
 | 7 Technical notes + cross-cutting | PASS | Brief's Notes for DESIGN (docs-symlink hazard, pnpm minimum release age, Fallow trial questions); cross-cutting answered below. |
-| 8 Dependencies tracked | PASS | None, hard or soft. |
+| 8 Dependencies tracked | PASS | No Story dependency, hard or soft. One new third-party dev dependency: `fallow`, exact pin (D1), Renovate defaults with the 7-day minimum release age (D7). |
 | 9 Outcome KPIs, measurable | PASS | Epic KPI 8 reads "**21 file pairs in 16 files**" → **0**, measured by the allow-list length (one import per pair today). |
 
 ## Wave: PICK-UP / [REF] Baseline re-count (2026-10-29)
 
 Counted by hand, resolving relative imports in production `.ts`/`.tsx` files (tests excluded) under each layer.
-Fallow, Biome and dependency-cruiser each reproduced the same 21 file pairs in 16 files at DESIGN (2026-10-29). This
+At DESIGN (2026-10-29) Fallow reported the same 21 file pairs in 16 files; Biome flagged the same 16 files and 21
+import lines; dependency-cruiser reported the same 21 imports once a second TypeScript (6) was added for it. This
 supersedes the 16-violation baseline in the Epic FE1 AC and in the brief (components→pages 7, hooks→pages/components 5).
 The brief's figures mixed units: its hooks figure of 5 is right in pairs, while its components figure of 7 matches
 neither unit today (8 files, 12 pairs). The list counts pairs; the Epic's KPI 8 row says so.
 
-| Rule | Brief (2026-10-22) | Today: files | Today: file pairs (the list) |
+| Rule | Brief (2026-10-22, violations as the brief counted them) | Today: files | Today: file pairs (the list) |
 |---|---|---|---|
 | components → pages | 7 | 8 (new: `FeatureListDataGrid` → `WidgetShell`) | **12** |
 | hooks → pages/components | 5 | 4 (`useMetricsData`, `useCreateWizard`, `useRuleRowDraft`, `useUsageDataConsent`) | **5** |
@@ -77,7 +86,7 @@ components->pages  components/Common/DateRangeSelector/DateRangeSelector.tsx    
 components->pages  components/Common/FeatureListDataGrid/FeatureListDataGrid.tsx    -> pages/Common/MetricsView/WidgetShell
 components->pages  components/Common/ProjectSettings/ModifyProjectSettings.tsx      -> pages/Common/AdvancedInputs/AdvancedInputs
 components->pages  components/Common/Team/ModifyTeamSettings.tsx                    -> pages/Common/AdvancedInputs/AdvancedInputs, pages/Teams/Edit/ForecastSettingsComponent
-components->pages  components/Common/Team/RefinementBandSettings.tsx                -> pages/Teams/Detail/Refinement/InfoTooltip, needWording
+components->pages  components/Common/Team/RefinementBandSettings.tsx                -> pages/Teams/Detail/Refinement/InfoTooltip.tsx, pages/Teams/Detail/Refinement/needWording.ts
 hooks->components  hooks/useCreateWizard.ts                                          -> components/DataRetrievalWizards
 hooks->components  hooks/useRuleRowDraft.ts                                          -> components/Common/DeliveryRuleBuilder/types
 hooks->components  hooks/useUsageDataConsent.tsx                                     -> components/UsageData/UsageDataIndicator
@@ -98,7 +107,7 @@ Continuous-improvement rules:
 - [ ] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
 - [ ] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
 - [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (DESIGN chose a new ADR, ADR-269, plus a status note on ADR-268).
-- [ ] Payoff claim: test run within noise, `pnpm test` measured before FE1-1, after FE1-1 and after FE1-2 (the check is part of the Vitest suite, not a build step).
+- [ ] Payoff claim (acceptance criterion 4): the median of three `pnpm test` runs is within the range of three runs taken before FE1-1, measured after FE1-1 and again after FE1-2.
 - [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
 
 Epic per-Story checklist (How to pick up a Story):
@@ -152,7 +161,7 @@ Run read-only from a scratch folder; nothing was added to the repository. All th
 
 | | Biome `noRestrictedImports` 2.5.15 | dependency-cruiser 18.7.0 | Fallow 3.36.0 |
 |---|---|---|---|
-| Same 16 files / 21 imports as the pick-up count | yes | yes, only with `typescript@6` added | yes |
+| Same 16 files and 21 file pairs as the pick-up count | yes | yes, only with `typescript@6` added | yes |
 | Works with the repo's TypeScript 7 | yes | **no**: scans 0 modules ("support for typescript@>=7 will follow") | yes, own parser |
 | Time | +0 (already in `prebuild`) | seconds | 0.4 s for the boundary check |
 | New dependency | none | yes, plus a second TypeScript | yes, native Rust binary, MIT, no install scripts |

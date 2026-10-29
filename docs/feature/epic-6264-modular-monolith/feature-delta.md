@@ -419,12 +419,12 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 `@infrastructure` · job_id: infrastructure-only · **Size S–M** · Depends on: none (G0; should go first on the frontend) · Brief: `slices/slice-33-fe1-import-boundary-enforcement.md`
 
 - infrastructure_rationale: no layer-boundary rule exists (Biome is configured in `biome.json` but has no import-graph rule; no ESLint, verified 2026-10-22), so layer leaks compile silently. The baseline makes them visible and stops new ones.
-- Elevator Pitch. **Before**: `components/Common/ModifyTeamSettings` importing `pages/Teams/Edit/ForecastSettingsComponent` compiles fine. **After**: `pnpm build` (Biome `noRestrictedImports` in `prebuild`) or a dependency-cruiser step fails with "components → pages: ModifyTeamSettings.tsx imports pages/Teams/…", unless the file is on the allow-list. Removing a leak forces the list to shrink. **Decision enabled**: FE2 can move features into folders inside an enforced boundary.
+- Elevator Pitch. **Before**: `components/Common/ModifyTeamSettings` importing `pages/Teams/Edit/ForecastSettingsComponent` compiles fine. **After** (as settled at Story 6389 DESIGN): the Vitest enforcement test `src/layerBoundaries.enforcement.test.ts`, run by `pnpm test`, fails with "components → pages: ModifyTeamSettings.tsx imports pages/Teams/…", unless the file is on the allow-list. Removing a leak forces the list to shrink. **Decision enabled**: FE2 can move features into folders inside an enforced boundary.
 - AC:
   - [ ] Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow (a short read-only trial first; see the Story brief). It runs in `pnpm build` or `pnpm test` so CI enforces it. *Settled at Story 6389 DESIGN: Fallow, checked by an enforcement test in the Vitest suite (`pnpm test`), not Biome or dependency-cruiser in `prebuild` (ADR-269). The Story's pick-up restates these AC in Given/When/Then.*
-  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1. *Re-counted 2026-10-29: 21 imports in 16 files (components→pages 12 in 8, hooks 5 in 4, services→hooks 2, models→pages 1, utils→services 1); the list holds file pairs (`from → to`). See the Story 6389 workspace.*
+  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1. *Re-counted 2026-10-29: 21 file pairs in 16 files (components→pages 12 in 8, hooks 5 in 4, services→hooks 2, models→pages 1, utils→services 1); the list holds file pairs (`from → to`). See the Story 6389 workspace.*
   - [ ] A new violation fails naming file and import. A fixed one fails until removed from the list.
-  - [ ] Zero Biome errors and warnings stays true. The build is not slower beyond noise.
+  - [ ] Zero Biome errors and warnings stays true. The build is not slower beyond noise. *Made testable in the Story 6389 pick-up, acceptance criterion 4.*
 
 #### FE2 — Package by module (pilot: Delivery, then one Story per module)
 
@@ -580,9 +580,9 @@ Validated at **catalogue level** (D-6264-3). Every Story's DoR is **re-checked w
 | 1 Problem statement, domain language | PASS | Every Story has an `infrastructure_rationale` naming the concrete smell (file, count, rule). |
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` (existing persona) plus the CI build. All Stories `@infrastructure`. |
 | 3 ≥ 3 domain examples, real data | PASS (catalogue) | Real file and type names and verified counts in AC and briefs (e.g. the 14 `GetAllByPredicate` files, the 20 connector throws, the 16 frontend violations). The per-Story DESIGN adds slice-level examples. |
-| 4 UAT Given/When/Then (3–7) | PASS (catalogue) | 2–6 testable AC per Story, CI-observable. Ratchet Stories phrased Given/When/Then (for FE1 the Given/When/Then form is restated in the Story 6389 pick-up). Full G/W/T scenarios are written at each Story's DISTILL. |
+| 4 UAT Given/When/Then (3–7) | PASS (catalogue) | 2–6 testable AC per Story, CI-observable. Ratchet Stories phrased Given/When/Then (FE1's are restated in the Story 6389 pick-up; other ratchet Stories are checked at their own pick-up). Full G/W/T scenarios are written at each Story's DISTILL. |
 | 5 AC derived from UAT | PASS | AC map 1:1 to the Elevator Pitch "After". |
-| 6 Right-sized | PASS **by waiver** | Stories sized S/M/L, and carpaccio into ≤ 1-day slices happens at each Story's DESIGN (D-6264-4). L Stories flagged. |
+| 6 Right-sized | PASS **by waiver** | Stories sized S/M/L, and carpaccio into ≤ 1-day slices happens at each Story's DESIGN (D-6264-4). L Stories flagged. FE1: cut into two half-day slices at its DESIGN; its test count waived by the maintainer at pick-up (2026-10-29). |
 | 7 Technical notes + cross-cutting | PASS | Cross-Cutting Impact Checklist (RBAC, Clients, Website, usage data, sketches, Terminology) answered explicitly. Constraints in Wave Decisions. |
 | 8 Dependencies tracked | PASS | Hard and soft dependencies per Story plus the ASCII graph. |
 | 9 Outcome KPIs, measurable | PASS | KPI table with baselines, targets and commands. |
