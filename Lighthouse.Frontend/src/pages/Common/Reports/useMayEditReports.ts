@@ -1,12 +1,13 @@
-import { useRbac } from "../../../hooks/useRbac";
+import { type RbacState, useRbac } from "../../../hooks/useRbac";
 import type { IReportOwner } from "../../../models/Reports/Report";
 
 /** Whether the viewer may create, change and delete each owner's reports; nobody may until the roles are known. */
-export const useMayEditReportsOf = (): {
+export const mayEditReportsOf = (
+	rbac: RbacState,
+): {
 	mayEdit: (owner: IReportOwner) => boolean;
 	isLoading: boolean;
 } => {
-	const rbac = useRbac();
 	const isAdminOf = (owner: IReportOwner) =>
 		owner.kind === "team"
 			? rbac.isTeamAdmin(owner.id)
@@ -21,6 +22,6 @@ export const useMayEditReportsOf = (): {
 export const useMayEditReports = (
 	owner: IReportOwner,
 ): { isEditor: boolean; isLoading: boolean } => {
-	const { mayEdit, isLoading } = useMayEditReportsOf();
+	const { mayEdit, isLoading } = mayEditReportsOf(useRbac());
 	return { isEditor: mayEdit(owner), isLoading };
 };

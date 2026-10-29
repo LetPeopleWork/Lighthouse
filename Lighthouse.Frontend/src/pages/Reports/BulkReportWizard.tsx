@@ -12,7 +12,6 @@ import { useMemo, useState } from "react";
 import WizardStepperFrame, {
 	type WizardFrameAction,
 } from "../../components/Common/CreateWizards/WizardStepperFrame";
-import { useRbac } from "../../hooks/useRbac";
 import type { IReportTemplates } from "../../models/Reports/Report";
 import type {
 	IReportCreationOptions,
@@ -44,12 +43,14 @@ const createLabelOf = (count: number): string =>
 const byName = (left: IReportCreationOwner, right: IReportCreationOwner) =>
 	left.ownerName.localeCompare(right.ownerName);
 
+type IsTeamAdmin = (teamId: number) => boolean;
+
 /** The Teams the reader may create on, as the owner step lists them. */
 const useTeamsToCreateOn = (
 	options: IReportCreationOptions,
-): IReportCreationOwner[] => {
-	const { isTeamAdmin } = useRbac();
-	return useMemo(
+	isTeamAdmin: IsTeamAdmin,
+): IReportCreationOwner[] =>
+	useMemo(
 		() =>
 			options.owners
 				.filter(
@@ -58,7 +59,6 @@ const useTeamsToCreateOn = (
 				.sort(byName),
 		[options.owners, isTeamAdmin],
 	);
-};
 
 const typeStepAt = (activeStep: number): ReportTypeStep<Draft> | undefined =>
 	activeStep > TYPE_STEP && activeStep < OWNER_STEP
@@ -160,16 +160,18 @@ const runOf = (
 
 interface ReadyWizardProps {
 	options: IReportCreationOptions;
+	isTeamAdmin: IsTeamAdmin;
 	onClose: () => void;
 }
 
 /** One report, configured once, created for every Team picked; the single wizard's steps, then the owners. */
 const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	options,
+	isTeamAdmin,
 	onClose,
 }) => {
 	const templates = useMemo(() => templatesForOwnersOf(options), [options]);
-	const teams = useTeamsToCreateOn(options);
+	const teams = useTeamsToCreateOn(options, isTeamAdmin);
 	const creation = useBulkReportCreation();
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const [draft, setDraft] = useState(type.forOwners.newDraft);
@@ -286,6 +288,8 @@ const CouldNotLoad: React.FC<Readonly<CouldNotLoadProps>> = ({
 interface BulkReportWizardProps {
 	/** Undefined when it could not be loaded, or while Retry asks again. */
 	options: IReportCreationOptions | undefined;
+	/** The page's own read of the viewer's roles, so the wizard lists only Teams the viewer is Admin of from its first frame. */
+	isTeamAdmin: IsTeamAdmin;
 	retrying: boolean;
 	onRetry: () => void;
 	onClose: () => void;
@@ -293,6 +297,7 @@ interface BulkReportWizardProps {
 
 const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 	options,
+	isTeamAdmin,
 	retrying,
 	onRetry,
 	onClose,
@@ -300,7 +305,11 @@ const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 	options === undefined ? (
 		<CouldNotLoad retrying={retrying} onRetry={onRetry} onClose={onClose} />
 	) : (
-		<ReadyWizard options={options} onClose={onClose} />
+		<ReadyWizard
+			options={options}
+			isTeamAdmin={isTeamAdmin}
+			onClose={onClose}
+		/>
 	);
 
 export default BulkReportWizard;

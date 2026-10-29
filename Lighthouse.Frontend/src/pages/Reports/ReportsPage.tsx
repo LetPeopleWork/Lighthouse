@@ -11,14 +11,14 @@ import { useState } from "react";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
-import { useRbac } from "../../hooks/useRbac";
+import { type RbacState, useRbac } from "../../hooks/useRbac";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import ReportList, {
 	type ReportListActions,
 } from "../Common/Reports/ReportList";
 import { ownerOfReport } from "../Common/Reports/reportOwner";
-import { useMayEditReportsOf } from "../Common/Reports/useMayEditReports";
+import { mayEditReportsOf } from "../Common/Reports/useMayEditReports";
 import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
@@ -34,26 +34,24 @@ const LIST_MIN_HEIGHT = 120;
 const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
 
 /** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
-const useIsAdminOfAny = (): { isAdminOfAny: boolean; isLoading: boolean } => {
-	const { isLoading, isRbacEnabled, isSystemAdmin, summary } = useRbac();
-	const administersSome =
-		(summary.adminTeamIds?.length ?? 0) > 0 ||
-		(summary.adminPortfolioIds?.length ?? 0) > 0;
-	return {
-		isAdminOfAny: !isRbacEnabled || isSystemAdmin || administersSome,
-		isLoading,
-	};
-};
+const isAdminOfAny = ({
+	isRbacEnabled,
+	isSystemAdmin,
+	summary,
+}: RbacState): boolean =>
+	!isRbacEnabled ||
+	isSystemAdmin ||
+	(summary.adminTeamIds?.length ?? 0) > 0 ||
+	(summary.adminPortfolioIds?.length ?? 0) > 0;
 
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
-const useBulkCreation = () => {
+const useBulkCreation = (rbac: RbacState) => {
 	const [opening, setOpening] = useState<number | null>(null);
 	const [retrying, setRetrying] = useState(false);
 	const options = useReportCreationOptions(opening);
 	const { licenseStatus, status } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
-	const admin = useIsAdminOfAny();
-	const lacksAdmin = !admin.isLoading && !admin.isAdminOfAny;
+	const lacksAdmin = !rbac.isLoading && !isAdminOfAny(rbac);
 	const open = () => {
 		setRetrying(false);
 		setOpening((opening ?? 0) + 1);
@@ -84,7 +82,7 @@ const useBulkCreation = () => {
 						waitingBeforeWizard ? <CircularProgress size={20} /> : <AddIcon />
 					}
 					disabled={
-						!isPremium || admin.isLoading || lacksAdmin || options.isFetching
+						!isPremium || rbac.isLoading || lacksAdmin || options.isFetching
 					}
 					onClick={open}
 				>
@@ -97,6 +95,7 @@ const useBulkCreation = () => {
 		<BulkReportWizard
 			key={opening}
 			options={arrived ? options.data : undefined}
+			isTeamAdmin={rbac.isTeamAdmin}
 			retrying={options.isFetching}
 			onRetry={retry}
 			onClose={close}
@@ -106,11 +105,12 @@ const useBulkCreation = () => {
 };
 
 const ReportsPageContent: React.FC = () => {
-	const bulkCreation = useBulkCreation();
+	const rbac = useRbac();
+	const bulkCreation = useBulkCreation(rbac);
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
-	const { mayEdit } = useMayEditReportsOf();
+	const { mayEdit } = mayEditReportsOf(rbac);
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);
 	const pdfExport = useReportPdfExport(undefined);
