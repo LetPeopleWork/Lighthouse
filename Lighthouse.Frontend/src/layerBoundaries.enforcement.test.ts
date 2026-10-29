@@ -220,7 +220,7 @@ describe("the frontend layers", () => {
 		const importer = "src/components/Widget.tsx";
 		const target = "src/pages/Page.tsx";
 
-		it.skip("is refused as a new leak, naming the component and the page", () => {
+		it("is refused as a new leak, naming the component and the page", () => {
 			const drift = compareWithAllowList(
 				findLeaks(importing(importer, target)),
 				[],
@@ -232,7 +232,7 @@ describe("the frontend layers", () => {
 			});
 		});
 
-		it.skip.each([".test.ts", ".test.tsx"])(
+		it.each([".test.ts", ".test.tsx"])(
 			"is not reported when it is only a %s file that does so",
 			(suffix) => {
 				const root = importingAlongsideControl(
@@ -244,7 +244,7 @@ describe("the frontend layers", () => {
 			},
 		);
 
-		it.skip("is reported once, however many times the component imports that page", () => {
+		it("is reported once, however many times the component imports that page", () => {
 			const root = projectWith({
 				...importFiles(control.importer, control.target),
 				[importer]: [
