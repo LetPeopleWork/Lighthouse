@@ -38,5 +38,8 @@ namespace Lighthouse.Backend.Models.Reports
         public const string OwnerNotFound = "owner-not-found";
 
         public const string NotSaved = "not-saved";
+
+        /// <summary>A window refused for reaching before the owner's kept history; its answer also names the first day that history holds.</summary>
+        public static bool NamesEarliestStart(string? code) => code is ThenBeforeCutoff or NowBeforeCutoff;
     }
 }

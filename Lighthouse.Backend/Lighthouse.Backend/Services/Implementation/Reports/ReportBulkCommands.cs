@@ -47,11 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             {
                 created = await commands.Create(owner, request);
             }
-            catch (DbUpdateException failure)
-            {
-                return NotSaved(owner, failure);
-            }
-            catch (ReportOwnerGoneException failure)
+            catch (Exception failure) when (failure is DbUpdateException or ReportOwnerGoneException)
             {
                 return NotSaved(owner, failure);
             }
@@ -60,7 +56,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             {
                 { Status: ReportOutcomeStatus.Done, Value: ReportRead read } => ReportOwnerOutcome.Created(owner, read.Id),
                 { Status: ReportOutcomeStatus.NotFound } => ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.OwnerNotFound),
-                { Code: ReportRefusalCodes.ThenBeforeCutoff or ReportRefusalCodes.NowBeforeCutoff } => ReportOwnerOutcome.NotCreated(owner, created.Code, EarliestStartOf(owner)),
+                _ when ReportRefusalCodes.NamesEarliestStart(created.Code) => ReportOwnerOutcome.NotCreated(owner, created.Code, EarliestStartOf(owner)),
                 _ => ReportOwnerOutcome.NotCreated(owner, created.Code),
             };
         }

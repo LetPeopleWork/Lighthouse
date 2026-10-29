@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.API
             var status = StatusOf(outcome);
             var problem = new ProblemDetails { Status = status, Title = "The report request was refused." };
             problem.Extensions["code"] = outcome.Code;
-            if (owner is not null && outcome.Code is ReportRefusalCodes.ThenBeforeCutoff or ReportRefusalCodes.NowBeforeCutoff)
+            if (owner is not null && ReportRefusalCodes.NamesEarliestStart(outcome.Code))
             {
                 problem.Extensions["earliestStart"] = queries.Templates(owner).Value?.EarliestStart;
             }
