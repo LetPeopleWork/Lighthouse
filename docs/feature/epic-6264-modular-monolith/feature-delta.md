@@ -691,3 +691,20 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6393 | FE5 Split wide units |
 | #6394 | FE6 "Project" → Portfolio naming in the frontend |
 | #6395 | S13 Aggregate boundaries in persistence |
+
+## Wave: DISCUSS / [REF] Improvement log
+
+One entry per item closed, removed or gated, newest last. Read it at every pick-up: it is where a lesson from one
+item changes the plan for the others.
+
+### 2026-10-29 — S04a #6367 Close the `Models ↛ Services` gap — Done
+- Commits: `e3ac351d4..93139eca0` (shared with S05a) · archive: `docs/evolution/2026-10-29-stories-6367-6369-kernel-and-repository-ratchets.md`
+- Ratchet: `Models` does not depend on `Services`, exception list **empty**; the update-queue rule lost its `UpdateType` exception.
+- KPIs re-measured: KPI 3 `Models` files 246 → 252 (six kernel types moved in; S04b brings it down).
+- Changes the plan: the brief's two-type gap was eight types (seven moved, `LegacyDefaultEncryptionKey` inverted into a `Services` extension). New ADR-268 (ratchet convention); ADR-027 status note. Dependency rules now read the compiled IL (`IlDependencies`, Mono.Cecil), because ArchUnitNET drops edges written inside `async` bodies in the Release build CI tests: later dependency ratchets (S02, S03*, S04b, S09a) should use `IlDependencies` for type-dependency questions, not ArchUnitNET's graph alone.
+
+### 2026-10-29 — S05a #6369 Ratchet guard: `GetAllByPredicate` callers + `API` on repositories — Done
+- Commits: `e3ac351d4..93139eca0` (shared with S04a) · archive: `docs/evolution/2026-10-29-stories-6367-6369-kernel-and-repository-ratchets.md`
+- Ratchet: `GetAllByPredicate` called only from **15** listed files (`file:line` on failure); the `API` namespace depends on a repository only in **23** listed types (20 controllers + 3 helpers). Both fail on a newcomer and on a stale entry.
+- KPIs re-measured: KPI 4 14 → 15 files, now guarded (`ReportOwnerLookup` from Epic 6350 arrived between DESIGN and landing); KPI 5 ≈20 → 23 types, now guarded; KPI 12 mutation 91.30 % on touched code.
+- Changes the plan: scope widened from controllers to the whole `API` namespace (maintainer, 2026-10-27), so S05c–e and S12* shrink a 23-entry list. `ProductionSource` is the shared source-scan helper; moving the five private copies onto it is an open housekeeping follow-up, not yet in the catalogue. FE1's brief now weighs Fallow as a tool candidate (`6530cab2d`).
