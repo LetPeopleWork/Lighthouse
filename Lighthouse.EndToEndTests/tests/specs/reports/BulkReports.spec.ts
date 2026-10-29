@@ -11,9 +11,8 @@ const ZENITH: ReportOwnerName = { name: "Team Zenith", kind: "Team" };
 const GRAVITY: ReportOwnerName = { name: "Team Gravity", kind: "Team" };
 const REPORT_NAME = "Quarter against the last";
 
-// Pending until the Reports page and creating for several owners are built.
 // @walking_skeleton @driving_port @us-02a @slice-02a @kpi-OUT-6350-bulk-creation-used @contract-shape:bounded-change
-testWithDemo.fixme(
+testWithDemo(
 	"a coach creates one comparison for two Teams from the Reports page, finds both listed and opens one",
 	async ({ testData, overviewPage }) => {
 		const teams = testData.teams.map((team) => team.name);

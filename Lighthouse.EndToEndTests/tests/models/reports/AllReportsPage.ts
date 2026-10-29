@@ -7,6 +7,12 @@ export interface ReportOwnerName {
 	readonly kind: string;
 }
 
+/** The Owner cell shows the name alone; its link is announced with the kind, e.g. "Team Zenith, Team". */
+const ownerLinkName = (owner: ReportOwnerName) => ({
+	name: `${owner.name}, ${owner.kind}`,
+	exact: true,
+});
+
 /**
  * The Reports page: every report on every Team and Portfolio the reader can read, in one table, and the wizard
  * that creates one report for several owners at once. Left as it opens, the wizard creates a Then & Now report of
@@ -14,6 +20,10 @@ export interface ReportOwnerName {
  */
 export class AllReportsPage {
 	constructor(private readonly page: Page) {}
+
+	get table(): Locator {
+		return this.page.getByTestId("all-reports");
+	}
 
 	/** The table marks itself ready once it has read the reports. */
 	get ready(): Locator {
@@ -35,21 +45,18 @@ export class AllReportsPage {
 		return this.page.getByRole("dialog");
 	}
 
-	/** The Owner cell shows the name alone; its link is announced with the kind, e.g. "Team Zenith, Team". */
 	ownerLink(owner: ReportOwnerName): Locator {
-		return this.page.getByRole("link", {
-			name: `${owner.name}, ${owner.kind}`,
-			exact: true,
-		});
+		return this.table.getByRole("link", ownerLinkName(owner));
 	}
 
+	// A `has` locator is resolved inside each row, so it starts from the page rather than from the table.
 	rowOf(reportName: string, owner: ReportOwnerName): Locator {
-		return this.page
+		return this.table
 			.getByRole("row")
 			.filter({
 				has: this.page.getByRole("link", { name: reportName, exact: true }),
 			})
-			.filter({ has: this.ownerLink(owner) });
+			.filter({ has: this.page.getByRole("link", ownerLinkName(owner)) });
 	}
 
 	/** Creates one report, with the wizard's window as it opens, for every owner named as its checkbox reads. */
