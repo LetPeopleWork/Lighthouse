@@ -283,40 +283,53 @@ A clean Haiku review is not proof on its own: the orchestrator spot-checks the c
 
 ## Wave: DISTILL / [REF] Scenario list
 
-Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (TypeScript, Vitest). All 12 are `it.skip`; DELIVER unskips one at a time. Error/edge scenarios: 8 of 12.
+Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (TypeScript, Vitest). All 17 are `it.skip`; DELIVER unskips one at a time. Error/edge scenarios: 15 of 17 (everything except the two walking-skeleton stages #1 and #2).
 
 | # | Title | Slice | Tags |
 |---|---|---|---|
 | 1 | components reach into pages in exactly the twelve listed places | FE1-1 | @walking_skeleton @real-io |
-| 2 | a component reaching into a page is refused as a new leak, naming the component and the page | FE1-1 | @error @real-io |
-| 3 | a component reaching into a page is not reported when it is only a test that does so | FE1-1 | @edge @real-io |
-| 4 | a listed leak that has been fixed is refused as stale until its entry is deleted, naming the entry | FE1-1 | @error @real-io |
-| 5 | directions the layers allow report nothing: a component using a hook | FE1-1 | @edge @real-io |
-| 6 | directions the layers allow report nothing: a page using a component | FE1-1 | @edge @real-io |
-| 7 | the whole frontend leaks across layers in exactly the twenty-one listed places | FE1-2 | @walking_skeleton @real-io |
-| 8 | refuses a hook reaching into a page, naming both ends | FE1-2 | @error @real-io |
-| 9 | refuses a hook reaching into a component, naming both ends | FE1-2 | @error @real-io |
-| 10 | refuses a service reaching into a hook, naming both ends | FE1-2 | @error @real-io |
-| 11 | refuses a model reaching into a page, naming both ends | FE1-2 | @error @real-io |
-| 12 | refuses a utility reaching into a service, naming both ends | FE1-2 | @error @real-io |
+| 2 | the whole frontend leaks across layers in exactly the twenty-one listed places | FE1-2 | @walking_skeleton @real-io |
+| 3 | a component reaching into a page is refused as a new leak, naming the component and the page | FE1-1 | @error @real-io |
+| 4 | a component reaching into a page is not reported when it is only a `.test.ts` file that does so | FE1-1 | @edge @real-io |
+| 5 | the same, for a `.test.tsx` file | FE1-1 | @edge @real-io |
+| 6 | a component reaching into a page is reported once, however many times it imports that page | FE1-1 | @edge @real-io |
+| 7 | a leak listed once is refused as a new leak when the same entry turns up a second time | FE1-1 | @error |
+| 8 | a leak listed twice but found only once is refused as stale | FE1-1 | @error |
+| 9 | a listed leak that has been fixed is refused as stale until its entry is deleted, naming the entry | FE1-1 | @error @real-io |
+| 10 | directions the layers allow report nothing: a component using a hook | FE1-1 | @edge @real-io |
+| 11 | directions the layers allow report nothing: a page using a component | FE1-1 | @edge @real-io |
+| 12 | refuses a hook reaching into a page, naming both ends | FE1-2 | @error @real-io |
+| 13 | refuses a hook reaching into a component, naming both ends | FE1-2 | @error @real-io |
+| 14 | refuses a service reaching into a hook, naming both ends | FE1-2 | @error @real-io |
+| 15 | refuses a model reaching into a page, naming both ends | FE1-2 | @error @real-io |
+| 16 | refuses a utility reaching into a service, naming both ends | FE1-2 | @error @real-io |
+| 17 | a boundary check that cannot run (missing config) fails the test, quoting what it printed, instead of reporting no leaks | FE1-1 | @error @real-io |
 
-Slice split by list: FE1-1 enables #1 against the 12 `components → pages` entries; FE1-2 enables #7 against all 21 (the other 9: hooks 5, services 2, models 1, utils 1). The inline `ALLOWED_LEAKS` holds all 21 from the start; `.fallowrc.json` decides which rules exist, so in FE1-1 the full list is not yet compared.
+Slice split by list: FE1-1 enables #1 against the 12 `components → pages` entries; FE1-2 enables #2 against all 21 (the other 9: hooks 5, services 2, models 1, utils 1). The inline `ALLOWED_LEAKS` holds all 21 from the start; `.fallowrc.json` decides which rules exist, so in FE1-1 the comparison covers the `src/components/` entries only.
+
+Positive control: every scenario that expects no leak (#4, #5, #9, #10, #11) puts one real `components → pages` import in the same fixture and expects exactly that entry, so a run that applied no rule fails. #6 carries the same control next to its own file.
+
+Counted entries: `compareWithAllowList` subtracts as a multiset, so a second identical entry is a newcomer and a surplus listed entry is stale (#7, #8). Fallow itself cannot report two edges for one file pair: with three statements importing the same page (two `import`s and an `export … from`), the 3.36.0 trial binary printed one violation (the first line). So an entry is one per file pair, not per import statement, #6 pins that, and #7/#8 are written at the comparison level with duplicated lists, not with a fixture.
+
+Build time is not a scenario; FE1-2 DELIVER measures `pnpm test` before and after (DEVOPS).
 
 ## Wave: DISTILL / [REF] Walking skeleton
 
-The maintainer runs `pnpm test` and learns exactly which layer leaks exist, with nothing hidden and nothing stale. Two stages of one skeleton: #1 (components, FE1-1) and #7 (whole frontend, FE1-2). Both drive the real Fallow CLI over the real `src/` tree with the real `.fallowrc.json`.
+The maintainer runs `pnpm test` and learns exactly which layer leaks exist, with nothing hidden and nothing stale. Two stages of one skeleton: #1 (components, FE1-1) and #2 (whole frontend, FE1-2). Both drive the real Fallow CLI over the real `src/` tree with the real `.fallowrc.json`.
 
 ## Wave: DISTILL / [REF] Adapter coverage
 
 | Driven adapter | @real-io scenario | Covered by |
 |---|---|---|
-| Fallow CLI (`fallow architecture --boundaries`, spawned as a child process) | YES | #1 and #7 on the real tree; #2 to #6 and #8 to #12 on throwaway project trees in the OS temp folder |
+| Fallow CLI (`fallow architecture --boundaries`, spawned as a child process) | YES | #1 and #2 on the real tree; #3 to #6, #9 to #17 on throwaway project trees in the OS temp folder |
 
 Fixtures are built on the fly with `mkdtemp` rather than committed under `src/`: no deliberate leaks sit in the repository, nothing needs to type-check or pass Biome, and the real check can never see them.
 
+Exit status: `findLeaks` throws unless Fallow exits 0 (no violations) or 1 (violations), and checks that the JSON holds a `boundary_violations` array. Fallow exits 2 on an error such as a missing config and still prints JSON to stdout (`{"error":true,…,"exit_code":2}`), so without the check an error could read as "no leaks". #17 covers it.
+
 ## Wave: DISTILL / [REF] Scaffolds
 
-None. There is no production module: the comparison helper (`compareWithAllowList`, `describeDrift`, `findLeaks`) lives inside the test file. Nothing carries a scaffold marker, and no `src/**` production file changes.
+None. There is no production module: the comparison helper (`compareWithAllowList`, `without`, `describeDrift`, `findLeaks`) lives inside the test file. Nothing carries a scaffold marker, and no `src/**` production file changes.
 
 ## Wave: DISTILL / [REF] Test placement
 
@@ -328,7 +341,6 @@ N/A, because nothing a user sees changes; FE1 adds a build check.
 
 ## Wave: DISTILL / [REF] Reconciliation
 
-Reconciliation passed — 0 contradictions (DISCUSS is the Epic's; DESIGN and DEVOPS agree: Fallow, `pnpm test`, no production change, mutation N/A). Two notes, neither a contradiction:
+Reconciliation found one contradiction at review, resolved in commit f4027b594. An earlier version of this section said "0 contradictions"; that was wrong. The FE1-1 slice row said the list holds "12 entries", while the test holds all 21. DESIGN now says: the list holds all 21 entries from DISTILL on; in FE1-1 (only the components rule configured) the test compares the `src/components/` entries both ways; FE1-2 switches to the whole list. The scenarios follow that (#1 then #2).
 
-- The test types Fallow's JSON with a two-field local interface, because `fallow/types` does not exist until DELIVER installs the package; DELIVER may swap it for the shipped type (D6).
-- `findLeaks` does not look at Fallow's exit status: a failed or empty run makes `JSON.parse` throw, which fails the test loudly (the DESIGN risk about an empty parse).
+D6 was also brought in line with the test: `spawnSync`, `createRequire`, the exit codes 0, 1 and 2, and a local two-field type for the JSON. DISCUSS is the Epic's; DESIGN and DEVOPS otherwise agree: Fallow, `pnpm test`, no production change, mutation N/A. No contradiction is open.

@@ -50,8 +50,13 @@ const bySortOrder = (a: string, b: string): number => a.localeCompare(b);
 const toEntry = (violation: BoundaryViolation): string =>
 	`${violation.from_path} → ${violation.to_path}`;
 
-/** Runs the boundary check over a project root with the real configuration; one entry per leaking import. */
-const findLeaks = (root: string): string[] => {
+const realConfig = join(frontendRoot, ".fallowrc.json");
+
+/**
+ * Runs the boundary check over a project root; one entry per leaking file pair.
+ * Anything but "no violations" (0) or "violations found" (1) is a failed run, never an empty result.
+ */
+const findLeaks = (root: string, config: string = realConfig): string[] => {
 	const launcher = nodeRequire.resolve("fallow/bin/fallow");
 	const run = spawnSync(
 		process.execPath,
@@ -63,22 +68,54 @@ const findLeaks = (root: string): string[] => {
 			"-r",
 			root,
 			"-c",
-			join(frontendRoot, ".fallowrc.json"),
+			config,
 			"-f",
 			"json",
 		],
 		{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
 	);
+
+	if (run.error) {
+		throw new Error(`The boundary check could not start: ${run.error.message}`);
+	}
+
+	if (run.status !== 0 && run.status !== 1) {
+		throw new Error(
+			`The boundary check failed with status ${run.status}.\nstderr: ${run.stderr}\nstdout: ${run.stdout}`,
+		);
+	}
+
 	const report = JSON.parse(run.stdout) as {
-		boundary_violations: BoundaryViolation[];
+		boundary_violations?: BoundaryViolation[];
 	};
+
+	if (!Array.isArray(report.boundary_violations)) {
+		throw new Error(
+			`The boundary check printed no list of violations.\nstdout: ${run.stdout}`,
+		);
+	}
 
 	return report.boundary_violations.map(toEntry).sort(bySortOrder);
 };
 
+/** What is left of `entries` after taking away one match for each item of `removed`. */
+const without = (entries: string[], removed: string[]): string[] => {
+	const toRemove = [...removed];
+
+	return entries.filter((entry) => {
+		const at = toRemove.indexOf(entry);
+		if (at < 0) {
+			return true;
+		}
+		toRemove.splice(at, 1);
+
+		return false;
+	});
+};
+
 const compareWithAllowList = (found: string[], allowed: string[]) => ({
-	newcomers: found.filter((entry) => !allowed.includes(entry)),
-	stale: allowed.filter((entry) => !found.includes(entry)),
+	newcomers: without(found, allowed),
+	stale: without(allowed, found),
 });
 
 const describeDrift = (drift: ReturnType<typeof compareWithAllowList>) =>
@@ -108,11 +145,32 @@ const specifierFrom = (importer: string, target: string): string => {
 	return path.startsWith(".") ? path : `./${path}`;
 };
 
+const importStatement = (importer: string, target: string, name = "value") =>
+	`import { ${name} } from "${specifierFrom(importer, target)}";\n`;
+
+const importFiles = (importer: string, target: string) => ({
+	[importer]: `${importStatement(importer, target)}export const used = value;\n`,
+	[target]: "export const value = 1;\n",
+});
+
 /** A project whose one file reaches into another, plus the target it reaches. */
 const importing = (importer: string, target: string): string =>
+	projectWith(importFiles(importer, target));
+
+/**
+ * A component reaching into a page, kept next to a scenario's own files. A scenario that
+ * expects nothing else to be reported still sees this one, so a run that applied no rule fails.
+ */
+const control = {
+	importer: "src/components/Control.tsx",
+	target: "src/pages/ControlPage.tsx",
+	entry: "src/components/Control.tsx → src/pages/ControlPage.tsx",
+};
+
+const importingAlongsideControl = (importer: string, target: string): string =>
 	projectWith({
-		[importer]: `import { value } from "${specifierFrom(importer, target)}";\nexport const used = value;\n`,
-		[target]: "export const value = 1;\n",
+		...importFiles(importer, target),
+		...importFiles(control.importer, control.target),
 	});
 
 const leaksUnder = (layer: string, entries: string[]): string[] =>
@@ -167,10 +225,51 @@ describe("the frontend layers", () => {
 			});
 		});
 
-		it.skip("is not reported when it is only a test that does so", () => {
-			const root = importing("src/components/Widget.test.ts", target);
+		it.skip.each([".test.ts", ".test.tsx"])(
+			"is not reported when it is only a %s file that does so",
+			(suffix) => {
+				const root = importingAlongsideControl(
+					`src/components/Widget${suffix}`,
+					target,
+				);
 
-			expect(findLeaks(root)).toEqual([]);
+				expect(findLeaks(root)).toEqual([control.entry]);
+			},
+		);
+
+		it.skip("is reported once, however many times the component imports that page", () => {
+			const root = projectWith({
+				...importFiles(control.importer, control.target),
+				[importer]: [
+					importStatement(importer, target, "value"),
+					importStatement(importer, target, "other"),
+					`export { value as again } from "${specifierFrom(importer, target)}";\n`,
+					"export const used = value + other;\n",
+				].join(""),
+				[target]: "export const value = 1;\nexport const other = 2;\n",
+			});
+
+			expect(findLeaks(root)).toEqual(
+				[control.entry, `${importer} → ${target}`].sort(bySortOrder),
+			);
+		});
+	});
+
+	describe("a leak that is listed once", () => {
+		const entry = "src/components/Widget.tsx → src/pages/Page.tsx";
+
+		it.skip("is refused as a new leak when the same entry turns up a second time", () => {
+			expect(compareWithAllowList([entry, entry], [entry])).toEqual({
+				newcomers: [entry],
+				stale: [],
+			});
+		});
+
+		it.skip("is refused as stale when it is listed twice but found only once", () => {
+			expect(compareWithAllowList([entry], [entry, entry])).toEqual({
+				newcomers: [],
+				stale: [entry],
+			});
 		});
 	});
 
@@ -180,9 +279,13 @@ describe("the frontend layers", () => {
 			const root = projectWith({
 				"src/components/Widget.tsx": "export const used = 1;\n",
 				"src/pages/Page.tsx": "export const value = 1;\n",
+				...importFiles(control.importer, control.target),
 			});
 
-			const drift = compareWithAllowList(findLeaks(root), [fixed]);
+			const drift = compareWithAllowList(findLeaks(root), [
+				fixed,
+				control.entry,
+			]);
 
 			expect(drift).toEqual({ newcomers: [], stale: [fixed] });
 		});
@@ -201,7 +304,9 @@ describe("the frontend layers", () => {
 				target: "src/components/Widget.tsx",
 			},
 		])("report nothing for $direction", ({ importer, target }) => {
-			expect(findLeaks(importing(importer, target))).toEqual([]);
+			const root = importingAlongsideControl(importer, target);
+
+			expect(findLeaks(root)).toEqual([control.entry]);
 		});
 	});
 
@@ -242,6 +347,17 @@ describe("the frontend layers", () => {
 				newcomers: [`${importer} → ${target}`],
 				stale: [],
 			});
+		});
+	});
+
+	describe("a boundary check that cannot run", () => {
+		it.skip("fails the test, quoting what it printed, instead of reporting no leaks", () => {
+			const root = importing("src/components/Widget.tsx", "src/pages/Page.tsx");
+			const missingConfig = join(root, "missing.fallowrc.json");
+
+			expect(() => findLeaks(root, missingConfig)).toThrow(
+				/status 2[\s\S]*missing\.fallowrc\.json/,
+			);
 		});
 	});
 });
