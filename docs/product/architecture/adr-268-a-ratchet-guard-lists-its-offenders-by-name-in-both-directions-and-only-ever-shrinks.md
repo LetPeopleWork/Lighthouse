@@ -53,3 +53,8 @@ internal reference codes as the explanation.
 - Negative: two techniques to know. A forgotten stale entry blocks the build until deleted, which is
   the intent.
 - The list is part of the test, so a rename of a listed file touches the test.
+
+## Status notes
+
+- 2026-10-29: the convention now covers the frontend too. ADR-269 applies it to the layer rules in
+  `Lighthouse.Frontend/src`: Fallow reports the leaking imports and one enforcement test holds the list.

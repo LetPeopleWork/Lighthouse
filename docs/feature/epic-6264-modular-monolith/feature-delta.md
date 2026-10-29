@@ -538,7 +538,7 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 | 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
 | 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |
-| 8 | Frontend import-boundary violations | **16** (survey) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
+| 8 | Frontend import-boundary violations | **16** (survey) → **21 imports in 16 files** (Fallow, 2026-10-29; FE1 lists imports, not files) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
 | 9 | `useContext(ApiServiceContext)` production consumers | **75** files | **0** (per-module ports) | `grep -rln "useContext(ApiServiceContext)" src \| grep -v test \| wc -l` | FE4 |
 | 10 | Production files where "Project" means Portfolio | **≈21** (survey) | **0** (documented exceptions excluded) | grep per FE6 AC | FE6 |
 | 11 | Frontend production files > 1000 lines | ≥ 2 known (2034, 1201), exact count at FE5 DESIGN | **0** or each justified | `wc -l` sweep | FE5 |

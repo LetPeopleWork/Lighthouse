@@ -10935,3 +10935,40 @@ Before, the diagram had one more arrow: `Models` depends on `Services`.
 No external integrations are touched, so no contract-test recommendation applies. Enforcement tooling is
 an IL walk with Mono.Cecil (already a dependency of ArchUnitNET) plus a source scan. Workspace:
 `docs/feature/stories-6367-6369-kernel-and-repository-ratchets/feature-delta.md`.
+
+## Application Architecture — story-6389-fe1-import-boundary-enforcement
+
+Frontend-only, behaviour-free, and no production file changes. The layers of `Lighthouse.Frontend/src`
+become enforced, and the 21 imports that cross them today are frozen in a named list that only shrinks
+(ADR-269, following ADR-268).
+
+Before: nothing related the layers, so a component importing from a page compiled and passed review.
+After: `pnpm test` runs Fallow over the module graph and fails on any leaking import that is not listed,
+and on a listed one that has gone.
+
+```mermaid
+C4Container
+  title Frontend layers and the boundary check, after
+  Container(pages, "pages", "React", "Routes and screens; may import every layer")
+  Container(components, "components", "React", "Shared UI; must not import pages")
+  Container(hooks, "hooks", "React", "Shared client state; must not import pages or components")
+  Container(services, "services", "TypeScript", "API adapters; must not import hooks")
+  Container(models, "models", "TypeScript", "Types; must not import pages")
+  Container(utils, "utils", "TypeScript", "Helpers; must not import services")
+  Container(check, "layerBoundaries.enforcement.test.ts", "Vitest + Fallow", "Runs fallow architecture, compares with the 21-entry list")
+  Rel(pages, components, "Imports")
+  Rel(components, hooks, "Imports")
+  Rel(hooks, services, "Imports")
+  Rel(check, components, "Checks the five layer rules over")
+```
+
+| Decision | Verdict |
+|---|---|
+| Tool | Fallow, exact pin; Biome has no import graph, dependency-cruiser does not support TypeScript 7 |
+| The list | Inline in one enforcement test, compared through `toEqual`, one entry per import (21) |
+| Where it runs | `pnpm test` |
+| Fallow's other reports | Not enforced |
+| Convention | ADR-269; status note on ADR-268 |
+
+No external integrations are touched, so no contract-test recommendation applies. Workspace:
+`docs/feature/story-6389-fe1-import-boundary-enforcement/feature-delta.md`.
