@@ -36,6 +36,8 @@ const COMPLETED_CLASS = "Completed";
 const ONGOING_CLASS = "Ongoing";
 const COMPLETION_CLASSES = [COMPLETED_CLASS, ONGOING_CLASS];
 const NO_COMPLETION_CLASSES: string[] = [];
+const NO_WAIT_STATES: string[] = [];
+const NO_STATE_MAPPINGS: IStateMapping[] = [];
 
 interface CumulativeStateTimeChartProps {
 	data: ICumulativeStateTimeResponse;
@@ -283,8 +285,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	pickerSlot,
 	scopeSlot,
 	completionFilterEnabled = false,
-	waitStates = [],
-	stateMappings = [],
+	waitStates = NO_WAIT_STATES,
+	stateMappings = NO_STATE_MAPPINGS,
 }) => {
 	const theme = useTheme();
 
@@ -295,6 +297,33 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	);
 	const { visibleTypes, toggleTypeVisibility } =
 		useTypesVisibility(completionClasses);
+
+	const orderedStates = useMemo(
+		() => orderByWorkflow(data.states),
+		[data.states],
+	);
+	const waitRawStates = useMemo(
+		() =>
+			new Set(
+				resolveWaitRawStates(waitStates, stateMappings).map((state) =>
+					state.toLowerCase(),
+				),
+			),
+		[waitStates, stateMappings],
+	);
+	const maxTotalDays = Math.max(...orderedStates.map((row) => row.totalDays));
+	const unit = chooseDurationUnit(maxTotalDays);
+	const barTooltip = useMemo<BarTooltipData>(
+		() => ({
+			states: orderedStates,
+			unit,
+			solidColorFor: (state) =>
+				waitRawStates.has(state.toLowerCase())
+					? theme.palette.error.main
+					: theme.palette.primary.main,
+		}),
+		[orderedStates, unit, waitRawStates, theme],
+	);
 
 	if (data.states.length === 0) {
 		return (
@@ -313,9 +342,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 		);
 	}
 
-	const orderedStates = orderByWorkflow(data.states);
-	const maxTotalDays = Math.max(...orderedStates.map((row) => row.totalDays));
-
 	if (maxTotalDays <= 0) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -332,16 +358,10 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 		);
 	}
 
-	const unit = chooseDurationUnit(maxTotalDays);
 	const unitLabel = formatDuration(maxTotalDays, unit).split(" ")[1];
 
 	const stateLabels = orderedStates.map((row) => row.state);
 
-	const waitRawStates = new Set(
-		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
-			state.toLowerCase(),
-		),
-	);
 	const isWaitState = (state: string): boolean =>
 		waitRawStates.has(state.toLowerCase());
 	const hasWaitBars = orderedStates.some((row) => isWaitState(row.state));
@@ -364,15 +384,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 
 	const valueFormatter = (value: number | null): string =>
 		value === null ? "" : formatDuration(value, unit);
-
-	const solidColorFor = (state: string): string =>
-		isWaitState(state) ? theme.palette.error.main : theme.palette.primary.main;
-
-	const barTooltip: BarTooltipData = {
-		states: orderedStates,
-		unit,
-		solidColorFor,
-	};
 
 	const allSeries = [
 		{
