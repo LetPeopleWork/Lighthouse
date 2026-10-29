@@ -1,0 +1,20 @@
+{
+	"$schema": "./node_modules/fallow/schema.json",
+	"boundaries": {
+		"zones": [
+			{ "name": "components", "patterns": ["src/components/**"] },
+			{ "name": "context", "patterns": ["src/context/**"] },
+			{ "name": "hooks", "patterns": ["src/hooks/**"] },
+			{ "name": "models", "patterns": ["src/models/**"] },
+			{ "name": "pages", "patterns": ["src/pages/**"] },
+			{ "name": "services", "patterns": ["src/services/**"] },
+			{ "name": "utils", "patterns": ["src/utils/**"] }
+		],
+		"rules": [
+			{
+				"from": "components",
+				"allow": ["context", "hooks", "models", "services", "utils"]
+			}
+		]
+	}
+}

@@ -191,7 +191,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("today's leaks", () => {
-		it.skip("lets components reach into pages only in the twelve listed places, and in all of them", () => {
+		it("lets components reach into pages only in the twelve listed places, and in all of them", () => {
 			const drift = compareWithAllowList(
 				leaksUnder("components", findLeaks(frontendRoot)),
 				leaksUnder("components", ALLOWED_LEAKS),
