@@ -379,7 +379,7 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// @us-02a @slice-02a @edge @contract-shape:pure-function
-	it.skip(`with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike (${pending})`, async () => {
+	it(`with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike (${pending})`, async () => {
 		renderTheReportsPage({ licence: "community" });
 
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
@@ -549,7 +549,7 @@ describe("The wizard waits for what a report needs", () => {
 
 describe("When Create reports can be pressed", () => {
 	// @us-02a @slice-02a @error @contract-shape:pure-function
-	it.skip(`on Community it is shown but disabled, with the Premium licence tooltip (${pending})`, async () => {
+	it(`on Community it is shown but disabled, with the Premium licence tooltip (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ licence: "community" });
 
 		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
@@ -593,7 +593,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02a @slice-02a @contract-shape:pure-function
-	it.skip(`where roles are not enforced anyone may press it on Premium (${pending})`, async () => {
+	it(`where roles are not enforced anyone may press it on Premium (${pending})`, async () => {
 		renderTheReportsPage({ permissions: "rolesNotEnforced" });
 
 		await waitFor(async () =>
@@ -604,7 +604,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02a @slice-02a @contract-shape:pure-function
-	it.skip(`an Admin of one Team on Premium may press it (${pending})`, async () => {
+	it(`an Admin of one Team on Premium may press it (${pending})`, async () => {
 		renderTheReportsPage({ permissions: { adminOf: [LIGHTSPEED_TEAM] } });
 
 		await waitFor(async () =>

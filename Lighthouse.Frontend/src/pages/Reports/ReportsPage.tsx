@@ -8,7 +8,9 @@ import {
 } from "@mui/material";
 import type React from "react";
 import { useState } from "react";
+import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import ReportList, {
@@ -25,7 +27,8 @@ import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
-const EMPTY = "Reports are created on a Team's or Portfolio's Reports tab.";
+const EMPTY =
+	"Reports are created on a Team's or Portfolio's Reports tab, or here with Create reports.";
 const LIST_MIN_HEIGHT = 120;
 
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
@@ -33,6 +36,8 @@ const useBulkCreation = () => {
 	const [opening, setOpening] = useState<number | null>(null);
 	const [retrying, setRetrying] = useState(false);
 	const options = useReportCreationOptions(opening);
+	const { licenseStatus, status } = useLicenseRestrictions();
+	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
 	const open = () => {
 		setRetrying(false);
 		setOpening((opening ?? 0) + 1);
@@ -51,16 +56,24 @@ const useBulkCreation = () => {
 		opening !== null && (arrived || options.isError || retrying);
 	const waitingBeforeWizard = options.isFetching && !showWizard;
 	const button = (
-		<Button
-			variant="contained"
-			startIcon={
-				waitingBeforeWizard ? <CircularProgress size={20} /> : <AddIcon />
-			}
-			disabled={options.isFetching}
-			onClick={open}
+		<LicenseTooltip
+			canUseFeature={isPremium}
+			defaultTooltip=""
+			checkStatus={licenseStatus ? "ready" : status}
 		>
-			Create reports
-		</Button>
+			<span>
+				<Button
+					variant="contained"
+					startIcon={
+						waitingBeforeWizard ? <CircularProgress size={20} /> : <AddIcon />
+					}
+					disabled={!isPremium || options.isFetching}
+					onClick={open}
+				>
+					Create reports
+				</Button>
+			</span>
+		</LicenseTooltip>
 	);
 	const wizard = showWizard ? (
 		<BulkReportWizard

@@ -4,7 +4,7 @@ import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import {
 	aReportOn,
 	DELETE,
-	EMPTY_BEFORE_BULK_CREATION,
+	EMPTY,
 	EVERY_REPORT_COULD_NOT_LOAD,
 	everyReport,
 	FILTER,
@@ -135,9 +135,7 @@ describe("Every report in one place", () => {
 	it(`with no report anywhere it says where reports are created`, async () => {
 		renderTheReportsPage({ reportService: aReportServiceListing() });
 
-		expect(
-			await screen.findByText(EMPTY_BEFORE_BULK_CREATION, { exact: true }),
-		).toBeInTheDocument();
+		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
 	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
@@ -154,9 +152,7 @@ describe("Every report in one place", () => {
 			true,
 		);
 		expect(screen.queryAllByRole("row")).toEqual([]);
-		expect(
-			screen.queryByText(EMPTY_BEFORE_BULK_CREATION),
-		).not.toBeInTheDocument();
+		expect(screen.queryByText(EMPTY)).not.toBeInTheDocument();
 	});
 
 	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
@@ -172,9 +168,7 @@ describe("Every report in one place", () => {
 		expect(
 			await screen.findByText(EVERY_REPORT_COULD_NOT_LOAD, { exact: true }),
 		).toBeInTheDocument();
-		expect(
-			screen.queryByText(EMPTY_BEFORE_BULK_CREATION),
-		).not.toBeInTheDocument();
+		expect(screen.queryByText(EMPTY)).not.toBeInTheDocument();
 
 		await user.click(screen.getByRole("button", { name: RETRY }));
 

@@ -90,8 +90,6 @@ export const MONTH = "Month vs month";
 // The copy the maintainer settled in the sketch walk, pinned word for word.
 export const REPORTS = "Reports";
 export const CREATE_REPORTS = "Create reports";
-export const EMPTY_BEFORE_BULK_CREATION =
-	"Reports are created on a Team's or Portfolio's Reports tab.";
 export const EMPTY = `Reports are created on a Team's or Portfolio's Reports tab, or here with ${CREATE_REPORTS}.`;
 export const EVERY_REPORT_COULD_NOT_LOAD = "The reports couldn't be loaded.";
 export const RETRY = "Retry";
