@@ -238,3 +238,68 @@ nothing is deployed, built or served differently.
 
 One environment: CI `ubuntu-latest` plus the developer machines (Linux, macOS, Windows). Nothing installs or runs
 differently between them, apart from which `@fallow-cli/*` binary pnpm picks.
+
+## Wave: DISTILL / [REF] Pre-check (2026-10-29, before dispatch)
+
+- Fallow run with `-r <fixture root>` and the same zone config reports a `components → pages` import in a two-file fixture tree with no `package.json`. So the enforcement test can prove the newcomer and stale-entry behaviours against a fixture, not only against the real tree.
+- Zones are anchored at the project root (`src/components/**`), so copies under `.stryker-tmp/`, `dist/` or `coverage/` cannot match a zone. That settles the DEVOPS risk about generated folders; no `ignorePatterns` needed.
+
+## Wave: DELIVER / [REF] Rigor profile (maintainer decision 2026-10-29)
+
+| Slices | Profile | Crafter and acceptance designer | Reviewer |
+|---|---|---|---|
+| FE1-1, FE1-2 | standard | sonnet | haiku |
+
+A clean Haiku review is not proof on its own: the orchestrator spot-checks the cited lines and untested edges.
+
+## Wave: DISTILL / [REF] Scenario list
+
+Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (TypeScript, Vitest). All 12 are `it.skip`; DELIVER unskips one at a time. Error/edge scenarios: 8 of 12.
+
+| # | Title | Slice | Tags |
+|---|---|---|---|
+| 1 | components reach into pages in exactly the twelve listed places | FE1-1 | @walking_skeleton @real-io |
+| 2 | a component reaching into a page is refused as a new leak, naming the component and the page | FE1-1 | @error @real-io |
+| 3 | a component reaching into a page is not reported when it is only a test that does so | FE1-1 | @edge @real-io |
+| 4 | a listed leak that has been fixed is refused as stale until its entry is deleted, naming the entry | FE1-1 | @error @real-io |
+| 5 | directions the layers allow report nothing: a component using a hook | FE1-1 | @edge @real-io |
+| 6 | directions the layers allow report nothing: a page using a component | FE1-1 | @edge @real-io |
+| 7 | the whole frontend leaks across layers in exactly the twenty-one listed places | FE1-2 | @walking_skeleton @real-io |
+| 8 | refuses a hook reaching into a page, naming both ends | FE1-2 | @error @real-io |
+| 9 | refuses a hook reaching into a component, naming both ends | FE1-2 | @error @real-io |
+| 10 | refuses a service reaching into a hook, naming both ends | FE1-2 | @error @real-io |
+| 11 | refuses a model reaching into a page, naming both ends | FE1-2 | @error @real-io |
+| 12 | refuses a utility reaching into a service, naming both ends | FE1-2 | @error @real-io |
+
+Slice split by list: FE1-1 enables #1 against the 12 `components → pages` entries; FE1-2 enables #7 against all 21 (the other 9: hooks 5, services 2, models 1, utils 1). The inline `ALLOWED_LEAKS` holds all 21 from the start; `.fallowrc.json` decides which rules exist, so in FE1-1 the full list is not yet compared.
+
+## Wave: DISTILL / [REF] Walking skeleton
+
+The maintainer runs `pnpm test` and learns exactly which layer leaks exist, with nothing hidden and nothing stale. Two stages of one skeleton: #1 (components, FE1-1) and #7 (whole frontend, FE1-2). Both drive the real Fallow CLI over the real `src/` tree with the real `.fallowrc.json`.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Driven adapter | @real-io scenario | Covered by |
+|---|---|---|
+| Fallow CLI (`fallow architecture --boundaries`, spawned as a child process) | YES | #1 and #7 on the real tree; #2 to #6 and #8 to #12 on throwaway project trees in the OS temp folder |
+
+Fixtures are built on the fly with `mkdtemp` rather than committed under `src/`: no deliberate leaks sit in the repository, nothing needs to type-check or pass Biome, and the real check can never see them.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+None. There is no production module: the comparison helper (`compareWithAllowList`, `describeDrift`, `findLeaks`) lives inside the test file. Nothing carries a scaffold marker, and no `src/**` production file changes.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts`, at the `src/` root because it spans every layer. Precedent: `ganttAdapterBoundary.enforcement.test.ts` and the other `*.enforcement.test.ts` files (inline expectation compared through `toEqual`). It is picked up by the existing `pnpm test`.
+
+## Wave: DISTILL / [REF] UI sketches
+
+N/A, because nothing a user sees changes; FE1 adds a build check.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+Reconciliation passed — 0 contradictions (DISCUSS is the Epic's; DESIGN and DEVOPS agree: Fallow, `pnpm test`, no production change, mutation N/A). Two notes, neither a contradiction:
+
+- The test types Fallow's JSON with a two-field local interface, because `fallow/types` does not exist until DELIVER installs the package; DELIVER may swap it for the shipped type (D6).
+- `findLeaks` does not look at Fallow's exit status: a failed or empty run makes `JSON.parse` throw, which fails the test loudly (the DESIGN risk about an empty parse).
