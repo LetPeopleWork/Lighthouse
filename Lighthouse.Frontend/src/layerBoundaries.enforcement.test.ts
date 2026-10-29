@@ -47,8 +47,10 @@ interface BoundaryViolation {
 
 const bySortOrder = (a: string, b: string): number => a.localeCompare(b);
 
+const slashed = (path: string): string => path.replaceAll("\\", "/");
+
 const toEntry = (violation: BoundaryViolation): string =>
-	`${violation.from_path} → ${violation.to_path}`;
+	`${slashed(violation.from_path)} → ${slashed(violation.to_path)}`;
 
 const realConfig = join(frontendRoot, ".fallowrc.json");
 
@@ -85,9 +87,14 @@ const findLeaks = (root: string, config: string = realConfig): string[] => {
 		);
 	}
 
-	const report = JSON.parse(run.stdout) as {
-		boundary_violations?: BoundaryViolation[];
-	};
+	let report: { boundary_violations?: BoundaryViolation[] };
+	try {
+		report = JSON.parse(run.stdout);
+	} catch {
+		throw new Error(
+			`The boundary check printed something other than JSON.\nstderr: ${run.stderr}\nstdout: ${run.stdout}`,
+		);
+	}
 
 	if (!Array.isArray(report.boundary_violations)) {
 		throw new Error(
@@ -184,7 +191,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("today's leaks", () => {
-		it.skip("components reach into pages in exactly the twelve listed places", () => {
+		it.skip("lets components reach into pages only in the twelve listed places, and in all of them", () => {
 			const drift = compareWithAllowList(
 				leaksUnder("components", findLeaks(frontendRoot)),
 				leaksUnder("components", ALLOWED_LEAKS),
@@ -196,7 +203,7 @@ describe("the frontend layers", () => {
 			});
 		});
 
-		it.skip("the whole frontend leaks across layers in exactly the twenty-one listed places", () => {
+		it.skip("lets the frontend cross its layers only in the twenty-one listed places, and in all of them", () => {
 			const drift = compareWithAllowList(
 				findLeaks(frontendRoot),
 				[...ALLOWED_LEAKS].sort(bySortOrder),

@@ -10939,7 +10939,7 @@ an IL walk with Mono.Cecil (already a dependency of ArchUnitNET) plus a source s
 ## Application Architecture — story-6389-fe1-import-boundary-enforcement
 
 Frontend-only, behaviour-free, and no production file changes. The layers of `Lighthouse.Frontend/src`
-become enforced, and the 21 imports that cross them today are frozen in a named list that only shrinks
+become enforced, and the 21 file pairs that cross them today are frozen in a named list that only shrinks
 (ADR-269, following ADR-268).
 
 Before: nothing related the layers, so a component importing from a page compiled and passed review.

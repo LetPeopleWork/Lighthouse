@@ -8,7 +8,7 @@
 
 `Lighthouse.Frontend/src` is layered by folder (`components`, `hooks`, `services`, `models`, `utils`,
 `pages`), but nothing enforces the layers. A component importing from a page compiles, lints and reads
-fine in review. Sixteen production files do it today, in 21 imports. Before the frontend can be packaged
+fine in review. Sixteen production files do it today, in 21 leaking file pairs. Before the frontend can be packaged
 by module, the existing leaks must stop growing and each removal must show.
 
 Biome, which already runs in `prebuild`, has no import graph: its `noRestrictedImports` matches import

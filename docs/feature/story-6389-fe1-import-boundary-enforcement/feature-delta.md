@@ -95,7 +95,7 @@ Continuous-improvement rules:
 - [ ] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
 - [ ] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
 - [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (DESIGN chose a new ADR, ADR-269, plus a status note on ADR-268).
-- [ ] Payoff claim: build time within noise, measured before and after (`pnpm build`, and the new step on its own).
+- [ ] Payoff claim: test run within noise, `pnpm test` measured before FE1-1, after FE1-1 and after FE1-2 (the check is part of the Vitest suite, not a build step).
 - [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
 
 Epic per-Story checklist (How to pick up a Story):
@@ -139,8 +139,9 @@ for a Story this size.
 
 Top-level `src/` entries with no zone, and why: `tests/` (test kits and helpers, test code), `assets/` (no TypeScript),
 `App.tsx`, `main.tsx` and `App.css` (the composition root, which wires every layer), `vite-env.d.ts` (ambient types),
-`layerBoundaries.enforcement.test.ts` (test code). `services`, `models` and `utils` keep the imports they have today
-toward `components` and `pages`; only the five survey rules are in FE1's scope.
+`layerBoundaries.enforcement.test.ts` (test code). `services` and `utils` keep the imports they have today toward
+`components` and `pages`, and `models` toward `components`; the one `models → pages` import is a listed leak. Only the
+five survey rules are in FE1's scope.
 
 ## Wave: DESIGN / [REF] Tool trial (2026-10-29)
 
@@ -152,7 +153,7 @@ Run read-only from a scratch folder; nothing was added to the repository. All th
 | Works with the repo's TypeScript 7 | yes | **no**: scans 0 modules ("support for typescript@>=7 will follow") | yes, own parser |
 | Time | +0 (already in `prebuild`) | seconds | 0.4 s for the boundary check |
 | New dependency | none | yes, plus a second TypeScript | yes, native Rust binary, MIT, no install scripts |
-| Unit of the allow-list | a file (`!path` in an override) | an import | an import (`from:to`) |
+| Unit of the allow-list | a file (`!path` in an override) | an import | a file pair (`from:to`) |
 | New leak fails, named | yes | yes | yes, `file:line → target (components → pages)` |
 | Fixed leak fails until delisted | no | no | no: a stale baseline entry passes |
 
@@ -206,8 +207,8 @@ After: `pnpm test` fails on any import across the five rules that is not one of 
 
 ## Wave: DESIGN / [REF] Risks
 
-- **Fallow changes its JSON shape.** The test parses `boundary_violations[].from_path/to_path`, typed by `fallow/types`; a Renovate bump that breaks it goes red in CI, not silently green, because an empty or failed parse cannot equal a 21-entry list.
-- **A zone added later without a rule.** A new top-level `src/` folder is unconstrained until FE2 adds module zones. Accepted; Fallow's `coverage.requireAllFiles` is the tool for that if it starts to matter.
+- **Fallow changes its JSON shape.** The test parses `boundary_violations[].from_path/to_path`, typed by a local two-field interface (D6); a Renovate bump that breaks it goes red in CI, not silently green, because the test throws on an unusable run and an empty result cannot equal the listed entries under comparison.
+- **A zone added later without a rule.** A new top-level `src/` folder is unconstrained until FE2 adds module zones. Accepted; Fallow's `boundaries.coverage.requireAllFiles` is the tool for that if it starts to matter.
 - **Binary availability.** The platform binary comes as an optional dependency. Published for 3.36.0: `darwin-arm64`, `darwin-x64`, `linux-arm64-gnu`, `linux-arm64-musl`, `linux-x64-gnu`, `linux-x64-musl`, `win32-arm64-msvc`, `win32-x64-msvc`, which covers every CI runner and developer platform here. On a platform without one, pnpm skips the optional package and installs fine; only the test fails, loudly.
 - **Config or rule semantics change between releases.** Fallow releases about weekly. The exact pin plus the enforcement test is the mitigation: a bump that changes the config schema or what a rule reports makes the test red, and Renovate's automerge waits for green.
 - **Observed JSON (trial, 3.36.0):** `boundary_violations[]` with `from_path`, `to_path` (relative to the root, e.g. `src/components/Common/Team/ModifyTeamSettings.tsx`), `from_zone`, `to_zone`, `line`, `col`, `finding_id`.
@@ -224,7 +225,7 @@ Quoted from `docs/feature/epic-6264-modular-monolith/feature-delta.md`, FE1 AC:
 
 > Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1.
 
-**Changed:** the list counts imports, not files (D3): **21** entries over 16 files. By rule: components → pages 12 imports in 8 files (the new one is `FeatureListDataGrid` → `WidgetShell`), hooks → pages/components 5 imports in 4 files, services → hooks 2, models → pages 1, utils → services 1. KPI 8's baseline becomes 21 imports.
+**Changed:** the list counts file pairs, not files (D3): **21** entries over 16 files (one import per pair today). By rule: components → pages 12 imports in 8 files (the new one is `FeatureListDataGrid` → `WidgetShell`), hooks → pages/components 5 imports in 4 files, services → hooks 2, models → pages 1, utils → services 1. KPI 8's baseline becomes 21 imports.
 
 Quoted from the same AC:
 
@@ -270,7 +271,8 @@ nothing is deployed, built or served differently.
 
 - **Generated folders.** Fallow must not scan `.stryker-tmp/`, `dist/`, `coverage/` or `reports/` copies of `src/`. A
   mutation run leaves sandboxes under `.stryker-tmp/`, and a scan that included them would report each leak several
-  times. DELIVER FE1-1 checks that Fallow honours `.gitignore`, or sets `ignorePatterns` in `.fallowrc.json`.
+  times. Settled by the root-anchored zones (DISTILL pre-check): a copy under `.stryker-tmp/` or `dist/` matches no zone, so
+  no `ignorePatterns` is needed. DELIVER FE1-1 confirms that a stray sandbox copy is not reported.
 - **Running inside StrykerJS.** A mutation run of another feature runs this test in a sandbox copy. The test resolves
   paths from its own location, so it scans the sandbox, which holds the same imports. Accepted.
 
@@ -299,8 +301,8 @@ Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (
 
 | # | Title | Slice | Tags |
 |---|---|---|---|
-| 1 | components reach into pages in exactly the twelve listed places | FE1-1 | @walking_skeleton @real-io |
-| 2 | the whole frontend leaks across layers in exactly the twenty-one listed places | FE1-2 | @walking_skeleton @real-io |
+| 1 | lets components reach into pages only in the twelve listed places, and in all of them | FE1-1 | @walking_skeleton @real-io |
+| 2 | lets the frontend cross its layers only in the twenty-one listed places, and in all of them | FE1-2 | @walking_skeleton @real-io |
 | 3 | a component reaching into a page is refused as a new leak, naming the component and the page | FE1-1 | @error @real-io |
 | 4 | a component reaching into a page is not reported when it is only a `.test.ts` file that does so | FE1-1 | @edge @real-io |
 | 5 | the same, for a `.test.tsx` file | FE1-1 | @edge @real-io |
@@ -319,11 +321,16 @@ Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (
 
 Slice split by list: FE1-1 enables #1 against the 12 `components → pages` entries; FE1-2 enables #2 against all 21 (the other 9: hooks 5, services 2, models 1, utils 1). The inline `ALLOWED_LEAKS` holds all 21 from the start; `.fallowrc.json` decides which rules exist, so in FE1-1 the comparison covers the `src/components/` entries only.
 
-Positive control: every scenario that expects no leak (#4, #5, #9, #10, #11) puts one real `components → pages` import in the same fixture and expects exactly that entry, so a run that applied no rule fails. #6 carries the same control next to its own file.
+Positive control: every scenario that expects no new leak (#4, #5, #9, #10, #11) puts one real `components → pages` import in the same fixture and expects exactly that entry, so a run that applied no rule fails. #6 carries the same control next to its own file.
 
 Counted entries: `compareWithAllowList` subtracts as a multiset, so a second identical entry is a newcomer and a surplus listed entry is stale (#7, #8). Fallow itself cannot report two edges for one file pair: with three statements importing the same page (two `import`s and an `export … from`), the 3.36.0 trial binary printed one violation (the first line). So an entry is one per file pair, not per import statement, #6 pins that, and #7/#8 are written at the comparison level with duplicated lists, not with a fixture.
 
-Build time is not a scenario; FE1-2 DELIVER measures `pnpm test` before and after (DEVOPS).
+Acceptance criterion 3 is not a scenario. Its Biome part is the `pnpm build` gate every slice ends with; its timing part
+is a DELIVER measurement of `pnpm test`, taken before FE1-1 adds Fallow and again after FE1-1 and FE1-2 (DEVOPS).
+
+Environments: N/A as scenarios, because the test has no install or runtime precondition of its own; the DEVOPS matrix
+varies only which Fallow binary pnpm installs. Paths are normalised to forward slashes, so a Windows run compares the
+same entries.
 
 ## Wave: DISTILL / [REF] Walking skeleton
 

@@ -57,4 +57,5 @@ internal reference codes as the explanation.
 ## Status notes
 
 - 2026-10-29: the convention now covers the frontend too. ADR-269 applies it to the layer rules in
-  `Lighthouse.Frontend/src`: Fallow reports the leaking imports and one enforcement test holds the list.
+  `Lighthouse.Frontend/src`: Fallow reports the leaking imports and one enforcement test holds the list. There the unit is one entry per
+  leaking file pair (importing file → imported file), a refinement of "file or type".

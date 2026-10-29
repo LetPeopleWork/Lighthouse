@@ -35,3 +35,14 @@ Neither is an implementation gap in a production module; there is none. The only
 
 - #7, #8 and #17 are guards: they cannot be made RED without production code, because there is none. They protect against regressions (a set-based comparison, an ignored exit status), not against a missing feature. Order in DELIVER: the positive scenario for the rule first (#3), then these.
 - The `it.skip` bodies have never run against the repo's Fallow: the file type-checks and passes Biome, and the JSON shape, the exit codes (0, 1, 2) and the one-violation-per-file-pair behaviour were checked by hand on the trial binary (3.36.0). DELIVER's first unskip is also the first execution of `findLeaks`; a problem in that helper shows as BROKEN, and is a test bug to fix before any RED is trusted.
+
+## Verified Fallow output for the missing-config scenario (3.36.0, 2026-10-29)
+
+Exit status 2, and on stdout:
+
+```text
+{"error":true,"message":"failed to load config '<path>/missing.fallowrc.json': Config file not found or unresolvable: <path>/missing.fallowrc.json: No such file or directory (os error 2)","exit_code":2}
+```
+
+The message names the config path, so the scenario's `/status 2[\s\S]*missing\.fallowrc\.json/` matches it. FE1-1
+re-checks this, and that `fallow/bin/fallow` resolves through the installed package, at the first unskip.
