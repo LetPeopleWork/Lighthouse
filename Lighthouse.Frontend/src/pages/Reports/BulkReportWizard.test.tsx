@@ -80,6 +80,9 @@ const theResult = () => screen.findByRole("dialog");
 const theLineSaying = async (line: string) =>
 	within(await theResult()).findByText(line, { exact: true });
 
+/** Rendering 50 or 60 owner rows is slow under a loaded run. */
+const RENDER_HEAVY = 20000;
+
 const sixtyTeams: Owner[] = Array.from({ length: 60 }, (_, index) => ({
 	kind: "team",
 	id: 300 + index,
@@ -393,43 +396,55 @@ describe("Create reports for several Teams", () => {
 
 describe("At most 50 Teams and Portfolios in one run", () => {
 	// @us-02a @slice-02a @error @edge @contract-shape:pure-function
-	it.skip(`Select all picks all 60 Teams, the button counts them, and Create says at most 50 (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: offering(...sixtyTeams),
-			permissions: { adminOf: sixtyTeams },
-		});
+	it(
+		`Select all picks all 60 Teams, the button counts them, and Create says at most 50 (${pending})`,
+		async () => {
+			const { user } = renderTheReportsPage({
+				reportService: offering(...sixtyTeams),
+				permissions: { adminOf: sixtyTeams },
+			});
 
-		await toTheOwnerStep(user);
-		await user.click(
-			within(screen.getByRole("group", { name: TEAMS_GROUP })).getByRole(
-				"button",
-				{ name: SELECT_ALL },
-			),
-		);
+			await toTheOwnerStep(user);
+			await user.click(
+				within(screen.getByRole("group", { name: TEAMS_GROUP })).getByRole(
+					"button",
+					{ name: SELECT_ALL },
+				),
+			);
 
-		expect(screen.getAllByRole("checkbox", { checked: true })).toHaveLength(60);
-		expect(
-			screen.getByRole("button", { name: createCount(60) }),
-		).toBeDisabled();
-		expect(
-			screen.getByText(OWNERS_AT_MOST_50, { exact: true }),
-		).toBeInTheDocument();
-	});
+			expect(screen.getAllByRole("checkbox", { checked: true })).toHaveLength(
+				60,
+			);
+			expect(
+				screen.getByRole("button", { name: createCount(60) }),
+			).toBeDisabled();
+			expect(
+				screen.getByText(OWNERS_AT_MOST_50, { exact: true }),
+			).toBeInTheDocument();
+		},
+		RENDER_HEAVY,
+	);
 
 	// @us-02a @slice-02a @edge @contract-shape:pure-function
-	it.skip(`exactly 50 picked may still be created, with no ceiling message (${pending})`, async () => {
-		const fifty = sixtyTeams.slice(0, 50);
-		const { user } = renderTheReportsPage({
-			reportService: offering(...fifty),
-			permissions: { adminOf: fifty },
-		});
+	it(
+		`exactly 50 picked may still be created, with no ceiling message (${pending})`,
+		async () => {
+			const fifty = sixtyTeams.slice(0, 50);
+			const { user } = renderTheReportsPage({
+				reportService: offering(...fifty),
+				permissions: { adminOf: fifty },
+			});
 
-		await toTheOwnerStep(user);
-		await user.click(screen.getByRole("button", { name: SELECT_ALL }));
+			await toTheOwnerStep(user);
+			await user.click(screen.getByRole("button", { name: SELECT_ALL }));
 
-		expect(screen.getByRole("button", { name: createCount(50) })).toBeEnabled();
-		expect(screen.queryByText(OWNERS_AT_MOST_50)).not.toBeInTheDocument();
-	});
+			expect(
+				screen.getByRole("button", { name: createCount(50) }),
+			).toBeEnabled();
+			expect(screen.queryByText(OWNERS_AT_MOST_50)).not.toBeInTheDocument();
+		},
+		RENDER_HEAVY,
+	);
 });
 
 describe("The wizard waits for what a report needs", () => {

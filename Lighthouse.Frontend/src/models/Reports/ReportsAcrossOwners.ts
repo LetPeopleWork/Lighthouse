@@ -41,6 +41,9 @@ export interface IReportCreationOptions {
 	owners: IReportCreationOwner[];
 }
 
+/** The most owners one creation run takes, and the most reports one selection acts on; the server refuses more. */
+export const MOST_PER_BULK_RUN = 50;
+
 export interface INewReportsForOwners extends INewReport {
 	owners: { ownerKind: "team" | "portfolio"; ownerId: number }[];
 }

@@ -25,7 +25,7 @@ import {
 } from "../Common/Reports/wizard/reportTypes";
 import TypeStep from "../Common/Reports/wizard/TypeStep";
 import BulkResult, { type BulkRun } from "./BulkResult";
-import OwnerStep, { ownerKeyOf } from "./OwnerStep";
+import OwnerStep, { isOverTheCeiling, ownerKeyOf } from "./OwnerStep";
 import { useBulkReportCreation } from "./useBulkReportCreation";
 
 const TITLE_ID = "bulk-report-wizard-title";
@@ -88,6 +88,7 @@ interface StepContentProps {
 	teams: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
 	onToggle: (owner: IReportCreationOwner) => void;
+	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
 }
 
 /** No owner is known while the report is configured; the window steps ask for none of an owner's own. */
@@ -101,6 +102,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	teams,
 	picked,
 	onToggle,
+	onSelectAll,
 }) => {
 	if (activeStep === OWNER_STEP) {
 		return (
@@ -108,6 +110,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 				teams={teams}
 				picked={picked}
 				onToggle={onToggle}
+				onSelectAll={onSelectAll}
 				stepNumber={activeStep + 1}
 				stepCount={STEP_LABELS.length}
 				disabled={false}
@@ -166,6 +169,11 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 		setPicked(next);
 	};
 
+	const selectAll = (owners: readonly IReportCreationOwner[]) =>
+		setPicked(
+			new Set([...picked, ...owners.map((owner) => ownerKeyOf(owner))]),
+		);
+
 	const pickedTeams = teams.filter((team) => picked.has(ownerKeyOf(team)));
 
 	const create = () =>
@@ -207,7 +215,9 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 							? {
 									label: createLabelOf(pickedTeams.length),
 									onClick: create,
-									disabled: pickedTeams.length === 0,
+									disabled:
+										pickedTeams.length === 0 ||
+										isOverTheCeiling(pickedTeams.length),
 								}
 							: undefined
 					}
@@ -220,6 +230,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 						teams={teams}
 						picked={picked}
 						onToggle={toggle}
+						onSelectAll={selectAll}
 					/>
 				</WizardStepperFrame>
 			) : (
