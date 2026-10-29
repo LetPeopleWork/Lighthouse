@@ -97,24 +97,24 @@ driving adapter.
 
 Continuous-improvement rules:
 
-- [ ] Behaviour-free: routes, DTOs, serialized responses, pixels and topologies unchanged; existing tests green unmodified (apart from tests that move with their code). `WorkTrackingSystems` keeps its integer values.
-- [ ] Ratchet in the same change: `Models ↛ Services`, the `GetAllByPredicate` guard and the controller-on-repository rule each land in the commit range that makes them pass. Inline file lists, never counts. Nothing loosened.
-- [ ] Moves separate from edits: the type relocations are pure `refactor(...): move …` commits.
-- [ ] Baselines re-counted (above) and re-checked at the PR.
-- [ ] Mutation last, on frozen code; touched area not lower.
-- [ ] `ARCHITECTURE.md` §4 gap note deleted; ADRs updated where a decision changes.
-- [ ] Payoff claim: N/A, because no performance claim is made.
-- [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
+- [x] Behaviour-free: routes, DTOs, serialized responses, pixels and topologies unchanged; existing tests green unmodified (apart from tests that move with their code). `WorkTrackingSystems` keeps its integer values. *Checked at close-out 2026-10-29: outside `Tests/Architecture` the range `e3ac351d4..93139eca0` changes only `using` lines in existing tests, plus new kill-round tests; CI 40563773352 green.*
+- [x] Ratchet in the same change: `Models ↛ Services`, the `GetAllByPredicate` guard and the controller-on-repository rule each land in the commit range that makes them pass. Inline file lists, never counts. Nothing loosened. *`af69c31a0`, `06641a5ba`, `5e3a25dc1`; lists of 0, 15 and 23 entries.*
+- [x] Moves separate from edits: the type relocations are pure `refactor(...): move …` commits. *`d39e4bf33`, `93c00f05d`, `ff78469e6`, `d66e6d25f`, `bb0883096`.*
+- [x] Baselines re-counted (above) and re-checked at the PR. *`ReportOwnerLookup` from Epic 6350 joined the `GetAllByPredicate` list at landing (14 → 15).*
+- [x] Mutation last, on frozen code; touched area not lower. *91.30 % after the kill round, see `mutation/results.md`.*
+- [x] `ARCHITECTURE.md` §4 gap note deleted; ADRs updated where a decision changes. *`4a3d55367`, `21480424b`; ADR-268 new.*
+- [x] Payoff claim: N/A, because no performance claim is made.
+- [x] No release notes (behaviour-free) unless the maintainer says otherwise. *Neither ADO item carries a tag.*
 
 Epic per-Story checklist (How to pick up a Story):
 
-- [ ] Ratchet in the same PR; baselines are inline file lists; never loosened.
-- [ ] Behaviour-free; API, E2E and response tests green unmodified.
-- [ ] Mutation score in the touched area does not drop.
-- [ ] Moves separate from edits.
-- [ ] ARCHITECTURE.md updated in the same change (§4).
-- [ ] One context at a time (N/A, because these items move no context; they add rules).
-- [ ] Terminology follows the seeded defaults (no S01 glossary yet).
+- [x] Ratchet in the same PR; baselines are inline file lists; never loosened.
+- [x] Behaviour-free; API, E2E and response tests green unmodified.
+- [x] Mutation score in the touched area does not drop.
+- [x] Moves separate from edits.
+- [x] ARCHITECTURE.md updated in the same change (§4).
+- [x] One context at a time (N/A, because these items move no context; they add rules).
+- [x] Terminology follows the seeded defaults (no S01 glossary yet).
 - [x] Cross-cutting re-check, answered 2026-10-27: RBAC N/A, because no endpoint or permission changes. Lighthouse-Clients N/A, because no payload changes (enums serialise by member name). Website N/A, because nothing user-visible changes. Usage-data event N/A, because the batch is behaviour-free (DEVOPS). UI sketch N/A, because no UI is touched.
 
 ## Wave: DESIGN / [REF] Decisions (2026-10-27, propose mode, maintainer decided)
