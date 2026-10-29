@@ -307,7 +307,10 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 			expect(featureService.getFeaturesByReferences).toHaveBeenCalledTimes(1);
 			const [asked] = vi.mocked(featureService.getFeaturesByReferences).mock
 				.calls[0] ?? [[]];
-			expect([...asked].sort()).toEqual(["FTR-1", "FTR-2"]);
+			expect([...asked].sort((a, b) => a.localeCompare(b))).toEqual([
+				"FTR-1",
+				"FTR-2",
+			]);
 
 			await act(async () =>
 				theLookup(answers, 0).resolve([searchRebuild, checkoutRevamp]),

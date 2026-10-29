@@ -315,7 +315,9 @@ describe("the browser's print effects, made for the app's own window", () => {
 		const answer = await forTheAppsWindow().loadFonts(THE_PRINTED_FACES);
 
 		expect(answer).toBe("loaded");
-		expect([...fetched].sort()).toEqual([...parts].sort());
+		expect([...fetched].sort((a, b) => a.localeCompare(b))).toEqual(
+			[...parts].sort((a, b) => a.localeCompare(b)),
+		);
 	});
 
 	// @us-02 @slice-02 @error @contract-shape:bounded-change

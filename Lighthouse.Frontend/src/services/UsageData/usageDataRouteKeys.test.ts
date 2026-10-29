@@ -192,9 +192,9 @@ describe("the browser list and the server list name the same members", () => {
 	// Numbering the members here instead would compare false against every response: these names
 	// travel as text in both directions.
 	it("carries those names as their own values", () => {
-		expect(Object.values(UsageDataRouteKey).sort()).toEqual(
-			[...serverMembers].sort(),
-		);
+		expect(
+			Object.values(UsageDataRouteKey).sort((a, b) => a.localeCompare(b)),
+		).toEqual([...serverMembers].sort((a, b) => a.localeCompare(b)));
 	});
 });
 

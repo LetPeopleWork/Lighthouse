@@ -57,7 +57,9 @@ describe("resolveWaitRawStates", () => {
 			mappings,
 		);
 
-		expect([...fromMappingName].sort()).toEqual([...fromRawStates].sort());
+		expect([...fromMappingName].sort((a, b) => a.localeCompare(b))).toEqual(
+			[...fromRawStates].sort((a, b) => a.localeCompare(b)),
+		);
 	});
 });
 
