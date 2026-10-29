@@ -265,14 +265,14 @@ describe("the frontend layers", () => {
 	describe("a leak that is listed once", () => {
 		const entry = "src/components/Widget.tsx → src/pages/Page.tsx";
 
-		it.skip("is refused as a new leak when the same entry turns up a second time", () => {
+		it("is refused as a new leak when the same entry turns up a second time", () => {
 			expect(compareWithAllowList([entry, entry], [entry])).toEqual({
 				newcomers: [entry],
 				stale: [],
 			});
 		});
 
-		it.skip("is refused as stale when it is listed twice but found only once", () => {
+		it("is refused as stale when it is listed twice but found only once", () => {
 			expect(compareWithAllowList([entry], [entry, entry])).toEqual({
 				newcomers: [],
 				stale: [entry],
@@ -281,7 +281,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("a listed leak that has been fixed", () => {
-		it.skip("is refused as stale until its entry is deleted, naming the entry", () => {
+		it("is refused as stale until its entry is deleted, naming the entry", () => {
 			const fixed = "src/components/Widget.tsx → src/pages/Page.tsx";
 			const root = projectWith({
 				"src/components/Widget.tsx": "export const used = 1;\n",
@@ -299,7 +299,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("directions the layers allow", () => {
-		it.skip.each([
+		it.each([
 			{
 				direction: "a component using a hook",
 				importer: "src/components/Widget.tsx",
@@ -358,7 +358,7 @@ describe("the frontend layers", () => {
 	});
 
 	describe("a boundary check that cannot run", () => {
-		it.skip("fails the test, quoting what it printed, instead of reporting no leaks", () => {
+		it("fails the test, quoting what it printed, instead of reporting no leaks", () => {
 			const root = importing("src/components/Widget.tsx", "src/pages/Page.tsx");
 			const missingConfig = join(root, "missing.fallowrc.json");
 
