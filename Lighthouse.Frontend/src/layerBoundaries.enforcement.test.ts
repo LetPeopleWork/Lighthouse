@@ -2,7 +2,7 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -74,7 +74,12 @@ const findLeaks = (root: string, config: string = realConfig): string[] => {
 			"-f",
 			"json",
 		],
-		{ encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+		{
+			encoding: "utf8",
+			maxBuffer: 64 * 1024 * 1024,
+			timeout: 60_000,
+			cwd: root,
+		},
 	);
 
 	if (run.error) {
@@ -99,6 +104,13 @@ const findLeaks = (root: string, config: string = realConfig): string[] => {
 	if (!Array.isArray(report.boundary_violations)) {
 		throw new Error(
 			`The boundary check printed no list of violations.\nstdout: ${run.stdout}`,
+		);
+	}
+
+	const reportedAny = report.boundary_violations.length > 0;
+	if (reportedAny !== (run.status === 1)) {
+		throw new Error(
+			`The boundary check exited with status ${run.status} but its violations disagree.\nstdout: ${run.stdout}`,
 		);
 	}
 
@@ -147,7 +159,9 @@ const projectWith = (files: Record<string, string>): string => {
 };
 
 const specifierFrom = (importer: string, target: string): string => {
-	const path = relative(dirname(importer), target).replace(/\.(ts|tsx)$/, "");
+	const path = posix
+		.relative(posix.dirname(importer), target)
+		.replace(/\.(ts|tsx)$/, "");
 
 	return path.startsWith(".") ? path : `./${path}`;
 };
@@ -228,6 +242,39 @@ describe("the frontend layers", () => {
 
 			expect(drift).toEqual({
 				newcomers: [`${importer} → ${target}`],
+				stale: [],
+			});
+		});
+
+		it("is refused as a new leak even in a file nothing imports", () => {
+			const orphan = "src/components/Orphan.tsx";
+			const root = projectWith({
+				"package.json": '{ "name": "fixture", "private": true }\n',
+				"src/main.tsx": 'import "./App";\n',
+				"src/App.tsx": "export const App = 1;\n",
+				...importFiles(orphan, target),
+			});
+
+			const drift = compareWithAllowList(findLeaks(root), []);
+
+			expect(drift).toEqual({
+				newcomers: [`${orphan} → ${target}`],
+				stale: [],
+			});
+		});
+
+		it("is refused as a new leak when the page is imported lazily", () => {
+			const lazy = "src/components/Lazy.tsx";
+			const lazyTarget = "src/pages/Other.tsx";
+			const root = projectWith({
+				[lazy]: `import { lazy } from "react";\nexport const Other = lazy(() => import("${specifierFrom(lazy, lazyTarget)}"));\n`,
+				[lazyTarget]: "export default 1;\n",
+			});
+
+			const drift = compareWithAllowList(findLeaks(root), []);
+
+			expect(drift).toEqual({
+				newcomers: [`${lazy} → ${lazyTarget}`],
 				stale: [],
 			});
 		});
