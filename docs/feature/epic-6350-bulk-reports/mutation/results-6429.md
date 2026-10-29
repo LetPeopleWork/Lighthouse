@@ -83,3 +83,109 @@ single-owner create, delete and refusal paths, pinned by suites outside this fil
 (older queries read by tests outside this filter); `ReportReadModels.cs:70` (arithmetic on an older record);
 `TeamReportMetricSeries.cs:18` (two), `:44` and `PortfolioReportMetricSeries.cs:18` (two), `:45` (the older cycle-time
 filter and a log string).
+
+## Frontend (StrykerJS 10.0.0)
+
+Config `stryker.6429.frontend.json` and `vitest.stryker.6429.mutation.ts`. The vitest config is copied into
+`Lighthouse.Frontend/`, where it is gitignored. The Stryker config runs from its place here
+(`pnpm exec stryker run ../docs/feature/epic-6350-bulk-reports/mutation/stryker.6429.frontend.json --incremental`),
+because a copy at the package root would not be ignored. Settings: `perTest`, `--incremental` (file
+`reports/mutation/stryker-incremental-6429.json`, gitignored), concurrency 2, `inPlace`, `disableTypeChecks: false`,
+`TZ=Europe/Zurich`. `mutate` is whole files, so whole-file and changed-line numbers come from one run. Changed lines are
+taken from `git diff 6530cab2d..HEAD`. The vitest include is `src/pages/Reports/**`, `src/pages/Common/Reports/**`,
+`ReportService.test.ts` and `src/models/Reports/**`. The vitest config sets `testTimeout: 30000`: the first attempt
+stopped in the dry run, where coverage instrumentation, on a machine also running the backend mutation run, pushed one
+wizard test past the 5 s default.
+
+`UsageDataService.ts` is not mutated. Its change is one entry, `ReportBulkCreationStarted`, in an `as const` object. Its
+string literal is the one mutable token, and the usage-data test that expects the event by that name would kill it.
+
+| run | whole file | changed lines |
+| --- | --- | --- |
+| first run (829 mutants, 136 min, on a machine shared with the backend run) | 729 / 829 = 87.94 % | 325 / 403 = 80.65 % |
+| after kill round (incremental: 520 re-tested, 309 reused, 29 min) | 762 / 829 = **91.92 %** | 358 / 403 = **88.83 %** |
+
+| file | changed lines, first | changed lines, after | whole file, after |
+| --- | --- | --- | --- |
+| `BulkReportWizard.tsx` (new) | 93 / 126 | 110 / 126 | 87.30 % |
+| `BulkResult.tsx` (new) | 40 / 54 | 46 / 54 | 85.19 % |
+| `OwnerStep.tsx` (new) | 17 / 22 | 17 / 22 | 77.27 % |
+| `ReportsPage.tsx` | 61 / 72 | 64 / 72 | 86.49 % |
+| `useBulkReportCreation.ts` (new) | 13 / 16 | 14 / 16 | 87.50 % |
+| `useReportCreationOptions.ts` (new) | 9 / 10 | 9 / 10 | 90.00 % |
+| `ReportsAcrossOwners.ts` | 25 / 28 | 28 / 28 | 100 % |
+| `Report.ts` | 1 / 1 | 1 / 1 | 100 % |
+| `reportRefusalCopy.ts` | 23 / 26 | 25 / 26 | 97.27 % |
+| `reportTypes.ts` | 10 / 10 | 10 / 10 | 100 % |
+| `thenAndNowDraft.ts` | 20 / 25 | 21 / 25 | 94.93 % |
+| `ReportService.ts` | 13 / 13 | 13 / 13 | 93.33 % |
+| `useMayEditReports.ts`, `NowStep.tsx`, `ThenStep.tsx`, `WindowLengthControl.tsx` | no mutant on a changed line | | 100 %, 100 %, 92.00 %, 76.19 % (older code) |
+
+### Kill round (new tests)
+
+- `BulkReportWizard.test.tsx`, "Moving through the wizard":
+  - The wizard is titled Create reports and names its five steps.
+  - Back leads from Then to the Type step, and the Type step has no Back.
+  - Next waits while Then's length is not a number of days.
+  - The owner step offers Create, not Next, and Create stays disabled while nobody is picked.
+  - A Team picked a second time is no longer picked.
+  - Only the Teams the reader is Admin of are listed.
+  - Escape leaves the result open while the run is under way and closes it once the run has answered.
+  - One report created is counted in the singular, and its line names its Team.
+  - An owner the answer leaves unnamed is called "this Team".
+
+  "Who may press Create reports":
+  - An Admin of one Portfolio alone may press it.
+  - For an Admin on Premium it carries no tooltip.
+- `ReportsPage.usageData.test.tsx`: two reports created and one not are reported as two `ReportCreated` events. The
+  existing test had one of each, which `===` mutated to `!==` also passes.
+- `ReportService.test.ts`: an owner kind the server leaves out of `metricKeysByOwnerKind` is offered no metric, and a
+  metric that is not named by a string is refused.
+- `reportRefusalCopy.test.ts`: a bulk line with no reason, or a reason this version does not know, asks to try again.
+- `thenAndNowDraft.test.ts`: a Now length that was entered is sent to every owner as its days.
+
+The existing test "while the run is under way the result says so and cannot be closed" presses Escape while focus is on
+the page body. The Create button has just unmounted, so the dialog never receives the key, and that check cannot fail;
+it is why all four `:208` mutants survived the first run. The new Escape test sends the key to the dialog. The old
+assertion is left as it is.
+
+### Accepted survivors on changed lines (45)
+
+- Module-level constants that StrykerJS never activates (5): `BulkReportWizard.tsx` `:30` (`TITLE_ID`), `:32`
+  (`chosen`), and three on `:37` (the step labels). Stryker reports them as uncovered survivors. Checked by hand: with
+  `chosen = ""` the whole test file fails to load. With the title id or any step label blanked, the new step-names test
+  fails.
+- Layout and style that jsdom does not compute (11): `sx` objects and values in `BulkResult.tsx` `:84` `:85` and two on
+  `:118`, `OwnerStep.tsx` `:59`–`:62` (four), and `ReportsPage.tsx` `:137` (two). Also the `text.disabled` colour while
+  Retry asks again (`BulkReportWizard.tsx:270`).
+- Equivalent (25):
+  - `BulkReportWizard.tsx:64` (six): any step index outside the type's own steps reads `undefined` from the array
+    anyway.
+  - `:60` and `:173` (`useMemo` deps to `[]`): one wizard instance is keyed to one opening, and roles are known before
+    the button is enabled.
+  - `:157`: a status of `""` still falls through to the result list.
+  - `BulkResult.tsx:86`: dropping `.trim()` leaves a trailing space that nobody sees.
+  - `BulkResult.tsx:88` (three): the server sends a report id exactly when it says created.
+  - `OwnerStep.tsx:48`: the picked set only ever holds listed Teams.
+  - `ReportsPage.tsx:52` and `:63` (`retrying` start value, and its reset on close): every opening resets it.
+  - `ReportsPage.tsx:59`: opening keys only need to differ from one another.
+  - `ReportsPage.tsx:74`: after a close the query has no key and so no data.
+  - `useBulkReportCreation.ts:36` (two): invalidating every query instead of `["reports"]` still re-reads every list.
+  - `reportRefusalCopy.ts:132`: `isRefusalCode(undefined)` is false, so the second half of the condition catches a
+    missing code.
+  - `thenAndNowDraft.ts:74` (four): `subDays(today, null)` is today itself, and an unparsable today becomes an Invalid
+    Date that the `isValid` fallback turns back into `templates.today`. The guard changes nothing.
+- Left open (4):
+  - `BulkReportWizard.tsx:57`: the `ownerKind === "team"` half of the owner filter. Removing it would list a Portfolio
+    under Teams. Pinning that now would mean asserting the opposite of the pending Portfolio scenarios in
+    `BulkReportWizard.portfolios.test.tsx`, which replace this filter.
+  - `ReportsPage.tsx:44` and `:45` (optional chaining on `adminTeamIds` and `adminPortfolioIds`): both lists are
+    optional on the wire, but `BulkReportsTestKit` always sends both. A test needs a kit option that leaves one out.
+  - `useReportCreationOptions.ts:16` (`refetchOnWindowFocus: false`): the network coming back is pinned, a window
+    regaining focus is not.
+
+## Frontend gates after the kill round
+
+`pnpm test`: 564 files passed, 6 skipped; 8651 tests passed, 54 skipped. The skipped ones are the pending scenarios of
+later slices. `pnpm build`: exit 0, clean; Biome reformatted the five test files. No production file is changed, and
+`git status` shows no mutant left in `src/`.

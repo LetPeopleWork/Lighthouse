@@ -1,0 +1,57 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6429.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6429.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/pages/Reports/BulkReportWizard.tsx",
+    "src/pages/Reports/BulkResult.tsx",
+    "src/pages/Reports/OwnerStep.tsx",
+    "src/pages/Reports/ReportsPage.tsx",
+    "src/pages/Reports/useBulkReportCreation.ts",
+    "src/pages/Reports/useReportCreationOptions.ts",
+    "src/models/Reports/ReportsAcrossOwners.ts",
+    "src/models/Reports/Report.ts",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts",
+    "src/pages/Common/Reports/wizard/reportTypes.ts",
+    "src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.ts",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx",
+    "src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx",
+    "src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx",
+    "src/pages/Common/Reports/useMayEditReports.ts",
+    "src/services/Api/ReportService.ts"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6429-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6429"
+}
