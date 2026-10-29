@@ -34,7 +34,7 @@ Read these in the Epic's `feature-delta.md`; they are not copied here.
 | 6 Right-sized | PASS by waiver (D-6264-4) | S–M sizing; carpaccio into ≤ 1-day slices is deferred to this Story's DESIGN. |
 | 7 Technical notes + cross-cutting | PASS | Brief's Notes for DESIGN (docs-symlink hazard, pnpm minimum release age, Fallow trial questions); cross-cutting answered below. |
 | 8 Dependencies tracked | PASS | None, hard or soft. |
-| 9 Outcome KPIs, measurable | PASS | KPI 8: 21 imports in 16 files → 0, measured by the allow-list length (one entry per import). |
+| 9 Outcome KPIs, measurable | PASS | KPI 8: 21 imports in 16 files → 0, measured by the allow-list length (one entry per importing file and imported file pair). |
 
 ## Wave: PICK-UP / [REF] Baseline re-count (2026-10-29)
 
@@ -106,7 +106,7 @@ for a Story this size.
 |---|---|---|
 | D1 | Tool | **Fallow** (`fallow architecture --boundaries`), pinned exactly as a dev dependency. Trial below. |
 | D2 | Where the named list lives | **Inline in one Vitest enforcement test**, `src/layerBoundaries.enforcement.test.ts`. It runs Fallow with `-f json` and compares the result with the list through `toEqual`, so Vitest's diff names a newcomer and a stale entry alike. Not Fallow's own baseline file: that would be a second mechanism over the same list, and it ignores stale entries. |
-| D3 | Granularity | **One entry per leaking import**, `from → to` (21 today), not per file (16): a listed file must not gain a second leak unnoticed. |
+| D3 | Granularity | **One entry per leaking file pair**, `from → to` (21 today), not per importing file (16): a listed file must not gain a leak to a second target unnoticed. Fallow reports a pair once however many import statements connect the two files (probed at DISTILL), so a pair is the finest unit there is. |
 | D4 | Where it runs | The Vitest suite: `pnpm test` locally; CI's frontend job runs the same suite as `pnpm run sonarreport` (Vitest with coverage). Not in `prebuild`: the test already gates, and a second run there adds time and nothing else. |
 | D5 | Zones and rules | `.fallowrc.json` declares a zone per top-level `src/` layer folder, with root-anchored patterns (`src/components/**`, …): `components`, `context`, `hooks`, `models`, `pages`, `services`, `utils`. Fallow rules are allow-lists, so each constrained layer allows every other zone except the ones it must not reach (table below). Imports within a zone are always allowed. Imports into a file that belongs to no zone are not checked. `--production` leaves test files out. The rules check direct imports only; reaching a page through an unzoned file is out of scope. |
 | D6 | How the test calls Fallow | `spawnSync(process.execPath, [launcher, …])`, with the launcher found through `createRequire(import.meta.url).resolve("fallow/bin/fallow")` (the frontend is an ES module, so there is no bare `require`). The launcher is a Node script, so this works on Windows too. Fallow exits **0** with no violation, **1** with violations and **2** on an error such as a missing config (checked 2026-10-29); the test parses stdout on 0 or 1 and throws, quoting stderr, on anything else. The JSON is typed by a local two-field interface (`from_path`, `to_path`); swapping in the package's shipped types is optional. |

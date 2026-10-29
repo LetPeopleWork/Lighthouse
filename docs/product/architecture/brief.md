@@ -10969,7 +10969,7 @@ C4Container
 | Decision | Verdict |
 |---|---|
 | Tool | Fallow, exact pin; Biome has no import graph, dependency-cruiser does not support TypeScript 7 |
-| The list | Inline in one enforcement test, compared through `toEqual`, one entry per import (21) |
+| The list | Inline in one enforcement test, compared through `toEqual`, one entry per leaking file pair (21) |
 | Where it runs | `pnpm test` |
 | Fallow's other reports | Not enforced |
 | Convention | ADR-269; status note on ADR-268 |

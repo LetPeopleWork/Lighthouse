@@ -25,9 +25,10 @@ graph, checks zone rules in 0.4 s, and found the same 21 imports as a hand count
 - **One enforcement test owns the list**, following ADR-268. `src/layerBoundaries.enforcement.test.ts`
   runs `fallow architecture --boundaries --production -f json` and compares the reported imports, as
   `from → to`, with an inline list. A new leak fails, naming the import; a listed import that no longer
-  leaks also fails, naming it, until its entry is deleted. One entry per import (a `from → to` edge naming both
-  files), not per file, so a file already on the list cannot gain a second leak unnoticed; this refines ADR-268's
-  "file or type" to the import edge. Entries are counted, so a second identical import is a newcomer too.
+  leaks also fails, naming it, until its entry is deleted. One entry per file pair (`from → to`, naming both
+  files), not per importing file, so a file already on the list cannot gain a leak to a second target unnoticed;
+  this refines ADR-268's "file or type" to the pair. Fallow reports a pair once, however many import statements
+  connect the two files. Entries are compared as counts, not as a set, so a duplicated entry is never hidden.
 - **The list is never loosened.** A new leak is fixed, not listed: move the shared piece to a layer both sides may
   import (usually `components`, `hooks` or `models`), or pass it in from the page. A rule whose leaks are all gone
   keeps its rule with no entries.
