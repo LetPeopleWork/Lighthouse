@@ -1,5 +1,5 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
 	"plugins": [
 		"./biome-plugins/iterator-callbacks.grit",
 		"./biome-plugins/mui-select-needs-label-id.grit",
@@ -11,7 +11,7 @@
 	],
 	"linter": {
 		"rules": {
-			"recommended": true,
+			"preset": "recommended",
 			"a11y": {
 				"noAccessKey": "error",
 				"noAriaHiddenOnFocusable": "error",
@@ -73,7 +73,9 @@
 				},
 				"useOptionalChain": "error",
 				"useRegexLiterals": "error",
-				"useWhile": "error"
+				"useWhile": "error",
+				"useArraySome": "error",
+				"useMathMinMax": "error"
 			},
 			"correctness": {
 				"noChildrenProp": "error",
@@ -100,14 +102,10 @@
 				"noBaseToString": "error",
 				"noExtendNative": "error",
 				"noFloatingPromises": "error",
-				"noIdenticalTestTitle": "error",
 				"noMisusedPromises": "error",
 				"noNegationInEqualityCheck": "error",
-				"noReactStringRefs": "error",
 				"noSelfImport": "error",
-				"useArraySome": "error",
 				"useIncludes": "error",
-				"useMathMinMax": "error",
 				"useModernMathApis": "error",
 				"usePromiseRejectErrors": "error",
 				"useRegexpExec": "error",
@@ -186,7 +184,9 @@
 				"useAwait": "error",
 				"useErrorMessage": "error",
 				"useGetterReturn": "error",
-				"useNamespaceKeyword": "error"
+				"useNamespaceKeyword": "error",
+				"noIdenticalTestTitle": "error",
+				"noReactStringRefs": "error"
 			}
 		}
 	},
@@ -203,6 +203,16 @@
 				"./biome-plugins/no-iso-string-day-key.grit",
 				"./biome-plugins/no-date-from-day-string.grit"
 			]
+		},
+		{
+			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/tests/**"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noComponentHookFactories": "off"
+					}
+				}
+			}
 		}
 	]
 }

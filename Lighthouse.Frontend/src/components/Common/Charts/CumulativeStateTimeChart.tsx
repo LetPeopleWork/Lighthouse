@@ -12,7 +12,7 @@ import {
 	useItemTooltip,
 } from "@mui/x-charts/ChartsTooltip";
 import type React from "react";
-import { type ReactNode, useMemo } from "react";
+import { createContext, type ReactNode, useContext, useMemo } from "react";
 import { useTypesVisibility } from "../../../hooks/useChartVisibility";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type {
@@ -36,6 +36,8 @@ const COMPLETED_CLASS = "Completed";
 const ONGOING_CLASS = "Ongoing";
 const COMPLETION_CLASSES = [COMPLETED_CLASS, ONGOING_CLASS];
 const NO_COMPLETION_CLASSES: string[] = [];
+const NO_WAIT_STATES: string[] = [];
+const NO_STATE_MAPPINGS: IStateMapping[] = [];
 
 interface CumulativeStateTimeChartProps {
 	data: ICumulativeStateTimeResponse;
@@ -167,32 +169,34 @@ export const CumulativeStateBarTooltip: React.FC<{
 	</Box>
 );
 
-const createBarTooltipSlot = (
-	states: ICumulativeStateTimeStateRow[],
-	unit: DurationUnit,
-	solidColorFor: (state: string) => string,
-): React.FC => {
-	const BarTooltipSlot: React.FC = () => {
-		const tooltipData = useItemTooltip();
-		const dataIndex = tooltipData?.identifier?.dataIndex;
-		if (dataIndex === undefined) {
-			return null;
-		}
-		const row = states[dataIndex];
-		if (!row) {
-			return null;
-		}
-		return (
-			<ChartsTooltipContainer trigger="item">
-				<CumulativeStateBarTooltip
-					row={row}
-					color={solidColorFor(row.state)}
-					unit={unit}
-				/>
-			</ChartsTooltipContainer>
-		);
-	};
-	return BarTooltipSlot;
+interface BarTooltipData {
+	states: ICumulativeStateTimeStateRow[];
+	unit: DurationUnit;
+	solidColorFor: (state: string) => string;
+}
+
+const BarTooltipContext = createContext<BarTooltipData | null>(null);
+
+const BarTooltipSlot: React.FC = () => {
+	const tooltipData = useItemTooltip();
+	const barTooltip = useContext(BarTooltipContext);
+	const dataIndex = tooltipData?.identifier?.dataIndex;
+	if (dataIndex === undefined || !barTooltip) {
+		return null;
+	}
+	const row = barTooltip.states[dataIndex];
+	if (!row) {
+		return null;
+	}
+	return (
+		<ChartsTooltipContainer trigger="item">
+			<CumulativeStateBarTooltip
+				row={row}
+				color={barTooltip.solidColorFor(row.state)}
+				unit={barTooltip.unit}
+			/>
+		</ChartsTooltipContainer>
+	);
 };
 
 const TooltipMark: React.FC<{ color: string }> = ({ color }) => (
@@ -281,8 +285,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	pickerSlot,
 	scopeSlot,
 	completionFilterEnabled = false,
-	waitStates = [],
-	stateMappings = [],
+	waitStates = NO_WAIT_STATES,
+	stateMappings = NO_STATE_MAPPINGS,
 }) => {
 	const theme = useTheme();
 
@@ -293,6 +297,33 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 	);
 	const { visibleTypes, toggleTypeVisibility } =
 		useTypesVisibility(completionClasses);
+
+	const orderedStates = useMemo(
+		() => orderByWorkflow(data.states),
+		[data.states],
+	);
+	const waitRawStates = useMemo(
+		() =>
+			new Set(
+				resolveWaitRawStates(waitStates, stateMappings).map((state) =>
+					state.toLowerCase(),
+				),
+			),
+		[waitStates, stateMappings],
+	);
+	const maxTotalDays = Math.max(...orderedStates.map((row) => row.totalDays));
+	const unit = chooseDurationUnit(maxTotalDays);
+	const barTooltip = useMemo<BarTooltipData>(
+		() => ({
+			states: orderedStates,
+			unit,
+			solidColorFor: (state) =>
+				waitRawStates.has(state.toLowerCase())
+					? theme.palette.error.main
+					: theme.palette.primary.main,
+		}),
+		[orderedStates, unit, waitRawStates, theme],
+	);
 
 	if (data.states.length === 0) {
 		return (
@@ -311,9 +342,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 		);
 	}
 
-	const orderedStates = orderByWorkflow(data.states);
-	const maxTotalDays = Math.max(...orderedStates.map((row) => row.totalDays));
-
 	if (maxTotalDays <= 0) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2, height: "100%" }}>
@@ -330,16 +358,10 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 		);
 	}
 
-	const unit = chooseDurationUnit(maxTotalDays);
 	const unitLabel = formatDuration(maxTotalDays, unit).split(" ")[1];
 
 	const stateLabels = orderedStates.map((row) => row.state);
 
-	const waitRawStates = new Set(
-		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
-			state.toLowerCase(),
-		),
-	);
 	const isWaitState = (state: string): boolean =>
 		waitRawStates.has(state.toLowerCase());
 	const hasWaitBars = orderedStates.some((row) => isWaitState(row.state));
@@ -362,15 +384,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 
 	const valueFormatter = (value: number | null): string =>
 		value === null ? "" : formatDuration(value, unit);
-
-	const solidColorFor = (state: string): string =>
-		isWaitState(state) ? theme.palette.error.main : theme.palette.primary.main;
-
-	const BarTooltipSlot = createBarTooltipSlot(
-		orderedStates,
-		unit,
-		solidColorFor,
-	);
 
 	const allSeries = [
 		{
@@ -482,66 +495,72 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 				</Stack>
 
 				<Box sx={{ flex: 1, minHeight: 0 }}>
-					<BarChart
-						style={{ height: "100%", width: "100%" }}
-						hideLegend
-						slots={{ tooltip: BarTooltipSlot }}
-						onItemClick={(_event, params) =>
-							handleBarClick(params?.dataIndex ?? -1)
-						}
-						xAxis={[
-							{
-								scaleType: "band",
-								data: stateLabels,
-								label: `Time per state (${unitLabel})`,
-								height: 64,
-								tickLabelInterval: () => true,
-								tickLabelStyle: {
-									angle: -25,
-									textAnchor: "end",
+					<BarTooltipContext.Provider value={barTooltip}>
+						<BarChart
+							style={{ height: "100%", width: "100%" }}
+							hideLegend
+							slots={{ tooltip: BarTooltipSlot }}
+							onItemClick={(_event, params) =>
+								handleBarClick(params?.dataIndex ?? -1)
+							}
+							xAxis={[
+								{
+									scaleType: "band",
+									data: stateLabels,
+									label: `Time per state (${unitLabel})`,
+									height: 64,
+									tickLabelInterval: () => true,
+									tickLabelStyle: {
+										angle: -25,
+										textAnchor: "end",
+									},
 								},
-							},
-						]}
-						yAxis={[{ valueFormatter, label: unitLabel }]}
-						series={series}
-					>
-						<defs>
-							<pattern
-								id={HATCH_PATTERN_ID}
-								patternUnits="userSpaceOnUse"
-								width={6}
-								height={6}
-								patternTransform="rotate(45)"
-							>
-								<rect width={6} height={6} fill={theme.palette.primary.light} />
-								<line
-									x1={0}
-									y1={0}
-									x2={0}
-									y2={6}
-									stroke={theme.palette.primary.dark}
-									strokeWidth={2}
-								/>
-							</pattern>
-							<pattern
-								id={WAIT_HATCH_PATTERN_ID}
-								patternUnits="userSpaceOnUse"
-								width={6}
-								height={6}
-								patternTransform="rotate(45)"
-							>
-								<rect width={6} height={6} fill={theme.palette.error.light} />
-								<line
-									x1={0}
-									y1={0}
-									x2={0}
-									y2={6}
-									stroke={theme.palette.error.dark}
-									strokeWidth={2}
-								/>
-							</pattern>
-						</defs>
-					</BarChart>
+							]}
+							yAxis={[{ valueFormatter, label: unitLabel }]}
+							series={series}
+						>
+							<defs>
+								<pattern
+									id={HATCH_PATTERN_ID}
+									patternUnits="userSpaceOnUse"
+									width={6}
+									height={6}
+									patternTransform="rotate(45)"
+								>
+									<rect
+										width={6}
+										height={6}
+										fill={theme.palette.primary.light}
+									/>
+									<line
+										x1={0}
+										y1={0}
+										x2={0}
+										y2={6}
+										stroke={theme.palette.primary.dark}
+										strokeWidth={2}
+									/>
+								</pattern>
+								<pattern
+									id={WAIT_HATCH_PATTERN_ID}
+									patternUnits="userSpaceOnUse"
+									width={6}
+									height={6}
+									patternTransform="rotate(45)"
+								>
+									<rect width={6} height={6} fill={theme.palette.error.light} />
+									<line
+										x1={0}
+										y1={0}
+										x2={0}
+										y2={6}
+										stroke={theme.palette.error.dark}
+										strokeWidth={2}
+									/>
+								</pattern>
+							</defs>
+						</BarChart>
+					</BarTooltipContext.Provider>
 				</Box>
 
 				{orderedStates.map((row) => (

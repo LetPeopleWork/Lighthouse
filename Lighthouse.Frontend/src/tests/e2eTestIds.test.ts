@@ -95,6 +95,8 @@ describe.skipIf(!e2eAvailable)("E2E test ids", () => {
 			)
 			.map(({ text, whole }) => (whole ? text : `${text}…`));
 
-		expect([...new Set(missing)].sort()).toEqual([]);
+		expect([...new Set(missing)].sort((a, b) => a.localeCompare(b))).toEqual(
+			[],
+		);
 	});
 });

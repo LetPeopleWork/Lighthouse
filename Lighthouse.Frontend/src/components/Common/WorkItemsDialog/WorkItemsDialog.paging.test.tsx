@@ -37,7 +37,8 @@ const twoHundredFortyThreeClosed = () =>
 		}),
 	);
 
-const sorted = (references: string[]) => [...references].sort();
+const sorted = (references: string[]) =>
+	[...references].sort((a, b) => a.localeCompare(b));
 
 beforeEach(() => {
 	localStorage.clear();
