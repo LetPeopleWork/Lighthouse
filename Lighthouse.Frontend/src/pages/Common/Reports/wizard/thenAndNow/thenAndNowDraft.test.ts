@@ -4,6 +4,8 @@ import { theEngagementStartReport } from "../../../../../tests/ReportsTestKit";
 import {
 	defaultNameOf,
 	lengthOf,
+	newBackToBackDraft,
+	newReportForOwnersOf,
 	newThenAndNowDraft,
 	offeredMetricsOf,
 	resolvedThenDays,
@@ -132,5 +134,15 @@ describe("windowDaysOf", () => {
 		["2026-07-05", "not a day"],
 	])("names no days when %j or %j is not a day", (start, end) => {
 		expect(windowDaysOf(start, end)).toBeNull();
+	});
+});
+
+describe("newReportForOwnersOf", () => {
+	it("sends a Now length that was entered as its days", () => {
+		const draft = { ...newBackToBackDraft(), nowLength: "30" };
+
+		expect(
+			newReportForOwnersOf(draft, templates).thenAndNow.nowLengthDays,
+		).toBe(30);
 	});
 });

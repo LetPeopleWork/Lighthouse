@@ -1,5 +1,12 @@
-import { act, screen, waitFor, within } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { IReportCreationOutcome } from "../../models/Reports/ReportsAcrossOwners";
 import type { IReportService } from "../../services/Api/ReportService";
 import {
 	anOwnerToCreateOn,
@@ -24,6 +31,7 @@ import {
 	neverAnswered,
 	notCreated,
 	notCreatedBecause,
+	OCEAN_EXPLORER,
 	OPEN,
 	OPTIONS_COULD_NOT_LOAD,
 	OWNERS_AT_MOST_50,
@@ -31,6 +39,7 @@ import {
 	PREMIUM_LICENSE_TOOLTIP,
 	PULSAR,
 	pickOwner,
+	pressCreateReports,
 	QUARTER,
 	RETRY,
 	renderTheReportsPage,
@@ -632,5 +641,188 @@ describe("When Create reports can be pressed", () => {
 				await screen.findByRole("button", { name: CREATE_REPORTS }),
 			).toBeEnabled(),
 		);
+	});
+});
+
+describe("Moving through the wizard", () => {
+	const aWizardFor = (permissions = { adminOf: [ZENITH, GRAVITY, PULSAR] }) =>
+		renderTheReportsPage({
+			reportService: aReportServiceCreating(
+				vi.fn().mockResolvedValue([created(ZENITH, 1)]),
+			),
+			permissions,
+		});
+
+	it(`is titled Create reports and names its steps Type, Then, Now, Metrics & name and Owners`, async () => {
+		const { user } = aWizardFor();
+
+		await pressCreateReports(user);
+
+		const wizard = await screen.findByRole("dialog", { name: CREATE_REPORTS });
+		for (const label of ["Type", "Then", "Now", "Metrics & name", "Owners"]) {
+			expect(
+				within(wizard).getAllByText(label, { exact: true }).length,
+			).toBeGreaterThan(0);
+		}
+	});
+
+	it(`Back leads from Then to the Type step, which offers no Back of its own`, async () => {
+		const { user } = aWizardFor();
+		await pressCreateReports(user);
+		expect(await screen.findByText(THE_TYPE_STEP)).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Back" }),
+		).not.toBeInTheDocument();
+
+		await user.click(screen.getByRole("button", { name: "Next" }));
+		await screen.findByRole("button", { name: "90 days" });
+		await user.click(screen.getByRole("button", { name: "Back" }));
+
+		expect(await screen.findByText(THE_TYPE_STEP)).toBeInTheDocument();
+	});
+
+	it(`Next waits while Then's length is no number of days`, async () => {
+		const { user } = aWizardFor();
+		await pressCreateReports(user);
+		await user.click(await screen.findByRole("button", { name: "Next" }));
+
+		await user.clear(
+			await screen.findByRole("spinbutton", { name: "Then length in days" }),
+		);
+
+		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+	});
+
+	it(`the owner step offers Create, not Next, and nothing can be created before a Team is picked`, async () => {
+		const { user } = aWizardFor();
+
+		await toTheOwnerStep(user);
+
+		expect(
+			screen.queryByRole("button", { name: "Next" }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
+	});
+
+	it(`a Team picked a second time is no longer picked`, async () => {
+		const { user } = aWizardFor();
+		await toTheOwnerStep(user);
+
+		await pickOwner(user, ZENITH);
+		await pickOwner(user, GRAVITY);
+		await pickOwner(user, GRAVITY);
+
+		expect(
+			screen.getByRole("checkbox", { name: GRAVITY.name }),
+		).not.toBeChecked();
+		expect(screen.getByRole("button", { name: createCount(1) })).toBeEnabled();
+	});
+
+	it(`lists only the Teams the reader is Admin of`, async () => {
+		const { user } = aWizardFor({ adminOf: [ZENITH] });
+
+		await toTheOwnerStep(user);
+
+		expect(
+			screen.getByRole("checkbox", { name: ZENITH.name }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("checkbox", { name: GRAVITY.name }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("checkbox", { name: PULSAR.name }),
+		).not.toBeInTheDocument();
+	});
+
+	it(`Escape leaves the result open while the run is under way, and closes it once the run has answered`, async () => {
+		let answer: (outcomes: IReportCreationOutcome[]) => void = () => undefined;
+		const { user } = renderTheReportsPage({
+			reportService: aReportServiceCreating(
+				vi.fn(
+					() =>
+						new Promise<IReportCreationOutcome[]>((resolve) => {
+							answer = resolve;
+						}),
+				),
+			),
+		});
+		await toTheOwnerStep(user);
+		await pickOwner(user, ZENITH);
+		await user.click(screen.getByRole("button", { name: createCount(1) }));
+		await screen.findByText("Creating 1 report…", { exact: true });
+
+		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+		expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+		await act(async () => answer([created(ZENITH, 1)]));
+		await screen.findByRole("button", { name: DONE });
+		fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" });
+
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+	});
+
+	it(`one report created is counted in the singular, and its line names its Team`, async () => {
+		const { user } = aWizardFor();
+		await toTheOwnerStep(user);
+		await pickOwner(user, ZENITH);
+		await user.click(screen.getByRole("button", { name: createCount(1) }));
+
+		const result = await theResult();
+		expect(
+			await within(result).findByText(createdHeadline(1, 0), { exact: true }),
+		).toBeInTheDocument();
+		expect(
+			within(result).getByText(`Team ${ZENITH.name}`, { exact: true }),
+		).toBeInTheDocument();
+	});
+
+	it(`an owner the answer leaves unnamed is spoken of as this Team`, async () => {
+		const unnamed = {
+			...notCreated(ZENITH, "owner-not-found"),
+			ownerName: undefined,
+		};
+		const { user } = renderTheReportsPage({
+			reportService: aReportServiceCreating(
+				vi.fn().mockResolvedValue([unnamed]),
+			),
+		});
+		await toTheOwnerStep(user);
+		await pickOwner(user, ZENITH);
+		await user.click(screen.getByRole("button", { name: createCount(1) }));
+
+		const result = await theResult();
+		expect(
+			await within(result).findByText("Team", { exact: true }),
+		).toBeInTheDocument();
+		expect(
+			within(result).getByText("Not created: this Team no longer exists.", {
+				exact: true,
+			}),
+		).toBeInTheDocument();
+	});
+});
+
+describe("Who may press Create reports", () => {
+	it(`an Admin of one Portfolio alone on Premium may press it`, async () => {
+		renderTheReportsPage({ permissions: { adminOf: [OCEAN_EXPLORER] } });
+
+		await waitFor(async () =>
+			expect(
+				await screen.findByRole("button", { name: CREATE_REPORTS }),
+			).toBeEnabled(),
+		);
+	});
+
+	it(`for an Admin on Premium it carries no tooltip`, async () => {
+		const { user } = renderTheReportsPage();
+		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
+		await waitFor(() => expect(button).toBeEnabled());
+
+		await user.hover(button.parentElement ?? button);
+		await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
+
+		expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
 	});
 });

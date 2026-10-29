@@ -301,6 +301,41 @@ describe("ReportService", () => {
 		});
 	});
 
+	const creationOptionsOffering = (metricKeysByOwnerKind: unknown) => ({
+		data: {
+			today: "2026-10-27",
+			minimumLengthDays: 14,
+			templates: [{ templateKey: "then-and-now", metricKeysByOwnerKind }],
+			owners: [],
+		},
+	});
+
+	it.each([
+		[
+			"Portfolios",
+			{ Team: ["cycle-time"] },
+			{ team: ["cycle-time"], portfolio: [] },
+		],
+		["Teams", { Portfolio: ["wip"] }, { team: [], portfolio: ["wip"] }],
+	])(
+		"offers no metric to %s when the server names none for them",
+		async (_, offered, expected) => {
+			mockedAxios.get.mockResolvedValueOnce(creationOptionsOffering(offered));
+
+			const options = await subject.getCreationOptions();
+
+			expect(options.templates[0].metricKeysByOwnerKind).toEqual(expected);
+		},
+	);
+
+	it("refuses what creating a report needs when a metric is not named", async () => {
+		mockedAxios.get.mockResolvedValueOnce(
+			creationOptionsOffering({ Team: [5], Portfolio: [] }),
+		);
+
+		await expect(subject.getCreationOptions()).rejects.toBeInstanceOf(ApiError);
+	});
+
 	it("creates one report for several owners in one request and answers each owner's outcome in order", async () => {
 		const report: INewReport = {
 			templateKey: "then-and-now",

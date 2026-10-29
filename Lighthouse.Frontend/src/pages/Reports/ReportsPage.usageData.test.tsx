@@ -12,6 +12,7 @@ import {
 	GRAVITY,
 	notCreated,
 	notRemoved,
+	PULSAR,
 	pendingEpic6350,
 	pickOwner,
 	QUARTER,
@@ -127,6 +128,45 @@ describe("What the Reports page tells the usage data", () => {
 		);
 		expect(theEventsNamed("ReportBulkCreationStarted")).toEqual([
 			[{ name: "ReportBulkCreationStarted" }],
+		]);
+	});
+
+	it(`two reports created and one not are told as two created reports`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions: vi
+					.fn()
+					.mockResolvedValue(
+						creationOptionsFor(
+							anOwnerToCreateOn(ZENITH),
+							anOwnerToCreateOn(GRAVITY),
+							anOwnerToCreateOn(PULSAR),
+						),
+					),
+				createReportsInBulk: vi
+					.fn()
+					.mockResolvedValue([
+						created(GRAVITY, 1),
+						notCreated(PULSAR, "not-admin"),
+						created(ZENITH, 2),
+					]),
+			}),
+			permissions: { adminOf: [ZENITH, GRAVITY, PULSAR] },
+		});
+
+		await toTheOwnerStep(user);
+		await pickOwner(user, ZENITH);
+		await pickOwner(user, GRAVITY);
+		await pickOwner(user, PULSAR);
+		await user.click(screen.getByRole("button", { name: createCount(3) }));
+
+		await waitFor(() =>
+			expect(theEventsNamed("ReportCreated")).toHaveLength(2),
+		);
+		expect(theEventsNamed("ReportCreated")).toEqual([
+			[{ name: "ReportCreated", reportTemplate: "ThenAndNow" }],
+			[{ name: "ReportCreated", reportTemplate: "ThenAndNow" }],
 		]);
 	});
 

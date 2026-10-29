@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../../services/Api/ApiError";
 import {
+	notCreatedLineFor,
 	type RefusalWords,
 	type ReportRefusalCode,
 	refusalCopyFor,
@@ -94,5 +95,16 @@ describe("refusalCopyFor", () => {
 		["a refusal naming a reason this version does not know", refusal("x")],
 	])("asks to try again after %s", (_, error) => {
 		expect(refusalCopyFor(error, words)).toBe(COULD_NOT_CREATE);
+	});
+});
+
+describe("notCreatedLineFor", () => {
+	it.each([
+		["no reason", undefined],
+		["a reason this version does not know", "x"],
+	])("asks to try again for an owner refused with %s", (_, code) => {
+		expect(notCreatedLineFor(code, { ...words, ownerName: "Zenith" })).toBe(
+			`Not created: ${COULD_NOT_CREATE}`,
+		);
 	});
 });
