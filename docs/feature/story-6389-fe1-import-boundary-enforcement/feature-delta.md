@@ -330,6 +330,15 @@ Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (
 | 15 | refuses a model reaching into a page, naming both ends | FE1-2 | @error @real-io |
 | 16 | refuses a utility reaching into a service, naming both ends | FE1-2 | @error @real-io |
 | 17 | a boundary check that cannot run (missing config) fails the test, quoting what it printed, instead of reporting no leaks | FE1-1 | @error @real-io |
+| 18 | a component reaching into a page is refused as a new leak even in a file nothing imports | FE1-1 (added at review) | @error @real-io |
+| 19 | a component reaching into a page is refused as a new leak when the page is imported lazily | FE1-1 (added at review) | @error @real-io |
+
+#18 and #19 were added in the FE1-1 review revision (a158f5be5). The review asked whether Fallow drops a file that no
+entry reaches, or a dynamic `import()`; a probe with Fallow 3.36.0 showed it reports both, so they are pinned against a
+later Fallow release that stops doing so (Renovate automerges on green). The same revision gave the child process a
+60 s timeout and its fixture root as working directory, and made the test throw when the exit status and the reported
+violations disagree. The stray `.stryker-tmp` copy was checked by hand in 01-02; the command and output are in that
+commit's body (10e1ba8aa).
 
 Slice split by list: FE1-1 enables #1 against the 12 `components → pages` entries; FE1-2 enables #2 against all 21 (the other 9: hooks 5, services 2, models 1, utils 1). The inline `ALLOWED_LEAKS` holds all 21 from the start; `.fallowrc.json` decides which rules exist, so in FE1-1 the comparison covers the `src/components/` entries only.
 
@@ -375,3 +384,13 @@ N/A, because nothing a user sees changes; FE1 adds a build check.
 Reconciliation found one contradiction at review, resolved in commit f4027b594. An earlier version of this section said "0 contradictions"; that was wrong. The FE1-1 slice row said the list holds "12 entries", while the test holds all 21. DESIGN now says: the list holds all 21 entries from DISTILL on; in FE1-1 (only the components rule configured) the test compares the `src/components/` entries both ways; FE1-2 switches to the whole list. The scenarios follow that (#1 then #2).
 
 D6 was also brought in line with the test: `spawnSync`, `createRequire`, the exit codes 0, 1 and 2, and a local two-field type for the JSON. DISCUSS is the Epic's; DESIGN and DEVOPS otherwise agree: Fallow, `pnpm test`, no production change, mutation N/A. No contradiction is open.
+
+## Wave: DELIVER / [REF] Test-run timing (acceptance criterion 4)
+
+Measured by the orchestrator. A parallel mutation run in another checkout loaded the machine throughout, so the runs
+alternate: the suite without the enforcement test (as it was before this Story, when the file ran nothing) and the full
+suite, three of each, so the load falls on both sides alike.
+
+| After | Without the check (3 runs) | Median without | Median with | Verdict |
+|---|---|---|---|---|
+| FE1-1 | 253.1, 263.9, 254.3 s | 254.3 s | 251.5 s (261.8, 251.5, 250.8) | not slower; the file itself takes about 2.3 s in its own worker |
