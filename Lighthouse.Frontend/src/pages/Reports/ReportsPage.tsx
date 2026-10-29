@@ -11,6 +11,7 @@ import { useState } from "react";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
+import { useRbac } from "../../hooks/useRbac";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import ReportList, {
@@ -30,6 +31,19 @@ const COULD_NOT_LOAD = "The reports couldn't be loaded.";
 const EMPTY =
 	"Reports are created on a Team's or Portfolio's Reports tab, or here with Create reports.";
 const LIST_MIN_HEIGHT = 120;
+const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
+
+/** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
+const useIsAdminOfAny = (): { isAdminOfAny: boolean; isLoading: boolean } => {
+	const { isLoading, isRbacEnabled, isSystemAdmin, summary } = useRbac();
+	const administersSome =
+		(summary.adminTeamIds?.length ?? 0) > 0 ||
+		(summary.adminPortfolioIds?.length ?? 0) > 0;
+	return {
+		isAdminOfAny: !isRbacEnabled || isSystemAdmin || administersSome,
+		isLoading,
+	};
+};
 
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
 const useBulkCreation = () => {
@@ -38,6 +52,8 @@ const useBulkCreation = () => {
 	const options = useReportCreationOptions(opening);
 	const { licenseStatus, status } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
+	const admin = useIsAdminOfAny();
+	const lacksAdmin = !admin.isLoading && !admin.isAdminOfAny;
 	const open = () => {
 		setRetrying(false);
 		setOpening((opening ?? 0) + 1);
@@ -58,7 +74,7 @@ const useBulkCreation = () => {
 	const button = (
 		<LicenseTooltip
 			canUseFeature={isPremium}
-			defaultTooltip=""
+			defaultTooltip={lacksAdmin ? NOT_ADMIN_OF_ANY : ""}
 			checkStatus={licenseStatus ? "ready" : status}
 		>
 			<span>
@@ -67,7 +83,9 @@ const useBulkCreation = () => {
 					startIcon={
 						waitingBeforeWizard ? <CircularProgress size={20} /> : <AddIcon />
 					}
-					disabled={!isPremium || options.isFetching}
+					disabled={
+						!isPremium || admin.isLoading || lacksAdmin || options.isFetching
+					}
 					onClick={open}
 				>
 					Create reports

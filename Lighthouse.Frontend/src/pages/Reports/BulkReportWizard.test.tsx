@@ -561,7 +561,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:pure-function
-	it.skip(`for someone who is Admin of no Team or Portfolio it is disabled and says why (${pending})`, async () => {
+	it(`for someone who is Admin of no Team or Portfolio it is disabled and says why (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ permissions: { adminOf: [] } });
 
 		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
@@ -573,7 +573,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @edge @contract-shape:pure-function
-	it.skip(`while permissions are on their way it is disabled (${pending})`, async () => {
+	it(`while permissions are on their way it is disabled (${pending})`, async () => {
 		renderTheReportsPage({ permissions: "loading" });
 
 		expect(
@@ -582,7 +582,7 @@ describe("When Create reports can be pressed", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:pure-function
-	it.skip(`when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong (${pending})`, async () => {
+	it(`when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong (${pending})`, async () => {
 		renderTheReportsPage({ permissions: "failing" });
 
 		await waitFor(async () =>
