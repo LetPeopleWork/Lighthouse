@@ -24,12 +24,24 @@ Read these in the Epic's `feature-delta.md`; they are not copied here.
 
 ## Wave: PICK-UP / [REF] DoR re-run (2026-10-29)
 
+Items 1–8 are the nWave Definition of Ready; item 9 (outcome KPIs) is this project's addition. Result: 8/8, plus item 9.
+
+The Story's acceptance criteria, restated in Given/When/Then with the trigger DESIGN chose (the brief's AC 1 said
+`pnpm build`, its AC 2 had no When, and its AC 3 was a quality bar):
+
+1. Given a production file in `components/` imports from `pages/` and is not on the list, when `pnpm test` runs, then
+   it fails naming the importing file and the imported one (and likewise for the other four rules).
+2. Given a listed file pair no longer leaks, when `pnpm test` runs, then it fails naming the stale entry until the
+   entry is deleted.
+3. Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings
+   and the test run is not slower beyond noise.
+
 | DoR item | Status | Evidence for FE1 |
 |---|---|---|
 | 1 Problem statement, domain language | PASS | 16 production files leak across layers today, and nothing stops a 17th. |
 | 2 Persona with specifics | PASS | `lighthouse-maintainer` and the CI build. |
 | 3 ≥ 3 domain examples, real data | PASS | Re-counted list below, e.g. `ModifyTeamSettings` → `pages/Teams/Edit/ForecastSettingsComponent`, `useMetricsData` → `pages/Common/MetricsView/widgetStatus`, `deliveryArchivedRefusal` → `services/Api/ApiError`. |
-| 4 UAT Given/When/Then | PASS | The brief's first two AC are Given/When/Then; the third is a quality bar, restated here as: *Given the check is in place, when `pnpm test` and `pnpm build` run, then Biome reports zero errors and warnings and the test run is not slower beyond noise.* DISTILL writes the scenarios (12+). |
+| 4 UAT Given/When/Then (3–7) | PASS | Three acceptance criteria, each in Given/When/Then, restated above. The executable scenarios DISTILL derives from them are tests, not UAT, and are counted there. |
 | 5 AC derived from UAT | PASS | AC map to the Elevator Pitch "After". |
 | 6 Right-sized | PASS by waiver (D-6264-4) | S–M sizing; carpaccio into ≤ 1-day slices is deferred to this Story's DESIGN. |
 | 7 Technical notes + cross-cutting | PASS | Brief's Notes for DESIGN (docs-symlink hazard, pnpm minimum release age, Fallow trial questions); cross-cutting answered below. |
@@ -40,12 +52,12 @@ Read these in the Epic's `feature-delta.md`; they are not copied here.
 
 Counted by hand, resolving relative imports in production `.ts`/`.tsx` files (tests excluded) under each layer.
 Fallow, Biome and dependency-cruiser each reproduced the same 21 imports in 16 files at DESIGN (2026-10-29). This
-supersedes the Epic FE1 AC's and the brief's "16 violations (components→pages 7, hooks 5)", which counted files and
-miscounted hooks; the Epic's KPI 8 row says so.
+supersedes the 16-violation baseline in the Epic FE1 AC and in the brief (components→pages 7, hooks→pages/components 5),
+which counted files and miscounted hooks; the Epic's KPI 8 row says so.
 
 | Measure | Brief (2026-10-22) | Today |
 |---|---|---|
-| Leaking files, total (KPI 8) | 16 | **16** files, 21 import edges |
+| KPI 8, the list length (file pairs) | 16 (counted as files) | **21** file pairs, in 16 files |
 | components → pages | 7 | **8**: new `FeatureListDataGrid` → `pages/Common/MetricsView/WidgetShell` |
 | hooks → pages/components | 5 | **4**: the brief names four hooks (`useMetricsData`, `useCreateWizard`, `useRuleRowDraft`, `useUsageDataConsent`); its 5 was a miscount |
 | services → hooks | 2 | 2 |
@@ -82,7 +94,7 @@ Continuous-improvement rules:
 - [ ] Moves separate from edits (N/A unless DESIGN decides to move code; FE1's OUT says fixing the 16 belongs to FE2/FE3/FE5).
 - [ ] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
 - [ ] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
-- [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (tool choice: new ADR or ADR-268 amendment, decided at DESIGN).
+- [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (DESIGN chose a new ADR, ADR-269, plus a status note on ADR-268).
 - [ ] Payoff claim: build time within noise, measured before and after (`pnpm build`, and the new step on its own).
 - [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
 

@@ -421,8 +421,8 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
 - infrastructure_rationale: no layer-boundary rule exists (Biome is configured in `biome.json` but has no import-graph rule; no ESLint, verified 2026-10-22), so layer leaks compile silently. The baseline makes them visible and stops new ones.
 - Elevator Pitch. **Before**: `components/Common/ModifyTeamSettings` importing `pages/Teams/Edit/ForecastSettingsComponent` compiles fine. **After**: `pnpm build` (Biome `noRestrictedImports` in `prebuild`) or a dependency-cruiser step fails with "components → pages: ModifyTeamSettings.tsx imports pages/Teams/…", unless the file is on the allow-list. Removing a leak forces the list to shrink. **Decision enabled**: FE2 can move features into folders inside an enforced boundary.
 - AC:
-  - [ ] Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow (a short read-only trial first; see the Story brief). It runs in `pnpm build` or `pnpm test` so CI enforces it.
-  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1. *Re-counted 2026-10-29: 21 imports in 16 files (components→pages 12 in 8, hooks 5 in 4, services→hooks 2, models→pages 1, utils→services 1); the list holds imports. See the Story 6389 workspace.*
+  - [ ] Tool chosen at DESIGN: Biome `noRestrictedImports` in the existing `biome.json`, dependency-cruiser, or Fallow (a short read-only trial first; see the Story brief). It runs in `pnpm build` or `pnpm test` so CI enforces it. *Settled at Story 6389 DESIGN: Fallow, checked by an enforcement test in the Vitest suite (`pnpm test`), not Biome or dependency-cruiser in `prebuild` (ADR-269). The Story's pick-up restates these AC in Given/When/Then.*
+  - [ ] Allow-list baseline of **16** violations (survey 2026-10-22, re-counted by the tool at DESIGN): components→pages 7, hooks→pages/components 5, services→hooks 2, models→pages 1, utils→services 1. *Re-counted 2026-10-29: 21 imports in 16 files (components→pages 12 in 8, hooks 5 in 4, services→hooks 2, models→pages 1, utils→services 1); the list holds file pairs (`from → to`). See the Story 6389 workspace.*
   - [ ] A new violation fails naming file and import. A fixed one fails until removed from the list.
   - [ ] Zero Biome errors and warnings stays true. The build is not slower beyond noise.
 
@@ -538,7 +538,7 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 | 5 | `API` types depending on `IRepository<>` / `I*Repository` | brief 5 → ≈20 → **23** (20 controllers + 3 API helpers, verified 2026-10-27) | **0** | S05a sibling-rule list length | S05c–e, S12* |
 | 6 | Production `S107` suppressions | brief 18 → **17** (8 API + 9 others; StubOAuthProvider is S1075) | **0** | `grep -rln "disable S107" --include=*.cs Lighthouse.Backend/Lighthouse.Backend` | S07*, S12* |
 | 7 | Connector `NotSupportedException` from members of implemented interfaces | brief 5 (CSV) → **20** (CSV 6, Linear 6, ServiceNow 8) | **0** | `grep -rn "throw new NotSupportedException" …/WorkTrackingConnectors/{Csv,Linear,ServiceNow}` | S06 |
-| 8 | Frontend import-boundary violations | **16** (survey) → **21 imports in 16 files** (Fallow, 2026-10-29; FE1 lists imports, not files) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
+| 8 | Frontend import-boundary violations | **16** (survey) → **21 file pairs in 16 files** (Fallow, 2026-10-29; FE1 lists importing-file → imported-file pairs, not files or import statements) | **0** | FE1 allow-list length | FE1, FE2, FE3 |
 | 9 | `useContext(ApiServiceContext)` production consumers | **75** files | **0** (per-module ports) | `grep -rln "useContext(ApiServiceContext)" src \| grep -v test \| wc -l` | FE4 |
 | 10 | Production files where "Project" means Portfolio | **≈21** (survey) | **0** (documented exceptions excluded) | grep per FE6 AC | FE6 |
 | 11 | Frontend production files > 1000 lines | ≥ 2 known (2034, 1201), exact count at FE5 DESIGN | **0** or each justified | `wc -l` sweep | FE5 |
@@ -643,7 +643,7 @@ Elevator-Pitch gate: all 39 Stories carry Before / After / Decision-enabled. "Af
 7. Open for S01: Platform/Persistence a module or composition-root infrastructure? `Domain/Application/Adapters` vs vertical slices? Frontend folder naming (`modules/` vs `features/`)?
 8. Open for S01/S02: order of S05/S06 vs S03 (before, during or after packaging each context). The default here is G2 before G3 where possible.
 9. Open for S09b: assembly per context. Deliberately deferred, may be "no".
-10. Open for FE1 DESIGN: Biome `noRestrictedImports` (no new dependency, but path-pattern expressiveness is limited) vs dependency-cruiser (expressive, but a new dev dependency, which must respect pnpm's minimum release age).
+10. Open for FE1 DESIGN: Biome `noRestrictedImports` (no new dependency, but path-pattern expressiveness is limited) vs dependency-cruiser (expressive, but a new dev dependency, which must respect pnpm's minimum release age). *Resolved at Story 6389 DESIGN: Fallow (ADR-269); dependency-cruiser does not support TypeScript 7.*
 11. `Feature.projects` wire rename needs a versioned-API decision with Lighthouse-Clients. Flagged, not owned here.
 
 ## Wave: DISCUSS / [REF] ADO Stories
