@@ -5,6 +5,7 @@ import {
 	ownerKind,
 	ReportListItemSchema,
 	type ReportMetricKey,
+	type ReportOwnerKind,
 	type ReportTemplateKey,
 } from "./Report";
 
@@ -24,7 +25,7 @@ export const ReportsAcrossOwnersSchema: z.ZodType<IReportsAcrossOwners> =
 
 /** An owner the caller is Admin of and so may create a report on; `earliestStart` is null when it keeps every finished item. */
 export interface IReportCreationOwner {
-	ownerKind: "team" | "portfolio";
+	ownerKind: ReportOwnerKind;
 	ownerId: number;
 	ownerName: string;
 	earliestStart: string | null;
@@ -36,7 +37,7 @@ export interface IReportCreationOptions {
 	minimumLengthDays: number;
 	templates: {
 		templateKey: ReportTemplateKey;
-		metricKeysByOwnerKind: Record<"team" | "portfolio", ReportMetricKey[]>;
+		metricKeysByOwnerKind: Record<ReportOwnerKind, ReportMetricKey[]>;
 	}[];
 	owners: IReportCreationOwner[];
 }
@@ -45,11 +46,11 @@ export interface IReportCreationOptions {
 export const MOST_PER_BULK_RUN = 50;
 
 export interface INewReportsForOwners extends INewReport {
-	owners: { ownerKind: "team" | "portfolio"; ownerId: number }[];
+	owners: { ownerKind: ReportOwnerKind; ownerId: number }[];
 }
 
 export interface IReportCreationOutcome {
-	ownerKind: "team" | "portfolio";
+	ownerKind: ReportOwnerKind;
 	ownerId: number;
 	ownerName?: string;
 	status: "created" | "notCreated";

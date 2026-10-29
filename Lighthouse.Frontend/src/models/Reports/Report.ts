@@ -1,8 +1,10 @@
 import { z } from "zod";
 
+export type ReportOwnerKind = "team" | "portfolio";
+
 /** Whose report it is. A report belongs to exactly one Team or one Portfolio and is deleted with it. */
 export interface IReportOwner {
-	readonly kind: "team" | "portfolio";
+	readonly kind: ReportOwnerKind;
 	readonly id: number;
 }
 
@@ -36,7 +38,7 @@ export interface IReportListItem {
 	id: number;
 	name: string;
 	templateKey: string;
-	ownerKind: "team" | "portfolio";
+	ownerKind: ReportOwnerKind;
 	ownerId: number;
 	createdOn: string;
 	/** Missing on a report of a type this version cannot read. */
@@ -107,7 +109,7 @@ export interface IReport {
 	id: number;
 	name: string;
 	templateKey: string;
-	ownerKind: "team" | "portfolio";
+	ownerKind: ReportOwnerKind;
 	ownerId: number;
 	createdOn: string;
 	concurrencyToken: string;
@@ -141,7 +143,7 @@ const day = z.string();
 /** The server names the owner kind by its capitalised enum name; the browser reads it lower-case, as its routes do. */
 export const ownerKind = z
 	.enum(["Team", "Portfolio", "team", "portfolio"])
-	.transform((kind) => kind.toLowerCase() as IReportOwner["kind"]);
+	.transform((kind) => kind.toLowerCase() as ReportOwnerKind);
 
 /** A later version may show a metric this one has no name for; it is passed on so the view can say it cannot show it. */
 const metricKey = z.custom<ReportMetricKey>((key) => typeof key === "string");

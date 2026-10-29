@@ -15,6 +15,7 @@ import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { ownerTermKeyOf, reportPathOf } from "../Common/Reports/reportOwner";
 import { notCreatedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
+import { ownerKeyOf } from "./OwnerStep";
 
 const NOT_CONFIRMED_CREATED =
 	"It could not be confirmed which reports were created.";
@@ -144,7 +145,7 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 				<List dense>
 					{run.outcomes.map((outcome) => (
 						<OutcomeLine
-							key={`${outcome.ownerKind}:${outcome.ownerId}`}
+							key={ownerKeyOf(outcome)}
 							outcome={outcome}
 							minimumLengthDays={minimumLengthDays}
 						/>

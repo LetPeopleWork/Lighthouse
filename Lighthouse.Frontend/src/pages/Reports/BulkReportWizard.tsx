@@ -80,6 +80,19 @@ const nextActionOf = (
 	};
 };
 
+const createActionOf = (
+	activeStep: number,
+	pickedCount: number,
+	onCreate: () => void,
+): WizardFrameAction | undefined =>
+	activeStep === OWNER_STEP
+		? {
+				label: createLabelOf(pickedCount),
+				onClick: onCreate,
+				disabled: pickedCount === 0 || isOverTheCeiling(pickedCount),
+			}
+		: undefined;
+
 interface StepContentProps {
 	activeStep: number;
 	templates: IReportTemplates;
@@ -210,17 +223,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 					next={nextActionOf(activeStep, draft, templates, () =>
 						setActiveStep(activeStep + 1),
 					)}
-					primaryAction={
-						activeStep === OWNER_STEP
-							? {
-									label: createLabelOf(pickedTeams.length),
-									onClick: create,
-									disabled:
-										pickedTeams.length === 0 ||
-										isOverTheCeiling(pickedTeams.length),
-								}
-							: undefined
-					}
+					primaryAction={createActionOf(activeStep, pickedTeams.length, create)}
 				>
 					<StepContent
 						activeStep={activeStep}

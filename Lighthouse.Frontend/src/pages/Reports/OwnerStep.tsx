@@ -16,8 +16,9 @@ import {
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 
-export const ownerKeyOf = (owner: IReportCreationOwner): string =>
-	`${owner.ownerKind}:${owner.ownerId}`;
+export const ownerKeyOf = (
+	owner: Pick<IReportCreationOwner, "ownerKind" | "ownerId">,
+): string => `${owner.ownerKind}:${owner.ownerId}`;
 
 export const isOverTheCeiling = (pickedCount: number): boolean =>
 	pickedCount > MOST_PER_BULK_RUN;
