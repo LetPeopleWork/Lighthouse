@@ -44,6 +44,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
           script: |
+            const { isGreenBase } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/green-base-run.mjs`);
             const workflow_id = 'ci.yml';
             const branch = 'main';
 
@@ -95,7 +96,7 @@ jobs:
                 break;
               }
               
-              // Find the last run where both verify stages succeeded
+              // Find the last run where every stack it verified ended green
               for (const run of runs.data.workflow_runs) {
                 // Skip the current run
                 if (run.id === context.runId) continue;
@@ -108,15 +109,7 @@ jobs:
                   per_page: 100
                 });
                 
-                // Check if both verify stages succeeded (even if the overall workflow is still in progress) and
-                // its Sonar gate did not fail, so a red gate stays in the next run's window and gets scanned again.
-                const sqliteVerify = jobs.data.jobs.find(j => j.name.includes('sqlite'));
-                const postgresVerify = jobs.data.jobs.find(j => j.name.includes('postgres'));
-                const sonarGate = jobs.data.jobs.find(j => j.name.includes('sonar-gates'));
-                const sonarGateHeld = !sonarGate || ['success', 'skipped'].includes(sonarGate.conclusion);
-              
-                
-                if (sqliteVerify?.conclusion === 'success' && postgresVerify?.conclusion === 'success' && sonarGateHeld) {
+                if (isGreenBase(jobs.data.jobs)) {
                   console.log(`Found last successful run: ${run.id} (status: ${run.status}) at commit ${run.head_sha}`);
                   foundCommit = run.head_sha;
                   break;
