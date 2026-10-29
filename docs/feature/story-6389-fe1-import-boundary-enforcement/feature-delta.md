@@ -101,23 +101,23 @@ utils->services    utils/deliveries/deliveryArchivedRefusal.ts                  
 
 Continuous-improvement rules:
 
-- [ ] Behaviour-free: no route, DTO, serialized response or pixel changes; existing tests green unmodified. FE1 adds a check and moves no code.
-- [ ] Ratchet in the same change: the boundary rule lands with its allow-list in the commit range that makes it pass. Inline file list, never a count; fails in both directions (ADR-268). Nothing loosened.
-- [ ] Moves separate from edits (N/A unless DESIGN decides to move code; FE1's OUT says fixing the 16 belongs to FE2/FE3/FE5).
-- [ ] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
-- [ ] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
-- [ ] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (DESIGN chose a new ADR, ADR-269, plus a status note on ADR-268).
-- [ ] Payoff claim (acceptance criterion 4): the median of three `pnpm test` runs is within the range of three runs taken before FE1-1, measured after FE1-1 and again after FE1-2.
-- [ ] No release notes (behaviour-free) unless the maintainer says otherwise.
+- [x] Behaviour-free: no route, DTO, serialized response or pixel changes; existing tests green unmodified. FE1 adds a check and moves no code.
+- [x] Ratchet in the same change: the boundary rule lands with its allow-list in the commit range that makes it pass. Inline file list, never a count; fails in both directions (ADR-268). Nothing loosened.
+- [x] Moves separate from edits (N/A unless DESIGN decides to move code; FE1's OUT says fixing the 16 belongs to FE2/FE3/FE5).
+- [x] Baselines re-counted (above) and re-checked by the chosen tool at DESIGN.
+- [x] Mutation last, on frozen code; touched area not lower. N/A, because FE1 adds no production code: the comparison helper lives in the test file on purpose (DEVOPS), and StrykerJS configs here mutate named production files only. Confirmed at the final gate.
+- [x] `ARCHITECTURE.md` §12 (frontend) updated in the same change; ADRs updated where a decision changes (DESIGN chose a new ADR, ADR-269, plus a status note on ADR-268).
+- [x] Payoff claim (acceptance criterion 4): the median of three `pnpm test` runs is within the range of three runs taken before FE1-1, measured after FE1-1 and again after FE1-2.
+- [x] No release notes (behaviour-free) unless the maintainer says otherwise.
 
 Epic per-Story checklist (How to pick up a Story):
 
-- [ ] Ratchet in the same PR; baselines are inline file lists; never loosened.
-- [ ] Behaviour-free; API, E2E and response tests green unmodified.
-- [ ] Mutation score in the touched area does not drop.
-- [ ] Moves separate from edits.
-- [ ] ARCHITECTURE.md updated in the same change (§12).
-- [ ] One context at a time (N/A, because FE1 sets layer rules, not module boundaries).
+- [x] Ratchet in the same PR; baselines are inline file lists; never loosened.
+- [x] Behaviour-free; API, E2E and response tests green unmodified.
+- [x] Mutation score in the touched area does not drop (N/A: no production code).
+- [x] Moves separate from edits (N/A: nothing moved).
+- [x] ARCHITECTURE.md updated in the same change (§12).
+- [x] One context at a time (N/A, because FE1 sets layer rules, not module boundaries).
 - [x] Terminology follows the seeded defaults: N/A, because FE1 adds no user-visible or documented product term; the test and config use folder names only.
 - [x] Cross-cutting re-check, answered 2026-10-29: RBAC N/A, because no endpoint, permission or `useRbac()` gating changes. Lighthouse-Clients N/A, because no route or payload changes. Website N/A, because nothing user-visible changes. Usage-data event provisionally N/A, because FE1 adds a build check, not a feature (DEVOPS confirms). UI sketch N/A, because no UI changes. Terminology N/A, because no user-visible or documented product term is added.
 
@@ -309,7 +309,7 @@ A clean Haiku review is not proof on its own: the orchestrator spot-checks the c
 
 ## Wave: DISTILL / [REF] Scenario list
 
-Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (TypeScript, Vitest). All 17 are `it.skip`; DELIVER unskips one at a time. Error/edge scenarios: 15 of 17 (everything except the two walking-skeleton stages #1 and #2).
+Executable spec: `Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts` (TypeScript, Vitest). DISTILL wrote 17, all `it.skip`; DELIVER unskipped them one step at a time, and the FE1-1 review added #18 and #19. All 19 now run, none skipped. Error/edge scenarios: 17 of 19 (everything except the two walking-skeleton stages #1 and #2).
 
 | # | Title | Slice | Tags |
 |---|---|---|---|
@@ -361,7 +361,7 @@ The maintainer runs `pnpm test` and learns exactly which layer leaks exist, with
 
 | Driven adapter | @real-io scenario | Covered by |
 |---|---|---|
-| Fallow CLI (`fallow architecture --boundaries`, spawned as a child process) | YES | #1 and #2 on the real tree; #3 to #6, #9 to #17 on throwaway project trees in the OS temp folder |
+| Fallow CLI (`fallow architecture --boundaries`, spawned as a child process) | YES | #1 and #2 on the real tree; #3 to #6, #9 to #19 on throwaway project trees in the OS temp folder |
 
 Fixtures are built on the fly with `mkdtemp` rather than committed under `src/`: no deliberate leaks sit in the repository, nothing needs to type-check or pass Biome, and the real check can never see them.
 
@@ -394,3 +394,20 @@ suite, three of each, so the load falls on both sides alike.
 | After | Without the check (3 runs) | Median without | Median with | Verdict |
 |---|---|---|---|---|
 | FE1-1 | 253.1, 263.9, 254.3 s | 254.3 s | 251.5 s (261.8, 251.5, 250.8) | not slower; the file itself takes about 2.3 s in its own worker |
+| FE1-2 | 251.0, 248.4, 249.5 s | 249.5 s | 245.8 s (250.0, 245.8, 242.2) | not slower |
+
+One run without the check had an unrelated failure (`usageDataEvents.test.ts`, "hands in what it noticed when the tab
+is put away", a `waitFor` that expired under the load); it passed in the other five runs.
+
+## Wave: DELIVER / [REF] Quality gates (2026-10-29)
+
+| Gate | Outcome |
+|---|---|
+| Steps | 01-01 522f69717, 01-02 10e1ba8aa, 01-03 8052abf8e, 02-01 0fba044d8; all four with complete DES traces |
+| Scenarios | 19 of 19 green (17 from DISTILL, #18 and #19 added at the FE1-1 review), none skipped |
+| FE1-1 wrap-up | refactor: nothing to change; review (haiku): one blocker, refuted by a Fallow probe, both cases pinned anyway (a158f5be5) |
+| Final refactor | a7605c73c: the ARCHITECTURE.md fix sentence holds for every rule; one stale comment |
+| Final review (haiku) | rules match the zone table exactly; the 21 pairs checked against their import lines; one stale DISTILL doc line, fixed. Three helper comments it called narrating were kept: they state the counted comparison and the fixture lifetime |
+| Mutation | N/A: FE1 adds no production code (the DEVOPS decision); there is no file to mutate |
+| Static checks | `pnpm build` 0 errors, 0 warnings; `pnpm test` 8615 passed, 0 failed |
+| Timing | not slower, after either slice (table above) |
