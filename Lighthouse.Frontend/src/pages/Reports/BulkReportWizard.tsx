@@ -1,4 +1,12 @@
-import { Dialog, DialogTitle } from "@mui/material";
+import {
+	Button,
+	CircularProgress,
+	Dialog,
+	DialogActions,
+	DialogContent,
+	DialogTitle,
+	Typography,
+} from "@mui/material";
 import type React from "react";
 import { useMemo, useState } from "react";
 import WizardStepperFrame, {
@@ -134,13 +142,13 @@ const runOf = (
 	return null;
 };
 
-interface BulkReportWizardProps {
+interface ReadyWizardProps {
 	options: IReportCreationOptions;
 	onClose: () => void;
 }
 
 /** One report, configured once, created for every Team picked; the single wizard's steps, then the owners. */
-const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
+const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	options,
 	onClose,
 }) => {
@@ -220,5 +228,60 @@ const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 		</Dialog>
 	);
 };
+
+const OPTIONS_COULD_NOT_LOAD = "What a report needs couldn't be loaded.";
+
+interface CouldNotLoadProps {
+	retrying: boolean;
+	onRetry: () => void;
+	onClose: () => void;
+}
+
+/** No step is shown without what a report needs: the reader may only leave or ask again. */
+const CouldNotLoad: React.FC<Readonly<CouldNotLoadProps>> = ({
+	retrying,
+	onRetry,
+	onClose,
+}) => (
+	<Dialog open onClose={onClose} aria-labelledby={TITLE_ID} maxWidth="sm">
+		<DialogTitle id={TITLE_ID}>What a report needs</DialogTitle>
+		<DialogContent>
+			<Typography color={retrying ? "text.disabled" : undefined}>
+				{OPTIONS_COULD_NOT_LOAD}
+			</Typography>
+		</DialogContent>
+		<DialogActions>
+			<Button onClick={onClose}>Cancel</Button>
+			<Button
+				variant="contained"
+				onClick={onRetry}
+				disabled={retrying}
+				startIcon={retrying ? <CircularProgress size={20} /> : undefined}
+			>
+				Retry
+			</Button>
+		</DialogActions>
+	</Dialog>
+);
+
+interface BulkReportWizardProps {
+	/** Undefined when it could not be loaded, or while Retry asks again. */
+	options: IReportCreationOptions | undefined;
+	retrying: boolean;
+	onRetry: () => void;
+	onClose: () => void;
+}
+
+const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
+	options,
+	retrying,
+	onRetry,
+	onClose,
+}) =>
+	options === undefined ? (
+		<CouldNotLoad retrying={retrying} onRetry={onRetry} onClose={onClose} />
+	) : (
+		<ReadyWizard options={options} onClose={onClose} />
+	);
 
 export default BulkReportWizard;

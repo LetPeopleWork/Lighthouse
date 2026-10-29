@@ -429,7 +429,7 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 
 describe("The wizard waits for what a report needs", () => {
 	// @us-02b @slice-02a @edge @contract-shape:unbounded-preservation
-	it.skip(`while it loads, Create reports spins and is disabled, and no wizard opens (${pending})`, async () => {
+	it(`while it loads, Create reports spins and is disabled, and no wizard opens`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
@@ -447,7 +447,7 @@ describe("The wizard waits for what a report needs", () => {
 	});
 
 	// @driving_port @us-02b @slice-02a @contract-shape:pure-function
-	it.skip(`once it has arrived the wizard opens at its first step, filled (${pending})`, async () => {
+	it(`once it has arrived the wizard opens at its first step, filled`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(vi.fn()),
 		});
@@ -464,7 +464,7 @@ describe("The wizard waits for what a report needs", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:unbounded-preservation
-	it.skip(`when it cannot be loaded the wizard says so, shows no step, and offers Cancel and Retry (${pending})`, async () => {
+	it(`when it cannot be loaded the wizard says so, shows no step, and offers Cancel and Retry`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
@@ -491,7 +491,7 @@ describe("The wizard waits for what a report needs", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:bounded-change
-	it.skip(`Retry asks again and opens the first step once it arrives (${pending})`, async () => {
+	it(`Retry asks again and opens the first step once it arrives`, async () => {
 		const getCreationOptions = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("the network dropped"))
@@ -519,7 +519,7 @@ describe("The wizard waits for what a report needs", () => {
 	});
 
 	// @us-02b @slice-02a @error @contract-shape:unbounded-preservation
-	it.skip(`Cancel closes it and creates nothing (${pending})`, async () => {
+	it(`Cancel closes it and creates nothing`, async () => {
 		const createReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({

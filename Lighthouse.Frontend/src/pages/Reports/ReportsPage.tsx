@@ -1,5 +1,11 @@
 import AddIcon from "@mui/icons-material/Add";
-import { Box, Button, Container, Typography } from "@mui/material";
+import {
+	Box,
+	Button,
+	CircularProgress,
+	Container,
+	Typography,
+} from "@mui/material";
 import type React from "react";
 import { useState } from "react";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
@@ -25,22 +31,46 @@ const LIST_MIN_HEIGHT = 120;
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
 const useBulkCreation = () => {
 	const [opening, setOpening] = useState<number | null>(null);
+	const [retrying, setRetrying] = useState(false);
 	const options = useReportCreationOptions(opening);
-	const close = () => setOpening(null);
+	const open = () => {
+		setRetrying(false);
+		setOpening((opening ?? 0) + 1);
+	};
+	const close = () => {
+		setRetrying(false);
+		setOpening(null);
+	};
+	const retry = () => {
+		setRetrying(true);
+		options.refetch();
+	};
+	// The first answer opens the wizard; once it has said it could not load, it stays open while Retry asks again.
+	const arrived = options.isSuccess && !options.isFetching;
+	const showWizard =
+		opening !== null && (arrived || options.isError || retrying);
+	const waitingBeforeWizard = options.isFetching && !showWizard;
 	const button = (
 		<Button
 			variant="contained"
-			startIcon={<AddIcon />}
+			startIcon={
+				waitingBeforeWizard ? <CircularProgress size={20} /> : <AddIcon />
+			}
 			disabled={options.isFetching}
-			onClick={() => setOpening((opening ?? 0) + 1)}
+			onClick={open}
 		>
 			Create reports
 		</Button>
 	);
-	const wizard =
-		opening !== null && options.isSuccess && !options.isFetching ? (
-			<BulkReportWizard key={opening} options={options.data} onClose={close} />
-		) : null;
+	const wizard = showWizard ? (
+		<BulkReportWizard
+			key={opening}
+			options={arrived ? options.data : undefined}
+			retrying={options.isFetching}
+			onRetry={retry}
+			onClose={close}
+		/>
+	) : null;
 	return { button, wizard };
 };
 
