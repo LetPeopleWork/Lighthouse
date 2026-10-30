@@ -109,7 +109,6 @@ beforeEach(() => {
 });
 
 describe("Third-party packages pages like every other list", () => {
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(
 		"shows the range and total of 243 packages with page arrows and no rows-per-page choice",
 		async () => {
@@ -123,7 +122,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @boundary @contract-shape:bounded-change
 	it(
 		"shows all of 38 packages with no footer",
 		async () => {
@@ -136,7 +134,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(
 		"shows all 9 packages a search from the second page leaves, with no footer",
 		async () => {
@@ -152,7 +149,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	// A reader cannot tell a search from a column filter, so a search opens the first page as a filter does.
 	it(
 		"opens the first page of what a search from the second page leaves, when that is still more than 100",
@@ -169,7 +165,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"opens the first page of what a search from the third page leaves, when that is two pages and the third is gone",
 		async () => {
@@ -186,7 +181,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"opens the first page of the whole list when the search is cleared from the second page of its results",
 		async () => {
@@ -204,7 +198,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"keeps the reader's sort and column filter when a search opens the first page",
 		async () => {
@@ -230,7 +223,6 @@ describe("Third-party packages pages like every other list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @regression @error @contract-shape:unbounded-preservation
 	it(
 		"says why the packages could not be loaded, with no list and no footer",
 		async () => {

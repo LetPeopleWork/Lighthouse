@@ -72,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             recordingHost.Dispose();
         }
 
-        // @probe @us-01
         [Test]
         [Explicit(RunByHand)]
         public async Task Creating_a_365_day_report_on_a_large_Team_stays_within_ten_seconds()

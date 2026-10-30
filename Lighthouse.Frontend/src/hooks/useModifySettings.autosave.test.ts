@@ -104,7 +104,7 @@ const twoTrackerConnections = () =>
 			makeConnection(2, "Borealis Tracker", "Jira"),
 		]);
 
-describe("@US-01 @in-memory auto-save general team settings", () => {
+describe("auto-save general team settings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -114,7 +114,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-01 persists a valid edit automatically after the team-admin stops typing", async () => {
+	it("persists a valid edit automatically after the team-admin stops typing", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -128,7 +128,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it("@US-01 reports calm progress: idle, then saving, then all-changes-saved", async () => {
+	it("reports calm progress: idle, then saving, then all-changes-saved", async () => {
 		const args = makeArgs({}, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
@@ -142,7 +142,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 	});
 
-	it("@US-01 @error holds back an invalid edit so the inline error is the only feedback", async () => {
+	it("holds back an invalid edit so the inline error is the only feedback", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -158,7 +158,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 	});
 
-	it("@US-01 @error keeps the edit and offers a retry when the save fails", async () => {
+	it("keeps the edit and offers a retry when the save fails", async () => {
 		const saveSettings = vi
 			.fn()
 			.mockRejectedValueOnce(new Error("server unavailable"))
@@ -180,7 +180,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
 	});
 
-	it("@US-01 @error never auto-saves for a viewer who lacks the right to save", async () => {
+	it("never auto-saves for a viewer who lacks the right to save", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -195,7 +195,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(result.current.saveState).toBe("idle");
 	});
 
-	it("@US-01 @error persists only the latest value when edits arrive in rapid succession", async () => {
+	it("persists only the latest value when edits arrive in rapid succession", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -214,7 +214,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		expect(lastSaved.dataRetrievalValue).toBe("60");
 	});
 
-	it("@US-01 @error holds the next save until the in-flight one resolves, then lands on saved", async () => {
+	it("holds the next save until the in-flight one resolves, then lands on saved", async () => {
 		let resolveFirst: (() => void) | undefined;
 		const saveSettings = vi
 			.fn()
@@ -249,7 +249,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 		await waitFor(() => expect(result.current.saveState).toBe("saved"));
 	});
 
-	it("@US-01 does not fire any save on the initial page load", async () => {
+	it("does not fire any save on the initial page load", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -264,7 +264,7 @@ describe("@US-01 @in-memory auto-save general team settings", () => {
 	});
 });
 
-describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
+describe("auto-save and auto-refresh state mappings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -274,7 +274,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-02 auto-saves a valid mapping change and refreshes the dependent metrics", async () => {
+	it("auto-saves a valid mapping change and refreshes the dependent metrics", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const refreshDependentData = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
@@ -295,7 +295,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings", () => {
 	});
 });
 
-describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity gate)", () => {
+describe("auto-save and auto-refresh state mappings (validity gate)", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -305,7 +305,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity 
 		vi.useRealTimers();
 	});
 
-	it("@US-02 @error fires no save when a mapping group name is left empty", async () => {
+	it("fires no save when a mapping group name is left empty", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const additionalFetch = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
@@ -331,7 +331,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (validity 
 	});
 });
 
-describe("@US-02 @in-memory auto-save and auto-refresh state mappings (reload fallback)", () => {
+describe("auto-save and auto-refresh state mappings (reload fallback)", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -341,7 +341,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (reload fa
 		vi.useRealTimers();
 	});
 
-	it("@US-02 @error offers a one-click reload when the automatic refresh fails", async () => {
+	it("offers a one-click reload when the automatic refresh fails", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const refreshDependentData = vi
 			.fn()
@@ -365,7 +365,7 @@ describe("@US-02 @in-memory auto-save and auto-refresh state mappings (reload fa
 	});
 });
 
-describe("@US-03 @in-memory auto-save forecast filter rules", () => {
+describe("auto-save forecast filter rules", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -375,7 +375,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-03 auto-saves a valid filter rule and never triggers an automatic throughput recompute", async () => {
+	it("auto-saves a valid filter rule and never triggers an automatic throughput recompute", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const recomputeThroughput = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
@@ -401,7 +401,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules", () => {
 	});
 });
 
-describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
+describe("auto-save forecast filter rules (pending)", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -411,7 +411,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-03 @error rejects an unknown filter field without clobbering the existing rule set", async () => {
+	it("rejects an unknown filter field without clobbering the existing rule set", async () => {
 		const persistedRuleSet =
 			'{"rules":[{"field":"Type","op":"equals","value":"Bug","exclude":true}]}';
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
@@ -444,7 +444,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 		expect(result.current.formValid).toBe(false);
 	});
 
-	it("@US-03 @error keeps the filter editor read-only with no auto-save for a viewer", async () => {
+	it("keeps the filter editor read-only with no auto-save for a viewer", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -464,7 +464,7 @@ describe("@US-03 @in-memory auto-save forecast filter rules (pending)", () => {
 	});
 });
 
-describe("@US-02 @in-memory list-handler interaction marks the form as edited", () => {
+describe("list-handler interaction marks the form as edited", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -474,7 +474,7 @@ describe("@US-02 @in-memory list-handler interaction marks the form as edited", 
 		vi.useRealTimers();
 	});
 
-	it("@US-02 auto-saves after a state is removed", async () => {
+	it("auto-saves after a state is removed", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -488,7 +488,7 @@ describe("@US-02 @in-memory list-handler interaction marks the form as edited", 
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it("@US-02 auto-saves after a state list is reordered", async () => {
+	it("auto-saves after a state list is reordered", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -503,7 +503,7 @@ describe("@US-02 @in-memory list-handler interaction marks the form as edited", 
 	});
 });
 
-describe("@US-01 @in-memory retry and in-flight progress", () => {
+describe("retry and in-flight progress", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -513,7 +513,7 @@ describe("@US-01 @in-memory retry and in-flight progress", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-01 retry does nothing before any save has happened", async () => {
+	it("retry does nothing before any save has happened", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -526,7 +526,7 @@ describe("@US-01 @in-memory retry and in-flight progress", () => {
 		expect(saveSettings).not.toHaveBeenCalled();
 	});
 
-	it("@US-01 reports a transient saving state while a save is in flight", async () => {
+	it("reports a transient saving state while a save is in flight", async () => {
 		let resolveSave: (() => void) | undefined;
 		const saveSettings = vi.fn().mockImplementation(
 			() =>
@@ -553,7 +553,7 @@ describe("@US-01 @in-memory retry and in-flight progress", () => {
 	});
 });
 
-describe("@US-04 @in-memory auto-save portfolio settings", () => {
+describe("auto-save portfolio settings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -563,7 +563,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		vi.useRealTimers();
 	});
 
-	it("@US-04 auto-saves a valid portfolio field the moment it is valid", async () => {
+	it("auto-saves a valid portfolio field the moment it is valid", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, teamAdminCanSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -577,7 +577,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it("@US-04 @error suppresses auto-save where portfolio data updates are not permitted", async () => {
+	it("suppresses auto-save where portfolio data updates are not permitted", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs({ saveSettings }, viewerCannotSave);
 		const { result } = renderHook(() => useModifySettings(args));
@@ -591,7 +591,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 		expect(saveSettings).not.toHaveBeenCalled();
 	});
 
-	it("@US-04 @error fires no save while the portfolio form is invalid", async () => {
+	it("fires no save while the portfolio form is invalid", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{
@@ -612,7 +612,7 @@ describe("@US-04 @in-memory auto-save portfolio settings", () => {
 	});
 });
 
-describe("@US-01 @in-memory switching the work tracking system connection", () => {
+describe("switching the work tracking system connection", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -622,7 +622,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		vi.useRealTimers();
 	});
 
-	it("@US-01 auto-saves the newly picked connection when the work tracking system is the only change", async () => {
+	it("auto-saves the newly picked connection when the work tracking system is the only change", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },
@@ -646,7 +646,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		expect(saved.workTrackingSystemConnectionId).toBe(2);
 	});
 
-	it("@US-01 @error stays silent on mount and after a conflict reload re-selects the connection", async () => {
+	it("stays silent on mount and after a conflict reload re-selects the connection", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },
@@ -672,7 +672,7 @@ describe("@US-01 @in-memory switching the work tracking system connection", () =
 		expect(result.current.selectedWorkTrackingSystem?.id).toBe(1);
 	});
 
-	it("@US-01 @error ignores an unknown system name instead of auto-saving a missing connection", async () => {
+	it("ignores an unknown system name instead of auto-saving a missing connection", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
 			{ saveSettings, getWorkTrackingSystems: twoTrackerConnections() },

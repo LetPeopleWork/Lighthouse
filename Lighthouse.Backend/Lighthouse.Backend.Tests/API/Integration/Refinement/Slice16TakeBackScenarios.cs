@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-16")]
     public partial class Slice16TakeBackTest : SizingVotesAcceptanceTest
     {
-        // @driving_port @real-io @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
         public async Task A_taken_back_vote_stops_counting_and_the_log_keeps_both()
         {
@@ -29,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenJonasNoLongerCountsAndAnaReadsInTheLog(gravity, "Vote", "Vote", "Revocation");
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task Taking_back_a_vote_you_do_not_have_records_nothing()
         {
@@ -40,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenItIsAnsweredWithoutErrorAndAnaReadsInTheLog(takeBack, gravity, "Vote");
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Taking_back_twice_records_one_take_back()
         {
@@ -52,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenItIsAnsweredWithoutErrorAndAnaReadsInTheLog(again, gravity, "Vote", "Vote", "Revocation");
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         // Declaring somebody else's name in another browser does not make their vote yours.
         [Test]
         public async Task Nobody_can_take_back_somebody_elses_vote_even_under_their_name()
@@ -64,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenItIsAnsweredWithoutErrorAndAnaReadsInTheLog(takeBack, gravity, "Vote");
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Taking_back_without_a_voter_key_is_refused()
         {
@@ -75,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenItIsRefusedAndAnasVoteStillCounts(refused, gravity, HttpStatusCode.BadRequest, VoterKeyRequired);
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Taking_back_on_a_Work_Item_that_is_not_in_refinement_is_refused()
         {
@@ -86,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenItIsRefusedAndAnasVoteStillCounts(refused, gravity, HttpStatusCode.Conflict, WorkItemNotInRefinement);
         }
 
-        // @driving_port @real-io @us-13 @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Taking_back_a_Yes_can_cost_a_Work_Item_its_Ready()
         {
@@ -97,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenConfigurationManagementNeeds(gravity, "MoreYesNeeded", missingVotes: 1);
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
         public async Task Voting_again_after_taking_back_counts_again()
         {
@@ -109,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenConfigurationManagementNeeds(gravity, "Ready", missingVotes: null);
         }
 
-        // @driving_port @real-io @us-16 @slice-16 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Taking_back_takes_the_vote_out_of_the_split()
         {
@@ -133,7 +124,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected override InstanceUnderTest Instance => InstanceUnderTest.WithSignInAndRoles;
 
-        // @driving_port @real-io @us-15 @us-16 @slice-16 @contract-shape:bounded-change
         [Test]
         public async Task Any_session_of_the_account_that_voted_can_take_the_vote_back()
         {
@@ -153,7 +143,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-15 @us-16 @slice-16 @boundary @contract-shape:unbounded-preservation
         // The laptop still shows the Yes it cast; the No cast since on the phone is not what it meant to take back.
         [Test]
         public async Task Taking_back_an_answer_the_account_has_since_changed_elsewhere_changes_nothing()
@@ -175,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-15 @us-16 @slice-16 @error @contract-shape:unbounded-preservation
         // A reader's own take-back is answered first, so the refusal can only be about the role.
         [Test]
         public async Task Somebody_without_a_role_on_the_Team_cannot_take_anything_back()

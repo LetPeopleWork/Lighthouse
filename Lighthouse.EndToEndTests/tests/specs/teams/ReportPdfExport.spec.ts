@@ -13,7 +13,6 @@ const THE_LIGHT_DIVIDER = "rgb(221, 221, 221)";
 
 // The print dialog of a real browser cannot be driven, so it is stood in for on the tab's page and on every frame
 // in it: only the report's own frame may ask for it, and the coach never leaves the report.
-// @walking_skeleton @driving_port @us-01 @rev-3 @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 testWithDemo(
 	"a coach exports a Team's Then & Now report as a PDF from the report: its own print frame asks for the dialog once, and the coach is still on the report with the same history",
 	async ({ testData, overviewPage, page }) => {
@@ -42,7 +41,6 @@ testWithDemo(
 
 // The page a pasted link opens is the one a later server renderer will load: it names the report and its owner,
 // fits the paper, and asks for no print dialog of its own.
-// @us-01 @slice-01 @real-io @error @contract-shape:unbounded-preservation
 testWithDemo(
 	"a report's print page opened by its address names the report and its owner, fits A4 and never asks for the print dialog",
 	async ({ testData, overviewPage, page }) => {
@@ -68,7 +66,6 @@ testWithDemo(
 
 // Only the typeface the app carries may reach the PDF: a machine font in it means the PDF looks different on
 // the next machine.
-// @us-02 @slice-02 @real-io @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:unbounded-preservation
 testWithDemo(
 	"the PDF of a report embeds the Lighthouse typeface and no other",
 	async ({ testData, overviewPage, page }) => {
@@ -93,7 +90,6 @@ testWithDemo(
 
 // A name in Central European letters needs a part of the typeface the page fetches only once it meets them; on a
 // slow connection that part can still be on its way when the page says it is ready to print.
-// @us-02 @slice-02 @real-io @error @contract-shape:bounded-change
 testWithDemo(
 	`a report named in Central European letters is ready to print only once the Lighthouse typeface can draw them, on a slow connection`,
 	async ({ testData, overviewPage, page }) => {
@@ -117,7 +113,6 @@ testWithDemo(
 );
 
 // A line in the text's own colour prints as a heavy black rule between the columns rather than a quiet divider.
-// @us-02 @slice-02 @real-io @contract-shape:bounded-change
 testWithDemo(
 	`the PDF of a report sets each panel's columns apart with the light divider line`,
 	async ({ testData, overviewPage, page }) => {

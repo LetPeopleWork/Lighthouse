@@ -122,7 +122,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		vi.unstubAllGlobals();
 	});
 
-	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
 	it("offers Yes, Yes, if… and No on every Work Item in refinement, beside how many have voted", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
@@ -144,7 +143,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-11 @slice-11 @driving_port @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 	it("asks for a name the first time, then casts the vote under it and shows it as the voter's own", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -187,7 +185,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(theButton(row, "No")).toHaveAttribute("aria-pressed", "false");
 	});
 
-	// @us-11 @slice-11 @contract-shape:bounded-change
 	it("remembers the name, so the next vote takes one click and comes from the same browser", async () => {
 		const key = aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -216,7 +213,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(screen.queryByRole("dialog")).toBeNull();
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:bounded-change
 	it("keeps only the voter's name and a long random key in this browser", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -247,7 +243,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(theStoredVoter()?.key?.length ?? 0).toBeGreaterThanOrEqual(32);
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
 	it("casts nothing and keeps nothing when the name prompt is closed", async () => {
 		const sizingLogService = aSizingLogService();
 		const { user } = renderTheRefinementTab(
@@ -265,7 +260,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(localStorage).toHaveLength(0);
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
 	it("will not vote under a blank name", async () => {
 		const sizingLogService = aSizingLogService();
 		const { user } = renderTheRefinementTab(
@@ -286,7 +280,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 	});
 
-	// @us-11 @slice-11 @contract-shape:bounded-change
 	it("lets the voter change the name their later votes carry, from the same browser", async () => {
 		const key = aBrowserThatVotedBefore("Jonas");
 		const sizingLogService = aSizingLogService({
@@ -334,7 +327,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		);
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
 	it("leaves the row as it was and says why when a vote is refused", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -359,7 +351,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(theButton(row, "Yes")).toHaveAttribute("aria-pressed", "false");
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
 	it.each([
 		{
 			why: "the work left refinement",
@@ -424,7 +415,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		},
 	);
 
-	// @us-11 @slice-11 @error @contract-shape:bounded-change
 	it("mints the browser's key where the page is not served over a secure connection", async () => {
 		const realCrypto = globalThis.crypto;
 		vi.stubGlobal("crypto", {
@@ -449,7 +439,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(theStoredVoter()?.key).toMatch(A_HEX_KEY);
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:bounded-change
 	it("still votes, and keeps the name for the page, when the browser refuses to store it", async () => {
 		const storage = localStorage;
 		vi.stubGlobal("localStorage", {
@@ -496,7 +485,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(second[3]).toBe(first[3]);
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:unbounded-preservation
 	it("takes a name of at most 100 characters", async () => {
 		const { user } = renderTheRefinementTab(gravitysRefinement());
 
@@ -574,7 +562,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		);
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:unbounded-preservation
 	it("will not save a name longer than 100 characters", async () => {
 		aBrowserThatVotedBefore("x".repeat(101));
 		const { user } = renderTheRefinementTab(gravitysRefinement());
@@ -591,7 +578,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(within(prompt).getByRole("button", { name: "Save" })).toBeDisabled();
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:bounded-change
 	it("sends one vote at a time from a row, and offers the row's answers again once the server has answered", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		let answer: (row: IRefinementRow) => void = () => {};
@@ -627,7 +613,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(theButton(answered, "Yes")).toHaveAttribute("aria-pressed", "true");
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:pure-function
 	it("names the Work Item each row's answers are for", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
@@ -640,7 +625,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:pure-function
 	it("counts one vote in the singular and more in the plural", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
@@ -655,7 +639,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(await theRowOf(ADVANCED_REPORTING)).toHaveTextContent("3 votes");
 	});
 
-	// @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 	it("reports each vote the server took to usage data, saying no cadence is set yet", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -687,7 +670,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		});
 	});
 
-	// @us-12 @slice-12 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 	it("reports a 'Yes, if…' to usage data once, and never what its condition says", async () => {
 		const condition = "only if the PDF export moves to its own Work Item";
 		aBrowserThatVotedBefore(JONAS);
@@ -726,7 +708,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		);
 	});
 
-	// @us-11 @slice-11 @error @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:unbounded-preservation
 	it("reports nothing for a vote the server refused", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -749,7 +730,6 @@ describe("A voter casts a sizing vote from the list", () => {
 		expect(reporter.current).not.toHaveBeenCalled();
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:pure-function
 	it("still names the Work Item a condition is asked for once it has left refinement", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		let answer: (row: IVotedRow) => void = () => {};
@@ -822,7 +802,6 @@ describe("A signed-in voter votes under their account", () => {
 		});
 	});
 
-	// @us-15 @slice-15 @driving_port @contract-shape:bounded-change
 	it("casts the vote at once without asking for a name, and keeps nothing in the browser", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -850,7 +829,6 @@ describe("A signed-in voter votes under their account", () => {
 		expect(localStorage).toHaveLength(0);
 	});
 
-	// @us-15 @slice-15 @boundary @contract-shape:pure-function
 	it("offers no way to change a name, because the account is the name", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ voterIdentity: "Account" }),
@@ -882,7 +860,6 @@ describe("The votes and comments of a Work Item", () => {
 		});
 	});
 
-	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
 	it("opens from the Votes cell and says how the votes split", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const { user } = renderTheRefinementTab(
@@ -908,7 +885,6 @@ describe("The votes and comments of a Work Item", () => {
 		expect(within(votes).getByRole("button", { name: "Close" })).toBeEnabled();
 	});
 
-	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
 	it("names the Work Item it shows the votes of in its title", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({}, [
@@ -948,7 +924,6 @@ describe("A voter takes back their own vote", () => {
 			theRowAfter(CONFIGURATION_MANAGEMENT, { voteCount: 1, myVote }),
 		]);
 
-	// @us-16 @slice-16 @contract-shape:pure-function
 	it("offers to take back a vote only where the reader has one", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const { user } = renderTheRefinementTab(
@@ -971,7 +946,6 @@ describe("A voter takes back their own vote", () => {
 		expect(within(votes).queryByRole("button", { name: TAKE_BACK })).toBeNull();
 	});
 
-	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
 	it.each([
 		["Yes", "Yes"],
 		[YES_IF, "YesBut"],
@@ -1013,7 +987,6 @@ describe("A voter takes back their own vote", () => {
 		},
 	);
 
-	// @us-16 @slice-16 @error @contract-shape:unbounded-preservation
 	it("keeps the vote in place and says why when taking it back fails", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({

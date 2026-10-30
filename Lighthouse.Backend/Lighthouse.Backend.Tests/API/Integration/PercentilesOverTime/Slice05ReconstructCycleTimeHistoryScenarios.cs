@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-05")]
     public partial class Slice05ReconstructCycleTimeHistoryTest
     {
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_flow_coach_reads_the_run_of_days_before_the_first_one_that_was_recorded()
         {
@@ -34,7 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheTrendCoversEveryDayFrom(teamId, TodayDay.AddDays(-30), TodayDay);
         }
 
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_flow_coach_reads_across_the_stretch_the_instance_was_switched_off()
         {
@@ -49,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheTrendCoversEveryDayFrom(teamId, TodayDay.AddDays(-30), TodayDay.AddDays(-10));
         }
 
-        // @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_team_nobody_is_syncing_any_more_gains_no_days_since_it_stopped()
         {
@@ -63,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheTrendStopsOn(teamId, lastObservedOn);
         }
 
-        // @us-01 @boundary @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_trend_reaches_back_only_as_far_as_the_team_has_finished_anything()
         {
@@ -77,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheTrendReachesBackNoFurtherThan(teamId, earliestFinishedDay);
         }
 
-        // @us-01 @boundary @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_year_wide_range_fills_in_over_several_visits_rather_than_all_at_once()
         {
@@ -106,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// scenario says nothing about the shipped value - only that a pass which reaches its budget
         /// gives the rest of the window back, and that the window is still there to be had next time.
         /// </summary>
-        // @us-01 @boundary @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_pass_that_runs_past_its_budget_stops_early_and_picks_up_on_the_next_visit()
         {
@@ -125,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenOpeningTheTrendAgainKeepsFillingItIn(teamId, heldWhenTheBudgetRanOut);
         }
 
-        // @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_stretch_in_which_the_team_finished_nothing_stays_blank_instead_of_reading_zero()
         {
@@ -148,7 +141,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// the first one to get there wins permanently. This is a change to behaviour that has already
         /// shipped: the recorder used to write four zeros for a quiet day.
         /// </summary>
-        // @us-01 @regression @driving_port @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_quiet_day_is_left_blank_by_the_daily_recording_too()
         {
@@ -164,7 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        // @us-01 @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_day_that_was_actually_watched_keeps_the_value_it_was_watched_at()
         {
@@ -178,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDayStillReadsExactlyAsRecorded(teamId, asWatched);
         }
 
-        // @us-01 @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Looking_at_the_same_period_twice_costs_nothing_the_second_time()
         {
@@ -206,7 +196,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// one before, so any stretch that is not the day's own reads differently, and the last Given checks
         /// that before the chart is opened.
         /// </summary>
-        // @us-01 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task A_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched()
         {
@@ -226,7 +215,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// than what the story adds: a chart load answers with what is there, and the filling in happens
         /// out of the reader's way.
         /// </summary>
-        // @driving_port @us-01 @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits()
         {
@@ -244,7 +232,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        // @us-01 @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_days_the_first_visit_could_not_show_are_there_on_the_next_one()
         {
@@ -263,7 +250,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Restoring or clearing the database while days are being written would swap the file out from
         /// under an open transaction. The operator is told to wait.
         /// </summary>
-        // @us-01 @maintenance @real-io @contract-shape:pure-function
         [Test]
         public async Task An_operator_cannot_start_a_database_restore_while_the_chart_is_filling_in()
         {
@@ -285,7 +271,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// checking and the filling starting; the filling has to stand down as well. It can afford to,
         /// because every day it has already written stays written and the next chart load asks again.
         /// </summary>
-        // @us-01 @maintenance @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_chart_stops_filling_itself_in_while_the_operator_is_restoring_the_database()
         {
@@ -305,7 +290,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// provider the unit suite uses does not enforce the uniqueness this rests on, so it would pass
         /// against an implementation with no backstop whatsoever.
         /// </summary>
-        // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
         [Test]
         public async Task Two_copies_of_the_application_filling_the_same_day_leave_one_point_not_two()
         {
@@ -329,7 +313,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// the chart comes out whole whether the refusal was absorbed or took the rest of the walk down
         /// with it. Only a single walk with nobody behind it leaves a hole that can be seen.
         /// </summary>
-        // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
         [Test]
         public async Task A_day_another_copy_records_mid_pass_costs_that_day_and_not_the_rest_of_the_window()
         {
@@ -351,7 +334,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Filling in history and a routine refresh can land on the database at the same moment. Neither
         /// may lose its writes to the other, and nothing may end up on the chart twice.
         /// </summary>
-        // @us-01 @concurrency @real-io @sqlite @contract-shape:bounded-change
         [Test]
         public async Task A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one()
         {
@@ -379,7 +361,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// observations, but they are also not this story's to correct: a day that already carries a
         /// value is left alone, whoever put it there.
         /// </summary>
-        // @us-01 @demo @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Backdated_demonstration_values_are_stepped_over_rather_than_corrected()
         {

@@ -196,7 +196,6 @@ describe("The Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("offers only the Team's To Do and Doing states as suggestions", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
@@ -206,7 +205,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(await theSuggestions()).toEqual(["Backlog", "Next", "Analysing"]);
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	// The server refuses a state that is not To Do or Doing, so typing one must never reach the autosave.
 	it("adds nothing when a state that is not suggested is typed", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
@@ -217,7 +215,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("shows no note about Doing states", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
@@ -226,7 +223,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(screen.queryByText(/already counts in/i)).not.toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("saves the added states as the Team's refinement states", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
 
@@ -240,7 +236,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual(["Backlog", "Analysing", "Next"]);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("shows the states already chosen as chips", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog" }] }),
@@ -252,7 +247,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(await theSuggestions()).toEqual(["Next", "Analysing"]);
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it("saves no refinement states once the last chip is removed", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ states: [{ state: "Backlog" }] }),
@@ -266,7 +260,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual([]);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("keeps the other chosen states when one chip is removed", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -282,7 +275,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual(["Analysing"]);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	// The suggestions are the form's own To Do and Doing states, so there is never anything to wait for.
 	it("shows no loading indicator in the state input", async () => {
 		await renderGravitysSettingsForm(gravitysSettings(null));
@@ -294,7 +286,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(within(inputBox).queryByRole("progressbar")).toBeNull();
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it("shows no chip and no flag for a chosen state that is no longer To Do or Doing", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(
@@ -311,7 +302,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("drops a chosen state from the chips and the save once it stops being a Doing state", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -329,7 +319,6 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(theChips()).toEqual(["Backlog"]);
 	});
 
-	// @us-02 @slice-01 @boundary @contract-shape:bounded-change
 	it("says the Team's own word for Refinement as the section's title and in the state input", async () => {
 		terms.current = {
 			...defaultTerms,

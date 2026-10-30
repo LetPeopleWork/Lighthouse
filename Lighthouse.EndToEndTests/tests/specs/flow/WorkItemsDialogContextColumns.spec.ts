@@ -11,7 +11,7 @@ const TEAM_NAME = "Team Zenith";
 const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
 
 testWithDemo(
-	"@walking_skeleton @driving_port @US-01 a coach clicks a bubble on Team Zenith's Estimation vs. Cycle Time and reads each item's estimate",
+	"a coach clicks a bubble on Team Zenith's Estimation vs. Cycle Time and reads each item's estimate",
 	async ({ testData, overviewPage }) => {
 		expect(testData.teams.map((team) => team.name)).toContain(TEAM_NAME);
 

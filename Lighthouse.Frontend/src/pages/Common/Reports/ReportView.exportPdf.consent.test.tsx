@@ -83,7 +83,6 @@ describe("Export PDF is counted only where this browser agreed", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	it(`counts the export, with the report's Type, from a browser that agreed`, async () => {
 		await exportingWith(theAnswerAboutThisBrowser({}), "sending");
 
@@ -95,7 +94,6 @@ describe("Export PDF is counted only where this browser agreed", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// A refusal mints a token too, so holding one says nothing about agreeing.
 	it(`counts nothing from a browser that said no, token or not`, async () => {
 		await exportingWith(

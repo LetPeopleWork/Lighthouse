@@ -25,7 +25,7 @@ testWithFeatures.afterEach(async ({ request }) => {
 });
 
 testWithFeatures(
-	"@premium @walking_skeleton a config admin hands the order to this instance and nothing moves",
+	"a config admin hands the order to this instance and nothing moves",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);
 

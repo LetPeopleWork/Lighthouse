@@ -88,7 +88,6 @@ describe("The printed report is never cut in two", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-02 @slice-02 @contract-shape:unbounded-preservation
 	it(`keeps the summary and every panel whole on one page`, async () => {
 		await thePrintedReport();
 
@@ -102,7 +101,6 @@ describe("The printed report is never cut in two", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// The screen stacks the three columns below its breakpoint, and A4 portrait is narrower than that breakpoint.
 	it(`keeps Then, Now and Change side by side in every panel, however narrow the paper`, async () => {
 		await thePrintedReport();
@@ -123,7 +121,6 @@ describe("The printed report is never cut in two", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @contract-shape:bounded-change
 	// A line in the text's own colour reads as a heavy black rule between the columns rather than a quiet divider.
 	it(`sets Now and Change off from the column before by a line in the theme's divider colour, on a wide screen and on paper`, async () => {
 		await thePrintedReport();
@@ -141,7 +138,6 @@ describe("The printed report is never cut in two", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// A paper size of the page's own would override the reader's A4 or Letter choice in the print dialog.
 	it(`asks for a 12 mm margin on every printed page and leaves the paper size to the reader`, async () => {
 		await thePrintedReport();
@@ -151,7 +147,6 @@ describe("The printed report is never cut in two", () => {
 		expect(pageRule).not.toMatch(/size:/);
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// On screen the page fills the window; on paper that height spills over onto a last page holding nothing.
 	it(`prints no empty page after the report`, async () => {
 		await thePrintedReport();

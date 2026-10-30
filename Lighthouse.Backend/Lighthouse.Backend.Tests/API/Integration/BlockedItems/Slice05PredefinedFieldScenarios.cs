@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// registration, FE DTO split) are pinned here as concrete tests.
     ///
     /// Driving ports: work-tracking-system-connection settings GET/PUT + team settings PUT + team metrics WIP
-    /// read (WorkItemDto.isBlocked). One scenario is the walking skeleton (@walking_skeleton, GREEN via
+    /// read (WorkItemDto.isBlocked). One scenario is the walking skeleton (GREEN via
     /// the existing connection additional-field round-trip). See distill/red-classification.md for the RED
     /// reason each of the others was driven from during DELIVER.
     /// The isPredefined DTO split (FE) and the synthetic-label removal (IssueFactory)
@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-05")]
     public partial class Slice05PredefinedFieldTest
     {
-        // @walking_skeleton @driving_port @real-io @us-05
         // GREEN today: proves the connection additional-field read/write round-trip wiring slice-05 extends.
         [Test]
         [Category("walking_skeleton")]
@@ -41,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheServedConnectionStillCarriesTheUserField(reread, "customfield_10050");
         }
 
-        // @driving_port @us-05 (AC1 — a flagged item reads blocked, with no synthetic "Flagged" label)
+        // (AC1 — a flagged item reads blocked, with no synthetic "Flagged" label)
         [Test]
         public async Task A_flagged_item_reads_blocked_through_the_flagged_field_without_a_synthetic_label()
         {
@@ -53,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheItemReadsBlockedWithoutASyntheticFlaggedLabel(team, "PHX-300");
         }
 
-        // @driving_port @property @us-05 (AC4 — the flagged value flows through the generic id-keyed path
+        // (AC4 — the flagged value flows through the generic id-keyed path
         // whether set or not; offered as a selectable rule field key)
         [TestCase(true)]
         [TestCase(false)]
@@ -68,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheItemBlockedStatusIs(team, "PHX-301", flagged);
         }
 
-        // @error @edge @us-05 (AC2 — reconcile merge-back: a settings save that omits the predefined field
+        // (AC2 — reconcile merge-back: a settings save that omits the predefined field
         // must NOT delete it; today UpdateAdditionalFieldDefinitions removes anything not in the incoming set)
         [Test]
         public async Task A_settings_save_that_omits_the_predefined_field_preserves_it()
@@ -83,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenAPredefinedFlaggedFieldIsStillSurfaced(reread);
         }
 
-        // @edge @us-05 (AC2 — slot split: a predefined field does not consume a user field slot;
+        // (AC2 — slot split: a predefined field does not consume a user field slot;
         // SupportsAdditionalFields must count where !IsPredefined)
         [Test]
         public async Task A_predefined_field_does_not_consume_a_user_field_slot_on_a_non_premium_connection()
@@ -99,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheSaveSucceeds(save);
         }
 
-        // @property @us-05 (Port seam — only a Jira connection contributes the predefined flagged field;
+        // (Port seam — only a Jira connection contributes the predefined flagged field;
         // ADO/Linear/Csv contribute none. Observed via the served connection since GetPredefinedAdditionalFields
         // does not exist on today's IWorkTrackingConnector.)
         [TestCase(WorkTrackingSystems.Jira, true)]
@@ -122,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             }
         }
 
-        // @edge @us-05 (Auto-registration idempotency — re-reading a Jira connection surfaces exactly one
+        // (Auto-registration idempotency — re-reading a Jira connection surfaces exactly one
         // predefined field, never a duplicate and never a =true sentinel)
         [Test]
         public async Task A_jira_connection_surfaces_exactly_one_predefined_field_stably()
@@ -136,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenExactlyOnePredefinedFlaggedFieldIsSurfaced(second);
         }
 
-        // @error @us-05 (Write-back exclusion + Reference immutability — a predefined field is inbound-only:
+        // (Write-back exclusion + Reference immutability — a predefined field is inbound-only:
         // its Reference cannot be changed by a settings save, and it is never persisted as a write-back target)
         [Test]
         public async Task A_predefined_field_is_inbound_only()

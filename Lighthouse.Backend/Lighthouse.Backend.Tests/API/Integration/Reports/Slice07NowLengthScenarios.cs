@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         private static readonly DateOnly EndOfJuly = new(2026, 7, 31);
 
-        // @driving_port @real-io @us-07 @slice-07 @contract-shape:bounded-change
         [Test]
         public async Task A_coach_sets_a_shorter_Now_and_every_later_view_uses_it()
         {
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:pure-function
         // 27 days of this Now lie inside Then; they are compared as they are, never clipped away.
         [Test]
         public async Task Now_may_overlap_Then_and_is_used_in_full()
@@ -55,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @contract-shape:pure-function
         [TestCase(2026, 7, 31, 63)]
         [TestCase(2026, 10, 2, 0)]
         public async Task The_report_says_how_many_days_ago_Then_ended(int year, int month, int day, int daysAgo)
@@ -67,7 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(DaysSinceThenEndedIn(await TheReport(lightspeed, reportId)), Is.EqualTo(daysAgo));
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Without_a_Now_length_Now_is_as_long_as_Then()
         {
@@ -78,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(NowWindowIn(await TheReport(gravity, reportId)).LengthDays, Is.EqualTo(45));
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         [TestCase(13)]
         [TestCase(0)]
         public async Task A_Now_shorter_than_fourteen_days_is_refused(int nowLengthDays)
@@ -92,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @boundary @contract-shape:bounded-change
         // 366 days ending 2 Oct 2026 start on 2 Oct 2025, the oldest day the Team keeps.
         [Test]
         public async Task A_Now_starting_on_the_oldest_kept_day_is_accepted()
@@ -104,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(NowWindowIn(await TheReport(gravity, reportId)), Is.EqualTo(new ReportWindow("2025-10-02", "2026-10-02", 366)));
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         [TestCase(367)]
         [TestCase(500)]
         public async Task A_Now_reaching_past_the_data_cutoff_is_refused(int nowLengthDays)
@@ -118,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-07 @slice-07 @error @contract-shape:unbounded-preservation
         // Now is stored on the report; a reader cannot change it, not even for one view.
         [Test]
         public async Task Asking_for_another_Now_in_the_address_changes_nothing()
@@ -138,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(nowLength, Is.EqualTo(30));
         }
 
-        // @driving_port @real-io @us-04 @us-07 @slice-07 @contract-shape:pure-function
         // Totals over different lengths cannot be compared, so the change is read on the per-day average.
         [Test]
         public async Task Throughput_with_a_Now_of_another_length_is_compared_per_day()

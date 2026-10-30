@@ -84,7 +84,7 @@ test("forecast filter: configure exclude-bugs rule on team settings, see quick-s
 		.toBe(true);
 });
 
-test("@walking_skeleton @real-io @US-01 a team-admin's valid settings edit persists with All changes saved and no Save button", async ({
+test("a team-admin's valid settings edit persists with All changes saved and no Save button", async ({
 	page,
 	request,
 	overviewPage,

@@ -123,7 +123,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		vi.useRealTimers();
 	});
 
-	// @us-04 @slice-04 @driving_port @contract-shape:pure-function
 	it("names the day and date of the next Refinement and how many days away it is", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
@@ -132,7 +131,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		).toBeVisible();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("says tomorrow when the next Refinement is one day away", async () => {
 		vi.setSystemTime(new Date(2026, 9, 7, 9, 0, 0));
 		renderTheRefinementTab(
@@ -147,7 +145,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		).toBeVisible();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	// The server counts from the instance's today, which in another time zone is not the viewer's.
 	it("counts the days the server counted, not the days the browser's clock would count", async () => {
 		vi.setSystemTime(new Date(2026, 9, 7, 9, 0, 0));
@@ -163,7 +160,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		).toBeVisible();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("says tomorrow when the server counts one day even though the browser's clock is already on that day", async () => {
 		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
 		renderTheRefinementTab(
@@ -179,7 +175,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(screen.queryByText(/in 0 days/)).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	// On a Refinement day the server already names the following one; the tab never says "today".
 	it("counts a week ahead on a Refinement day and never says today", async () => {
 		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
@@ -197,7 +192,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(screen.queryByText(/today/i)).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("titles the need message with the next Refinement instead of naming it on the heading's row", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({
@@ -215,7 +209,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(screen.getAllByText(/^Next Refinement: /)).toHaveLength(1);
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("says there is no cadence on the heading's row, beside the count", async () => {
 		renderTheRefinementTab(withoutACadence(), aSizingLogService(), "Reader");
 
@@ -229,7 +222,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(heading.nextElementSibling).toBe(placedBesideTheHeading);
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("names the next Refinement on the heading's row, beside the count", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
@@ -243,7 +235,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(heading.nextElementSibling).toBe(placedBesideTheHeading);
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("reads the heading first and the next Refinement after it", async () => {
 		renderTheRefinementTab(refiningOnThursdayTheEighth());
 
@@ -257,7 +248,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		).toBeTruthy();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it("says a Team without a cadence has none, points a Team admin to Settings in the tooltip, and still lists the Work Items", async () => {
 		const { user } = renderTheRefinementTab(
 			withoutACadence(),
@@ -273,7 +263,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(screen.queryByText(/^Next Refinement: /)).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it("tells somebody who cannot change the settings that a Team admin can set a cadence", async () => {
 		const { user } = renderTheRefinementTab(
 			withoutACadence(),
@@ -289,7 +278,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it("opens the hint when the icon beside No cadence is reached with the keyboard", async () => {
 		const { user } = renderTheRefinementTab(
 			withoutACadence(),
@@ -309,7 +297,6 @@ describe("The Refinement tab names the next Refinement", () => {
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(READER_HINT);
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:pure-function
 	it("says the Team's own words in the next Refinement and in the hint", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
@@ -339,7 +326,6 @@ describe("The sizing events say whether they happened on a Refinement day", () =
 		});
 	});
 
-	// @us-04 @us-11 @us-13 @slice-04 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 	it.each([
 		[THURSDAY_THE_EIGHTH, true, "OnRefinementDay"],
 		[THURSDAY_THE_EIGHTH, false, "OnOtherDay"],

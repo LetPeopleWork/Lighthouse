@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     [Category("slice-06")]
     public class Slice06PortfolioReportScenarios : ReportsAcceptanceTest
     {
-        // @driving_port @real-io @us-06 @slice-06 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [Test]
         public async Task A_Portfolio_admin_creates_a_Then_and_Now_report_about_its_Features()
         {
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-06 @slice-06 @contract-shape:pure-function
         [Test]
         public async Task A_Portfolio_can_be_reported_on_all_four_metrics()
         {
@@ -53,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
         public async Task A_Portfolio_with_no_finished_Features_shows_a_dash_and_the_reason()
         {
@@ -64,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             ThenItIsADashFor(ThenValueIn(await TheReport(orion, reportId), CycleTime, P85), Reason.NoFinishedItems);
         }
 
-        // @driving_port @real-io @us-06 @slice-06 @contract-shape:pure-function
         [Test]
         public async Task A_Portfolio_reader_finds_the_report_and_cannot_create_one()
         {
@@ -79,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsForbidden(refused);
         }
 
-        // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
         public async Task A_report_reached_through_another_Portfolios_address_is_not_found()
         {
@@ -95,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsNotFound(throughOrion);
         }
 
-        // @driving_port @real-io @us-06 @slice-06 @error @contract-shape:pure-function
         [Test]
         public async Task A_Teams_report_cannot_be_reached_through_a_Portfolios_address()
         {
@@ -111,7 +105,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsNotFound(throughThePortfolio);
         }
 
-        // @driving_port @real-io @us-06 @us-08 @slice-06 @contract-shape:bounded-change
         [Test]
         public async Task Deleting_a_Portfolio_deletes_its_reports()
         {

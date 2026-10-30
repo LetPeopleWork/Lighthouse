@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// forecast so it can say which levels held; this one proves the real engine's answer is read the
         /// same way.
         /// </summary>
-        // @walking_skeleton @driving_port @driving_adapter @real-io @us-01 @kpi-OUT-4172-never-overclaims @contract-shape:unbounded-preservation
         [Test]
         public async Task Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date()
         {
@@ -50,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// delivers exactly that. A check that scored one day more than its horizon, or learned from a day it
         /// is also scored on, reads this steady Team as beating every forecast it was ever given.
         /// </summary>
-        // @driving_port @driving_adapter @real-io @us-01 @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_Team_finishing_one_Work_Item_every_day_delivers_exactly_what_every_level_of_every_check_forecast()
         {
@@ -69,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @driving_adapter @real-io @us-01 @contract-shape:pure-function
         [Test]
         public async Task The_same_check_answers_on_the_versioned_route_as_well()
         {
@@ -80,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
         }
 
-        // @driving_port @us-01 @boundary @real-io @contract-shape:pure-function
         [TestCase(NoOptions)]
         [TestCase("{\"applyFilterOverride\":null}")]
         [TestCase("{\"applyFilterOverride\":false}")]
@@ -94,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
         }
 
-        // @driving_port @us-01 @error @real-io @contract-shape:unbounded-preservation
         [TestCase("{\"applyFilterOverride\":\"yes\"}")]
         [TestCase("{\"applyFilterOverride\":1}")]
         [TestCase("{\"applyFilterOverride\":")]
@@ -112,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// The check takes no dates. A caller that sends some anyway - an old client, a hand-written
         /// script - must not be able to move the check off today.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @contract-shape:pure-function
         [Test]
         public async Task Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today()
         {
@@ -125,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- Who may ask ---
 
-        // @driving_port @us-01 @rbac @real-io @contract-shape:pure-function
         [Test]
         public async Task Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer()
         {
@@ -136,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
         }
 
-        // @driving_port @us-01 @rbac @error @real-io @contract-shape:unbounded-preservation
         /// <summary>
         /// Refused as "not found", exactly as the single back-test refuses, so the answer never reveals
         /// that a Team the person may not see exists at all.
@@ -152,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             await ThenTheyAreToldItWasNotFoundWithoutASingleCheck(refused);
         }
 
-        // @driving_port @us-01 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Team_that_does_not_exist_is_answered_as_not_found()
         {
@@ -166,7 +157,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- What the answer states it checked ---
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Every_check_ends_today_and_reaches_back_by_its_own_length()
         {
@@ -181,7 +171,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear()
         {
@@ -192,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenTheAnswerStatesTheLadderTheHorizonsTheLevelsAndTheBar(answer);
         }
 
-        // @driving_port @us-01 @real-io @contract-shape:pure-function
         [TestCase(14)]
         [TestCase(30)]
         [TestCase(60)]
@@ -215,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// written from them alone would never run. The Team's own setting is the most decision-relevant
         /// check in the report and is always one of the windows swept.
         /// </summary>
-        // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(45)]
         [TestCase(7)]
         [TestCase(120)]
@@ -237,7 +224,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// behaved alike come back as a set in the ladder's own order, and nothing in the answer carries a
         /// number per window that anything could be sorted by.
         /// </summary>
-        // @driving_port @us-01 @property @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(30)]
         [TestCase(45)]
         public async Task No_part_of_the_answer_can_rank_one_sampling_window_above_another(int samplingWindowDays)
@@ -255,7 +241,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Every_check_that_was_run_is_in_the_answer_including_the_ones_that_could_not_be_evaluated()
         {
@@ -274,7 +259,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- The region, never a winner ---
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Every_window_behaving_alike_is_an_answer_that_says_the_setting_is_fine()
         {
@@ -286,7 +270,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenEveryWindowIsInTheRegionAndTheSettingIsInsideIt(answer);
         }
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Deep_Currents_fourteen_day_window_over_forecast_three_times_in_four_and_sits_outside_the_region()
         {
@@ -308,7 +291,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// of bounds: the windows either side of the Team's own behaved, and its own did not. A pair of
         /// bounds would have said 14 to 90 and called the Team inside.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not()
         {
@@ -325,7 +307,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task An_off_ladder_setting_can_hold_up_when_the_windows_either_side_of_it_do_not()
         {
@@ -342,7 +323,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task When_no_window_held_up_the_answer_says_so_rather_than_naming_the_least_bad()
         {
@@ -365,7 +345,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// on it. Falling short of even the 95% forecast in two of four is already ten times its own rate,
         /// so it is enough to put the window outside.
         /// </summary>
-        // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_window_that_fell_short_of_its_most_cautious_forecast_in_two_of_four_checks_is_outside_the_region()
         {
@@ -387,7 +366,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// the median is what half of a well-judged forecast's checks do. It shows up in the 50% level's
         /// line instead. Only falling short of the cautious forecast counts.
         /// </summary>
-        // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Delivering_more_than_forecast_never_counts_against_a_window_only_falling_short_does()
         {
@@ -409,7 +387,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// them must have held at 95%. One check that ran decides on its own; no minimum number of checks
         /// is added, because that would be a second sufficiency bar.
         /// </summary>
-        // @driving_port @us-01 @boundary @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(2, 0, true)]
         [TestCase(2, 1, false)]
         [TestCase(1, 0, true)]
@@ -428,7 +405,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// A window that could not be checked, between two that held up, is a gap in the region: the answer
         /// lists what held up around it rather than letting a span claim the window it never examined.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_window_that_could_not_be_checked_in_the_middle_of_the_ladder_is_a_gap_in_the_region()
         {
@@ -445,7 +421,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_Team_whose_history_supports_no_check_at_all_is_told_nothing_could_be_concluded()
         {
@@ -464,7 +439,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task When_the_Teams_own_window_could_not_be_evaluated_its_standing_is_not_determined()
         {
@@ -488,7 +462,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// the level itself. At the 50% level the wrong formula - counting the complement - gives the same
         /// number, which is how that mistake survived review once; the other three rows tell them apart.
         /// </summary>
-        // @driving_port @us-01 @property @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(50, 8, 8.0)]
         [TestCase(70, 11, 11.2)]
         [TestCase(85, 14, 13.6)]
@@ -503,7 +476,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             ThenTheLevelHeldAgainstItsNominalRate(answer, confidenceLevel, timesItHeld, timesItWasExpectedToHold, SometimesHeld);
         }
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(50, 0, 6.0, NeverHeld)]
         [TestCase(70, 0, 8.4, NeverHeld)]
         [TestCase(85, 12, 10.2, AlwaysHeld)]
@@ -528,7 +500,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// publishing. Every level reads as never held, which is over-forecasting, and the 95% line says
         /// how many times it should have held.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_Team_that_never_reached_even_its_most_cautious_forecast_is_told_no_level_ever_held()
         {
@@ -550,7 +521,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// Sixteen checks at 95% expected 15.2 holds - under one miss - so holding in all sixteen is what
         /// that level predicted, and it reads as neither extreme.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_Team_that_always_beat_its_most_optimistic_forecast_is_told_which_levels_always_held_when_a_miss_was_expected()
         {
@@ -572,7 +542,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// Where the Team's actual count landed against one check's band, from below the whole band to
         /// above it, and which of the four levels that means held.
         /// </summary>
-        // @driving_port @us-01 @property @real-io @contract-shape:pure-function
         [TestCase(HeldUpTo.NoLevel, OverForecast)]
         [TestCase(HeldUpTo.NinetyFive, WithinBand)]
         [TestCase(HeldUpTo.EightyFive, WithinBand)]
@@ -590,7 +559,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- Checks that could not be run ---
 
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task Coastal_Surveys_fourteen_day_checks_hold_too_few_days_of_finished_work_and_are_named_as_unable_to_run()
         {
@@ -613,7 +581,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// four is not. The days are placed well inside the one-week check's two-week history, so neither
         /// edge of that window decides the outcome.
         /// </summary>
-        // @driving_port @us-01 @boundary @real-io @contract-shape:pure-function
         [TestCase(5, true)]
         [TestCase(4, false)]
         public async Task Five_days_with_finished_work_is_enough_to_check_and_four_is_not(int daysWithFinishedWork, bool canBeChecked)
@@ -630,7 +597,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// off. That is a second reason a check cannot be evaluated, not a second bar; and the engine's
         /// "no reading" marker must never reach a count, a band or a cell.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [Test]
         public async Task A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing()
         {
@@ -656,7 +622,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// A stored window of zero as well is the case where both reasons apply; fixed dates wins, because
         /// it is why the stored window does not drive the Team's forecasts at all.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @kpi-OUT-4172-never-overclaims @contract-shape:pure-function
         [TestCase(45)]
         [TestCase(0)]
         public async Task A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested(int storedSamplingWindowDays)
@@ -673,7 +638,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @error @real-io @contract-shape:pure-function
         [TestCase(0)]
         [TestCase(-7)]
         public async Task A_stored_window_that_is_not_a_length_of_time_adds_nothing_to_the_check(int storedSamplingWindowDays)
@@ -691,7 +655,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- Read-only, end to end ---
 
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public async Task Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items()
         {
@@ -709,7 +672,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         /// <summary>Nothing is stored between runs, so a second press over the same history answers identically.</summary>
-        // @driving_port @us-01 @real-io @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public async Task Running_the_check_twice_gives_the_same_answer_twice()
         {
@@ -728,7 +690,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// It is also the harness's own proof that seeding, the pinned clock and the scripted forecast reach
         /// the real forecast endpoints.
         /// </summary>
-        // @driving_port @regression @coexistence @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_single_back_test_beside_the_check_still_answers_as_it_did()
         {

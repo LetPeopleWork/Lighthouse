@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @AC-06.3 - the guarantee the whole slice exists for. The browser is not asked to stop and is
+        // the guarantee the whole slice exists for. The browser is not asked to stop and is
         // not told it was stopped; its request is accepted exactly as before and the batch is dropped.
         [Test]
         public async Task An_engaged_veto_drops_the_batch_of_a_browser_that_had_already_consented()
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @AC-06.5 - suspended, never revoked. The browser that consented before the veto is not asked
+        // suspended, never revoked. The browser that consented before the veto is not asked
         // anything when it is lifted; it simply starts being counted again.
         [Test]
         public async Task Lifting_the_veto_lets_the_same_browser_send_again_without_asking_it_anything()
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @AC-06.4 @AC-05.8 - the asking stops too, and it stops for a browser that would otherwise be
+        // the asking stops too, and it stops for a browser that would otherwise be
         // due. Suppressing only the sending would leave the dialog appearing on an instance whose
         // administrator has stopped the whole thing.
         [Test]
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "which is the one thing an administrator using this switch is trying to prevent");
         }
 
-        // @AC-06.7 @DT-25 - the indicator may not say data is being sent from a browser nothing is sent
+        // the indicator may not say data is being sent from a browser nothing is sent
         // from. The answer used to be derived from this browser's own decision alone, so a granted
         // browser was told "sending" while the emit path dropped everything it handed in.
         [Test]
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "every batch it hands in - the indicator is reporting a decision, not a fact");
         }
 
-        // @AC-06.7 @DT-26 - and it says whose doing it was. "Not sending" alone reads as "you declined"
+        // and it says whose doing it was. "Not sending" alone reads as "you declined"
         // to somebody who did not decline, which is the reading this criterion exists to rule out.
         [Test]
         public async Task An_engaged_veto_says_the_administrator_stopped_it()
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "own, so the footer can only blame the reader for a choice somebody else made");
         }
 
-        // @AC-06.7 - the other half, and the one that makes the field mean something. A browser that
+        // the other half, and the one that makes the field mean something. A browser that
         // declined is told it is not sending and is NOT told an administrator did it.
         [Test]
         public async Task A_browser_that_declined_is_not_told_the_administrator_did_it()

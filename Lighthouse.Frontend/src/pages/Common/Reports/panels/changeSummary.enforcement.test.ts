@@ -19,7 +19,6 @@ const importsOf = (source: string): string[] =>
  * the moment it reaches for React, MUI or the instance's words, it can no longer be called on its own.
  */
 describe("the judgement behind the summary's CHANGE side", () => {
-	// @us-05b @slice-05b @contract-shape:unbounded-preservation
 	it.each(["changeSummary.ts", "thenNowComparison.ts"])(
 		"keeps %s free of React, MUI and the instance's words",
 		(file) => {
@@ -32,7 +31,6 @@ describe("the judgement behind the summary's CHANGE side", () => {
 		},
 	);
 
-	// @us-05b @slice-05b @contract-shape:unbounded-preservation
 	// The words and marks the reader sees belong to the header; the tally only sorts metrics into kinds.
 	it("leaves every word and mark of the CHANGE side to the header", () => {
 		expect(sourceOf("changeSummary.ts")).not.toMatch(

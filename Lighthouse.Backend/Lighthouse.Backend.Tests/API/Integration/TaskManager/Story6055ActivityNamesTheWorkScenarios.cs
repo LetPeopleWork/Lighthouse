@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-02")]
     public partial class Story6055ActivityNamesTheWorkTest
     {
-        // @driving_port @real-io @AC-02.1 — the reported defect's second half. A Portfolio refresh
+        // the reported defect's second half. A Portfolio refresh
         // triggers a forecast of the same Portfolio, so this pair is the ordinary case, not an edge.
         [Test]
         public async Task A_queued_forecast_does_not_say_it_is_waiting_behind_its_own_portfolio()
@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenNoRowNamesItsOwnEntityAsWhatItIsWaitingFor();
         }
 
-        // @driving_port @real-io @AC-02.2 — the already-shipped reading, which must not regress. A row
+        // the already-shipped reading, which must not regress. A row
         // waiting for something else still learns its name.
         [Test]
         public async Task A_queued_team_still_learns_the_name_of_the_portfolio_holding_the_lane()
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheQueuedRowSaysItIsBehindTheEntityNamed(UpdateType.Team, team.Id, portfolio.Name);
         }
 
-        // @driving_port @real-io @AC-02.3 — the clause names what the HOLDER is doing, never what the
+        // the clause names what the HOLDER is doing, never what the
         // queued row is doing. A removal waiting behind a refresh reads as a refresh.
         [Test]
         public async Task A_queued_removal_behind_its_own_refresh_names_the_refresh()
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheQueuedRowSaysItIsBehindItsOwn(UpdateType.PortfolioDelete, portfolio.Id, UpdateType.Features);
         }
 
-        // @driving_port @real-io @AC-02.3 — and the mirror, so the clause cannot be reading the queued
+        // and the mirror, so the clause cannot be reading the queued
         // row's own type by accident. Both scenarios pass against an implementation that echoes the
         // wrong side only if the two types happen to match, which is why both exist.
         [Test]
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheQueuedRowSaysItIsBehindItsOwn(UpdateType.Features, portfolio.Id, UpdateType.PortfolioDelete);
         }
 
-        // @driving_port @real-io @error @AC-02.4 — THE criterion. A Team and a Portfolio that happen to
+        // THE criterion. A Team and a Portfolio that happen to
         // share an integer are two entities, not one. An implementation comparing ids alone passes every
         // other scenario in this file and fails this one; that is the whole reason it is written.
         [Test]
@@ -94,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheQueuedRowSaysItIsBehindTheEntityNamed(UpdateType.Team, portfolio.Id, portfolio.Name);
         }
 
-        // @driving_port @real-io @AC-02.5 — work whose lane is free is waiting for nothing, and the
+        // work whose lane is free is waiting for nothing, and the
         // honest answer is no clause rather than an arbitrary running row.
         [Test]
         public async Task Work_that_is_waiting_for_nothing_says_nothing()
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowIsWaitingForNothing(UpdateType.Team, team.Id);
         }
 
-        // @driving_port @real-io @AC-02.6 — the contract guard. This story changes one field's type and is
+        // the contract guard. This story changes one field's type and is
         // affordable only because it changes nothing else; this is where that claim is checked, on the
         // serialised payload, where a consumer would break.
         [Test]
@@ -119,7 +119,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowStillCarriesEveryFieldItAlwaysDid(UpdateType.Team, team.Id, team.Name);
         }
 
-        // @driving_port @real-io @AC-02.7 @production-data — the dogfood check. Named here so it is part
+        // the dogfood check. Named here so it is part
         // of the suite's record rather than a step somebody remembers to do; it stays ignored in CI
         // because it needs a real connection, and is run by hand at slice close.
         [Test]

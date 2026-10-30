@@ -132,14 +132,14 @@ const renderForecastView = () =>
 		</SnackbarErrorHandler>,
 	);
 
-describe("@US-05 @in-memory auto-run new-item forecast", () => {
+describe("auto-run new-item forecast", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.clearAllMocks();
 		forecastService.runItemPrediction.mockResolvedValue({});
 	});
 
-	it("@US-05 recomputes the new-item forecast automatically after a valid input change", async () => {
+	it("recomputes the new-item forecast automatically after a valid input change", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.runAllTimersAsync();
@@ -156,7 +156,7 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).toHaveBeenCalledTimes(1);
 	});
 
-	it("@US-05 @error fires no run on page load until an input changes", async () => {
+	it("fires no run on page load until an input changes", async () => {
 		renderForecastView();
 
 		await act(async () => {
@@ -166,7 +166,7 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).not.toHaveBeenCalled();
 	});
 
-	it("@US-05 @error fires no run when the inputs become incomplete", async () => {
+	it("fires no run when the inputs become incomplete", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.runAllTimersAsync();
@@ -183,7 +183,7 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 		expect(forecastService.runItemPrediction).not.toHaveBeenCalled();
 	});
 
-	it("@US-05 @error shows only the latest run when input changes arrive in rapid succession", async () => {
+	it("shows only the latest run when input changes arrive in rapid succession", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.runAllTimersAsync();
@@ -207,14 +207,14 @@ describe("@US-05 @in-memory auto-run new-item forecast", () => {
 	});
 });
 
-describe("@US-06 @in-memory auto-run backtest", () => {
+describe("auto-run backtest", () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
 		vi.clearAllMocks();
 		forecastService.runBacktest.mockResolvedValue({});
 	});
 
-	it("@US-06 recomputes the backtest automatically after a valid input change", async () => {
+	it("recomputes the backtest automatically after a valid input change", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.runAllTimersAsync();
@@ -231,7 +231,7 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).toHaveBeenCalledTimes(1);
 	});
 
-	it("@US-06 @error fires no run when the mode is switched while inputs are incomplete", async () => {
+	it("fires no run when the mode is switched while inputs are incomplete", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.runAllTimersAsync();
@@ -248,7 +248,7 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
 	});
 
-	it("@US-06 @error fires no backtest run on page load until an input changes", async () => {
+	it("fires no backtest run on page load until an input changes", async () => {
 		renderForecastView();
 
 		await act(async () => {
@@ -258,7 +258,7 @@ describe("@US-06 @in-memory auto-run backtest", () => {
 		expect(forecastService.runBacktest).not.toHaveBeenCalled();
 	});
 
-	it("@US-06 starts with no forecast until a rolling window is entered (no predefined window)", async () => {
+	it("starts with no forecast until a rolling window is entered (no predefined window)", async () => {
 		renderForecastView();
 		await act(async () => {
 			await vi.advanceTimersByTimeAsync(DEBOUNCE_MS * 2);

@@ -447,7 +447,7 @@ const NOT_HELD_GRADES: ForecastGrade[] = [
 	"NotHeldOver25",
 ];
 
-describe("@us-05 @slice-05 @kpi-OUT-6094-colour-never-alone the colours of a graded check", () => {
+describe("the colours of a graded check", () => {
 	it("gives every grade a fill whose text reads at 4.5 to 1 or better", () => {
 		const fills = gradeFills();
 

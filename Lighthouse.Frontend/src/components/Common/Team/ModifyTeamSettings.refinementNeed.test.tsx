@@ -207,7 +207,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("offers optional stages, a Ready rule and a Being refined rule, each with nothing set", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -224,7 +223,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("shows the Ready rule the Team stored", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -236,7 +234,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		expect(within(ready).getByLabelText("Value")).toHaveValue("ready");
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:bounded-change
 	it("saves a changed Ready rule and leaves the Being refined rule as it was", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -261,7 +258,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:bounded-change
 	it("switches the Ready rule off when its last condition is removed", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -286,7 +282,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:bounded-change
 	it("keeps an edited Ready rule when the Yes votes needed change before it is saved", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -324,7 +319,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-03 @slice-03 @error @contract-shape:unbounded-preservation
 	it("saves nothing while a new rule is still incomplete", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -412,7 +406,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	// @us-04 @slice-04 @driving_port @contract-shape:pure-function
 	it("offers the weekdays Monday to Sunday and every week, with no starting week asked for", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -438,7 +431,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(screen.queryByLabelText(STARTING_WEEK)).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
 	it("saves Thursdays every week", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -455,7 +447,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		);
 	});
 
-	// @us-04 @slice-04 @driving_port @contract-shape:bounded-change
 	it("asks for the starting week once Refinements are more than a week apart, and saves it", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -477,7 +468,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		);
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
 	it("saves nothing while every second week names no starting week, and marks the field", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -495,7 +485,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
 	it("saves nothing for fewer than one week between Refinements", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -512,7 +501,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
 	// The server looks a year ahead for the next Refinement, so a longer gap could leave it none.
 	it("saves nothing for more than 52 weeks between Refinements, and says why", async () => {
 		await renderGravitysSettingsForm(
@@ -533,7 +521,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-04 @slice-04 @boundary @contract-shape:bounded-change
 	it("leaves the Team without a cadence when the last weekday is unticked", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -575,7 +562,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
 	it("shows the range read at 50% and 85% until the admin changes it", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -588,7 +574,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
 	it("saves a changed high end with the low end as it was", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -602,7 +587,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it.each([
 		["90", "85"],
 		["85", "85"],
@@ -627,7 +611,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		},
 	);
 
-	// @us-07 @slice-07 @error @boundary @contract-shape:unbounded-preservation
 	it.each([
 		["Low end likelihood", "49"],
 		["High end likelihood", "96"],
@@ -647,7 +630,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		},
 	);
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it("refuses a decimal likelihood instead of saving it rounded, and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -660,7 +642,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-07 @slice-07 @error @a11y @contract-shape:unbounded-preservation
 	it("marks the high end being typed in when it falls below the low end, and explains why there", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({ band: { lowPercentile: 60, highPercentile: 85 } }),
@@ -678,7 +659,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(screen.getAllByText(inverted)).toHaveLength(1);
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
 	it("heads the band with the Team's words for work items and Refinement", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -692,7 +672,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		).toBeVisible();
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:pure-function
 	it("explains the high end at 95 as reached with only 5% likelihood", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -704,7 +683,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it("keeps explaining the last valid band while the low end is cleared", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -719,7 +697,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(explanation).not.toContain("NaN");
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
 	it("explains the band as last edited, not as it was when the form opened", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -731,7 +708,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(await theBandExplanation()).toContain(afterTheEdit);
 	});
 
-	// @us-07 @slice-07 @driving_port @contract-shape:bounded-change
 	it("explains the band as last edited when only the low end changed", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -743,7 +719,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(await theBandExplanation()).toContain(afterTheEdit);
 	});
 
-	// @us-07 @need-over-one-cycle @slice-07 @driving_port @contract-shape:pure-function
 	// The band is read over one Refinement cycle, so the explanation names that cycle, not the days until the next.
 	it("explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word", async () => {
 		terms.current = {
@@ -759,7 +734,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(explanation).not.toContain("until the next");
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it("shows a cleared low end as empty, not as 0, and says what it takes", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -770,7 +744,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(low).toHaveAccessibleDescription("Between 50% and 95%.");
 	});
 
-	// @us-07 @slice-07 @driving_port @a11y @contract-shape:pure-function
 	it("marks neither end while the band is valid, and shows each end in percent", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -783,7 +756,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		});
 	});
 
-	// @us-07 @slice-07 @error @a11y @contract-shape:unbounded-preservation
 	it("marks only the low end when it is out of range above the high end, since that is not an inverted band", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 

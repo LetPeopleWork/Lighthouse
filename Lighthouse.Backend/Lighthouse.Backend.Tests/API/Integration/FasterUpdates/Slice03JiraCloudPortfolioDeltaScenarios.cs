@@ -45,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-03")]
     public partial class Slice03JiraCloudPortfolioDeltaTest
     {
-        // @driving_port @real-io @AC-3.1 @D6 @contract-shape:bounded-change
         // The upgrade case: the portfolio's Features exist, none of them carries a stamp yet.
         [Test]
         public async Task The_first_portfolio_refresh_downloads_every_feature_and_remembers_when_each_one_last_changed()
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenEveryFeatureInThePortfolioRemembersWhenItLastChanged(portfolio);
         }
 
-        // @walking_skeleton @driving_port @real-io @AC-3.1 @AC-3.6 @contract-shape:bounded-change
         // The half of the cycle the epic was still paying for in full.
         [Test]
         public async Task A_later_portfolio_refresh_downloads_only_the_features_that_moved()
@@ -79,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 1);
         }
 
-        // @driving_port @real-io @AC-3.1 @AC-3.2 @D2 @contract-shape:unbounded-preservation
         // Failure mode 1, and the reason this slice is not slice 02 pointed at another method: the
         // portfolio is rebuilt from the fetched list, so under delta the Features that did NOT move are
         // the ones at risk. Losing a Feature here deletes it outright.
@@ -98,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 1);
         }
 
-        // @driving_port @real-io @AC-3.3 @contract-shape:unbounded-preservation
         // The second half of failure mode 1: what a dropped Feature costs beyond the row itself.
         [Test]
         public async Task A_feature_that_did_not_move_keeps_its_history_and_stays_blocked_if_it_was()
@@ -118,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 1);
         }
 
-        // @error @driving_port @real-io @AC-3.2 @D2 @contract-shape:bounded-change
         // Removal is a set difference against the whole query, exactly as it is today.
         [Test]
         public async Task A_feature_that_left_the_query_is_gone_from_the_portfolio_on_the_very_next_cycle()
@@ -135,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 2, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-3.4 @contract-shape:bounded-change
         // A Feature two portfolios both claim is one stored record with one stamp, so the second
         // portfolio's own cycle finds it already current — and must still show it.
         [Test]
@@ -156,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 3, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-3.4 @contract-shape:bounded-change
         // The other half of AC-3.4, and the one no scenario reached: every shared-Feature scenario above
         // pre-refreshes BOTH portfolios over the same Features, so a Feature never arrives in a
         // portfolio's query for the first time while another portfolio already stores it stamped. What
@@ -179,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 3, fetched: 1);
         }
 
-        // @error @driving_port @real-io @AC-3.2 @AC-3.4 @contract-shape:bounded-change
         // The mirror of the scenario above: letting go is per portfolio, deletion is not. A Feature that
         // leaves one portfolio's query loses that portfolio's claim and nothing else, because the
         // orphaned-Feature cleanup deletes only what no portfolio claims at all.
@@ -201,7 +193,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(second, scanned: 2, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-3.1 @contract-shape:unbounded-preservation
         // Failure mode 2: the parent key list is derived from what the portfolio STORES. Derived from
         // what this cycle fetched, it shrinks to nothing on a quiet cycle and the parents drop out.
         [Test]
@@ -219,7 +210,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 2, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-3.5 @D9 @contract-shape:bounded-change
         // "The Feature record did not move remotely" is not "the Feature's rollup did not change". The
         // work under a Feature belongs to a team whose own refresh has its own schedule.
         [Test]
@@ -239,7 +229,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 1, fetched: 0);
         }
 
-        // @error @driving_port @real-io @AC-3.1 @D8 @contract-shape:bounded-change
         // No partial results, ever — the portfolio half of D8.
         [Test]
         public async Task A_portfolio_refresh_whose_scan_fails_downloads_every_feature_rather_than_half()
@@ -257,7 +246,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorIsToldTheScanFailed();
         }
 
-        // @driving_port @real-io @AC-3.1 @contract-shape:bounded-change
         // The other direction of the quiet-cycle scenario above: a parent whose OWN record moved has to be
         // refetched even though not one child did. Nothing on the Feature side of the cycle can report
         // this, which is the whole reason the parent half sweeps at all.
@@ -277,7 +265,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 2, fetched: 0);
         }
 
-        // @error @driving_port @real-io @AC-3.1 @contract-shape:bounded-change
         // The Feature half's rule inverted. A Feature the sweep does not answer for has left the query and
         // is dropped; a PARENT the sweep does not answer for is downloaded, because parents are excluded
         // from the orphaned-Feature cleanup and silence must never be read as departure.
@@ -295,7 +282,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheParentFeatureIsStillStored(TheParentFeature);
         }
 
-        // @error @driving_port @real-io @AC-3.1 @D8 @contract-shape:bounded-change
         // The parent half of D8, and the half no scenario reached: the parent path scans and falls back on
         // its own, so the Feature half's fallback says nothing about it.
         [Test]
@@ -313,7 +299,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorIsToldTheParentScanFailed();
         }
 
-        // @driving_port @real-io @AC-3.1 @A1 @contract-shape:unbounded-preservation
         // Whether a query can be swept is per connector, and the parent half honours that answer on its own.
         // A Jira Data Center portfolio still gets every parent, downloaded in full.
         [Test]
@@ -331,7 +316,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 2, fetched: 2);
         }
 
-        // @error @driving_port @real-io @AC-3.2 @AC-3.3 @contract-shape:bounded-change
         // The mirror of "a quiet Feature keeps its open spell": a Feature that genuinely LEFT this
         // portfolio's query has to have its spell closed, and only the sweep over what departed can do it.
         // Two portfolios, so the row survives losing this one's claim and the spell survives with it.

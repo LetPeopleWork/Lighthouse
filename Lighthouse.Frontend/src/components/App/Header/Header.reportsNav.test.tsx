@@ -64,7 +64,6 @@ const theNavigationLabels = () =>
 		.map((link) => link.textContent);
 
 describe("Header — the way in to every report", () => {
-	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
 	it("Reports sits between Features and System Settings", async () => {
 		renderTheHeader();
 
@@ -78,7 +77,6 @@ describe("Header — the way in to every report", () => {
 		);
 	});
 
-	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
 	it("Reports opens the Reports page", async () => {
 		renderTheHeader();
 		const user = userEvent.setup();
@@ -94,7 +92,6 @@ describe("Header — the way in to every report", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it("a reader who is Admin of nothing still finds Reports", async () => {
 		const rbacService = createMockRbacService();
 		rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({

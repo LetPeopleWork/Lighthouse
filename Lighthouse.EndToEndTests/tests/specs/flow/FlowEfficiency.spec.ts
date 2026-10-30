@@ -24,7 +24,7 @@ const DEMO_WAIT_STATE = "Waiting for Verification";
 // spec's setup verbatim — same demo seed, same wait state, same save — to re-read
 // the same tile. The unconfigured state is simply what the tile shows BEFORE the
 // wait state is marked, so it is asserted here first, on the same seed.
-test("@walking_skeleton @US-01 the delivery lead is prompted in red to configure wait states, then an admin marks one and flow efficiency appears on the tile and the cumulative chart", async ({
+test("the delivery lead is prompted in red to configure wait states, then an admin marks one and flow efficiency appears on the tile and the cumulative chart", async ({
 	page,
 	request,
 	overviewPage,

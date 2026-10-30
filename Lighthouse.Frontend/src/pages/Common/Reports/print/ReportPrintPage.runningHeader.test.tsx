@@ -104,7 +104,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 		document.title = "";
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// The dates read as the report view writes them.
 	it.each<[string, IReportOwner, string]>([
 		["a Team's", LIGHTSPEED, "Team Lightspeed"],
@@ -126,7 +125,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @contract-shape:bounded-change
 	it(`keeps the report's name as the big title under that line, on the first page only`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
@@ -146,7 +144,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// A line fixed to the page is printed on every sheet; without room kept for it, page two's panels run under it.
 	it(`repeats the line at the top of every printed page, with room kept for it above the report`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
@@ -170,7 +167,6 @@ describe("Every printed page carries the report's line and the credit", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// Page numbers were offered and declined.
 	it(`repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);

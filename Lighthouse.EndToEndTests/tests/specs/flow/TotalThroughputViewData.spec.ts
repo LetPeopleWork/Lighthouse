@@ -11,7 +11,7 @@ import {
 const DEMO_SCENARIO_ID = 0; // "When Will This Be Done?" — seeds Team Zenith deterministically
 const DEMO_TEAM_NAME = "Team Zenith";
 
-test("@walking_skeleton the View Data icon on the Total Throughput overview widget drills through to a populated work item dialog", async ({
+test("the View Data icon on the Total Throughput overview widget drills through to a populated work item dialog", async ({
 	page,
 	request,
 	overviewPage,

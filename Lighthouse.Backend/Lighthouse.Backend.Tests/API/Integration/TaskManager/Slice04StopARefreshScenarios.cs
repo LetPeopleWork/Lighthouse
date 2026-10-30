@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-04")]
     public partial class Slice04StopARefreshTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-04.1 — the whole promise in one scenario: an
+        // the whole promise in one scenario: an
         // operator presses Cancel and the tracker is never contacted. Work that has not started is the
         // case where "stopped" can mean something absolute rather than best-effort.
         [Test]
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListDoesNotMention(waiting);
         }
 
-        // @driving_port @real-io @AC-04.1 — *when* the row goes, not just that it does. The scenario above
+        // *when* the row goes, not just that it does. The scenario above
         // releases the refresh ahead of it and drains the queue before it looks, so it passes just as well
         // against a cancel nobody acts on until the reader eventually reaches the row — which is what the
         // maintainer met: press Cancel, and the work sits there until whatever is running finishes. The
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatTeamIsStillOnTheTaskList(running);
         }
 
-        // @driving_port @real-io @AC-04.1 — the cancel is what the instance did; telling the browser is only
+        // the cancel is what the instance did; telling the browser is only
         // how it says so. A hub that cannot be reached must not leave work the operator stopped still queued,
         // and the operator has to be able to find out from the log that a push was lost.
         [Test]
@@ -87,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheInstanceSaysWhichWorkItCouldNotTellAnybodyAbout(waiting);
         }
 
-        // @driving_port @real-io @AC-04.2 — a running refresh stops rather than running to completion. The
+        // a running refresh stops rather than running to completion. The
         // interval is the subject of the probe's measurement; what this pins is that it stops at all.
         [Test]
         public async Task A_refresh_that_is_running_stops_instead_of_running_to_completion()
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatRefreshStopsBeforeItHasReadEveryPage(team);
         }
 
-        // @driving_port @real-io @AC-04.3 — Cancelled is the last word the browser hears, and it is reached
+        // Cancelled is the last word the browser hears, and it is reached
         // by the same monotonic advance every other terminal state is. A cancel that left the row saying
         // "running" would be a button with no feedback, which reads as a button that did not work.
         [Test]
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheBrowserWasToldThatRefreshWasCancelled(team);
         }
 
-        // @driving_port @real-io @error @AC-04.4 — the invariant that is easy to miss, reached through a
+        // the invariant that is easy to miss, reached through a
         // door slice 01 did not use. A round that never finishes silently drops every write it staged, so a
         // cancelled run owes its round the same report a run that finished does.
         [Test]
@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheWriteBackRoundWasAccountedFor();
         }
 
-        // @driving_port @real-io @error @AC-04.4 — the other half. Work parked behind a cancelled key waits
+        // the other half. Work parked behind a cancelled key waits
         // on that key leaving the queue, not on it leaving successfully; held work stranded by a cancel
         // stays parked until something unrelated happens to poke the same key.
         [Test]
@@ -148,7 +148,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenWhatWasHeldBehindItWasLetGo();
         }
 
-        // @driving_port @real-io @error @AC-04.5 — a cancel must leave a state a later refresh corrects.
+        // a cancel must leave a state a later refresh corrects.
         // Stopping mid-flight and leaving a half-written entity that nothing overwrites would trade a
         // runaway refresh for a quietly wrong one, which is the worse of the two.
         [Test]
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenAFreshRefreshOfThatTeamCompletes(team);
         }
 
-        // @driving_port @real-io @error @AC-04.6 — the row was drawn before the operator clicked it, so
+        // the row was drawn before the operator clicked it, so
         // "it finished while you were reading" is the ordinary case. Answering an error would put a failure
         // in front of somebody who did nothing wrong.
         [Test]
@@ -177,7 +177,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListIsAnsweredAndEmpty();
         }
 
-        // @driving_port @real-io @error — the one thing the route does not accept. A removal is listed with
+        // the one thing the route does not accept. A removal is listed with
         // a Stop control beside it like everything else, so this is a button an operator can genuinely
         // press; stopping a delete half-way would tell the caller waiting on it that the entity had gone
         // while its row is still in the database.
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenCancellingARemovalOfThatTeamIsRefusedWithAReasonToShow(team);
         }
 
-        // @driving_port @real-io @error @AC-04.6 — the same refusal the list it is reached from gives. A
+        // the same refusal the list it is reached from gives. A
         // cancel route that is guarded more loosely than the list would let somebody stop every refresh on
         // an instance they cannot even see.
         [Test]
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenCancellingRefusesANonAdministratorTheSameWayTheTaskListDoes(team);
         }
 
-        // @driving_port @real-io @AC-04.7 — cancel is per key. An operator stopping one runaway refresh
+        // cancel is per key. An operator stopping one runaway refresh
         // must not stop the instance, or the button is too dangerous to press.
         [Test]
         public async Task Cancelling_one_refresh_leaves_the_others_alone()

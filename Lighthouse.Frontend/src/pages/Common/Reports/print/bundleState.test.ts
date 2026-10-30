@@ -13,7 +13,6 @@ const parts = (...states: BundlePartState[]) =>
 	states.map((state, index) => ({ reportId: index + 1, state }));
 
 describe("How far a PDF of several reports has got", () => {
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it.skip.each([
 		[["ready", "ready"], { look: "ready", failedReportIds: [] }],
 		[["ready", "preparing"], { look: "preparing", failedReportIds: [] }],
@@ -28,7 +27,6 @@ describe("How far a PDF of several reports has got", () => {
 		expect(bundleStateOf(parts(...states))).toEqual(expected);
 	});
 
-	// @us-07 @slice-07 @edge @contract-shape:pure-function
 	it.skip(`a bundle of no reports stays preparing and never prints; the page cannot ask for one, since Export PDF needs a selection (${pending})`, () => {
 		expect(bundleStateOf([])).toEqual({
 			look: "preparing",

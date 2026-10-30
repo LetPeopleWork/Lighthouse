@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private const string SecondExperiment = "Then & Now — second experiment";
 
-        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
         [Test]
         public async Task An_admin_deletes_a_report_and_it_is_gone_for_everybody()
         {
@@ -45,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_reader_cannot_delete_a_report()
         {
@@ -59,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ReportNamesIn(await TheReportsListOf(lightspeed)), Is.EqualTo(TheEngagementStartAlone));
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Deleting_through_another_Teams_address_deletes_nothing()
         {
@@ -74,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ReportNamesIn(await TheReportsListOf(lightspeed)), Is.EqualTo(TheEngagementStartAlone));
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
         public async Task Deleting_a_report_twice_finds_nothing_the_second_time()
         {
@@ -91,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
         [Test]
         public async Task Community_keeps_one_Then_and_Now_report_per_Team()
         {
@@ -117,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         // Each type has its own place, so a Team holding a report of a type a later version added can still
         // create its one Then & Now report.
         [Test]
@@ -138,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         [Test]
         public async Task The_cap_is_per_Team()
         {
@@ -153,7 +146,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.Created), await created.Content.ReadAsStringAsync());
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @contract-shape:bounded-change
         [Test]
         public async Task Premium_creates_as_many_reports_as_it_needs()
         {
@@ -174,7 +166,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
         public async Task A_lapsed_licence_keeps_every_report_readable_and_deletable_but_stops_creating()
         {
@@ -208,7 +199,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Deleting_the_report_frees_its_place_for_a_new_one()
         {
@@ -228,7 +218,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @boundary @contract-shape:pure-function
         // Then starts on 2 Oct 2025, the oldest day kept on 2 Oct 2026; a day later it is one day too old.
         [Test]
         public async Task A_Then_older_than_what_the_Team_keeps_says_it_can_no_longer_be_rebuilt()
@@ -250,7 +239,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:bounded-change
         [Test]
         public async Task A_report_of_a_type_this_version_does_not_know_can_still_be_deleted()
         {
@@ -264,7 +252,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(lightspeed);
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Portfolio_reader_cannot_delete_its_report()
         {
@@ -278,7 +265,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ReportNamesIn(await TheReportsListOf(apollo)), Is.EqualTo(TheEngagementStartAlone));
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
         [Test]
         public async Task A_Portfolio_admin_deletes_its_report()
         {
@@ -291,7 +277,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(apollo);
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
         [Test]
         public async Task Community_keeps_one_Then_and_Now_report_per_Portfolio()
         {

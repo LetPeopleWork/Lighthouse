@@ -38,7 +38,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             "$geoip_disable",
         ];
 
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
         public async Task A_browser_that_agreed_reports_refinement_being_set_up_as_one_event_carrying_only_its_name()
         {
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [TestCase(",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(",\"workTrackingSystem\":\"Jira\"")]
         public async Task A_refinement_set_up_event_carrying_anything_but_its_name_is_refused(string somethingExtra)
@@ -87,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// The name is the contract and the number is whatever is next when the slice lands, so this pins
         /// that it was appended after every name that existed before this feature rather than a number.
         /// </summary>
-        // @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
         public void Refinement_being_set_up_is_appended_to_the_list_of_names_never_inserted()
         {
@@ -104,7 +101,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:bounded-change
         [Test]
         public async Task A_browser_that_agreed_reports_opening_the_Refinement_tab_as_a_Team_tab_opening_naming_that_tab()
         {
@@ -121,7 +117,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:bounded-change
         [Test]
         public void The_usage_data_page_lists_the_Refinement_tab_among_the_addresses_it_publishes()
         {

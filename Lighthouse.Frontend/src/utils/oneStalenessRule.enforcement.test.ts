@@ -70,7 +70,6 @@ const relativeToSource = (path: string): string =>
 	relative(sourceRoot, path).replaceAll("\\", "/");
 
 describe("one staleness rule, and it is Lighthouse's", () => {
-	// @kpi @contract-shape:unbounded-preservation
 	it("the browser's copy of the rule is gone", () => {
 		const stillNamingIt = shippedSourceFiles(sourceRoot)
 			.filter((path) => readFileSync(path, "utf8").includes(THE_DELETED_RULE))
@@ -79,7 +78,6 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 		expect(stillNamingIt).toEqual([]);
 	});
 
-	// @kpi @contract-shape:unbounded-preservation
 	it("nothing in the app compares days with a staleness threshold", () => {
 		const offenders = shippedSourceFiles(sourceRoot)
 			.map(relativeToSource)
@@ -95,7 +93,6 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 
 	// The two checks above are only as good as the pattern they share, so it is held to the shapes it
 	// has to catch and the ones it has to let through.
-	// @contract-shape:pure-function
 	it.each([
 		"if (days > stalenessThreshold) {",
 		"\tdaysInState >= blockedStalenessThresholdDays &&",
@@ -107,7 +104,6 @@ describe("one staleness rule, and it is Lighthouse's", () => {
 		expect(comparesDaysWithAStalenessThreshold(line)).toBe(true);
 	});
 
-	// @contract-shape:pure-function
 	it.each([
 		"(stalenessThresholdDays ?? 0) > 0 ||",
 		"setIsStalenessEnabled(settings.stalenessThresholdDays > 0);",

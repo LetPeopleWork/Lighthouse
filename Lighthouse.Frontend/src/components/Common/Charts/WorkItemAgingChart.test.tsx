@@ -812,7 +812,6 @@ describe("WorkItemAgingChart component", () => {
 			return { count: dots.length, colourOfTheFirst: dots[0]?.color };
 		};
 
-		// @contract-shape:pure-function
 		it("reds the dot of a Work Item Lighthouse marks stale, however recently it moved", () => {
 			const markedStale: IWorkItem = {
 				...mockInProgressItems[0],
@@ -828,7 +827,6 @@ describe("WorkItemAgingChart component", () => {
 			});
 		});
 
-		// @error @contract-shape:pure-function
 		it("does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat", () => {
 			const notStale: IWorkItem = {
 				...mockInProgressItems[0],
@@ -846,7 +844,6 @@ describe("WorkItemAgingChart component", () => {
 			});
 		});
 
-		// @error @contract-shape:unbounded-preservation
 		it("does not red the dot of a Work Item an older Lighthouse said nothing about", () => {
 			const noAnswer: IWorkItem = {
 				...mockInProgressItems[0],

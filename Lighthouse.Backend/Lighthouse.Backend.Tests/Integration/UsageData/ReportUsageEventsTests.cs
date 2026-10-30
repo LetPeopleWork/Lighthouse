@@ -52,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         private static readonly string[] EverythingThePageSaysTravelsWithATemplate = [.. EverythingThePageSaysTravels, TemplateOnTheWire];
 
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change
         [TestCase(ReportCreated)]
         [TestCase(ReportOpened)]
         public async Task A_report_created_or_opened_travels_with_its_type_and_nothing_else(string name)
@@ -79,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // The type is the whole of what these two events say; without one from the list, or with anything beside it, they are refused.
         [TestCase(ReportCreated, "")]
         [TestCase(ReportCreated, ",\"reportTemplate\":\"Signal\"")]
@@ -97,7 +95,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenItIsRefusedAndNothingIsForwarded(refused);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // Only a report being created or opened may say which type it was.
         [Test]
         public async Task A_tab_opening_carrying_a_report_type_is_refused()
@@ -111,7 +108,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenItIsRefusedAndNothingIsForwarded(refused);
         }
 
-        // @driving_port @real-io @us-01 @us-06 @slice-01 @slice-06 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [TestCase(TabOpened, TeamReportsTab, "/teams/:id/reports")]
         [TestCase(PortfolioTabOpened, PortfolioReportsTab, "/portfolios/:id/reports")]
         public async Task Opening_the_Reports_tab_travels_as_a_tab_opening_naming_that_tab(string name, string tab, string publishedAddress)
@@ -129,7 +125,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
         [Test]
         public async Task A_report_deleted_travels_as_its_name_alone()
         {
@@ -151,7 +146,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_report_deleted_carrying_its_type_is_refused()
         {
@@ -167,14 +161,12 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// The name is the contract and the number is whatever is next when the slice lands, so this pins the
         /// order the names were appended in rather than their numbers.
         /// </summary>
-        // @us-01 @us-08 @slice-01 @slice-08 @contract-shape:bounded-change
         [TestCase(ReportCreated, TheLastEventNamedBeforeReports)]
         [TestCase(ReportOpened, ReportCreated)]
         [TestCase(ReportDeleted, ReportOpened)]
         public void The_report_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)
             => ThenIsAppendedAfter("UsageDataEventName", name, namedBefore);
 
-        // @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
         public void Then_and_Now_is_the_first_report_type_on_its_own_list()
         {
@@ -186,7 +178,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(names, Is.EqualTo(OnlyThenAndNow), "the list of report types usage data may name");
         }
 
-        // @us-01 @us-06 @us-08 @slice-01 @slice-06 @slice-08 @contract-shape:bounded-change
         // Data leaving that the page does not describe is data nobody was told about. Each row is found by what
         // its first column says, and must name what travels with it.
         [TestCase("A report was created", "`ThenAndNow`")]
@@ -206,7 +197,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Assert.That(rows, Has.All.Contains(rowNames));
         }
 
-        // @us-01 @us-06 @slice-01 @slice-06 @contract-shape:bounded-change
         [TestCase("/teams/:id/reports")]
         [TestCase("/portfolios/:id/reports")]
         public void The_usage_data_page_lists_the_Reports_address_among_those_it_publishes(string address)

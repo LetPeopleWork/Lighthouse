@@ -274,7 +274,6 @@ beforeEach(() => {
 });
 
 describe("Reports on the Overview", () => {
-	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it("shows a Reports column on the Teams table, after Tags and before Last Updated", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
 
@@ -285,7 +284,6 @@ describe("Reports on the Overview", () => {
 		expect(titles.indexOf("Last Updated")).toBe(titles.indexOf("Reports") + 1);
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it("shows a Reports column on the Portfolios table, after Deliveries and before Last Updated", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
 
@@ -296,7 +294,6 @@ describe("Reports on the Overview", () => {
 		expect(titles.indexOf("Last Updated")).toBe(titles.indexOf("Reports") + 1);
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:bounded-change
 	it("lets a reader hide the Reports column from the column menu", async () => {
 		const user = userEvent.setup();
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
@@ -314,7 +311,6 @@ describe("Reports on the Overview", () => {
 		expect(theColumnTitles()).toContain("Tags");
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it("shows a Team's report as a chip with its name that opens the report", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
@@ -332,7 +328,6 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @driving_port @contract-shape:pure-function
 	it("shows a Portfolio's report as a chip that opens the report under that Portfolio", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			reportService: reportsAnswering(
@@ -350,7 +345,6 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.2 @boundary @contract-shape:pure-function
 	it("shows the first two reports by name, A to Z, whatever order they arrive in", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
@@ -365,7 +359,6 @@ describe("Reports on the Overview", () => {
 		expect(linkNamesIn(cell)).toEqual(["alpha kickoff", "Mid-year", "+1 more"]);
 	});
 
-	// @us-12 @slice-12 @ac-12.2 @ac-12.3 @boundary @contract-shape:pure-function
 	it.each([
 		{ count: 1, expected: ["Report A"] },
 		{ count: 2, expected: ["Report A", "Report B"] },
@@ -388,7 +381,6 @@ describe("Reports on the Overview", () => {
 		expect(within(cell).queryByText("No Reports")).toBeNull();
 	});
 
-	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
 	it("opens the Team's Reports tab from +N more", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: reportsAnswering(
@@ -404,7 +396,6 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.2 @driving_port @contract-shape:pure-function
 	it("opens the Portfolio's Reports tab from +N more", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			reportService: reportsAnswering(
@@ -420,7 +411,6 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.3 @boundary @contract-shape:pure-function
 	it("says No Reports for an owner without any", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED]);
 
@@ -430,7 +420,6 @@ describe("Reports on the Overview", () => {
 		expect(within(cell).queryAllByRole("link")).toHaveLength(0);
 	});
 
-	// @us-12 @slice-12 @ac-12.1 @boundary @contract-shape:pure-function
 	// Its own page explains it cannot be shown; the Overview still lists it so it can be reached and deleted.
 	it("still shows a chip for a report of a type this version cannot show", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
@@ -444,7 +433,6 @@ describe("Reports on the Overview", () => {
 		expect(linkNamesIn(cell)).toEqual(["Signals — flow alerts"]);
 	});
 
-	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
 	it("shows a small spinner, not No Reports, while the reports are on their way", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
@@ -464,7 +452,6 @@ describe("Reports on the Overview", () => {
 		expect(cell).not.toHaveTextContent("No Reports");
 	});
 
-	// @us-12 @slice-12 @ac-12.5 @ac-12.7 @boundary @contract-shape:bounded-change
 	// Creating, editing or deleting a report drops the owner's list, which is what this re-read stands for.
 	it("keeps the chips on screen, dimmed under a spinner, while the reports are read again", async () => {
 		const reread = deferred<IReportList>();
@@ -500,7 +487,6 @@ describe("Reports on the Overview", () => {
 		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
 
-	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
 	it("shows a report created elsewhere once the owner's reports are read again", async () => {
 		const { queryClient } = renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
@@ -529,7 +515,6 @@ describe("Reports on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
 	// A report made by someone else, or in another tab, drops nothing here, so only the next visit can bring it.
 	it("shows a report changed elsewhere when the Overview is opened again, however soon", async () => {
 		const getReports = vi
@@ -561,7 +546,6 @@ describe("Reports on the Overview", () => {
 		).toBe("ready");
 	});
 
-	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
 	it("says Couldn't load Reports when they could not be read, never No Reports", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED], {
 			reportService: aReportService({
@@ -581,7 +565,6 @@ describe("Reports on the Overview", () => {
 		expect(within(cell).queryByRole("progressbar")).toBeNull();
 	});
 
-	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:bounded-change
 	it("keeps one owner's failure to its own row", async () => {
 		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
 			reportService: aReportService({
@@ -605,7 +588,6 @@ describe("Reports on the Overview", () => {
 		expect(linkNamesIn(rocket)).toEqual(["Launch review"]);
 	});
 
-	// @us-12 @slice-12 @ac-12.7 @error @contract-shape:unbounded-preservation
 	it("never lets a late answer for one Team land in another Team's row", async () => {
 		const lightspeedAnswer = deferred<IReportList>();
 		renderTheTable("teams", [TEAM_LIGHTSPEED, TEAM_ROCKET], {
@@ -635,7 +617,6 @@ describe("Reports on the Overview", () => {
 		]);
 	});
 
-	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
 	// Renaming every configurable word around it shows the column's own word is not one of them.
 	it("keeps the word Reports whatever the instance calls its Teams, Portfolios and Deliveries", async () => {
 		terms.current = {
@@ -654,7 +635,6 @@ describe("Reports on the Overview", () => {
 });
 
 describe("Deliveries on the Overview", () => {
-	// @us-12 @slice-12 @ac-12.4 @driving_port @contract-shape:pure-function
 	it("shows the first two Deliveries in the order the server answers, then +N more to the Portfolio's Deliveries", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
@@ -686,7 +666,6 @@ describe("Deliveries on the Overview", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
 	it("shows two Deliveries without any +N more", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
@@ -707,7 +686,6 @@ describe("Deliveries on the Overview", () => {
 		expect(within(cell).queryByText(/more$/)).toBeNull();
 	});
 
-	// @us-12 @slice-12 @ac-12.4 @boundary @contract-shape:pure-function
 	it("says No Deliveries for a Portfolio without any", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO]);
 
@@ -716,7 +694,6 @@ describe("Deliveries on the Overview", () => {
 		expect(cell).toHaveTextContent("No Deliveries");
 	});
 
-	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:pure-function
 	it("shows a small spinner, not No Deliveries, while the Deliveries are on their way", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
@@ -735,7 +712,6 @@ describe("Deliveries on the Overview", () => {
 		expect(cell).not.toHaveTextContent("No Deliveries");
 	});
 
-	// @us-12 @slice-12 @ac-12.5 @boundary @contract-shape:bounded-change
 	it("keeps the Delivery chips on screen, dimmed under a spinner, while they are read again", async () => {
 		const reread = deferred<ReturnType<typeof activeDeliveries>>();
 		const { queryClient } = renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
@@ -770,7 +746,6 @@ describe("Deliveries on the Overview", () => {
 		expect(theBoxDimmingTheChip(cell, chip)).toHaveStyle(DIMMED);
 	});
 
-	// @us-12 @slice-12 @ac-12.7 @contract-shape:bounded-change
 	// The Deliveries tab reads them without going through this cell, so nothing else would tell it they changed.
 	it("shows Deliveries changed elsewhere when the Overview is opened again, however soon", async () => {
 		const getByPortfolio = vi
@@ -803,7 +778,6 @@ describe("Deliveries on the Overview", () => {
 		).toBe("ready");
 	});
 
-	// @us-12 @slice-12 @ac-12.4 @error @contract-shape:unbounded-preservation
 	it("shows each Portfolio its own Deliveries", async () => {
 		const GEMINI = aPortfolio(4, "Gemini");
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO, GEMINI], {
@@ -827,7 +801,6 @@ describe("Deliveries on the Overview", () => {
 		expect(gemini[0]).toMatch(/^Moon Landing/);
 	});
 
-	// @us-12 @slice-12 @ac-12.6 @error @contract-shape:pure-function
 	it("says Couldn't load Deliveries when they could not be read, never No Deliveries", async () => {
 		renderTheTable("portfolios", [PORTFOLIO_APOLLO], {
 			deliveryService: deliveriesAnswering(
@@ -846,7 +819,6 @@ describe("Deliveries on the Overview", () => {
 		expect(cell).not.toHaveTextContent("No Deliveries");
 	});
 
-	// @us-12 @slice-12 @ac-12.8 @boundary @contract-shape:pure-function
 	it("names the Deliveries in the instance's own word, empty and failed alike", async () => {
 		terms.current = {
 			...seededTerms,

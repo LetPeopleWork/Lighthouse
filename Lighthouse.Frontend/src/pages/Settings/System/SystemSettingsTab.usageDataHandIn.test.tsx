@@ -157,7 +157,7 @@ describe("A behaviour setting switch, as this browser hands it in", () => {
 		vi.restoreAllMocks();
 	});
 
-	// @driving_port @AC-1.1 - the parts the server needs have to survive every step between the
+	// the parts the server needs have to survive every step between the
 	// switch and the post, and nothing on the way is checked against them.
 	it("hands in which setting was switched and which way", async () => {
 		mockOptionalFeatureService.getAllFeatures = vi

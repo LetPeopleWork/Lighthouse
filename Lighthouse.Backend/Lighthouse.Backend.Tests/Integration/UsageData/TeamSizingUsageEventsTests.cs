@@ -67,7 +67,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             SizingMomentOnTheWire,
         ];
 
-        // @driving_port @real-io @us-11 @slice-11 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast)]
         [TestCase(TeamSizingReadinessReached)]
         public async Task A_browser_that_agreed_reports_the_event_with_its_name_and_when_it_happened_and_nothing_else(string name)
@@ -92,7 +91,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-11 @us-13 @contract-shape:unbounded-preservation
         // No usage-data event ever carries personal data. The browser that just voted, under a name, a key, a
         // comment and an address nobody else uses, hands the event in with the same key and address on the
         // request; none of them may reach the collector, and neither may anything beyond the event's name,
@@ -132,7 +130,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-11 @us-13 @error @contract-shape:unbounded-preservation
         // The moment is the whole reason these events exist; one arriving without it would be counted wrongly.
         [TestCase(TeamSizingVoteCast)]
         [TestCase(TeamSizingReadinessReached)]
@@ -151,7 +148,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-11 @us-13 @error @contract-shape:unbounded-preservation
         [TestCase(TeamSizingVoteCast, ",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(TeamSizingVoteCast, ",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(TeamSizingVoteCast, ",\"enabled\":true")]
@@ -171,7 +167,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         // The moment is a choice from a closed list; anything else could carry a date or a name.
         [TestCase("Tuesday")]
         [TestCase("2026-10-06")]
@@ -190,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-11 @slice-11 @error @contract-shape:unbounded-preservation
         // Only the sizing events may say when something happened relative to a Refinement.
         [Test]
         public async Task Another_event_carrying_a_sizing_moment_is_refused()
@@ -212,7 +206,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// The name is the contract and the number is whatever is next when the slice lands, so this pins
         /// the order the names were appended in rather than their numbers.
         /// </summary>
-        // @us-11 @us-13 @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast, TheLastEventNamedBeforeSizingVotes)]
         [TestCase(TeamSizingReadinessReached, TeamSizingVoteCast)]
         public void The_sizing_events_are_appended_to_the_list_of_names_never_inserted(string name, string namedBefore)

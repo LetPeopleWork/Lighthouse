@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         protected override WebApplicationFactory<Program> WithAuthentication(TestHelpers.TestWebApplicationFactory<Program> root) => root;
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
         public async Task Without_sign_in_anybody_creates_a_report()
         {
@@ -28,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(created.StatusCode, Is.EqualTo(HttpStatusCode.Created), await created.Content.ReadAsStringAsync());
         }
 
-        // @driving_port @real-io @us-08 @slice-08 @contract-shape:bounded-change
         [Test]
         public async Task Without_sign_in_anybody_deletes_a_report()
         {
@@ -41,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(deleted.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
         public async Task Without_sign_in_anybody_edits_a_report()
         {

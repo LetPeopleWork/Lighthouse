@@ -32,7 +32,6 @@ const aFieldList = (info?: { text: string; learnMoreUrl?: string }) =>
 	);
 
 describe("Story 6352: a field list with something to explain", () => {
-	// @contract-shape:pure-function
 	it("carries an info button named after the field, closed until asked", () => {
 		aFieldList({ text: TIP });
 
@@ -41,7 +40,6 @@ describe("Story 6352: a field list with something to explain", () => {
 		expect(screen.queryByText(TIP)).not.toBeInTheDocument();
 	});
 
-	// @contract-shape:pure-function
 	it("opening the button shows the tip and a Learn More opening the docs in a new tab", async () => {
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
 
@@ -51,7 +49,6 @@ describe("Story 6352: a field list with something to explain", () => {
 		expectLearnMoreToOpen(tip, DOCS);
 	});
 
-	// @contract-shape:pure-function
 	it("the button says it opens a dialog, and the open tip is that dialog, named after the button", async () => {
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
 
@@ -62,7 +59,6 @@ describe("Story 6352: a field list with something to explain", () => {
 		expect(screen.getByRole("dialog", { name: `About ${LABEL}` })).toBe(tip);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("a tip with nowhere to lead shows its text and no Learn More", async () => {
 		aFieldList({ text: TIP });
 
@@ -74,7 +70,6 @@ describe("Story 6352: a field list with something to explain", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @edge @contract-shape:pure-function
 	it("Escape closes the tip again", async () => {
 		const user = userEvent.setup();
 		aFieldList({ text: TIP, learnMoreUrl: DOCS });
@@ -91,7 +86,6 @@ describe("Story 6352: a field list with something to explain", () => {
 });
 
 describe("Story 6352: a field list with nothing to explain", () => {
-	// @error @active-guard @contract-shape:unbounded-preservation
 	it("shows no info icon and no button beside it", () => {
 		const { container } = aFieldList();
 

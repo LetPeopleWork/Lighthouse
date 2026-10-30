@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// </summary>
     public abstract class BulkReportsWhereEveryoneIsAdminScenarios : BulkReportsAcceptanceTest
     {
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
         public async Task Every_report_on_every_owner_is_listed()
         {
@@ -30,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(owners, Is.EquivalentTo(new[] { OwnerKey(gravity), OwnerKey(apollo) }));
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @contract-shape:bounded-change
         [Test]
         public async Task Every_Team_may_be_created_on_in_one_run()
         {
@@ -45,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(outcomes.Select(outcome => outcome.Status), Is.EqualTo(new[] { Created, Created }));
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Community_instance_is_still_refused_the_whole_run()
         {
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsForbidden(run);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task Every_report_may_be_removed_in_one_run()

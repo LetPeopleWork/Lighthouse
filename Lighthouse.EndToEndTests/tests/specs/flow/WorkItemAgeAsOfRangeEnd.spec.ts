@@ -52,7 +52,7 @@ function daysBeforeToday(days: number): Date {
  *    a card populated from today-anchored ages would clear "non-zero" easily and
  *    fail here, because those ages cannot be smaller than the gap to today.
  */
-test("@US-04 a delivery lead reading a six-week-old window sees Work Item Age as it stood then, including items that have since closed", async ({
+test("a delivery lead reading a six-week-old window sees Work Item Age as it stood then, including items that have since closed", async ({
 	page,
 	request,
 	overviewPage,

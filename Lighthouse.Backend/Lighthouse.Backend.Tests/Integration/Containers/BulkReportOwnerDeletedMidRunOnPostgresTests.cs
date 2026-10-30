@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        // @driving_port @real-io @adapter-integration @us-02a @slice-02a @error @contract-shape:bounded-change
         [Test]
         public async Task An_owner_deleted_between_lookup_and_save_fails_only_its_own_row_on_Postgres()
         {

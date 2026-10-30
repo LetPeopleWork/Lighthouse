@@ -240,7 +240,6 @@ afterEach(() => {
 });
 
 describe("the browser's print effects, made for the app's own window", () => {
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("asks the browser for its print dialog once per print", () => {
 		const print = theBrowsersPrint();
 
@@ -249,7 +248,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		expect(print).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it("hears the dialog close until it is told to stop listening", () => {
 		const listener = vi.fn();
 		const stopListening = forTheAppsWindow().onAfterPrint(listener);
@@ -261,7 +259,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		expect(listener).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("loads every face it is asked for and answers loaded once the document's fonts are ready", async () => {
 		const ready = deferred<void>();
 		const load = vi.fn(async (_face: string) => [A_FACE]);
@@ -283,7 +280,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		expect(answer).toBe("loaded");
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it.each<[string, (face: string) => Promise<FontFace[]>]>([
 		[
 			"refused",
@@ -302,7 +298,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		await expect(forTheAppsWindow().loadFonts(FACES)).resolves.toBe("failed");
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	// A name such as "Zespół Łódź" needs the typeface's Central European letters; fetched only for a space, they
 	// would still be on their way when the page prints, and the name would come out in a machine's font.
 	it(`loads every part of the typeface before it answers loaded, so a letter beyond basic Latin prints in it too`, async () => {
@@ -320,7 +315,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		);
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	it(`answers failed when the part of the typeface with the Central European letters cannot be fetched`, async () => {
 		theBrowserHoldsTheTypeface(["latin-ext"]);
 
@@ -329,7 +323,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		);
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it("asks for the picture at the address and answers loaded once it has been decoded", async () => {
 		const decoded: string[] = [];
 		thePicturesDecodeBy(function (this: HTMLImageElement) {
@@ -343,7 +336,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 		expect(decoded).toEqual([A_PICTURE]);
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	it("answers failed when the picture cannot be decoded", async () => {
 		thePicturesDecodeBy(() =>
 			Promise.reject(new Error("the picture could not be fetched")),
@@ -356,7 +348,6 @@ describe("the browser's print effects, made for the app's own window", () => {
 });
 
 describe("the browser's print effects, made for the print frame's window", () => {
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Only the frame's document goes to a dialog asked for on the frame's window, so the app around it never prints.
 	it(`asks the frame's window for the print dialog, never the app's, and hears that window's dialog close`, () => {
 		const theAppsPrint = theBrowsersPrint();
@@ -378,7 +369,6 @@ describe("the browser's print effects, made for the print frame's window", () =>
 		expect(listener).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// A face or a picture loaded into the app's page would leave the frame's printout in a fallback font, unmarked.
 	it(`loads the faces into the frame document's fonts and the Lighthouse mark as a picture of the frame, not the app's`, async () => {
 		theDocumentsFontsAre(() =>
@@ -413,7 +403,6 @@ describe("the browser's print effects, made for the print frame's window", () =>
 		expect(decodedInTheFrame).toEqual([A_PICTURE]);
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// Engines differ on which title they offer as the PDF's file name, so both carry the report's, until the frame goes.
 	it(`names the frame's document and the app's after the report, and gives the app its own name back when asked`, () => {
 		document.title = "Lighthouse";
@@ -445,7 +434,6 @@ const liesBeyondTheScreen = (offset: string): boolean => {
 };
 
 describe("the print frame an export draws the report into", () => {
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Never display: none or zero-sized: the frame must lay out at paper size and stay printable in every engine.
 	it(`makes one off-screen frame under the app's page, at A4 size, unseen, untabbable and titled, and answers once it has loaded`, async () => {
 		document.documentElement.lang = "en";
@@ -473,7 +461,6 @@ describe("the print frame an export draws the report into", () => {
 		expect(opened.head).toBe(frame.contentDocument?.head);
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// The bundled typeface is declared in the app's own sheets; Emotion's styles are the app's dark screen, not paper.
 	it(`copies the app's own style sheets into the frame, but none that Emotion wrote, and answers only once each copied sheet has loaded`, async () => {
 		const head = theAppsHead();
@@ -516,7 +503,6 @@ describe("the print frame an export draws the report into", () => {
 		}
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// A sheet that never reached the frame would print the report in a fallback, so no PDF is made from it.
 	it(`refuses to answer with a frame when one of the app's style sheets cannot be loaded into it`, async () => {
 		const head = theAppsHead();
@@ -588,7 +574,6 @@ describe("the print frame an export draws the report into", () => {
 		expect(document.querySelectorAll("iframe")).toHaveLength(0);
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	it(`takes away exactly the frame it made when closed, and leaves the rest of the page as it was`, async () => {
 		const { frame: another } = aFrameInThePage();
 

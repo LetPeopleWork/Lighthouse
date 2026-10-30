@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-04")]
     public partial class Slice04JiraDataCenterDeltaTest
     {
-        // @driving_port @real-io @AC-4.3 @D2 @declared_guard @contract-shape:bounded-change
         // Offset paging over an unordered query is the documented way this instance repeats a record. The
         // collapse has to happen in the scan, not only on the way into storage: a download list built from a
         // scan that repeats itself pays twice for the same payload on every cycle.
@@ -55,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorIsToldHowManyCopiesWereDropped(TheRepeatedIssue);
         }
 
-        // @driving_port @real-io @AC-4.3 @D2 @declared_guard @contract-shape:bounded-change
         // The portfolio half reaches the same collapse from its own call site, and a Feature counted twice
         // doubles the remaining work, the size percentile and the forecast that reads them.
         [Test]

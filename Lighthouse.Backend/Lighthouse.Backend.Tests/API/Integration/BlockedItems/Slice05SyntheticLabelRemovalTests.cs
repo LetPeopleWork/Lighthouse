@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     {
         private const string FlaggedFieldReference = "customfield_10001";
 
-        // @error @us-05 (AC3 — no synthetic "Flagged" label injection remains)
+        // (AC3 — no synthetic "Flagged" label injection remains)
         [Test]
         public void A_flagged_jira_issue_is_built_without_a_synthetic_flagged_label()
         {

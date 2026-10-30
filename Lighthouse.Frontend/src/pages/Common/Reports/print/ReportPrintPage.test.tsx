@@ -126,7 +126,6 @@ describe("The print page gets ready", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("says it is preparing the PDF, under a spinner, and is not ready, while the report is on its way", async () => {
 		aPrintDialog();
 		openingThePrintPageDirectly(withHeld("the report"));
@@ -136,7 +135,6 @@ describe("The print page gets ready", () => {
 		expect(renderReadiness()).toBe("false");
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
 	it.each<Held>(["the report", "the owner's name", "the terms", "the fonts"])(
 		"is still preparing, and not ready, while %s has not arrived",
 		async (held) => {
@@ -151,7 +149,6 @@ describe("The print page gets ready", () => {
 		},
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The wish to print travels with Export PDF, never in the address, so a pasted link only shows the page.
 	it("shows a print page opened from its address but never opens the print dialog", async () => {
 		const dialog = aPrintDialog();
@@ -166,7 +163,6 @@ describe("The print page gets ready", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	it("is not ready while the fonts are on their way, and ready once they arrive", async () => {
 		aPrintDialog();
 		const fonts = theFontsAreStillLoading();
@@ -181,7 +177,6 @@ describe("The print page gets ready", () => {
 		await thePrintPageIsReady();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// Asked before the document is drawn, the browser would only fetch the faces it already needs for the spinner.
 	it("asks for the Lighthouse typeface, its headings' weight included, only once the report is drawn", async () => {
 		aPrintDialog();
@@ -198,7 +193,6 @@ describe("The print page gets ready", () => {
 		expect(fonts.askedBeforeTheReportWasDrawn()).toBe(false);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it.each<"are not found" | "fail outright">([
 		"are not found",
 		"fail outright",
@@ -230,7 +224,6 @@ describe("The print page never prints by itself", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// A pasted link says nothing about where the reader came from; the owner's Reports list is the one safe place.
 	it("leads a page opened from its address back to the Reports list", async () => {
 		aPrintDialog();
@@ -244,7 +237,6 @@ describe("The print page never prints by itself", () => {
 		await waitFor(() => expect(whereTheReaderIs().path).toBe(atTheList));
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// A history entry an older Lighthouse left behind, reached by a reload or Forward, still asks for nothing.
 	it(`never prints, even when its history entry still carries an export's wish to print`, async () => {
 		const dialog = aPrintDialog();
@@ -258,7 +250,6 @@ describe("The print page never prints by itself", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Nothing sends a reader here any more, so the page knows no report view to return to; the list is its one way on.
 	it(`offers only "‹ Back to Reports", a plain link to the list that carries nothing, whatever its history entry says`, async () => {
 		aPrintDialog();
@@ -286,7 +277,6 @@ describe("A report the print page cannot read", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("says no PDF was made, offers Retry, and never gets ready or prints, when the report could not be loaded", async () => {
 		const dialog = aPrintDialog();
 		openingThePrintPageDirectly({
@@ -305,7 +295,6 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it("reads the report again on Retry on a page opened from its address, shows it, and still never prints", async () => {
 		const dialog = aPrintDialog();
 		const getReport = vi
@@ -324,7 +313,6 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Nothing comes of trying again, so there is no Retry, and the only way on is the list.
 	it.each([
 		["no longer exists", aRefusal(404, "not-found"), NO_LONGER_EXISTS],
@@ -355,7 +343,6 @@ describe("A report the print page cannot read", () => {
 		},
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("says part of the page could not be loaded, offers Retry, and never prints, when the owner's name cannot be read", async () => {
 		const dialog = aPrintDialog();
 		const teamService = aTeamServiceThatCannotReadTheName();
@@ -382,7 +369,6 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it("says part of the page could not be loaded when the instance's terms cannot be read, and Retry reads them again and gets the page ready", async () => {
 		const dialog = aPrintDialog();
 		const terminologyService = aTerminologyServiceThatCannotReadTheTerms({
@@ -409,7 +395,6 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The page must not go on saying it failed, nor offer Retry a second time, while the answer to Retry is on its way.
 	it(`shows that it is preparing the PDF, with no Retry, while Retry reads the report again`, async () => {
 		const dialog = aPrintDialog();
@@ -438,7 +423,6 @@ describe("A report the print page cannot read", () => {
 		expect(dialog.timesOpened()).toBe(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A Team or Portfolio deleted since the report was opened answers with no one; waiting for its name would never end.
 	it.each<[string, () => Promise<unknown>]>([
 		[
@@ -481,7 +465,6 @@ describe("A report the print page cannot read", () => {
 		},
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A refusal that asking again will not change, but which has no sentence of its own, still speaks of the report.
 	it(`says the report couldn't be loaded, offers no Retry and leads back to Reports, when the report is refused for a reason with no sentence of its own`, async () => {
 		const dialog = aPrintDialog();
@@ -518,7 +501,6 @@ describe("What the print page prints", () => {
 		document.title = "";
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("shows nothing of the app around the report: no Edit report, no Delete, no tabs, no navigation", async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
@@ -530,7 +512,6 @@ describe("What the print page prints", () => {
 		expect(screen.queryByRole("navigation", { name: "breadcrumb" })).toBeNull();
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it('ends with the Lighthouse mark and "Made with Lighthouse by LetPeopleWork", after the last panel', async () => {
 		openingThePrintPageDirectly();
 		await thePrintPageIsReady();
@@ -548,7 +529,6 @@ describe("What the print page prints", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	// The browser offers the page's title as the PDF's file name.
 	it("names the page after the report and its owner, so the PDF is saved under that name", async () => {
 		openingThePrintPageDirectly();
@@ -557,7 +537,6 @@ describe("What the print page prints", () => {
 		expect(document.title).toBe(`${ENGAGEMENT_START} — Team Lightspeed`);
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("names a Portfolio as the owner of a Portfolio's report", async () => {
 		openingThePrintPageDirectly({
 			startAt: printPathFor(APOLLO, ENGAGEMENT_START_ID),
@@ -576,7 +555,6 @@ describe("What the print page prints", () => {
 		expect(document.title).toBe(`${ENGAGEMENT_START} — Portfolio Apollo`);
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// A panel's title is the instance's term alone, as on screen.
 	it("prints the instance's own words for the owner and the metrics", async () => {
 		openingThePrintPageDirectly({
@@ -600,7 +578,6 @@ describe("What the print page prints", () => {
 		expect(document.title).toBe(`${ENGAGEMENT_START} — Squad Lightspeed`);
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:bounded-change
 	// Paper is white whatever the reader's screen is, so the page paints its own light ground and ink.
 	it("prints dark ink on its own white ground, the whole page high, even when the reader's screen is dark", async () => {
 		openingThePrintPageDirectly({ readersTheme: "dark" });
@@ -628,7 +605,6 @@ describe("The print page prints the report as it is now", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:unbounded-preservation
 	// An answer read a minute ago still counts as fresh for the rest of the app, which keeps answers five minutes.
 	it("never prints an answer it was holding from a minute ago, and reads the report afresh", async () => {
 		aPrintDialog();
@@ -668,7 +644,6 @@ describe("The print page prints the report as it is now", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
 	it("prints the same summary and panels the reader sees on the report", async () => {
 		aPrintDialog();
 		const onScreen = renderTheExportScene({
@@ -709,7 +684,6 @@ describe("What the print page reports about its use", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// The export was counted when it was chosen; the page drawn for paper is not a page anyone opened.
 	it("reports nothing of its own, however long it stays open", async () => {
 		aPrintDialog();

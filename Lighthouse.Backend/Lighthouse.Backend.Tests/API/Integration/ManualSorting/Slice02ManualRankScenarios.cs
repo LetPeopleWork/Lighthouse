@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             new object[] { "no order at all", new[] { string.Empty, string.Empty, string.Empty, string.Empty } },
         ];
 
-        // @walking_skeleton @driving_port @real-io @AC-2.1 — the promise the whole slice rests on: on the
+        // the promise the whole slice rests on: on the
         // instant ownership changes hands, the list a user is looking at does not move.
         [TestCaseSource(nameof(EveryConnectorOrderShape))]
         public async Task Handing_the_order_over_moves_nobody_whatever_the_tracker_wrote(string shape, string[] sourceOrders)
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(before, after);
         }
 
-        // @driving_port @real-io @AC-2.1 — the multi-connector instance the premise check actually found:
+        // the multi-connector instance the premise check actually found:
         // three Order shapes at once, which is where a comparison that is not a total order shows up.
         [Test]
         public async Task Handing_the_order_over_moves_nobody_on_an_instance_wired_to_several_trackers()
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(before, after);
         }
 
-        // @driving_port @real-io @AC-2.2 — K2. Five consecutive refreshes, with the tracker rewriting its
+        // K2. Five consecutive refreshes, with the tracker rewriting its
         // own order every single time, and nobody moves.
         [Test]
         public async Task The_tracker_may_re_rank_all_it_likes_and_the_order_this_instance_shows_never_moves()
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheTrackerStillOwnsItsOwnOrderValues("FTR-1", "35");
         }
 
-        // @driving_port @real-io @AC-2.3 — K4, and the premise check turned into an assertion. The two
+        // K4, and the premise check turned into an assertion. The two
         // Features tied on 5 are the shape the dev instance really carries: a subset sort that resolves a
         // tie by whatever order the store happened to hand the rows back disagrees with the whole-table
         // one, and nothing but this comparison would notice.
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenBothWaysInAgreeOnTheOrder(throughTheFeaturesView, throughThePortfolio);
         }
 
-        // @driving_port @real-io @AC-2.4 @AC-5.1 — giving it back takes effect at once, no refresh needed
+        // giving it back takes effect at once, no refresh needed
         [Test]
         public async Task Giving_the_order_back_restores_the_trackers_own_sequence_straight_away()
         {
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListReads(afterGivingItBack, theTrackersNewSequence);
         }
 
-        // @AC-5.2 — the places this instance chose are kept while the tracker has the order back, so the
+        // the places this instance chose are kept while the tracker has the order back, so the
         // switch is an experiment rather than a door. Judged against the store: while the policy is off
         // there is, by construction, no read port that would show them.
         [Test]
@@ -144,7 +144,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheStoredPlacesAreUnchangedFrom(chosenWhileOwned);
         }
 
-        // @driving_port @real-io @AC-5.3 — the one that proves re-enabling restores rather than re-seeds.
+        // the one that proves re-enabling restores rather than re-seeds.
         // While the order is given back, the tracker reshuffles everything; taking it over again must
         // return the instance's own sequence, not a fresh reading of the tracker's new one.
         [Test]
@@ -168,7 +168,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(whatThisInstanceChose, afterTakingItOverAgain);
         }
 
-        // @driving_port @real-io @AC-5.3 — the second half of the AC, and the only path that exercises
+        // the second half of the AC, and the only path that exercises
         // appending after an existing place: a Feature arrives while the tracker has the order back, so
         // taking it over again must place the newcomer at the END rather than re-reading the tracker.
         [Test]
@@ -193,7 +193,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryFeatureHoldsOnePlaceOfItsOwn(afterTakingItOverAgain);
         }
 
-        // @error @driving_port @real-io @AC-2.6 @AC-5.3 — a Feature the tracker would rank first arrives
+        // a Feature the tracker would rank first arrives
         // while this instance owns the order, and lands last without announcing itself (D7).
         [Test]
         public async Task A_feature_arriving_while_this_instance_owns_the_order_lands_last()
@@ -212,7 +212,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListReads(afterTheNewcomerArrived, theNewcomerLast);
         }
 
-        // @error @AC-2.5 — the view is free, the ownership is not (D12/S11)
+        // the view is free, the ownership is not (D12/S11)
         [Test]
         public async Task An_instance_without_a_premium_licence_may_not_hand_the_order_over()
         {
@@ -228,7 +228,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheViewIsStillReachable(theViewItself);
         }
 
-        // @error @AC-2.7 — running a Portfolio does not make the instance's ordering yours to change.
+        // running a Portfolio does not make the instance's ordering yours to change.
         // Reading who owns it is a different question: every feature list asks it to name its position
         // column, so a refusal there would leave everyone but an instance administrator reading the
         // wrong heading over the right order.
@@ -246,7 +246,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheTrackerOwnsTheOrder(read);
         }
 
-        // @error @AC-5.1 — the downgrade path and the fresh-install path are the same path: nothing has
+        // the downgrade path and the fresh-install path are the same path: nothing has
         // been chosen, so the tracker owns the order and nobody had to write a row to say so.
         [Test]
         public async Task Before_anyone_chooses_the_instance_follows_the_tracker()
@@ -264,7 +264,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListReads(theList, theTrackersOwnSequence);
         }
 
-        // @error @driving_port @real-io — INV-O2. Gaps, repeats and Features never given a place are all
+        // INV-O2. Gaps, repeats and Features never given a place are all
         // legal, and the instance must still report one place per Feature. DESIGN's instruction to DISTILL
         // was explicit: do not assume the places are contiguous.
         [Test]
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(theList, theSameListAgain);
         }
 
-        // @error @driving_port @real-io @AC-2.1 — regression, found by hand on a restored database and by
+        // regression, found by hand on a restored database and by
         // nothing in this suite. Writing places over the loaded Feature graph writes back everything else
         // that graph dragged in, and a Portfolio whose Features carry no Teams drags in far less of it.
         // Every fixture here used one, so none of them could express the failure.
@@ -307,7 +307,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListIsUnchanged(before, after);
         }
 
-        // @AC-2.1 — the bounded-change complement. Taking the order over writes places and nothing else:
+        // the bounded-change complement. Taking the order over writes places and nothing else:
         // the tracker's own value, the state and the Portfolio membership all come through untouched (D5).
         [Test]
         public async Task Taking_the_order_over_disturbs_nothing_but_the_places()

@@ -23,7 +23,7 @@ function daysBeforeToday(days: number): Date {
 	return date;
 }
 
-test("@walking_skeleton a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it", async ({
+test("a delivery lead picks the last 90 days and watches a chart wait for the new window, then show it", async ({
 	page,
 	request,
 	overviewPage,

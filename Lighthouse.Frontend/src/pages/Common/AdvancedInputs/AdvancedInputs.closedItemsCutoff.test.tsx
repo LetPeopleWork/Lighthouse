@@ -44,7 +44,6 @@ const givenSamOpensTheSettingsOf = async (
 const theCutoff = () => screen.getByLabelText(CUTOFF);
 
 describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
-	// @driving_port @contract-shape:pure-function
 	it("on a Team's settings, the line under the cutoff says what it limits, of its Work Items", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
@@ -53,7 +52,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 		);
 	});
 
-	// @driving_port @contract-shape:pure-function
 	it("on a Portfolio's settings, the same line speaks of its Features", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio");
 
@@ -62,7 +60,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 		);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("a tenant that calls its Work Items Tickets reads Tickets on a Team, never Work Items", async () => {
 		await givenSamOpensTheSettingsOf("Team", { terms: RenamedTerms });
 
@@ -72,7 +69,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 		expect(screen.queryByText(/Work Items/)).not.toBeInTheDocument();
 	});
 
-	// @edge @contract-shape:pure-function
 	it("a tenant that calls its Features Bets reads Bets on a Portfolio, never Features", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", { terms: RenamedTerms });
 
@@ -82,7 +78,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 		expect(screen.queryByText(/Features/)).not.toBeInTheDocument();
 	});
 
-	// @edge @contract-shape:pure-function
 	it("before the settings arrive, the line already says what the cutoff limits", async () => {
 		await givenSamOpensTheSettingsOf("Team", { settings: null });
 
@@ -91,7 +86,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 		);
 	});
 
-	// @error @contract-shape:pure-function
 	it("names Reports in general, and the old retain-and-filter wording is gone", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 
@@ -104,7 +98,6 @@ describe("Story 6348: the Closed Items Cutoff says what it limits", () => {
 });
 
 describe("Story 6348: what stays as it is", () => {
-	// @error @active-guard @contract-shape:bounded-change
 	it("the explanation sits in the open, so no info icon hides it", async () => {
 		await givenSamOpensTheSettingsOf("Team");
 

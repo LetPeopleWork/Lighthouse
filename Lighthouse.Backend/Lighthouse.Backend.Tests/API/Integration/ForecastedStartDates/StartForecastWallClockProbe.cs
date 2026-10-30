@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
 
         private const int RunsPerMeasurement = 3;
 
-        // @probe @us-01 @contract-shape:unbounded-preservation (AC-1.8)
+        // (AC-1.8)
         [Test]
         [Explicit("Measures wall clock. Run by hand, on one machine, before and after the change.")]
         public async Task MeasureFiftyFeatureForecastWallClock()

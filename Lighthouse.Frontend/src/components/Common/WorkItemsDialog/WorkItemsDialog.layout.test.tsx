@@ -52,7 +52,6 @@ async function aCoachHidesClosedInTheTeamsEstimationDialog() {
 }
 
 describe("each context remembers its own layout", () => {
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"a column hidden in the Estimation dialog is still hidden the next time it opens",
 		async () => {
@@ -69,7 +68,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"hiding Closed in the Estimation dialog leaves the Cycle Time scatter's dialog as it was",
 		async () => {
@@ -86,7 +84,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"hiding Closed in a Team's Estimation dialog leaves every Portfolio's Estimation dialog as it was",
 		async () => {
@@ -107,7 +104,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"a column turned on stays on in its own context only",
 		async () => {
@@ -142,7 +138,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"Reset layout brings the context back to its defaults, not to every column shown",
 		async () => {
@@ -164,7 +159,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @error @contract-shape:unbounded-preservation
 	it(
 		"a layout saved before the dialog knew its contexts does not reach any context",
 		() => {
@@ -188,7 +182,6 @@ describe("each context remembers its own layout", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @kpi @contract-shape:bounded-change
 	it(
 		"the same dialog switched to another context while open shows that context's layout",
 		async () => {

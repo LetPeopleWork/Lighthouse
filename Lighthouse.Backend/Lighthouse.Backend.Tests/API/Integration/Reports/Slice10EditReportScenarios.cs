@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private static readonly DateOnly ThenStarts = new(2026, 7, 5);
 
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
         public async Task An_admin_renames_a_report_and_every_reader_sees_the_new_name()
         {
@@ -41,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @us-07 @slice-10 @contract-shape:bounded-change
         [Test]
         public async Task A_changed_Now_length_is_stored_for_everyone()
         {
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @us-04 @slice-10 @contract-shape:bounded-change
         // Work Items that turn up for Then's days after creation must not reach the Throughput ticked later.
         [Test]
         public async Task Ticking_a_metric_that_was_frozen_but_hidden_shows_Then_as_it_was_on_the_day_of_creation()
@@ -81,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_metric_the_report_never_captured_cannot_be_shown()
         {
@@ -95,7 +91,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ShownMetricsIn(await TheReport(lightspeed, reportId)), Is.EqualTo(OnlyCycleTime));
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         // An edit has no Then in it; one that brings Then along anyway is saved as if Then were not there.
         [Test]
         public async Task Then_cannot_be_edited()
@@ -125,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:bounded-change
         // A later version may have stored members this one does not know; an edit here must not strip them.
         [Test]
         public async Task An_edit_changes_the_name_the_shown_metrics_and_how_long_Now_is_and_nothing_else()
@@ -159,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @us-07 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_reader_cannot_edit_a_report_not_even_how_long_Now_is()
         {
@@ -179,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
         // Two admins of the Team opened the same report; the one who saves second has not seen the first's change.
         [Test]
         public async Task A_save_over_another_admins_change_is_refused_and_overwrites_nothing()
@@ -204,7 +196,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
         // An edit that does not name the version of the report it was made on could silently overwrite anybody's change.
         [Test]
         public async Task An_edit_that_does_not_name_the_version_it_was_made_on_is_refused_and_changes_nothing()
@@ -226,7 +217,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [TestCase("", null, Reason.NameMissing)]
         [TestCase(SinceAugust, 13, Reason.NowTooShort)]
         [TestCase(SinceAugust, 367, Reason.NowBeforeCutoff)]
@@ -246,7 +236,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task An_edit_that_shows_no_metric_is_refused()
         {
@@ -259,7 +248,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ShownMetricsIn(await TheReport(lightspeed, reportId)), Is.EqualTo(OnlyCycleTime));
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Editing_through_another_Teams_address_changes_nothing()
         {

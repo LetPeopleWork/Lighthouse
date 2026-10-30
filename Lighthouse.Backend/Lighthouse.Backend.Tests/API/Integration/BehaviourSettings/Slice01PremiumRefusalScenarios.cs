@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     [Category("slice-01")]
     public partial class Slice01PremiumRefusalTest
     {
-        // @driving_port @real-io @AC-02.1 - the promise of the slice. A refusal that returns 200 carrying
+        // the promise of the slice. A refusal that returns 200 carrying
         // the old value is worse than an error: the caller is told the write landed.
         [Test]
         public async Task A_toggle_the_licence_does_not_cover_is_refused_out_loud()
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheRefusalIsForbidden(response);
         }
 
-        // @driving_port @real-io @AC-02.1 - the refusal has to look like the one the other door already
+        // the refusal has to look like the one the other door already
         // gives, or the two doors onto the same setting answer a client differently.
         [Test]
         public async Task The_refusal_reads_the_same_as_the_one_the_other_door_already_gives()
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheRefusalSaysPremiumIsRequired(response);
         }
 
-        // @driving_port @real-io @AC-02.1 - and nothing is written. Asserted through the read port as well
+        // and nothing is written. Asserted through the read port as well
         // as the store, because a caller can only see the former.
         [Test]
         public async Task A_refused_toggle_leaves_the_setting_exactly_as_it_was()
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredSettingIsStillOff(PremiumFixtureKey);
         }
 
-        // @driving_port @real-io @AC-02.2 - the licensed half of the same branch. Without it the slice
+        // the licensed half of the same branch. Without it the slice
         // could be passed by refusing everybody.
         [Test]
         public async Task A_toggle_the_licence_covers_is_taken_and_reported_back()
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredSettingIsOn(PremiumFixtureKey);
         }
 
-        // @driving_port @real-io @AC-02.3 - a setting that is not premium must never become gated by this
+        // a setting that is not premium must never become gated by this
         // fix. Asserted on both licence states explicitly rather than implied by the premium cases: an
         // inverted check refuses everything and would pass every scenario above.
         [Test]
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredSettingIsOn(nonPremiumSetting);
         }
 
-        // @driving_port @real-io @AC-02.1 - the door this setting has today already refuses correctly, and
+        // the door this setting has today already refuses correctly, and
         // that refusal is the shipped promise - an unlicensed administrator cannot take over the Feature
         // order - that the whole slice order exists to protect.
         // Nothing asserted it until now, so the criterion the sequencing defends was itself untested.
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheRefusalSaysPremiumIsRequired(response);
         }
 
-        // @driving_port @real-io @AC-02.1 - and once the setting has two doors, both must refuse alike.
+        // and once the setting has two doors, both must refuse alike.
         // The design says the new path's refusal is "matched by hand" against the attribute's; that is a
         // claim about two strings in two files, and it is only true for as long as something compares them.
         [Test]
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenBothRefusalsAreIdentical(throughTheDoorItHasToday, throughTheNewDoor);
         }
 
-        // @driving_port @real-io @AC-02.1 - a setting that does not exist is still Not Found, licence or
+        // a setting that does not exist is still Not Found, licence or
         // no licence. The refusal runs after the lookup; hoisting it above would answer 403 for a row
         // nobody could name, and lose the answer the caller actually needs.
         [Test]

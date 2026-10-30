@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- The stage rules ---
 
-        // @driving_port @real-io @us-03 @slice-03 @contract-shape:bounded-change
         [Test]
         public async Task A_Team_admin_sets_a_Ready_rule_and_a_Being_refined_rule_and_both_read_back()
         {
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheStageRulesAre(await ReadTheTeamSettings(gravity), ready: ReadyTag, beingRefined: AnalysingTag);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // Stages are optional, and a Team that uses none is told nothing new.
         [Test]
         public async Task A_Team_that_never_set_a_stage_rule_has_no_stages_at_all()
@@ -49,7 +47,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTabHasNoStages(tab);
         }
 
-        // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Without_stage_rules_the_ready_count_follows_the_votes()
         {
@@ -61,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 1, FromVotes);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         [Test]
         public async Task With_stage_rules_the_ready_count_follows_the_stages()
         {
@@ -72,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 2, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         [Test]
         public async Task Every_Work_Item_the_rules_do_not_match_is_Waiting()
         {
@@ -83,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheStagesAre(tab, (UserActivityTracking, ReadyStage), (AdvancedReporting, BeingRefined), (ConfigurationManagement, Waiting), (LoadTesting, Waiting));
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         [Test]
         public async Task When_both_rules_match_a_Work_Item_the_Ready_rule_wins()
         {
@@ -96,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Two signals side by side ---
 
-        // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         // With stages the tracker decides: three Yes votes say Ready, the stage still says Waiting.
         [Test]
         public async Task With_stage_rules_votes_never_make_a_Work_Item_Ready()
@@ -110,7 +103,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 2, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @us-13 @slice-03 @boundary @contract-shape:bounded-change
         // One No sends a Work Item to discussion by default; its stage stays Ready, and so does the count.
         [Test]
         public async Task With_stage_rules_votes_never_block_a_Ready_Work_Item()
@@ -124,7 +116,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 2, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // One Yes is cast and the votes still want two more, so the votes cast disagree with the Ready stage.
         [Test]
         public async Task A_Ready_stage_the_votes_cast_do_not_back_yet_is_marked_as_disagreeing()
@@ -137,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowReads(tab, new StageRowReading(UserActivityTracking, ReadyStage, "MoreYesNeeded", 2, SignalsDisagree: true));
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // Nobody has voted, so the votes hold no opinion yet and there is nothing to disagree with.
         [Test]
         public async Task A_Ready_stage_nobody_has_voted_on_shows_no_disagreement()
@@ -150,7 +140,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 2, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_Ready_stage_the_votes_also_call_Ready_shows_no_disagreement()
         {
@@ -162,7 +151,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowReads(tab, new StageRowReading(UserActivityTracking, ReadyStage, "Ready", null, SignalsDisagree: false));
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Waiting_Work_Item_the_votes_do_not_call_Ready_shows_no_disagreement()
         {
@@ -173,7 +161,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowReads(tab, new StageRowReading(ConfigurationManagement, Waiting, "MoreYesNeeded", 3, SignalsDisagree: false));
         }
 
-        // @driving_port @real-io @us-03 @us-11 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Votes_stay_open_on_a_Work_Item_whose_stage_is_Ready()
         {
@@ -184,7 +171,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRowCarriesOneVoteAndItsReadyStage(gravity, UserActivityTracking);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
         // Stage rules that make nothing Ready leave nothing Ready, however the votes went.
         [Test]
         public async Task Stage_rules_that_match_nothing_Ready_leave_the_ready_count_at_zero()
@@ -197,7 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 0, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:pure-function
         // A Team may split its refinement into Waiting and Being refined only; then nothing is Ready by stage.
         [Test]
         public async Task A_Being_refined_rule_alone_still_counts_by_stage()
@@ -210,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 0, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:pure-function
         // A rule never pulls a Work Item into refinement from a state the Team does not refine in.
         [Test]
         public async Task Rules_only_ever_judge_Work_Items_already_in_refinement()
@@ -223,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 1, FromStages);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @contract-shape:pure-function
         // Team Pulsar refines in one state and marks ready Work Items with a tag.
         [Test]
         public async Task A_Team_with_a_single_refinement_state_splits_it_into_stages_by_rule()
@@ -237,7 +220,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Refusals and what a save leaves alone ---
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_rule_on_a_field_Work_Items_do_not_have_is_refused_and_nothing_is_saved()
         {
@@ -248,7 +230,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheReadyRuleIsStill(refused, gravity, ReadyTag);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
         // The same limit the blocked-items rule editor has: twenty conditions.
         [Test]
         public async Task A_rule_with_more_conditions_than_the_rule_editor_allows_is_refused_and_nothing_is_saved()
@@ -260,7 +241,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheReadyRuleIsStill(refused, gravity, ReadyTag);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:unbounded-preservation
         // A Team created through the API, the CLI or MCP gets the same check as one whose settings are saved.
         [TestCase("workitem.storypoints", 1)]
         [TestCase("workitem.tags", 21)]
@@ -273,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheCreateIsRefusedAndNoTeamIsCreated(create);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Creating_a_Team_with_a_valid_stage_rule_keeps_it()
         {
@@ -284,7 +263,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCreatedTeamHasTheReadyRule(create, TagsContainReading(ReadyTag)!);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_rule_of_twenty_conditions_is_accepted()
         {
@@ -295,7 +273,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsAcceptedWithAReadyRuleReading(save, gravity, new StageRuleReading("or", 20, "workitem.tags", "contains", "tag-1"));
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:unbounded-preservation
         // An older settings form knows nothing about stage rules; its saves must not remove them.
         [TestCase(SaveShape.WithoutTheRefinementSection)]
         [TestCase(SaveShape.RefinementSectionWithoutTheMember)]
@@ -308,7 +285,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheStageRulesAre(await ReadTheTeamSettings(gravity), ready: ReadyTag, beingRefined: null);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
         // Editing a connection's additional fields re-creates them under new ids, so a rule saved on the
         // old one names a field that is gone. The form saves back what it read, and that save must go through.
         [Test]
@@ -321,7 +297,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsAcceptedAndTheTeamHasNoReadyRule(save, gravity);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:pure-function
         // A missing field reads as empty, so the stale rule "is not High" would otherwise call every Work Item Ready.
         [Test]
         public async Task A_Ready_rule_on_an_additional_field_that_went_away_gives_the_tab_no_stages()
@@ -333,7 +308,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTabHasNoStages(tab);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         // The rule editor sends an empty value for the operators that take none.
         [Test]
         public async Task A_Ready_rule_whose_operator_takes_no_value_is_accepted_and_reads_back()
@@ -345,7 +319,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsAcceptedWithAReadyRuleReading(save, gravity, new StageRuleReading("and", 1, "workitem.tags", "isEmpty", ""));
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Turning_every_stage_rule_off_hands_the_ready_count_back_to_the_votes()
         {
@@ -359,7 +332,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadyCountIs(tab, 1, FromVotes);
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @boundary @contract-shape:bounded-change
         // A stage rule is a refinement setting; it never makes the Team fetch its Work Items afresh.
         [Test]
         public async Task Setting_stage_rules_keeps_every_Work_Item_the_Team_holds()

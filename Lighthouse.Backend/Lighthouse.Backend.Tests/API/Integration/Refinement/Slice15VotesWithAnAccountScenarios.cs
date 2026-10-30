@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected override InstanceUnderTest Instance => InstanceUnderTest.WithSignInAndRoles;
 
-        // @driving_port @real-io @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
         public async Task A_signed_in_reader_votes_under_their_account_without_giving_a_name()
         {
@@ -31,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheLogShowsTheVoteUnder(jonas, gravity, ConfigurationManagement, JonasWeber);
         }
 
-        // @driving_port @real-io @us-15 @slice-15 @error @contract-shape:bounded-change
         // With sign-in, who you are comes from the session; a name in the request cannot change it.
         [Test]
         public async Task A_name_sent_with_a_signed_in_vote_is_ignored()
@@ -43,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheLogShowsTheVoteUnder(jonas, gravity, ConfigurationManagement, JonasWeber);
         }
 
-        // @driving_port @real-io @us-15 @slice-15 @boundary @contract-shape:bounded-change
         [Test]
         public async Task One_account_is_one_voter_whichever_browser_it_votes_from()
         {
@@ -57,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenBothBrowsersSeeOneVoteAndItIsHis(gravity, jonasOnHisLaptop, jonasOnHisPhone, Answer.No);
         }
 
-        // @driving_port @real-io @us-11 @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
         public async Task A_Team_admin_votes_like_any_reader()
         {
@@ -69,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheLogShowsTheVoteUnder(priya, gravity, ConfigurationManagement, PriyaSharma);
         }
 
-        // @driving_port @real-io @us-15 @slice-15 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Two_accounts_with_the_same_name_are_two_voters()
         {
@@ -81,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRowCounts(gravity, ConfigurationManagement, voteCount: 2);
         }
 
-        // @driving_port @real-io @us-15 @slice-15 @error @contract-shape:unbounded-preservation
         // The tab opens and a vote is taken for a reader first, so the refusal can only be about the role.
         [Test]
         public async Task Somebody_without_a_role_on_the_Team_can_neither_open_the_tab_nor_vote()
@@ -95,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenBothAreNotFoundAndOnlyJonassVoteCounts(tab, vote, gravity, jonas);
         }
 
-        // @driving_port @real-io @us-12 @us-15 @slice-15 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Somebody_without_a_role_on_the_Team_can_neither_read_the_log_nor_comment()
         {
@@ -108,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenBothAreNotFoundAndTheLogHoldsOnlyJonassVote(log, comment, gravity, jonas);
         }
 
-        // @driving_port @real-io @us-15 @slice-15 @contract-shape:pure-function
         [Test]
         public async Task With_sign_in_the_tab_says_a_voter_is_known_by_their_account()
         {
@@ -131,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected override InstanceUnderTest Instance => InstanceUnderTest.WithSignInWithoutRoles;
 
-        // @driving_port @real-io @us-15 @slice-15 @contract-shape:bounded-change
         [Test]
         public async Task Every_signed_in_person_votes_when_roles_are_not_enforced()
         {

@@ -225,7 +225,6 @@ async function theLeadClosesTheDialog(user: UserEvent): Promise<void> {
 }
 
 describe("a Feature's child items, from every list that opens them", () => {
-	// @us-03 @slice-03 @driving_port @error @contract-shape:pure-function
 	it.each(everyFeatureList)(
 		"%s: they open at once in their loading look, never as an empty list",
 		async (_, showTheList) => {
@@ -241,7 +240,6 @@ describe("a Feature's child items, from every list that opens them", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it.each(everyFeatureList)(
 		"%s: they show Started, Closed, Work Item Age, Cycle Time and Estimate once they arrive, oldest first",
 		async (_, showTheList) => {
@@ -263,7 +261,6 @@ describe("a Feature's child items, from every list that opens them", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it.each(everyFeatureList)(
 		"%s: they say they couldn't be loaded when the request fails",
 		async (_, showTheList) => {
@@ -284,7 +281,6 @@ describe("a Feature's child items, from every list that opens them", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:bounded-change
 	it.each(everyFeatureList)(
 		"%s: they are asked for again when the lead closes and reopens after a failure",
 		async (_, showTheList) => {
@@ -304,7 +300,6 @@ describe("a Feature's child items, from every list that opens them", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it.each(everyFeatureList)(
 		"%s: the previous Feature's items never show when their answer arrives late",
 		async (_, showTheList) => {

@@ -37,7 +37,6 @@ const theInputHolding = (member: string): object | undefined =>
 		);
 
 describe("what the print routes hand the print page", () => {
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it("is the report read and the owner's name, and the instance's terms, each holding exactly what the page reads", async () => {
 		renderWithQueryClient(
 			<MemoryRouter initialEntries={["/print/teams/1/reports/42"]}>

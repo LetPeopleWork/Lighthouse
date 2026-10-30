@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- The cadence setting ---
 
-        // @driving_port @real-io @us-04 @slice-04 @contract-shape:bounded-change
         [Test]
         public async Task A_Team_admin_sets_the_Refinement_cadence_and_it_reads_back()
         {
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheCadenceIs(await ReadTheTeamSettings(gravity), new CadenceReading("Tuesday,Thursday", 2, "2026-10-05"));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         // A starting week can be named by any of its days; it is kept as the week, from its Monday.
         [Test]
         public async Task A_starting_week_named_by_any_of_its_days_is_kept_as_that_week()
@@ -44,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheCadenceIs(await ReadTheTeamSettings(gravity), new CadenceReading(Tuesday, 2, "2026-10-05"));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         [Test]
         public async Task The_same_weekday_named_twice_is_one_Refinement_day()
         {
@@ -55,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheCadenceIs(await ReadTheTeamSettings(gravity), new CadenceReading(Thursday, 1, null));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         // Without a starting week "every second Tuesday" names no Tuesday in particular.
         [Test]
         public async Task Every_few_weeks_without_a_starting_week_is_refused_and_nothing_is_saved()
@@ -67,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheCadenceIsStillThursdaysEveryWeek(refused, gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [TestCase(0)]
         [TestCase(-1)]
         [TestCase(53)]
@@ -80,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheCadenceIsStillThursdaysEveryWeek(refused, gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [TestCase("Someday")]
         [TestCase("Thu 8 Oct")]
         public async Task A_Refinement_day_that_is_not_a_weekday_is_refused_and_nothing_is_saved(string notAWeekday)
@@ -92,7 +86,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndTheCadenceIsStillThursdaysEveryWeek(refused, gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function
         // The settings form checks a Team before it saves it; a day that is not a weekday is refused there too,
         // by name, rather than failing the check.
         [TestCase("Funday")]
@@ -106,7 +99,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCheckIsRefusedNaming(refused, notAWeekday);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:unbounded-preservation
         // An older settings form knows nothing about the cadence; its saves must not remove it.
         [TestCase(SaveShape.WithoutTheRefinementSection)]
         [TestCase(SaveShape.RefinementSectionWithoutTheMember)]
@@ -119,7 +111,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheCadenceIs(await ReadTheTeamSettings(gravity), new CadenceReading(Thursday, 1, null));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Clearing_every_Refinement_day_leaves_the_Team_without_a_cadence()
         {
@@ -130,7 +121,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheTeamHasNoCadenceAndTheTabNamesNoDate(gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         // The cadence is a refinement setting; it never makes the Team fetch its Work Items afresh.
         [Test]
         public async Task Setting_the_cadence_keeps_every_Work_Item_the_Team_holds()
@@ -145,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- The next Refinement ---
 
-        // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // Thursdays every week. The Thursday itself and the Friday after are the boundaries. The days until it
         // are counted from the instance's today, so a browser in another time zone shows the same number.
         [TestCase(2026, 10, 2, "2026-10-08", false, 6)]
@@ -162,7 +151,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIsDaysAway(tab, nextRefinement, isRefinementDay, daysAway);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // Tuesdays every second week, from the week of Monday 5 October 2026.
         [TestCase(2026, 10, 2, "2026-10-06", false)]
         [TestCase(2026, 10, 6, "2026-10-20", true)]
@@ -177,7 +165,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIs(tab, nextRefinement, isRefinementDay);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         [Test]
         public async Task No_Refinement_falls_before_the_starting_week()
         {
@@ -190,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIs(tab, "2026-10-20", false);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:bounded-change
         // A client may still send a starting week with an every-week cadence; it means nothing there, so it is not kept.
         [Test]
         public async Task Refining_every_week_keeps_no_starting_week_and_looks_to_the_next_cadence_day()
@@ -209,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Team_refining_on_two_weekdays_looks_to_whichever_comes_first()
         {
@@ -222,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIs(tab, "2026-10-13", true);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // At 23:30 UTC on Wednesday 7 October it is already Thursday in Zurich - a Refinement day there.
         [TestCase("Europe/Zurich", "2026-10-15", true, 7)]
         [TestCase("UTC", "2026-10-08", false, 1)]
@@ -236,7 +220,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIsDaysAway(tab, nextRefinement, isRefinementDay, daysAway);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // Nobody refines on a day the instance has blacked out, so that Refinement simply does not happen.
         [TestCase(2)]
         [TestCase(8)]
@@ -251,7 +234,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIs(tab, "2026-10-15", false);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:pure-function
         // Without a cadence the tab is still the place to see and vote; it just names no date.
         [Test]
         public async Task Without_a_cadence_the_tab_lists_its_Work_Items_and_names_no_date()
@@ -263,7 +245,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTabListsAllSixAndNamesNoDate(tab);
         }
 
-        // @driving_port @real-io @us-04 @us-11 @slice-04 @error @contract-shape:bounded-change
         [Test]
         public async Task Without_a_cadence_votes_are_still_taken()
         {

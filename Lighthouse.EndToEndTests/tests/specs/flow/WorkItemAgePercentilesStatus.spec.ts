@@ -46,7 +46,7 @@ const MEASURED_TREND_DIRECTIONS = ["up", "down", "flat"];
  * painted from something other than the live measurement, cannot produce three
  * different readings from the same selector.
  */
-test("@US-05 a delivery lead is told to define an SLE, then sees the Work Item Age Percentiles status follow the ageing population", async ({
+test("a delivery lead is told to define an SLE, then sees the Work Item Age Percentiles status follow the ageing population", async ({
 	page,
 	request,
 	overviewPage,

@@ -691,7 +691,6 @@ describe("WorkTrackingSystemService", () => {
 			};
 		};
 
-		// @us-02 @driving_port @contract-shape:pure-function
 		it("keeps how many Teams and Portfolios use each connection from the list of connections", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [{ ...nordwindJiraDc, usedBy: { teams: 4, portfolios: 2 } }],
@@ -706,7 +705,6 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
-		// @us-04 @driving_port @contract-shape:pure-function
 		it("keeps the connection's defaults and the defaults it offers, leaving out one this page does not know", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [
@@ -725,7 +723,6 @@ describe("WorkTrackingSystemService", () => {
 			expect(connection.supportedDefaults).toEqual(["parentOverrideForTeams"]);
 		});
 
-		// @us-04 @driving_port @contract-shape:pure-function
 		it("keeps every default the connection names, for Teams and Portfolios alike", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [
@@ -749,7 +746,6 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
-		// @story-6313 @driving_port @contract-shape:pure-function
 		it("reads each Estimation default as its whole bundle, filling the parts the server left out", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [
@@ -787,7 +783,6 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
-		// @us-03 @driving_port @contract-shape:bounded-change
 		it("saving only asks the server to leave the updates to their next scheduled run", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
 
@@ -802,7 +797,6 @@ describe("WorkTrackingSystemService", () => {
 			});
 		});
 
-		// @us-03 @driving_port @contract-shape:bounded-change
 		it("saving and updating leaves the server to start the updates now", async () => {
 			mockedAxios.put.mockResolvedValueOnce({ data: nordwindJiraDc });
 
@@ -819,7 +813,6 @@ describe("WorkTrackingSystemService", () => {
 	});
 
 	describe("a save the server refuses", () => {
-		// @us-6304 @driving_port
 		it("carries the refusal's reason and its sentence to the page", async () => {
 			const detail =
 				'"Caused by" cannot be removed. It is the Teams\' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.';

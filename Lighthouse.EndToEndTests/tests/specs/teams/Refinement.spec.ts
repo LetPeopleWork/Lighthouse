@@ -16,7 +16,6 @@ const UNCONFIGURED_TEAM = "Team Zenith";
 // sitting in Backlog, Analysing or Next is GR-051.
 const FIRST_IN_BACKLOG_ORDER = "GR-051";
 
-// @walking_skeleton @driving_port @us-01 @us-02 @slice-01 @slice-02 @contract-shape:bounded-change
 // The demo data names Gravity's refinement states (Backlog, Analysing, Next) and leaves Zenith
 // without any, and the tab lists what is in them. Without sign-in everybody may edit the Team, so the
 // switched-off tab points to Settings.
@@ -60,7 +59,6 @@ testWithDemo(
 // it Ready at the default of three Yes votes from three voters.
 const TWO_YES_SHORT_OF_READY = "GR-059";
 
-// @walking_skeleton @driving_port @us-11 @us-13 @slice-11 @slice-13 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
 // Without sign-in a voter gives a name once, votes from the list, sees the vote counted, and the third Yes
 // makes the Work Item Ready for everybody.
 testWithDemo(
@@ -96,7 +94,6 @@ testWithDemo(
 	},
 );
 
-// @walking_skeleton @driving_port @us-04 @us-05 @us-06 @slice-04 @slice-05 @slice-06 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
 // The demo data already has Gravity refine on Thursdays, and its admin re-affirms that here. Then
 // the tab names the next Thursday, says whether to refine more or stop against the Team's own forecast,
 // and marks where the Work Items needed before then end. The numbers depend on the day the run happens,

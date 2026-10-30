@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             "$geoip_disable",
         ];
 
-        // @driving_port @real-io @kpi @contract-shape:bounded-change
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
@@ -86,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @error @contract-shape:unbounded-preservation
         [TestCase("AllReportsListed", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-01,slice-01")]
         [TestCase("AllReportsListed", ",\"route\":\"TeamDetail_Reports\"", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-02a,slice-02a")]
@@ -106,7 +104,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         /// <summary>The name is the contract and the number is whatever is next when the slice lands, so this pins the order, never the number.</summary>
-        // @contract-shape:bounded-change
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
@@ -126,7 +123,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // Holds today and must keep holding as each of the four is appended.
-        // @contract-shape:unbounded-preservation
         [Test]
         public void Every_event_named_before_them_keeps_its_number()
         {
@@ -137,7 +133,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         // Data leaving that the page does not describe is data nobody was told about.
-        // @contract-shape:bounded-change
         [TestCase("Every report was listed", Category = "us-01,slice-01")]
         [TestCase("Reports were created for several Teams or Portfolios", Category = "us-02a,slice-02a")]
         [TestCase("Several reports were removed at once", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
@@ -153,7 +148,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @contract-shape:bounded-change
         [TestCase("A report was created", "Create reports", Category = "us-02a,slice-02a")]
         [TestCase("A report was deleted", "already gone", Category = "us-05,slice-05", Ignore = PendingEpic6350.Slice05)]
         [TestCase("A report was exported as a PDF", "one report selected", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]

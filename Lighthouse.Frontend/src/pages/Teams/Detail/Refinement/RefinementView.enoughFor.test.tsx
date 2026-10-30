@@ -132,7 +132,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		vi.useRealTimers();
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	it("numbers the first rows up to the high end and draws the line after them", async () => {
 		renderTheRefinementTab(gravityNeeding(3));
 
@@ -152,7 +151,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(line, list[3].row)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	// Somebody sorting by State sees the first three rows as sorted numbered, not the backlog's first three.
 	it("numbers the rows in the order they are shown when somebody sorts the list", async () => {
 		const { user } = renderTheRefinementTab(gravityNeeding(3));
@@ -179,7 +177,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(line, list[3].row)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:unbounded-preservation
 	it("shows backlog order again the next time the tab opens after a sort", async () => {
 		const { user } = renderTheRefinementTab(gravityNeeding(3));
 		await theListAsShown();
@@ -206,7 +203,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		]);
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	// A filter is one more way of choosing what is shown, so the numbering follows it as it follows a sort.
 	it("says all the shown ones are needed when a filter leaves fewer than needed", async () => {
 		const { user } = renderTheRefinementTab(
@@ -224,7 +220,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(list[2].row, line)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	it("draws the line after the last shown row when a filter leaves exactly as many as needed", async () => {
 		const { user } = renderTheRefinementTab(
 			gravityNeeding(5, {}, sixToFilterByState()),
@@ -245,7 +240,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(list[4].row, line)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("says all of them are needed, after the last row, when fewer are in refinement than needed", async () => {
 		renderTheRefinementTab(gravityNeeding(8));
 
@@ -268,7 +262,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		).not.toBeInTheDocument();
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("draws the line after the last row when exactly as many are listed as needed", async () => {
 		renderTheRefinementTab(gravityNeeding(6));
 
@@ -286,7 +279,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(list[5].row, line)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("numbers nothing and draws the line before the first row when nothing is needed", async () => {
 		renderTheRefinementTab(gravityNeeding(0, { readyCount: 2 }));
 
@@ -297,7 +289,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		expect(comesBefore(line, list[0].row)).toBe(true);
 	});
 
-	// @us-06 @slice-06 @error @contract-shape:pure-function
 	// The tab says why there is no number, so the missing column and line are not a tab that failed to load.
 	it.each([
 		[
@@ -335,7 +326,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		},
 	);
 
-	// @us-06 @slice-06 @error @contract-shape:pure-function
 	// The rows are marked exactly when the verdict above them is shown, so the two never disagree.
 	it.each([
 		["nothing ready is counted", { readyCount: undefined }],
@@ -354,7 +344,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		},
 	);
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	// The grid places every row from the heights it knows, so the line has to sit in space it reserved.
 	it("reserves the space the line takes after the last needed row", async () => {
 		renderTheRefinementTab(gravityNeeding(5));
@@ -371,7 +360,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		]);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("reserves the space the line takes before the first row when nothing is needed", async () => {
 		renderTheRefinementTab(gravityNeeding(0, { readyCount: 2 }));
 
@@ -387,7 +375,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		]);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	// Muting the whole row would also dim the vote buttons below readable contrast; only the text is muted.
 	it("mutes the text of the rows below the line and leaves their controls at full strength", async () => {
 		renderTheRefinementTab(gravityNeeding(3));
@@ -412,7 +399,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		]);
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	// The line sits among the rows, where a screen reader would read it as a row of its own, so it is
 	// hidden from one and each number says what it counts instead.
 	it("tells a screen reader what each number counts instead of reading the line", async () => {
@@ -434,7 +420,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		).toBeInTheDocument();
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("says the Team's own words on the line", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
@@ -450,7 +435,6 @@ describe("The Refinement tab marks the Work Items needed before the next Refinem
 		).toBeInTheDocument();
 	});
 
-	// @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("says the Team's own word for Refinement on the enough-for line", async () => {
 		terms.current = {
 			...defaultRefinementTerms,

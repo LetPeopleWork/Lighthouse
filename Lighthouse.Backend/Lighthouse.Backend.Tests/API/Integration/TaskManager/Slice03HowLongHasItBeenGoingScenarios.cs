@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-03")]
     public partial class Slice03HowLongHasItBeenGoingTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-03.1 @AC-03.4 — a real refresh, running, through
+        // a real refresh, running, through
         // the production queue: the row says how long it has been going and the number is the server's.
         [Test]
         public async Task A_running_refresh_says_how_long_it_has_been_running()
@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(team, TimeSpan.FromSeconds(12));
         }
 
-        // @driving_port @real-io @AC-03.1 @AC-03.4 — the waiting half. A queued row's elapsed time is how
+        // the waiting half. A queued row's elapsed time is how
         // long it has been waiting, which is the number that separates a queue from a wedge.
         [Test]
         public async Task A_refresh_waiting_its_turn_says_how_long_it_has_been_waiting()
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(waiting, TimeSpan.FromMinutes(3));
         }
 
-        // @driving_port @real-io @AC-03.4 — the criterion itself. Between the two readings the test's own
+        // the criterion itself. Between the two readings the test's own
         // wall clock moves by milliseconds and the instance clock by an hour; the answer follows the
         // instance. A duration computed anywhere but here would fail this and pass everything else.
         [Test]
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheAnswerGrewByExactly(beforeTheClockMoved, afterTheClockMoved, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @AC-03.3 — a coalesced follow-up is new work waiting, not the old work
+        // a coalesced follow-up is new work waiting, not the old work
         // still waiting. Carrying the original wait on would report an hour against something admitted a
         // moment ago, which is the exact misreading the slice exists to prevent.
         [Test]
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(team, TimeSpan.Zero);
         }
 
-        // @driving_port @real-io @error @AC-03.5 — mid-rolling-upgrade, which is a mixed list rather than
+        // mid-rolling-upgrade, which is a mixed list rather than
         // an empty one: one replica is on the older build and records nothing, the other is on this one and
         // records both moments. The old entry has to survive without a duration rather than invent one or
         // take the list down with it, while the new entry still answers.
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(admittedByThisOne, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @error @AC-03.5 — the half-recorded case, which is the one a fallback
+        // the half-recorded case, which is the one a fallback
         // gets wrong quietly: an entry that has an admission moment but never got a start moment is
         // running, so falling back to the admission would report the wait as the run — forty minutes
         // against something that may have started seconds ago.
@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(recordedInFull, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @error @AC-03.5 — work that has finished is neither running nor waiting, so
+        // work that has finished is neither running nor waiting, so
         // it is not on a list of what is running. It can still be in the store: briefly as it ends, and for
         // good if the replica running it died in that window, because nothing reaps a key its own replica
         // never removed. A row like that used to be listed and counted for the life of the deployment while
@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamSaysItHasBeenGoingFor(stillWaiting, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @error @AC-03.4 — the moments are written by whichever replica handled
+        // the moments are written by whichever replica handled
         // the transition and the elapsed time computed by whichever replica answers the read. Their clocks
         // do not agree to the millisecond, so "started in the future" is an ordinary state, and a row that
         // reports it as a negative duration reads as broken rather than as new.

@@ -13,7 +13,7 @@ const THE_DEMO_PORTFOLIO = "Project Apollo";
 // The only Additional Field the CSV demo connection defines.
 const A_FIELD_OF_THE_CONNECTION = "Story Points";
 
-test("@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the connection and a Team that follows it shows it", async ({
+test("an admin sets the Teams' Estimation once on the connection and a Team that follows it shows it", async ({
 	request,
 	overviewPage,
 }) => {
@@ -38,7 +38,7 @@ test("@walking_skeleton @US-11 an admin sets the Teams' Estimation once on the c
 	);
 });
 
-test("@walking_skeleton @US-10 an admin sets the Portfolios' Feature Owner Field once on the connection and a Portfolio that follows it shows it", async ({
+test("an admin sets the Portfolios' Feature Owner Field once on the connection and a Portfolio that follows it shows it", async ({
 	request,
 	overviewPage,
 }) => {

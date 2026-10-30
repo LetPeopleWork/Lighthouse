@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
     [Category("slice-03")]
     public partial class Slice03VetoSettingTest
     {
-        // @driving_port @real-io @AC-06.1 - the row itself. Until it exists the master switch reads no
+        // the row itself. Until it exists the master switch reads no
         // row, concludes the veto is disengaged, and no control renders anywhere.
         [Test]
         public async Task The_veto_is_offered_to_administrators_as_a_setting_of_its_own()
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoIsAmongThem(settings);
         }
 
-        // @driving_port @real-io @AC-06.1 @DT-23 - and it ships disengaged. This is the one value the
+        // and it ships disengaged. This is the one value the
         // seeder writes exactly once: it never overwrites the stored on/off of a key it already knows,
         // so a release that ships the wrong default cannot be repaired by seeding again.
         [Test]
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheStoredVetoIsDisengaged();
         }
 
-        // @driving_port @real-io @AC-06.1 - premium, which is what makes the Community half of AC-07.4
+        // premium, which is what makes the Community half of AC-07.4
         // a commercial line rather than a missing feature.
         [Test]
         public void The_veto_is_a_premium_setting()
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoIsPremium();
         }
 
-        // @driving_port @real-io @AC-06.6 - the words an administrator decides on. The criterion asks
+        // the words an administrator decides on. The criterion asks
         // for the suspend-and-resume behaviour in plain words, because the fear that stops somebody
         // using this switch is that flipping it destroys what people already answered.
         [Test]
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoExplainsSuspendAndResume();
         }
 
-        // @driving_port @real-io @AC-06.6 - and the name carries the negation on its own. It sits in a
+        // and the name carries the negation on its own. It sits in a
         // table where every other switch reads positively, so a name that does not say "never" is read
         // backwards at a glance, in the direction that matters.
         [Test]
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoIsNamedForWhatItStops();
         }
 
-        // @driving_port @real-io @AC-06.2 - the upgrade case. An administrator who engaged the veto has
+        // the upgrade case. An administrator who engaged the veto has
         // made a policy decision, and the next release may not quietly undo it.
         [Test]
         public async Task A_later_upgrade_leaves_an_engaged_veto_engaged()
@@ -81,7 +81,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheStoredVetoIsEngaged();
         }
 
-        // @driving_port @real-io @AC-06.1 - the licensed half of the branch. Without it the slice could
+        // the licensed half of the branch. Without it the slice could
         // be passed by refusing everybody.
         [Test]
         public async Task A_licensed_administrator_engages_the_veto_and_is_told_it_landed()
@@ -95,7 +95,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheStoredVetoIsEngaged();
         }
 
-        // @driving_port @real-io @AC-07.1 @AC-07.4 - a Community administrator is refused out loud. A
+        // a Community administrator is refused out loud. A
         // privacy control whose write can be dropped while the response says success is worse than no
         // control, which is why this is asserted here and not only where the gate was written.
         [Test]
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheStoredVetoIsDisengaged();
         }
 
-        // @driving_port @real-io @AC-07.4 - and it is not hidden from them. Seeing that the control
+        // and it is not hidden from them. Seeing that the control
         // exists, seeing that usage data is flowing, and seeing that stopping it needs Premium is the
         // whole of what a Community administrator is owed here.
         [Test]
@@ -126,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheVetoReadsAsDisengagedAndPremium(settings);
         }
 
-        // @driving_port @real-io @DT-30 - nothing is wired to run when this row is written. The gate
+        // nothing is wired to run when this row is written. The gate
         // reads the row on every emit, so there is no consequence to apply, and a later refactor that
         // attaches one would change when the veto takes effect without changing a single scenario above.
         [Test]
@@ -142,7 +142,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheOnlySettingThatChangedIsTheVeto(before, after);
         }
 
-        // @driving_port @real-io @AC-07.1 - NOT ignored, and deliberately so. This slice inherits the
+        // NOT ignored, and deliberately so. This slice inherits the
         // refusal from story #5876 rather than writing it. If that story is ever reverted, or its own
         // fixture archived with it, every scenario above would go green against a gate that silently
         // drops the write - so this Epic checks the inherited promise for itself.
@@ -159,7 +159,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
             ThenTheStoredSettingIsStillOff(premiumSetting);
         }
 
-        // @driving_port @real-io @AC-07.3 - NOT ignored. This Epic's invariant wherever the premium fix
+        // NOT ignored. This Epic's invariant wherever the premium fix
         // was written: a setting that is not premium may not become gated by it.
         [Test]
         public async Task A_setting_that_is_not_premium_still_toggles_on_an_instance_with_no_premium_licence()

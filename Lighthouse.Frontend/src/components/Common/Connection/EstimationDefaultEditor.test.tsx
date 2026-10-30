@@ -49,7 +49,6 @@ const pick = (option: string) => {
 };
 
 describe("EstimationDefaultEditor", () => {
-	// @story-6313 @contract-shape:bounded-change
 	it("without a default shows only the field, and no unit or non-numeric switch", () => {
 		renderEditor(null);
 
@@ -60,7 +59,6 @@ describe("EstimationDefaultEditor", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("picking a field where there was no default starts a numeric bundle without unit or categories", () => {
 		const onChange = renderEditor(null);
 
@@ -74,7 +72,6 @@ describe("EstimationDefaultEditor", () => {
 		});
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("picking None clears the whole default", () => {
 		const onChange = renderEditor(sizes);
 
@@ -83,14 +80,12 @@ describe("EstimationDefaultEditor", () => {
 		expect(onChange).toHaveBeenCalledWith(null);
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("a default without a unit shows the unit empty", () => {
 		renderEditor({ ...points, unit: null });
 
 		expect(screen.getByLabelText("Estimation Unit")).toHaveValue("");
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("switching to non-numeric keeps the field and unit", () => {
 		const onChange = renderEditor(points);
 
@@ -102,7 +97,6 @@ describe("EstimationDefaultEditor", () => {
 		});
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("adding a category puts it after the ones the default holds", () => {
 		const onChange = renderEditor(sizes);
 
@@ -116,7 +110,6 @@ describe("EstimationDefaultEditor", () => {
 		});
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("removing a category keeps the others in their order", () => {
 		const onChange = renderEditor(sizes);
 
@@ -131,7 +124,6 @@ describe("EstimationDefaultEditor", () => {
 		});
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("dragging a category to another place reorders the default's categories", () => {
 		const onChange = renderEditor(sizes);
 

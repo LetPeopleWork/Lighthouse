@@ -101,6 +101,14 @@ Two standing principles worth keeping visible here because they're easy to skip 
   dashboard widgets, and keyed TanStack queries so a late answer for an old request never lands. DISTILL
   then pins both states, and E2E page objects wait for `data-widget-status="ready"` rather than mere
   visibility. Check it by hand with the browser throttled to a slow connection.
+- **DISTILL writes no nWave scenario tags into the code.** The acceptance-designer's mandate tags every
+  scenario (`@us-02b`, `@slice-02b`, `@kpi-OUT-…`, `@contract-shape:…`, `@walking_skeleton`,
+  `@driving_port`, `@error`, `@real-io`, `@US-01`, `@BUG-…`). That assumes Gherkin files a runner filters
+  on; here they would be comments or title prefixes on Vitest, NUnit and Playwright tests that no tool
+  reads, and the story and slice ids point at feature documents that get archived. Keep any such
+  classification in the feature workspace, and tell every acceptance-designer dispatch so, and every
+  reviewer that an untagged scenario is correct here. The Playwright title tags the package scripts
+  filter on (`@screenshot`, `@auth`, `@rbac`, `@proxyauth`) are real and stay.
 - **DESIGN ends with an architecture summary for the maintainer.** When a DESIGN wave finishes (in AFK
   mode too, as part of the wave-done update), post a short, high-level summary in chat, so the maintainer
   can learn from it and keep up:

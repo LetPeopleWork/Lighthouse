@@ -37,7 +37,6 @@ describe("RefinementService and the browser's voter key", () => {
 		localStorage.clear();
 	});
 
-	// @us-11 @slice-11 @driving_port @contract-shape:pure-function
 	it("reads the tab with the key this browser keeps for its voter, and with none before it keeps one", async () => {
 		await refinementService.getRefinement(7);
 		localStorage.setItem(
@@ -54,7 +53,6 @@ describe("RefinementService and the browser's voter key", () => {
 		expect(theKeySentWithRead(0)).toBeUndefined();
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:pure-function
 	it("sends no key while what the browser keeps cannot be read, and the key once it can", async () => {
 		localStorage.setItem(VOTER_STORAGE_KEY, "not json");
 		await refinementService.getRefinement(7);

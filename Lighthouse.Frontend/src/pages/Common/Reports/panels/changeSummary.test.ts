@@ -42,7 +42,6 @@ const metric = (
 });
 
 describe("summariseChange", () => {
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it.each<[string, ChangeGroup["kind"], readonly Line[]]>([
 		[
 			"better on one line and unmoved on the rest",
@@ -81,7 +80,6 @@ describe("summariseChange", () => {
 		]);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// A dash is a line that cannot be compared, including one never captured; it neither moves a metric nor holds it.
 	it.each<[string, ChangeGroup["kind"], readonly Line[]]>([
 		[
@@ -110,7 +108,6 @@ describe("summariseChange", () => {
 		]);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	it("lists no metric whose every line is a dash, nor one with no change line at all", () => {
 		expect(
 			summariseChange([
@@ -121,7 +118,6 @@ describe("summariseChange", () => {
 		).toEqual([{ kind: "worse", keys: ["wip"] }]);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it("gives the groups as improved, got worse, mixed and unchanged, whatever order the metrics come in", () => {
 		expect(
 			summariseChange([
@@ -138,7 +134,6 @@ describe("summariseChange", () => {
 		]);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it("keeps the metrics of one group in the order they came in, and leaves out a group with none", () => {
 		expect(
 			summariseChange([
@@ -153,7 +148,6 @@ describe("summariseChange", () => {
 		]);
 	});
 
-	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	it.each<[string, readonly ShownMetricLines[]]>([
 		["no metric is shown", []],
 		[

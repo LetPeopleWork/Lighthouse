@@ -272,8 +272,8 @@ beforeEach(() => {
 	terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Work Item");
 });
 
-describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on paragraphs", () => {
-	it(`@kpi-OUT-6094-words-above-the-table above the table sit only the headline, the window badge and four level rows - no more than 50 words`, async () => {
+describe("the dialog opens on a summary, not on paragraphs", () => {
+	it(`above the table sit only the headline, the window badge and four level rows - no more than 50 words`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 12, 70: 14, 85: 15, 95: 16 } }),
 		);
@@ -331,7 +331,7 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 			headline: "Backtested 1 scenario · 1 forecast",
 		},
 	])(
-		`@kpi-OUT-6094-caution-is-visible when $case the headline reads "$headline"`,
+		`when $case the headline reads "$headline"`,
 		async ({ answer, headline }) => {
 			const dialog = await theDialogFor(answer());
 
@@ -340,8 +340,8 @@ describe("@us-06 @slice-06b @driving_port the dialog opens on a summary, not on 
 	);
 });
 
-describe("@us-06 @slice-06b each confidence level is a bar against the rate it should hold at", () => {
-	it(`@kpi-OUT-6094-caution-is-visible Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading "94% (15 of 16) · 3 accurate"`, async () => {
+describe("each confidence level is a bar against the rate it should hold at", () => {
+	it(`Maria's 85th held in 15 of 16 checks, 3 of them within 10%: a bar at 94% against a tick at 85%, reading "94% (15 of 16) · 3 accurate"`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer(mariasEightyFifth()));
 		const bar = within(dialog).getByRole("img", {
 			name: "85th Confident: held in 94% of checks (15 of 16), expected about 85%; 3 accurate within 10%",
@@ -404,7 +404,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		}
 	});
 
-	it(`@error a level that never held and one that always held get no words beyond their bar and numbers`, async () => {
+	it(`a level that never held and one that always held get no words beyond their bar and numbers`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				heldCounts: { 50: 0, 70: 9, 85: 12, 95: 16 },
@@ -422,7 +422,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 		).toHaveLength(0);
 	});
 
-	it(`@error a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar`, async () => {
+	it(`a Team with no checkable history - Kelp Farm - gets a plain headline, a could-not-be-checked badge and four levels not tested, each an empty bar`, async () => {
 		const dialog = await theDialogFor(kelpFarm());
 
 		expectTheLine(dialog, "None of the 16 scenarios could be backtested");
@@ -449,7 +449,7 @@ describe("@us-06 @slice-06b each confidence level is a bar against the rate it s
 	});
 });
 
-describe("@us-06 @slice-06b the sampling window is one badge that never ranks windows", () => {
+describe("the sampling window is one badge that never ranks windows", () => {
 	it.each([
 		{
 			state: "every window held up, the Team's own among them",
@@ -545,7 +545,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		badge: string;
 		tone: string;
 	}[])(
-		`@kpi-OUT-6094-no-window-ranked when $state the badge reads "$badge" in the $tone tone`,
+		`when $state the badge reads "$badge" in the $tone tone`,
 		async ({ options, badge, tone }) => {
 			const dialog = await theDialogFor(aRealityCheckAnswer(options));
 
@@ -587,7 +587,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		);
 	});
 
-	it(`@error when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted`, async () => {
+	it(`when the Team's own window could not be checked the badge's tooltip names that window among the ones not counted`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				determination: "SomeWindowsSound",
@@ -611,7 +611,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(linesReading(tooltip, notChecked)).not.toHaveLength(0);
 	});
 
-	it(`@boundary when every window could be checked the badge's tooltip only says what held up means`, async () => {
+	it(`when every window could be checked the badge's tooltip only says what held up means`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const badge = theBadgeReading(dialog, "Your 30-day sampling window: fine");
 
@@ -621,7 +621,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 		expect(readingOf(tooltip)).toBe(HELD_UP_MEANS);
 	});
 
-	it(`@kpi-OUT-6094-no-window-ranked nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up`, async () => {
+	it(`nothing in the summary, the badge's tooltip or the explanation names, orders or scores a window - Deep Current, whose 14 days did not hold up`, async () => {
 		const dialog = await theDialogFor(deepCurrent());
 		const badge = theBadgeReading(
 			dialog,
@@ -648,7 +648,7 @@ describe("@us-06 @slice-06b the sampling window is one badge that never ranks wi
 	});
 });
 
-describe("@us-06 @slice-06b the explanation, the credit and the source are one press away", () => {
+describe("the explanation, the credit and the source are one press away", () => {
 	it(`hovering the headline's info icon names it "${EXPLANATION_ICON}" and opens nothing`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
@@ -738,7 +738,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
-	it(`@error when no scenario could run the explanation says all of them were left out, and why - Kelp Farm`, async () => {
+	it(`when no scenario could run the explanation says all of them were left out, and why - Kelp Farm`, async () => {
 		const dialog = await theDialogFor(kelpFarm());
 
 		await userEvent.click(theExplanationIcon(dialog));
@@ -758,7 +758,7 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 		).not.toHaveLength(0);
 	});
 
-	it(`@error when some scenarios could not run the explanation says how many and why - Coastal Survey`, async () => {
+	it(`when some scenarios could not run the explanation says how many and why - Coastal Survey`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 
 		await userEvent.click(theExplanationIcon(dialog));
@@ -783,8 +783,8 @@ describe("@us-06 @slice-06b the explanation, the credit and the source are one p
 	});
 });
 
-describe("@us-06 @slice-06b the summary holds to what the check promised", () => {
-	it(`@kpi-OUT-4172-read-only the only control the summary adds is its explanation's icon; nothing could change a Team setting`, async () => {
+describe("the summary holds to what the check promised", () => {
+	it(`the only control the summary adds is its explanation's icon; nothing could change a Team setting`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		for (const role of [

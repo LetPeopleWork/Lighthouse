@@ -72,7 +72,6 @@ describe("The Reports page is counted only where this browser agreed", () => {
 		forgetWhatWasNoticed();
 	});
 
-	// @driving_port @us-01 @slice-01 @kpi-OUT-6350-every-report-found @contract-shape:bounded-change
 	it(`counts the page, and nothing about its reports, from a browser that agreed`, async () => {
 		await showingThePageWith(theAnswerAboutThisBrowser({}), "sending");
 
@@ -85,7 +84,6 @@ describe("The Reports page is counted only where this browser agreed", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it(`counts nothing from a browser that said no, token or not`, async () => {
 		await showingThePageWith(
 			theAnswerAboutThisBrowser({ sending: false, decision: "Declined" }),

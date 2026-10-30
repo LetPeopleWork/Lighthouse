@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
     [Category("slice-01")]
     public partial class Slice01SleRiskReadTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-01.1 @AC-01.2
         //
         // The whole feature in one scenario. Twenty finished items, a published target of 10 days, and
         // an item open for 5: six of the twenty took longer than 10 days, thirteen were still open on
@@ -37,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 46);
         }
 
-        // @driving_port @real-io — slice 03. A share over two finished items and a share over forty
+        // slice 03. A share over two finished items and a share over forty
         // read identically, and the first moves fifty points when one more item closes. The count
         // beside the number is what tells them apart.
         //
@@ -68,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsAnswerRestsOn(past, 12);
         }
 
-        // @driving_port @real-io — ADO Story #6069. The count beside the number tells a reader how
+        // ADO Story #6069. The count beside the number tells a reader how
         // much evidence there was; it does not tell them how much of it missed, and working that out
         // means multiplying the percentage by the count in their head. This says it outright.
         //
@@ -96,7 +95,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsAnswerOwesNoEvidence(past);
         }
 
-        // @driving_port @real-io @AC-01.2 — the same distribution read at three more ages. Written as
+        // the same distribution read at three more ages. Written as
         // one scenario per age rather than a loop so a failure names the age it failed at.
         [TestCase(2, 32)]
         [TestCase(9, 86)]
@@ -112,7 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, expected);
         }
 
-        // @driving_port @real-io @AC-01.3 — past the target, certainty is arithmetic rather than a
+        // past the target, certainty is arithmetic rather than a
         // rule: every item that ran this long necessarily ran longer than the target, so the fraction
         // is one. A special case here would be a second place for the answer to be decided.
         [Test]
@@ -127,7 +126,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 100);
         }
 
-        // @driving_port @real-io — nothing the team finished ever ran this long, and the item is
+        // nothing the team finished ever ran this long, and the item is
         // still inside its target. A share of an empty set is undefined, so zero is a choice: the
         // item can still meet the target, and a hundred would say it cannot.
         [Test]
@@ -142,7 +141,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
-        // @driving_port @real-io — nine comparable items is a small denominator and the answer moves
+        // nine comparable items is a small denominator and the answer moves
         // sharply when one arrives or leaves. It is still the team's own history, and a number a
         // reader can weigh beats a silence on the day an item is due. The volatility is real, measured
         // and accepted rather than hidden: docs/evolution/epic-4127-sle-risk/OUT-4127-risk-stability.md.
@@ -159,7 +158,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
-        // @driving_port @real-io @error @AC-01.5 — a team that never published a target has not made
+        // a team that never published a target has not made
         // a promise, so there is no promise to be at risk of breaking. An empty answer, not zero.
         [Test]
         public async Task A_team_that_never_published_a_target_is_told_nothing_rather_than_zero()
@@ -173,7 +172,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenNothingIsSaidAboutAnyItem();
         }
 
-        // @driving_port @real-io — a team with a target and no finished work at all. The item is
+        // a team with a target and no finished work at all. The item is
         // inside its target and there is nothing to divide by, which is the same shape as the
         // no-comparable-work case and gets the same answer.
         [Test]
@@ -187,7 +186,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 0);
         }
 
-        // @driving_port @real-io @AC-01.11 — an item that took exactly the target MET it. Getting this
+        // an item that took exactly the target MET it. Getting this
         // boundary wrong moves every number on the page by one item, and nothing on screen would say so.
         [Test]
         public async Task An_item_that_finished_on_the_target_day_did_not_miss_the_target()
@@ -203,7 +202,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 67);
         }
 
-        // @driving_port @real-io @AC-01.11 — the other boundary. An item open for five days may still
+        // the other boundary. An item open for five days may still
         // close today at five, so a finished item that took five is one of the survivors it is being
         // compared against, not one that already got away.
         [Test]
@@ -220,7 +219,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 50);
         }
 
-        // @driving_port @real-io @AC-01.2 — the window the caller asked about is the window that
+        // the window the caller asked about is the window that
         // counts, the same as every other number on the metrics page. Work that finished before it
         // is not evidence about today.
         [Test]
@@ -238,7 +237,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 50);
         }
 
-        // @driving_port @real-io — the scenario this whole slice exists for. A dialog reading 27%
+        // the scenario this whole slice exists for. A dialog reading 27%
         // against a board field reading 18, for the same item on the same day, is what a coach
         // actually saw. Both paths are driven here in one run so the two numbers can be compared
         // against each other rather than each against an expectation.
@@ -257,7 +256,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheBoardWouldBeWrittenTheSameNumbersTheScreensShow(team, young, older, past);
         }
 
-        // @driving_port @real-io — the date range is a control for looking at past metrics. The risk
+        // the date range is a control for looking at past metrics. The risk
         // is a claim about now, so a number that moved when a range widened would be a function of a
         // UI control rather than of the work. The route takes no dates at all, and stray ones sent by
         // an older bundle are ignored rather than honoured.
@@ -276,7 +275,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 50);
         }
 
-        // @driving_port @real-io — the target is half the arithmetic, and it is a setting a
+        // the target is half the arithmetic, and it is a setting a
         // coach changes in one click. An answer remembered against the old target is a wrong answer
         // that looks exactly like a right one.
         [Test]
@@ -298,7 +297,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 75);
         }
 
-        // @driving_port @real-io — the answer is remembered between requests, and the day it was
+        // the answer is remembered between requests, and the day it was
         // computed for is part of what it depends on. This is the one case that can say so: a team
         // whose evidence window is pinned has a window that does not move overnight, while the ages
         // still advance. On a rolling history the window's own dates move with the calendar, so a
@@ -329,7 +328,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 100);
         }
 
-        // @driving_port @real-io — the evidence window is the other half of the key, and widening it
+        // the evidence window is the other half of the key, and widening it
         // admits older work that changes the answer. A key carrying only the target would serve the
         // narrower window's answer here and look entirely correct doing it.
         [Test]
@@ -352,7 +351,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheItemsChanceOfMissingIs(item, 60);
         }
 
-        // @driving_port @real-io @error — the risk names the team's own work, so it is readable by
+        // the risk names the team's own work, so it is readable by
         // exactly the people who may read the team. Every other metrics route on this controller is
         // scoped the same way and a new one is the easy place to forget.
         [Test]
@@ -367,7 +366,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheyAreTurnedAway();
         }
 
-        // @driving_port @real-io — the chart background that painted where the odds turn is gone, and
+        // the chart background that painted where the odds turn is gone, and
         // the per-item risk it was built beside is not. Asking for both in one run is the point: a
         // test that only checked the 404 would pass just as well if the whole feature had been torn
         // out, which is the failure this deletion is most exposed to.
@@ -383,7 +382,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
             ThenTheBackgroundIsGoneAndThePerItemRiskIsNot();
         }
 
-        // @driving_port @error @AC-01.6 — portfolios are deliberately out of this Epic: a feature can
+        // portfolios are deliberately out of this Epic: a feature can
         // sit in several, each with its own target and its own history, so one feature would have
         // several answers and no way to choose. The route not existing is how that decision is kept.
         [Test]

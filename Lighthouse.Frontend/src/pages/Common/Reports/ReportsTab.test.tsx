@@ -81,7 +81,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("lists each report by name, linking to it, with its Type and when it was created", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
@@ -99,7 +98,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(screen.getByRole("row", { name: /Then & Now/ })).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The code calls it a template; nobody using Lighthouse ever reads that word.
 	it("never says Template", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
@@ -111,7 +109,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(document.body).not.toHaveTextContent(/template/i);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("offers an admin Create Report", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
@@ -120,7 +117,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(await theCreateButton()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("shows a reader the reports but nothing to create or delete them with", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
@@ -133,7 +129,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(screen.queryByRole("button", { name: /delete/i })).toBeNull();
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Every Community instance runs without sign-in, where everybody may do everything.
 	it("lets everybody create and delete when roles are not enforced", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
@@ -145,7 +140,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(await theDeleteButtonOf(ENGAGEMENT_START)).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	it("shows an admin of a Team without reports an empty list and Create Report", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -157,7 +151,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		expect(await theCreateButton()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	it("tells a reader of a Team without reports that a Team Admin can create one", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -171,7 +164,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @us-06 @slice-06 @boundary @contract-shape:pure-function
 	it("tells a reader of a Portfolio without reports that a Portfolio Admin can create one, in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -192,7 +184,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		).toBeVisible();
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	it("links a Portfolio's report to its place under the Portfolio", async () => {
 		renderWithReports(<ReportsTab owner={APOLLO} />, {
 			reportService: aReportService({
@@ -215,7 +206,6 @@ describe("The Reports tab lists a Team's reports", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// An instance rolled back from a later version still holds that version's reports.
 	it("lists a report of a type this version cannot show as not supported, and still lets an admin delete it", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
@@ -251,7 +241,6 @@ describe("The Community cap on the Reports tab", () => {
 				.mockResolvedValue(aReportList([aListedReport()], true)),
 		});
 
-	// @us-08 @slice-08 @error @kpi-OUT-5878-K4-community-cap-reached @contract-shape:pure-function
 	it("disables Create Report at the cap and says why, in the instance's word for a Team", async () => {
 		terms.current = { ...defaultTerms, [TERMINOLOGY_KEYS.TEAM]: "Squad" };
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
@@ -264,7 +253,6 @@ describe("The Community cap on the Reports tab", () => {
 		).toBeVisible();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:pure-function
 	// The same tooltip every other Premium-limited control carries, so the way to Premium looks the same.
 	it("explains the disabled Create Report with the Premium licence tooltip", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
@@ -283,7 +271,6 @@ describe("The Community cap on the Reports tab", () => {
 		);
 	});
 
-	// @us-08 @slice-08 @boundary @contract-shape:pure-function
 	it("says nothing about the cap below it", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -295,7 +282,6 @@ describe("The Community cap on the Reports tab", () => {
 		expect(screen.queryByText(/Community includes/)).toBeNull();
 	});
 
-	// @us-08 @slice-08 @contract-shape:bounded-change
 	it("enables Create Report again once the report is deleted", async () => {
 		const getReports = vi
 			.fn()
@@ -324,7 +310,6 @@ describe("Deleting a report from the list", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-08 @slice-08 @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
 	it("asks first, deletes the report, takes it off the list and reports one report deleted", async () => {
 		const reportService = aReportService({
 			getReports: vi
@@ -354,7 +339,6 @@ describe("Deleting a report from the list", () => {
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
 	it("keeps the report and reports nothing when the delete is cancelled", async () => {
 		const reportService = aReportService();
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, { reportService });
@@ -371,7 +355,6 @@ describe("Deleting a report from the list", () => {
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:pure-function
 	it("warns that a Then reaching past the kept history can no longer be rebuilt", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -392,7 +375,6 @@ describe("Deleting a report from the list", () => {
 		);
 	});
 
-	// @us-08 @slice-08 @boundary @contract-shape:pure-function
 	it("does not warn about rebuilding a Then that can still be rebuilt", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService(),
@@ -407,7 +389,6 @@ describe("Deleting a report from the list", () => {
 		expect(dialog).not.toHaveTextContent(/can no longer be rebuilt/);
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
 	it("keeps the report listed and reports nothing when the delete fails", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -432,7 +413,6 @@ describe("Deleting a report from the list", () => {
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
 	it("lets Delete be pressed again after a delete failed", async () => {
 		renderWithReports(<ReportsTab owner={LIGHTSPEED} />, {
 			reportService: aReportService({
@@ -454,7 +434,6 @@ describe("Deleting a report from the list", () => {
 		).toBeEnabled();
 	});
 
-	// @us-08 @slice-08 @boundary @contract-shape:bounded-change
 	it("sends one delete however quickly Delete is pressed twice", async () => {
 		const held = deferred<void>();
 		const reportService = aReportService({
@@ -478,7 +457,6 @@ describe("Deleting a report from the list", () => {
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:bounded-change
 	// A dialog that looked cancelled must not turn out to have deleted the report after all.
 	it("holds the question open while the delete is on its way, whatever is pressed", async () => {
 		const held = deferred<void>();
@@ -510,7 +488,6 @@ describe("Deleting a report from the list", () => {
 		expect(reportUsage).toHaveBeenCalledWith({ name: "ReportDeleted" });
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:bounded-change
 	// Somebody else got there first: the report is gone either way, but nobody here deleted it.
 	it("takes a report somebody else already deleted off the list and reports nothing", async () => {
 		const reportService = aReportService({
@@ -541,7 +518,6 @@ describe("The Reports list on a slow or failing connection", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// An empty area while the list is on its way would read as "no reports".
 	it("shows a spinner, never the empty list, while the list is on its way", async () => {
 		const held = deferred<ReturnType<typeof aReportList>>();
@@ -555,7 +531,6 @@ describe("The Reports list on a slow or failing connection", () => {
 		expect(screen.queryByText(EMPTY)).toBeNull();
 	});
 
-	// @us-01 @us-08 @slice-01 @boundary @contract-shape:pure-function
 	// Until the list arrives nobody knows whether the Community cap is reached.
 	it("holds Create Report until the list says whether another report may be created", async () => {
 		const held = deferred<ReturnType<typeof aReportList>>();
@@ -572,7 +547,6 @@ describe("The Reports list on a slow or failing connection", () => {
 		expect(await theCreateButton()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
 	it("says the list could not be loaded and offers Retry, never the empty list", async () => {
 		const getReports = vi
 			.fn()

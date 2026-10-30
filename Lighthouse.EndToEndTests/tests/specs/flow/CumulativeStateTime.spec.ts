@@ -19,7 +19,7 @@ const CUMULATIVE_STATE_TIME_WIDGET_ID = "stateTimeCumulative";
 // for one widget. The assertions below are unchanged and run in the order a
 // delivery lead meets them: read the bars, drill into the constraint, then scope to
 // one item.
-test("@walking_skeleton @US-01 @US-04 @US-05 delivery lead reads the team cumulative time per state chart, drills into the constraint bar, and scopes it to a single work item", async ({
+test("delivery lead reads the team cumulative time per state chart, drills into the constraint bar, and scopes it to a single work item", async ({
 	page,
 	request,
 	overviewPage,
@@ -44,13 +44,13 @@ test("@walking_skeleton @US-01 @US-04 @US-05 delivery lead reads the team cumula
 		CUMULATIVE_STATE_TIME_WIDGET_ID,
 	);
 
-	await test.step("@US-01 the chart shows bars with completed and ongoing segments", async () => {
+	await test.step("the chart shows bars with completed and ongoing segments", async () => {
 		await expect.poll(() => chart.countStateBars()).toBeGreaterThan(0);
 		await expect.poll(() => chart.countCompletedSegments()).toBeGreaterThan(0);
 		await expect.poll(() => chart.countOngoingSegments()).toBeGreaterThan(0);
 	});
 
-	await test.step("@US-04 clicking the constraint bar lists the contributing items, and the panel closes again", async () => {
+	await test.step("clicking the constraint bar lists the contributing items, and the panel closes again", async () => {
 		const drillDown = await chart.clickConstraintBar();
 		await expect(drillDown.container).toBeVisible();
 		await expect.poll(() => drillDown.countRows()).toBeGreaterThan(0);
@@ -59,7 +59,7 @@ test("@walking_skeleton @US-01 @US-04 @US-05 delivery lead reads the team cumula
 		await expect(drillDown.container).not.toBeVisible();
 	});
 
-	await test.step("@US-05 the chart scopes to a single selected work item", async () => {
+	await test.step("the chart scopes to a single selected work item", async () => {
 		await chart.searchPicker("TZ-");
 		await chart.selectFirstPickerOption();
 

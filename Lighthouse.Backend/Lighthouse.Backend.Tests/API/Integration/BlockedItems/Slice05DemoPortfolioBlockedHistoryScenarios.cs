@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-05")]
     public partial class Slice05DemoPortfolioBlockedHistoryTest
     {
-        // @walking_skeleton @driving_port @us-05 @contract-shape:bounded-change (US-05 AC1)
+        // (US-05 AC1)
         [Test]
         [Category("walking_skeleton")]
         public async Task A_freshly_refreshed_demo_portfolio_gains_backdated_feature_blocked_spells_in_the_feature_keyspace()
@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureKeyspaceHoldsBackdatedSpellsForBothFeatures(portfolio);
         }
 
-        // @invariant @us-05 @us-01 @contract-shape:unbounded-preservation (US-05 AC1 — slice 01's
+        // (US-05 AC1 — slice 01's
         // keyspace invariant must still hold after the demo backfill is re-added. Work items are seeded
         // with colliding ids so that TODAY's broken handler actually lands rows in the team table —
         // without the collision the enforced FK aborts the write and the scenario would be vacuously green.)
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheTeamKeyspaceHasNoSpells();
         }
 
-        // @us-05 @contract-shape:bounded-change (US-05 AC2 — idempotent: a second refresh adds nothing.
+        // (US-05 AC2 — idempotent: a second refresh adds nothing.
         // Asserted non-vacuously: spells exist after the first refresh AND the second adds none.)
         [Test]
         public async Task Backfilling_twice_leaves_the_feature_keyspace_unchanged()
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureKeyspaceIsUnchangedAndNonEmpty(portfolio, spellsAfterFirstRefresh);
         }
 
-        // @error @us-05 @contract-shape:bounded-change (the slice's named ship-broken risk: after slice 01,
+        // (the slice's named ship-broken risk: after slice 01,
         // demo portfolios ALREADY have backdated snapshots but no feature spells — the legacy snapshot-based
         // idempotency guard would short-circuit and synthesize nothing on exactly the instances targeted)
         [Test]
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureKeyspaceHoldsBackdatedSpellsForBothFeatures(portfolio);
         }
 
-        // @edge @us-05 @contract-shape:bounded-change (US-05 AC4 — never claim a feature was blocked
+        // (US-05 AC4 — never claim a feature was blocked
         // before it was started; the StartedDate cap survives the retarget. Asserted non-vacuously:
         // at least one spell must exist for the cap check to mean anything.)
         [Test]
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenSpellsExistAndEverySpellStartsOnOrAfterItsFeatureStarted(portfolio);
         }
 
-        // @driving_port @us-05 @contract-shape:pure-function (US-05 AC3 — bars worth clicking: a backdated
+        // (US-05 AC3 — bars worth clicking: a backdated
         // bar drills into the demo features blocked that day. Depends on slice 04's port; scaffolded here
         // because the claim belongs to this slice's elevator pitch.)
         [Test]
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenYesterdaysBarListsTheBackfilledFeatures(portfolio);
         }
 
-        // @edge @us-05 @contract-shape:unbounded-preservation (US-05 AC2 — the demo gate is the whole
+        // (US-05 AC2 — the demo gate is the whole
         // safety argument: non-demo portfolios are untouched. Green today; pins the gate against the
         // retarget.)
         [Test]

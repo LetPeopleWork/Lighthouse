@@ -46,7 +46,7 @@ import { LighthousePage } from "../../models/app/LighthousePage";
 
 test.describe("Slice 01 — Jira OAuth", () => {
 	testWithAuth(
-		"[@walking_skeleton @driving_adapter @real-io @in-memory @US-01 @kpi-OUT-oauth-setup-success-rate] Jira OAuth connection is configured end-to-end and the first sync succeeds",
+		"Jira OAuth connection is configured end-to-end and the first sync succeeds",
 		async ({ request }) => {
 			const connection = await createOAuthJiraConnection(
 				request,
@@ -78,7 +78,7 @@ test.describe("Slice 01 — Jira OAuth", () => {
 	);
 
 	testWithAuth(
-		"[@driving_adapter @real-io @in-memory @US-01 @error] Lighthouse:BaseUrl unset triggers the callback-URL warning",
+		"Lighthouse:BaseUrl unset triggers the callback-URL warning",
 		async ({ request }) => {
 			const connection = await createOAuthJiraConnection(
 				request,
@@ -123,7 +123,7 @@ test.describe("Slice 01 — Jira OAuth", () => {
 
 test.describe("Slice 03 — Azure DevOps OAuth", () => {
 	testWithAuth(
-		"[@driving_adapter @real-io @in-memory @US-03 @adapter-integration] Azure DevOps OAuth connection is configured end-to-end",
+		"Azure DevOps OAuth connection is configured end-to-end",
 		async ({ request }) => {
 			const connection = await createOAuthAdoConnection(
 				request,
@@ -154,7 +154,7 @@ test.describe("Slice 03 — Azure DevOps OAuth", () => {
 		},
 	);
 
-	// NOTE: "@US-03 @error — ADO OAuth form warns when BaseUrl is HTTP" is verified at
+	// NOTE: "ADO OAuth form warns when BaseUrl is HTTP" is verified at
 	// the unit layer by CreateConnectionWizard.test.tsx (positive ADO+OAuth+http and
 	// negative Jira+OAuth+http cases). Re-asserting via Playwright duplicates a pure
 	// UI-rendering invariant at high cost.
@@ -166,7 +166,7 @@ test.describe("Slice 03 — Azure DevOps OAuth", () => {
 
 test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking skeleton)", () => {
 	testWithAuth(
-		"[@walking_skeleton @popup-migration @driving_adapter @real-io @in-memory @US-01 @Story-5018] Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation",
+		"Reconnect from a disconnected connection's edit dialog flips the status badge to Connected without page navigation",
 		async ({ page, request }) => {
 			const connectionName = generateRandomName();
 			const connection = await createOAuthJiraConnection(

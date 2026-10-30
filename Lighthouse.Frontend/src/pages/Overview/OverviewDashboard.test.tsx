@@ -1144,7 +1144,6 @@ describe("OverviewDashboard", () => {
 			};
 		};
 
-		// @us-08 @slice-08 @driving_port @contract-shape:pure-function
 		// One report is all Community keeps; more than one is a Premium instance, or one whose licence lapsed.
 		it.each([
 			["teams", "Test Team 1", 1, "and its report"],
@@ -1170,7 +1169,6 @@ describe("OverviewDashboard", () => {
 			},
 		);
 
-		// @us-08 @slice-08 @boundary @contract-shape:pure-function
 		it("says nothing about reports when there are none", async () => {
 			const { dialog, reportService } = await askToDeleteTheFirstRowOf(
 				"teams",
@@ -1189,7 +1187,6 @@ describe("OverviewDashboard", () => {
 			expect(dialog).not.toHaveTextContent(/report/i);
 		});
 
-		// @us-08 @slice-08 @error @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:unbounded-preservation
 		// Reports going with their Team are not somebody deleting a report.
 		it("reports the Team deleted and never a report deleted", async () => {
 			reportUsage.mockClear();
@@ -1204,7 +1201,6 @@ describe("OverviewDashboard", () => {
 			expect(reportUsage).not.toHaveBeenCalledWith({ name: "ReportDeleted" });
 		});
 
-		// @us-08 @slice-08 @error @contract-shape:bounded-change
 		// A deleted Team's reports are gone with it, so nothing may still answer for them from memory.
 		it("forgets the deleted Team's reports", async () => {
 			const { dialog, queryClient, apiContext } =
@@ -1265,7 +1261,6 @@ describe("OverviewDashboard", () => {
 			silenced.mockRestore();
 		});
 
-		// @us-08 @slice-08 @boundary @contract-shape:pure-function
 		// Deleting before the count arrives would take reports along that the dialog never named.
 		it("holds Delete until it knows how many reports go with it", async () => {
 			const { dialog } = await askToDeleteTheFirstRowOf(
@@ -1286,7 +1281,6 @@ describe("OverviewDashboard", () => {
 			).toBeDisabled();
 		});
 
-		// @us-08 @slice-08 @boundary @contract-shape:bounded-change
 		// The row's Reports cell counted them a moment ago, but someone may have made or deleted one since.
 		it("holds Delete until it has counted the reports itself, even when the row has just counted them", async () => {
 			const recount = deferred<IReportList>();
@@ -1333,7 +1327,6 @@ describe("OverviewDashboard", () => {
 			).toBeEnabled();
 		});
 
-		// @us-08 @slice-08 @error @contract-shape:pure-function
 		it("says any reports it has go with it when their number cannot be read", async () => {
 			const { dialog } = await askToDeleteTheFirstRowOf(
 				"teams",

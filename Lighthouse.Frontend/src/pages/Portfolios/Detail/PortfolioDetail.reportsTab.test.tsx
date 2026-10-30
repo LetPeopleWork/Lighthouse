@@ -113,7 +113,6 @@ describe("The Reports tab on a Portfolio page", () => {
 		vi.clearAllMocks();
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	it("sits between Metrics and Settings", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}`, "portfolioAdmin");
 
@@ -130,7 +129,6 @@ describe("The Reports tab on a Portfolio page", () => {
 		]);
 	});
 
-	// @us-06 @slice-06 @driving_port @contract-shape:pure-function
 	it("opens the Portfolio's reports for a reader", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}`, "reader");
 
@@ -141,7 +139,6 @@ describe("The Reports tab on a Portfolio page", () => {
 		);
 	});
 
-	// @us-06 @slice-06 @contract-shape:pure-function
 	it("opens one report under the Reports tab from an address that names it", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}/reports/42`, "reader");
 
@@ -151,7 +148,6 @@ describe("The Reports tab on a Portfolio page", () => {
 		expect(await theReportsTab()).toHaveAttribute("aria-selected", "true");
 	});
 
-	// @us-06 @slice-06 @contract-shape:pure-function
 	it("opens the tab the address names, not a report, when that tab is not Reports", async () => {
 		renderThePortfolioPage(`/portfolios/${APOLLO_ID}/metrics/42`, "reader");
 

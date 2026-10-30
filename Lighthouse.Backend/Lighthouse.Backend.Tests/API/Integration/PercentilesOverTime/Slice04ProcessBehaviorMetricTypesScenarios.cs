@@ -19,8 +19,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-04")]
     public partial class Slice04ProcessBehaviorMetricTypesTest
     {
-        // @driving_port @scenario-13 (US-05 AC1 — each team family reads back its OWN dated triple)
-        // @edge (US-05 AC2 — a neighbour team's rows for the SAME family never leak in)
+        // (US-05 AC1 — each team family reads back its OWN dated triple)
+        // (US-05 AC2 — a neighbour team's rows for the SAME family never leak in)
         [TestCase(ProcessBehaviorMetricType.Throughput)]
         [TestCase(ProcessBehaviorMetricType.WorkItemAge)]
         [TestCase(ProcessBehaviorMetricType.Wip)]
@@ -38,8 +38,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDatedLimitTripleComesBackOrderedByDate(response, recorded);
         }
 
-        // @driving_port @scenario-13 (US-05 AC1 — the portfolio twin, including portfolio-only Feature Size)
-        // @edge (US-05 AC2 — a neighbour portfolio's rows for the SAME family never leak in)
+        // (US-05 AC1 — the portfolio twin, including portfolio-only Feature Size)
+        // (US-05 AC2 — a neighbour portfolio's rows for the SAME family never leak in)
         [TestCase(ProcessBehaviorMetricType.Throughput)]
         [TestCase(ProcessBehaviorMetricType.WorkItemAge)]
         [TestCase(ProcessBehaviorMetricType.Wip)]
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDatedLimitTripleComesBackOrderedByDate(response, recorded);
         }
 
-        // @driving_port @scenario-13 (US-05 AC2 — the discriminator: two families on the SAME owner and the
+        // (US-05 AC2 — the discriminator: two families on the SAME owner and the
         // SAME days, carrying different triples. A family-blind read returns both runs and fails here.)
         [TestCase(ProcessBehaviorMetricType.Throughput, ProcessBehaviorMetricType.WorkItemAge)]
         [TestCase(ProcessBehaviorMetricType.Wip, ProcessBehaviorMetricType.CycleTime)]
@@ -77,7 +77,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenEachFamilyKeepsItsOwnSeries(response, recorded, otherResponse, recordedForTheOtherFamily);
         }
 
-        // @edge @scenario-14 (US-05 AC3 / decision D8 — Feature Size is portfolio-only, enforced at the
+        // (US-05 AC3 / decision D8 — Feature Size is portfolio-only, enforced at the
         // toggle and structurally in the recorder, NOT at the wire: a team asking for it passes
         // Enum.IsDefined and gets the honest empty state because nothing is ever recorded for a team.)
         [Test]

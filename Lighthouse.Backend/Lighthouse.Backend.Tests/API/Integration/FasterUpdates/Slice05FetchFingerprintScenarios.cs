@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-05")]
     public partial class Slice05FetchFingerprintTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-5.1 @AC-5.2 @contract-shape:bounded-change
         // The promise the slice is named after, in the one shape an operator recognises: edit the query,
         // save, and the next cycle really does go and get the new answer.
         [Test]
@@ -55,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheTeamRemembersWhatItAskedFor(team);
         }
 
-        // @driving_port @real-io @AC-5.2 @contract-shape:bounded-change
         // Without the reason, a configuration-forced full download and a tracker-forced one are the same
         // line, and the admin is left hoping the edit took effect rather than reading that it did.
         [Test]
@@ -72,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorSeesAFullUpdate(scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @AC-5.2 @contract-shape:bounded-change
         // AC-5.2 is a promise about EVERY fetch-shaping property, and a fingerprint that covers six of
         // seven fails silently on the seventh: delta serves a stale result set with every test green.
         [Test]
@@ -92,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @AC-5.2 @AC-5.6 @contract-shape:bounded-change
         // The portfolio carries three fetch-shaping settings the team does not, and today it carries no
         // change detection at all - the asymmetry A2 says this slice resolves.
         [Test]
@@ -112,7 +108,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @contract-shape:bounded-change
         // The edit that falsifies "the fetch-shaping set is what PrepareQuery is handed". Moving a raw
         // state from one mapping to another leaves the query's state set identical and changes the state
         // - and the state category - stored against every record in it. Under delta those records are
@@ -136,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @contract-shape:bounded-change
         // The same falsification from the other side: AllStates is a UNION, so moving a state between the
         // three columns leaves it identical while changing the state category of every stored record in
         // that state. A fingerprint built on AllStates - which is what AC-5.1 names - cannot see this.
@@ -159,7 +153,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @contract-shape:bounded-change
         // The third falsification, and the one no save-time comparison can ever catch: the field lives on
         // the CONNECTION. Nothing about the team changed, and every record the team stores now carries a
         // value it did not carry before - for every team on that connection.
@@ -179,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.1 @contract-shape:unbounded-preservation
         // The collections are sets. A fingerprint that is order-sensitive turns opening the Settings
         // screen and pressing Save into a full re-download of the whole query.
         [Test]
@@ -198,7 +190,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-5.3 @kpi @contract-shape:unbounded-preservation
         // KPI-4, and the half of the epic that is easiest to lose: "any settings save invalidates" is a
         // safe answer that spends the entire win. Every one of these is a local derivation.
         [Test]
@@ -218,7 +209,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-5.3 @kpi @contract-shape:unbounded-preservation
         [Test]
         [TestCaseSource(nameof(EveryPortfolioSettingThatChangesNothingAboutWhatIsFetched))]
         public async Task A_portfolio_edit_that_changes_nothing_about_what_is_fetched_costs_no_download(PortfolioEdit edit)
@@ -235,7 +225,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-5.5 @D8 @contract-shape:bounded-change
         // The upgrade case. The stored work already carries remote change stamps, so slice 02's "nothing
         // is stamped" branch cannot be what makes this cycle full - the ONLY thing missing is the
         // fingerprint, which is what makes the scenario capable of failing for the reason it names.
@@ -255,7 +244,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @AC-5.6 @contract-shape:unbounded-preservation
         // Stored per entity, so an edit to one is not an invalidation of the other. A single shared
         // fingerprint - or one hung off the connection - would make every team edit cost every portfolio
         // on the same connection a full re-download.
@@ -275,7 +263,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-5.6 @contract-shape:unbounded-preservation
         [Test]
         public async Task A_portfolio_edit_does_not_cost_its_team_a_full_download()
         {
@@ -292,7 +279,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 0);
         }
 
-        // @error @driving_port @real-io @A2 @contract-shape:bounded-change
         // The one edit the purge is FOR: the same reference id on a different tracker is a different
         // item, and SyncWorkItem updates the stored copy in place - so without a purge the old system's
         // transition history silently becomes the new system's.
@@ -311,7 +297,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @A2 @contract-shape:unbounded-preservation
         // And the edit the purge is NOT for. Same tracker, different question - removed = stored - fetched
         // reconciles it on the very next full cycle, which is exactly how the portfolio side has always
         // coped without a purge. Paying for it in transition history is a cost with nothing bought.
@@ -330,7 +315,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @error @driving_port @real-io @A2 @contract-shape:bounded-change
         // The portfolio half of the same rule. Today PortfolioController has no change detection at all,
         // so a portfolio repointed at a different tracker carries every Feature - and every Feature's
         // recorded history - across with it.
@@ -349,7 +333,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(portfolio, scanned: 3, fetched: 3);
         }
 
-        // @driving_port @real-io @A2 @contract-shape:unbounded-preservation
         [Test]
         public async Task A_portfolio_whose_query_changed_keeps_the_features_it_already_stored()
         {

@@ -35,16 +35,6 @@
 #
 # Walking Skeleton Strategy: D (Configurable per environment matrix).
 #   - PR / main CI: scenarios run against StubOAuthProvider via test DI (no outbound HTTPS to real IdPs)
-#
-# Tag legend:
-#   @walking_skeleton      — the one e2e-thin-slice that proves the full pipeline (driving adapter → driven adapters → DB)
-#   @driving_adapter       — exercises the HTTP entry point via real network call (not a service-function invocation)
-#   @real-io               — uses real DB, real ICryptoService, real file system
-#   @in-memory             — uses StubOAuthProvider (no real IdP HTTPS)
-#   @US-N                  — traceability to feature-delta.md user story N
-#   @kpi-OUT-N             — verifies the named outcome (links to docs/product/kpi-contracts.yaml)
-#   @error                 — error-path scenario
-#   @adapter-integration   — adapter Mandate 6 coverage (real I/O for a specific driven adapter)
 
 
 Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
@@ -63,7 +53,6 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
   # Slice 01 — Jira OAuth (foundation slice; folds in #4971 abstraction + #4972 BaseUrl)
   # ─────────────────────────────────────────────────────────────────────────
 
-  @walking_skeleton @driving_adapter @real-io @in-memory @US-01 @adapter-integration @kpi-OUT-oauth-setup-success-rate
   Scenario: Jira OAuth connection is configured end-to-end and the first sync succeeds
     Given an empty database with no work-tracking connections
     When the SystemAdmin opens "New Jira connection" and selects Authentication "OAuth (Jira Cloud)"
@@ -76,7 +65,6 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
     And the next manual "Update All" against this connection issues an outbound request carrying "Authorization: Bearer <stub-access-token>"
     And the response contains at least one synced work item from the stub provider
 
-  @driving_adapter @real-io @in-memory @US-01 @error
   Scenario: Non-Premium instance shows upgrade affordance instead of OAuth form
     Given Lighthouse is running with a Premium license that has expired
     When the SystemAdmin opens "New Jira connection"
@@ -84,7 +72,6 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
     But selecting it shows an "Upgrade to Premium" panel instead of the OAuth form fields
     And POST /api/oauth/jira.oauth/connect returns HTTP 402 with body referencing the premium gate
 
-  @driving_adapter @real-io @in-memory @US-01 @error
   Scenario: Lighthouse:BaseUrl unset triggers the callback-URL warning
     Given Lighthouse:BaseUrl is not configured
     When the SystemAdmin opens the Jira OAuth form
@@ -111,7 +98,6 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
   # Slice 03 — Azure DevOps OAuth (US-03)
   # ─────────────────────────────────────────────────────────────────────────
 
-  @driving_adapter @real-io @in-memory @US-03 @adapter-integration
   Scenario: Azure DevOps OAuth connection is configured end-to-end
     Given an empty database with no work-tracking connections
     When the SystemAdmin opens "New Azure DevOps connection" and selects Authentication "OAuth (Azure DevOps)"
@@ -122,14 +108,12 @@ Feature: OAuth-authenticated work-tracking connections (Jira + Azure DevOps)
     And the connection page shows "Status: Connected — OAuth (Azure DevOps)" with scope "vso.work_write" listed
     And the next "Update All" against this connection carries Bearer auth
 
-  @driving_adapter @real-io @in-memory @US-03 @error
   Scenario: ADO OAuth form warns when BaseUrl is HTTP (Azure DevOps requires HTTPS at registration time)
     Given Lighthouse:BaseUrl is configured to "http://lighthouse-test.local" (HTTP, not HTTPS)
     When the SystemAdmin opens the ADO OAuth form
     Then a warning is shown: "Azure DevOps requires HTTPS callback URLs in production"
     And the form remains usable (no input is disabled)
 
-  @driving_adapter @real-io @in-memory @US-03
   Scenario: Adding the ADO provider did not require changes to the controller or persistence (DESIGN AC #5)
     # NOTE: this is a structural assertion — verified by diff review at PR time, not by Playwright.
     # The .spec.ts companion records the assertion as a test.skip() with a TODO referencing

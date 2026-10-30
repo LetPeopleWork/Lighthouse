@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         private static readonly string[] OnlyTheQuarter = [TheQuarter];
 
-        // @walking_skeleton @driving_port @real-io @us-03 @slice-03 @kpi-OUT-6350-K2-bulk-creation-used @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice03)]
         public async Task Teams_and_a_Portfolio_get_the_same_comparison_in_one_run()
@@ -41,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:unbounded-preservation
         [Test]
         [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_she_only_reads_is_not_created_on()
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice03)]
         public async Task A_run_of_Portfolios_only_creates_on_each()
@@ -82,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_whose_kept_history_is_too_short_is_skipped_with_the_day_its_history_starts()
@@ -104,7 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-03 @slice-03 @error @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_deleted_while_the_run_is_under_way_is_one_row()
@@ -122,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Is.EqualTo(new[] { (NotCreated, RunReason.OwnerNotFound), (Created, (string?)null) }));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @contract-shape:pure-function
         [Test]
         [Ignore(PendingEpic6350.Slice04)]
         public async Task Each_owners_history_start_in_the_creation_options_is_the_one_its_own_refusal_names()

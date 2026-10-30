@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// the run starts a Feature reaches a client, as a date, at the confidence levels the completion
         /// date already uses.
         /// </summary>
-        // @walking_skeleton @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.1)
+        // (AC-1.1)
         [Test]
         [Category("walking_skeleton")]
         public async Task A_Feature_nobody_has_started_says_when_work_on_it_is_expected_to_begin()
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         ///
         /// The one-day gap is real, but it is a gap between Teams, and there is only one Team here.
         /// </summary>
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.2, D7)
+        // (AC-1.2, D7)
         [Test]
         public async Task At_Feature_WIP_one_the_next_Feature_starts_the_day_the_one_above_it_finishes()
         {
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// it would be a worse answer to a question already answered. The simulation is not told what is
         /// in flight - it still runs, still records a day - and this is decided on the way out.
         /// </summary>
-        // @driving_port @us-01 @edge @real-io @contract-shape:bounded-change (AC-1.6, D5)
+        // (AC-1.6, D5)
         [Test]
         public async Task A_Feature_already_in_flight_reports_the_day_it_actually_started()
         {
@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// The per-Team completion half closes a gap that predates this Epic: those forecasts have always
         /// existed in the domain and have always died at the boundary.
         /// </summary>
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.9, AC-1.10, D16)
+        // (AC-1.9, AC-1.10, D16)
         [Test]
         public async Task A_Feature_two_Teams_share_reports_a_start_and_a_completion_for_each_of_them()
         {
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// start are the same observation seen at two grains and must be the same number. If they ever
         /// differ, the roll-up is doing arithmetic instead of reading.
         /// </summary>
-        // @driving_port @us-01 @invariant @real-io @contract-shape:pure-function (AC-1.9, D4)
+        // (AC-1.9, D4)
         [Test]
         public async Task A_Feature_one_Team_works_reports_the_same_number_at_both_grains()
         {
@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// that ever stopped being true, because a start row folded into the aggregate would drag every
         /// completion percentile earlier.
         /// </summary>
-        // @regression @us-01 @real-io @contract-shape:unbounded-preservation (AC-1.5, D3)
+        // (AC-1.5, D3)
         [Test]
         public async Task Nothing_about_the_completion_forecast_moves()
         {
@@ -199,7 +199,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// from the Teams that could be forecast, which reads as a whole one - exactly as it has since
         /// long before start dates existed. No new rule was written for this.
         /// </summary>
-        // @driving_port @us-01 @error @real-io @contract-shape:bounded-change (AC-1.7, DDD-4)
+        // (AC-1.7, DDD-4)
         [Test]
         public async Task A_Feature_a_Team_cannot_be_forecast_for_carries_no_start_date_either()
         {
@@ -238,7 +238,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// before it decides whether to draw the cannot-forecast state, so flipping these two here would
         /// hide a date the client is holding.
         /// </summary>
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.7, DDD-4)
+        // (AC-1.7, DDD-4)
         [Test]
         public async Task A_started_Feature_reports_the_day_it_began_even_when_a_Team_cannot_be_forecast()
         {

@@ -840,7 +840,6 @@ describe("WorkItemsDialog Component", () => {
 		// as the reader's local midnight, which in Zurich is still the day before in UTC.
 		const theRangesLastDay = new Date(2026, 4, 25);
 
-		// @contract-shape:pure-function
 		test("a row Lighthouse marks stale shows the stale badge, counted to the column's day, with no threshold given", () => {
 			const markedStale: IWorkItem = {
 				...timeInStateItems[2],
@@ -866,7 +865,6 @@ describe("WorkItemsDialog Component", () => {
 			);
 		});
 
-		// @error @contract-shape:pure-function
 		test("a row Lighthouse says is not stale shows no stale badge, however long it has sat", () => {
 			const notStale: IWorkItem = {
 				...timeInStateItems[2],

@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-01")]
     public partial class Slice01DemoBackfillTeamHistoryTest
     {
-        // @walking_skeleton @driving_port @us-01 @contract-shape:bounded-change (US-01 AC1)
+        // (US-01 AC1)
         // REGRESSION CLASS: RED today — the phantom spell corrupts the historic team read.
         [Test]
         [Category("walking_skeleton")]
@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheWorkItemReadsNotBlockedOnAPastRange(team, workItemId);
         }
 
-        // @driving_port @us-01 @contract-shape:bounded-change (US-01 AC2)
+        // (US-01 AC2)
         [Test]
         public async Task The_team_drill_through_at_a_past_date_excludes_the_colliding_id()
         {
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheTeamDrillThroughExcludesTheWorkItem(team, workItemId);
         }
 
-        // @us-01 @invariant @contract-shape:unbounded-preservation (US-01 AC3 — keyspace purity: with the
+        // (US-01 AC3 — keyspace purity: with the
         // FK enforced, the literal "row without a WorkItem" invariant is unsurpassable, so the portfolio-
         // owner assertion is the meaningful form: a portfolio refresh writes ZERO rows into the team
         // keyspace. ADR-102 enforcement row; cross-checked again by slice 05 AC1.)
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheTeamKeyspaceHasNoSpells();
         }
 
-        // @us-01 @error @real-io @contract-shape:bounded-change (US-01 AC4, DESIGN amendment — the FK-bite
+        // (US-01 AC4, DESIGN amendment — the FK-bite
         // branch: a demo feature id with NO matching work item aborts the whole backfill on a real FK-
         // enforcing database. RED only on SQLite; passes for broken AND fixed code on EF InMemory.)
         [Test]
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenThePortfolioHasBackdatedSnapshots(portfolio);
         }
 
-        // @us-01 @regression @contract-shape:bounded-change (US-01 AC4 — snapshot backfill is retained;
+        // (US-01 AC4 — snapshot backfill is retained;
         // passes today and must keep passing: colliding-id branch where the insert succeeds.)
         [Test]
         public async Task The_demo_portfolio_blocked_trend_still_renders_its_backdated_history()

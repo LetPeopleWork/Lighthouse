@@ -60,7 +60,7 @@ function asTheHeaderReadsIt(date: Date): string {
  * window the reader stopped on, not the three they passed through on the way —
  * and "did not fetch" is only observable on the wire.
  */
-test("@walking_skeleton @US-01 @US-02 a delivery lead picks a named window and then walks it back a month in one burst of clicks", async ({
+test("a delivery lead picks a named window and then walks it back a month in one burst of clicks", async ({
 	page,
 	request,
 	overviewPage,

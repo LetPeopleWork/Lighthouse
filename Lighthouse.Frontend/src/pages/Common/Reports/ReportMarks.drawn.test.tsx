@@ -127,7 +127,6 @@ describe("The marks of a report are drawn", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:unbounded-preservation
 	it.each<Where>(["on the report", "in the print"])(
 		`draws every summary and line mark %s and types none; a screen reader hears each line's rise or fall and skips the summary's marks`,
 		async (where) => {
@@ -148,7 +147,6 @@ describe("The marks of a report are drawn", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	// 4 days out of 880 rounds to 0 %, so the words of a rise and of a fall are the same; only the mark tells them apart.
 	it.each<Where>(["on the report", "in the print"])(
 		`tells a screen reader a line that rose from one that fell by as much, when the percent rounds to nothing, %s`,
@@ -173,7 +171,6 @@ describe("The marks of a report are drawn", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it.each<Where>(["on the report", "in the print"])(
 		`keeps every word beside the marks %s as it was`,
 		async (where) => {
@@ -192,7 +189,6 @@ describe("The marks of a report are drawn", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @contract-shape:bounded-change
 	it.each<Where>(["on the report", "in the print"])(
 		"draws better and worse apart, green and red, %s",
 		async (where) => {
@@ -206,7 +202,6 @@ describe("The marks of a report are drawn", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	it(`draws a rise and a fall as different marks`, async () => {
 		await showingTheReport("on the report");
 
@@ -216,7 +211,6 @@ describe("The marks of a report are drawn", () => {
 		expect(drawings.size).toBeGreaterThanOrEqual(2);
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:bounded-change
 	it(`draws the mark of a line that did not change, and keeps its words`, async () => {
 		const report = theEngagementStartReport();
 		const cycleTime = theMetric(report, "cycle-time");
@@ -242,7 +236,6 @@ describe("Punctuation stays text", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-02 @slice-02 @edge @contract-shape:unbounded-preservation
 	// Guards the screen today and after the marks are drawn: only the marks become pictures.
 	it("keeps the minus of a fall and the dash of a missing value as text on the report", async () => {
 		const report = theEngagementStartReport();
@@ -275,7 +268,6 @@ const productionSourcesUnder = (directory: string): string[] =>
 	});
 
 describe("No mark is typed anywhere in Reports", () => {
-	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	it(`leaves no mark character in the Reports code`, () => {
 		const typed = productionSourcesUnder(here)
 			.filter((file) => THE_MARK_CHARACTERS.test(readFileSync(file, "utf8")))

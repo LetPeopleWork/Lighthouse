@@ -26,7 +26,7 @@ const OTHER_FAMILY = "WorkItemAge" as const;
 const SOLID: number[] = [];
 const SOLID_BORDER = "solid";
 
-test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput process behaviour limits", async ({
+test("delivery lead reads dated Throughput process behaviour limits", async ({
 	page,
 	request,
 	overviewPage,
@@ -86,7 +86,7 @@ test("@real-io @driving_adapter @US-04 delivery lead reads dated Throughput proc
 // so the scope rule is only visible to a user here. Absence is asserted from the
 // OFFERED set, not from a click that times out: a timing-out click is
 // indistinguishable from a broken locator.
-test("@real-io @driving_adapter @US-05 the family toggle offers every recorded family, and Feature Size only on a portfolio", async ({
+test("the family toggle offers every recorded family, and Feature Size only on a portfolio", async ({
 	page,
 	request,
 	overviewPage,
@@ -125,7 +125,7 @@ test("@real-io @driving_adapter @US-05 the family toggle offers every recorded f
 
 // The toggle actually switches families rather than only
 // rendering six buttons that all draw Throughput.
-test("@real-io @driving_adapter @US-05 selecting another family moves the selection and keeps the chart intact", async ({
+test("selecting another family moves the selection and keeps the chart intact", async ({
 	page,
 	request,
 	overviewPage,

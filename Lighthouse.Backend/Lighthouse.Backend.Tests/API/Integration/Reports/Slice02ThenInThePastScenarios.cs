@@ -30,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private static readonly int[] CycleTimesInsideThen = [4, 6, 7, 9, 10, 12, 15, 18, 21, 28];
 
-        // @driving_port @real-io @us-02 @slice-02 @contract-shape:bounded-change
         [Test]
         public async Task A_coach_freezes_a_Then_that_ended_the_day_before_the_engagement_began()
         {
@@ -46,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5878-G3 @contract-shape:pure-function
         // The rebuilt Then and the Metrics tab are read for the same inclusive days and must agree.
         [Test]
         public async Task The_rebuilt_Then_matches_the_Metrics_tab_for_the_same_days()
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(metricsTab85th, finished.GetArrayLength())));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @contract-shape:bounded-change
         [Test]
         public async Task A_coach_freezes_a_Then_of_a_custom_length()
         {
@@ -73,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenWindowIn(await TheReport(gravity, reportId)), Is.EqualTo(new ReportWindow("2026-07-31", "2026-09-13", 45)));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         // Counting both ends, 1 to 14 Sep is 14 days; a rule that subtracted the dates would call it 13.
         [Test]
         public async Task A_Then_of_exactly_fourteen_days_is_accepted()
@@ -85,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenWindowIn(await TheReport(gravity, reportId)), Is.EqualTo(new ReportWindow("2026-09-01", "2026-09-14", 14)));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [TestCase(13)]
         [TestCase(10)]
         [TestCase(0)]
@@ -101,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Then_ending_after_today_is_refused()
         {
@@ -114,7 +108,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(lightspeed);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         // 90 days ending 15 Nov 2025 start on 18 Aug 2025; the Team keeps finished Work Items from 2 Oct 2025.
         [Test]
         public async Task A_Then_reaching_past_the_data_cutoff_is_refused_naming_the_earliest_start()
@@ -128,7 +121,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(await EarliestStartNamedBy(refused), Is.EqualTo("2025-10-02"));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_Then_starting_on_the_oldest_kept_day_is_accepted()
         {
@@ -139,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenWindowIn(await TheReport(lightspeed, reportId)), Is.EqualTo(new ReportWindow("2025-10-02", "2025-12-30", 90)));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:unbounded-preservation
         // The cutoff is the Team's own setting, so a Team that keeps 180 days cannot reach back to April's 4th.
         [Test]
         public async Task The_earliest_start_follows_how_long_the_Team_keeps_finished_Work_Items()
@@ -161,7 +152,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsRefusedFor(refused, Reason.ThenBeforeCutoff);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:bounded-change
         // A Team set to keep every finished Work Item has no oldest kept day, so Then may start on any day.
         [Test]
         public async Task A_Team_that_keeps_every_finished_Work_Item_has_no_earliest_start()
@@ -177,7 +167,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenWindowIn(report), Is.EqualTo(new ReportWindow("2024-04-02", "2024-06-30", 90)));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:unbounded-preservation
         // History that fills in later - a sync that brings an older finished Work Item - is not rebuilt into Then.
         [Test]
         public async Task Later_views_read_the_frozen_Then_not_a_rebuild()
@@ -190,7 +179,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenValueIn(await TheReport(lightspeed, reportId), CycleTime, P85), Is.EqualTo(Shown(18, 10)));
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [TestCase("thenEndDate")]
         [TestCase("thenLengthDays")]
         public async Task A_Then_missing_its_end_or_its_length_is_refused(string leftOut)
@@ -206,7 +194,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(lightspeed);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [TestCase("31.07.2026")]
         [TestCase("2026-02-30")]
         [TestCase("yesterday")]

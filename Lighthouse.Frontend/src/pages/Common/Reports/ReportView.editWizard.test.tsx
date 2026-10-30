@@ -123,7 +123,6 @@ describe("Editing a report", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
 	it("opens on Now, the first step an edit can change", async () => {
 		await openTheEditWizard();
 
@@ -136,7 +135,6 @@ describe("Editing a report", () => {
 		).toBeNull();
 	});
 
-	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
 	it("shows the Type locked", async () => {
 		await openTheEditWizard();
 		await theNowLengthField();
@@ -153,7 +151,6 @@ describe("Editing a report", () => {
 		).toBeDisabled();
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:unbounded-preservation
 	it("shows Then as it was frozen, locked", async () => {
 		await openTheEditWizard();
 		await theNowLengthField();
@@ -165,7 +162,6 @@ describe("Editing a report", () => {
 		expect(await theWizard()).toHaveTextContent(FROZEN);
 	});
 
-	// @us-10 @us-07 @slice-10 @driving_port @contract-shape:bounded-change
 	it("saves a new name, a new Now and the shown metrics, never Then, over the report as it was read", async () => {
 		const reportService = await openTheEditWizard();
 		await enterNumber(await theNowLengthField(), 30);
@@ -190,7 +186,6 @@ describe("Editing a report", () => {
 		expect(await screen.findByText(SINCE_AUGUST)).toBeVisible();
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	it("cannot tick a metric the report never captured, and says why", async () => {
 		const report = theEngagementStartReport({
 			shownMetricKeys: ["cycle-time"],
@@ -208,7 +203,6 @@ describe("Editing a report", () => {
 		expect(await theMetricBox("Throughput")).toBeEnabled();
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	it("cannot save a report showing no metric", async () => {
 		const report = theEngagementStartReport({
 			shownMetricKeys: ["cycle-time"],
@@ -224,7 +218,6 @@ describe("Editing a report", () => {
 		expect(await theWizard()).toHaveTextContent(NO_METRIC);
 	});
 
-	// @us-10 @slice-10 @error @ac-10.6 @contract-shape:unbounded-preservation
 	// Another Team Admin saved a change after this wizard was opened.
 	it("says the report was changed by someone else when the save comes too late, keeping the edit", async () => {
 		await openTheEditWizard(
@@ -243,7 +236,6 @@ describe("Editing a report", () => {
 		expect(await theNameField()).toHaveValue(SINCE_AUGUST);
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	it("says the report couldn't be saved when the save fails for no reason it names", async () => {
 		await openTheEditWizard(
 			aReportService({
@@ -259,7 +251,6 @@ describe("Editing a report", () => {
 		).toHaveTextContent("The report couldn't be saved. Try again.");
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	// Another Team Admin deleted the report after this wizard was opened.
 	it("says the report no longer exists when it was deleted before the save", async () => {
 		await openTheEditWizard(
@@ -276,7 +267,6 @@ describe("Editing a report", () => {
 		).toHaveTextContent("This report no longer exists.");
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	it("says the report couldn't be saved when the edit is not allowed", async () => {
 		await openTheEditWizard(
 			aReportService({
@@ -292,7 +282,6 @@ describe("Editing a report", () => {
 		).toHaveTextContent("The report couldn't be saved. Try again.");
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	// The page shows the report the save answered with, dimmed until it has been read again.
 	it("dims the saved report under a spinner while it is read again after the save", async () => {
 		const reread = deferred<IReport>();
@@ -318,7 +307,6 @@ describe("Editing a report", () => {
 		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
 	});
 
-	// @us-10 @slice-10 @ac-10.6 @boundary @contract-shape:bounded-change
 	// A second edit made before the re-read lands must not be refused as somebody else's change.
 	it("edits the saved report, not the one before, when Edit is chosen again", async () => {
 		const reportService = await openTheEditWizard(
@@ -394,7 +382,6 @@ describe("Editing a report", () => {
 		expect(queryClient.getQueryState(anotherReport)?.isInvalidated).toBe(false);
 	});
 
-	// @us-10 @slice-10 @driving_port @contract-shape:bounded-change
 	it("has the report list read again after the save", async () => {
 		const reportService = aReportService({
 			getReport: vi.fn().mockResolvedValue(theEngagementStartReport()),
@@ -461,7 +448,6 @@ describe("Editing does not count as opening the report again", () => {
 		vi.useRealTimers();
 	});
 
-	// @us-10 @us-01 @slice-10 @kpi-OUT-5878-K2-reports-reopened @error @contract-shape:unbounded-preservation
 	it("reports the report opened once, however often it is read again after edits", async () => {
 		await openTheEditWizard();
 		await act(() => vi.advanceTimersByTimeAsync(5_100));

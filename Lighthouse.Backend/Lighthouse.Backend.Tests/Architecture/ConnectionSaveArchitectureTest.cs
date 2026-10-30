@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly Type[] LeftToTheConnectionSave = [typeof(IDomainEventDispatcher), typeof(FetchFingerprint)];
 
         [Test]
-        // @contract-shape:unbounded-preservation
         public void TheConnectionController_LeavesWhoToUpdateAfterASaveToTheConnectionSave()
         {
             using var module = ModuleDefinition.ReadModule(typeof(WorkTrackingSystemConnectionController).Assembly.Location);

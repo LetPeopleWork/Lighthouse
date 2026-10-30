@@ -58,7 +58,7 @@ testWithTeam(
 			).toBeVisible();
 		});
 
-		// @walking_skeleton @driving_port @us-06 @slice-06b - it never presses the headline's info icon: with
+		// it never presses the headline's info icon: with
 		// the explanation open, the first Escape would close the explanation rather than the dialog.
 		await test.step("Forecast reality check reads at a glance", async () => {
 			await expect(teamDetailPage.realityCheckExplanationIcon).toBeVisible();

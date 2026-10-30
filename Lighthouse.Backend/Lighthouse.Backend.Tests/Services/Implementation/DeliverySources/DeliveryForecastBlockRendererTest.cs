@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
 
         private DeliveryForecastBlockRenderer CreateSubject() => new();
 
-        // @AC-05.3 - the observed default on the demo instance is a Release with no description at all.
+        // the observed default on the demo instance is a Release with no description at all.
         [Test]
         public void A_release_with_no_description_gets_one_that_is_only_the_forecast()
         {
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             Assert.That(result, Is.EqualTo(block));
         }
 
-        // @AC-05.4 - coexistence with the text the team wrote is the whole point of the markers.
+        // coexistence with the text the team wrote is the whole point of the markers.
         [Test]
         public void A_description_the_team_wrote_keeps_every_word_when_the_forecast_is_added()
         {
@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @AC-05.4b - the criterion that carries the slice: rewriting replaces, it never accumulates.
+        // the criterion that carries the slice: rewriting replaces, it never accumulates.
         [Test]
         public void Writing_the_forecast_twice_leaves_one_forecast_not_two()
         {
@@ -80,7 +80,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @AC-05.4c - text outside the markers survives a rewrite, on both sides of the block.
+        // text outside the markers survives a rewrite, on both sides of the block.
         [Test]
         public void Rewriting_the_forecast_disturbs_nothing_around_it()
         {
@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @AC-05.4d - a human who edited inside the block does not get a merge, they get it rewritten.
+        // a human who edited inside the block does not get a merge, they get it rewritten.
         [Test]
         public void A_hand_edited_forecast_is_replaced_wholesale_rather_than_merged()
         {
@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @error - the rule that protects prose Lighthouse did not write. Losing the closing marker must
+        // the rule that protects prose Lighthouse did not write. Losing the closing marker must
         // never let the replace run to the end of the description.
         [Test]
         public void A_forecast_whose_closing_marker_was_deleted_costs_the_reader_nothing()
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             Assert.That(result, Does.Contain(theirs));
         }
 
-        // @error - detection anchors on the opening line, so the emoji alone is just a character.
+        // detection anchors on the opening line, so the emoji alone is just a character.
         [Test]
         public void An_emoji_someone_typed_themselves_is_not_treated_as_a_marker()
         {
@@ -145,7 +145,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @AC-05.3b - the first of the four required things, and the one the truncating Releases-list
+        // the first of the four required things, and the one the truncating Releases-list
         // column has to still show: whoever reads it must be able to tell where the number came from.
         [Test]
         public void The_block_says_Lighthouse_wrote_it_and_when()
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             Assert.That(FirstLineOf(block), Is.EqualTo(Ball + " Lighthouse forecast - updated 2026-08-22"));
         }
 
-        // @AC-05.3b - the same three percentiles the product renders on its own screen, so a Release
+        // the same three percentiles the product renders on its own screen, so a Release
         // and the Lighthouse page can never disagree about which ones are on show.
         [Test]
         public void The_block_carries_all_three_forecasts_the_product_itself_shows()
@@ -174,7 +174,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DeliverySources
             }
         }
 
-        // @AC-05.3b - the fourth required thing. The target is named rather than implied, because a
+        // the fourth required thing. The target is named rather than implied, because a
         // likelihood with no date attached is a number about nothing.
         [Test]
         public void The_block_names_the_target_and_the_chance_of_hitting_it()

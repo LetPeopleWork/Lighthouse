@@ -851,7 +851,6 @@ describe("ForecastService", () => {
 			expect(result.cells[0].scoredPeriodStart).toBe("2026-09-15");
 		});
 
-		// @us-04 @slice-04 @kpi-OUT-6094-how-far-each-forecast-landed
 		it("should keep every period the check scored, with its days and what was delivered, as they travel", async () => {
 			const scoredPeriods = [
 				{

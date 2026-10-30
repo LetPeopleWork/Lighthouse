@@ -38,7 +38,6 @@ const everythingIn: PrintPageInputs = {
 };
 
 describe("the print page's state", () => {
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it.each<[string, WithTheReportBeingRead, PrintPageState]>([
 		["everything is in", {}, "ready"],
 		[
@@ -120,7 +119,6 @@ describe("the print page's state", () => {
 		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// A failed read stays in hand while Retry asks again; what the page has then is an answer on its way, not a failure.
 	it.each<[string, WithTheReportBeingRead, PrintPageState]>([
 		[
@@ -137,7 +135,6 @@ describe("the print page's state", () => {
 		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:pure-function
 	// The hidden frame gives up after 30 seconds, so its spinner never turns forever; the sentence follows what was
 	// still missing, and a failure already decided stays as it was.
 	it.each<
@@ -186,7 +183,6 @@ describe("the print page's state", () => {
 		expect(printPageStateOf({ ...everythingIn, ...change })).toBe(expected);
 	});
 
-	// @us-01 @slice-01 @property @edge @contract-shape:pure-function
 	// Every combination of the five inputs without a failure: ready exactly when all five are in, else preparing.
 	it("is ready exactly when all five inputs are in, and preparing otherwise", () => {
 		const answers = [null, OPENED - 1, OPENED, OPENED + 1];
@@ -223,7 +219,6 @@ describe("the print page's state", () => {
 		expect(combinations).toBe(64);
 	});
 
-	// @us-01 @slice-01 @contract-shape:unbounded-preservation
 	// Holds today and must keep holding: a decision that reaches for React, the router or the cache is no longer a plain function of its inputs.
 	it("keeps the decision free of React, the router and the query library", () => {
 		const source = readFileSync(

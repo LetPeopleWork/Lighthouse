@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-07")]
     public partial class Slice07TheQueueReadsLikeAQueueTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-07A.1 — a real refresh, running, through the
+        // a real refresh, running, through the
         // production queue, read back beside work that is genuinely waiting on it.
         [Test]
         public async Task The_refresh_that_is_under_way_is_read_first_and_what_is_waiting_follows_it_oldest_first()
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheListReads(running, waitingLongest, waitingSince);
         }
 
-        // @driving_port @AC-07A.1 — the waiting half on its own, admitted newest-first so that a list
+        // the waiting half on its own, admitted newest-first so that a list
         // handed back in the order it was filled is wrong rather than coincidentally right.
         [Test]
         public async Task Work_that_has_been_waiting_longest_is_the_next_thing_the_queue_will_reach()
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheListReads(oldestFirst);
         }
 
-        // @driving_port @error @AC-07A.2 — the promise the defect is actually about. One read of an
+        // the promise the defect is actually about. One read of an
         // unordered list can come out right; five agreeing on a twelve-row answer cannot.
         [Test]
         public async Task The_queue_reads_the_same_way_every_time_it_is_read()
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheListReadsTheSameWayEveryTime(oldestFirst);
         }
 
-        // @driving_port @error @AC-07A.2 — the case the moments cannot settle. Two admissions inside one
+        // the case the moments cannot settle. Two admissions inside one
         // tick of the clock share a moment, and a comparison that stops there hands the order back to the
         // store.
         //
@@ -88,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheListAlwaysReadsTheSameWayWhateverOrderThatIs(admittedTogether);
         }
 
-        // @driving_port @error @AC-07A.3 — mid-rolling-upgrade a replica on the older build admits work
+        // mid-rolling-upgrade a replica on the older build admits work
         // and records nothing. The row has no place to claim in the order, so it takes the last one, and
         // it keeps everything else about itself.
         [Test]
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRowForThatTeamStillSaysItIs(unrecorded, UpdateProgress.Queued);
         }
 
-        // @driving_port @error @AC-07A.3 @AC-07A.1 — the same missing moment, on the row that is running.
+        // the same missing moment, on the row that is running.
         // Sorting it to the very end would drop the one thing the instance is doing below three things it
         // is not, which is the reading this slice exists to fix. Last of what is running, not last of all.
         [Test]

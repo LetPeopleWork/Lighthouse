@@ -191,7 +191,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		vi.useRealTimers();
 	});
 
-	// @us-05 @need-over-one-cycle @slice-05 @driving_port @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
 	// The number covers one Refinement cycle: what the Team pulls from the next Refinement until the one after.
 	it("says how many more to refine when fewer are ready than the Team is likely to pull until the Refinement after", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below"));
@@ -207,7 +206,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		).toBeInTheDocument();
 	});
 
-	// @need-over-one-cycle @boundary @contract-shape:pure-function
 	// A view that does not say whether today is a Refinement day is read as an ordinary day.
 	it("reads the cycle as ending at the Refinement after when the view does not say whether today is a Refinement day", async () => {
 		renderTheRefinementTab(
@@ -219,7 +217,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 	});
 
-	// @need-over-one-cycle @driving_port @boundary @contract-shape:pure-function
 	// On a Refinement day the cycle starts today, so the first date the tooltip names is today's.
 	it("names today as the cycle's first Refinement when today is a Refinement day", async () => {
 		vi.setSystemTime(new Date(2026, 9, 8, 9, 0, 0));
@@ -250,7 +247,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(message).not.toHaveTextContent(/until the Refinement after/);
 	});
 
-	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
 	it("says nothing more needs refining when the ready count is in range", async () => {
 		renderTheRefinementTab(gravityWithReady(6, "In"));
 
@@ -260,7 +256,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(within(message).getByTestId(SETTLED_ICON)).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @driving_port @contract-shape:pure-function
 	// Stopping is as much an action as refining more, so it is said as loudly.
 	it("says stop refining, as loudly as refine more, when more are ready than the Team is likely to pull", async () => {
 		renderTheRefinementTab(gravityWithReady(11, "Above"));
@@ -271,14 +266,12 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(within(message).getByTestId(ACT_ICON)).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	it("says five ready against 5–8 in the in-range words", async () => {
 		renderTheRefinementTab(gravityWithReady(5, "In"));
 
 		await expectTheVerdictToRead(/^5 ready — in the range of 5–8\./);
 	});
 
-	// @us-05 @need-over-one-cycle @slice-05 @boundary @contract-shape:pure-function
 	it("says the Team's own words for Work Items, the Team and Refinement", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
@@ -300,7 +293,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:pure-function
 	it("gives the message forecasts give when the Team has too little history", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", { need: noNeedBecause("InsufficientData") }),
@@ -313,7 +305,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(screen.queryByText(/ ready — /)).not.toBeInTheDocument();
 	});
 
-	// @us-05 @us-04 @slice-05 @error @contract-shape:pure-function
 	it("shows no message without a cadence; the heading's hint says what is missing", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", {
@@ -327,7 +318,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// Without stage rules the votes say what is ready, so the vote that makes a Work Item Ready moves the
 	// message; the tab reads the need again rather than working it out itself.
 	it("moves the message on a Team without stages when a vote makes a Work Item Ready", async () => {
@@ -381,7 +371,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// A vote can take a Work Item out of Ready as well as into it, and the ready count moves either way.
 	it("moves the message on a Team without stages when a vote takes a Work Item out of Ready", async () => {
 		aBrowserThatVotedBefore("Jonas Weber");
@@ -438,7 +427,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:unbounded-preservation
 	// With stage rules the stage says what is ready, so no vote can move the message and none reads again.
 	it("reads nothing again on a Team with stages when a vote makes a Work Item Ready", async () => {
 		aBrowserThatVotedBefore("Jonas Weber");
@@ -470,7 +458,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(refinementService.getRefinement).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// The server read the Refinement before the second vote reached it, so its answer still holds that
 	// Work Item's old votes; the vote answered since then is the newer word on it.
 	it("keeps a vote answered while the Refinement is read again", async () => {
@@ -537,7 +524,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(await theRowOf(LOAD_TESTING)).toHaveTextContent("1 vote");
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	it("keeps the newer read when an older one answers after it", async () => {
 		aBrowserThatVotedBefore("Jonas Weber");
 		const nearlyReady = { voteCount: 2, missingVotes: 1 };
@@ -620,7 +606,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		);
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	// A verdict rests on every number the server sends with it; one missing and there is no verdict to say.
 	it.each([
 		"verdict",
@@ -642,7 +627,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		},
 	);
 
-	// @need-over-one-cycle @boundary @contract-shape:pure-function
 	// The tooltip names the cycle's two Refinements; without either date there is no verdict to explain.
 	it.each(["cycleStart", "cycleEnd"] as const)(
 		"says no verdict and names the next Refinement on the heading's row when the need comes without its %s",
@@ -657,7 +641,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		},
 	);
 
-	// @need-over-one-cycle @boundary @contract-shape:pure-function
 	// A cycle date that is not a real calendar day cannot be named either, even when the other one can.
 	it.each([
 		["cycleStart", "2026-10-32"],
@@ -675,7 +658,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		},
 	);
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	it("says no verdict and names the next Refinement on the heading's row when the server sent no ready count", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(3, "Below", { readyCount: undefined }),
@@ -684,14 +666,12 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	it("says no verdict and names the next Refinement on the heading's row when the server said nothing about the need", async () => {
 		renderTheRefinementTab(gravityWithReady(3, "Below", { need: undefined }));
 
 		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	// "By then" needs a then: without a next Refinement the verdict has nothing to be judged by.
 	it("says no verdict when the server judged the need but named no next Refinement", async () => {
 		renderTheRefinementTab(
@@ -705,7 +685,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:pure-function
 	it("names the next Refinement on the heading's row when the Team has a cadence but no Refinement states", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(0, "Below", {
@@ -716,7 +695,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		await expectNoMessageAndTheNextRefinementOnTheHeadingsRow();
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:pure-function
 	it("names the next Refinement only once, as the title of the too-little-history message", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", { need: noNeedBecause("InsufficientData") }),
@@ -727,7 +705,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(screen.getAllByText(/^Next Refinement: /)).toHaveLength(1);
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:unbounded-preservation
 	// Somebody can take a Work Item out of Refinement while this browser's vote on it is on its way. The
 	// Refinement read since no longer lists it, so the late answer has nothing left to change.
 	it("keeps the Refinement as read when a vote is answered for a Work Item it no longer lists", async () => {
@@ -800,7 +777,6 @@ describe("The Refinement tab says whether to refine more or stop", () => {
 		expect(refinementService.getRefinement).toHaveBeenCalledTimes(2);
 	});
 
-	// @us-05 @us-13 @slice-05 @contract-shape:bounded-change
 	// The Team page keeps the tab mounted when the address moves to another Team, so a vote cast before the
 	// move can be answered after it. Even one that moved the last Team's message must not hold the next
 	// Team's Refinement back.
@@ -865,7 +841,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		});
 	});
 
-	// @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
 	it.each([
 		["Below", 3],
 		["In", 6],
@@ -892,7 +867,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		},
 	);
 
-	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
 	it("reports None on a Refinement day when there is no number to judge against", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(2, "Below", {
@@ -910,7 +884,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		);
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:unbounded-preservation
 	it("reports nothing about the verdict on any other day", async () => {
 		renderTheRefinementTab(
 			gravityWithReady(3, "Below", { isRefinementDay: false }),
@@ -925,7 +898,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		).toHaveLength(0);
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
 	// Usage data counts openings, not reads: the vote that moves the message reads the Refinement again,
 	// and that read reports nothing more.
 	it("reports once when a vote on a Refinement day reads the Refinement again", async () => {
@@ -975,7 +947,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		expect(verdictsReported()).toEqual(["Below"]);
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
 	// The Team page keeps the tab mounted when the address moves to another Team, so a vote cast on the
 	// Team before can be answered while the next Team's Refinement is still being read.
 	it("reports the next Team's verdict, not the last one's, when a vote cast before the move is answered after it", async () => {
@@ -1023,7 +994,6 @@ describe("A Refinement day reports which verdict the tab showed", () => {
 		await waitFor(() => expect(verdictsReported()).toEqual(["Below", "In"]));
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:bounded-change
 	// Until the next Team's Refinement arrives the last Team's Work Items stay on screen and can still be
 	// voted on. That answer belongs to them, and must not pass for the next Team's opening.
 	it("reports the next Team's verdict when a Work Item still on screen from the last Team is voted on during the move", async () => {

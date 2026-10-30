@@ -13,7 +13,7 @@ import { expect, test } from "../../fixutres/LighthouseFixture";
 
 const PAGE_SIZE = 100;
 
-test("A long list shows its range, pages to the rest, and a search opens its first page @walking_skeleton @driving_port @us-01 @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change", async ({
+test("A long list shows its range, pages to the rest, and a search opens its first page", async ({
 	overviewPage,
 }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();

@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-03")]
     public partial class Slice03HistoricPortfolioBlockedCountTest
     {
-        // @walking_skeleton @driving_port @us-03 @contract-shape:pure-function (US-03 AC1)
+        // (US-03 AC1)
         [Test]
         [Category("walking_skeleton")]
         public async Task A_feature_blocked_during_a_past_window_but_clear_today_reads_blocked_for_that_window()
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureReadsBlockedWithTheSpellStart(item);
         }
 
-        // @driving_port @us-03 @error @contract-shape:pure-function (US-03 AC2 — the inverse error:
+        // (US-03 AC2 — the inverse error:
         // blocked only today must NOT leak into ranges that closed before the spell began)
         [Test]
         public async Task A_feature_blocked_only_today_reads_not_blocked_on_a_range_that_closed_before_its_spell_began()
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureReadsNotBlocked(item);
         }
 
-        // @driving_port @us-03 @contract-shape:pure-function (US-03 AC3 — guard shape: today answers live)
+        // (US-03 AC3 — guard shape: today answers live)
         [Test]
         public async Task Todays_read_still_answers_from_the_live_rule_set()
         {
@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureReadsBlocked(item);
         }
 
-        // @edge @us-03 @contract-shape:pure-function (US-03 AC4a — no capture history at all: pre-capture
+        // (US-03 AC4a — no capture history at all: pre-capture
         // feature falls back to the live rule, the only honest answer available)
         [Test]
         public async Task A_feature_with_no_capture_history_falls_back_to_the_live_rule()
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureReadsBlocked(item);
         }
 
-        // @edge @us-03 @contract-shape:pure-function (US-03 AC4b — the correctness cliff: WITH history
+        // (US-03 AC4b — the correctness cliff: WITH history
         // and no covering spell, absence of a spell is evidence, not a gap — never fall back to live)
         [Test]
         public async Task A_feature_with_history_but_no_spell_covering_the_date_reads_not_blocked()
@@ -83,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheFeatureReadsNotBlocked(item);
         }
 
-        // @property @us-03 @contract-shape:pure-function (parity KPI / journey integration_validation:
+        // (parity KPI / journey integration_validation:
         // the same spell shape asserted through BOTH controllers over the same past range must produce
         // the same answer — divergence is a failing test, not a nuance)
         [Test]

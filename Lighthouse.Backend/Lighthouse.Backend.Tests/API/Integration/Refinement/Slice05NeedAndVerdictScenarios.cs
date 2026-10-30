@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- The verdict ---
 
-        // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
         [Test]
         public async Task Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNextRefinementIsThursdayTheEighthWithTwoReady(tab);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @boundary @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // Two Work Items are ready; both ends of the range belong to it.
         [TestCase(3, 8, Below)]
         [TestCase(2, 8, InRange)]
@@ -56,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheVerdictIs(tab, verdict);
         }
 
-        // @driving_port @real-io @us-05 @us-13 @slice-05 @contract-shape:bounded-change
         // Without stage rules the votes make Work Items Ready, and so they move the verdict.
         [Test]
         public async Task On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
@@ -69,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), InRange);
         }
 
-        // @driving_port @real-io @us-05 @us-03 @slice-05 @boundary @contract-shape:bounded-change
         // With stage rules the tracker decides what is ready; votes are shown, not counted. Were they counted,
         // the three Yes votes would make a third Work Item ready and lift the count above the range of 1-2.
         [Test]
@@ -85,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- The number behind it ---
 
-        // @driving_port @real-io @us-05 @slice-05 @contract-shape:pure-function
         // A Team that finishes two Work Items every day is forecast fourteen over the seven working days of its
         // cycle, whatever the engine draws, so both reads of the shipped engine must agree exactly. The manual
         // forecast is asked for the day as many working days ahead as the cycle has. With so even a history
@@ -101,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRangeIsTheManualForecastForTheSevenWorkingDaysOfTheCycleAfterTuesdayTheThirteenth(tab, gravity);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @boundary @contract-shape:pure-function
         // Tuesday 13 and Wednesday 14 October are blackout days, so only five of the seven days after
         // Thursday the 8th up to Thursday the 15th are working days.
         [Test]
@@ -116,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRangeIs(tab, low: 4, high: 7, horizonWorkingDays: 5);
         }
 
-        // @driving_port @real-io @us-05 @us-04 @slice-05 @boundary @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:pure-function
         // On a Refinement day today's session is the moment to top up, so the count looks a week ahead.
         [Test]
         public async Task On_a_Refinement_day_the_number_is_for_the_following_Refinement()
@@ -132,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- When there is no number ---
 
-        // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:pure-function
         // The guard forecasts use: at least five days with finished Work Items.
         [Test]
         public async Task Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number()
@@ -144,7 +136,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenThereIsNoNumberBecause(tab, InsufficientData);
         }
 
-        // @driving_port @real-io @us-05 @us-04 @slice-05 @error @contract-shape:pure-function
         [Test]
         public async Task Without_a_cadence_there_is_no_number_and_the_list_stays()
         {
@@ -156,7 +147,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenAllSixAreStillListed(tab);
         }
 
-        // @driving_port @real-io @us-05 @us-01 @slice-05 @error @contract-shape:pure-function
         [Test]
         public async Task A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states()
         {
@@ -169,7 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- How many rows are needed ---
 
-        // @driving_port @real-io @us-06 @slice-05 @boundary @contract-shape:pure-function
         // Gravity lists six Work Items. The browser needs the true high end to say that all six are needed,
         // so the answer never cuts it down to what is listed.
         [TestCase(3)]
@@ -185,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheHighEndIsAndSixAreListed(tab, high);
         }
 
-        // @driving_port @real-io @us-06 @slice-05 @boundary @contract-shape:pure-function
         // A Team likely to pull nothing at all over the cycle needs nothing refined.
         [Test]
         public async Task A_range_of_nothing_says_stop_with_two_ready()
@@ -200,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Guardrail ---
 
-        // @driving_port @real-io @us-05 @slice-05 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
         // Second, warm read; the shipped forecast engine runs.
         [Test]
         public async Task Three_hundred_Work_Items_in_refinement_still_answer_with_a_verdict_within_two_seconds()

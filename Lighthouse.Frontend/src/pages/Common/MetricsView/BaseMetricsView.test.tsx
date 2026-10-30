@@ -6865,7 +6865,6 @@ describe("BaseMetricsView component", () => {
 			anItemInProgress(14, { currentStateEnteredAt: aMonthAgo }),
 		];
 
-		// @driving_port @kpi @contract-shape:pure-function
 		it("the Team's Stale count is the number of Work Items Lighthouse marks stale", async () => {
 			const team = new Team();
 			team.name = "Stale Answer Team";
@@ -6885,7 +6884,6 @@ describe("BaseMetricsView component", () => {
 			).toHaveTextContent(/^3$/);
 		});
 
-		// @driving_port @kpi @contract-shape:pure-function
 		it("the Portfolio's Stale count is the number of Features Lighthouse marks stale", async () => {
 			const portfolio = new Portfolio();
 			portfolio.name = "Stale Answer Portfolio";
@@ -6906,7 +6904,6 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		// @driving_port @contract-shape:pure-function
 		it("the aging chart's health counts a Work Item Lighthouse marks stale as stale", async () => {
 			// One of ten past the 14-day target is within the 85% promise, so only a stale (or Blocked)
 			// Work Item among them turns the aging health red.
@@ -6935,7 +6932,6 @@ describe("BaseMetricsView component", () => {
 			});
 		});
 
-		// @driving_port @error @contract-shape:pure-function
 		it("on a past range, the aging chart's health does not call stale a Work Item Lighthouse judged not stale on the range's last day", async () => {
 			// Two days in its state on the range's last day, months by today: the browser counted to
 			// today, while Lighthouse judged the item as of the range end and found it not stale.

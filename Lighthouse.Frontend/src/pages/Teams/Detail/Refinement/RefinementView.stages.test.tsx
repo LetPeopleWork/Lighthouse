@@ -124,7 +124,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		});
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("heads the tab with the list broken down by stage, and counts it nowhere else", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
@@ -137,7 +136,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		expect(screen.queryByText(/ in Refinement/)).not.toBeInTheDocument();
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("puts a Stage column straight after State and heads the votes column Votes say", async () => {
 		renderTheRefinementTab(gravityWithStages());
 		await theRowOf("GR-058");
@@ -148,7 +146,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		expect(headers).not.toContain("Readiness");
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("says each row's stage in words", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
@@ -157,7 +154,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		expect(await theStageCellOf("GR-073")).toHaveTextContent(/^Waiting$/);
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("warns about a row whose stage and votes disagree, in words a screen reader reads too, and leaves the Stage cell to the stage", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
@@ -173,7 +169,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it("tells a screen reader which way the stage and votes disagree, not only that they do", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement(
@@ -207,7 +202,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	it("marks only the row where the two signals disagree", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
@@ -221,7 +215,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		});
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	// Nobody has voted on GR-060, so its votes hold no opinion yet: its Ready stage carries no marker.
 	it("marks no row whose stage is Ready when nobody has voted on it yet", async () => {
 		renderTheRefinementTab(
@@ -251,7 +244,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	it("says nobody is Ready yet rather than leaving the stage count out when no Work Item matches the Ready rule", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement(
@@ -275,7 +267,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		).toBeVisible();
 	});
 
-	// @us-03 @us-13 @slice-03 @boundary @contract-shape:unbounded-preservation
 	it("shows the tab as before when the Team sets no stage rule: no Stage column, no breakdown, ready by votes", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({
@@ -298,7 +289,6 @@ describe("The Refinement tab shows stages beside the votes", () => {
 		expect(screen.queryByLabelText(SIGNALS_DISAGREE)).not.toBeInTheDocument();
 	});
 
-	// @us-03 @slice-03 @boundary @contract-shape:pure-function
 	it("keeps the breakdown as the heading when the Team has its own words", async () => {
 		terms.current = {
 			...defaultRefinementTerms,
@@ -356,7 +346,6 @@ describe("The Warnings column", () => {
 		},
 	);
 
-	// @us-12 @slice-12 @boundary @contract-shape:pure-function
 	it("shows nothing at all on a row with nothing to warn about", async () => {
 		renderTheRefinementTab(gravityWithStages());
 
@@ -365,7 +354,6 @@ describe("The Warnings column", () => {
 		expect(clean).toHaveTextContent(/^$/);
 	});
 
-	// @us-03 @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("lists every reason when a row has several, in one icon a screen reader reads whole", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
@@ -386,7 +374,6 @@ describe("The Warnings column", () => {
 		expect(listed.map((item) => item.textContent)).toEqual(reasons);
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("says a single reason as one sentence", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
@@ -405,7 +392,6 @@ describe("The Warnings column", () => {
 		expect(within(tooltip).queryByRole("list")).not.toBeInTheDocument();
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("brings the rows with warnings together when sorted by it", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [
@@ -439,7 +425,6 @@ describe("The Warnings column", () => {
 		expect(warned[1] - warned[0]).toBe(1);
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("puts the clean rows first when sorted by it, and the rows with warnings first when sorted again", async () => {
 		const { user } = renderTheRefinementTab(
 			gravitysRefinement({ stagesConfigured: true, readySource: "Stages" }, [

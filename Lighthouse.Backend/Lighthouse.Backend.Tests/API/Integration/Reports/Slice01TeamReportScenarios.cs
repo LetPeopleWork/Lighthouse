@@ -28,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private const string DroppedLater = "LS-17";
 
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
         [Test]
         public async Task A_coach_freezes_the_Cycle_Time_of_the_last_ninety_days_for_a_Team()
         {
@@ -53,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
         public async Task Every_reader_of_the_Team_finds_the_report_in_its_list()
         {
@@ -72,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @us-02 @slice-01 @contract-shape:pure-function
         // The wizard's date picker and default name are bounded by the instance's day, never the viewer's clock.
         [Test]
         public async Task The_types_of_report_offered_name_today_and_the_earliest_day_Then_may_start()
@@ -91,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
         public async Task Now_moves_with_the_calendar_while_Then_stays_as_it_was_frozen()
         {
@@ -116,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         // Rebuilding Then without LS-17 would give an 85th percentile of 17 days and a 70th of 9, on 19 Work Items,
         // so 21 and 11 on 20 can only be the frozen values.
         [Test]
@@ -136,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         // The first reports froze the 85th percentile alone; Then's 70th and 50th were never captured for them.
         [Test]
         public async Task A_report_that_froze_only_the_85th_percentile_says_nothing_of_Thens_70th_and_50th()
@@ -160,7 +154,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
         [Test]
         public async Task Thin_data_shows_the_value_with_its_sample_size()
         {
@@ -181,7 +174,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
         public async Task No_finished_Work_Items_show_a_dash_and_the_reason_never_a_zero()
         {
@@ -199,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_reader_cannot_create_a_report()
         {
@@ -218,7 +209,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // Without a role on the Team, its reports are not there at all, the way the Team itself is not.
         [Test]
         public async Task Somebody_with_no_role_on_the_Team_cannot_see_that_it_has_reports()
@@ -234,7 +224,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsNotFound(report);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
         public async Task A_report_reached_through_another_Teams_address_is_not_found()
         {
@@ -251,7 +240,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsNotFound(throughZenith);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:pure-function
         [Test]
         public async Task A_report_that_does_not_exist_is_not_found()
         {
@@ -265,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsNotFound(report);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [TestCase("")]
         [TestCase("   ")]
         public async Task A_report_without_a_name_is_refused_and_nothing_is_created(string name)
@@ -279,7 +266,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(lightspeed);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_type_of_report_this_version_does_not_offer_is_refused()
         {
@@ -292,7 +278,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(lightspeed);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         // Half past one in the morning in the instance's zone is still the previous day in UTC.
         [Test]
         public async Task Then_ending_today_means_the_instances_today_just_after_midnight()
@@ -310,7 +295,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenWindowIn(report), Is.EqualTo(NinetyDaysToToday));
         }
 
-        // @driving_port @real-io @us-08 @slice-01 @contract-shape:bounded-change
         // The reports go at the database, so an older version deleting the Team takes them along as well.
         [Test]
         public async Task Deleting_a_Team_deletes_its_reports()
@@ -331,7 +315,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // An instance rolled back from a later version still holds that version's reports.
         [Test]
         public async Task A_report_of_a_type_this_version_does_not_know_is_listed_but_opening_it_is_refused_never_a_crash()
@@ -353,7 +336,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenItIsRefusedWith(opened, HttpStatusCode.UnprocessableEntity, Reason.TemplateNotSupported);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task A_report_carrying_values_this_version_does_not_know_still_opens()
         {
@@ -366,7 +348,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenValueIn(report, CycleTime, P85), Is.EqualTo(Shown(21, 20)));
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
         // The operator learns why a report will not open; the name a coach gave it never reaches the log.
         [Test]
         public async Task The_operator_is_warned_when_a_stored_report_cannot_be_read_and_the_warning_does_not_name_it()

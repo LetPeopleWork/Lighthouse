@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Holds today and after: if the scanner stopped seeing calls, every seam test below would pass
         // without looking at anything.
-        // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
         public void TheScanner_SeesACallThatIsThere()
         {
@@ -39,7 +38,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
         public void NothingOutsideTheNormalizer_NormalizesAnEstimateItself()
         {
@@ -63,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
         public void BothEstimationChartBuilders_ReadThroughEstimatesOf()
         {
@@ -85,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // @us-01 @slice-01a @architecture @contract-shape:unbounded-preservation
         [Test]
         public void TheRowsEstimate_IsReadThroughEstimateOf()
         {

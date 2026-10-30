@@ -31,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private static readonly string[] MembersThatDifferPerOwner = ["id", "ownerId", "ownerName", "concurrencyToken"];
 
-        // @driving_port @real-io @us-02a @slice-02a @kpi-OUT-6350-K2-bulk-creation-used @contract-shape:bounded-change
         [Test]
         public async Task A_coach_creates_the_same_comparison_for_two_Teams_in_one_go()
         {
@@ -58,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @contract-shape:bounded-change
         // The run must make exactly the report the single wizard makes, so the comparison reads the same whichever way it was set up.
         [Test]
         public async Task Each_report_made_in_bulk_equals_the_one_the_single_wizard_makes_from_the_same_inputs()
@@ -80,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(madeInBulk, Is.EqualTo(madeAlone));
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:bounded-change
         [Test]
         public async Task A_Team_whose_kept_history_is_too_short_is_skipped_with_the_day_its_history_starts()
         {
@@ -103,7 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @edge @contract-shape:unbounded-preservation
         [Test]
         public async Task A_run_where_every_Team_is_refused_answers_each_with_its_reason_and_writes_nothing()
         {
@@ -124,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Team_she_only_reads_is_not_created_on_and_the_others_are()
         {
@@ -145,7 +140,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
         // A Team deleted, an Admin right lost and a licence lapsing while the run is under way each cost one row.
         [Test]
         public async Task Changes_during_the_run_are_refused_owner_by_owner()
@@ -179,7 +173,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @adapter-integration @contract-shape:bounded-change
         // Needs a database that holds its foreign keys: on one that does not, the orphan row would simply be saved.
         [Test]
         public async Task An_owner_deleted_between_lookup_and_save_fails_only_its_own_row()
@@ -202,7 +195,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_Community_instance_is_refused_the_whole_run_and_nothing_is_written()
         {
@@ -217,7 +209,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(StoredReports(), Is.Zero);
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @edge @contract-shape:unbounded-preservation
         [Test]
         public async Task More_than_50_owners_in_one_run_are_refused_whole()
         {
@@ -231,7 +222,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheWholeRequestIsRefusedAndNothingIsWritten(run);
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
         public async Task Exactly_50_owners_are_answered_owner_by_owner()
         {
@@ -252,7 +242,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
         public async Task A_Team_named_twice_is_created_once_and_answered_in_the_order_first_asked()
         {
@@ -271,7 +260,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @contract-shape:unbounded-preservation
         [TestCase("no owner at all")]
         [TestCase("an owner of no known kind")]
         [TestCase("a Then & Now without its Then")]
@@ -299,7 +287,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheWholeRequestIsRefusedAndNothingIsWritten(run);
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @edge @contract-shape:bounded-change
         [Test]
         public async Task Running_the_same_creation_twice_gives_every_Team_a_second_copy()
         {
@@ -324,7 +311,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @contract-shape:pure-function
         [Test]
         public async Task A_created_row_names_the_new_report_which_opens_at_its_owner()
         {
@@ -340,7 +326,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(TextOf(report, "name"), Is.EqualTo(TheQuarter));
         }
 
-        // @driving_port @real-io @us-02a @us-04 @slice-02a @contract-shape:pure-function
         [Test]
         public async Task The_creation_options_offer_the_type_its_metrics_the_window_bounds_and_every_readable_owner()
         {
@@ -362,7 +347,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
         [Test]
         public async Task The_creation_options_leave_out_an_owner_the_caller_cannot_read()
         {

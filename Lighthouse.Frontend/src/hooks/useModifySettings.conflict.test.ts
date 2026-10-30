@@ -81,7 +81,7 @@ const makeArgs = (
 const conflict = () =>
 	new ApiError(409, "This record was modified by someone else.");
 
-describe("@conflict @in-memory optimistic concurrency on settings auto-save", () => {
+describe("optimistic concurrency on settings auto-save", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();

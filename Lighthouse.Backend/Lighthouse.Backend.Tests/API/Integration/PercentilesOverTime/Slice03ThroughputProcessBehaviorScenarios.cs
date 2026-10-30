@@ -17,8 +17,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-03")]
     public partial class Slice03ThroughputProcessBehaviorTest
     {
-        // @driving_port @scenario-10 (the dated limit triple — three lines plotted across the date range)
-        // @edge @scenario-12 (dayCount 0 — the forward-only empty state at the API level)
+        // (the dated limit triple — three lines plotted across the date range)
+        // (dayCount 0 — the forward-only empty state at the API level)
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(5)]
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDatedLimitTripleComesBackOrderedByDate(response, recorded);
         }
 
-        // @edge @scenario-12 (a fresh team — never a broken chart, never another owner's rows)
+        // (a fresh team — never a broken chart, never another owner's rows)
         [Test]
         public async Task A_fresh_team_sees_the_honest_empty_state_rather_than_a_neighbours_limits()
         {
@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheWidgetGetsTheForwardOnlyEmptyState(response);
         }
 
-        // @driving_port @scenario-10 (portfolio read path — the twin endpoint, same parameter shape)
+        // (portfolio read path — the twin endpoint, same parameter shape)
         [Test]
         public async Task The_delivery_lead_reads_the_dated_throughput_limits_a_portfolio_has_recorded()
         {
@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDatedLimitTripleComesBackOrderedByDate(response, recorded);
         }
 
-        // @driving_port @scenario-10 (the type parameter defaults to Throughput — the only family so far)
+        // (the type parameter defaults to Throughput — the only family so far)
         [Test]
         public async Task A_request_that_omits_the_type_gets_the_throughput_limits()
         {
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDatedLimitTripleComesBackOrderedByDate(response, recorded);
         }
 
-        // @edge @scenario-12 (an unknown family must be a 400 — an empty 200 would lie about the reason)
+        // (an unknown family must be a 400 — an empty 200 would lie about the reason)
         // "99" is the in-range-integer-but-undefined case, which reaches the controller's Enum.IsDefined
         // guard; the NAME case is rejected one layer earlier, at the model binder. Both are 400, which is
         // why the Then asserts the STATUS only and the two cases can share it.
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheRequestIsRejectedAsUnsupported(response);
         }
 
-        // @edge (the sentinel guards itself — epic-5427 slice-04 turned the previous sentinel "CycleTime"
+        // (the sentinel guards itself — epic-5427 slice-04 turned the previous sentinel "CycleTime"
         // into a real family, which would have made the two rejection cases above pass for the wrong
         // reason. A future slice that appends a family matching the sentinel now fails HERE, loudly.)
         [Test]
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 $"'{UnknownFamilyName}' is the sentinel for an UNKNOWN metric family — once it parses, the rejection scenarios above stop testing rejection and start testing a happy path");
         }
 
-        // @driving_port @scenario-10 (additive contract — the shipped endpoint is not perturbed)
+        // (additive contract — the shipped endpoint is not perturbed)
         [Test]
         public async Task A_client_on_the_shipped_percentiles_contract_still_reads_the_identical_series()
         {

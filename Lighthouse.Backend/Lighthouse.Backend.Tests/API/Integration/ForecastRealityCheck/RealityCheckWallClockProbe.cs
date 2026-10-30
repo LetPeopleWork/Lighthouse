@@ -62,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// 30 is on the standard ladder, so the sweep checks sixteen cells. 45 is not, so the Team's own
         /// window is checked as a fifth and the sweep grows to twenty cells.
         /// </param>
-        // @probe @us-01
         [TestCase(615, 30)]
         [TestCase(615, 45)]
         [TestCase(5_000, 30)]
@@ -95,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// sampling window, one simulation, one read of what was actually delivered. Four weeks scored,
         /// the thirty days before them sampled.
         /// </summary>
-        // @probe @us-01
         [Test]
         [Explicit(RunByHand)]
         public async Task MeasureSingleBacktestWallClock()

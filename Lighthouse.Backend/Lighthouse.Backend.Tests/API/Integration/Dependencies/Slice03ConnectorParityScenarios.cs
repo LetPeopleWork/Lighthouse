@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         [SetUp]
         public void UseThisTracker() => TheTracker = tracker;
 
-        // @driving_adapter @us-09 - "Everything the earlier slices delivered behaves the same on every
+        // "Everything the earlier slices delivered behaves the same on every
         // tracker". The row's count, the named entries, and the one warning that stands against an entry
         // outside this Portfolio.
         [Test]

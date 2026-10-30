@@ -139,7 +139,6 @@ describe("Export PDF on the report view", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(`offers an editor Export PDF as the first outlined button, before Edit report and Delete`, async () => {
 		onTheReportAlone();
 
@@ -152,7 +151,6 @@ describe("Export PDF on the report view", () => {
 		expect(await theExportButton()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	// Exporting is reading what is already on screen, so anyone who can read the report may do it.
 	it(`offers a reader who may not change the report Export PDF alone`, async () => {
 		onTheReportAlone(aReportService(), "reader");
@@ -161,7 +159,6 @@ describe("Export PDF on the report view", () => {
 		expect(await theExportButton()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// A PDF of a report still on its way would be a PDF of nothing; the button shows where it will be.
 	it(`shows Export PDF but lets nobody press it while the report is on its way`, async () => {
 		const held = deferred<never>();
@@ -174,7 +171,6 @@ describe("Export PDF on the report view", () => {
 		expect(exportsReported()).toHaveLength(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Holds today and must keep holding once Export PDF is offered on reports that load.
 	it.each([
 		["could not be loaded", new Error("the network dropped"), COULD_NOT_LOAD],
@@ -197,7 +193,6 @@ describe("Export PDF on the report view", () => {
 		},
 	);
 
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// A report this version cannot show has nothing to print, and its Type has no word on usage data's own list.
 	// Holds today and must keep holding once Export PDF is offered on the reports it can show.
 	it("offers no Export PDF for a report of a Type this version cannot show, and reports nothing", async () => {
@@ -237,7 +232,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		document.title = "";
 	});
 
-	// @us-01 @rev-3 @walking_skeleton @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
 	// The print dialog of the frame's own window shows only the report; the app's window is never asked.
 	it(`asks the report's own print frame for the dialog once everything is in, counts one export, and leaves the reader on the report with nothing added to their history`, async () => {
 		const theAppsDialog = aPrintDialog();
@@ -256,7 +250,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(exportsReported()).toEqual([ONE_EXPORT]);
 	});
 
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// The control keeps the focus the reader gave it, so a keyboard reader is not thrown back to the page's top.
 	it(`shows the waiting spinner on Export PDF while the PDF is prepared, keeps it focused and lets a second choice do nothing, until the dialog is asked for`, async () => {
 		aPrintDialog();
@@ -290,7 +283,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(exportPdfNow()).not.toHaveAttribute("aria-busy", "true");
 	});
 
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// Paper is white whatever the reader's screen is, and the frame holds the app's typeface but not its dark ground.
 	it(`draws a Portfolio's report inside the frame, on a light page of its own carrying the app's style sheets, and none of it on the report view`, async () => {
 		aPrintDialog();
@@ -365,7 +357,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		).toBe(readsBefore);
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// Browsers differ on whose title they offer as the PDF's file name, so the frame's and the tab's both carry it.
 	it(`names the PDF after the report and its owner while the frame is there, and gives the tab its own name back once the frame has gone`, async () => {
 		document.title = "Lighthouse";
@@ -385,7 +376,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(document.title).toBe("Lighthouse");
 	});
 
-	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-G-pdf-matches-screen @contract-shape:bounded-change
 	// The screen and the PDF agree: the report behind the dialog shows the answer that was just printed.
 	it(`reads the report afresh for the PDF, and the report view shows the very answer the PDF printed`, async () => {
 		aPrintDialog();
@@ -409,7 +399,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
 	});
 
-	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// One opening is one stay on the report; an export moves the reader nowhere, so it neither adds one nor loses one.
 	it(`counts the report as opened once, export or not`, async () => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
@@ -439,7 +428,6 @@ describe("Export PDF prints the report without leaving it", () => {
 		expect(theReadersHistory().entries).toBe(1);
 	});
 
-	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// React's strict mode runs every effect twice on mount; the reader still gets one frame and one dialog.
 	it(`asks for one dialog from one frame even when React runs every effect twice`, async () => {
 		aPrintDialog();
@@ -464,7 +452,6 @@ describe("The print frame goes once the dialog is done with it", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// It counts the choice, not a saved file: nothing tells Lighthouse whether the dialog saved one.
 	it(`removes the frame a moment after the dialog closes, and counts one export with the report's Type every time Export PDF is chosen`, async () => {
 		const frames = aPrintFrameBrowser();
@@ -481,7 +468,6 @@ describe("The print frame goes once the dialog is done with it", () => {
 		expect(theReadersHistory()).toEqual({ path: atTheReport, entries: 1 });
 	});
 
-	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// Chrome says the dialog closed before print() returns; taking the frame away then would pull the page from
 	// under its own dialog.
 	it(`keeps the frame until print() has returned when the browser says the dialog closed before that, then removes it`, async () => {
@@ -528,7 +514,6 @@ describe("Export PDF on the macOS desktop app", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(`greys Export PDF out for assistive technology yet keeps it focusable, and starts no export when it is clicked`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheReportAlone();
@@ -544,7 +529,6 @@ describe("Export PDF on the macOS desktop app", () => {
 		expect(exportsReported()).toHaveLength(0);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it(`explains why on hover and describes the button with it, keeping the button's name`, async () => {
 		const { user } = onTheReportAlone();
 		const button = await theExportButton();
@@ -558,7 +542,6 @@ describe("Export PDF on the macOS desktop app", () => {
 		expect(button).toHaveAccessibleName(EXPORT_PDF);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it(`explains why when Export PDF gets the keyboard focus`, async () => {
 		const { user } = onTheReportAlone();
 		const button = await theExportButton();
@@ -583,7 +566,6 @@ describe("Export PDF on the report view on every other host", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it.each([
 		"a browser on a Mac",
 		"the Linux desktop app",

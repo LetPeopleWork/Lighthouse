@@ -470,7 +470,6 @@ async function theReadersLayoutComesBackOnReopen({
 }
 
 describe("US-01 — the Estimation dialog shows each item's estimate", () => {
-	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
 	it(
 		"a bubble on a Team's Estimation vs. Cycle Time opens with Estimate, Cycle Time and Closed, longest Cycle Time first",
 		() => {
@@ -491,7 +490,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
 	it(
 		"a bubble on a Portfolio's Estimation vs. Cycle Time opens the same way, with Owned by still beside the Features",
 		() => {
@@ -518,7 +516,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
 	it(
 		"each row shows the estimate the chart plots it at, and an empty cell where there is nothing the chart could place",
 		() => {
@@ -531,7 +528,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:pure-function
 	it(
 		"a category estimate shows its category name",
 		() => {
@@ -546,7 +542,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @boundary @contract-shape:pure-function
 	it.each([
 		[
 			"reads plain Estimate even when every estimated row shares a unit",
@@ -579,7 +574,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:pure-function
 	it(
 		"sorting by Estimate follows the configured category order, not the alphabet",
 		async () => {
@@ -598,7 +592,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @driving_port @contract-shape:pure-function
 	it(
 		"Manage columns offers every other column the rows can fill, all of them off, after the defaults",
 		async () => {
@@ -620,7 +613,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"a column turned on appears in its place in the fixed order",
 		async () => {
@@ -643,7 +635,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @error @contract-shape:pure-function
 	it(
 		"rows from a backend that sends no estimate at all read as estimation not set up",
 		async () => {
@@ -669,7 +660,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @boundary @contract-shape:pure-function
 	it(
 		"dates show the local day as YYYY-MM-DD, and a date the item does not have stays empty",
 		() => {
@@ -685,7 +675,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:pure-function
 	it(
 		"the configured word for Cycle Time heads its column",
 		() => {
@@ -700,7 +689,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 });
 
 describe("US-02 — every chart's dialog brings the columns that explain its point", () => {
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it.each(everyChartContext)(
 		"$context opens with exactly its default columns, in order, sorted by $sortedBy",
 		({ context, items, extra, columns, sortedBy, firstRow }) => {
@@ -713,7 +701,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"a Feature Size dot lists the largest Feature first",
 		() => {
@@ -728,7 +715,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it.each(["aging", "stale", "inProgress"] as const)(
 		"%s lists the oldest item first, not the one longest in its state",
 		(context) => {
@@ -745,7 +731,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @regression @contract-shape:pure-function
 	it(
 		"Cycle Time keeps its SLE colouring and bold where the caller passes the SLE",
 		() => {
@@ -764,7 +749,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @regression @contract-shape:pure-function
 	it(
 		"a blocked item still carries the blocked marker in the column it is sorted by",
 		() => {
@@ -777,7 +761,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @regression @contract-shape:pure-function
 	it(
 		"Time in State keeps its own badge when the list is sorted by Age",
 		() => {
@@ -789,7 +772,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it.each(["aging", "inProgress"] as const)(
 		"%s neither shows nor offers Time in State when the caller says nothing about how to measure it",
 		async (context) => {
@@ -807,7 +789,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Age on a past day's point is the age the item had on that day",
 		() => {
@@ -822,7 +803,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it.each([
 		"arrivals",
 		"workDistribution",
@@ -845,7 +825,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Age on a past day's point still shows for an item finished since, because it was unfinished on that day",
 		() => {
@@ -860,7 +839,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"an item not started yet leaves its Work Item Age empty, never 0, and lists it below the started ones",
 		() => {
@@ -884,7 +862,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Age on a day given as its first moment, as a chosen range end is, is the age on that calendar day",
 		() => {
@@ -900,7 +877,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Age on a past day stays empty for an item that had finished by that day",
 		() => {
@@ -915,7 +891,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Age on a past day's point stays empty for an item that had not started by that day",
 		() => {
@@ -930,7 +905,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time",
 		async () => {
@@ -967,7 +941,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"Cumulative Time per State keeps Days Contributed only and offers nothing else",
 		async () => {
@@ -996,7 +969,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it(
 		"Feature rows add Size and Forecasted Completion, last, to what Manage columns offers",
 		async () => {
@@ -1018,7 +990,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @error @contract-shape:pure-function
 	it(
 		"Work Item rows neither show nor offer Owned by",
 		async () => {
@@ -1049,7 +1020,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it(
 		"a Feature's forecast is offered as the Features grid's Forecasted Completion column, right after Size",
 		async () => {
@@ -1093,21 +1063,18 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 });
 
 describe("US-02 — every chart context that offers more columns follows the same rules", () => {
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it.each(everyChartContext)(
 		"$context neither shows nor offers an Estimate where estimation is not set up",
 		estimateIsNeitherShownNorOffered,
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it.each(everyChartContext)(
 		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
 		manageColumnsListsTheOneFixedOrder,
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @contract-shape:bounded-change
 	it.each(everyChartContext)(
 		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
 		theReadersLayoutComesBackOnReopen,
@@ -1116,7 +1083,6 @@ describe("US-02 — every chart context that offers more columns follows the sam
 });
 
 describe("US-03 — a Feature's child items show their progress at a glance", () => {
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it(
 		"a Feature's child items open with Started, Closed, Work Item Age, Cycle Time and Estimate, oldest first",
 		() => {
@@ -1137,7 +1103,6 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it(
 		"without estimation on the child items' Team, the child items open without an Estimate",
 		() => {
@@ -1156,7 +1121,6 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it(
 		"the Delivery timeline keeps Warnings as its only extra column and never offers Estimate or Blocked since",
 		async () => {
@@ -1180,21 +1144,18 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it.each(theFeatureListContexts)(
 		"$context neither shows nor offers an Estimate where estimation is not set up",
 		estimateIsNeitherShownNorOffered,
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @contract-shape:pure-function
 	it.each(theFeatureListContexts)(
 		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
 		manageColumnsListsTheOneFixedOrder,
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @contract-shape:bounded-change
 	it.each(theFeatureListContexts)(
 		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
 		theReadersLayoutComesBackOnReopen,
@@ -1203,7 +1164,6 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 });
 
 describe("guards that hold today and must keep holding", () => {
-	// @us-01 @slice-01b @regression @contract-shape:unbounded-preservation
 	it(
 		"Feature rows keep Owned by beside the fixed columns",
 		() => {
@@ -1714,7 +1674,6 @@ describe("what each catalogue column says, and how it sorts", () => {
 // On a Team, every size is the Team's own part of the Feature. That number comes from
 // the Team's answer, so the dialog only has to show the size it is handed, unchanged.
 describe("a Team's Features worked on", () => {
-	// @story-6251 @us-01 @contract-shape:unbounded-preservation
 	it(
 		"show in the Size column the size the Team's answer carries",
 		async () => {

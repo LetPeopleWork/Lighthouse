@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private static readonly DateOnly NowStarts = new(2026, 9, 3);
 
-        // @driving_port @real-io @us-04 @slice-04 @contract-shape:pure-function
         [Test]
         public async Task A_Team_can_be_reported_on_Cycle_Time_and_Throughput()
         {
@@ -33,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(MetricKeysOfThenAndNowIn(templates), Is.SupersetOf(CycleTimeAndThroughput));
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @kpi-OUT-5878-K2-reports-reopened @contract-shape:pure-function
         // Then is the 90 days to 31 Jul 2026 (3 May - 31 Jul), Now the last 90 days (5 Jul - 2 Oct): the two
         // overlap by 27 days, and the Work Items finished in those days count on both sides.
         [Test]
@@ -60,7 +58,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @contract-shape:bounded-change
         // Every metric that applies is frozen, ticked or not, so ticking it later still shows Then as it was.
         [Test]
         public async Task A_metric_that_is_not_shown_is_still_frozen()
@@ -77,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_report_that_shows_no_metric_is_refused()
         {
@@ -90,7 +86,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_metric_that_is_not_in_the_catalog_is_refused()
         {
@@ -103,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_metric_shown_twice_is_refused()
         {
@@ -116,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheOwnerHoldsNoReport(gravity);
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task An_older_report_did_not_capture_Throughput()
         {
@@ -133,7 +126,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-04 @slice-04 @boundary @contract-shape:pure-function
         // Nothing finished on any day of Then: a real zero, shown like any other count.
         [Test]
         public async Task A_Then_where_nothing_finished_shows_a_real_zero()

@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private static readonly NewReport ATrialReport = TheMonthsComparison with { Name = TrialRun };
 
-        // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-6350-bulk-removal-used @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_coach_removes_reports_on_two_Teams_and_a_Portfolio_in_one_go_on_a_Community_instance()
@@ -52,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:unbounded-preservation
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_on_an_owner_she_only_reads_is_not_removed_and_stays()
@@ -75,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @edge @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_somebody_else_removed_first_counts_as_removed_and_says_it_was_already_gone()
@@ -99,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Is.EqualTo(new[] { (Removed, (string?)null), (Removed, RunReason.AlreadyGone) }));
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task Losing_Admin_while_the_run_is_under_way_is_answered_for_that_report_alone()
@@ -122,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @edge @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_whose_owner_was_deleted_counts_as_already_gone()
@@ -141,7 +136,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 Is.EqualTo(new[] { (Removed, RunReason.AlreadyGone), (Removed, (string?)null) }));
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @edge @contract-shape:unbounded-preservation
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task More_than_50_reports_are_refused_whole_and_nothing_is_removed()
@@ -156,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheWholeRequestIsRefusedAndNothingIsWritten(run);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:unbounded-preservation
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_removal_naming_no_report_is_refused()
@@ -171,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             await ThenTheWholeRequestIsRefusedAndNothingIsWritten(run);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @edge @contract-shape:bounded-change
         [Test]
         [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_named_twice_is_removed_once_and_answered_once()

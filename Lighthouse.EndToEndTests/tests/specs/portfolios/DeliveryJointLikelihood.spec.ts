@@ -36,7 +36,7 @@ const DEMO_SCENARIO_ID = 0;
 const DEMO_PORTFOLIO_NAME = "Project Apollo";
 const DEMO_DELIVERY_NAME = "Apollo Release";
 
-test("@walking_skeleton @driving_adapter @real-io @US-03 forecaster reads which probability each delivery surface is showing", async ({
+test("forecaster reads which probability each delivery surface is showing", async ({
 	page,
 	request,
 	overviewPage,
@@ -97,7 +97,7 @@ const TEAM_WITHOUT_THROUGHPUT = "Team Meridian";
  * Deliberately NOT asserted: an exact percentage. Demo throughput moves with the calendar, so a pinned
  * number is a flake generator; the exact joint is pinned in DeliveryJointForecastIntegrationTest.
  */
-test("@premium @real-io @US-01 a delivery is unforecastable while one team has no throughput, then reports the joint across the rest", async ({
+test("a delivery is unforecastable while one team has no throughput, then reports the joint across the rest", async ({
 	page,
 	request,
 	overviewPage,

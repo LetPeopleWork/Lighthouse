@@ -33,7 +33,6 @@ const aWidgetWithInfo = () =>
 	);
 
 describe("Story 6352: a dashboard widget's info popover stays as it is", () => {
-	// @error @active-guard @contract-shape:unbounded-preservation
 	it("opens with the description, the guidance and Learn More, and Escape closes it", async () => {
 		const user = userEvent.setup();
 		aWidgetWithInfo();
@@ -51,7 +50,6 @@ describe("Story 6352: a dashboard widget's info popover stays as it is", () => {
 		);
 	});
 
-	// @contract-shape:pure-function
 	it("is named after the widget it explains and says whether its popover is open", async () => {
 		const user = userEvent.setup();
 		render(
@@ -73,7 +71,6 @@ describe("Story 6352: a dashboard widget's info popover stays as it is", () => {
 		expect(button).toHaveAttribute("aria-expanded", "true");
 	});
 
-	// @edge @contract-shape:pure-function
 	it("on a widget without a title, the info button is named after the widget all the same", () => {
 		aWidgetWithInfo();
 

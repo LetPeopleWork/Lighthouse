@@ -123,7 +123,6 @@ describe("Export PDF in the Reports list", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(`leads an editor's row actions with the PDF icon, before Edit and Delete`, async () => {
 		onTheList();
 
@@ -134,7 +133,6 @@ describe("Export PDF in the Reports list", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(`gives a reader an Actions column holding only the PDF icon`, async () => {
 		onTheList(aReportService(), "reader");
 
@@ -144,7 +142,6 @@ describe("Export PDF in the Reports list", () => {
 		expect(screen.getByRole("columnheader", { name: "Actions" })).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it(`names the icon "Export PDF" when the pointer rests on it`, async () => {
 		const { user } = onTheList();
 
@@ -155,7 +152,6 @@ describe("Export PDF in the Reports list", () => {
 		expect(readingOf(await screen.findByRole("tooltip"))).toBe(EXPORT_PDF);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it(`offers no PDF on a row this version cannot show, and keeps it on the other rows`, async () => {
 		const later = aListedReportOfALaterType();
 		onTheList(aListOf(aListedReport(), later));
@@ -173,7 +169,6 @@ describe("Export PDF in the Reports list", () => {
 		).toBeNull();
 	});
 
-	// @us-01 @rev-3 @driving_port @kpi-OUT-6298-K1-pdf-export-used @kpi-OUT-6298-K6-exported-report-types @contract-shape:bounded-change
 	it(`prints the row's report from a hidden frame, counting one export with its Type, and leaves the reader on the list with nothing added to their history`, async () => {
 		const theAppsDialog = aPrintDialog();
 		const frames = aPrintFrameBrowser();
@@ -192,7 +187,6 @@ describe("Export PDF in the Reports list", () => {
 		]);
 	});
 
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	it(`turns the row's PDF icon into the waiting spinner and holds every other row's PDF icon back until the dialog is asked for, so one export runs at a time`, async () => {
 		const frames = aPrintFrameBrowser();
 		const fonts = theFontsAreStillLoading();
@@ -238,7 +232,6 @@ describe("The list's print frame goes when it is no longer wanted", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// A browser may never say its dialog closed; the next export takes that frame's place rather than adding one.
 	it(`removes a frame whose dialog never said it closed when the next export starts, so there is only ever one frame`, async () => {
 		const frames = aPrintFrameBrowser();
@@ -259,7 +252,6 @@ describe("The list's print frame goes when it is no longer wanted", () => {
 		expect(thePrintFrames()).toEqual([second]);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The reader went elsewhere; a dialog over the page they moved to would be a surprise.
 	it(`removes the frame and prints nothing when the reader leaves the list while the PDF is prepared`, async () => {
 		const frames = aPrintFrameBrowser();
@@ -297,7 +289,6 @@ describe("When Export PDF from the list cannot make the PDF", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The list has no report on screen to fall back on, so the snackbar is the only place the reader learns of it.
 	it(`says in the snackbar that no PDF was made when the row's report could not be read, and Retry prints it from a fresh frame, counting one export and leaving the reader on the list`, async () => {
 		const frames = aPrintFrameBrowser();
@@ -372,7 +363,6 @@ describe("Export PDF on the macOS desktop app", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(`greys the row's PDF icon out for assistive technology yet keeps it focusable, and starts no export when it is clicked`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = onTheList();
@@ -390,7 +380,6 @@ describe("Export PDF on the macOS desktop app", () => {
 		expect(exportsReported()).toHaveLength(0);
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it(`explains why on hover and describes the icon with it, keeping the icon's name`, async () => {
 		const { user } = onTheList();
 		const icon = await screen.findByLabelText(
@@ -405,7 +394,6 @@ describe("Export PDF on the macOS desktop app", () => {
 		expect(icon).toHaveAccessibleName(exportAsPdfLabelOf(ENGAGEMENT_START));
 	});
 
-	// @us-01 @slice-01 @contract-shape:bounded-change
 	it(`explains why when the icon gets the keyboard focus`, async () => {
 		const { user } = onTheList();
 		const icon = await screen.findByLabelText(
@@ -436,7 +424,6 @@ describe("Export PDF in the Reports list on every other host", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it.each([
 		"a browser on a Mac",
 		"the Linux desktop app",

@@ -50,7 +50,6 @@ const toTheOwnerStepWithThenEnding29Jul = async (
 };
 
 describe("Owners that cannot hold the window", () => {
-	// @walking_skeleton @driving_port @us-04 @slice-04 @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it.skip(`Equinox is listed but cannot be picked, and says why and where to change it (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: theOwnersOffered(),
@@ -73,7 +72,6 @@ describe("Owners that cannot hold the window", () => {
 		expect(whereTheReaderIs()).toBe(`/teams/${EQUINOX.id}/settings`);
 	});
 
-	// @us-04 @slice-04 @edge @contract-shape:pure-function
 	it.skip(`Select all picks every Team that can hold the window and leaves Equinox out (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: theOwnersOffered(),
@@ -93,7 +91,6 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("button", { name: createCount(2) })).toBeEnabled();
 	});
 
-	// @us-04 @slice-04 @edge @contract-shape:pure-function
 	it.skip(`a shorter window that stays inside Equinox's kept history makes it pickable (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: theOwnersOffered(),
@@ -105,7 +102,6 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.queryByText(/^Kept history starts/)).not.toBeInTheDocument();
 	});
 
-	// @us-04 @slice-04 @edge @contract-shape:pure-function
 	it.skip(`a Then starting on the very day the kept history starts can be held (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
@@ -123,7 +119,6 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("checkbox", { name: EQUINOX.name })).toBeEnabled();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it.skip(`when every owner picked cannot hold the window nothing can be created (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({

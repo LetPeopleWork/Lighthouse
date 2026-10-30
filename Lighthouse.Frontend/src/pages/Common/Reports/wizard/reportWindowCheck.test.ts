@@ -39,7 +39,6 @@ const boundsFor = (row: BoundaryRow): ReportWindowBounds =>
 const answer = (refusal: ReportWindowRefusal | null) => refusal ?? "accepted";
 
 describe("the edges of a report window, checked as the server checks them", () => {
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it.each(rows.filter((row) => row.side === "then"))(
 		"answers $case as the server does",
 		(row) => {
@@ -69,7 +68,6 @@ describe("the edges of a report window, checked as the server checks them", () =
 		},
 	);
 
-	// @us-07 @slice-07 @boundary @contract-shape:pure-function
 	it.each(rows.filter((row) => row.side === "now"))(
 		"answers $case as the server does",
 		(row) => {

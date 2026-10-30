@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("story-5913-always-faster-updates")]
     public partial class Story5913AlwaysFasterUpdatesTest
     {
-        // @driving_port @real-io @AC-1.1 @contract-shape:unbounded-preservation
         // A new instance never meets the switch at all.
         [Test]
         public async Task A_fresh_install_offers_no_faster_updates_switch()
@@ -27,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheSettingsListOffersNoFasterUpdatesSwitch(offered);
         }
 
-        // @driving_port @real-io @AC-1.1 @contract-shape:bounded-change
         // The upgrade takes the row away whichever way it was set, and takes nothing else with it.
         [Test]
         [TestCase(HowTheOperatorLeftIt.On)]
@@ -43,7 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenOnlyTheFasterUpdatesSwitchIsGone(before, after);
         }
 
-        // @driving_port @real-io @AC-1.5 @kpi @contract-shape:unbounded-preservation
         // Every later start-up re-runs the seeders. None of them may bring the row back.
         [Test]
         public async Task Upgrading_again_never_brings_the_faster_updates_switch_back()
@@ -59,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenNoFasterUpdatesSettingIsStored();
         }
 
-        // @driving_port @real-io @AC-1.2 @kpi @contract-shape:bounded-change
         // The operator who had it off is the one this story is for. The instance also holds no premium
         // licence, because the cheaper refresh was never something a licence paid for.
         [Test]
@@ -81,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 1);
         }
 
-        // @driving_port @real-io @AC-1.3 @contract-shape:bounded-change
         // The portfolio half read the same switch, so it has to stop needing it too.
         [Test]
         public async Task A_portfolio_on_an_instance_that_had_faster_updates_off_downloads_only_the_features_that_moved_after_the_upgrade()
@@ -100,7 +95,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(portfolio, scanned: 3, fetched: 1);
         }
 
-        // @driving_port @real-io @AC-1.3 @contract-shape:bounded-change
         // The parent Features decide their own mode, separately from the Features under them, so a
         // portfolio whose Features went cheap says nothing about whether its parents did.
         [Test]

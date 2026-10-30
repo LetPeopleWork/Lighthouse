@@ -530,7 +530,6 @@ describe("a message with a way to act on it", () => {
 		theSnackbar = undefined;
 	});
 
-	// @us-01 @rev-3 @contract-shape:unbounded-preservation
 	// Every caller from before the export hands over a sentence alone, and the snackbar must keep treating it so.
 	it("hides a message given alone after six seconds, as it always has", () => {
 		vi.useFakeTimers();
@@ -545,7 +544,6 @@ describe("a message with a way to act on it", () => {
 		expect(theMessage()).toBeNull();
 	});
 
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	it(`shows the action beside the message, and choosing it runs the action once and closes the message`, async () => {
 		const user = userEvent.setup();
 		const retry = vi.fn();
@@ -560,7 +558,6 @@ describe("a message with a way to act on it", () => {
 		await waitFor(() => expect(theMessage()).toBeNull());
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// A reader needs time to reach Retry; a message that offers it waits for them.
 	it(`keeps a message that offers an action open past six seconds, until the reader closes it`, () => {
 		vi.useFakeTimers();
@@ -578,7 +575,6 @@ describe("a message with a way to act on it", () => {
 		expect(theMessage()).toBeNull();
 	});
 
-	// @us-01 @rev-3 @contract-shape:bounded-change
 	// The export takes its own message back when the reader leaves the page whose Retry it offers.
 	it(`takes a message away when the one who showed it asks`, async () => {
 		renderTheSnackbar();
@@ -591,7 +587,6 @@ describe("a message with a way to act on it", () => {
 		await waitFor(() => expect(theMessage()).toBeNull());
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// One message at a time: a newer one has replaced the export's, and taking the export's back must not take it.
 	// A message being closed stays on screen while it fades, so the time for that passes before the newer one is read.
 	it(`leaves a newer message standing when an older one is taken back`, () => {
@@ -612,7 +607,6 @@ describe("a message with a way to act on it", () => {
 		).toHaveTextContent(ANOTHER_MESSAGE);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	it(`offers no action with a message given alone after one that offered Retry`, async () => {
 		renderTheSnackbar();
 		show(NO_PDF_WAS_MADE, { label: RETRY, onClick: vi.fn() });

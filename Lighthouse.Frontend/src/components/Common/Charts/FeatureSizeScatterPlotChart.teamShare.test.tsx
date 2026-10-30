@@ -145,7 +145,6 @@ beforeEach(() => {
 });
 
 describe("the Feature Size scatter on a Team counts that Team's Work Items", () => {
-	// @us-06 @contract-shape:bounded-change
 	it("names the size axis as this Team's Work Items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -157,7 +156,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		expect(sizeAxis()).toBe("Size (this Team's Work Items)");
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("names the size axis as this Team's Work Items in the Closed Date mode too", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -171,7 +169,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		expect(verticalAxis()).toBe("Size (this Team's Work Items)");
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("a bubble of two Features says each holds that many of this Team's Work Items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -185,7 +182,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		);
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("a bubble of one Feature names it in the singular", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -199,7 +195,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		);
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("a bubble's button names the same share for a screen reader", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -215,7 +210,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		).toBeInTheDocument();
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("says it in the words this instance uses", () => {
 		terms.current = {
 			...seededTerms,
@@ -236,7 +230,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		expect(bubbleTitles()).toContain("2 Epics with 5 of this Squad's Tickets");
 	});
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("on a Team, keeps the title Features Size with no line of text added to say whose Work Items it counts", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -256,7 +249,6 @@ describe("the Feature Size scatter on a Team counts that Team's Work Items", () 
 		expect(mentionsOfTheTeam).toEqual([]);
 	});
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("offers only the Cycle Time and Closed Date modes when it is handed no estimate", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -309,7 +301,6 @@ describe("the Feature Size scatter on a Team filters by state like the Portfolio
 	const chip = (name: string) =>
 		screen.getByRole("button", { name: `${name} visibility toggle` });
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("starts with only the Team's finished Features plotted: Done on, To Do and In Progress off", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -324,7 +315,6 @@ describe("the Feature Size scatter on a Team filters by state like the Portfolio
 		expect(chip("In Progress")).toHaveAttribute("aria-pressed", "false");
 	});
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("adds the Team's open Features once To Do and In Progress are turned on", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -341,7 +331,6 @@ describe("the Feature Size scatter on a Team filters by state like the Portfolio
 });
 
 describe("the Feature Size scatter on a Portfolio reads as before", () => {
-	// @us-06 @contract-shape:unbounded-preservation
 	it("names the size axis as child items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -353,7 +342,6 @@ describe("the Feature Size scatter on a Portfolio reads as before", () => {
 		expect(sizeAxis()).toBe("Size (Child Items)");
 	});
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("a bubble says its size in child items", () => {
 		render(
 			<FeatureSizeScatterPlotChart
@@ -369,7 +357,6 @@ describe("the Feature Size scatter on a Portfolio reads as before", () => {
 describe.each(["team", "portfolio"] as const)(
 	"the Feature Size scatter on a %s with no Features to plot",
 	(ownerKind) => {
-		// @us-03 @error @contract-shape:bounded-change
 		it("shows its title and says there are no Features to show", () => {
 			render(
 				<FeatureSizeScatterPlotChart
@@ -385,7 +372,6 @@ describe.each(["team", "portfolio"] as const)(
 			expect(screen.queryByTestId("chart-container")).toBeNull();
 		});
 
-		// @us-03 @error @contract-shape:bounded-change
 		it("says so in the words this instance uses", () => {
 			terms.current = { ...seededTerms, feature: "Epic", features: "Epics" };
 

@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private static readonly DateTime WhenItLastChanged = new(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
 
-        // @unit @AC-2.7 @D6 @contract-shape:bounded-change
         [Test]
         public void An_issue_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed()
         {
@@ -34,7 +33,6 @@ namespace Lighthouse.Backend.Tests.Models
                 + "a performance regression with every other test still green.");
         }
 
-        // @unit @AC-2.7 @D6 @contract-shape:pure-function
         [Test]
         public void An_issue_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed()
         {

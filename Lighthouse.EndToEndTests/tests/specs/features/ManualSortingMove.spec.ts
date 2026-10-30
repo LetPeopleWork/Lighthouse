@@ -25,7 +25,7 @@ testWithFeatures.afterEach(async ({ request }) => {
 });
 
 testWithFeatures(
-	"@premium @walking_skeleton a product owner sends a Feature to the top and the order reads it back",
+	"a product owner sends a Feature to the top and the order reads it back",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);
 

@@ -106,7 +106,6 @@ const offering = (...owners: Owner[]) =>
 	});
 
 describe("Create reports for several Teams", () => {
-	// @walking_skeleton @driving_port @us-02a @slice-02a @kpi-OUT-6350-bulk-creation-used @contract-shape:bounded-change
 	it(`a coach creates the same comparison for Zenith and Gravity and finds both listed`, async () => {
 		const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 501 });
 		const gravitysQuarter = aReportOn(GRAVITY, QUARTER, { id: 502 });
@@ -137,7 +136,6 @@ describe("Create reports for several Teams", () => {
 		expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument();
 	});
 
-	// @driving_port @us-02a @slice-02a @contract-shape:bounded-change
 	it(`every Team picked gets the same comparison, in the order the step lists them`, async () => {
 		const createReportsInBulk = vi
 			.fn()
@@ -168,7 +166,6 @@ describe("Create reports for several Teams", () => {
 	});
 
 	// Today is 27 Oct 2026. Now ends today, and Then ends the day before Now starts, so the windows sit back to back.
-	// @us-02a @slice-02a @contract-shape:pure-function
 	it.each([
 		["30 days", 30, "2026-09-27"],
 		["90 days", 90, "2026-07-29"],
@@ -201,7 +198,6 @@ describe("Create reports for several Teams", () => {
 		},
 	);
 
-	// @us-02a @slice-02a @edge @contract-shape:unbounded-preservation
 	it(`while the run is under way the result says so and cannot be closed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(vi.fn(() => neverAnswered())),
@@ -226,7 +222,6 @@ describe("Create reports for several Teams", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-02a @slice-02a @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:bounded-change
 	it(`a Team refused is named with its reason while the others are created and can be opened`, async () => {
 		const createReportsInBulk = vi
 			.fn()
@@ -264,7 +259,6 @@ describe("Create reports for several Teams", () => {
 		expect(whereTheReaderIs()).toBe(`/teams/${ZENITH.id}/reports/601`);
 	});
 
-	// @us-02a @slice-02a @error @contract-shape:bounded-change
 	it(`when every Team is refused the headline says none was created and each line says why`, async () => {
 		const createReportsInBulk = vi
 			.fn()
@@ -299,7 +293,6 @@ describe("Create reports for several Teams", () => {
 		}
 	});
 
-	// @us-02a @slice-02a @error @contract-shape:pure-function
 	it.each([
 		[
 			"the Community cap after the licence lapsed",
@@ -340,7 +333,6 @@ describe("Create reports for several Teams", () => {
 		expect(await theLineSaying(line)).toBeInTheDocument();
 	});
 
-	// @us-02a @slice-02a @error @contract-shape:unbounded-preservation
 	it(`when no answer arrives it says it cannot confirm what was created and leads back to Reports`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(
@@ -364,7 +356,6 @@ describe("Create reports for several Teams", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// @us-02a @slice-02a @edge @contract-shape:bounded-change
 	it(`creating the same report twice creates it twice, with no warning`, async () => {
 		const createReportsInBulk = vi
 			.fn()
@@ -389,7 +380,6 @@ describe("Create reports for several Teams", () => {
 		expect(createReportsInBulk).toHaveBeenCalledTimes(2);
 	});
 
-	// @us-02a @slice-02a @edge @contract-shape:pure-function
 	it(`with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike`, async () => {
 		renderTheReportsPage({ licence: "community" });
 
@@ -398,7 +388,6 @@ describe("Create reports for several Teams", () => {
 });
 
 describe("At most 50 Teams and Portfolios in one run", () => {
-	// @us-02a @slice-02a @error @edge @contract-shape:pure-function
 	it(
 		`Select all picks all 60 Teams, the button counts them, and Create says at most 50`,
 		async () => {
@@ -428,7 +417,6 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-02a @slice-02a @edge @contract-shape:pure-function
 	it(
 		`exactly 50 picked may still be created, with no ceiling message`,
 		async () => {
@@ -451,7 +439,6 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 });
 
 describe("The wizard waits for what a report needs", () => {
-	// @us-02b @slice-02a @edge @contract-shape:unbounded-preservation
 	it(`while it loads, Create reports spins and is disabled, and no wizard opens`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
@@ -469,7 +456,6 @@ describe("The wizard waits for what a report needs", () => {
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 	});
 
-	// @driving_port @us-02b @slice-02a @contract-shape:pure-function
 	it(`once it has arrived the wizard opens at its first step, filled`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceCreating(vi.fn()),
@@ -486,7 +472,6 @@ describe("The wizard waits for what a report needs", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-02b @slice-02a @error @contract-shape:unbounded-preservation
 	it(`when it cannot be loaded the wizard says so, shows no step, and offers Cancel and Retry`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportService({
@@ -513,7 +498,6 @@ describe("The wizard waits for what a report needs", () => {
 		).toEqual([CANCEL, RETRY]);
 	});
 
-	// @us-02b @slice-02a @error @contract-shape:bounded-change
 	it(`Retry asks again and opens the first step once it arrives`, async () => {
 		const getCreationOptions = vi
 			.fn()
@@ -541,7 +525,6 @@ describe("The wizard waits for what a report needs", () => {
 		expect(getCreationOptions).toHaveBeenCalledTimes(2);
 	});
 
-	// @us-02b @slice-02a @error @contract-shape:unbounded-preservation
 	it(`Cancel closes it and creates nothing`, async () => {
 		const createReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
@@ -571,7 +554,6 @@ describe("The wizard waits for what a report needs", () => {
 });
 
 describe("When Create reports can be pressed", () => {
-	// @us-02a @slice-02a @error @contract-shape:pure-function
 	it(`on Community it is shown but disabled, with the Premium licence tooltip`, async () => {
 		const { user } = renderTheReportsPage({ licence: "community" });
 
@@ -583,7 +565,6 @@ describe("When Create reports can be pressed", () => {
 		);
 	});
 
-	// @us-02b @slice-02a @error @contract-shape:pure-function
 	it(`for someone who is Admin of no Team or Portfolio it is disabled and says why`, async () => {
 		const { user } = renderTheReportsPage({ permissions: { adminOf: [] } });
 
@@ -595,7 +576,6 @@ describe("When Create reports can be pressed", () => {
 		);
 	});
 
-	// @us-02b @slice-02a @edge @contract-shape:pure-function
 	it(`while permissions are on their way it is disabled`, async () => {
 		const { queryClient } = renderTheReportsPage({ permissions: "loading" });
 		// Before the Premium licence has answered the button is disabled anyway, so only a check after it proves
@@ -610,7 +590,6 @@ describe("When Create reports can be pressed", () => {
 		expect(screen.getByRole("button", { name: CREATE_REPORTS })).toBeDisabled();
 	});
 
-	// @us-02b @slice-02a @error @contract-shape:pure-function
 	it(`when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong`, async () => {
 		renderTheReportsPage({ permissions: "failing" });
 
@@ -621,7 +600,6 @@ describe("When Create reports can be pressed", () => {
 		);
 	});
 
-	// @us-02a @slice-02a @contract-shape:pure-function
 	it(`where roles are not enforced anyone may press it on Premium`, async () => {
 		renderTheReportsPage({ permissions: "rolesNotEnforced" });
 
@@ -632,7 +610,6 @@ describe("When Create reports can be pressed", () => {
 		);
 	});
 
-	// @us-02a @slice-02a @contract-shape:pure-function
 	it(`an Admin of one Team on Premium may press it`, async () => {
 		renderTheReportsPage({ permissions: { adminOf: [LIGHTSPEED_TEAM] } });
 

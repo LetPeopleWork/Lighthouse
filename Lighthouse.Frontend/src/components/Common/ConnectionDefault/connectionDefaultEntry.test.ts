@@ -83,7 +83,6 @@ const settingsOnTheConnection = {
 } as IBaseSettings;
 
 describe("nameOfTheDefault", () => {
-	// @story-6313 @contract-shape:pure-function
 	it("names an Estimation default off the loaded connection by its field and unit, whatever name the settings carry", () => {
 		expect(
 			nameOfTheDefault(
@@ -102,7 +101,6 @@ describe("nameOfTheDefault", () => {
 		).toBe("Story Points, Points");
 	});
 
-	// @story-6313 @contract-shape:pure-function
 	it("names no Estimation default whose field the connection no longer lists, even with a unit", () => {
 		expect(
 			nameOfTheDefault(
@@ -121,7 +119,6 @@ describe("nameOfTheDefault", () => {
 		).toBeUndefined();
 	});
 
-	// @story-6313 @contract-shape:pure-function
 	it("names an Estimation default as the settings carry it while the connection cannot be read", () => {
 		expect(
 			nameOfTheDefault(
@@ -133,7 +130,6 @@ describe("nameOfTheDefault", () => {
 		).toBe("Effort, Hours");
 	});
 
-	// @story-6313 @contract-shape:pure-function
 	it("before the settings arrive, names a field default off the loaded connection", () => {
 		expect(
 			nameOfTheDefault(

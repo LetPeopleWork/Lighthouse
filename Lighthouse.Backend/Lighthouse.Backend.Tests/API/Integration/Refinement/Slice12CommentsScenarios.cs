@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-12")]
     public partial class Slice12CommentsTest : SizingVotesAcceptanceTest
     {
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
         public async Task A_Yes_but_carries_its_condition_into_the_Work_Items_log()
         {
@@ -33,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Vote", nameof(Answer.YesBut), OnlyIfThePdfExportMovesOut, AnaLima, nameof(Channel.Web), null, IsMine: true));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [TestCase(Answer.Yes)]
         [TestCase(Answer.No)]
         public async Task Any_answer_may_carry_a_comment(Answer answer)
@@ -46,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Vote", answer.ToString(), NeedsTheDesignFirst, AnaLima, nameof(Channel.Web), null, IsMine: true));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_vote_without_a_comment_carries_none()
         {
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Vote", nameof(Answer.Yes), null, AnaLima, nameof(Channel.Web), null, IsMine: true));
         }
 
-        // @driving_port @real-io @us-11 @us-12 @slice-12 @contract-shape:bounded-change
         // Changing your mind adds to the log; nothing is ever overwritten.
         [Test]
         public async Task A_changed_mind_keeps_both_votes_in_the_log_oldest_first()
@@ -70,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenJonasReadsTheAnswersInOrder(gravity, ConfigurationManagement, nameof(Answer.Yes), nameof(Answer.YesBut));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:pure-function
         [Test]
         public async Task The_log_says_who_said_what_when_and_from_where_oldest_first()
         {
@@ -84,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:pure-function
         // The server decides which entry is the open question, so every reader marks the same one.
         [Test]
         public async Task The_log_marks_the_question_still_waiting_for_its_askers_vote()
@@ -96,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(log);
         }
 
-        // @driving_port @real-io @us-11 @us-12 @slice-12 @contract-shape:pure-function
         // The names travel beside the split so a reader can see who stands behind each count; a changed mind moves
         // its voter, and each list keeps the order in which those current votes were cast.
         [Test]
@@ -111,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new VotersReading(Yes: [JonasWeber, MoOkafor, AnaLima], YesBut: [], No: []));
         }
 
-        // @driving_port @real-io @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
         // Nobody has to vote to read the others: the split and every comment are there for anyone.
         [Test]
         public async Task Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment()
@@ -126,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
         public async Task A_question_without_a_vote_flags_the_Work_Item_and_counts_as_no_vote()
         {
@@ -137,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRowReads(gravity, ApiVersioning, voteCount: 0, hasOpenQuestion: true, hasComments: true);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @contract-shape:bounded-change
         [Test]
         public async Task The_asker_voting_closes_their_own_question()
         {
@@ -148,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: false, hasComments: true);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Somebody_elses_vote_does_not_close_the_question()
         {
@@ -159,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: true, hasComments: true);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_comment_from_somebody_who_has_voted_is_no_open_question_and_keeps_their_vote()
         {
@@ -171,7 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenAnaStillCountsWith(gravity, ApiVersioning, Answer.No);
         }
 
-        // @driving_port @real-io @us-12 @us-13 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_question_counts_for_nothing_towards_readiness()
         {
@@ -182,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheReadinessOfTheRowIs(gravity, ApiVersioning, "MoreYesNeeded", missingVotes: 3);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [TestCase("")]
         [TestCase("   ")]
         public async Task An_empty_question_is_refused_and_nothing_is_recorded(string comment)
@@ -194,7 +180,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentRequired);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_comment_of_two_thousand_characters_is_kept_whole()
         {
@@ -206,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenJonasReadsHisComment(gravity, twoThousand);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_comment_longer_than_two_thousand_characters_is_refused()
         {
@@ -217,7 +201,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         [Test]
         public async Task A_question_of_two_thousand_characters_is_kept_whole()
         {
@@ -229,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenJonasReadsHisComment(gravity, twoThousand);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_vote_whose_comment_is_longer_than_two_thousand_characters_is_refused()
         {
@@ -240,7 +222,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_question_without_a_name_is_refused()
         {
@@ -251,7 +232,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, VoterNameRequired);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_question_on_a_Work_Item_that_is_not_in_refinement_is_refused()
         {
@@ -262,7 +242,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.Conflict, WorkItemNotInRefinement);
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @error @contract-shape:pure-function
         // The log opens for a listed Work Item first, so the refusal can only be about the Work Item.
         [Test]
         public async Task The_log_of_a_Work_Item_that_is_not_in_refinement_is_not_found()
@@ -274,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:pure-function
         // A reference is whatever text the tracker uses; a slash in it travels escaped, as a browser sends it.
         [TestCase("REQ/12")]
         [TestCase("REQ/12#3")]
@@ -289,7 +267,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 new LogEntryReading("Comment", null, WhichApiVersion, JonasWeber, nameof(Channel.Web), null, IsMine: false));
         }
 
-        // @driving_port @real-io @us-12 @slice-12 @boundary @contract-shape:bounded-change
         // Whatever somebody types is text: it is stored and handed back exactly, never interpreted.
         [Test]
         public async Task A_comment_comes_back_exactly_as_it_was_written()

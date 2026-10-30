@@ -110,7 +110,7 @@ const shownInsideItsBand = (
 	percent >= SHOWN_RANGE_OF_BAND[band][0] &&
 	percent <= SHOWN_RANGE_OF_BAND[band][1];
 
-describe("@us-04 @slice-04 one level of one check, found by its percentile", () => {
+describe("one level of one check, found by its percentile", () => {
 	const LEVEL_OUTCOMES = [
 		{ confidenceLevel: 95, forecastValue: 31, held: true },
 		{ confidenceLevel: 50, forecastValue: 48, held: false },
@@ -122,13 +122,13 @@ describe("@us-04 @slice-04 one level of one check, found by its percentile", () 
 		).toEqual({ forecastValue: 48, actualCompleted: 42, held: false });
 	});
 
-	it("@error has nothing for a level the check left out", () => {
+	it("has nothing for a level the check left out", () => {
 		expect(
 			gradedCheckAt({ levelOutcomes: LEVEL_OUTCOMES, actualCompleted: 42 }, 70),
 		).toBeNull();
 	});
 
-	it("@error has nothing for a check with no actual, even one that lists the level", () => {
+	it("has nothing for a check with no actual, even one that lists the level", () => {
 		expect(
 			gradedCheckAt(
 				{ levelOutcomes: LEVEL_OUTCOMES, actualCompleted: null },
@@ -138,7 +138,7 @@ describe("@us-04 @slice-04 one level of one check, found by its percentile", () 
 	});
 });
 
-describe("@us-06 @slice-06b one level across every check", () => {
+describe("one level across every check", () => {
 	const aCell = (
 		samplingWindowDays: number,
 		levelOutcomes: RealityCheckLevelOutcome[] | null,
@@ -161,7 +161,7 @@ describe("@us-06 @slice-06b one level across every check", () => {
 		levelOutcomes,
 	});
 
-	it("@error keeps only the checks that have a reading at that level, and nothing in place of the others", () => {
+	it("keeps only the checks that have a reading at that level, and nothing in place of the others", () => {
 		const cells = [
 			aCell(14, [{ confidenceLevel: 50, forecastValue: 48, held: false }], 42),
 			aCell(30, [{ confidenceLevel: 95, forecastValue: 31, held: true }], 42),
@@ -176,7 +176,7 @@ describe("@us-06 @slice-06b one level across every check", () => {
 	});
 });
 
-describe("@us-04 @slice-04 the miss in Work Items", () => {
+describe("the miss in Work Items", () => {
 	it.each([
 		{ actual: 42, forecast: 36, miss: 6 },
 		{ actual: 42, forecast: 48, miss: -6 },
@@ -192,7 +192,7 @@ describe("@us-04 @slice-04 the miss in Work Items", () => {
 	);
 });
 
-describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items how close one forecast landed", () => {
+describe("how close one forecast landed", () => {
 	it.each<{
 		story: string;
 		actual: number;
@@ -266,7 +266,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		{ actual: 40, forecast: 44, grade: "NotHeldWithin10", percent: 10 },
 		{ actual: 39, forecast: 43, grade: "NotHeld10To25", percent: 11 },
 	])(
-		`@boundary shows a percentage that never contradicts its band at the edges - $forecast against $actual is $percent%`,
+		`shows a percentage that never contradicts its band at the edges - $forecast against $actual is $percent%`,
 		({ actual, forecast, grade, percent }) => {
 			const reading = readCheck(aCheck(actual, forecast));
 
@@ -275,7 +275,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		},
 	);
 
-	it(`@boundary a forecast the Team delivered exactly held within 10%, 0 off and 0%`, () => {
+	it(`a forecast the Team delivered exactly held within 10%, 0 off and 0%`, () => {
 		expect(readCheck(aCheck(40, 40))).toEqual({
 			grade: "HeldWithin10",
 			miss: 0,
@@ -283,7 +283,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it(`@error a forecast of nothing in a period that delivered nothing held exactly, with no percentage`, () => {
+	it(`a forecast of nothing in a period that delivered nothing held exactly, with no percentage`, () => {
 		expect(readCheck(aCheck(0, 0))).toEqual({
 			grade: "HeldWithin10",
 			miss: 0,
@@ -291,7 +291,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it(`@error a forecast above nothing in a period that delivered nothing did not hold, the largest miss, with no percentage`, () => {
+	it(`a forecast above nothing in a period that delivered nothing did not hold, the largest miss, with no percentage`, () => {
 		expect(readCheck(aCheck(0, 2))).toEqual({
 			grade: "NotHeldOver25",
 			miss: -2,
@@ -299,7 +299,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 		});
 	});
 
-	it(`@property for every actual from 1 to 200 and every forecast from 0 to 400 the percentage sits in its band, stays within 1 of the true share of the actual, and is at least 1 whenever the forecast missed`, () => {
+	it(`for every actual from 1 to 200 and every forecast from 0 to 400 the percentage sits in its band, stays within 1 of the true share of the actual, and is at least 1 whenever the forecast missed`, () => {
 		const contradictions: string[] = [];
 
 		for (let actual = 1; actual <= 200; actual++) {
@@ -330,7 +330,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-no-percentage-without-its-work-items ho
 	});
 });
 
-describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level landed", () => {
+describe("how close one level landed", () => {
 	it("counts the checks that landed within 10% on either side, held or not", () => {
 		const closeness = levelCloseness([
 			...heldWithin10(2),
@@ -343,7 +343,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 		expect(closeness.withinTenPercent).toBe(6);
 	});
 
-	it("@error a level with no check that could run has nothing within 10%", () => {
+	it("a level with no check that could run has nothing within 10%", () => {
 		expect(levelCloseness([])).toEqual({
 			gradedChecks: 0,
 			withinTenPercent: 0,
@@ -351,7 +351,7 @@ describe("@us-05 @slice-05 @kpi-OUT-6094-caution-is-visible how close one level 
 	});
 });
 
-describe("@us-06 @slice-06a @kpi-OUT-6094-colour-never-alone which side of the hue a grade sits on", () => {
+describe("which side of the hue a grade sits on", () => {
 	it.each<{ grade: ForecastGrade; held: boolean }>([
 		{ grade: "HeldWithin10", held: true },
 		{ grade: "Held10To25", held: true },
@@ -364,8 +364,8 @@ describe("@us-06 @slice-06a @kpi-OUT-6094-colour-never-alone which side of the h
 	});
 });
 
-describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its checks a level held in", () => {
-	it(`@error a level no check could test has no share`, () => {
+describe("the share of its checks a level held in", () => {
+	it(`a level no check could test has no share`, () => {
 		expect(heldShare(0, 0)).toBeNull();
 	});
 
@@ -382,7 +382,7 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its ch
 		expect(heldShare(held, evaluated)).toBe(share);
 	});
 
-	it(`@property for every count of checks from 1 to 200 and every count held, the share is a whole percentage within half a point of the true share, reads 100 only when every check held and 0 only when none did, and otherwise stays between 1 and 99`, () => {
+	it(`for every count of checks from 1 to 200 and every count held, the share is a whole percentage within half a point of the true share, reads 100 only when every check held and 0 only when none did, and otherwise stays between 1 and 99`, () => {
 		const contradictions = everyHeldCountUpTo(200)
 			.filter(({ held, evaluated }) =>
 				breaksAShareInvariant(heldShare(held, evaluated), held, evaluated),
@@ -397,7 +397,7 @@ describe("@us-06 @slice-06b @kpi-OUT-6094-caution-is-visible the share of its ch
 	});
 });
 
-describe("@us-06 @slice-06b @kpi-OUT-6094-no-window-ranked how the Team's own sampling window stands on its badge", () => {
+describe("how the Team's own sampling window stands on its badge", () => {
 	it.each<{
 		case: string;
 		determination: Determination;

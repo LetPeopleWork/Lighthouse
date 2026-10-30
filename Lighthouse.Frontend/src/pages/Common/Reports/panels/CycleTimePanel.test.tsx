@@ -115,7 +115,6 @@ describe("the Cycle Time panel", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
 	// Forecasts at the highest certainty lean on the 95th, so it opens the panel, above the 85th.
 	it("shows the 95th above the 85th on both sides, with the certainty icon the Metrics tab shows for it", () => {
 		renderPanel({ atThen: THEN_IN_FULL, atNow: NOW_IN_FULL });
@@ -130,7 +129,6 @@ describe("the Cycle Time panel", () => {
 		expect(iconsIn("now")).toEqual(CERTAINTY_OF_95TH_85TH_70TH_50TH);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it("shows the 95th's own change first, a shorter one reading as better", () => {
 		renderPanel({ atThen: THEN_IN_FULL, atNow: NOW_IN_FULL });
 
@@ -140,7 +138,6 @@ describe("the Cycle Time panel", () => {
 		expect(theChanges()[0].dataset.change).toBe("better");
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:unbounded-preservation
 	// A report frozen before the 95th was captured has no Then 95th at all: not a zero, not a dash with a reason.
 	it("says a Then 95th was not captured for a report frozen before it was, shows no change for it, and still shows Now's", () => {
 		renderPanel({ atThen: THEN_BEFORE_THE_95TH, atNow: NOW_IN_FULL });

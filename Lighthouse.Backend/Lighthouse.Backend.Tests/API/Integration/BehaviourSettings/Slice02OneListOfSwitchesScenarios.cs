@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     [Category("slice-02")]
     public partial class Slice02OneListOfSwitchesTest
     {
-        // @driving_port @real-io - the promise the whole slice rests on, and the regression test
+        // the promise the whole slice rests on, and the regression test
         // for the one decision that can be wrong in a way users see. The tracker's order is the reverse of
         // the order the rows were created in, so a seed that runs after the flip - reading an all-null set
         // of places and numbering them by row id - produces a visibly different list and fails here. A
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenThePlacesFollowTheTrackersOrderRatherThanTheRowIds();
         }
 
-        // @driving_port @real-io - the migration. It has exactly one chance to run, at first add,
+        // the migration. It has exactly one chance to run, at first add,
         // and a shipped release that gets it wrong cannot be repaired by a later seed.
         [Test]
         public async Task An_instance_that_already_owned_its_order_still_owns_it_after_the_upgrade()
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredPlacesAreUnchangedFrom(placesBeforeTheUpgrade);
         }
 
-        // @driving_port @real-io - the other half of the migration: the instance that chose the
+        // the other half of the migration: the instance that chose the
         // tracker, the instance that never had a row at all, and the instance whose row holds something
         // that is neither. Without all three, a migration that always seeds on would pass the case above,
         // and the seeder gets exactly one chance at each of them.
@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheTrackerStillOwnsTheOrder();
         }
 
-        // @driving_port @real-io - both transitions still re-queue the forecasts. Asserted on the
+        // both transitions still re-queue the forecasts. Asserted on the
         // way back as well as the way out: a handler wired only to the enable path would leave an instance
         // that gave the order back with dates computed from an order it no longer uses.
         [Test]
@@ -101,7 +101,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheForecastsWereReQueuedFor(platform, times: 2);
         }
 
-        // @driving_port @real-io - the revert guarantee the move may not lose: giving the order
+        // the revert guarantee the move may not lose: giving the order
         // back and taking it over again returns the places this instance chose, not a fresh reading.
         [Test]
         public async Task Taking_the_order_over_again_restores_the_places_this_instance_already_chose()
@@ -120,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheStoredPlacesAreUnchangedFrom(placesWhileOwned);
         }
 
-        // @driving_port @real-io - one store behind two doors. The deprecated alias writes, the
+        // one store behind two doors. The deprecated alias writes, the
         // new read port shows it: a second write path would let the two answers drift apart on exactly the
         // instances that use the old one.
         [Test]
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenThisInstanceStillOwnsTheOrder();
         }
 
-        // @driving_port @real-io - and it carries the same consequences in the same order, so the
+        // and it carries the same consequences in the same order, so the
         // old door cannot become the one that scrambles the list.
         [Test]
         public async Task A_write_through_the_deprecated_door_moves_nobody_either()
@@ -167,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheSettingStillReads(nonPremiumSetting, asItWas);
         }
 
-        // @driving_port @real-io - two rows in one table have to be switchable one at a time.
+        // two rows in one table have to be switchable one at a time.
         // Today the store keys a setting by its key and nothing generates the number the toggle route
         // addresses it by, so both shipped rows carry zero and the route cannot tell them apart. Nobody
         // has hit it because there has only ever been one row; this change adds the second.
@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheSettingStillReads(theOtherSetting, theOtherSettingAsItWas);
         }
 
-        // @driving_port @real-io - the seed runs on the way out, not on the way back. A Feature
+        // the seed runs on the way out, not on the way back. A Feature
         // that arrived while this instance owned the order has no place yet; giving the order back must
         // leave it that way, because a null place is what "arrived while the switch was off" means and it
         // is what makes re-enabling append rather than renumber. The shipped write path seeds only when
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheFeatureThatArrivedLaterStillHasNoPlace("FTR-5");
         }
 
-        // @driving_port @real-io - an instance whose licence lapsed while it owned the order keeps
+        // an instance whose licence lapsed while it owned the order keeps
         // owning it. True today: nothing in the ordering read path consults the licence. It is asserted
         // here because the move re-backs that path onto a row marked premium, and the obvious tidy-up -
         // having the provider check the licence - would silently hand every lapsed customer's list back to
@@ -227,7 +227,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenThisInstanceStillOwnsTheOrder();
         }
 
-        // @driving_port @real-io - the read port hands back the setting a caller names, not
+        // the read port hands back the setting a caller names, not
         // merely some setting. Every unit test around this endpoint mocks the lookup, so the comparison
         // that picks the row has never once been executed; the toggle now runs through the same shape, and
         // an inverted comparison there would switch whichever row the store happened to return first.
@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             ThenTheSettingItMigratedFromIsStillStored(OrderOwnedByThisInstance);
         }
 
-        // @driving_port @real-io @observability - switching a behaviour setting is answered in the
+        // switching a behaviour setting is answered in the
         // instance's own log, which way it went and a write that changes nothing included, at Information
         // so it never reads as a problem.
         [Test]

@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-07")]
     public partial class Slice07WhereTheLimitsActuallyMovedTest
     {
-        // @driving_port @us-03 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer()
         {
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenEveryBehaviourTheTeamReportsGotItsLimits(teamId);
         }
 
-        // @driving_port @us-03 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer()
         {
@@ -45,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenEveryBehaviourThePortfolioReportsGotItsLimits(portfolioId);
         }
 
-        // @us-03 @real-io @contract-shape:bounded-change
         [Test]
         public async Task How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team()
         {
@@ -82,7 +79,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// OverTimeReconstructionSeamArchUnitTest - the one asserting that a chart which is not Ready
         /// carries no band - because that invariant is the reason the redundancy holds at all.
         /// </summary>
-        // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits()
         {
@@ -96,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenNoLimitsAreReportedFor(teamId, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-30), TodayDay);
         }
 
-        // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one()
         {
@@ -146,7 +141,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// is, feeding the display window in as the baseline. With this seed that makes the limits
         /// climb day by day and the distinct count goes above one.
         /// </summary>
-        // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart()
         {
@@ -162,7 +156,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheLimitsHoldSteadyAcross(teamId, OwnerType.Team, ProcessBehaviorMetricType.Throughput, TodayDay.AddDays(-60), TodayDay.AddDays(-30));
         }
 
-        // @us-03 @driving_port @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too()
         {
@@ -188,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// implementation did, and this scenario would have agreed with the fixed-stretch one above
         /// instead of reading differently from it.
         /// </summary>
-        // @us-03 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history()
         {
@@ -213,7 +205,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// checks that every one of those wrong ways really does read differently, and fails before the
         /// chart is opened if one does not.
         /// </summary>
-        // @us-03 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched()
         {
@@ -229,7 +220,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheLimitsCameBackTheSameAsWhenTheyWereWatched(teamId, ProcessBehaviorMetricType.Throughput, asWatched);
         }
 
-        // @us-03 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing()
         {

@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-02")]
     public partial class Slice02RefinementListTest : RefinementAcceptanceTest
     {
-        // @driving_port @real-io @us-02 @slice-02 @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
         [Test]
         public async Task The_coach_sees_every_Work_Item_in_refinement_in_backlog_order()
         {
@@ -31,7 +30,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "GR-058", "GR-059", "GR-051", "GR-073");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         [Test]
         public async Task Each_row_names_the_Work_Item_links_to_the_tracker_and_gives_its_state_and_parent()
         {
@@ -47,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         // The tab shows name, parent and state only, so the answer does not send what nobody shows.
         [Test]
         public async Task No_row_carries_an_age_or_a_category()
@@ -60,7 +57,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenNoRowCarries(tab, "workItemAge", "stateCategory");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         [Test]
         public async Task Work_Items_the_tracker_ranks_equally_are_listed_by_id()
         {
@@ -72,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "GR-074", "GR-075");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         // A tracker that ranks 9 above 10 must not see 10 first because "1" sorts before "9" as text.
         [Test]
         public async Task Numeric_ranks_are_compared_as_numbers_not_as_text()
@@ -85,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "GR-091", "GR-090");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         // A Team that maps Analysing and Grooming together holds their Work Items under the mapping's name.
         [Test]
         public async Task A_state_chosen_by_its_mapped_name_lists_the_Work_Items_held_under_that_name()
@@ -98,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "OR-002", "OR-001");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         // Everywhere else a Team's states match the tracker's whatever their case, so the tab must too.
         [Test]
         public async Task A_state_typed_in_other_case_than_the_trackers_still_lists_its_Work_Items()
@@ -111,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "NV-002", "NV-001");
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:pure-function
         [Test]
         public async Task An_empty_refinement_is_stated_not_answered_as_an_error()
         {
@@ -127,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:pure-function
         // The tab is disabled for such a Team, but an old link or a client can still ask.
         [Test]
         public async Task A_Team_nobody_set_up_answers_that_it_has_no_refinement_states_and_lists_nothing()
@@ -144,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @contract-shape:pure-function
         [Test]
         public async Task Another_Teams_Work_Items_in_the_same_state_are_not_listed()
         {
@@ -156,7 +146,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowsAre(tab, "GR-073");
         }
 
-        // @driving_port @real-io @us-01 @us-02 @slice-02 @error @contract-shape:pure-function
         // The Work Items keep reading Analysing until the tracker is read again, so only the Team's
         // current mapping can keep them off the list.
         [Test]
@@ -177,7 +166,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         // Not even whether the Team exists is given away to somebody who cannot read it.
         [Test]
         public async Task Somebody_without_a_role_on_the_Team_is_told_the_tab_does_not_exist()
@@ -191,7 +179,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTabIsNotFound(answer);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Asking_for_the_Refinement_tab_of_a_Team_that_does_not_exist_is_not_found()
         {
@@ -204,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTabIsNotFound(answer);
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @contract-shape:pure-function
         // Opening the tab is a read: it stores nothing, changes nothing and answers the same twice.
         [Test]
         public async Task Opening_the_tab_changes_nothing_about_the_Team_or_its_Work_Items()
@@ -226,7 +212,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-02 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
         // The guardrail is a tab that renders within two seconds at 300 Work Items; the answer it renders
         // from must leave room for the rendering, so it is held to the same budget on its own.
         [Test]

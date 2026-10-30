@@ -99,21 +99,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory.Dispose();
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @kpi @contract-shape:pure-function
         [Test]
         public async Task Team_EveryItemTheEstimationChartPlots_ListsTheSameEstimateInItsRow()
         {
             await AssertEveryPlottedItemListsItsPointsEstimate($"/api/latest/teams/{estimatedTeamId}/metrics");
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @kpi @contract-shape:pure-function
         [Test]
         public async Task Portfolio_EveryFeatureTheEstimationChartPlots_ListsTheSameEstimateInItsRow()
         {
             await AssertEveryPlottedItemListsItsPointsEstimate($"/api/latest/portfolios/{estimatedPortfolioId}/metrics");
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @contract-shape:pure-function
         [TestCase(Throughput)]
         [TestCase(Arrivals)]
         [TestCase(WipOverTime)]
@@ -134,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @contract-shape:pure-function
         [TestCase(Throughput)]
         [TestCase(Started)]
         [TestCase(Arrivals)]
@@ -163,7 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [TestCase(Throughput)]
         [TestCase(CycleTimeData)]
         [TestCase(Wip)]
@@ -174,7 +169,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AssertEveryRowSaysEstimationIsNotSetUp(rows, endpoint, body);
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [TestCase(Throughput)]
         [TestCase(CycleTimeData)]
         [TestCase(Wip)]
@@ -185,7 +179,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AssertEveryRowSaysEstimationIsNotSetUp(rows, endpoint, body);
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
         public async Task Team_ItemWithNothingTheChartCouldPlace_HasAnEstimateWithoutADisplayValue()
         {
@@ -200,7 +193,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
         public async Task Portfolio_FeatureWithACategoryMissingFromTheList_HasAnEstimateWithoutADisplayValue()
         {
@@ -210,7 +202,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Assert.That(KindOf(estimate, DisplayValueField), Is.EqualTo(JsonValueKind.Null), body);
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @contract-shape:pure-function
         [Test]
         public async Task FeatureChildItems_EachCarriesTheEstimateOfItsOwnTeam()
         {
@@ -225,7 +216,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
         public async Task TeamFeaturesInProgress_HaveNoSingleOwnerToAsk_SoCarryNoEstimate()
         {
@@ -234,7 +224,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             AssertEveryRowSaysEstimationIsNotSetUp(rows, FeaturesInProgress, body);
         }
 
-        // @us-01 @slice-01a @driving_port @real-io @error @contract-shape:pure-function
         [Test]
         public async Task FeaturesByIds_HaveNoSingleOwnerToAsk_SoCarryNoEstimate()
         {

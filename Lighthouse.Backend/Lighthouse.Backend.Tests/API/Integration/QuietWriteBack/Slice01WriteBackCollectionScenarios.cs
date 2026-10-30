@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
     public partial class Slice01WriteBackCollectionTest
     {
 
-        // @walking_skeleton @driving_port @real-io @AC-04.1a
         // Today this refresh talks to the tracker twice - once after features, once after forecasts.
         [Test]
         public async Task One_scheduled_refresh_of_a_portfolio_reaches_the_tracker_once()
@@ -30,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenThatWriteCarriedBothTheSizeAndTheForecastFor("PROJ-1");
         }
 
-        // @driving_port @AC-04.1b - the residue ADR-144 closes by making the stored copy true
+        // the residue ADR-144 closes by making the stored copy true
         [Test]
         public async Task A_value_written_in_one_execution_is_not_written_again_by_the_next()
         {
@@ -44,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheTrackerWasWrittenTo(times: 1);
         }
 
-        // @error @driving_port @AC-04.3 - the D8 no-op guard, preserved
+        // the D8 no-op guard, preserved
         [Test]
         public async Task A_refresh_in_which_nothing_changed_never_reaches_the_tracker()
         {
@@ -57,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheTrackerWasNeverWrittenTo();
         }
 
-        // @driving_port @AC-04.4 - the seam is above the connector, so it is connector-agnostic by
+        // the seam is above the connector, so it is connector-agnostic by
         // construction. That the Azure DevOps adapter still asks for silence is asserted where the flag
         // is observable: AzureDevOpsWriteBackTest.
         [Test]
@@ -73,7 +72,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenThatWriteCarriedBothTheSizeAndTheForecastFor("42");
         }
 
-        // @error @driving_port @parity @AC-04.6 - parity with today's swallow-and-log. Green from
+        // parity with today's swallow-and-log. Green from
         // DISTILL on purpose: the AC asks for behaviour that already holds and must survive the seam.
         [Test]
         public async Task A_flush_that_throws_leaves_the_refresh_round_finished()
@@ -88,7 +87,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheRefreshRoundWasRecordedAsComplete(portfolio);
         }
 
-        // @driving_port @parity @AC-04.7 - a team refresh already reaches the tracker once and must go
+        // a team refresh already reaches the tracker once and must go
         // on doing so through the collector. That it goes *through* the collector is asserted where it
         // is observable: WriteBackCollectorTest plus the single flush site in UpdateServiceBase.
         [Test]
@@ -103,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheStoredValueOfMatchesWhatWasWritten("STORY-1");
         }
 
-        // @error @driving_port - the first bound on the D11 exception: the local copy may lag reality,
+        // the first bound on the D11 exception: the local copy may lag reality,
         // it may never lead it.
         [Test]
         public async Task A_write_the_tracker_refused_never_updates_the_local_copy()
@@ -119,7 +118,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheStoredForecastOfWasBroughtUpToDate("PROJ-1");
         }
 
-        // @driving_port - the third bound: inbound sync still wins, so an apparent success that did not
+        // the third bound: inbound sync still wins, so an apparent success that did not
         // take effect self-corrects within one cycle.
         [Test]
         public async Task The_next_inbound_sync_still_overrides_a_locally_persisted_value()
@@ -135,7 +134,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheStoredSizeOfIs("PROJ-1", "99");
         }
 
-        // @driving_port @parity - D11 stands: the exception must not become jitter damping. Green from
+        // D11 stands: the exception must not become jitter damping. Green from
         // DISTILL because today nothing damps anything; it is the guard that catches D-A7-R being
         // widened from "persist what was written" into "do not write small movements".
         [Test]
@@ -152,7 +151,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheLastWriteCarriedTheForecastFor("PROJ-1");
         }
 
-        // @driving_port - ADR-144's first decision, asserted from the outside: resolving is not writing.
+        // ADR-144's first decision, asserted from the outside: resolving is not writing.
         [Test]
         public void Resolving_a_portfolios_write_back_plan_never_reaches_the_tracker()
         {

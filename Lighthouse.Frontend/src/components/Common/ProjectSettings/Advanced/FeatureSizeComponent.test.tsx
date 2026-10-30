@@ -84,7 +84,6 @@ describe("FeatureSizeComponent", () => {
 
 	// The page renders before the settings have arrived. Reaching into them would blank the form with a
 	// crash rather than show it empty.
-	// @story-6313 @contract-shape:pure-function
 	it("renders before there are any settings to show", () => {
 		render(
 			<FeatureSizeComponent

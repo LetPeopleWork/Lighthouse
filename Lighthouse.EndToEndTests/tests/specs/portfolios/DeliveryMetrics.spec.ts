@@ -9,7 +9,7 @@ const DEMO_SCENARIO_ID = 0;
 const DEMO_PORTFOLIO_NAME = "Project Apollo";
 const DEMO_DELIVERY_NAME = "Apollo Release";
 
-test("@walking_skeleton @US-01 forecaster opens a delivery's Metrics tab and sees the backlog and done burnup", async ({
+test("forecaster opens a delivery's Metrics tab and sees the backlog and done burnup", async ({
 	page,
 	request,
 	overviewPage,

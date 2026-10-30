@@ -49,7 +49,6 @@ notifyManager.setScheduler(queueMicrotask);
 const RENDER_HEAVY = 20000;
 
 describe("a dialog whose items are still on their way", () => {
-	// @us-03 @slice-03 @driving_port @contract-shape:pure-function
 	it(
 		"opens at once with its title and the context's headers over the grid's loading overlay",
 		() => {
@@ -78,7 +77,6 @@ describe("a dialog whose items are still on their way", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it(
 		"never says there are no items while they are still on their way",
 		() => {
@@ -94,7 +92,6 @@ describe("a dialog whose items are still on their way", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it(
 		"says the items couldn't be loaded, with a warning and no retry button, when they cannot be loaded",
 		() => {
@@ -118,7 +115,6 @@ describe("a dialog whose items are still on their way", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @error @contract-shape:pure-function
 	it(
 		"the could-not-load message uses the instance's word for Work Items",
 		() => {
@@ -139,7 +135,6 @@ describe("a dialog whose items are still on their way", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-03 @slice-03 @regression @contract-shape:unbounded-preservation
 	it(
 		"a dialog left at its defaults with nothing to list still says so, as today",
 		() => {
@@ -236,7 +231,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 		return answers[index];
 	}
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"shows the parent's name once it is known",
 		async () => {
@@ -254,7 +248,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it(
 		"shows the parent's reference while its name is on its way",
 		() => {
@@ -270,7 +263,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it(
 		"shows the parent's reference when its name cannot be looked up",
 		async () => {
@@ -293,7 +285,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 	// The lookup is a request to the server for every parent on screen, so whether it is made is the
 	// cost being guarded: these two read the request itself, and the cell it fills.
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it(
 		"asks once for the names of the shown rows' parents while Parent is shown, and shows them",
 		async () => {
@@ -322,7 +313,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @regression @contract-shape:unbounded-preservation
 	it(
 		"asks for no parent names while Parent is hidden",
 		() => {
@@ -338,7 +328,6 @@ describe("Parent shows the parent's name, looked up only while it is shown", () 
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it(
 		"a late answer for the previous dialog's parents never names the next dialog's",
 		async () => {

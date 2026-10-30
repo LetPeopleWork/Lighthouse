@@ -54,7 +54,7 @@ const EVERY_UPDATE_TYPE: UpdateTaskType[] = [
 ];
 
 describe("Activity rows say what the work is", () => {
-	// @AC-01.1 — the reported defect. Asserted as a DIFFERENCE rather than against two expected
+	// the reported defect. Asserted as a DIFFERENCE rather than against two expected
 	// literals: an assertion that hard-codes both strings keeps passing while a future update type
 	// quietly joins the pile, which is exactly how this shipped.
 	//
@@ -70,7 +70,7 @@ describe("Activity rows say what the work is", () => {
 		expect(rowText("Features", 3)).not.toEqual(rowText("Forecasts", 3));
 	});
 
-	// @AC-01.2 — five members, five answers. The lookup that caused #6055 had a default arm absorbing
+	// five members, five answers. The lookup that caused #6055 had a default arm absorbing
 	// three of them, so the promise is about the whole enum rather than about the pair that was reported.
 	it("gives every kind of work its own phrase", () => {
 		renderRows(
@@ -86,7 +86,7 @@ describe("Activity rows say what the work is", () => {
 		expect(new Set(phrases).size).toBe(EVERY_UPDATE_TYPE.length);
 	});
 
-	// @AC-01.3 @AC-01.5 — the row is one sentence built from two vocabularies. The noun is whatever the
+	// the row is one sentence built from two vocabularies. The noun is whatever the
 	// tenant renamed it to; the verb is Lighthouse's own word and is never looked up.
 	it("uses the tenant's noun and Lighthouse's own verb", () => {
 		mockGetTerm.mockImplementation((key: string) =>
@@ -103,7 +103,7 @@ describe("Activity rows say what the work is", () => {
 		expect(rowText("Features", 3)).not.toContain("Portfolio");
 	});
 
-	// @AC-01.2 @AC-01.3 @AC-01.5 — the same sentence, read for a forecast. The two promises above are
+	// the same sentence, read for a forecast. The two promises above are
 	// kept differentially: one compares two rows, the other counts distinct phrases. Both still agree
 	// with themselves when the forecast's own words are emptied, so a forecast is the one kind of work
 	// nothing here ever actually reads.
@@ -117,7 +117,7 @@ describe("Activity rows say what the work is", () => {
 		expect(rowText("Forecasts", 3)).toContain("Forecasting Programme");
 	});
 
-	// @AC-01.4 — the suffix is replaced, not joined. Two ways of saying one thing in one column is how
+	// the suffix is replaced, not joined. Two ways of saying one thing in one column is how
 	// they come to disagree.
 	it("says a removal is a removal without also appending one", () => {
 		renderRows([
@@ -128,7 +128,7 @@ describe("Activity rows say what the work is", () => {
 		expect(rowText("PortfolioDelete", 3)).not.toContain("(removal)");
 	});
 
-	// @AC-01.6 — the id the existing #5511 suite addresses rows by is a fixed point, so that suite keeps
+	// the id the existing #5511 suite addresses rows by is a fixed point, so that suite keeps
 	// working across this change rather than being rewritten alongside it. It pins behaviour that
 	// already exists and has to survive, rather than promising behaviour that does not.
 	it("keeps the handle every other specification addresses a row by", () => {
@@ -139,7 +139,7 @@ describe("Activity rows say what the work is", () => {
 });
 
 describe("Activity rows explain a wait without naming themselves", () => {
-	// @AC-02.1 — the clause names the holder's activity when the holder is this row's own entity.
+	// the clause names the holder's activity when the holder is this row's own entity.
 	it("says a forecast is behind its own portfolio's refresh", () => {
 		renderRows([
 			aTask({
@@ -159,7 +159,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		);
 	});
 
-	// @AC-02.3 — and the word follows what the HOLDER is doing, not what this row is doing.
+	// and the word follows what the HOLDER is doing, not what this row is doing.
 	it("says a refresh is behind its own portfolio's removal", () => {
 		renderRows([
 			aTask({
@@ -176,7 +176,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		expect(rowText("Features", 3)).toContain("Queued behind its own removal");
 	});
 
-	// @AC-02.1 @AC-02.3 — and the third kind of holder. A portfolio refresh ends by triggering a
+	// and the third kind of holder. A portfolio refresh ends by triggering a
 	// forecast of the same portfolio, so a refresh asked for again while that forecast still holds the
 	// lane is an ordinary state; without this the word a forecast lends to this clause is never read.
 	it("says a refresh is behind its own portfolio's forecast", () => {
@@ -195,7 +195,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		expect(rowText("Features", 3)).toContain("Queued behind its own forecast");
 	});
 
-	// @AC-02.2 — the reading that already shipped, which must not regress. A different entity is still
+	// the reading that already shipped, which must not regress. A different entity is still
 	// named, because that name is the difference between waiting and wedged.
 	it("still names a different entity that is holding the lane", () => {
 		renderRows([
@@ -215,7 +215,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		expect(rowText("Team", 7)).toContain("Queued behind Ocean Explorer");
 	});
 
-	// @AC-02.5 — work whose lane is free is waiting for nothing, and says nothing rather than naming an
+	// work whose lane is free is waiting for nothing, and says nothing rather than naming an
 	// arbitrary running row. Already true, and a pin for the same reason as AC-01.6: the clause gains a
 	// branch in this story, and "gains a branch" is exactly when a row with no clause starts growing one.
 	it("says nothing extra when the row is waiting for nothing", () => {
@@ -225,7 +225,7 @@ describe("Activity rows explain a wait without naming themselves", () => {
 		expect(rowText("Team", 7)).not.toContain("behind");
 	});
 
-	// @AC-02.8 — one decider. The payload below is deliberately self-contradictory: the flag says "your
+	// one decider. The payload below is deliberately self-contradictory: the flag says "your
 	// own entity" while the name says otherwise. A browser that recomputed sameness from the row and the
 	// holder would print the name; one that trusts the instance prints the activity. Only the second
 	// keeps a partial re-read from making the two disagree.

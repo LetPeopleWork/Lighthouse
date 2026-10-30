@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-03")]
     public partial class Slice03BlockedTrendTest
     {
-        // @driving_port @us-03
         [Test]
         public async Task The_blocked_count_trend_is_available_over_time()
         {
@@ -30,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheTrendIsAvailable(response);
         }
 
-        // @edge @us-03 (honest forward-only empty state)
+        // (honest forward-only empty state)
         [Test]
         public async Task A_new_team_sees_an_honest_empty_trend()
         {
@@ -41,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheTrendShowsTheForwardOnlyEmptyState(response);
         }
 
-        // @regression @us-03 (Bug 5522 — days with no recorded snapshot carry the last known count
+        // (Bug 5522 — days with no recorded snapshot carry the last known count
         // forward; the seed is the latest snapshot BEFORE the window, and nothing is fabricated ahead
         // of the first-ever record)
         [Test]

@@ -25,7 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-06")]
     public partial class Slice06TheWarningsWithoutTheLogTest
     {
-        // @walking_skeleton @driving_port @real-io @error @AC-06.1 @AC-06.7
         // The slice in one line. Today the only record that this team stopped refreshing is a line inside a
         // rolling text file, which an operator sees only if they decide to go and open it — and the whole
         // point of the popover is that noticing should not depend on that decision.
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenRecentProblemsSaysWhatBrokeFor(team);
         }
 
-        // @driving_port @real-io @error @AC-06.1 @AC-06.7
         // The one above says the failure is listed; this one says the row is worth reading. A section that
         // lists a failure without saying when, how seriously, from where or what broke is a wall of
         // sentences, which is the outcome this slice's hypothesis says would disprove it.
@@ -55,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemSaysWhenHowSeriousWhereFromAndWhatBroke(team);
         }
 
-        // @driving_port @real-io @AC-06.1
         // The negative control, and the one that keeps the section honest. Every refresh writes its own
         // summary line, and a section that showed those would be a wall of text within the hour — which is
         // precisely the outcome the level filter is being tested for. A refresh that worked contributes
@@ -71,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenRecentProblemsSaysNothingAbout(team);
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // A short list is read from the top. Two failures that arrived in the wrong order would have an
         // operator chasing the one that has already been fixed.
         [Test]
@@ -87,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheProblemAboutIsReadBeforeTheProblemAbout(newer: second, older: first);
         }
 
-        // @driving_port @real-io @error @AC-06.2
         // An instance that has been up for a month must not be holding a month of failures in memory. What
         // makes room is the oldest going first: dropping the newest instead would leave the section
         // permanently showing whatever went wrong first and never what is going wrong now.
@@ -103,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenRecentProblemsSaysWhatBrokeFor(teams[^1]);
         }
 
-        // @driving_port @real-io @error @AC-06.3
         // The level control the log viewer already offers governs this section too, and it takes effect on
         // what is being captured right now. An operator who turns the noise down and has to restart the
         // instance for it to mean anything has not been given a control.
@@ -119,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenRecentProblemsSaysNothingAbout(team);
         }
 
-        // @driving_port @real-io @error @AC-06.3
         // The other direction, and the control on the one above: without it, a section that has quietly
         // stopped recording anything at all satisfies that scenario perfectly.
         [Test]
@@ -138,7 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenRecentProblemsSaysNothingAbout(silenced);
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // The row an operator is being asked to act on says which of their teams stopped refreshing. An id
         // identifies it to whoever is reading the source and to nobody else: it cannot be looked up from
         // the popover, it does not say whether this is the team that matters, and working it out means
@@ -154,7 +146,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemSaysWhoseRefreshBroke(team);
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // The other half of what refreshes. A portfolio's refresh is queued under the kind of work it does
         // rather than under the word "portfolio", so whatever makes a team's row readable has to be asked
         // about a portfolio separately or half the section stays unreadable.
@@ -169,7 +160,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemSaysWhoseRefreshBroke(portfolio);
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // The case that stops a readable row turning into a blank one. Something whose refresh broke can be
         // gone by the time anybody reads about it, and then there is no name to say — so the row falls back
         // to the kind of work and the id, which is less than a name and far more than nothing.
@@ -185,7 +175,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemStillSaysWhichRefreshBroke(team);
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // The regression guard on the whole change. Most of what lands in this section — a sign-in refused,
         // a migration that complained, the host grumbling on the way up — was never about a refresh and
         // carries nothing a name could be looked up by. Those rows have to go on saying exactly what they
@@ -198,7 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemStillReadsAsTheInstanceWroteIt("oauth.callback.idp_error", "access_denied");
         }
 
-        // @driving_port @real-io @error @AC-06.1
         // Names are read off the instance as the section is read, not copied into the record when the
         // failure happens. A team renamed this morning reads under the name it has now, and an operator is
         // never shown a name that no longer exists anywhere else in the product. This is the promise that
@@ -215,7 +203,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatProblemSaysWhoseRefreshBroke(renamed);
         }
 
-        // @driving_port @real-io @error @AC-06.4
         // The same team names, work-tracking URLs and connector errors the log file carries, which is why
         // the log file has been administrator-only since 2026-08-06. Serving them from a second route
         // would hand out exactly what that guard was put there to withhold.

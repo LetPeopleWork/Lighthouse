@@ -110,7 +110,6 @@ const whenPriyaOpensTheTipOf = (field: string, group: string) =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(field, theGroup(group)));
 
 describe("Story 6352: the connection's defaults say which way round they read", () => {
-	// @driving_port @contract-shape:pure-function
 	it("on a Jira connection, only the Parent Override and Dependency rows carry an About button", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -123,7 +122,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		]);
 	});
 
-	// @edge @contract-shape:unbounded-preservation
 	it("the Estimation, Size Estimate and Feature Owner rows carry no info icon", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -142,7 +140,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		}
 	});
 
-	// @contract-shape:pure-function
 	it("on a Jira connection, the Teams' Parent Override tip gives Jira's example", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -151,7 +148,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		).toHaveTextContent(IS_CAUSED_BY);
 	});
 
-	// @contract-shape:pure-function
 	it("on a Jira connection, the Dependency tip asks for is blocked by", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -160,7 +156,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		).toHaveTextContent(IS_BLOCKED_BY);
 	});
 
-	// @contract-shape:pure-function
 	it("on an Azure DevOps connection, the Dependency tip names Predecessor and no Jira phrase", async () => {
 		await givenPriyaOpensAConnectionOn("AzureDevOps");
 
@@ -169,7 +164,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		expect(tip).not.toHaveTextContent(IS_BLOCKED_BY);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("a tenant's own words reach the tips: the Dependency tip speaks of a Bet, never of a Feature", async () => {
 		await givenPriyaOpensAConnectionOn("Jira", RenamedTerms);
 
@@ -178,7 +172,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		expect(tip).not.toHaveTextContent(/Feature/);
 	});
 
-	// @contract-shape:pure-function
 	it("the Teams' Parent Override tip leads to the Team docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -188,7 +181,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		);
 	});
 
-	// @contract-shape:pure-function
 	it("the Portfolios' Parent Override tip leads to the Portfolio docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -198,7 +190,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		);
 	});
 
-	// @contract-shape:pure-function
 	it("the Dependency tip leads to the Dependency Field docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
@@ -210,7 +201,6 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 });
 
 describe("Story 6352: defaults that read no link", () => {
-	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a CSV connection's defaults, Estimation and Feature Owner, carry no info button", async () => {
 		await givenPriyaOpensAConnectionOn("Csv");
 

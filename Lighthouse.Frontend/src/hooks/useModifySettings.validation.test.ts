@@ -84,7 +84,7 @@ const settleDebounce = async () => {
 	});
 };
 
-describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
+describe("auto-save validates connector settings", () => {
 	beforeEach(() => {
 		vi.useFakeTimers({ shouldAdvanceTime: true });
 		vi.clearAllMocks();
@@ -94,7 +94,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		vi.useRealTimers();
 	});
 
-	it("@BUG-5628 @error warns the coach when the settings the auto-save just persisted do not validate", async () => {
+	it("warns the coach when the settings the auto-save just persisted do not validate", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(false);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -111,7 +111,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(validateSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it("@BUG-5628 still persists the edit even when the validation that follows it fails", async () => {
+	it("still persists the edit even when the validation that follows it fails", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const validateSettings = vi.fn().mockResolvedValue(false);
 		const args = makeArgs({ saveSettings, validateSettings });
@@ -125,7 +125,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(saveSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it("@BUG-5628 stays silent when the persisted settings validate", async () => {
+	it("stays silent when the persisted settings validate", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -142,7 +142,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(result.current.validationTechnicalDetails).toBeNull();
 	});
 
-	it("@BUG-5628 probes the connector once per settled save, not once per keystroke", async () => {
+	it("probes the connector once per settled save, not once per keystroke", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -160,7 +160,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		await waitFor(() => expect(validateSettings).toHaveBeenCalledTimes(1));
 	});
 
-	it("@BUG-5628 does not re-probe when a later save leaves the connector-relevant fields untouched", async () => {
+	it("does not re-probe when a later save leaves the connector-relevant fields untouched", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ saveSettings, validateSettings });
@@ -186,7 +186,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(validateSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it("@BUG-5628 never probes on the default-settings pages, which have no connector", async () => {
+	it("never probes on the default-settings pages, which have no connector", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ validateSettings, modifyDefaultSettings: true });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -201,7 +201,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(result.current.validationError).toBeNull();
 	});
 
-	it("@BUG-5628 @error carries the connector's own verdict through to the alert", async () => {
+	it("carries the connector's own verdict through to the alert", async () => {
 		const validateSettings = vi
 			.fn()
 			.mockRejectedValue(
@@ -229,7 +229,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		);
 	});
 
-	it("@BUG-5628 clears the warning as soon as the coach starts correcting the settings", async () => {
+	it("clears the warning as soon as the coach starts correcting the settings", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(false);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -245,7 +245,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(result.current.validationTechnicalDetails).toBeNull();
 	});
 
-	it("@BUG-5628 re-probes when a later save changes the query", async () => {
+	it("re-probes when a later save changes the query", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -264,7 +264,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		);
 	});
 
-	it("@BUG-5628 re-probes when a later save changes the work item types", async () => {
+	it("re-probes when a later save changes the work item types", async () => {
 		const validateSettings = vi.fn().mockResolvedValue(true);
 		const args = makeArgs({ validateSettings });
 		const { result } = renderHook(() => useModifySettings(args));
@@ -285,7 +285,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		);
 	});
 
-	it("@BUG-5628 probes the payload that supersedes the one queued behind an in-flight save", async () => {
+	it("probes the payload that supersedes the one queued behind an in-flight save", async () => {
 		let releaseFirstSave: () => void = () => undefined;
 		const firstSaveInFlight = new Promise<undefined>((resolve) => {
 			releaseFirstSave = () => resolve(undefined);
@@ -325,7 +325,7 @@ describe("@BUG-5628 @in-memory auto-save validates connector settings", () => {
 		expect(validateSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it("@BUG-5628 @error swallows a probe failure the connector did not report as an ApiError", async () => {
+	it("swallows a probe failure the connector did not report as an ApiError", async () => {
 		const consoleError = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});

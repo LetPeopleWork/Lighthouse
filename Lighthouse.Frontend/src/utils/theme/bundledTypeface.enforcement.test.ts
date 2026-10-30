@@ -50,7 +50,6 @@ const quicksandStacks = (): { file: string; stack: string }[] =>
  * licence ships beside it word for word, and every place that names the typeface names the one the app carries.
  */
 describe("the Lighthouse typeface ships with the app", () => {
-	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	it(`loads no font from the internet`, () => {
 		const page = readFileSync(resolve(frontendRoot, "index.html"), "utf8");
 
@@ -58,7 +57,6 @@ describe("the Lighthouse typeface ships with the app", () => {
 		expect(page).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com/);
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it(`brings the typeface in from the package the app carries`, () => {
 		const importers = productionSourcesUnder(sourceRoot).filter((file) =>
 			ITS_IMPORT.test(readFileSync(file, "utf8")),
@@ -67,7 +65,6 @@ describe("the Lighthouse typeface ships with the app", () => {
 		expect(importers).toHaveLength(1);
 	});
 
-	// @us-02 @slice-02 @edge @contract-shape:unbounded-preservation
 	// A stack that names the typeface by any other family falls back to a machine font without a word.
 	it(`names the carried family first wherever the app asks for the typeface`, () => {
 		const stacks = quicksandStacks();
@@ -81,7 +78,6 @@ describe("the Lighthouse typeface ships with the app", () => {
 		}
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// The licence asks to travel with the font, unchanged; a package update that changes it must change the copy.
 	it(`ships the typeface's licence word for word as the package carries it`, () => {
 		expect(

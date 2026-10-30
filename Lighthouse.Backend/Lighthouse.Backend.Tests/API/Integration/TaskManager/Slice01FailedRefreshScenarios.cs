@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-01")]
     public partial class Slice01FailedRefreshTest
     {
-        // @walking_skeleton @driving_port @real-io @error @AC-01.1
         [Test]
         public async Task A_team_refresh_that_fails_tells_the_browser_it_failed()
         {
@@ -33,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheBrowserWasToldTheRefreshFailed(team);
         }
 
-        // @driving_port @real-io @error @AC-01.1 — the other half of the refresh cycle, same promise.
+        // the other half of the refresh cycle, same promise.
         [Test]
         public async Task A_portfolio_refresh_that_fails_tells_the_browser_it_failed()
         {
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheBrowserWasToldTheRefreshFailed(portfolio);
         }
 
-        // @driving_port @real-io @AC-01.1 — the positive control. Without it, "always report Failed"
+        // the positive control. Without it, "always report Failed"
         // satisfies every other scenario in this file.
         [Test]
         public async Task A_team_refresh_that_works_still_tells_the_browser_it_completed()
@@ -58,7 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheBrowserWasToldTheRefreshCompleted(team);
         }
 
-        // @driving_port @real-io @error @AC-01.1 — only the last word changes. A refresh is announced
+        // only the last word changes. A refresh is announced
         // when it is taken on and again when it ends, and this slice moves nothing but the second one.
         [Test]
         public async Task A_failing_refresh_is_announced_as_queued_and_then_as_failed()
@@ -71,7 +70,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheBrowserWasToldTheRefreshWasQueuedAndThenThatItFailed(team);
         }
 
-        // @driving_port @real-io @error @AC-01.2 — the record that already told the truth keeps telling it.
+        // the record that already told the truth keeps telling it.
         [Test]
         public async Task A_failed_refresh_still_records_that_it_did_not_succeed()
         {
@@ -84,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheOperatorSeesOneSummaryLineSayingItDidNotSucceed();
         }
 
-        // @driving_port @real-io @error @AC-01.3 — a round that never finishes silently drops every
+        // a round that never finishes silently drops every
         // write it had staged. The failure path has to leave the round exactly as the success path does.
         [Test]
         public async Task A_failed_refresh_still_finishes_its_write_back_round()
@@ -98,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheRoundSaidItsPieceExactlyOnce();
         }
 
-        // @driving_port @real-io @error @AC-01.5 — the blast radius. Somebody who pressed Refresh is
+        // the blast radius. Somebody who pressed Refresh is
         // told the refresh was accepted; whether it later fails is the task list's business, not the
         // button's, and a 500 here would be a new failure mode invented by this slice.
         [Test]
@@ -113,7 +112,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatRefreshStillEndedAsFailed(team);
         }
 
-        // @driving_port @real-io @error @AC-01.5 — the other half of the blast radius: the awaitable
+        // the other half of the blast radius: the awaitable
         // path already faults its caller, and this slice must not change that.
         [Test]
         public async Task A_caller_awaiting_an_update_still_sees_the_failure_it_always_saw()

@@ -71,7 +71,6 @@ const inputs = (
 });
 
 describe("printing once in the frame", () => {
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	// The control stops waiting when the dialog is asked for, since in Chrome print() returns only once it closes.
 	it(`tells the host it is printing, then asks the frame's window for the dialog once, when the page is ready`, () => {
 		const frame = aFakeFrame();
@@ -81,7 +80,6 @@ describe("printing once in the frame", () => {
 		expect(frame.happened()).toEqual(["printing", "print"]);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	it.each<PrintPageState>([
 		"preparing",
 		"failedRetryable",
@@ -95,7 +93,6 @@ describe("printing once in the frame", () => {
 		expect(frame.prints()).toBe(0);
 	});
 
-	// @us-01 @rev-3 @edge @contract-shape:bounded-change
 	// React's strict mode runs every effect twice on mount; one frame still asks for one dialog.
 	it(`prints once under React's strict mode, and no more when the page draws again`, () => {
 		const frame = aFakeFrame();
@@ -110,7 +107,6 @@ describe("printing once in the frame", () => {
 		expect(frame.prints()).toBe(1);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	it.each<[PrintPageState, PrintFailureLook, PrintOutcome]>([
 		[
 			"failedRetryable",
@@ -143,7 +139,6 @@ describe("printing once in the frame", () => {
 		},
 	);
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// A print dialog that cannot be opened made no PDF, and asking again in a fresh frame may help.
 	it(`tells the host part of the page couldn't be loaded, with Retry, when the frame's print dialog cannot be opened`, () => {
 		const frame = aFakeFrame(() => {
@@ -164,7 +159,6 @@ describe("printing once in the frame", () => {
 });
 
 describe("hearing the frame's dialog close", () => {
-	// @us-01 @rev-3 @driving_port @contract-shape:bounded-change
 	it(`tells the host once that the dialog closed, after it printed`, () => {
 		const frame = aFakeFrame();
 		renderHook(() => usePrintOnce(inputs(frame)));
@@ -175,7 +169,6 @@ describe("hearing the frame's dialog close", () => {
 		expect(frame.happened()).toEqual(["printing", "print", "closed"]);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// A dialog the frame did not open is none of the host's business, and a frame gone hears nothing.
 	it(`listens once for as long as it is mounted, tells nothing of a dialog it did not open, and stops listening once gone`, () => {
 		const frame = aFakeFrame();

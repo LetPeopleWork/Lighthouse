@@ -123,7 +123,6 @@ describe("Step one: the Type of report", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("offers Then & Now as the one Type, already chosen, saying what it is for", async () => {
 		await openTheWizard();
 
@@ -144,7 +143,6 @@ describe("Step two: Then", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("starts as the 90 days ending today and says which days that is", async () => {
 		await openTheWizard();
 		await next();
@@ -155,7 +153,6 @@ describe("Step two: Then", () => {
 		expect(await theWizard()).not.toHaveTextContent(/frozen/);
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("says the days of a Then that ended in the past", async () => {
 		await openTheWizard();
 		await next();
@@ -165,7 +162,6 @@ describe("Step two: Then", () => {
 		expect(await theWizard()).toHaveTextContent("= 3 May – 31 Jul 2026");
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("says the days of a Then of a custom length", async () => {
 		await openTheWizard();
 		await next();
@@ -176,7 +172,6 @@ describe("Step two: Then", () => {
 		expect(await theWizard()).toHaveTextContent("= 31 Jul – 13 Sep 2026");
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("cannot end in the future", async () => {
 		await openTheWizard();
 		await next();
@@ -190,7 +185,6 @@ describe("Step two: Then", () => {
 		).toBeDisabled();
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("offers a Team's Then as 30 or 90 days with one click", async () => {
 		await openTheWizard();
 		await next();
@@ -208,7 +202,6 @@ describe("Step two: Then", () => {
 		).toBeNull();
 	});
 
-	// @us-06 @slice-06 @contract-shape:pure-function
 	it("offers a Portfolio's Then as 90 or 180 days with one click", async () => {
 		await openTheWizard(
 			aReportService({
@@ -231,7 +224,6 @@ describe("Step two: Then", () => {
 		).toBeNull();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("refuses a Then starting before the oldest kept day, naming that day, and goes no further", async () => {
 		await openTheWizard();
 		await next();
@@ -244,7 +236,6 @@ describe("Step two: Then", () => {
 		).toBeDisabled();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("refuses a Then shorter than 14 days and goes no further", async () => {
 		await openTheWizard();
 		await next();
@@ -257,7 +248,6 @@ describe("Step two: Then", () => {
 		).toBeDisabled();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it.each([0, -30])(
 		"refuses a Then of %i days as too short and goes no further",
 		async (days) => {
@@ -273,7 +263,6 @@ describe("Step two: Then", () => {
 		},
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("refuses a Then reaching back further than the calendar goes, without naming its days", async () => {
 		await openTheWizard();
 		await next();
@@ -287,7 +276,6 @@ describe("Step two: Then", () => {
 		).toBeDisabled();
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("accepts a Then of exactly 14 days", async () => {
 		await openTheWizard();
 		await next();
@@ -300,7 +288,6 @@ describe("Step two: Then", () => {
 		).toBeEnabled();
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	// The shortest window is the server's to say; the wizard holds no number of its own.
 	it("takes the shortest Then it allows from the server", async () => {
 		await openTheWizard(
@@ -323,7 +310,6 @@ describe("Step two: Then", () => {
 		).toBeEnabled();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	// A Team keeping 180 days has a later oldest kept day; the refusal names the day the server answered.
 	it("names the oldest kept day the server answers when Then starts before it", async () => {
 		await openTheWizard(
@@ -346,7 +332,6 @@ describe("Step two: Then", () => {
 		).toBeDisabled();
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("lets Then start on any day when the Team keeps every finished Work Item", async () => {
 		await openTheWizard(
 			aReportService({
@@ -375,7 +360,6 @@ describe("The wizard on a slow or failing connection", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Today is the instance's day; until it arrives the wizard has no day to start Then from.
 	it("draws no dates and goes no further while the report types are on their way", async () => {
 		const held = deferred<ReturnType<typeof aTemplateList>>();
@@ -397,7 +381,6 @@ describe("The wizard on a slow or failing connection", () => {
 		expect(await theThenEndField()).toHaveValue(TODAY_ON_THE_INSTANCE);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	it("says the report types could not be loaded and offers Retry, going no further", async () => {
 		await openTheWizard(
 			aReportService({
@@ -435,7 +418,6 @@ describe("Step three: Now", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it("is as long as Then until changed, always ending today", async () => {
 		await openTheWizard();
 		await next();
@@ -449,7 +431,6 @@ describe("Step three: Now", () => {
 		);
 	});
 
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it("starts on the length Then was given with one click, with that button pressed", async () => {
 		await openTheWizard();
 		await next();
@@ -464,7 +445,6 @@ describe("Step three: Now", () => {
 		).toHaveAttribute("aria-pressed", "true");
 	});
 
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it("offers a Team's Now as 30 or 90 days with one click, beside its length in days", async () => {
 		await openTheWizard();
 		await next();
@@ -487,7 +467,6 @@ describe("Step three: Now", () => {
 		).toBeNull();
 	});
 
-	// @us-07 @us-06 @slice-07 @contract-shape:pure-function
 	it("offers a Portfolio's Now as 90 or 180 days with one click", async () => {
 		await openTheWizard(
 			aReportService({
@@ -508,7 +487,6 @@ describe("Step three: Now", () => {
 		).toBeNull();
 	});
 
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it("takes a Now of a custom length in days, pressing no button", async () => {
 		await openTheWizard();
 		await next();
@@ -530,7 +508,6 @@ describe("Step three: Now", () => {
 		).toBeEnabled();
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:pure-function
 	it("refuses a Now shorter than 14 days and goes no further", async () => {
 		await openTheWizard();
 		await next();
@@ -546,7 +523,6 @@ describe("Step three: Now", () => {
 		).toBeDisabled();
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:pure-function
 	it("refuses a Now reaching back past the oldest kept day and goes no further", async () => {
 		await openTheWizard();
 		await next();
@@ -656,7 +632,6 @@ describe("Step four: metrics and name", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	it("ticks all four metrics, named in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -674,7 +649,6 @@ describe("Step four: metrics and name", () => {
 		expect(await theWizard()).not.toHaveTextContent("Cycle Time");
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	it("cannot create a report showing no metric", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
@@ -690,7 +664,6 @@ describe("Step four: metrics and name", () => {
 		expect(await theWizard()).toHaveTextContent(NO_METRIC);
 	});
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	// The server names every metric it can capture; a metric this version has no panel for would be created unseeable.
 	it("offers only the metrics this version can show, whatever else the server offers", async () => {
 		const offeredByTheServer: ReportMetricKey[] = [
@@ -730,7 +703,6 @@ describe("Step four: metrics and name", () => {
 		).toBeNull();
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("names the report after its Then until the name is edited", async () => {
 		await openTheWizard();
 		await next();
@@ -743,7 +715,6 @@ describe("Step four: metrics and name", () => {
 		);
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("keeps an edited name when Then changes afterwards", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
@@ -763,7 +734,6 @@ describe("Step four: metrics and name", () => {
 		expect(await theNameField()).toHaveValue("Engagement start");
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	it("cannot create a report without a name", async () => {
 		await openTheWizard();
 		await onToTheLastStep();
@@ -781,7 +751,6 @@ describe("Creating the report", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
 	it("creates the report as chosen, opens it, and reports one report created with its Type", async () => {
 		const reportService = await openTheWizard();
 		await next();
@@ -813,7 +782,6 @@ describe("Creating the report", () => {
 		});
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	it("shows that the report is being created and holds every input still meanwhile", async () => {
 		const held = deferred<number>();
 		await openTheWizard(
@@ -831,7 +799,6 @@ describe("Creating the report", () => {
 		expect(await theCreateButton()).toBeDisabled();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("keeps every input and reports nothing when creating fails", async () => {
 		await openTheWizard(
 			aReportService({
@@ -854,7 +821,6 @@ describe("Creating the report", () => {
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	// @us-08 @slice-08 @error @kpi-OUT-5878-K4-community-cap-reached @contract-shape:unbounded-preservation
 	// Somebody else may have created the one report Community allows while this wizard was open.
 	it("says the cap was reached when the server refuses for it", async () => {
 		await openTheWizard(
@@ -875,7 +841,6 @@ describe("Creating the report", () => {
 		expect(reportUsage).not.toHaveBeenCalled();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:unbounded-preservation
 	// The oldest kept day moves on at midnight; a wizard left open overnight can still be refused.
 	it("names the oldest kept day the server refuses Then with, not the one the wizard was opened with", async () => {
 		const reportService = await openTheWizard(
@@ -904,7 +869,6 @@ describe("Creating the report", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("creates nothing and reports nothing when the wizard is closed", async () => {
 		const reportService = await openTheWizard();
 		await onToTheLastStep();

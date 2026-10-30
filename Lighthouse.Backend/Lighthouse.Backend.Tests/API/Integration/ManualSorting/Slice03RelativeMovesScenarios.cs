@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         private const string MobileApprovals = "Ship the mobile approvals flow";
         private const string ReportingWarehouse = "Archive the reporting warehouse";
 
-        // @walking_skeleton @driving_port @real-io @AC-3.1 @AC-3.4 — insert-at-target (D4) in its plainest
+        // insert-at-target (D4) in its plainest
         // form: the moved Feature takes the place the target held, the block between the two shifts by
         // one, and no other pair changes places.
         [Test]
@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryFeatureHoldsOnePlaceOfItsOwn(after);
         }
 
-        // @driving_port @real-io @AC-3.2 — the assertion that IS D4, and the one the slice exists to test
+        // the assertion that IS D4, and the one the slice exists to test
         // in the field. A Portfolio's Features are non-contiguous in the global order, so "Move to Top"
         // from that Portfolio's list lands the Feature above the Portfolio's own first row, NOT at global
         // rank 1 — and in doing so it crosses Features that are on nobody's screen.
@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(wholeInstance, SearchIndex, MobileApprovals, LegacyImporter, PartnerCatalogue, BillingGateway, ReportingWarehouse);
         }
 
-        // @driving_port @real-io @AC-3.3 — "to the end" means past everybody, including the Features that
+        // "to the end" means past everybody, including the Features that
         // arrived after the order was handed over and hold no place at all. They sort last (INV-O1), so a
         // Move to Bottom that only renumbers the placed rows would leave the moved Feature above them.
         // This is OQ-4, and the answer is forced rather than chosen: the jumped tail has to be given
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryFeatureHoldsOnePlaceOfItsOwn(after);
         }
 
-        // @driving_port @real-io @AC-3.3 — the mirror gesture. Placing a Feature *below* a target is the
+        // the mirror gesture. Placing a Feature *below* a target is the
         // same primitive read the other way round, and slice 04 reuses it unchanged.
         [Test]
         public async Task Placing_a_feature_below_another_one_puts_it_immediately_after_it()
@@ -105,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(after, LegacyImporter, PartnerCatalogue, SearchIndex, BillingGateway);
         }
 
-        // @driving_port @real-io @AC-3.5 — the move is this instance's own decision, so the tracker
+        // the move is this instance's own decision, so the tracker
         // re-ranking everything on the very next sync must not take it back.
         [Test]
         public async Task The_new_place_survives_the_tracker_re_ranking_everything_on_the_next_sync()
@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(afterTheSync, PartnerCatalogue, SearchIndex, LegacyImporter);
         }
 
-        // @driving_port @real-io @AC-3.6 — the promise the whole epic is for: the order is not decoration,
+        // the promise the whole epic is for: the order is not decoration,
         // it decides which delivery date is credible. The team closes a different number of items every
         // day on purpose — on constant throughput every Feature finishes on the same simulated day and a
         // sequencing change has nothing at all to show up in (Epic 5459's lesson).
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheDateMovedLaterFor(whileTheSearchIndexLed, onceTheImporterLed, SearchIndex);
         }
 
-        // @driven-port-probe @AC-3.6 — ADR-133. Whether the dates are recomputed is a promise the queue
+        // ADR-133. Whether the dates are recomputed is a promise the queue
         // keeps on its own thread, so it is asserted where it is made: a committed move asks for a fresh
         // forecast for every Portfolio the Feature belongs to. A move that leaves them stale is the one
         // failure indistinguishable from success.
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenAFreshForecastWasAskedForFor(alignment, newProduct);
         }
 
-        // @error @driving_port @AC-3.7 — reading a Portfolio is not running it. The refusal and the row's
+        // reading a Portfolio is not running it. The refusal and the row's
         // own verdict must agree, because the client renders from the verdict and the endpoint enforces.
         [Test]
         public async Task Someone_who_may_only_read_a_portfolio_may_not_move_its_features()
@@ -189,7 +189,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenNoFreshForecastWasAskedFor();
         }
 
-        // @error @driving_port @AC-3.8 — D11's strictness, and the reason it is strict: one move
+        // D11's strictness, and the reason it is strict: one move
         // re-sequences a Feature the other Portfolio forecasts against, so writing on one of the two is
         // not enough. Write on both and the same Feature moves.
         [Test]
@@ -216,7 +216,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 "Writing on every Portfolio the Feature belongs to is exactly what the rule asks for.");
         }
 
-        // @error @driving_port @AC-3.8 — the disabled action has to say why, or a Portfolio owner is left
+        // the disabled action has to say why, or a Portfolio owner is left
         // with a dead button. The Portfolio standing in the way is named when the caller may read it.
         [Test]
         public async Task The_refusal_names_the_portfolio_standing_in_the_way_when_the_caller_may_read_it()
@@ -232,7 +232,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheReasonNamesThePortfolio(theList, "Rework the shared onboarding", "New Product Initiative");
         }
 
-        // @error @driving_port @AC-3.8 — SA-9 / ADR-136 §3, the disclosure half. Naming a Portfolio the
+        // SA-9 / ADR-136 §3, the disclosure half. Naming a Portfolio the
         // caller may not read would tell them it exists; the refusal must still be true and still say
         // something, without naming it.
         [Test]
@@ -249,7 +249,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheReasonNamesNoPortfolioTheCallerMayNotRead(theList, "Rework the shared onboarding", "Confidential Acquisition");
         }
 
-        // @error @driving_port — DDD-9. "Every Portfolio may be written" is vacuously true for a Feature in
+        // DDD-9. "Every Portfolio may be written" is vacuously true for a Feature in
         // no Portfolio, so the literal rule would hand the instance's orphans to anybody. An orphan is
         // movable by nobody, and an instance administrator is the caller that proves it.
         [Test]
@@ -267,7 +267,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheRowSaysItMayNotBeMoved(theList, "Left behind by a deleted portfolio");
         }
 
-        // @error @driving_port @AC-3.10 — the view is free and the position column is free (D12); deciding
+        // the view is free and the position column is free (D12); deciding
         // the order is not.
         [Test]
         public async Task An_instance_without_a_premium_licence_may_not_move_anything()
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theViewItself, SearchIndex, LegacyImporter);
         }
 
-        // @error @driving_port @AC-3.10 — while the tracker owns the order, a move has nothing to change:
+        // while the tracker owns the order, a move has nothing to change:
         // the ranks it would write are the ones nobody reads. A silent 200 would leave the caller looking
         // at an unmoved list with no way to tell why.
         [Test]
@@ -301,7 +301,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
         }
 
-        // @error @driving_port — DDD-7. The command carries exactly one target. Both at once is not a
+        // DDD-7. The command carries exactly one target. Both at once is not a
         // move, and answering it with a guess would make the endpoint's contract whatever the last
         // caller happened to send.
         [Test]
@@ -318,7 +318,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theList, SearchIndex, LegacyImporter, PartnerCatalogue);
         }
 
-        // @error @driving_port — DDD-7, the two shapes a caller can send that are not a command at all: a
+        // DDD-7, the two shapes a caller can send that are not a command at all: a
         // body that is not an object, and a target that is not a Feature's identity. Neither is guessed at.
         [Test]
         public async Task A_move_whose_body_is_not_a_command_at_all_is_refused()
@@ -348,7 +348,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
         }
 
-        // @error @driving_port — the Feature itself is gone. Deleted between the list being rendered and the
+        // the Feature itself is gone. Deleted between the list being rendered and the
         // menu being used is the ordinary way this happens, and it must not renumber anybody.
         [Test]
         public async Task A_move_of_a_feature_that_does_not_exist_changes_nothing()
@@ -365,7 +365,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenNoFreshForecastWasAskedFor();
         }
 
-        // @error @driving_port — a target that is not there. Whatever the instance answers, it must not
+        // a target that is not there. Whatever the instance answers, it must not
         // answer "done", and the order it shows afterwards must be the one it showed before.
         [Test]
         public async Task A_move_against_a_target_that_does_not_exist_changes_nothing()
@@ -381,7 +381,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theList, SearchIndex, LegacyImporter);
         }
 
-        // @error @driving_port @real-io — INV-O2. DESIGN told DISTILL not to assume the places are
+        // INV-O2. DESIGN told DISTILL not to assume the places are
         // contiguous, so the fixture deliberately hands the move a set with a gap, a repeat and a Feature
         // nobody has placed. Whatever the move writes, the instance still reports one place per Feature.
         [Test]
@@ -402,7 +402,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheOrderReads(theSameListAgain, "Never given a place", SearchIndex, LegacyImporter, PartnerCatalogue);
         }
 
-        // @driven-port-probe @AC-3.1 — the bounded-change complement, and D5's promise stated as
+        // the bounded-change complement, and D5's promise stated as
         // something testable: a move writes places and touches nothing else. A Done Feature is in the
         // fixture because ranking is indifferent to it (D15) and it must survive the renumber untouched.
         [Test]

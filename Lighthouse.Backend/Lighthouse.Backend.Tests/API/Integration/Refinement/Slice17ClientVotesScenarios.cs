@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- Reading votes and readiness (17a) ---
 
-        // @driving_port @real-io @us-17a @slice-17a @contract-shape:pure-function
         [Test]
         public async Task A_client_is_told_which_Work_Items_need_discussion_and_which_are_Ready()
         {
@@ -33,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheClientReads(tab, (ApiVersioning, "NeedsDiscussion"), (ConfigurationManagement, "Ready"));
         }
 
-        // @driving_port @real-io @us-17a @slice-17a @contract-shape:pure-function
         [Test]
         public async Task A_client_is_told_how_the_votes_split()
         {
@@ -46,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Casting from a client without sign-in (17b) ---
 
-        // @driving_port @real-io @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
         public async Task A_voter_casts_a_Yes_but_with_its_condition_from_the_command_line()
         {
@@ -57,7 +54,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenAnaReadsHerEntryMarkedAsFrom(gravity, AdvancedReporting, nameof(Channel.Cli), nameof(Answer.YesBut), OnlyIfThePdfExportMovesOut);
         }
 
-        // @driving_port @real-io @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
         public async Task A_vote_cast_through_an_assistant_is_marked_as_cast_through_an_assistant()
         {
@@ -68,7 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenAnaReadsHerEntryMarkedAsFrom(gravity, AdvancedReporting, nameof(Channel.Assistant), nameof(Answer.No), comment: null);
         }
 
-        // @driving_port @real-io @us-17b @slice-17b @error @contract-shape:unbounded-preservation
         // A client never makes a name up for its user; the server refuses a nameless vote anyway.
         [Test]
         public async Task A_client_vote_without_a_name_is_refused_and_nothing_is_recorded()
@@ -80,7 +75,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheClientIsRefusedAndNothingCounts(refused, gravity, HttpStatusCode.BadRequest, VoterNameRequired);
         }
 
-        // @driving_port @real-io @us-12 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
         public async Task A_question_asked_through_an_assistant_flags_the_Work_Item()
         {
@@ -91,7 +85,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowHasAnOpenQuestion(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), gravity), ApiVersioning);
         }
 
-        // @driving_port @real-io @us-16 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
         public async Task A_client_takes_back_the_vote_it_cast()
         {
@@ -103,7 +96,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheTakeBackIsMarkedAsFrom(gravity, nameof(Channel.Cli));
         }
 
-        // @driving_port @real-io @us-16 @us-17b @slice-17b @error @contract-shape:unbounded-preservation
         // The command line keeps a key of its own: it is not the browser, even under the same name.
         [Test]
         public async Task A_client_cannot_take_back_a_vote_its_user_cast_from_a_browser()
@@ -130,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected override InstanceUnderTest Instance => InstanceUnderTest.WithSignInWithoutRoles;
 
-        // @driving_port @real-io @us-15 @us-17b @slice-17b @contract-shape:bounded-change
         [Test]
         public async Task A_personal_API_key_votes_under_its_owners_name()
         {
@@ -145,7 +136,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(entries.Select(entry => (entry.VoterName, entry.Channel)), Is.EqualTo(anaFromTheCommandLine));
         }
 
-        // @driving_port @real-io @us-15 @us-17b @slice-17b @error @contract-shape:unbounded-preservation
         // A key nobody owns may read the Team, but a vote under it would have no voter.
         [TestCase("vote")]
         [TestCase("comment")]

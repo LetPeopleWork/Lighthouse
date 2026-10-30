@@ -146,7 +146,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		forgetTheBrowser();
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The report view shares the answer, so it shows its own could-not-load look as well; the snackbar says no PDF.
 	it.each<[string, () => Promise<unknown>, string, boolean]>([
 		[
@@ -184,7 +183,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		},
 	);
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	it.each<[string, () => Partial<Scene>]>([
 		[
 			"the owner's name",
@@ -236,7 +234,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		},
 	);
 
-	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// The reader asked for a PDF once; Retry finishes that export, from a fresh frame, and counts nothing more.
 	it(`prints once from a fresh frame when Retry reads the report the export could not read, counting no second export`, async () => {
 		const { user } = await exportingFromTheReport({
@@ -289,7 +286,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		await waitFor(() => expect(theErrorSnackbarIsShown()).toBe(false));
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The app reads its terms once and never again on its own, so only the export can ask for them a second time.
 	it(`prints from a fresh frame when Retry asks again for the instance's terms the export could not read`, async () => {
 		const { user } = await exportingFromTheReport({
@@ -307,7 +303,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		expect(exportsReported()).toHaveLength(1);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// The frame cannot be seen, so a read, a font or a picture that never arrives would otherwise leave the spinner
 	// turning with no word; the sentence follows what was still missing.
 	it.each<[string, () => Partial<Scene>, string]>([
@@ -363,7 +358,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		},
 	);
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// A failure inside the printed copy is the export's alone; the report the reader is looking at stays as it was.
 	it(`says part of the page couldn't be loaded, with Retry, when the report breaks while it is drawn for paper, and leaves the report view as it was`, async () => {
 		theDocument.breaks = true;
@@ -380,7 +374,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		expect(screen.getByText(ENGAGEMENT_START)).toBeVisible();
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	it.each<FramePrintDialog>(["throws", "is missing"])(
 		`says part of the page couldn't be loaded, with Retry, when the frame's print dialog %s, and gives Export PDF back`,
 		async (dialog) => {
@@ -397,7 +390,6 @@ describe("When Export PDF cannot make the PDF", () => {
 		},
 	);
 
-	// @us-01 @rev-3 @error @contract-shape:bounded-change
 	// Retry restarts the export on the report the reader left; the message goes with the page it belongs to.
 	it(`takes its message away when the reader leaves the report it offered Retry on`, async () => {
 		const { user } = await exportingFromTheReport({

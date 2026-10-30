@@ -227,7 +227,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-describe("@us-06 @slice-06a @driving_port every run shows that it is working", () => {
+describe("every run shows that it is working", () => {
 	it(`the first run shows a spinner and "${LOADING}" in a polite status, and the answer arriving moves no focus and empties that same status`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
@@ -268,7 +268,7 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 		await answerArrives(aRealityCheckAnswer());
 	});
 
-	it(`@error a check that fails replaces the spinner and "${LOADING}" with its plain message`, async () => {
+	it(`a check that fails replaces the spinner and "${LOADING}" with its plain message`, async () => {
 		const failure = "The reality check could not be run. Please try again.";
 		let fail: (error: Error) => void = () => {};
 		runRealityCheck.mockReturnValue(
@@ -289,7 +289,7 @@ describe("@us-06 @slice-06a @driving_port every run shows that it is working", (
 	});
 });
 
-describe("@us-06 @slice-06a each period is one line, its dates in the reader's own format", () => {
+describe("each period is one line, its dates in the reader's own format", () => {
 	it.each([
 		{
 			locale: "de-CH",
@@ -310,7 +310,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 			],
 		},
 	])(
-		`@kpi-OUT-6094-how-far-each-forecast-landed in $locale every period header reads its horizon, its first and last day in digits, and what was completed`,
+		`in $locale every period header reads its horizon, its first and last day in digits, and what was completed`,
 		async ({ locale, headers }) => {
 			aReaderWhoseBrowserUses(locale);
 			const dialog = await theDialogFor(aRealityCheckAnswer());
@@ -323,7 +323,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 		},
 	);
 
-	it(`@boundary a period in which the Team completed one Work Item says so in the singular`, async () => {
+	it(`a period in which the Team completed one Work Item says so in the singular`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				checks: thePeriodChecked(7, {
@@ -341,7 +341,7 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 		);
 	});
 
-	it(`@error a period the answer carries no scored period for is headed by its horizon alone`, async () => {
+	it(`a period the answer carries no scored period for is headed by its horizon alone`, async () => {
 		const answer = aRealityCheckAnswer();
 		const dialog = await theDialogFor({
 			...answer,
@@ -356,8 +356,8 @@ describe("@us-06 @slice-06a each period is one line, its dates in the reader's o
 	});
 });
 
-describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and explains itself on demand", () => {
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared`, async () => {
+describe("a cell shows whether it held and the forecast, and explains itself on demand", () => {
+	it(`Ocean Explorer's 30-day row over 8 weeks reads ✗ 48, ✓ 40, ✓ 36, ✓ 31 on its grade colours, each named by how it compared`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				checks: thePeriodChecked(56, {
@@ -453,7 +453,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 			name: "Closed 1 Work Item fewer (0) than forecasted (1). No percentage — nothing was completed.",
 		},
 	])(
-		`@kpi-OUT-6094-no-percentage-without-its-work-items $comparison: the cell shows "$shows" and is named "$name"`,
+		`$comparison: the cell shows "$shows" and is named "$name"`,
 		async ({ actual, forecast, shows, name }) => {
 			const dialog = await theDialogFor(
 				aRealityCheckAnswer({
@@ -480,7 +480,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		},
 	);
 
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was`, async () => {
+	it(`every graded cell is a keyboard stop that shows only its glyph and forecast and is named by how far off it was`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 
 		const cells = everyGradedCell(dialog);
@@ -521,7 +521,7 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 		);
 	});
 
-	it(`@error a level the check left out shows "—", is named "Not checked at this confidence level." and is still a keyboard stop`, async () => {
+	it(`a level the check left out shows "—", is named "Not checked at this confidence level." and is still a keyboard stop`, async () => {
 		const answer = oceanExplorersWeek();
 		const dialog = await theDialogFor({
 			...answer,
@@ -549,8 +549,8 @@ describe("@us-06 @slice-06a a cell shows whether it held and the forecast, and e
 	});
 });
 
-describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
-	it(`@error Escape dismisses a cell's tooltip and leaves the dialog open`, async () => {
+describe("a cell's words never trap the reader", () => {
+	it(`Escape dismisses a cell's tooltip and leaves the dialog open`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 
 		await tabUntilFocused(theFirstGradedCell(dialog));
@@ -566,7 +566,7 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 		expect(theFirstGradedCell(dialog)).toHaveFocus();
 	});
 
-	it(`@error Escape dismisses a cell's tooltip opened by hovering, with the focus elsewhere, and leaves the dialog open`, async () => {
+	it(`Escape dismisses a cell's tooltip opened by hovering, with the focus elsewhere, and leaves the dialog open`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 		const focusedBefore = document.activeElement;
 
@@ -583,7 +583,7 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 		expect(document.activeElement).toBe(focusedBefore);
 	});
 
-	it(`@error once a cell's tooltip has closed, Escape closes the dialog again`, async () => {
+	it(`once a cell's tooltip has closed, Escape closes the dialog again`, async () => {
 		const dialog = await theDialogFor(oceanExplorersWeek());
 
 		await userEvent.hover(theFirstGradedCell(dialog));
@@ -597,7 +597,7 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 
 	// Already true and kept as it is: a check that could not run is one muted reason across the row, never
 	// a graded cell, a "—" or a keyboard stop.
-	it(`@error a check that could not run keeps its reason across the four columns, and is neither graded nor a keyboard stop`, async () => {
+	it(`a check that could not run keeps its reason across the four columns, and is neither graded nor a keyboard stop`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				unevaluable: [
@@ -622,8 +622,8 @@ describe("@us-06 @slice-06a a cell's words never trap the reader", () => {
 	});
 });
 
-describe("@us-06 @slice-06a the legend, the table's name and the Backtesting group", () => {
-	it(`@kpi-OUT-6094-colour-never-alone the legend is two titled rows - "${HELD_TITLE}" then "${MISSED_TITLE}" - each with its three bands on the grade fills, in band order`, async () => {
+describe("the legend, the table's name and the Backtesting group", () => {
+	it(`the legend is two titled rows - "${HELD_TITLE}" then "${MISSED_TITLE}" - each with its three bands on the grade fills, in band order`, async () => {
 		const dialog = await theDialogFor(aRealityCheckAnswer());
 		const titles = [HELD_TITLE, MISSED_TITLE].map((title) => {
 			const matching = linesReading(dialog, title);
@@ -705,7 +705,7 @@ describe("@us-06 @slice-06a the legend, the table's name and the Backtesting gro
 	});
 });
 
-describe("@us-06 @slice-06a Terminology", () => {
+describe("Terminology", () => {
 	it(`speaks the instance's own words in the period headers and the cells, and names the region by the Team's own name`, async () => {
 		terms.set(TERMINOLOGY_KEYS.TEAM, "Squad");
 		terms.set(TERMINOLOGY_KEYS.WORK_ITEMS, "Tickets");

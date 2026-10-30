@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-01")]
     public partial class Slice01RefinementStatesTest : RefinementAcceptanceTest
     {
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
         [Test]
         public async Task A_Team_admin_names_the_refinement_states_and_the_Team_says_it_has_them()
         {
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Team_nobody_has_set_up_says_it_has_no_refinement_states()
         {
@@ -55,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
         public async Task Every_reader_of_the_Team_learns_that_it_has_refinement_states()
         {
@@ -67,7 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheTeamSaysItHasRefinementStates(team);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
         public async Task A_state_the_Team_maps_under_a_name_of_its_own_can_be_chosen_by_that_name()
         {
@@ -80,7 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(team), Refining);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         // States match whatever their case, so the same state sent twice in different case is one choice.
         [Test]
         public async Task A_state_chosen_twice_in_different_case_is_kept_once()
@@ -94,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog, Next);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // A Done state is finished work and an unmapped state never reaches the Team, so neither can mean refinement.
         [TestCase(Done)]
         [TestCase(Icebox)]
@@ -108,7 +102,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // Creating a Team is the same settings form, so it refuses what a save of an existing Team refuses.
         [Test]
         public async Task Creating_a_Team_with_a_state_that_is_neither_To_Do_nor_Doing_is_refused()
@@ -121,7 +114,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedNaming(create, Done);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         [Test]
         public async Task Creating_a_Team_keeps_the_refinement_states_it_was_created_with()
         {
@@ -134,7 +126,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await TheSettingsAnswerOf(create), Backlog, Next);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Only_a_Team_admin_can_change_the_refinement_states()
         {
@@ -152,7 +143,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
         // An older client, or any form that does not know the section, must not wipe what the admin chose.
         [Test]
         public async Task A_save_that_says_nothing_about_refinement_leaves_the_chosen_states_as_they_were()
@@ -165,7 +155,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog, Analysing, Next);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Clearing_every_refinement_state_turns_the_Team_back_to_having_none()
         {
@@ -183,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         // Only an admin editing To Do, Doing or the mappings can take a state out of those lists, so the removal
         // happens in the save they make, in front of them.
         [Test]
@@ -203,7 +191,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @boundary @contract-shape:bounded-change
         [Test]
         public async Task Removing_the_only_chosen_state_from_To_Do_and_Doing_turns_the_Team_back_to_having_none()
         {
@@ -221,7 +208,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:bounded-change
         // A form opened before the change still sends the state it showed as chosen. Refusing that would block
         // the very save that takes the state out of Doing.
         [Test]
@@ -235,7 +221,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog, Next);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @contract-shape:unbounded-preservation
         // A state the Team does map, but newly ticked, still has to be To Do or Doing at the moment it is chosen.
         [Test]
         public async Task A_newly_chosen_state_that_is_no_longer_mapped_is_refused()
@@ -248,7 +233,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheChosenStatesAre(await ReadTheTeamSettings(gravity), Backlog);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:bounded-change
         // A Team's Work Items are thrown away and fetched again only when the work they describe changes;
         // naming refinement states describes nothing new about that work.
         [Test]
@@ -269,7 +253,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        // @driving_port @real-io @us-02 @slice-01 @contract-shape:pure-function
         // The tab, its heading and its tooltip all say the Team's own word; the word has to exist to be renamed.
         [Test]
         public async Task Refinement_is_a_word_every_instance_can_rename()

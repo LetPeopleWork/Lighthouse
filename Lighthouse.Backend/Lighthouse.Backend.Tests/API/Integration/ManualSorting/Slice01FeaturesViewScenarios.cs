@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         private static readonly int[] PlatformPositions = [4, 17];
         private static readonly int[] RequestedPortfolios = [41, 42, 43];
 
-        // @walking_skeleton @driving_port @AC-1.2
         [Test]
         public async Task The_product_owner_sees_every_feature_from_the_portfolios_they_may_read_and_nothing_else()
         {
@@ -35,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenExactlyTheseFeaturesAreListed(response, expected);
         }
 
-        // @driving_port @AC-1.5 — the literal proof case: two rows shown next to each other read 4 and 17
+        // the literal proof case: two rows shown next to each other read 4 and 17
         [Test]
         public async Task Two_features_shown_next_to_each_other_report_their_places_across_the_whole_instance()
         {
@@ -50,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListedPositionsAre(response, PlatformPositions);
         }
 
-        // @AC-1.5 — the place belongs to the instance, not to whoever is looking: callers holding disjoint
+        // the place belongs to the instance, not to whoever is looking: callers holding disjoint
         // scopes over the two Portfolios a Feature shares must all read the same number for it (ADR-135).
         [Test]
         public async Task Callers_with_disjoint_scopes_read_the_same_place_for_the_feature_they_share()
@@ -74,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 "Move checkout to the new gateway", throughPlatform, throughPayments, throughTheWholeInstance);
         }
 
-        // @AC-1.4 — many-to-many membership (S7); the shared-Feature case the dev instance has none of
+        // many-to-many membership (S7); the shared-Feature case the dev instance has none of
         [Test]
         public async Task A_feature_two_portfolios_share_is_listed_once_and_names_both()
         {
@@ -89,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheFeatureIsListedOnceNaming(response, "Move checkout to the new gateway", bothPortfolios);
         }
 
-        // @AC-1.2 refined by ADR-136 §1 — a Feature in no Portfolio is visible to everyone
+        // refined by ADR-136 §1 — a Feature in no Portfolio is visible to everyone
         [Test]
         public async Task A_feature_belonging_to_no_portfolio_stays_visible()
         {
@@ -104,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenExactlyTheseFeaturesAreListed(response, expected);
         }
 
-        // @AC-1.3 — the view is general infrastructure, not a premium sorting page (D12)
+        // the view is general infrastructure, not a premium sorting page (D12)
         [Test]
         public async Task The_features_view_opens_on_an_instance_with_no_premium_licence()
         {
@@ -120,7 +119,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenExactlyTheseFeaturesAreListed(response, expected);
         }
 
-        // @AC-1.7 — finished Features keep their place, so hiding them cannot renumber the rest (DDD-5)
+        // finished Features keep their place, so hiding them cannot renumber the rest (DDD-5)
         [Test]
         public async Task A_finished_feature_still_occupies_its_place_in_the_order()
         {
@@ -136,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListedPositionsAre(response, expectedPositions);
         }
 
-        // @error @AC-1.8 — a tracker that never ranked this Feature (ServiceNow, a CSV without the column)
+        // a tracker that never ranked this Feature (ServiceNow, a CSV without the column)
         [Test]
         public async Task A_feature_the_tracker_never_ranked_still_reports_its_place()
         {
@@ -150,7 +149,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryListedFeatureReportsAPosition(response);
         }
 
-        // @AC-1.2 — the rows and their places are numbered by one and the same key, so a rank the tracker
+        // the rows and their places are numbered by one and the same key, so a rank the tracker
         // repeated, or never gave at all, can never leave the list reading out of position order.
         [Test]
         public async Task Features_the_tracker_ranked_alike_are_listed_in_the_order_their_places_claim()
@@ -168,7 +167,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenTheListedPositionsAscend(response);
         }
 
-        // @AC-1.9 (backend half) — the read port answers for an instance of five hundred Features
+        // (backend half) — the read port answers for an instance of five hundred Features
         [Test]
         public async Task The_features_view_answers_for_an_instance_of_five_hundred_features()
         {
@@ -185,7 +184,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         // --- The writable batch (OQ-1 closure). Each early return is its own scenario, because getting
         //     one wrong is silent over-permission on a write path, not a visible error. ---
 
-        // @AC-1.2 @branch — self-hosted single-user default: everyone may move everything
+        // self-hosted single-user default: everyone may move everything
         [Test]
         public async Task With_access_control_switched_off_every_portfolio_is_writable()
         {
@@ -197,7 +196,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryPortfolioIsWritable(writable, RequestedPortfolios);
         }
 
-        // @error @branch — a half-configured instance must fail closed
+        // a half-configured instance must fail closed
         [Test]
         public async Task With_access_control_only_half_configured_no_portfolio_is_writable()
         {
@@ -209,7 +208,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenNoPortfolioIsWritable(writable);
         }
 
-        // @branch — an access-control manager already passes the per-Portfolio check everywhere
+        // an access-control manager already passes the per-Portfolio check everywhere
         [Test]
         public async Task Whoever_administers_access_control_may_write_every_portfolio()
         {
@@ -221,7 +220,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenEveryPortfolioIsWritable(writable, RequestedPortfolios);
         }
 
-        // @error @branch — an unrecognised caller must fail closed
+        // an unrecognised caller must fail closed
         [Test]
         public async Task An_unrecognised_caller_may_write_no_portfolio()
         {
@@ -233,7 +232,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenNoPortfolioIsWritable(writable);
         }
 
-        // @error @branch — the predicate swap itself: reading a Portfolio never implies writing it
+        // the predicate swap itself: reading a Portfolio never implies writing it
         [Test]
         public async Task Someone_who_may_only_read_a_portfolio_may_not_write_it()
         {

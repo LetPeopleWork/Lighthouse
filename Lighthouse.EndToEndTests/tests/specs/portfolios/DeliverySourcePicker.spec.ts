@@ -53,7 +53,7 @@ const asShownToTheReader = (yearMonthDay: string): string =>
 //     preview -> DeliverySourceTab.test.tsx
 //   - refusing an edit that fights the binding, and letting go of one -> the backend scenarios and
 //     DeliverySection.provenance.test.tsx
-test("@walking_skeleton a dated Jira Release picked in the form becomes a Delivery carrying its date, its Features and the mark that it follows that Release", async ({
+test("a dated Jira Release picked in the form becomes a Delivery carrying its date, its Features and the mark that it follows that Release", async ({
 	request,
 	overviewPage,
 }) => {

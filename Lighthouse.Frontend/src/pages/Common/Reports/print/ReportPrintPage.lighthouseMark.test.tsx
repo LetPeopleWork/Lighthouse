@@ -52,7 +52,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 
 	afterEach(forgetTheBrowser);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:bounded-change
 	it("waits for the Lighthouse mark before it is ready", async () => {
 		const mark = theLighthouseMarkIsStillLoading();
 		openingThePrintPageDirectly();
@@ -67,7 +66,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 		expect(printDialog.timesOpened()).toBe(0);
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	it("says part of the page couldn't be loaded, offers Retry and never gets ready, when the Lighthouse mark cannot be loaded", async () => {
 		theLighthouseMarkCannotLoad();
 		openingThePrintPageDirectly();
@@ -81,7 +79,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 		expect(printDialog.timesOpened()).toBe(0);
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:bounded-change
 	it("asks for the Lighthouse mark again on Retry and is ready once it is in", async () => {
 		const mark = theLighthouseMarkCannotLoad();
 		const { user } = openingThePrintPageDirectly();
@@ -95,7 +92,6 @@ describe("The Lighthouse mark is in the PDF", () => {
 		expect(screen.queryByText(PREPARING)).toBeNull();
 	});
 
-	// @us-02 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:bounded-change
 	// A fresh frame is a fresh document, so the mark is asked for again there.
 	it(`asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in`, async () => {
 		const frames = aPrintFrameBrowser();

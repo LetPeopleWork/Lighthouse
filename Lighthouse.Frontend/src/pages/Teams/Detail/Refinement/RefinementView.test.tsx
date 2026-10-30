@@ -160,7 +160,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		});
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it("asks for this Team's refinement and counts what it holds in the heading above a grid", async () => {
 		const { refinementService } = renderTheRefinementTab(gravitysRefinement);
 
@@ -182,7 +181,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("shows the Work Items in the order they came, which is backlog order", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
@@ -196,7 +194,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		]);
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("names each Work Item as one link to the tracker and shows its state", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
@@ -217,7 +214,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		expect(backlog).toHaveTextContent("Backlog");
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("links the parent when the Work Item has one and says No Parent when it has none", async () => {
 		const { featureService } = renderTheRefinementTab(gravitysRefinement);
 
@@ -234,7 +230,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		]);
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("shows no age and no category for any Work Item", async () => {
 		renderTheRefinementTab(gravitysRefinement);
 
@@ -246,7 +241,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		expect(screen.queryByText(/^(To Do|Doing)$/)).toBeNull();
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("counts a single Work Item in the singular", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
@@ -261,7 +255,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		).toBeVisible();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("states that nothing is in refinement right now instead of showing an empty grid or an error", async () => {
 		renderTheRefinementTab({
 			refinementConfigured: true,
@@ -277,7 +270,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		expect(screen.queryByRole("link")).toBeNull();
 	});
 
-	// @us-02 @slice-02 @boundary @contract-shape:pure-function
 	it("says the Team's own words in the heading and the name column", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -301,7 +293,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		expect(screen.queryByText(/work items?/i)).toBeNull();
 	});
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it("says the Team's own words when nothing is in refinement", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -319,7 +310,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		).toBeVisible();
 	});
 
-	// @us-02 @slice-02 @boundary @kpi-OUT-5510-K2-refinement-tab-weekly @contract-shape:pure-function
 	// Three hundred is the size of a whole backlog sitting in one To Do state; the heading has to count all
 	// of them and the grid has to start where the backlog starts. The grid only draws the rows in view,
 	// so this reads the first row rather than counting rows on the page.
@@ -349,7 +339,6 @@ describe("The Refinement tab lists the Work Items in refinement", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	// A read that fails is said the way the other Team views say it, never shown as an empty refinement.
 	it("says the read failed instead of claiming nothing is in refinement", async () => {
 		renderTheRefinementTab(new Error("The Refinement tab could not be read"));

@@ -114,7 +114,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		});
 	});
 
-	// @us-10 @slice-10 @driving_port @contract-shape:pure-function
 	it("asks whether a Work Item is doable within the Team's SLE and says the SLE in the tooltip", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 
@@ -124,7 +123,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		).toHaveTextContent("SLE 75% of work items in 7 days or less");
 	});
 
-	// @us-10 @slice-10 @contract-shape:pure-function
 	it("without an SLE asks against the fallback and says in the tooltip that it is one", async () => {
 		const { user } = renderWithTheYardstick(FALLBACK_OF_12);
 
@@ -137,7 +135,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		).toHaveTextContent("No SLE set, based off 85% of historical cycle time");
 	});
 
-	// @us-10 @slice-10 @error @contract-shape:pure-function
 	it("without an SLE or finished Work Items asks without a number and says why in the tooltip", async () => {
 		const { user } = renderWithTheYardstick(NOTHING_TO_GO_ON);
 
@@ -150,7 +147,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		).toHaveTextContent("No SLE is set and no Work Items have finished yet");
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it.each([
 		["the Team's SLE", SLE_75_WITHIN_7, "Doable within 7 days?"],
 		["the fallback", FALLBACK_OF_12, "Doable within 12 days?"],
@@ -170,14 +166,12 @@ describe("The Refinement tab asks one question against one number", () => {
 		},
 	);
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("says one day in the singular", async () => {
 		renderWithTheYardstick({ source: "Sle", days: 1, probability: 85 });
 
 		expect(await theQuestion("Doable within 1 day?")).toBeVisible();
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("says one day in the singular in the tooltip too", async () => {
 		const { user } = renderWithTheYardstick({
 			source: "Sle",
@@ -191,7 +185,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		).toHaveTextContent("SLE 85% of work items in 1 day or less");
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it.each([
 		[
 			"a source it does not know",
@@ -221,7 +214,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		},
 	);
 
-	// @us-10 @slice-10 @contract-shape:pure-function
 	it("lets a screen reader hear the tooltip once, as the icon's name", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 		const tooltip = "SLE 75% of work items in 7 days or less";
@@ -235,7 +227,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		expect(icon).toHaveAccessibleDescription("");
 	});
 
-	// @us-10 @slice-10 @contract-shape:pure-function
 	it("opens the tooltip when the icon is reached with the keyboard from the grid's first header", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 		const tooltip = "SLE 75% of work items in 7 days or less";
@@ -258,7 +249,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(tooltip);
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("opens the tooltip when the icon in the header is clicked, and the click neither sorts nor takes focus away", async () => {
 		const { user } = renderWithTheYardstick(SLE_75_WITHIN_7);
 		const tooltip = "SLE 75% of work items in 7 days or less";
@@ -280,7 +270,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		);
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it("asks nothing once nothing is in refinement any more", async () => {
 		renderWithTheYardstick(SLE_75_WITHIN_7);
 		expect(await theQuestion("Doable within 7 days?")).toBeVisible();
@@ -294,7 +283,6 @@ describe("The Refinement tab asks one question against one number", () => {
 		expect(screen.queryByText(/^Doable within/)).toBeNull();
 	});
 
-	// @us-10 @slice-10 @boundary @contract-shape:pure-function
 	it.each([
 		[
 			SLE_75_WITHIN_7,

@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         private const string BoundaryTable = "Lighthouse.Frontend/src/tests/reportWindowBoundaries.json";
 
-        // @driving_port @real-io @us-02 @us-07 @slice-02 @slice-07 @boundary @contract-shape:unbounded-preservation
         [TestCaseSource(nameof(TheRowsOfTheBoundaryTable))]
         public async Task A_window_at_an_edge_is_answered_as_the_table_says(BoundaryRow row)
         {

@@ -147,7 +147,6 @@ describe("the report schemas", () => {
 });
 
 describe("the report schema and the Cycle Time 95th", () => {
-	// @us-05b @slice-05b @contract-shape:unbounded-preservation
 	// A report frozen before the 95th was captured sends none for Then; one frozen after sends it on both sides.
 	it("reads a 95th on either side, and none where Then never captured it", () => {
 		const base = aReportWhoseThenIsADash("no-finished-items");

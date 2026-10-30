@@ -383,7 +383,6 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("the section on the connection page", () => {
-		// @walking_skeleton @driving_port @us-04 @ac-4.7 @contract-shape:pure-function
 		it("a Jira connection shows a Defaults for Teams and Portfolios section with the settings Jira honours for each", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
@@ -402,7 +401,6 @@ describe("defaults set once on the connection", () => {
 			]);
 		});
 
-		// @us-04 @ac-4.7 @contract-shape:pure-function
 		it("a CSV connection offers only the Feature Owner and Estimation defaults", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ tracker: "Csv" }),
@@ -415,7 +413,6 @@ describe("defaults set once on the connection", () => {
 			]);
 		});
 
-		// @error @active-guard @us-04 @ac-4.7 @contract-shape:unbounded-preservation
 		it.each(["Linear", "ServiceNow"] as const)(
 			"a %s connection shows no defaults section",
 			async (tracker) => {
@@ -429,7 +426,6 @@ describe("defaults set once on the connection", () => {
 			},
 		);
 
-		// @us-04 @ac-4.7 @ac-f.4 @contract-shape:pure-function
 		it("the section speaks in the words this instance uses", async () => {
 			await givenPriyaOpensJiraDcPayments({ words: SquadsProgramsAndEpics });
 
@@ -448,7 +444,6 @@ describe("defaults set once on the connection", () => {
 			).toBeInTheDocument();
 		});
 
-		// @edge @us-04 @ac-4.7 @contract-shape:pure-function
 		it("a connection that offers only Teams defaults shows no Portfolios group", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: Object.assign(jiraDcPayments(), {
@@ -465,7 +460,6 @@ describe("defaults set once on the connection", () => {
 			).not.toBeInTheDocument();
 		});
 
-		// @edge @us-04 @ac-4.7 @contract-shape:pure-function
 		it.each([
 			["no field", {}],
 			["a field the connection does not list", { parentOverrideForTeams: 99 }],
@@ -488,7 +482,6 @@ describe("defaults set once on the connection", () => {
 			).toBeInTheDocument();
 		});
 
-		// @error @us-04 @contract-shape:bounded-change
 		it("Try again loads the connection that could not be loaded, with its section", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				answers: [
@@ -507,7 +500,6 @@ describe("defaults set once on the connection", () => {
 			expect(screen.queryByText(TheCouldNotLoadLook)).not.toBeInTheDocument();
 		});
 
-		// @edge @us-04 @ac-4.7 @contract-shape:unbounded-preservation
 		it("the page never says how many follow a default", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
@@ -517,7 +509,6 @@ describe("defaults set once on the connection", () => {
 			expect(within(theSection()).queryByText(/\b3\b/)).not.toBeInTheDocument();
 		});
 
-		// @edge @us-04 @contract-shape:unbounded-preservation
 		it("while the connection is on its way the page shows its loading look, and the section once it arrives", async () => {
 			let answer: (connections: IWorkTrackingSystemConnection[]) => void =
 				() => {};
@@ -543,7 +534,6 @@ describe("defaults set once on the connection", () => {
 			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
 		});
 
-		// @error @us-04 @contract-shape:unbounded-preservation
 		it("an answer for the connection Priya has left is dropped, and the one she opened shows its own defaults", async () => {
 			let answerForPayments: (
 				connections: IWorkTrackingSystemConnection[],
@@ -582,7 +572,6 @@ describe("defaults set once on the connection", () => {
 			).not.toBeInTheDocument();
 		});
 
-		// @error @us-04 @contract-shape:unbounded-preservation
 		it("when the connection cannot be loaded the page says so, and no section pretends it has no defaults", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				loading: Promise.reject(new Error("The server could not be reached")),
@@ -602,7 +591,6 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("saving a changed default", () => {
-		// @error @us-04 @contract-shape:unbounded-preservation
 		it("a save that changes neither a default nor a field sends the defaults as they were and asks nothing", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -619,7 +607,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @error @us-04 @contract-shape:bounded-change
 		it("removing the field a default names clears that default in the save, and leaves the others as they were", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -647,7 +634,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @error @us-11 @contract-shape:bounded-change
 		it("removing the field the Teams' Estimation default reads clears that default in the save", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -677,7 +663,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @error @us-04 @contract-shape:unbounded-preservation
 		it("renaming the connection sends the Portfolios' default it was loaded with", async () => {
 			const asTheServerSendsIt = JSON.parse(
 				JSON.stringify(
@@ -715,7 +700,6 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("the save dialog for a changed default that is read when updating", () => {
-		// @walking_skeleton @driving_port @us-05 @ac-5.3 @ac-5.4 @ac-f.1 @contract-shape:bounded-change
 		it("asks whether to update the 3 Teams that follow it, and Save and update says so", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -745,7 +729,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @error @us-05 @ac-5.2 @contract-shape:bounded-change
 		it("Save only sends the default without starting any update", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
@@ -760,7 +743,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @us-05 @ac-5.3 @contract-shape:bounded-change
 		it.each([
 			["parentOverrideForPortfolios", "Parent Override Field", "parents"],
 			["dependencyFieldForPortfolios", "Dependency Field", "dependencies"],
@@ -792,7 +774,6 @@ describe("defaults set once on the connection", () => {
 		);
 
 		// A Portfolio following both changed defaults is one Portfolio to update, not two.
-		// @us-08 @us-09 @contract-shape:bounded-change
 		it.each([
 			{
 				first: ["parentOverrideForPortfolios", "Parent Override Field"],
@@ -830,7 +811,6 @@ describe("defaults set once on the connection", () => {
 			},
 		);
 
-		// @us-08 @contract-shape:bounded-change
 		it("a changed Dependency default says its followers' dependencies change once updated", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -851,7 +831,6 @@ describe("defaults set once on the connection", () => {
 			);
 		});
 
-		// @error @us-05 @contract-shape:bounded-change
 		it("changing a default clears the refusal the last save got", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 			vi.mocked(
@@ -874,7 +853,6 @@ describe("defaults set once on the connection", () => {
 			);
 		});
 
-		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation
 		it("the dialog never names who follows", async () => {
 			await givenPriyaOpensJiraDcPayments();
 
@@ -887,7 +865,6 @@ describe("defaults set once on the connection", () => {
 			);
 		});
 
-		// @error @us-05 @ac-5.3 @ac-f.3 @contract-shape:bounded-change
 		it("a default nobody follows saves without asking anything", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ followers: {} }),
@@ -901,7 +878,6 @@ describe("defaults set once on the connection", () => {
 			expect(theSave(server).choice).toBeUndefined();
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("a changed default nobody follows saves without asking, though other defaults have followers", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -916,7 +892,6 @@ describe("defaults set once on the connection", () => {
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("a followed Estimation default left as it was asks nothing when another default changes", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -932,7 +907,6 @@ describe("defaults set once on the connection", () => {
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("Portfolios following a changed default and another one left as it was are all asked about", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -962,7 +936,6 @@ describe("defaults set once on the connection", () => {
 			);
 		});
 
-		// @error @us-05 @ac-f.2 @contract-shape:unbounded-preservation
 		it("Cancel saves nothing and keeps Priya's choice on the page", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
@@ -983,7 +956,6 @@ describe("defaults set once on the connection", () => {
 
 		// A changed Additional Field updates everyone on the connection, which already covers whoever
 		// follows the changed default, so one save asks one question: the Additional Fields one.
-		// @error @us-05 @contract-shape:bounded-change
 		it("an Additional Field and a followed default changed in one save ask only the Additional Fields question", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -1016,7 +988,6 @@ describe("defaults set once on the connection", () => {
 
 		// A default is not an Additional Field: counting it as a field change would report that fields
 		// changed when none did.
-		// @error @us-05 @contract-shape:unbounded-preservation
 		it("answering the question about a default does not report that Additional Fields changed", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
 
@@ -1031,7 +1002,6 @@ describe("defaults set once on the connection", () => {
 	});
 
 	describe("the Estimation default", () => {
-		// @driving_port @us-11 @ac-11.4 @contract-shape:bounded-change
 		it("a changed Estimation default 4 Teams follow asks only to save, because nothing needs updating", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ followers: { estimationForTeams: 4 } }),
@@ -1066,7 +1036,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @edge @us-11 @ac-11.4 @contract-shape:bounded-change
 		it("a save that also changes a default read when updating asks only the update question, and still sends the Estimation default", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -1099,7 +1068,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("a changed Estimation default nobody follows saves without asking anything", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({ followers: {} }),
@@ -1112,7 +1080,6 @@ describe("defaults set once on the connection", () => {
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("a changed Portfolios' Estimation default asks about the Portfolios that follow it", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -1129,7 +1096,6 @@ describe("defaults set once on the connection", () => {
 			);
 		});
 
-		// @story-6313 @contract-shape:bounded-change
 		it("changing only the unit of a followed Estimation default asks before saving", async () => {
 			await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -1148,7 +1114,6 @@ describe("defaults set once on the connection", () => {
 			expect(question).toHaveTextContent(TheEstimationQuestionSays);
 		});
 
-		// @edge @us-11 @ac-11.5 @contract-shape:pure-function
 		it("the Estimation default stays collapsed to its field until a field is chosen", async () => {
 			await givenPriyaOpensJiraDcPayments();
 

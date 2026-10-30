@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
             return feature;
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
         public void For_OwnerWithoutAnEstimationField_IsNothing_SoNoEstimateColumnIsOffered()
         {
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(estimate, Is.Null);
         }
 
-        // @us-01 @slice-01a @contract-shape:pure-function
         [Test]
         public void For_NumericEstimate_CarriesTheNumberItsLabelAndTheOwnersUnit()
         {
@@ -47,7 +45,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(estimate, Is.EqualTo(new WorkItemEstimateDto(5, "5", StoryPoints)));
         }
 
-        // @us-01 @slice-01a @contract-shape:pure-function
         [Test]
         public void For_CategoryEstimate_SortsByTheCategorysPlaceAndShowsItsName()
         {
@@ -56,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(estimate, Is.EqualTo(new WorkItemEstimateDto(2, "L", null)));
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase("XXL")]
         [TestCase("")]
         [TestCase(null)]
@@ -67,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.DTO
             Assert.That(estimate, Is.EqualTo(new WorkItemEstimateDto(null, null, null)));
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase("big")]
         [TestCase(null)]
         public void For_NothingUsableInANumericField_IsConfiguredButEmpty_AndKeepsTheUnit(string? value)

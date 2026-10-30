@@ -83,7 +83,6 @@ const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theDependencyButton());
 
 describe("Story 6352: Dependency Field says which end of a link it reads", () => {
-	// @driving_port @contract-shape:pure-function
 	it("on Jira, the tip asks for the phrase on the waiting end, is blocked by, not blocks", async () => {
 		await givenSamOpensAPortfolioOn("Jira");
 
@@ -93,7 +92,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(tip).toHaveTextContent(NOT_BLOCKS);
 	});
 
-	// @contract-shape:pure-function
 	it("on Jira, the tip says None reads the tracker's own links and a chosen field replaces them", async () => {
 		await givenSamOpensAPortfolioOn("Jira");
 
@@ -103,7 +101,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(tip).toHaveTextContent(/rather than/);
 	});
 
-	// @contract-shape:pure-function
 	it("on Azure DevOps, the tip names the Reverse end, Predecessor, and no Jira phrase", async () => {
 		await givenSamOpensAPortfolioOn("AzureDevOps");
 
@@ -113,7 +110,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(tip).not.toHaveTextContent(IS_BLOCKED_BY);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("once an Azure DevOps connection has loaded, the tip follows it, though the settings still say Jira", async () => {
 		await givenSamOpensAPortfolioOn(
 			"Jira",
@@ -131,7 +127,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(tip).not.toHaveTextContent(IS_BLOCKED_BY);
 	});
 
-	// @edge @contract-shape:pure-function
 	it.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
 		"on a %s Portfolio the tip stays tracker-neutral, without an example",
 		async (tracker) => {
@@ -144,7 +139,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		},
 	);
 
-	// @edge @contract-shape:pure-function
 	it("the tip speaks of the tenant's Bet that waits, never of a Feature", async () => {
 		await givenSamOpensAPortfolioOn("Jira", RenamedTerms);
 
@@ -153,14 +147,12 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(tip).not.toHaveTextContent(/Feature/);
 	});
 
-	// @contract-shape:pure-function
 	it("Learn More opens the Dependency Field docs in a new tab", async () => {
 		await givenSamOpensAPortfolioOn("Jira");
 
 		expectLearnMoreToOpen(await whenSamOpensTheTip(), DEPENDENCY_FIELD_DOCS);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("with the keyboard alone, Enter opens the tip and Tab reaches Learn More", async () => {
 		const user = userEvent.setup();
 		await givenSamOpensAPortfolioOn("Jira");
@@ -173,7 +165,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 		expect(within(tip).getByRole("link", { name: "Learn More" })).toHaveFocus();
 	});
 
-	// @edge @contract-shape:bounded-change
 	it("Escape closes the tip, and the button says it is closed again", async () => {
 		const user = userEvent.setup();
 		await givenSamOpensAPortfolioOn("Jira");
@@ -190,7 +181,6 @@ describe("Story 6352: Dependency Field says which end of a link it reads", () =>
 });
 
 describe("Story 6352: what stays as it is", () => {
-	// @error @active-guard @contract-shape:bounded-change
 	it("choosing a Dependency Field saves exactly what it saved before", async () => {
 		const held = await givenSamOpensAPortfolioOn("Jira");
 		const before = held.current;

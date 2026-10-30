@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-02")]
     public partial class Slice02FeatureBlockedCaptureTest
     {
-        // @walking_skeleton @driving_port @us-02 @contract-shape:bounded-change (US-02 AC1+AC3)
+        // (US-02 AC1+AC3)
         [Test]
         [Category("walking_skeleton")]
         public async Task A_feature_that_becomes_blocked_shows_how_long_it_has_been_blocked()
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheFeatureExposesABlockedDuration(portfolio, "F-100");
         }
 
-        // @driving_port @us-02 @contract-shape:bounded-change (US-02 AC2 — leave clears the duration)
+        // (US-02 AC2 — leave clears the duration)
         [Test]
         public async Task A_feature_that_stops_matching_the_blocked_rules_no_longer_shows_a_duration()
         {
@@ -43,7 +43,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheFeatureExposesNoBlockedDuration(portfolio, "F-100");
         }
 
-        // @edge @us-02 @contract-shape:bounded-change (US-02 AC4 — first-observation "—": a feature
+        // (US-02 AC4 — first-observation "—": a feature
         // already blocked when capture first sees it opens NO spell and exposes no duration)
         [Test]
         public async Task A_feature_blocked_on_its_first_observation_shows_no_duration_until_a_baseline_exists()
@@ -55,7 +55,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheFeatureExposesNoBlockedDuration(portfolio, "F-100");
         }
 
-        // @driving_port @us-02 @adr-103 @contract-shape:bounded-change (DDD-2 observable behaviour change —
+        // (DDD-2 observable behaviour change —
         // the divergent-rule-set probe ADR-103 requires as an integration test: a feature blocked only
         // by Portfolio A's rules must NOT render blocked on Portfolio B's page.)
         [Test]
@@ -71,7 +71,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheFeatureReadsNotBlockedOn(portfolioB, "F-SHARED");
         }
 
-        // @regression @us-02 @adr-103 @contract-shape:pure-function (Any-portfolio read projection —
+        // (Any-portfolio read projection —
         // scope-free surfaces keep today's behaviour. Pre-DDD-7 the DTO Any-computes the rule match;
         // post-DDD-7 the site Any-projects over open spells — so the scenario drives a real block edge
         // (two refreshes) to open a spell, staying green BOTH ways: the invariant the refactor must not

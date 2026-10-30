@@ -1262,7 +1262,6 @@ describe("a dashboard as it opens", () => {
 		opensWithEveryFrameInPlace,
 	);
 
-	// @us-03 @contract-shape:bounded-change
 	it.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s opens with every chart's frame in its place, each with a spinner, before any data arrives",
 		opensWithEveryFrameInPlace,
@@ -1285,7 +1284,6 @@ describe("a dashboard as it opens", () => {
 		]);
 	});
 
-	// @us-03 @contract-shape:bounded-change
 	it("a portfolio's Portfolio & Features opens with the Work Item distribution and Feature Size framed", () => {
 		openTheDashboard("portfolio", "portfolio");
 
@@ -1316,7 +1314,6 @@ describe("a dashboard as it opens", () => {
 		addsAndRemovesNoChartOnceItsDataHasArrived,
 	);
 
-	// @us-03 @contract-shape:bounded-change
 	it.each(everyOwnerAndCategory.filter(isPortfolioAndFeatures))(
 		"a %s's %s adds and removes no chart once its data has arrived",
 		addsAndRemovesNoChartOnceItsDataHasArrived,
@@ -1507,7 +1504,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 	const theChartIsHanded = () =>
 		within(frameOf("featureSize")).getByTestId("feature-size-chart");
 
-	// @us-03 @contract-shape:bounded-change
 	it.each(owners)(
 		"a %s's Feature Size is framed from the first render, under a lone spinner",
 		(owner) => {
@@ -1521,7 +1517,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		},
 	);
 
-	// @us-03 @error @contract-shape:bounded-change
 	it.each(owners)(
 		"a %s's Feature Size keeps its place, ready, and hands the chart an empty list when the window holds no Features",
 		async (owner) => {
@@ -1538,7 +1533,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		},
 	);
 
-	// @us-03 @error @contract-shape:bounded-change
 	it("a Team's Feature Size says it couldn't be loaded when its Features cannot be loaded", async () => {
 		openTheDashboard("team", "portfolio");
 
@@ -1554,7 +1548,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-01 @contract-shape:bounded-change
 	it("a Team's Feature Size plots the Features the Team itself answers with, and asks for its size percentiles", async () => {
 		openTheDashboard("team", "portfolio");
 		const anyOwnersFeatures = usualAnswer(
@@ -1594,7 +1587,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		);
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("a Team's Feature Size is handed no estimate, so it offers no Estimation mode, and no estimate is ever asked of the Team", async () => {
 		openTheDashboard("team", "portfolio");
 
@@ -1604,7 +1596,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		expect(methodsAsked()).not.toContain("getFeatureSizeEstimation");
 	});
 
-	// @us-06 @contract-shape:bounded-change
 	it("a Team's Feature Size explains that it counts only this Team's Work Items", () => {
 		openTheDashboard("team", "portfolio");
 
@@ -1619,7 +1610,6 @@ describe("Feature Size on a Team's and a Portfolio's dashboard", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-06 @contract-shape:unbounded-preservation
 	it("a Portfolio's Feature Size explains itself as before", async () => {
 		openTheDashboard("portfolio", "portfolio");
 		await everythingHasLoaded();
@@ -1670,7 +1660,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 	const statusOfThePercentiles = () =>
 		within(frameOf("featureSizePercentiles")).getByTestId("rag-status");
 
-	// @us-02 @contract-shape:bounded-change
 	it("is offered on a Team and asked of the Team itself", async () => {
 		openTheDashboard("team", "flow-overview");
 
@@ -1682,7 +1671,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		expect(statusOf("featureSizePercentiles")).toBe("ready");
 	});
 
-	// @us-07 @error @contract-shape:bounded-change
 	it("says there is no data, not zeros, when the Team finished no Feature in the window", async () => {
 		openTheDashboard("team", "flow-overview");
 
@@ -1708,7 +1696,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-02 @error @contract-shape:bounded-change
 	it("says it couldn't be loaded when the Team's Feature Size Percentiles cannot be loaded", async () => {
 		openTheDashboard("team", "flow-overview");
 
@@ -1728,7 +1715,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-07 @contract-shape:pure-function
 	it.each([
 		["Act", 9],
 		["Observe", 8],
@@ -1756,7 +1742,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 
 	// A finished Feature bigger than the 85th is history, not a risk: only open Features move
 	// the status.
-	// @us-07 @error @contract-shape:pure-function
 	it.each([
 		[
 			"only a finished Feature bigger than the 85th",
@@ -1783,7 +1768,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		expect(statusOfThePercentiles()).toHaveTextContent(/^Sustain$/);
 	});
 
-	// @us-02 @contract-shape:bounded-change
 	it("explains that it counts this Team's Work Items in completed Features", () => {
 		openTheDashboard("team", "flow-overview");
 
@@ -1800,7 +1784,6 @@ describe("Feature Size Percentiles on a Team's Flow Overview", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-02 @contract-shape:unbounded-preservation
 	it("on a Portfolio explains itself as before", () => {
 		openTheDashboard("portfolio", "flow-overview");
 
@@ -1885,7 +1868,6 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 			.queryAllByTestId("view-data-row")
 			.map((row) => row.textContent);
 
-	// @us-02 @contract-shape:bounded-change
 	it.each(owners)(
 		"a %s's Feature Size Percentiles offers its data as a table",
 		async (owner) => {
@@ -1895,7 +1877,6 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 		},
 	);
 
-	// @us-02 @contract-shape:bounded-change
 	it.each(owners)(
 		"a %s's Feature Size Percentiles table is titled Closed Features, in the instance's words",
 		async (owner) => {
@@ -1907,7 +1888,6 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 		},
 	);
 
-	// @us-02 @contract-shape:pure-function
 	it.each(owners)(
 		"a %s's Feature Size Percentiles table lists only the Features finished in the window, none still open",
 		async (owner) => {
@@ -1917,7 +1897,6 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 		},
 	);
 
-	// @us-02 @error @contract-shape:pure-function
 	it("a Portfolio's Feature Size Percentiles table leaves out a finished Feature sized by the Portfolio's default, as its percentiles do", async () => {
 		await openTheFlowOverviewAnsweredWith("portfolio", [
 			aFeature("OE-011", "Done", 4),
@@ -1928,7 +1907,6 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 	});
 
 	// OE-001 holds 17 Work Items on the Portfolio; this Team's answer carries its part, 4.
-	// @us-02 @contract-shape:bounded-change
 	it("a Team's Feature Size Percentiles table shows each Feature at the Team's own part of it", async () => {
 		await openTheFlowOverviewAnsweredWith("team", [
 			aFeature("OE-001", "Done", 4),

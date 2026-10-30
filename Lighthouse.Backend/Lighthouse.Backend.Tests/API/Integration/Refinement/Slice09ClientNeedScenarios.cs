@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-09")]
     public partial class Slice09ClientNeedTest : RefinementNeedAcceptanceTest
     {
-        // @driving_port @real-io @us-09 @slice-09 @contract-shape:pure-function
         [Test]
         public async Task A_client_is_told_whether_to_refine_more_or_stop()
         {
@@ -29,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheClientReadsBelowFiveToEightWithTwoReadyByStageForThursday(tab);
         }
 
-        // @driving_port @real-io @us-09 @slice-09 @error @contract-shape:pure-function
         [Test]
         public async Task A_client_is_told_why_there_is_no_number()
         {
@@ -40,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheClientIsToldThereIsNoNumberBecause(tab, NoCadence);
         }
 
-        // @driving_port @real-io @us-09 @us-17a @slice-09 @boundary @contract-shape:unbounded-preservation
         // A client released before the need existed still finds every vote fact it reads today.
         [Test]
         public async Task The_need_joins_the_answer_without_taking_away_what_older_clients_read()
@@ -65,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected override InstanceUnderTest Instance => InstanceUnderTest.WithSignInWithoutRoles;
 
-        // @driving_port @real-io @us-09 @us-15 @slice-09 @contract-shape:pure-function
         [Test]
         public async Task A_personal_API_key_is_told_the_same_need_as_a_browser()
         {

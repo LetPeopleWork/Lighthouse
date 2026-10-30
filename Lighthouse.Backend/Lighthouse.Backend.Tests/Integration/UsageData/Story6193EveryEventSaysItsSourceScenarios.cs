@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [Category("story-6193-usage-data-from-clients")]
     public partial class Story6193EveryEventSaysItsSourceTest
     {
-        // @US-01 @driving_port @real-io @guard @contract-shape:unbounded-preservation
         // The web sends no source and must keep being taken in.
         [Test]
         public async Task Todays_browser_batch_is_still_taken_in_and_forwarded()
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         // A Browser count is browsers only, and the web needs no change to stay in it.
         [Test]
         [TestCase(SourceLeftOut)]
@@ -62,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         [Test]
         [TestCase(Cli)]
         [TestCase(Mcp)]
@@ -80,7 +77,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @boundary @contract-shape:bounded-change
         // Names are read whatever their case, as every other closed choice on this endpoint is.
         [Test]
         public async Task A_source_named_in_lower_case_is_read_as_the_source_it_names()
@@ -97,7 +93,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @kpi @contract-shape:bounded-change
         // One source per batch, written on every message the batch becomes, so every count splits by surface.
         [Test]
         public async Task Every_message_a_batch_becomes_carries_the_source_of_that_batch()
@@ -117,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @error @contract-shape:bounded-change
         // Nothing but our own page and our own clients posts here, so an unknown source is our bug.
         [Test]
         [TestCase("\"Shell\"")]
@@ -141,7 +135,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @error @guard @contract-shape:unbounded-preservation
         // The administrator's stop is the server's guarantee, so no client has to check before it sends.
         [Test]
         [TestCase(Cli)]
@@ -163,7 +156,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @error @guard @contract-shape:unbounded-preservation
         // Declaring a client source must never open a way past the gate.
         [Test]
         [TestCase(WithNoToken)]
@@ -184,7 +176,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @version-skew @contract-shape:pure-function
         // A version fact, the same for every caller, so it tells an anonymous caller nothing about anyone.
         [Test]
         [TestCase(WithNoToken)]
@@ -202,7 +193,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "caller something about another");
         }
 
-        // @US-01 @driving_port @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_state_adds_the_labelled_sources_and_nothing_else_to_what_it_already_said()
         {
@@ -213,7 +203,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 + "sources is a new disclosure nobody decided on");
         }
 
-        // @US-01 @driving_port @real-io @adapter-integration @contract-shape:bounded-change
         // The cross-repository contract, provider side: the exact body the lh command line sends for a
         // Refinement-day vote that made a Work Item Ready. The clients' own test asserts lh sends exactly
         // this file, so a drift on either side fails in the repository that caused it.
@@ -234,7 +223,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @US-01 @driving_port @real-io @adapter-integration @contract-shape:pure-function
         // The other half of the contract: what a client parses after its grant. The clients keep a copy of
         // this file and parse exactly it.
         [Test]
@@ -248,7 +236,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 $"the state served after a grant no longer matches the fixture the clients parse. Served: {served}");
         }
 
-        // @US-01 @driving_port @contract-shape:pure-function
         // The page the consent links to is the disclosure; it never promises less than the product sends.
         [Test]
         public void The_usage_data_page_lists_the_source_among_what_every_event_carries()

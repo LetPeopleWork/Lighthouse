@@ -66,7 +66,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // @driving_port @us-01 @real-io @sqlite @kpi-OUT-4172-answer-in-seconds @contract-shape:bounded-change
         [TestCase(30, 20)]
         [TestCase(45, 24)]
         public void One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about(int samplingWindowDays, int expectedReads)

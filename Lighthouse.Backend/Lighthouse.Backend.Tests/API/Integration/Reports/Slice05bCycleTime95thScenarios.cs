@@ -31,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         /// <summary>Sorted: 95th 19 days, 85th 15, 70th 11, 50th 8.</summary>
         private static readonly int[] NowCycleTimes = [2, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9, 9, 10, 11, 12, 13, 15, 17, 19, 22];
 
-        // @driving_port @real-io @us-05b @slice-05b @contract-shape:bounded-change
         [Test]
         public async Task The_Cycle_Time_panel_shows_the_95th_for_Then_and_Now()
         {
@@ -49,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05b @slice-05b @kpi-OUT-5878-G3 @contract-shape:pure-function
         // The report and the Metrics tab are read for the same inclusive days and must agree.
         [Test]
         public async Task Thens_95th_is_the_95th_the_Metrics_tab_shows_for_the_same_days()
@@ -65,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(ThenValueIn(report, CycleTime, P95), Is.EqualTo(Shown(metricsTab95th, finished.GetArrayLength())));
         }
 
-        // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:unbounded-preservation
         // Reports created before the 95th was captured froze the 85th, 70th and 50th only. Nothing is added to them on
         // reading: Then's 95th stays missing, and the page reads it as never captured, not as a dash.
         [Test]
@@ -86,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:unbounded-preservation
         // The first reports froze the 85th alone, so their Then lacks the 95th as well as the 70th and 50th.
         [Test]
         public async Task A_report_that_froze_only_the_85th_has_no_Then_95th_either()
@@ -110,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05b @slice-05b @boundary @contract-shape:pure-function
         // One finished Work Item of 12 days: every percentile, the 95th included, is that item.
         [Test]
         public async Task With_a_single_finished_Work_Item_the_95th_is_that_item_with_its_sample_size()
@@ -128,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-05b @slice-05b @error @contract-shape:pure-function
         [Test]
         public async Task With_no_finished_Work_Items_the_95th_is_a_dash_with_the_reason_never_a_zero()
         {

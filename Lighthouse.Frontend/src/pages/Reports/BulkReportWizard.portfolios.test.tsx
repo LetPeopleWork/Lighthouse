@@ -49,7 +49,6 @@ const creatingWith = (createReportsInBulk = vi.fn().mockResolvedValue([])) =>
 	});
 
 describe("Teams and Portfolios in one run", () => {
-	// @walking_skeleton @driving_port @us-03 @slice-03 @kpi-OUT-6350-bulk-creation-used @contract-shape:bounded-change
 	it.skip(`a coach creates one comparison for two Teams and Ocean Explorer in one go (${pending})`, async () => {
 		const createReportsInBulk = vi
 			.fn()
@@ -81,7 +80,6 @@ describe("Teams and Portfolios in one run", () => {
 		);
 	});
 
-	// @us-03 @slice-03 @contract-shape:pure-function
 	it.skip(`Portfolios are listed after Teams, alphabetically, with their own Select all (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
@@ -107,7 +105,6 @@ describe("Teams and Portfolios in one run", () => {
 		expect(screen.getByRole("button", { name: createCount(3) })).toBeEnabled();
 	});
 
-	// @us-03 @slice-03 @edge @contract-shape:pure-function
 	it.skip(`only Portfolios may be picked, with no Team at all (${pending})`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
@@ -129,7 +126,6 @@ describe("Teams and Portfolios in one run", () => {
 });
 
 describe("Choosing the window for several owners", () => {
-	// @us-03 @slice-03 @contract-shape:pure-function
 	it.skip(`Then offers 30, 90 and 180 days or a custom length, and Now is as long as Then unless changed (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
@@ -146,7 +142,6 @@ describe("Choosing the window for several owners", () => {
 		expect(screen.getByRole("radio", { name: SAME_AS_THEN })).toBeChecked();
 	});
 
-	// @us-03 @slice-03 @error @contract-shape:unbounded-preservation
 	it.skip(`a custom Then shorter than 14 days is refused before any owner is asked (${pending})`, async () => {
 		const createReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
@@ -166,7 +161,6 @@ describe("Choosing the window for several owners", () => {
 		expect(createReportsInBulk).not.toHaveBeenCalled();
 	});
 
-	// @us-03 @slice-03 @edge @contract-shape:pure-function
 	it.skip(`a custom Then of exactly 14 days is accepted (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
@@ -180,7 +174,6 @@ describe("Choosing the window for several owners", () => {
 		expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
 	});
 
-	// @us-03 @slice-03 @contract-shape:bounded-change
 	it.skip(`a custom Now length travels with the request; Same as Then travels as no Now length (${pending})`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({

@@ -517,7 +517,6 @@ describe("Feature Size on a Team", () => {
 	const widgetKeysOf = (category: CategoryKey, owner: "team" | "portfolio") =>
 		getWidgetsForCategory(category, owner).map((w) => w.widgetKey);
 
-	// @us-01 @contract-shape:bounded-change
 	it("a Team's Portfolio & Features category offers Feature Size between the Work Item distribution and Estimation vs. Cycle Time", () => {
 		expect(widgetKeysOf("portfolio", "team")).toEqual([
 			"workDistribution",
@@ -526,7 +525,6 @@ describe("Feature Size on a Team", () => {
 		]);
 	});
 
-	// @us-02 @contract-shape:bounded-change
 	it("a Team's Flow Overview offers Feature Size Percentiles last, as a Portfolio's does", () => {
 		expect(widgetKeysOf("flow-overview", "team")).toEqual([
 			"wipOverview",
@@ -545,7 +543,6 @@ describe("Feature Size on a Team", () => {
 		]);
 	});
 
-	// @us-01 @contract-shape:bounded-change
 	it("a Team asks for the Feature sizes whenever either widget is shown", () => {
 		expect([...getFetchKeysForCategories(["portfolio"], "team")]).toContain(
 			"featureSizeData",
@@ -555,7 +552,6 @@ describe("Feature Size on a Team", () => {
 		);
 	});
 
-	// @us-01 @contract-shape:unbounded-preservation
 	it("a Team is never asked for an estimate of a Feature's size", () => {
 		const everyCategory = getCategories().map((category) => category.key);
 
@@ -564,7 +560,6 @@ describe("Feature Size on a Team", () => {
 		);
 	});
 
-	// @us-01 @contract-shape:unbounded-preservation
 	it("the Feature Size process behaviour chart stays on a Portfolio only", () => {
 		expect(widgetKeysOf("predictability", "team")).not.toContain(
 			"featureSizePbc",

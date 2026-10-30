@@ -51,7 +51,6 @@ const isKnownColumn = (column: string): boolean =>
 	column in singleColumnIds || /^namedCycleTime:\d+$/.test(column);
 
 describe("the rules every context of the Work Items dialog follows", () => {
-	// @us-02 @slice-01b @example @contract-shape:pure-function
 	it("there is one context per row of the defaults table and no other", () => {
 		expect(
 			Object.keys(WORK_ITEMS_DIALOG_CONTEXTS).sort((a, b) =>
@@ -60,7 +59,6 @@ describe("the rules every context of the Work Items dialog follows", () => {
 		).toEqual([...everyContext].sort((a, b) => a.localeCompare(b)));
 	});
 
-	// @us-02 @slice-01b @example @contract-shape:pure-function
 	it.each(everyContext)(
 		"%s sorts by one of its own default columns",
 		(context) => {
@@ -70,7 +68,6 @@ describe("the rules every context of the Work Items dialog follows", () => {
 		},
 	);
 
-	// @us-02 @slice-01b @example @contract-shape:pure-function
 	it.each(everyContext)(
 		"%s names only columns the dialog knows, for its defaults and its sort",
 		(context) => {
@@ -84,7 +81,6 @@ describe("the rules every context of the Work Items dialog follows", () => {
 		},
 	);
 
-	// @us-02 @slice-01b @example @contract-shape:pure-function
 	it("only Cumulative Time per State offers nothing beyond its defaults, because its rows carry no real dates or ages", () => {
 		const withoutCatalogue = everyContext.filter(
 			(context) => !WORK_ITEMS_DIALOG_CONTEXTS[context].catalogue,

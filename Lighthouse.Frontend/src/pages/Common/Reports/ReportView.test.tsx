@@ -218,7 +218,6 @@ const beforeEachReportTest = () => {
 describe("The report header", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("names the report on one line after Reports, which leads back to the list, with no large heading", async () => {
 		openTheReport();
 
@@ -240,7 +239,6 @@ describe("The report header", () => {
 describe("The report's summary header", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-03 @driving_port @contract-shape:pure-function
 	// A report made before Throughput was captured counts from its Cycle Time; the count from Throughput is tested where Throughput is shown.
 	it("opens with a summary of each side's window and how many Work Items closed in it", async () => {
 		openTheReport(madeBeforeThroughput());
@@ -255,7 +253,6 @@ describe("The report's summary header", () => {
 		);
 	});
 
-	// @us-01 @slice-03 @boundary @contract-shape:pure-function
 	it.each([
 		[
 			"a Then and a Now within one year",
@@ -301,7 +298,6 @@ describe("The report's summary header", () => {
 		},
 	);
 
-	// @us-01 @slice-03 @boundary @contract-shape:pure-function
 	it("says one day and one Work Item in the singular", async () => {
 		const report = withCycleTime({
 			atThen: { p85: shown(21, 38), p70: shown(10, 38), p50: shown(5, 38) },
@@ -316,7 +312,6 @@ describe("The report's summary header", () => {
 		expect(readingOfSummary("now")).not.toMatch(/days|Items/);
 	});
 
-	// @us-01 @slice-03 @error @contract-shape:pure-function
 	it.each([
 		[
 			"the Work Items behind the first percentile that has any, the 85th recorded as never captured",
@@ -353,7 +348,6 @@ describe("The report's summary header", () => {
 		expect(readingOfSummary("now")).toMatch(/ · 90 days 41 Work Items closed$/);
 	});
 
-	// @us-01 @slice-03 @error @contract-shape:pure-function
 	it.each<[string, IReportMetric | null | undefined]>([
 		["missing from the report", undefined],
 		["recorded as never captured", null],
@@ -378,7 +372,6 @@ describe("The report's summary header", () => {
 		},
 	);
 
-	// @us-01 @slice-03 @boundary @contract-shape:pure-function
 	// Every report keeps its Cycle Time, so the count is there even when its panel is not.
 	it("counts the closed Work Items even when the report does not show its Cycle Time panel", async () => {
 		openTheReport(
@@ -393,7 +386,6 @@ describe("The report's summary header", () => {
 		expect(readingOfSummary("now")).toMatch(/ 41 Work Items closed$/);
 	});
 
-	// @us-03 @us-04 @slice-04 @driving_port @contract-shape:pure-function
 	// Throughput counts every finished Work Item, Cycle Time only those whose cycle time it can measure. Once a
 	// report captured Throughput, the summary reads its total, so the summary and the Throughput panel agree.
 	it.each<[string, (report: IReport) => IReport, string, string]>([
@@ -454,7 +446,6 @@ describe("The report's summary header", () => {
 		},
 	);
 
-	// @us-01 @slice-03 @contract-shape:pure-function
 	it("names the closed Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -476,7 +467,6 @@ describe("The report's summary header", () => {
 		expect(readingOfTheSummary()).not.toContain("Work Item");
 	});
 
-	// @us-01 @slice-03 @contract-shape:pure-function
 	it("says nothing of Then being frozen or of Now always being the last days", async () => {
 		openTheReport();
 
@@ -485,7 +475,6 @@ describe("The report's summary header", () => {
 		expect(readingOfTheSummary()).not.toMatch(/frozen|always|last \d+ days/i);
 	});
 
-	// @us-01 @slice-03 @contract-shape:pure-function
 	it("sits between the line naming the report and the first panel, inside the report's loading look", async () => {
 		openTheReport();
 
@@ -507,7 +496,6 @@ describe("The report's summary header", () => {
 		);
 	});
 
-	// @us-01 @slice-03 @boundary @ac-1.8 @contract-shape:pure-function
 	it("shows no summary while the report is on its way, and shows it once the report is here", async () => {
 		const held = deferred<IReport>();
 		renderWithReports(
@@ -534,7 +522,6 @@ describe("The report's summary header", () => {
 		}
 	});
 
-	// @us-01 @slice-03 @error @ac-1.8 @contract-shape:pure-function
 	it.each([
 		["could not be loaded", new Error("the network dropped"), COULD_NOT_LOAD],
 		[
@@ -642,7 +629,6 @@ const SECONDARY_TEXT_COLOUR = "rgba(0, 0, 0, 0.6)";
 describe("The summary's CHANGE side", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
 	it("reads Then, Now and Change side by side, like the panels", async () => {
 		openTheReport();
 
@@ -655,7 +641,6 @@ describe("The summary's CHANGE side", () => {
 		expect(readingOfSummary("change")).toMatch(/^CHANGE /i);
 	});
 
-	// @us-05b @slice-05b @walking_skeleton @driving_port @contract-shape:pure-function
 	// Every Cycle Time line, Throughput per day and every WIP line are better in Now; every Total Work Item Age
 	// line is worse. Throughput's total carries no change mark and does not count.
 	it("names the metrics that improved and the one that got worse", async () => {
@@ -672,7 +657,6 @@ describe("The summary's CHANGE side", () => {
 		]);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	// The spread widened: a majority rule would hide either that the typical Work Item got faster or the slow tail.
 	it("reads Mixed for a metric whose slow end got worse while its fast end improved", async () => {
 		openTheReport(
@@ -689,7 +673,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// No threshold: a one-day move counts, and a metric none of whose lines moved is said to be unchanged.
 	it("counts a one-day move, and reads Unchanged for a metric that did not move", async () => {
 		const report = withCycleTime({
@@ -705,7 +688,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// The header judges a line as its panel shows it: a move the panel cannot show is no move, the smallest it can is one.
 	it.each<[string, number, number, string]>([
 		[
@@ -742,7 +724,6 @@ describe("The summary's CHANGE side", () => {
 		},
 	);
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// Team Pulsar finished nothing in its Now, so every Cycle Time line reads "—" there and cannot be compared.
 	it("leaves out a metric none of whose lines can be compared", async () => {
 		const report = withCycleTime({
@@ -763,7 +744,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// "—" is the report's sign for "cannot be compared"; an empty side would read like "nothing changed".
 	it("reads a dash when no shown metric can be compared at all", async () => {
 		openTheReport(
@@ -782,7 +762,6 @@ describe("The summary's CHANGE side", () => {
 		expect(theChangeGroups()).toHaveLength(0);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	// WIP rose since Then, but the report does not show it, so the summary does not judge it either.
 	it("summarises only the metrics the report shows", async () => {
 		const report = theEngagementStartReport();
@@ -797,7 +776,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:pure-function
 	it.each<[string, (report: IReport) => IReport, string]>([
 		[
 			"a metric this version has no panel for",
@@ -829,7 +807,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @error @contract-shape:unbounded-preservation
 	// The report "Then & Now — 30 days to 1 Sep 2026" was frozen before the 95th was captured. Its other lines did not
 	// move: the 95th, which cannot be compared, neither makes Cycle Time a change nor leaves it out.
 	it("judges a report frozen before the 95th was captured on its other percentiles alone", async () => {
@@ -856,7 +833,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A rise from nothing has no percentage, but it is a rise all the same.
 	it("counts a change from a Then of zero", async () => {
 		openTheReport(
@@ -872,7 +848,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @boundary @contract-shape:pure-function
 	// A 30-day Now finishes fewer Work Items than a 90-day Then at a higher rate; only the rate carries a change mark.
 	it("judges Throughput by its rate per day, never by its total", async () => {
 		const report = withThroughput(
@@ -894,7 +869,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it("names the metrics in the instance's words, as their panels are titled", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -912,7 +886,6 @@ describe("The summary's CHANGE side", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @contract-shape:pure-function
 	// Colour backs the marks; the mark and the word carry the meaning for anyone who cannot see it.
 	it("shows every kind in its order, each led by its mark and word, improved in green and got worse in red", async () => {
 		openTheReport(
@@ -945,7 +918,6 @@ describe("The summary's CHANGE side", () => {
 		expect(drawings.size).toBe(4);
 	});
 
-	// @us-05b @slice-05b @error @ac-1.8 @contract-shape:pure-function
 	// The CHANGE side lives inside the summary, so it shares its loading and failure looks; after Retry it is fresh.
 	it("shows the CHANGE of the report read after Retry, never one from before", async () => {
 		const getReport = vi
@@ -972,7 +944,6 @@ describe("The summary's CHANGE side", () => {
 describe("The panels of a report", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	// The closed Work Items are counted once, in the summary above, not again on each panel.
 	it("shows the Cycle Time panel as Then, Now and Change, each side headed by its name alone", async () => {
 		openTheReport();
@@ -989,7 +960,6 @@ describe("The panels of a report", () => {
 		expect(readingOfSegment(panel, "change")).toMatch(/^CHANGE /i);
 	});
 
-	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// The same icons as the Metrics tab's Cycle Time percentiles, so a reader knows the 50th is a coin toss.
 	it("marks every percentile on both sides with the certainty icon the Metrics tab shows for it", async () => {
 		openTheReport();
@@ -1004,7 +974,6 @@ describe("The panels of a report", () => {
 		);
 	});
 
-	// @us-05b @slice-05b @driving_port @contract-shape:pure-function
 	// Forecasts at the highest certainty lean on the 95th, so it opens the panel, above the 85th.
 	it("opens the Cycle Time panel with the 95th for Then and for Now, and its change", async () => {
 		openTheReport();
@@ -1021,7 +990,6 @@ describe("The panels of a report", () => {
 		expect(iconsIn(theSegment(panel, "now"))[0]).toBe("CheckCircleIcon");
 	});
 
-	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the drawn mark say the same.
 	it("tells a shorter Cycle Time as better on every percentile by mark and sign as well as colour", async () => {
 		openTheReport();
@@ -1043,7 +1011,6 @@ describe("The panels of a report", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	it("reads a percentile that did not move as No change, and a longer one as worse", async () => {
 		openTheReport(
 			withCycleTime({
@@ -1063,7 +1030,6 @@ describe("The panels of a report", () => {
 		expect(worse.map(readingOf)).toEqual(["1 day (+20 %)"]);
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// No change has a mark of its own where a rise or a fall has one, so the column lines up. Its words already say
 	// it did not change, so that mark is not read out; a rise's and a fall's words do not say which way they went.
 	it(`leads No change, a fall and a rise each with a mark of its own; a screen reader hears the fall and the rise, and skips the No change mark`, async () => {
@@ -1092,7 +1058,6 @@ describe("The panels of a report", () => {
 		expect(theOneMarkOf(unchanged)).toHaveAttribute("aria-hidden", "true");
 	});
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	it("shows Throughput as a total and a per-day average, compared per day", async () => {
 		openTheReport();
 
@@ -1110,7 +1075,6 @@ describe("The panels of a report", () => {
 		expect(changesIn(panel)[0].dataset.change).toBe("better");
 	});
 
-	// @us-05 @slice-05 @contract-shape:pure-function
 	// The average 8.62 shows as 9 and 7.38 as 7, and the change is worked out from what is shown.
 	it("shows WIP as its average, median, min and max, each with its own change, lower reading as better", async () => {
 		openTheReport();
@@ -1138,7 +1102,6 @@ describe("The panels of a report", () => {
 		]);
 	});
 
-	// @us-05 @slice-05 @contract-shape:pure-function
 	// Colour alone tells nobody who cannot see it; the sign and the drawn mark say the same.
 	it("tells a growing Total Work Item Age as worse on every line by sign and mark as well as colour", async () => {
 		openTheReport();
@@ -1166,7 +1129,6 @@ describe("The panels of a report", () => {
 		]);
 	});
 
-	// @us-05 @slice-05 @contract-shape:pure-function
 	it.each([WIP_PANEL, AGE_PANEL])(
 		"leads the average, median, min and max of %s with the same icons on both sides",
 		async (title) => {
@@ -1179,7 +1141,6 @@ describe("The panels of a report", () => {
 		},
 	);
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	it("leads Throughput's total and per-day lines with their icons on both sides", async () => {
 		openTheReport();
 
@@ -1193,7 +1154,6 @@ describe("The panels of a report", () => {
 		}
 	});
 
-	// @us-04 @us-05 @slice-05 @contract-shape:pure-function
 	// A screen reader reaches the change column apart from the labels beside it, so each change names its line.
 	it.each([
 		[
@@ -1216,7 +1176,6 @@ describe("The panels of a report", () => {
 		},
 	);
 
-	// @us-01 @us-05b @slice-01 @slice-05b @contract-shape:pure-function
 	it("names the line of every change on the Cycle Time panel, the 95th first", async () => {
 		openTheReport();
 
@@ -1227,7 +1186,6 @@ describe("The panels of a report", () => {
 		);
 	});
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	it("stacks only the shown metrics, in the catalog's order whatever order they were ticked in", async () => {
 		openTheReport(
 			theEngagementStartReport({
@@ -1240,7 +1198,6 @@ describe("The panels of a report", () => {
 		expect(thePanelTitles()).toEqual([CYCLE_TIME_PANEL, THROUGHPUT_PANEL]);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("names every metric and the Work Items in the instance's words", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -1263,7 +1220,6 @@ describe("The panels of a report", () => {
 describe("Values a report cannot show", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	it("shows a dash and says Then had no finished Work Items", async () => {
 		openTheReport(
 			withCycleTime({
@@ -1285,7 +1241,6 @@ describe("Values a report cannot show", () => {
 		expect(changesIn(panel)).toHaveLength(0);
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	// A rise from nothing has no percentage; the difference itself still shows.
 	it("shows no percentage for a change from a Then of zero", async () => {
 		const report = theEngagementStartReport();
@@ -1302,7 +1257,6 @@ describe("Values a report cannot show", () => {
 		expect(panel).not.toMatch(/%|Infinity|NaN|—/);
 	});
 
-	// @us-04 @slice-04 @contract-shape:pure-function
 	it("names a single finished Work Item in the singular", async () => {
 		const report = theEngagementStartReport();
 		report.thenAndNow.metrics.throughput = {
@@ -1319,7 +1273,6 @@ describe("Values a report cannot show", () => {
 		expect(readingOfSegment(panel, "now")).toMatch(/^NOW Total 2 Work Items /i);
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:pure-function
 	// A day with nothing in progress is a real 0 for both metrics; only the percentage from a Then of 0 is missing.
 	it("shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress", async () => {
 		const zero = shown(0, 90);
@@ -1363,7 +1316,6 @@ describe("Values a report cannot show", () => {
 		}
 	});
 
-	// @us-05 @slice-05 @boundary @contract-shape:unbounded-preservation
 	// A report made before WIP and Work Item Age were captured has nothing frozen for them.
 	it("says WIP and Total Work Item Age were not captured for a report made before they existed", async () => {
 		const report = theEngagementStartReport();
@@ -1381,7 +1333,6 @@ describe("Values a report cannot show", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @boundary @contract-shape:pure-function
 	// Thin data is shown, not hidden: the number of Work Items behind it, in the summary above, lets the reader judge.
 	it("shows a value backed by very few Work Items, with that number in the summary above", async () => {
 		openTheReport(
@@ -1401,7 +1352,6 @@ describe("Values a report cannot show", () => {
 		expect(readingOfSummary("now")).toMatch(/ 3 Work Items closed$/);
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:unbounded-preservation
 	// A later version may add a metric this one has no panel for; the rest of the report still reads.
 	it("puts a plain note in place of a metric this version cannot show, and shows the others", async () => {
 		const report = theEngagementStartReport({
@@ -1419,7 +1369,6 @@ describe("Values a report cannot show", () => {
 		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
 	});
 
-	// @us-04 @slice-04 @error @contract-shape:pure-function
 	// The note stands where the panel would; a metric from a later version has no word here, so it goes by its key.
 	it("heads the note in place of a later version's metric with that metric's key", async () => {
 		openTheReport(
@@ -1441,7 +1390,6 @@ describe("Values a report cannot show", () => {
 describe("A report on a slow or failing connection", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-01 @slice-01 @boundary @ac-1.8 @contract-shape:pure-function
 	it("shows only the way back and a spinner while the report is on its way", async () => {
 		const held = deferred<IReport>();
 		renderWithReports(
@@ -1460,7 +1408,6 @@ describe("A report on a slow or failing connection", () => {
 		expect(document.querySelector('[data-report-status="ready"]')).toBeNull();
 	});
 
-	// @us-01 @slice-01 @error @ac-1.8 @contract-shape:pure-function
 	it("says the report could not be loaded and offers Retry, showing no numbers", async () => {
 		const getReport = vi
 			.fn()
@@ -1479,7 +1426,6 @@ describe("A report on a slow or failing connection", () => {
 		expect(await thePanel(CYCLE_TIME_PANEL)).toBeVisible();
 	});
 
-	// @us-08 @slice-08 @error @ac-1.8 @contract-shape:pure-function
 	// Deleted, or another owner's: either way there is nothing here to show.
 	it("says a report that is gone no longer exists and leads back to the list", async () => {
 		renderWithReports(
@@ -1498,7 +1444,6 @@ describe("A report on a slow or failing connection", () => {
 		expect(screen.queryByText(COULD_NOT_LOAD)).toBeNull();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// An instance rolled back from a later version still holds that version's reports.
 	it("says a report made by a newer version cannot be shown here and leads back to the list", async () => {
 		renderWithReports(
@@ -1520,7 +1465,6 @@ describe("A report on a slow or failing connection", () => {
 		expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("never lets a late answer for the report opened before land on the one opened now", async () => {
 		const first = deferred<IReport>();
 		const getReport = vi
@@ -1671,7 +1615,6 @@ describe("A report on a slow or failing connection", () => {
 describe("Who may change a report from its page", () => {
 	beforeEach(beforeEachReportTest);
 
-	// @us-10 @us-08 @slice-08 @slice-10 @contract-shape:pure-function
 	it("offers an admin Edit report and Delete", async () => {
 		openTheReport(theEngagementStartReport(), "admin");
 
@@ -1681,7 +1624,6 @@ describe("Who may change a report from its page", () => {
 		expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
 	});
 
-	// @us-10 @us-08 @slice-08 @slice-10 @error @contract-shape:unbounded-preservation
 	it("offers a reader neither", async () => {
 		openTheReport(theEngagementStartReport(), "reader");
 
@@ -1709,7 +1651,6 @@ describe("Who may change a report from its page", () => {
 		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
 	});
 
-	// @us-08 @slice-08 @contract-shape:pure-function
 	it("offers an admin Delete", async () => {
 		openTheReport(theEngagementStartReport(), "admin");
 
@@ -1718,7 +1659,6 @@ describe("Who may change a report from its page", () => {
 		expect(screen.getByRole("button", { name: "Delete" })).toBeEnabled();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:unbounded-preservation
 	it("offers a reader no Delete", async () => {
 		openTheReport(theEngagementStartReport(), "reader");
 
@@ -1727,7 +1667,6 @@ describe("Who may change a report from its page", () => {
 		expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
 	});
 
-	// @us-08 @slice-08 @driving_port @kpi-OUT-5878-guardrail-quick-deletes @contract-shape:bounded-change
 	it("deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list", async () => {
 		const reportService = openTheReport(
 			theEngagementStartReport({
@@ -1760,7 +1699,6 @@ describe("Who may change a report from its page", () => {
 		expect(reportUsage).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:bounded-change
 	// Going Back after a delete must not bring the deleted report up as if it were still there.
 	it("never shows a deleted report again when it is opened once more", async () => {
 		const reportService = aReportService({
@@ -1791,7 +1729,6 @@ describe("Who may change a report from its page", () => {
 		expect(screen.queryByText(ENGAGEMENT_START)).toBeNull();
 	});
 
-	// @us-08 @slice-08 @error @contract-shape:bounded-change
 	// Somebody else got there first: the report is gone either way, but nobody here deleted it.
 	it("goes back to the list without reporting a deletion when the report was already deleted", async () => {
 		renderWithReports(
@@ -1835,7 +1772,6 @@ describe("What opening a report reports", () => {
 	const reportsOfOpening = () =>
 		reportUsage.mock.calls.filter(([use]) => use.name === "ReportOpened");
 
-	// @us-01 @slice-01 @kpi-OUT-5878-K2-reports-reopened @contract-shape:bounded-change
 	it("reports one report opened, with its Type, once it has been open for five seconds", async () => {
 		openTheReport();
 		await theReportIsReady();
@@ -1849,7 +1785,6 @@ describe("What opening a report reports", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// A glance that leaves at once is not somebody reading the report.
 	it("reports nothing for a report left within five seconds", async () => {
 		const { unmount } = renderWithReports(
@@ -1865,7 +1800,6 @@ describe("What opening a report reports", () => {
 		expect(reportsOfOpening()).toHaveLength(0);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it("reports nothing for a report that could not be loaded", async () => {
 		renderWithReports(
 			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,

@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// None of the five is small enough to finish inside a single day, which is what keeps the fourth
         /// out - a Feature that emptied would let the one below it start the same day.
         /// </summary>
-        // @driving_port @us-01 @edge @real-io @contract-shape:bounded-change (AC-1.3, S2)
+        // (AC-1.3, S2)
         [Test]
         public async Task Feature_WIP_bounds_how_many_Features_can_begin_on_the_first_day()
         {
@@ -54,7 +54,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// the number four. Raise what the Team may carry and the same five Features all begin at once:
         /// the wait was the policy, not the work.
         /// </summary>
-        // @driving_port @us-01 @real-io @contract-shape:bounded-change (AC-1.3)
+        // (AC-1.3)
         [Test]
         public async Task Raising_Feature_WIP_lets_them_all_begin_on_the_first_day()
         {
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates
         /// credits the Feature with two independent chances of having started when it only ever had one.
         /// Equality here is therefore not a coincidence; it is the derivation being ruled out.
         /// </summary>
-        // @driving_port @us-01 @edge @invariant @real-io @contract-shape:bounded-change (AC-1.4, D4, ADR-199)
+        // (AC-1.4, D4, ADR-199)
         [Test]
         public async Task The_start_a_Feature_reports_is_the_one_the_run_saw_not_the_one_its_Teams_marginals_imply()
         {

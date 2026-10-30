@@ -170,7 +170,7 @@ describe("Behaviour Settings", () => {
 		givenTheInstanceCallsFeatures("Feature", "Features");
 	});
 
-	// @AC-01.1 - which switches live where is a fact about release history until this ships. One
+	// which switches live where is a fact about release history until this ships. One
 	// heading, one table, both rows under it.
 	it("puts every instance-wide switch under one heading", async () => {
 		renderTheSystemSettings();
@@ -183,7 +183,7 @@ describe("Behaviour Settings", () => {
 		expect(screen.getByTestId("feature-row-FeatureOrdering")).toBeVisible();
 	});
 
-	// @AC-01.1 - and the two places it used to live are gone. Without this the move is an addition and
+	// and the two places it used to live are gone. Without this the move is an addition and
 	// the page has three answers to the same question instead of one.
 	it("leaves no separate section behind", async () => {
 		renderTheSystemSettings();
@@ -204,7 +204,7 @@ describe("Behaviour Settings", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @AC-01.2 - the premium affordance the table already knows how to render, on the row that is now
+	// the premium affordance the table already knows how to render, on the row that is now
 	// the first premium one it has ever held.
 	it("shows the ordering switch as unavailable on an instance without the licence", async () => {
 		givenTheInstanceHasNoPremiumLicence();
@@ -218,7 +218,7 @@ describe("Behaviour Settings", () => {
 		});
 	});
 
-	// @AC-01.11 - the criterion this store was once rejected on. The seeded string names a token; the
+	// the criterion this store was once rejected on. The seeded string names a token; the
 	// cell renders the instance's own word.
 	it("reads the row in the instance's own word for a Feature", async () => {
 		givenTheInstanceCallsFeatures("Deliverable", "Deliverables");
@@ -237,7 +237,7 @@ describe("Behaviour Settings", () => {
 		expect(screen.queryByText(/\{\{features\}\}/)).not.toBeInTheDocument();
 	});
 
-	// @AC-01.11 - a token nobody defined is left standing, braces and all. Resolving it to the bare key
+	// a token nobody defined is left standing, braces and all. Resolving it to the bare key
 	// would read as ordinary prose and ship a typo nobody notices; dropping it would delete a word from
 	// a sentence and read as a bug in the copy.
 	it("leaves a token nobody defined exactly where it is", async () => {
@@ -273,7 +273,7 @@ describe("Behaviour Settings", () => {
 		expect(screen.queryByText(/\{\{workItems\}\}/)).not.toBeInTheDocument();
 	});
 
-	// @AC-01.1 - the two rows are switched one at a time. The mock gives both the identity the seeder
+	// the two rows are switched one at a time. The mock gives both the identity the seeder
 	// really writes: the store keys these rows by their key, nothing generates the number, so every
 	// seeded row carries zero. A table that matches its optimistic update on that number moves every
 	// switch on the page at once, and no amount of fixing the server changes that.
@@ -299,7 +299,7 @@ describe("Behaviour Settings", () => {
 		).not.toBeChecked();
 	});
 
-	// @AC-02.4 - when the write is refused, the switch goes back to what is actually in force. Slice 01
+	// when the write is refused, the switch goes back to what is actually in force. Slice 01
 	// turns this endpoint's refusal from a 200 carrying the old value into a 403, so the rollback stops
 	// being decorative and starts being the only thing between an administrator and a switch that shows
 	// a setting they do not have.
@@ -325,7 +325,7 @@ describe("Behaviour Settings", () => {
 		});
 	});
 
-	// @AC-01.9 - a setting already in the list keeps its name and its help text, and it is not premium,
+	// a setting already in the list keeps its name and its help text, and it is not premium,
 	// so the switch stays operable. It is not in preview, so no badge may say it is.
 	it("shows the setting that was already in the list, without a preview badge", async () => {
 		renderTheSystemSettings();
@@ -342,7 +342,7 @@ describe("Behaviour Settings", () => {
 		).not.toBeDisabled();
 	});
 
-	// @AC-02.4 - the refusal slice 01 ships is reachable only by calling the API directly. Green
+	// the refusal slice 01 ships is reachable only by calling the API directly. Green
 	// already: the table has disabled premium switches since the affordance was built. It is asserted
 	// here so the move cannot quietly start producing errors in front of a user.
 	it("never lets an unlicensed administrator reach the refusal", async () => {

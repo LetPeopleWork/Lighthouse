@@ -18,7 +18,7 @@ const HISTORY_ENDPOINT = "/metrics/percentiles-over-time";
 // backend resolve the horizon-less sentinel.
 const AGE_METRIC_TYPE = "WorkItemAge";
 
-test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend", async ({
+test("flow coach opens the Percentiles Over Time widget and reads a dated CT-30 trend", async ({
 	page,
 	request,
 	overviewPage,
@@ -101,7 +101,7 @@ test("@walking_skeleton @US-01 flow coach opens the Percentiles Over Time widget
 	expect(historyRequests).toBe(requestsBeforeReturn);
 });
 
-test("@real-io @driving_adapter @US-03 flow coach reads a dated work item age percentile trend from the WIA tab", async ({
+test("flow coach reads a dated work item age percentile trend from the WIA tab", async ({
 	page,
 	request,
 	overviewPage,

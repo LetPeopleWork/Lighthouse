@@ -164,7 +164,7 @@ beforeEach(() => {
 	terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Work Item");
 });
 
-describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words first", () => {
+describe("the answer opens in a dialog, words first", () => {
 	it(`pressing Run reality check opens the dialog at once, and it fills in without asking for a date`, async () => {
 		const answerArrives = anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
@@ -206,12 +206,12 @@ describe("@us-04 @slice-04 @driving_port the answer opens in a dialog, words fir
 	});
 });
 
-describe("@us-04 @slice-04 every forecast next to what the Team delivered", () => {
+describe("every forecast next to what the Team delivered", () => {
 	it.each([
 		{ ownWindow: 30, rows: 16, windows: [14, 30, 60, 90] },
 		{ ownWindow: 45, rows: 20, windows: [14, 30, 45, 60, 90] },
 	])(
-		`@kpi-OUT-6094-how-far-each-forecast-landed has one row per check - $rows - grouped by period in horizon order, the windows in ladder order in every group`,
+		`has one row per check - $rows - grouped by period in horizon order, the windows in ladder order in every group`,
 		async ({ ownWindow, rows, windows }) => {
 			const dialog = await theDialogFor(
 				aRealityCheckAnswer({ currentSettingDays: ownWindow }),
@@ -232,7 +232,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		},
 	);
 
-	it(`@kpi-OUT-6094-how-far-each-forecast-landed prints each period's actual once, in its header`, async () => {
+	it(`prints each period's actual once, in its header`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const eightWeeks = periodGroup(theTableIn(dialog), 56);
 
@@ -264,7 +264,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		);
 	});
 
-	it(`@error a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks`, async () => {
+	it(`a check that could not run says why across all four level columns, never blank and never graded - Coastal Survey's 14-day row over 2 weeks`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const row = windowRow(periodGroup(theTableIn(dialog), 14), 14);
 
@@ -278,7 +278,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(row).not.toHaveTextContent(/[✓✗]/);
 	});
 
-	it(`@error a check that could not run is set apart from the graded ones in muted italics`, async () => {
+	it(`a check that could not run is set apart from the graded ones in muted italics`, async () => {
 		const dialog = await theDialogFor(coastalSurvey());
 		const [reason] = within(
 			windowRow(periodGroup(theTableIn(dialog), 14), 14),
@@ -290,7 +290,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		});
 	});
 
-	it(`@error a check whose forecast could not be worked out gives its own reason, not the thin-history one`, async () => {
+	it(`a check whose forecast could not be worked out gives its own reason, not the thin-history one`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				unevaluable: [
@@ -313,7 +313,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(row).not.toHaveTextContent(/[✓✗]/);
 	});
 
-	it(`@error @kpi-OUT-6094-how-far-each-forecast-landed a period in which no window could be checked still shows what the Team delivered, and every row its reason`, async () => {
+	it(`a period in which no window could be checked still shows what the Team delivered, and every row its reason`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				unevaluable: STANDARD_WINDOW_DAYS.map((window) => ({
@@ -348,7 +348,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		}
 	});
 
-	it(`@error a Team whose own setting was not tested has no row called "your setting"`, async () => {
+	it(`a Team whose own setting was not tested has no row called "your setting"`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -361,7 +361,7 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 		expect(linesMatching(dialog, /your setting/i)).toHaveLength(0);
 	});
 
-	it(`@kpi-OUT-6094-no-window-ranked keeps the order the check was run in, even when the checks arrive shuffled`, async () => {
+	it(`keeps the order the check was run in, even when the checks arrive shuffled`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({
 				currentSettingDays: 45,
@@ -395,8 +395,8 @@ describe("@us-04 @slice-04 every forecast next to what the Team delivered", () =
 	});
 });
 
-describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
-	it(`@kpi-OUT-6094-no-window-ranked says nothing that tallies, orders or picks out a sampling window, and offers no way to sort the table`, async () => {
+describe("the dialog holds to what the check promised", () => {
+	it(`says nothing that tallies, orders or picks out a sampling window, and offers no way to sort the table`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8, 70: 11, 85: 14, 95: 15 } }),
 		);
@@ -414,7 +414,7 @@ describe("@us-04 @slice-04 the dialog holds to what the check promised", () => {
 	});
 });
 
-describe("@us-04 @slice-04 running again, closing and reopening", () => {
+describe("running again, closing and reopening", () => {
 	it(`Run again asks again and the dialog fills in with the fresh answer`, async () => {
 		const dialog = await theDialogFor(
 			aRealityCheckAnswer({ heldCounts: { 50: 8 } }),
@@ -444,7 +444,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(2);
 	});
 
-	it(`@error while a check is running Run again cannot be pressed and reopening starts no second check`, async () => {
+	it(`while a check is running Run again cannot be pressed and reopening starts no second check`, async () => {
 		anAnswerStillOnItsWay();
 		const group = renderTheForecastTab(runRealityCheck);
 		await pressRunRealityCheck(group);
@@ -462,7 +462,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(runRealityCheck).toHaveBeenCalledTimes(1);
 	});
 
-	it(`@error a check that fails to come back leaves the dialog open with a plain message and Run again, and no answer`, async () => {
+	it(`a check that fails to come back leaves the dialog open with a plain message and Run again, and no answer`, async () => {
 		runRealityCheck.mockRejectedValue(
 			new Error("The reality check could not be run"),
 		);
@@ -478,7 +478,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		expect(within(dialog).queryByRole("table")).toBeNull();
 	});
 
-	it(`@error a failure that carries no message of its own still says plainly that the check could not run`, async () => {
+	it(`a failure that carries no message of its own still says plainly that the check could not run`, async () => {
 		runRealityCheck.mockRejectedValue({ status: 503 });
 		const group = renderTheForecastTab(runRealityCheck);
 
@@ -490,7 +490,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 		);
 	});
 
-	it(`@error Run again after a failure can still bring the answer`, async () => {
+	it(`Run again after a failure can still bring the answer`, async () => {
 		runRealityCheck
 			.mockRejectedValueOnce(new Error("The reality check could not be run"))
 			.mockResolvedValueOnce(aRealityCheckAnswer());
@@ -508,7 +508,7 @@ describe("@us-04 @slice-04 running again, closing and reopening", () => {
 	});
 });
 
-describe("@us-04 @slice-04 the dialog from the keyboard and on a small screen", () => {
+describe("the dialog from the keyboard and on a small screen", () => {
 	it(`Escape closes the dialog and puts focus back on Run reality check`, async () => {
 		runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 		const group = renderTheForecastTab(runRealityCheck);

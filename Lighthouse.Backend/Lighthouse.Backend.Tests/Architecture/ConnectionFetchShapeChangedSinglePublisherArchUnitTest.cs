@@ -24,7 +24,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "a helper type the architecture loader does not attribute to its owner.";
 
         [Test]
-        // @contract-shape:unbounded-preservation
         public void NoTypeOutsideTheConnectionSave_PublishesThatAConnectionsFetchShapeChanged()
         {
             Types().That()
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        // @contract-shape:unbounded-preservation
         public void TheConnectionSave_IsSeenToPublishThatAConnectionsFetchShapeChanged()
         {
             Types().That()

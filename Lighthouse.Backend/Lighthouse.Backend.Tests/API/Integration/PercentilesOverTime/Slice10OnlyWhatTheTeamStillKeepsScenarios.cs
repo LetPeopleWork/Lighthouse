@@ -21,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-10")]
     public partial class Slice10OnlyWhatTheTeamStillKeepsTest
     {
-        // @driving_port @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Cycle_time_is_filled_in_only_for_days_whose_whole_window_the_team_still_keeps()
         {
@@ -38,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        // @driving_port @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Limits_are_filled_in_only_for_days_whose_whole_stretch_the_team_still_keeps()
         {
@@ -64,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The second team is the same team with its stretch pinned a little later, inside what it keeps,
         /// so the same days do get limits there - a fill that wrote no limits for anyone cannot pass this.
         /// </summary>
-        // @driving_port @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Limits_drawn_from_a_pinned_stretch_the_team_no_longer_keeps_are_not_filled_in()
         {
@@ -92,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// edge is still one whose finished work is gone, and an item that was in progress on it and
         /// finished before the edge is no longer there to be counted.
         /// </summary>
-        // @driving_port @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Work_item_age_is_filled_in_from_the_oldest_day_the_team_still_keeps_and_not_before()
         {

@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("slice-02")]
     public partial class Slice02SeeWhatIsRunningTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-02.1 @AC-02.3 @AC-02.9
         [Test]
         public async Task A_refresh_that_is_running_is_listed_by_name()
         {
@@ -41,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListShowsExactly(OneRunningTeamNamed(team));
         }
 
-        // @driving_port @real-io @AC-02.1 @AC-02.3 — the other half of the refresh cycle.
+        // the other half of the refresh cycle.
         [Test]
         public async Task A_portfolio_refresh_that_is_running_is_listed_by_name()
         {
@@ -53,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListShowsExactly(OneRunningPortfolioNamed(portfolio));
         }
 
-        // @driving_port @real-io @AC-02.1 @AC-02.3 — the question the list exists to answer is "what is
+        // the question the list exists to answer is "what is
         // waiting", not only "what is busy". One lane means the second refresh is genuinely queued.
         [Test]
         public async Task A_refresh_waiting_its_turn_is_listed_as_queued()
@@ -68,7 +67,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListShows(OneRunningTeamNamed(running), OneQueuedTeamNamed(waiting));
         }
 
-        // @driving_port @real-io @AC-02.3 — the naming half of deferred item G, pulled in on 2026-09-14.
+        // the naming half of deferred item G, pulled in on 2026-09-14.
         // #5877 is a user who watched three Teams sit behind one Portfolio for 3h38m and read it as hung;
         // a row that says only "queued" is what let that happen.
         [Test]
@@ -85,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheRunningRowSaysItIsWaitingBehindNothing(holdingTheLane);
         }
 
-        // @driving_port @real-io @error @AC-02.3 — a Team deleted while its refresh was in flight must
+        // a Team deleted while its refresh was in flight must
         // not take the whole list down with it.
         [Test]
         public async Task A_refresh_whose_entity_has_gone_is_still_listed_by_what_it_is()
@@ -99,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListStillDescribesThatWorkByTypeAndId(team);
         }
 
-        // @driving_port @real-io @AC-02.7 — the backend half: nothing running is an empty list, not an
+        // the backend half: nothing running is an empty list, not an
         // error. What an operator reads instead of an empty box is the popover's promise.
         [Test]
         public async Task With_nothing_running_the_task_list_is_empty_and_says_so_without_failing()
@@ -109,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListIsAnsweredAndEmpty();
         }
 
-        // @driving_port @real-io @error @AC-02.6 — the same refusal the refresh log already gives.
+        // the same refusal the refresh log already gives.
         [Test]
         public async Task The_task_list_is_refused_to_somebody_who_is_not_a_system_administrator()
         {
@@ -118,7 +117,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListRefusesANonAdministratorTheSameWayTheRefreshLogDoes();
         }
 
-        // @driving_port @real-io @AC-02.2 — the endpoint being replaced is already wrong under Redis with
+        // the endpoint being replaced is already wrong under Redis with
         // more than one replica: it counts a dictionary only the answering pod can see. Reading through
         // the port is the fix, and work admitted through the port is how that is observable from outside.
         [Test]
@@ -131,7 +130,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenTheTaskListShowsExactly(OneQueuedTeamNamed(team));
         }
 
-        // @driving_port @real-io @AC-02.3 — UpdateType has five members and the frontend union knows
+        // UpdateType has five members and the frontend union knows
         // three (S11). The delete types reach this list, so they have to read as something.
         [Test]
         public async Task A_delete_that_is_waiting_is_listed_as_something_a_reader_can_understand()

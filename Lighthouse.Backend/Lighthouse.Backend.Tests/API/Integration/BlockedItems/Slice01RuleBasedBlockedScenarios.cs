@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// Job: job-config-admin-define-blocked-rules. Persona: config-admin (Carlos). Driving ports: team
     /// settings PUT + team settings GET + team metrics WIP read (WorkItemDto.isBlocked).
     ///
-    /// One scenario is the walking skeleton (@walking_skeleton, GREEN via the existing blocked
+    /// One scenario is the walking skeleton (GREEN via the existing blocked
     /// round-trip). See distill/red-classification.md for the RED reason each of the others was
     /// driven from during DELIVER.
     /// </summary>
@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-01")]
     public partial class Slice01RuleBasedBlockedTest
     {
-        // @walking_skeleton @driving_port @real-io @us-01
         [Test]
         [Category("walking_skeleton")]
         public async Task An_admin_saves_a_teams_blocked_definition_and_reads_it_back()
@@ -32,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheBlockedDefinitionIncludes(settings, "Blocked");
         }
 
-        // @driving_port @us-01
         [Test]
         public async Task A_custom_field_condition_makes_an_item_read_blocked()
         {
@@ -44,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheItemReadsBlocked(team, "PHX-204");
         }
 
-        // @driving_port @us-01 read-your-writes
+        // read-your-writes
         [Test]
         public async Task Saved_blocked_rules_persist_across_reload()
         {
@@ -57,7 +55,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheMigratedRuleSetExpresses(settings, "workitem.state equals Blocked", "workitem.tags contains impediment");
         }
 
-        // @driving_port @us-01 @property (single definition drives every blocked signal)
+        // (single definition drives every blocked signal)
         [Test]
         [Category("property")]
         public async Task An_item_matching_the_blocked_rules_reads_blocked_everywhere()
@@ -71,7 +69,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheItemReadsBlocked(team, "PHX-9");
         }
 
-        // @edge @us-01 (empty rule set blocks nothing)
+        // (empty rule set blocks nothing)
         [Test]
         public async Task A_team_with_no_blocked_config_blocks_nothing()
         {
@@ -84,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             await ThenTheItemDoesNotReadBlocked(team, "ATL-1");
         }
 
-        // @error @us-01 (schema limit)
+        // (schema limit)
         [Test]
         public async Task A_blocked_rule_set_exceeding_the_maximum_conditions_is_rejected()
         {
@@ -96,7 +94,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheSaveIsRejected(save);
         }
 
-        // @error @us-01 (unknown field key)
+        // (unknown field key)
         [Test]
         public async Task A_blocked_rule_referencing_an_unknown_field_is_rejected()
         {
@@ -107,7 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheSaveIsRejected(save);
         }
 
-        // @error @us-01 @rbac (config-admin gate on the extended contract; passes today via existing guard)
+        // (config-admin gate on the extended contract; passes today via existing guard)
         [Test]
         public async Task A_non_admin_cannot_change_the_blocked_definition()
         {

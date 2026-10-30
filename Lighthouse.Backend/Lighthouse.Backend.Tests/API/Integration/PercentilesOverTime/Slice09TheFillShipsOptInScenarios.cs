@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The daily recording is not the fill. Today is written on a refresh exactly as before, and a
         /// refresh writes nothing but today.
         /// </summary>
-        // @us-05 @not-gated @regression @real-io @contract-shape:bounded-change
         [Test]
         public async Task The_daily_recording_still_writes_today()
         {
@@ -43,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// refresh writes the team's age reading for today, which is what shows the recording genuinely
         /// ran for this team and chose to leave cycle time blank.
         /// </summary>
-        // @us-05 @not-gated @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_quiet_day_is_still_left_blank_by_the_daily_recording()
         {
@@ -65,7 +63,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// settled, everyday chart that is missing nothing nor one that finds days to ask for looks one
         /// up. A lookup coming back here is a gate coming back.
         /// </summary>
-        // @us-05 @read-cost @real-io @contract-shape:pure-function
         [Test]
         public async Task Opening_a_chart_never_looks_up_a_behaviour_setting()
         {

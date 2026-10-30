@@ -191,7 +191,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 		vi.useRealTimers();
 	});
 
-	// @us-01 @slice-01 @driving_port @kpi-OUT-6202-no-hidden-rows @contract-shape:bounded-change
 	it(
 		"Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it",
 		async () => {
@@ -239,7 +238,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @regression @contract-shape:unbounded-preservation
 	it(
 		"a Team with 38 Work Items in refinement sees all of them, with no footer",
 		async () => {
@@ -257,7 +255,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	// Where the line lands on each page for every placement that matters around the page edge.
 	it.each<[number, LineOnThePage | null, LineOnThePage | null]>([
 		[0, { side: "above", by: reference(1), says: ENOUGH_FOR }, null],
@@ -284,7 +281,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The first page must not call its own 100 rows all needed while 143 are in refinement.
 	it(
 		"with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
@@ -314,7 +310,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(
 		"with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last",
 		async () => {

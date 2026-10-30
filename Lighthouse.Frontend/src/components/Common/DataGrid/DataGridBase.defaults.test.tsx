@@ -84,7 +84,6 @@ const thePage = () => document.body;
 const onlyEmailHidden: ColumnVisibilityModel = { email: false };
 
 describe("a grid given default visibility", () => {
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"starts with the columns the defaults hide out of sight",
 		() => {
@@ -95,7 +94,6 @@ describe("a grid given default visibility", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"remembers a column the user turned on across a reopen",
 		async () => {
@@ -111,7 +109,6 @@ describe("a grid given default visibility", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"lets a later change to the defaults reach every column the user never touched",
 		async () => {
@@ -127,7 +124,6 @@ describe("a grid given default visibility", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"keeps a column the user turned on, even after the defaults start hiding it",
 		async () => {
@@ -143,7 +139,6 @@ describe("a grid given default visibility", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"Reset layout lands on the defaults, not on every column shown",
 		async () => {
@@ -159,7 +154,6 @@ describe("a grid given default visibility", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @contract-shape:bounded-change
 	it(
 		"keeps a column that cannot be hidden on screen without freezing the other defaults",
 		() => {
@@ -236,7 +230,6 @@ describe("a grid given default visibility", () => {
 });
 
 describe("a grid given no default visibility (every other grid), as today", () => {
-	// @us-01 @slice-01b @regression @contract-shape:unbounded-preservation
 	it(
 		"shows every column",
 		() => {
@@ -247,7 +240,6 @@ describe("a grid given no default visibility (every other grid), as today", () =
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @regression @contract-shape:unbounded-preservation
 	it(
 		"remembers a column the user hid across a reopen",
 		async () => {
@@ -263,7 +255,6 @@ describe("a grid given no default visibility (every other grid), as today", () =
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01b @regression @contract-shape:unbounded-preservation
 	it(
 		"Reset layout shows every column again",
 		async () => {

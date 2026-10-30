@@ -39,7 +39,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             "$geoip_disable",
         ];
 
-        // @driving_port @real-io @us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor @contract-shape:bounded-change
         [Test]
         public async Task A_browser_that_agreed_reports_a_reality_check_as_one_event_carrying_only_its_name()
         {
@@ -62,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-01 @error @contract-shape:unbounded-preservation
         [TestCase("declined")]
         [TestCase(null)]
         public async Task Nothing_leaves_a_browser_that_did_not_agree_when_it_runs_a_reality_check(string? decision)
@@ -84,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @us-01 @error @contract-shape:unbounded-preservation
         [Test]
         public async Task Nothing_is_forwarded_while_the_administrator_has_stopped_usage_data()
         {
@@ -108,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// The event is name-only by decision. A message under its name that carries any of the parts
         /// other events are allowed - a page, a kind of system, a setting - is refused whole rather than forwarded with the extra dropped.
         /// </summary>
-        // @driving_port @real-io @us-01 @error @contract-shape:unbounded-preservation
         [TestCase(",\"route\":\"" + TeamMetricsTab + "\"")]
         [TestCase(",\"workTrackingSystem\":\"Jira\"")]
         [TestCase(",\"optionalFeature\":\"FeatureOrder\",\"enabled\":true")]
@@ -136,7 +132,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// name and number and its line on the page; the shipped disclosure test then counts the two
         /// lists against each other.
         /// </summary>
-        // @us-01 @kpi-OUT-4172-reality-check-used-outside-the-vendor @contract-shape:bounded-change
         [Test]
         public void The_event_is_the_twelfth_on_the_list_and_the_usage_data_page_describes_it()
         {

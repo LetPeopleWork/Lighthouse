@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-01")]
     public partial class Slice01PercentilesOverTimeTest
     {
-        // @driving_port @scenario-1 (team read path)
+        // (team read path)
         [Test]
         public async Task The_flow_coach_reads_a_dated_cycle_time_percentiles_trend_for_a_team()
         {
@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             });
         }
 
-        // @edge @scenario-1 (honest empty-state contract)
+        // (honest empty-state contract)
         [Test]
         public async Task A_team_with_no_snapshots_sees_an_empty_series()
         {
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheSeriesIsEmpty(response);
         }
 
-        // @driving_port @scenario-1 (portfolio read path — the twin endpoint)
+        // (portfolio read path — the twin endpoint)
         [Test]
         public async Task The_flow_coach_reads_a_dated_cycle_time_percentiles_trend_for_a_portfolio()
         {

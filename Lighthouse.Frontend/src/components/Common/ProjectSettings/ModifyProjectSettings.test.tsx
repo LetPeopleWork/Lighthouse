@@ -934,7 +934,6 @@ describe("ModifyProjectSettings", () => {
 		});
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("a Portfolio following the Portfolios' Estimation default shows it, and picking a field of its own saves that choice", async () => {
 		mockGetWorkTrackingSystems.mockResolvedValue([
 			{
@@ -1039,7 +1038,6 @@ describe("ModifyProjectSettings", () => {
 			return screen.getByRole("combobox", { name: "Parent Override Field" });
 		};
 
-		// @driving_port @us-07 @ac-7.5 @contract-shape:pure-function
 		it("shows the followed field as the selected first entry", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault();
 
@@ -1060,7 +1058,6 @@ describe("ModifyProjectSettings", () => {
 			]);
 		});
 
-		// @us-07 @ac-7.5 @contract-shape:bounded-change
 		it("picking another entry makes the value the Portfolio's own", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault();
 
@@ -1081,7 +1078,6 @@ describe("ModifyProjectSettings", () => {
 			);
 		});
 
-		// @us-07 @ac-7.5 @contract-shape:bounded-change
 		it("switching the connection shows the default of the connection now chosen", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault({
 				additionalFieldDefinitions: [
@@ -1105,7 +1101,6 @@ describe("ModifyProjectSettings", () => {
 			).toBeInTheDocument();
 		});
 
-		// @us-07 @ac-7.5 @contract-shape:bounded-change
 		it("switching to a connection whose default names nothing shows None", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault({
 				defaults: { parentOverrideForTeams: 31 },
@@ -1118,7 +1113,6 @@ describe("ModifyProjectSettings", () => {
 			);
 		});
 
-		// @us-07 @ac-7.5 @contract-shape:bounded-change
 		it("switching to a connection whose tracker holds no default offers no connection default", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault({
 				workTrackingSystem: "Linear",
@@ -1173,7 +1167,6 @@ describe("ModifyProjectSettings", () => {
 	] as const)(
 		"a Portfolio that follows the connection's $field",
 		({ group, field, theDefault, following }) => {
-			// @us-09 @ac-9.1 @contract-shape:bounded-change
 			it("switching the connection shows the default of the connection now chosen", async () => {
 				mockGetWorkTrackingSystems.mockResolvedValue([
 					{

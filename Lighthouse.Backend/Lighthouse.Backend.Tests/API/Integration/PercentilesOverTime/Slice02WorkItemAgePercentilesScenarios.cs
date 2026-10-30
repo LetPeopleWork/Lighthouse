@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [Category("slice-02")]
     public partial class Slice02WorkItemAgePercentilesTest
     {
-        // @driving_port @scenario-8 (read-after-record — the shared pipeline's age rows are served back)
+        // (read-after-record — the shared pipeline's age rows are served back)
         [Test]
         public async Task The_flow_coach_reads_back_the_age_percentiles_the_metrics_refresh_just_recorded()
         {
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             });
         }
 
-        // @driving_port @scenario-8 (additive contract — a slice-01-shaped request is untouched)
+        // (additive contract — a slice-01-shaped request is untouched)
         [Test]
         public async Task A_client_on_the_slice_one_contract_still_reads_the_identical_cycle_time_series()
         {
@@ -57,7 +57,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             });
         }
 
-        // @edge @scenario-8 (age has no horizon dimension — a stale horizon must not mis-serve the tab)
+        // (age has no horizon dimension — a stale horizon must not mis-serve the tab)
         [Test]
         public async Task An_age_request_that_still_carries_a_horizon_gets_the_single_age_series()
         {
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             });
         }
 
-        // @edge @scenario-9 (honest forward-only empty state — never the neighbouring CT rows)
+        // (honest forward-only empty state — never the neighbouring CT rows)
         [Test]
         public async Task A_team_with_no_recorded_age_percentiles_sees_an_empty_series()
         {
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheSeriesIsEmpty(response);
         }
 
-        // @driving_port @scenario-8 (portfolio read path — the twin endpoint)
+        // (portfolio read path — the twin endpoint)
         [Test]
         public async Task The_flow_coach_reads_a_dated_age_percentiles_trend_for_a_portfolio()
         {

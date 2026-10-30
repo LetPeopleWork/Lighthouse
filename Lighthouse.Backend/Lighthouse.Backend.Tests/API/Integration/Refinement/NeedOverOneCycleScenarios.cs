@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- One cycle ---
 
-        // @walking_skeleton @driving_port @real-io @need-over-one-cycle @contract-shape:pure-function
         // Friday 2 October: the next Refinement is Thursday the 8th and the one after it Thursday the 15th.
         [Test]
         public async Task The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after()
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheHeadingStillNamesTheNextRefinement(tab, ThursdayTheEighth, isRefinementDay: false);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // Friday, Monday, Tuesday and Wednesday all look to the same cycle, so they all read the same number.
         [TestCase(2)]
         [TestCase(5)]
@@ -54,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheNeedIsBelowFiveToEightOverTheCycle(tab, ThursdayTheEighth, ThursdayTheFifteenth);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // With weekends blacked out the cycle from Thursday to Thursday has five working days: Friday the 9th
         // and Monday to Thursday the following week.
         [TestCase(5)]
@@ -71,7 +68,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRangeIsOverTheCycle(tab, low: 4, high: 6, workingDays: 5, ThursdayTheEighth, ThursdayTheFifteenth);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // Today's session is the moment to top up, so the cycle starts today and runs to the next Refinement.
         [Test]
         public async Task On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement()
@@ -88,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Several weekdays ---
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // Mondays and Thursdays: Monday to Thursday is three days, Thursday to Monday four, so the number
         // follows whichever gap comes next. Gravity finishes one Work Item a day, so the shipped forecast
         // reads one per working day at both ends.
@@ -109,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- Blackout days ---
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // Monday the 12th lies inside the cycle and shortens it; Monday the 5th comes before the next
         // Refinement and no longer changes the number.
         [TestCase(12, 6)]
@@ -125,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRangeIsOverTheCycle(tab, low: 4, high: 9, workingDays, ThursdayTheEighth, ThursdayTheFifteenth);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // Nobody refines on Thursday the 15th, so the cycle runs on to Thursday the 22nd: fourteen days, one
         // of them blacked out.
         [Test]
@@ -140,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRangeIsOverTheCycle(tab, low: 9, high: 14, workingDays: 13, ThursdayTheEighth, ThursdayTheTwentySecond);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // Nobody refines on Thursday the 8th, so the next Refinement is the 15th and the cycle runs to the 22nd.
         [Test]
         public async Task A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens()
@@ -155,7 +147,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheHeadingStillNamesTheNextRefinement(tab, ThursdayTheFifteenth, isRefinementDay: false);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @us-04 @boundary @contract-shape:pure-function
         // A Thursday blacked out is no Refinement day, so the cycle does not start today but at the next one.
         [Test]
         public async Task Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does()
@@ -171,7 +162,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheHeadingStillNamesTheNextRefinement(tab, ThursdayTheFifteenth, isRefinementDay: false);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @boundary @contract-shape:pure-function
         // Every day up to Wednesday 29 September 2027 is blacked out, so the next Refinement is Thursday the
         // 30th, almost a year ahead. The one after it would be Thursday 7 October 2027, a blackout day too, so
         // the cycle runs to Thursday 14 October 2027. A Refinement that far ahead still counts as blacked out.
@@ -192,7 +182,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- No cycle, no number ---
 
-        // @driving_port @real-io @need-over-one-cycle @us-05 @error @contract-shape:pure-function
         // Thursday the 8th happens, but every Thursday in the year after it is blacked out: there is no
         // Refinement worth planning for, as with no cadence at all. The heading still names the 8th.
         [Test]
@@ -207,7 +196,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheHeadingStillNamesTheNextRefinement(tab, ThursdayTheEighth, isRefinementDay: false);
         }
 
-        // @driving_port @real-io @need-over-one-cycle @us-05 @error @contract-shape:pure-function
         // Whatever is missing, a need without a range names no cycle either.
         [TestCase(MissingSetUp.Cadence, NoCadence)]
         [TestCase(MissingSetUp.ThroughputHistory, InsufficientData)]

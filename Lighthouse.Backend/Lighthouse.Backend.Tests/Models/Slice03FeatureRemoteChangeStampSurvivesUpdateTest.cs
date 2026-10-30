@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private static readonly DateTime WhenItLastChanged = new(2026, 8, 1, 9, 0, 0, DateTimeKind.Utc);
 
-        // @unit @AC-3.1 @D6 @contract-shape:bounded-change
         [Test]
         public void A_feature_that_is_refreshed_keeps_the_day_the_tracker_says_it_last_changed()
         {
@@ -37,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Models
                 + "downloads every Feature again - the saving handed straight back, with every other test still green.");
         }
 
-        // @unit @AC-3.1 @D6 @contract-shape:pure-function
         [Test]
         public void A_feature_copied_from_what_the_tracker_returned_keeps_the_day_it_last_changed()
         {

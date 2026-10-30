@@ -26,7 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// so the period cannot be worked out from anything - which is a different statement from
         /// "nothing has been recorded yet".
         /// </summary>
-        // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_period_that_predates_everything_the_team_holds_stays_empty_and_nothing_is_invented()
         {
@@ -45,7 +44,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             }
         }
 
-        // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_team_with_nothing_in_it_at_all_stays_empty_and_nothing_is_invented()
         {
@@ -66,7 +64,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The third state. This team stopped being synced, so the recent part of the period will never
         /// fill in however long the coach waits - which is a different answer again from the other two.
         /// </summary>
-        // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_team_nobody_is_syncing_any_more_stays_empty_for_the_period_since_it_stopped()
         {
@@ -89,7 +86,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Asking for more than can be answered must not turn into answering nothing: the part of the
         /// period the team's work does cover still arrives.
         /// </summary>
-        // @driving_port @us-04 @boundary @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_period_that_reaches_further_back_than_the_team_does_still_returns_the_part_it_covers()
         {
@@ -102,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheChartStillCoversThePeriodItCan(teamId, TodayDay.AddDays(-40), TodayDay);
         }
 
-        // @driving_port @us-04 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_limits_chart_stays_empty_for_a_period_that_predates_everything_the_team_holds()
         {

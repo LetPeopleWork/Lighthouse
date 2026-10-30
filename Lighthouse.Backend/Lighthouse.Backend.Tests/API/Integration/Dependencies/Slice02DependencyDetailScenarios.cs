@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             NotHonouredReason.NotLicensed,
         ];
 
-        // @driving_adapter @us-02 - "Opening the list of Features one is waiting on". The reader finds what
+        // "Opening the list of Features one is waiting on". The reader finds what
         // a Feature waits on on the row itself, named and linked, rather than by going somewhere for it.
         [Test]
         public async Task A_row_names_the_features_it_waits_on_and_leads_to_each_of_them()
@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheRowFor(rows, "F-3").WaitsOn();
         }
 
-        // @driving_adapter @us-02 - "An entry Lighthouse cannot act on says so, in words the reader
+        // "An entry Lighthouse cannot act on says so, in words the reader
         // already uses". Both halves are one scenario on purpose: a reason on every entry would be as
         // useless as a reason on none, so what carries one and what does not have to be read together.
         [Test]
@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheReasonsAreExactly(TheReasonsThisEpicCanProduce);
         }
 
-        // @error @us-02 - "A Feature the reader may not see is named as withheld, never quietly dropped".
+        // "A Feature the reader may not see is named as withheld, never quietly dropped".
         // A shorter list is one the reader has no way of telling is short.
         [Test]
         public async Task A_feature_the_reader_may_not_see_is_withheld_rather_than_left_out()
@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheRowFor(rows, "F-3").WaitsOnThisMany(2);
         }
 
-        // @rbac @us-02 - "A reader who may not change anything sees the same list and is offered no
+        // "A reader who may not change anything sees the same list and is offered no
         // action". Nothing here is offered to anybody, so the readable half is the whole difference a
         // permission could make, and it must make none.
         [Test]
@@ -146,7 +146,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingInTheApiWritesADependency();
         }
 
-        // @error @us-03 - "Waiting on a Feature outside the Portfolio raises a warning that names it".
+        // "Waiting on a Feature outside the Portfolio raises a warning that names it".
         [Test]
         public async Task Waiting_on_a_feature_outside_the_portfolio_says_so_on_the_row_and_names_it()
         {
@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNoEntryCarriesASentenceNobodyCanRename(rows);
         }
 
-        // @us-03 - a Portfolio's page and a Team's page ask for the Features they hold rather than for the
+        // a Portfolio's page and a Team's page ask for the Features they hold rather than for the
         // whole list, and they carry the same warnings column. One dependency reading as a problem on one
         // screen and as fine on another is the disagreement this whole feature exists to prevent, so what
         // is said about it cannot depend on which screen asked.
@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheRowFor(rows, "F-3").Entry("F-1").HasNothingWrongWithIt();
         }
 
-        // @error @us-03 - "Waiting on a Feature positioned below raises a different warning, and nothing
+        // "Waiting on a Feature positioned below raises a different warning, and nothing
         // is moved". The order stays the reader's, so the whole rendered order is compared before and
         // after the read.
         [Test]
@@ -223,7 +223,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenTheOrderEveryFeatureIsInIsUnchanged(theOrderBefore, rows);
         }
 
-        // @error @us-03 - "A loop warns on every Feature in it and names the others". Every member is
+        // "A loop warns on every Feature in it and names the others". Every member is
         // waiting on every other member, so there is no first one to start with.
         [Test]
         public async Task Two_features_waiting_on_each_other_both_say_so()
@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingAboutTheDependenciesWasRecorded(everythingRecordedBefore);
         }
 
-        // @edge @us-03 - "A Feature waiting on one whose Team has no measured delivery is told why". The
+        // "A Feature waiting on one whose Team has no measured delivery is told why". The
         // wait has no end anyone can name, which is a different problem from the dependency being unusable.
         [Test]
         public async Task Waiting_on_a_feature_no_one_can_forecast_says_so()
@@ -363,7 +363,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             ThenNothingWasSaidAboutDependencies();
         }
 
-        // @kpi - "The verdict is worked out from what the page already loaded". Asserted as a count rather
+        // "The verdict is worked out from what the page already loaded". Asserted as a count rather
         // than a stopwatch reading: a wall-clock figure on one machine says nothing about an instance ten
         // times larger, and the failure worth catching is a read whose cost grows with the list.
         [Test]

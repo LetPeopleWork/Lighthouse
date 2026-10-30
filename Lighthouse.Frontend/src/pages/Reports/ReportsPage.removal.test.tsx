@@ -72,7 +72,6 @@ const pickTheThree = async (
 const theConfirmation = () => screen.findByRole("dialog");
 
 describe("Remove several reports at once", () => {
-	// @walking_skeleton @driving_port @us-05 @slice-05 @kpi-OUT-6350-bulk-removal-used @contract-shape:bounded-change
 	it.skip(`a coach removes three trial reports on two Teams and a Portfolio, and they leave the list (${pending})`, async () => {
 		const getAllReports = theThreeOfThem()
 			.mockResolvedValueOnce(
@@ -109,7 +108,6 @@ describe("Remove several reports at once", () => {
 		await waitFor(() => expect(screen.queryAllByRole("row")).toHaveLength(1));
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:unbounded-preservation
 	it.skip(`Cancel removes nothing (${pending})`, async () => {
 		const removeReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
@@ -126,7 +124,6 @@ describe("Remove several reports at once", () => {
 		expect(theReportNamesListed()).toEqual([QUARTER, QUARTER, MONTH]);
 	});
 
-	// @us-05 @slice-05 @edge @contract-shape:pure-function
 	it.skip(`the confirmation warns when one of them holds a Then that can no longer be rebuilt (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -152,7 +149,6 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @edge @contract-shape:pure-function
 	it.skip(`with every Then still rebuildable the confirmation carries no warning (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
@@ -168,7 +164,6 @@ describe("Remove several reports at once", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it.skip(`with one picked report on an owner she only reads, Remove is disabled and says why (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -197,7 +192,6 @@ describe("Remove several reports at once", () => {
 		);
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:bounded-change
 	it.skip(`a report the server did not remove is named with its reason and stays listed (${pending})`, async () => {
 		const getAllReports = vi
 			.fn()
@@ -234,7 +228,6 @@ describe("Remove several reports at once", () => {
 		await waitFor(() => expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument());
 	});
 
-	// @us-05 @slice-05 @edge @contract-shape:bounded-change
 	it.skip(`a report somebody else removed first counts as removed (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -262,7 +255,6 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @error @contract-shape:unbounded-preservation
 	it.skip(`when no answer arrives it says it cannot confirm what was removed (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -284,7 +276,6 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-05 @slice-05 @edge @contract-shape:unbounded-preservation
 	it.skip(`while the removal is under way the dialog cannot be closed (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -312,7 +303,6 @@ describe("Remove several reports at once", () => {
 describe("Picking reports", () => {
 	const pendingSelection = pendingEpic6350("05");
 
-	// @us-01 @us-05 @slice-05 @error @edge @contract-shape:pure-function
 	it.skip(`above 50 picked, Remove and Export PDF are disabled and say at most 50 (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -332,7 +322,6 @@ describe("Picking reports", () => {
 		);
 	});
 
-	// @us-01 @us-05 @slice-05 @edge @contract-shape:pure-function
 	it.skip(`exactly 50 picked may still be removed (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -349,7 +338,6 @@ describe("Picking reports", () => {
 		).toBeEnabled();
 	});
 
-	// @us-01 @slice-05 @edge @contract-shape:pure-function
 	it.skip(`changing the filter clears what was picked (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
@@ -366,7 +354,6 @@ describe("Picking reports", () => {
 		).toBeDisabled();
 	});
 
-	// @us-01 @slice-05 @contract-shape:pure-function
 	it.skip(`sorting keeps what was picked (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
@@ -380,7 +367,6 @@ describe("Picking reports", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-05 @contract-shape:pure-function
 	it.skip(`Select all picks every row the filter shows, on every page (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(

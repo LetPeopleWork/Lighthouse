@@ -49,7 +49,7 @@ const OTHER_PBC_FAMILY = "WorkItemAge" as const;
 // The dashboard date pickers apply to both over-time widgets. The
 // demo backfill covers [today-14, today-1], so a ~7-day window inside it plots
 // strictly fewer days than the default 30-day window.
-test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fewer recorded days on both over-time widgets", async ({
+test("narrowing the dashboard range re-plots fewer recorded days on both over-time widgets", async ({
 	page,
 	request,
 	overviewPage,
@@ -112,7 +112,7 @@ test("@real-io @driving_adapter @US-06 narrowing the dashboard range re-plots fe
 	await expect(pbc.emptyState).toHaveCount(0);
 });
 
-test("@edge @US-06 a range that ends before the demo history shows the honest empty copy on both over-time widgets", async ({
+test("a range that ends before the demo history shows the honest empty copy on both over-time widgets", async ({
 	page,
 	request,
 	overviewPage,
@@ -155,7 +155,7 @@ test("@edge @US-06 a range that ends before the demo history shows the honest em
 // process-behaviour limits at all, and it sits on a non-demo connection — only demo
 // connections are seeded with past days — so this is the honest "fresh team" fixture
 // for BOTH widgets.
-test("@edge @US-03 @US-04 a fresh team's over-time widgets show the honest empty state", async ({
+test("a fresh team's over-time widgets show the honest empty state", async ({
 	page,
 	request,
 	overviewPage,

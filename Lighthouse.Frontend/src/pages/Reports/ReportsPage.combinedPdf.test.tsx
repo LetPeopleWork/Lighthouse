@@ -110,7 +110,6 @@ describe("One PDF of several reports", () => {
 		forgetTheBrowser();
 	});
 
-	// @walking_skeleton @driving_port @us-07 @slice-07 @kpi-OUT-6350-combined-pdf-used @contract-shape:bounded-change
 	it.skip(`a coach exports the reports of two Teams as one PDF, each on a page of its own (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -130,7 +129,6 @@ describe("One PDF of several reports", () => {
 		expect(theReportTitlesPrinted()).toEqual([QUARTER, MONTH]);
 	});
 
-	// @us-07 @slice-07 @contract-shape:pure-function
 	it.skip(`the reports print in the table's order, as the reader sorted it (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -154,7 +152,6 @@ describe("One PDF of several reports", () => {
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
 	});
 
-	// @us-07 @slice-07 @edge @contract-shape:unbounded-preservation
 	it.skip(`while the reports load, Export PDF shows it is preparing and nothing prints yet (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -180,7 +177,6 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	// @us-07 @slice-07 @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it.skip(`a reader who is Admin of none of them may still export them (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -200,7 +196,6 @@ describe("One PDF of several reports", () => {
 		await theFramesHavePrinted(frames, 1);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it.skip(`a report that cannot be loaded stops the PDF and is named (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -232,7 +227,6 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:bounded-change
 	it.skip(`Leave it out unpicks the report that failed and prints the rest (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -262,7 +256,6 @@ describe("One PDF of several reports", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-07 @slice-07 @error @edge @contract-shape:pure-function
 	it.skip(`Leave it out is not offered when leaving the failed reports out would leave nothing to print (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -286,7 +279,6 @@ describe("One PDF of several reports", () => {
 		).toEqual([CANCEL, RETRY]);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:bounded-change
 	it.skip(`Retry asks for the report again and prints once it arrives (${pending})`, async () => {
 		const frames = aPrintFrameBrowser();
 		const getReport = eachReportReads();
@@ -312,7 +304,6 @@ describe("One PDF of several reports", () => {
 		await theFramesHavePrinted(frames, 1);
 	});
 
-	// @us-07 @slice-07 @error @contract-shape:unbounded-preservation
 	it.skip(`when part of the page cannot be loaded no PDF is made and it says so (${pending})`, async () => {
 		theFontsCannotLoad("fail outright");
 		const frames = aPrintFrameBrowser();
@@ -342,7 +333,6 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	// @us-07 @slice-07 @error @edge @contract-shape:pure-function
 	it.skip(`above 50 picked, Export PDF is disabled and says at most 50 (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -364,7 +354,6 @@ describe("One PDF of several reports", () => {
 		);
 	});
 
-	// @us-07 @slice-07 @edge @contract-shape:pure-function
 	it.skip(`with nothing picked Export PDF is disabled and says why (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(eachReportReads(), zenithsQuarter),

@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     {
         private static readonly string[] OnlyTheLaterType = ["signals"];
 
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-6350-K1-reports-page-used @contract-shape:pure-function
         [Test]
         public async Task A_lead_reads_every_report_he_can_read_with_its_owner_on_a_Community_instance()
         {
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             }
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
         [Test]
         public async Task A_report_on_a_Portfolio_he_cannot_read_is_never_sent()
         {
@@ -55,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(owners, Is.EqualTo(new[] { OwnerKey(oceanExplorer) }));
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
         [Test]
         public async Task A_report_on_a_Team_he_cannot_read_is_never_sent()
         {
@@ -70,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(owners, Is.EqualTo(new[] { OwnerKey(gravity) }));
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
         public async Task An_instance_without_reports_answers_an_empty_list_not_a_failure()
         {
@@ -81,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(every, Is.Empty);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
         public async Task A_caller_who_can_read_no_owner_gets_an_empty_list()
         {
@@ -94,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(every, Is.Empty);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @edge @contract-shape:pure-function
         [Test]
         public async Task A_report_of_a_type_this_version_cannot_show_is_still_listed()
         {
@@ -107,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(every.Select(report => TextOf(report, "templateKey")), Is.EqualTo(OnlyTheLaterType));
         }
 
-        // @driving_port @real-io @us-01 @us-05 @slice-01 @edge @contract-shape:pure-function
         // The removal confirm counts the Thens that can no longer be rebuilt from this list, without opening each report.
         [Test]
         public async Task Each_row_says_whether_its_Then_can_still_be_rebuilt()
@@ -124,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(rebuildable, Is.EqualTo(new Dictionary<string, bool?> { ["Equinox"] = false, ["Gravity"] = true }));
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:unbounded-preservation
         // Older clients read the per-owner list; it must not gain the owner's name.
         [Test]
         public async Task The_per_owner_list_names_no_owner_as_before()
@@ -137,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
             Assert.That(list.Select(report => report.TryGetProperty("ownerName", out _)), Has.All.False);
         }
 
-        // @driving_port @real-io @us-01 @slice-01 @contract-shape:pure-function
         [Test]
         public async Task Each_row_names_its_owners_kind_id_and_name_beside_the_report()
         {

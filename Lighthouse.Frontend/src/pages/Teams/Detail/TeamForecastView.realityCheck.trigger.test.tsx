@@ -171,7 +171,7 @@ beforeEach(() => {
 	runRealityCheck.mockResolvedValue(aRealityCheckAnswer());
 });
 
-describe("@us-06 @slice-06a @driving_port the check is started from under the back-test inputs", () => {
+describe("the check is started from under the back-test inputs", () => {
 	// Green today and after the trigger moves: the single back-test keeps working beside its new neighbour, and this
 	// is also what proves the harness can bring a back-test result into the group.
 	it(`the single back-test beside the check still shows its result once an input changes`, async () => {
@@ -257,7 +257,7 @@ describe("@us-06 @slice-06a @driving_port the check is started from under the ba
 		},
 	);
 
-	it(`@error pressing the info icon opens nothing and runs no check`, async () => {
+	it(`pressing the info icon opens nothing and runs no check`, async () => {
 		const group = renderTheForecastTabWithItsBacktestInputs();
 
 		const explanation = within(group).getByRole("button", {

@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         [Test]
-        // @contract-shape:unbounded-preservation
         public void WhichRemovedFieldsAreStillInUse_IsDecidedFromPlainDataAlone()
         {
             Types().That()

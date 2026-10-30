@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-02")]
     public partial class Slice02JiraCloudTeamDeltaTest
     {
-        // @driving_port @real-io @AC-2.1 @contract-shape:bounded-change
         // The upgrade case: items exist, none of them carries a stamp yet.
         [Test]
         public async Task The_first_refresh_after_an_upgrade_downloads_everything_and_remembers_when_each_issue_last_changed()
@@ -39,7 +38,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenEveryStoredIssueRemembersWhenItLastChanged(team);
         }
 
-        // @walking_skeleton @driving_port @real-io @AC-2.2 @contract-shape:bounded-change
         // The thing the epic is buying.
         [Test]
         public async Task A_later_refresh_downloads_only_the_issues_that_moved()
@@ -57,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 3, fetched: 1);
         }
 
-        // @driving_port @real-io @AC-2.2 @D2 @D8 @contract-shape:unbounded-preservation
         // Whether a query can be swept is the connector's to declare. Every refresh tries the cheap path, so
         // this answer is the one thing keeping a sweep away from a query it cannot enumerate reliably.
         [Test]
@@ -74,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedAFullUpdateOf(team, scanned: 3, fetched: 3);
         }
 
-        // @error @driving_port @real-io @AC-2.3 @D2 @contract-shape:bounded-change
         // The rule whose failure deletes live work items: removed is an exact set difference.
         [Test]
         public async Task An_issue_that_left_the_query_is_gone_from_the_team_on_the_very_next_cycle()
@@ -91,7 +87,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRefreshReportedACheaperUpdateOf(team, scanned: 2, fetched: 0);
         }
 
-        // @driving_port @real-io @AC-2.4 @contract-shape:unbounded-preservation
         // Hypothesis 2: "updated is not trustworthy". Whole-surface, not a spot check of two fields.
         [Test]
         public async Task An_issue_that_did_not_move_is_left_exactly_as_it_was()
@@ -109,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheUntouchedIssueIsIdenticalTo(before, team, "ITEM-1");
         }
 
-        // @driving_port @real-io @AC-2.5 @D10 @contract-shape:bounded-change
         // The regression that leaves every other test green.
         [Test]
         public async Task An_issue_that_stopped_moving_still_goes_stale()
@@ -124,7 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheIssueWasNeverDownloaded();
         }
 
-        // @error @driving_port @real-io @AC-2.6 @D8 @contract-shape:bounded-change
         // No partial results, ever.
         [Test]
         public async Task A_refresh_whose_scan_fails_downloads_everything_rather_than_half()
@@ -142,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorIsToldTheScanFailed();
         }
 
-        // @driving_port @real-io @AC-2.9 @D9 @contract-shape:bounded-change
         // Everything downstream of the fetch keeps happening.
         [Test]
         public async Task A_cheaper_refresh_still_rolls_up_remaining_work_and_still_asks_for_a_new_forecast()

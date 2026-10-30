@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
     [Category("slice-04")]
     public partial class Slice04QuietWriteBackTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-01.1
         [Test]
         public async Task A_refresh_whose_writes_could_not_be_silenced_tells_the_administrator_once()
         {
@@ -34,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenThatWarningNamesTheRemedy();
         }
 
-        // @driving_port @AC-01.1 - the anti-regression criterion, seen from the refresh rather than the wire.
+        // the anti-regression criterion, seen from the refresh rather than the wire.
         [Test]
         public async Task A_refresh_whose_writes_could_not_be_silenced_still_wrote_the_values()
         {
@@ -48,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheStoredSizeIs(portfolio, "PROJ-1", "5");
         }
 
-        // @error @driving_port - ADR-142 §3: a 403 that survived the retry was never about notifications.
+        // ADR-142 §3: a 403 that survived the retry was never about notifications.
         [Test]
         public async Task A_refresh_whose_writes_were_refused_outright_does_not_blame_permissions()
         {
@@ -62,7 +61,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheAdministratorIsNotWarnedAboutNotifications();
         }
 
-        // @driving_port - the quiet case stays quiet in the log too.
+        // the quiet case stays quiet in the log too.
         [Test]
         public async Task A_refresh_that_was_silenced_says_nothing_about_notifications()
         {
@@ -75,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
             ThenTheAdministratorIsNotWarnedAboutNotifications();
         }
 
-        // @driving_port @AC-01.4 - Azure DevOps suppresses without a permission, so it never appears here.
+        // Azure DevOps suppresses without a permission, so it never appears here.
         [Test]
         public async Task An_azure_devops_refresh_never_warns_about_notifications()
         {

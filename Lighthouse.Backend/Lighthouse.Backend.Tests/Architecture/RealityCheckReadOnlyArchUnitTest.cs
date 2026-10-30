@@ -66,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static GivenTypesConjunction TheRealityCheckBesideItsController() =>
             TheRealityCheck().And().DoNotHaveFullName(Controller);
 
-        // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public void The_sweep_and_its_verdict_rules_exist_where_these_rules_look_for_them()
         {
@@ -92,7 +91,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public void Nothing_in_the_reality_check_can_reach_a_repository()
         {
@@ -106,7 +104,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         // Read off the call dependencies directly: the fluent call rule does not match a method declared on the
         // generic repository interface, so it would pass a controller that saves.
-        // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public void The_check_s_controller_only_ever_reads_through_the_repository_it_holds()
         {
@@ -128,7 +125,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        // @us-01 @kpi-OUT-4172-read-only @contract-shape:unbounded-preservation
         [Test]
         public void Nothing_in_the_reality_check_can_reach_the_database_directly()
         {
@@ -138,7 +134,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Check(Architecture);
         }
 
-        // @us-01 @contract-shape:pure-function
         [Test]
         public void The_verdict_rules_depend_on_no_service()
         {

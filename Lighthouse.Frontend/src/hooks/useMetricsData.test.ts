@@ -658,7 +658,6 @@ describe("useMetricsData", () => {
 		// chart and no estimate of a Feature's size, which are configured on a Portfolio. The Team's
 		// service here carries both of those methods as traps: having them must not make a Team's
 		// service count as a Portfolio's, so neither is ever asked.
-		// @us-01 @contract-shape:bounded-change
 		it("asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate", async () => {
 			const entity = createMockEntity();
 			const service = {
@@ -778,7 +777,6 @@ describe("useMetricsData", () => {
 
 		// A service missing any one of the three Feature-size methods (the sizes, their percentiles,
 		// or the percentiles' info) is asked for no Feature sizes at all.
-		// @us-02 @contract-shape:bounded-change
 		it.each(["getFeatureSizePercentilesInfo"] as const)(
 			"does not treat a service missing %s as a portfolio service",
 			doesNotTreatItAsAPortfolioService,
@@ -786,7 +784,6 @@ describe("useMetricsData", () => {
 
 		// Story #6251: a service without the Feature Size process behaviour chart or the estimate
 		// is not a Portfolio, but it may still be a Team with Feature sizes of its own.
-		// @us-01 @contract-shape:bounded-change
 		it.each(["getFeatureSizePbc", "getFeatureSizeEstimation"] as const)(
 			"a service missing %s is not treated as a portfolio service, but is still asked for its Feature sizes",
 			async (missingMethod) => {

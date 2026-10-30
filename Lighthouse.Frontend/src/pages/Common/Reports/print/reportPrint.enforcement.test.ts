@@ -61,7 +61,6 @@ const productionSourcesUnder = (directory: string): string[] =>
  * footer, prompts or usage reporting: a page drawn for paper is not a page anyone opened.
  */
 describe("what the print pages are built from", () => {
-	// @us-01 @slice-01 @contract-shape:unbounded-preservation
 	it("draws the report with the same summary and panels as the report view", () => {
 		const reached = whatThePrintPagesReach();
 
@@ -71,7 +70,6 @@ describe("what the print pages are built from", () => {
 		);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it.each([
 		"components/App/Header/Header.tsx",
 		"components/App/Footer/Footer.tsx",
@@ -108,7 +106,6 @@ const productionModulesNaming = (
 		.map((file) => relative(sourceRoot, file).replaceAll("\\", "/"));
 
 describe("who asks the browser for its print dialog", () => {
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// One caller, so the dialog can open once and only once; a second is a second dialog.
 	it("is the browser binding alone, however the dialog is spelled", () => {
 		const askers = productionSourcesUnder(sourceRoot)
@@ -126,7 +123,6 @@ describe("who asks the browser for its print dialog", () => {
 		expect(theWindowsOwn).toEqual([]);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The dialog closing is heard on the window that was asked, so only the module that asks may listen for it.
 	it("is the only one that hears the dialog close", () => {
 		expect(productionModulesNaming(/["'`]afterprint["'`]/)).toEqual([
@@ -136,7 +132,6 @@ describe("who asks the browser for its print dialog", () => {
 });
 
 describe("who loads fonts into a document", () => {
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// The report's fonts go through its effect port, so a test can stand in for them; one binding names the browser's.
 	it("is the browser binding alone", () => {
 		expect(productionModulesNaming(/\.fonts\s*\.\s*(?:load|ready)\b/)).toEqual([
@@ -146,7 +141,6 @@ describe("who loads fonts into a document", () => {
 });
 
 describe("who makes a frame", () => {
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// One way to make the print frame, so a second, unwatched frame fails by name.
 	it("is the browser binding, and nothing else", () => {
 		expect(
@@ -158,12 +152,10 @@ describe("who makes a frame", () => {
 });
 
 describe("what prints without moving the reader", () => {
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	it(`nothing under print/ navigates`, () => {
 		expect(productionModulesNaming(/\buseNavigate\b/, here)).toEqual([]);
 	});
 
-	// @us-01 @rev-3 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// Export PDF prints where the reader is; the starter can never slip back into taking them somewhere.
 	it(`the export starter neither navigates nor holds the router's navigation`, () => {
 		const starters = productionModulesNaming(/ReportPdfExportStarted/).filter(
@@ -176,7 +168,6 @@ describe("what prints without moving the reader", () => {
 		expect(starter).not.toMatch(/\bnavigate\s*\(/);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// In the frame the global document is the app's, so a title written there would name the wrong page.
 	it(`nothing under print/ but the binding writes a document's title`, () => {
 		expect(
@@ -186,7 +177,6 @@ describe("what prints without moving the reader", () => {
 		).toEqual([]);
 	});
 
-	// @us-01 @rev-3 @error @contract-shape:unbounded-preservation
 	// The frame host draws the same content as the route, so it must reach none of the app's chrome either.
 	it(`the frame host, alone in giving the frame a style cache of its own, draws the report's summary and panels and reaches none of the app's chrome`, () => {
 		const hosts = productionModulesNaming(/from\s+["']@emotion\/cache["']/);
@@ -212,7 +202,6 @@ describe("what prints without moving the reader", () => {
 });
 
 describe("what the print page reads through", () => {
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	// Only the routes build the page's ports; the page and what it draws never reach for every service the app has.
 	it("is the read port it is handed, never the app's services", () => {
 		const printFolder = dirname(THE_PRINT_PAGES);
@@ -233,7 +222,6 @@ describe("what the print page reads through", () => {
 });
 
 describe("who counts an export", () => {
-	// @us-01 @slice-01 @error @kpi-OUT-6298-K1-pdf-export-used @contract-shape:unbounded-preservation
 	// One starter for the report view's button and the list's icon, so a third surface cannot count differently.
 	it(`is the one export starter, whichever surface the reader exports from`, () => {
 		const theEventList = "services/Api/UsageDataService.ts";

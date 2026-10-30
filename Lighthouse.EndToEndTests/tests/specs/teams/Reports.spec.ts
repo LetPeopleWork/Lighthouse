@@ -7,7 +7,6 @@ const testWithDemo = testWithDemoData(TEAM_LIGHTSPEED_HISTORY_SCENARIO_ID);
 
 const LIGHTSPEED = "Team Lightspeed";
 
-// @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-5878-K1-report-created @contract-shape:bounded-change
 testWithDemo(
 	"a coach creates a Then & Now report on a Team and it opens with Then frozen and the Cycle Time panel",
 	async ({ testData, overviewPage }) => {
@@ -24,7 +23,6 @@ testWithDemo(
 	},
 );
 
-// @driving_port @us-12 @slice-12 @ac-12.1 @ac-12.7 @contract-shape:bounded-change
 testWithDemo(
 	"a report a coach created shows beside its Team on the Overview and opens from there",
 	async ({ testData, overviewPage }) => {

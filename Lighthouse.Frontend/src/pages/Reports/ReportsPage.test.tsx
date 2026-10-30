@@ -57,7 +57,6 @@ const aReportServiceListing = (...reports: ReturnType<typeof aReportOn>[]) =>
 const theFilter = () => screen.getByRole("textbox", { name: FILTER });
 
 describe("Every report in one place", () => {
-	// @walking_skeleton @driving_port @us-01 @slice-01 @kpi-OUT-6350-every-report-found @contract-shape:pure-function
 	it("a coach finds the reports of two Teams and a Portfolio on one page and opens one", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(
@@ -86,7 +85,6 @@ describe("Every report in one place", () => {
 		);
 	});
 
-	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
 	it(`the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
@@ -108,7 +106,6 @@ describe("Every report in one place", () => {
 		expect(whereTheReaderIs()).toBe(`/teams/${ZENITH.id}`);
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`the owner's kind is announced in the instance's own word`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter),
@@ -121,7 +118,6 @@ describe("Every report in one place", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`the empty page and the disabled Create reports speak of the instance's own words for Team and Portfolio`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(),
@@ -147,7 +143,6 @@ describe("Every report in one place", () => {
 		);
 	});
 
-	// @driving_port @us-01 @slice-01 @contract-shape:pure-function
 	it(`two reports of the same name on different owners are both listed and told apart by owner`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, gravitysQuarter),
@@ -158,14 +153,12 @@ describe("Every report in one place", () => {
 		expect(rowOf(QUARTER, ZENITH)).not.toBe(rowOf(QUARTER, GRAVITY));
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`with no report anywhere it says where reports are created`, async () => {
 		renderTheReportsPage({ reportService: aReportServiceListing() });
 
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
 	it(`while the reports are on their way it shows a loading look and no table`, async () => {
 		renderTheReportsPage({
 			reportService: aReportService({
@@ -182,7 +175,6 @@ describe("Every report in one place", () => {
 		expect(screen.queryByText(EMPTY)).not.toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:unbounded-preservation
 	it(`when the reports cannot be loaded it says so, shows no empty table, and Retry loads them`, async () => {
 		const getAllReports = vi
 			.fn()
@@ -203,7 +195,6 @@ describe("Every report in one place", () => {
 		expect(rowOf(QUARTER, ZENITH)).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`a report of a type this version cannot show is listed and says so`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
@@ -220,7 +211,6 @@ describe("Every report in one place", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`a report whose Then can no longer be rebuilt is marked on its row`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(
@@ -240,7 +230,6 @@ describe("Every report in one place", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it(`the filter narrows the rows by owner name`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(
@@ -256,7 +245,6 @@ describe("Every report in one place", () => {
 		await waitFor(() => expect(theReportNamesListed()).toEqual([MONTH]));
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:pure-function
 	it(`the filter still matches an owner's kind, though the cell shows only its name`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, oceanExplorersMonth),
@@ -270,7 +258,6 @@ describe("Every report in one place", () => {
 });
 
 describe("The icons on each row", () => {
-	// @driving_port @us-01 @slice-01 @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it(`Edit and Delete show only on rows the reader is Admin of; PDF shows on every row`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter, pulsarsQuarter),
@@ -293,7 +280,6 @@ describe("The icons on each row", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-01 @slice-01 @edge @contract-shape:unbounded-preservation
 	it(`while permissions are on their way no row offers Edit or Delete, and every row offers PDF`, async () => {
 		renderTheReportsPage({
 			reportService: aReportServiceListing(zenithsQuarter),
@@ -309,7 +295,6 @@ describe("The icons on each row", () => {
 		).toBeInTheDocument();
 	});
 
-	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
 	it(`Delete on a row asks the owner tab's confirmation, deletes that report alone and takes it off the list`, async () => {
 		const getAllReports = vi
 			.fn()
@@ -345,7 +330,6 @@ describe("The icons on each row", () => {
 });
 
 describe("Editing from a row", () => {
-	// @driving_port @us-01 @slice-01 @contract-shape:bounded-change
 	it(`a saved edit shows the report's new name on the list`, async () => {
 		const renamed = "Since August";
 		const read = theEngagementStartReport({
@@ -383,7 +367,6 @@ describe("Editing from a row", () => {
 		await waitFor(() => expect(theReportNamesListed()).toEqual([renamed]));
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(`Edit on a report that no longer exists says so and takes its row off the list`, async () => {
 		const getAllReports = vi
 			.fn()

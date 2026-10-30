@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- The readiness setting ---
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Team_that_never_chose_readiness_needs_three_Yes_from_three_voters_and_discusses_one_No_or_two_Yes_if_votes()
         {
@@ -33,7 +32,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(settings, minYes: 3, minVoters: 3, TheDefaultDiscussion);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
         public async Task A_Team_admin_sets_readiness_and_it_reads_back()
         {
@@ -44,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 3, new DiscussWhen(No: 2, YesIf: 3));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:bounded-change
         // Each rule has its own switch: turning one off leaves the other as the admin set it.
         [TestCase(null, 2)]
         [TestCase(1, null)]
@@ -58,7 +55,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 3, minVoters: 3, new DiscussWhen(no, yesIf));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         // Green always means somebody looked, so at least one Yes is needed.
         [TestCase(0)]
         [TestCase(-1)]
@@ -71,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         // Three Yes votes already are three voters, so fewer voters than Yes votes could never bite.
         [Test]
         public async Task Fewer_voters_than_Yes_votes_is_refused_and_nothing_is_saved()
@@ -83,7 +78,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         // A save that names only one side of the voter rule is judged with the side already stored.
         [TestCase("minVoters", 2)]
         [TestCase("minYes", 4)]
@@ -96,7 +90,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:bounded-change
         [Test]
         public async Task As_many_voters_as_Yes_votes_is_accepted()
         {
@@ -107,7 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, TheDefaultDiscussion);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:unbounded-preservation
         // A rule that needs no votes would send every Work Item to discussion; turning the rule off is the way to silence it.
         [TestCase(0, 2)]
         [TestCase(1, 0)]
@@ -120,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             await ThenTheSaveIsRefusedAndReadinessIsUnchanged(refused, gravity);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         // An older settings form knows nothing about readiness; its saves must not reset what the admin chose.
         [Test]
         public async Task A_save_that_says_nothing_about_readiness_leaves_it_as_it_was()
@@ -132,7 +123,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: null, YesIf: 3));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task A_readiness_save_that_leaves_out_the_discussion_rules_keeps_them()
         {
@@ -143,7 +133,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 1, minVoters: 1, new DiscussWhen(No: null, YesIf: 3));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task A_save_of_only_the_discussion_rules_keeps_the_Yes_votes_and_voters()
         {
@@ -154,7 +143,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: 3, YesIf: null));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         // A threshold left out of the save keeps the stored one; only a threshold sent as null turns its rule off.
         [Test]
         public async Task A_save_that_sends_only_the_No_rule_keeps_the_stored_Yes_if_rule()
@@ -166,7 +154,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 2, minVoters: 2, new DiscussWhen(No: 2, YesIf: 3));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task A_save_that_sends_only_the_Yes_if_rule_keeps_the_stored_No_rule()
         {
@@ -177,7 +164,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheReadinessIs(await WhenTheAdminOpensTheTeamSettings(gravity), minYes: 3, minVoters: 3, new DiscussWhen(No: 2, YesIf: 3));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
         [Test]
         public async Task Changing_readiness_keeps_every_Work_Item_the_Team_holds()
         {
@@ -191,7 +177,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- What the votes make of each row ---
 
-        // @driving_port @real-io @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:pure-function
         [Test]
         public async Task Enough_Yes_votes_make_a_Work_Item_Ready_and_the_tab_counts_it()
         {
@@ -202,7 +187,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowIsReadyAndTheTabCounts(tab, ConfigurationManagement, readyByVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:pure-function
         [Test]
         public async Task The_missing_Yes_votes_are_named()
         {
@@ -213,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowNeeds(tab, AdvancedReporting, MoreYesNeeded, missingVotes: 2);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_Work_Item_nobody_has_voted_on_needs_every_Yes()
         {
@@ -224,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowNeeds(tab, LoadTesting, MoreYesNeeded, missingVotes: 3);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
         public async Task A_No_does_not_count_towards_the_Yes_votes()
         {
@@ -235,7 +217,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowNeeds(tab, ApiVersioning, MoreYesNeeded, missingVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         [Test]
         public async Task Enough_Yes_votes_from_too_few_voters_name_the_missing_voters()
         {
@@ -246,7 +227,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowNeeds(tab, AdvancedReporting, MoreVotersNeeded, missingVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
         public async Task Any_answer_from_the_missing_voter_makes_the_Work_Item_Ready()
         {
@@ -257,7 +237,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowIsReadyAndTheTabCounts(await WhenPriyaOpensTheRefinementTab(gravity), AdvancedReporting, readyByVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @error @contract-shape:pure-function
         // A discussion wins over any number of Yes votes: the doubt is what the meeting is for.
         [Test]
         public async Task By_default_one_No_sends_a_Work_Item_to_discussion_however_many_say_Yes()
@@ -269,7 +248,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowNeedsDiscussionAndIsNotCounted(tab, ApiVersioning);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         // A single "Yes, if…" is a Yes with a caveat the Team can take along; a second one is worth a talk.
         [TestCase(1, Ready)]
         [TestCase(2, NeedsDiscussion)]
@@ -282,7 +260,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(RowOf(tab, AdvancedReporting).Readiness, Is.EqualTo(readiness));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @contract-shape:pure-function
         // Jonas, Mo, Ana and Priya answer in that order; the readiness itself stays three Yes from three voters.
         [TestCase(null, 2, new[] { Answer.Yes, Answer.Yes, Answer.Yes, Answer.No }, Ready, TestName = "With the No rule off a No sends nothing to discussion")]
         [TestCase(null, 2, new[] { Answer.Yes, Answer.YesBut, Answer.YesBut }, NeedsDiscussion, TestName = "With the No rule off the Yes-if rule still sends to discussion")]
@@ -304,7 +281,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             Assert.That(RowOf(tab, AdvancedReporting).Readiness, Is.EqualTo(readiness));
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         // Only the latest answer of each voter counts, for a discussion too.
         [Test]
         public async Task A_No_changed_to_Yes_lifts_the_discussion()
@@ -316,7 +292,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowIsReadyAndTheTabCounts(await WhenPriyaOpensTheRefinementTab(gravity), ApiVersioning, readyByVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:bounded-change
         // Usage data counts a Work Item reaching Ready once, so only the vote that tipped it may say it did.
         [Test]
         public async Task Only_the_vote_that_makes_a_Work_Item_Ready_says_it_did()
@@ -330,7 +305,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenOnlyTheFirstSaysItMadeTheWorkItemReady(tipping, following);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
         [Test]
         public async Task A_vote_on_a_Work_Item_that_was_Ready_already_does_not_say_it_made_it_Ready()
         {
@@ -341,7 +315,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheVoteDidNotMakeItReady(answer);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
         [Test]
         public async Task A_vote_that_leaves_a_Work_Item_short_does_not_say_it_made_it_Ready()
         {
@@ -352,7 +325,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheVoteDidNotMakeItReady(answer);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:bounded-change
         [Test]
         public async Task Lowering_readiness_makes_a_Work_Item_Ready_on_the_next_read()
         {
@@ -363,7 +335,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheRowIsReadyAndTheTabCounts(await WhenPriyaOpensTheRefinementTab(gravity), AdvancedReporting, readyByVotes: 1);
         }
 
-        // @driving_port @real-io @us-13 @slice-13 @contract-shape:pure-function
         [Test]
         public async Task The_tab_counts_only_the_Work_Items_the_votes_made_Ready()
         {

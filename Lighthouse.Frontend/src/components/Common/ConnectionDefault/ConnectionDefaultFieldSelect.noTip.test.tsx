@@ -88,7 +88,6 @@ const fieldsThatReadNoLink: FieldThatReadsNoLink[] = [
 ];
 
 describe("Story 6352: the Team and Portfolio fields that read no link", () => {
-	// @edge @active-guard @contract-shape:bounded-change
 	it.each(fieldsThatReadNoLink)(
 		"on Jira, the $label ($setting) shows no info button",
 		async ({ label, component }) => {

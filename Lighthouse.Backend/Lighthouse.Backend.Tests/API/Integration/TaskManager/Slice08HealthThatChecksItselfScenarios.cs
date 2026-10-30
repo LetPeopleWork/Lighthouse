@@ -31,7 +31,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     {
         // --- US-08A — a check that stays checked ---
 
-        // @driving_port @real-io @AC-08A.1
         // The defect as the maintainer met it: press the button, get a green tick, come back after the
         // hourly refresh and the row reads "Not checked yet" with nothing on screen to say what undid it.
         [Test]
@@ -49,7 +48,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionWasObservedNoEarlierThanTheCheckBeforeIt(connection);
         }
 
-        // @driving_port @real-io @AC-08A.2
         // A refresh authenticated against the tracker and read real data from it. If that is not evidence
         // the credential works, nothing is — and the button, which reads one trivial record, is weaker.
         [Test]
@@ -64,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Healthy");
         }
 
-        // @driving_port @real-io @AC-08A.3
         // Recovery has to be as visible as failure. This scenario replaces slice 05's
         // A_refresh_that_works_clears_the_failure_before_it_without_claiming_health, whose expected
         // outcome D19 reverses — see the note in the Specifications file.
@@ -83,7 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Healthy");
         }
 
-        // @driving_port @real-io @AC-08A.4
         // The defect being fixed is a delete. A delete followed by an insert leaves exactly the state this
         // slice wants and is still the bug, so the end state cannot be what proves it gone — the row's own
         // identity is the only thing that can, and that is why this scenario reads the stored row.
@@ -101,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheStoredVerdictIsStillTheSameRow(connection, theRowThatWasRecorded);
         }
 
-        // @driving_port @real-io @error @AC-08A.5
         // Unchanged from slice 05 and re-asserted here because D19 rewrites the method next to it. A
         // cancel is not a verdict: somebody chose to stop it, nothing was learned about the credential,
         // and recording health from it would claim a round trip that never finished.
@@ -117,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Unknown");
         }
 
-        // @driving_port @real-io @error @AC-08A.6
         // The one way D19 could paint a tick over something broken. Describe folds the OAuth credential
         // row in, and a refresh that succeeded says nothing about a grant that is separately disconnected.
         [Test]
@@ -132,7 +126,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "AuthenticationFailed");
         }
 
-        // @driving_port @real-io @error @AC-08A.7
         // The refresh has already done its work and written its row by the time health is recorded.
         // Failing here would turn a completed refresh into a failed one over a verdict nobody asked for.
         [Test]
@@ -151,7 +144,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- US-08B — Lighthouse checks, so I do not have to ---
 
-        // @walking_skeleton @driving_adapter @real-io @AC-08B.1
         // The wiring, entered the way a running instance enters it. A prober that works when a test calls
         // the service directly and is registered nowhere is the defect this scenario exists to make
         // impossible — the slice's whole promise is that nobody has to press anything.
@@ -166,7 +158,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Healthy");
         }
 
-        // @driving_port @real-io @AC-08B.2
         [Test]
         public async Task A_connection_whose_answer_has_gone_stale_is_asked_again()
         {
@@ -181,7 +172,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "AuthenticationFailed");
         }
 
-        // @driving_port @real-io @AC-08B.3
         // The criterion that separates this from the loop D9 refused, and the only one a naive "probe
         // everything on a timer" fails. It is asserted as an absence of a call rather than as a state,
         // because the state after a redundant probe is identical to the state after no probe at all.
@@ -198,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTrackerWasNotAskedAgain();
         }
 
-        // @driving_port @real-io @AC-08B.3
         // The economic claim the whole reopening of D9 rests on: because a successful refresh now records
         // health, a connection something refreshes never goes stale and therefore costs no probe at all.
         // Measured as OUT-5511-08-probe-cost. If this scenario fails, D20 is not the decision that was
@@ -218,7 +207,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Healthy");
         }
 
-        // @driving_port @real-io @AC-08B.2 @AC-08B.3
         // What "too old" is derived from, pinned. Every other scenario here sets the age far from any
         // boundary on purpose, so all of them pass whether the threshold is twice the longest refresh
         // interval, twice the shortest, or a fraction of either - and the difference is the whole of why
@@ -236,7 +224,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTrackerWasNotAskedAgain();
         }
 
-        // @driving_port @real-io @AC-08B.3
         // The claim has to match the connection it was asked about. Matching on anything else asks the
         // wrong tracker and advances the wrong row, and with one connection in the fixture that is
         // indistinguishable from working.
@@ -262,7 +249,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionWasObservedThisLongAgo(fresh, TimeSpan.FromHours(1));
         }
 
-        // @driving_port @real-io @AC-08B.2
         // Two stale connections in one pass, both already carrying a verdict. The second one's row has
         // been read into memory by the first one's recording, so this is the pass where a copy held from
         // earlier could be written back over the claim - and a connection handed back to every pass is
@@ -281,7 +267,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionWasObservedThisLongAgo(second, TimeSpan.Zero);
         }
 
-        // @driving_port @real-io @error @AC-08B.4
         [Test]
         public async Task A_probe_the_tracker_refuses_is_recorded_as_a_credential_problem()
         {
@@ -293,7 +278,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "AuthenticationFailed");
         }
 
-        // @driving_port @real-io @error @AC-08B.4
         // A probe that ran is evidence, whatever it found. Leaving the connection Unknown because the
         // answer was bad would put the one state that means "nobody has asked" over a question that was
         // asked and answered — which is how Unknown stops being readable and starts hiding faults.
@@ -308,7 +292,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(connection, "Unreachable");
         }
 
-        // @driving_port @real-io @error @AC-08B.5
         // One connector raising instead of returning must not silence every other connection's health.
         // This is about the loop's resilience and is not the fix for #6010 (D28) — US-08C is that.
         [Test]
@@ -324,7 +307,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             await ThenThatConnectionReads(answers, "Healthy");
         }
 
-        // @driving_port @real-io @error @AC-08B.5
         // The same promise against the failure that can actually break it. The scenario above makes the
         // connector raise, which happens inside the per-connection guard and leaves nothing behind — so it
         // held while a pass really was ending on the first connection that failed, and two connections on
@@ -348,7 +330,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheOperatorIsToldWhichConnectionCouldNotBeChecked(breaks);
         }
 
-        // @driving_port @real-io @error @AC-08B.5
         // The other half of surviving a failure: a pass the host is stopping has not failed at all. Without
         // this, the guard that tells the two apart is free to disappear — and what replaces it is a warning
         // naming a perfectly healthy connection in the log of every clean restart, which is how an operator
@@ -366,7 +347,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenNothingWasReportedAsAConnectionThatCouldNotBeChecked();
         }
 
-        // @driving_port @real-io @AC-08B.6
         // A verdict outlives the process that observed it, so a fresh instance does not start from
         // nothing and must not re-ask every tracker on the way up. Startup is the loop's first tick, not
         // a separate mechanism — which is only true if the first tick obeys the same staleness rule.
@@ -381,7 +361,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTrackerWasNotAskedAgain();
         }
 
-        // @driving_port @real-io @error @AC-08B.7
         // Two replicas both find the connection stale on the same tick. The verdict row is the claim, so
         // one of them wins it and the other finds nothing to do. Run through two service scopes against
         // the real database, because the unique index and the conditional update are database behaviour
@@ -400,7 +379,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- US-08C — testing an Azure DevOps connection answers instead of failing ---
 
-        // @driving_port @real-io @error @AC-08C.1 @AC-08C.2
         // Bug #6010 through the real Azure DevOps connector rather than the harness double, because a
         // double cannot reproduce a defect that lives in the connector or in the classification above it.
         // The host does not exist, so nothing reaches a real tracker and no credential is needed: the
@@ -415,7 +393,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTestAnsweredRatherThanFailed(answer);
         }
 
-        // @driving_port @real-io @error @AC-08C.2
         // The one line in the Azure DevOps connector that sits outside its own try, and therefore the
         // cheapest candidate for #6010's 500: the Url lookup throws ArgumentException when the option row
         // is absent, and nothing between there and the controller catches it. Needs no network at all.
@@ -429,7 +406,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTestAnsweredRatherThanFailed(answer);
         }
 
-        // @driving_port @real-io @AC-08C.4
         // Whatever the fix turns out to be it lands in shared code, so every connection type is
         // downstream of it. The positive control on the guard: a fix that answers by swallowing would
         // also swallow this, and this one has a verdict to lose.
@@ -444,7 +420,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             ThenTheTestItselfAnswered("Healthy");
         }
 
-        // @driving_port @real-io @error @AC-08C.5
         // Regression guard on slice 05. A guard added to stop #6010's throw reaching the controller is
         // exactly the kind of change that turns a named, actionable message into "something went wrong",
         // and this message is the one that stops an administrator reissuing a credential that was intact.

@@ -42,7 +42,6 @@ describe("SizingLogService", () => {
 		vi.resetAllMocks();
 	});
 
-	// @us-11 @slice-11 @driving_port @contract-shape:bounded-change
 	it("casts a vote to the Work Item's address with the voter's key and answers the row as it now stands", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
@@ -61,7 +60,6 @@ describe("SizingLogService", () => {
 		);
 	});
 
-	// @us-15 @slice-15 @boundary @contract-shape:bounded-change
 	it("sends no voter key header when the browser holds none", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
@@ -76,7 +74,6 @@ describe("SizingLogService", () => {
 		expect(options?.headers?.[VOTER_KEY_HEADER]).toBeUndefined();
 	});
 
-	// @us-11 @slice-11 @boundary @contract-shape:bounded-change
 	it("keeps a Work Item reference that needs escaping in one piece of the address", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
@@ -94,7 +91,6 @@ describe("SizingLogService", () => {
 		);
 	});
 
-	// @us-11 @slice-11 @error @contract-shape:unbounded-preservation
 	it("passes a refused vote on to the caller", async () => {
 		mockedAxios.post.mockRejectedValueOnce(
 			new Error("Request failed with status code 409"),
@@ -110,7 +106,6 @@ describe("SizingLogService", () => {
 		).rejects.toThrow("409");
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
 	it("sends a question to the Work Item's comments with the voter's key", async () => {
 		mockedAxios.post.mockResolvedValueOnce({ data: theRow });
 
@@ -136,7 +131,6 @@ describe("SizingLogService", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("reads a Work Item's log with the voter's key", async () => {
 		const log: ISizingLog = {
 			entries: [
@@ -164,7 +158,6 @@ describe("SizingLogService", () => {
 		);
 	});
 
-	// @us-16 @slice-16 @driving_port @contract-shape:bounded-change
 	it.each(["Yes", "YesBut", "No"] as const)(
 		"takes back the voter's own %s with their key, naming the answer it takes back",
 		async (answer) => {

@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-02")]
     public partial class Slice02BlockedDurationTest
     {
-        // @driving_port @us-02
         [Test]
         public async Task A_newly_blocked_item_shows_how_long_it_has_been_blocked()
         {
@@ -25,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheItemExposesABlockedDuration(item);
         }
 
-        // @edge @us-02 (unblocked item clears its duration)
+        // (unblocked item clears its duration)
         [Test]
         public async Task An_unblocked_item_no_longer_shows_a_blocked_duration()
         {
@@ -37,7 +36,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheItemExposesNoBlockedDuration(item);
         }
 
-        // @edge @us-02 (first-observation baseline)
+        // (first-observation baseline)
         [Test]
         public async Task A_first_observation_blocked_item_shows_no_duration_until_a_baseline_exists()
         {
@@ -49,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheItemExposesNoBlockedDuration(item);
         }
 
-        // @property @us-02 (duration derives only from rule-matched items — single definition)
+        // (duration derives only from rule-matched items — single definition)
         [Test]
         [Category("property")]
         public async Task An_item_that_does_not_match_the_blocked_rules_has_no_blocked_duration()

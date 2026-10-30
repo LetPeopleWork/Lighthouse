@@ -151,7 +151,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		});
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
 	it("asks for the condition of a Yes, if… and sends it, trimmed, with the vote in one request", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -204,7 +203,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("will not cast a Yes, if… whose condition is blank", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService();
@@ -226,7 +224,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("casts nothing when the condition of a Yes, if… is cancelled", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService();
@@ -248,7 +245,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 	});
 
-	// @us-12 @slice-12 @boundary @contract-shape:bounded-change
 	it("asks a browser without a name who is voting first, then the condition of its Yes, if…", async () => {
 		const sizingLogService = aSizingLogService({
 			castVote: vi.fn().mockResolvedValue(
@@ -299,7 +295,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.castVote).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
 	it("lets anybody add a comment without voting", async () => {
 		const key = aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -336,7 +331,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.castVote).not.toHaveBeenCalled();
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:bounded-change
 	it("reads the log again once a comment is sent, so the comment shows in it", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -360,7 +354,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(within(theOpenDialog()).getAllByRole("listitem")).toHaveLength(1);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("shows the log of the Work Item now open when a comment sent on another one is answered late", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		let answerTheComment: (row: IRefinementRow) => void = () => {};
@@ -407,7 +400,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(within(apiVersioning).queryByText(ANA)).toBeNull();
 	});
 
-	// @us-12 @slice-12 @boundary @contract-shape:bounded-change
 	it("reads the log once more, not twice, when somebody names themselves to comment", async () => {
 		const sizingLogService = aSizingLogService({
 			addComment: vi.fn().mockResolvedValue(apiVersioningAsked()),
@@ -445,7 +437,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		).toEqual([null, theStoredVoter()?.key]);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:bounded-change
 	it("sends a comment once, however often Send is pressed while it is on its way", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		let answerTheComment: (row: IRefinementRow) => void = () => {};
@@ -478,7 +469,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.addComment).toHaveBeenCalledTimes(1);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:bounded-change
 	it("keeps a refused comment so it can be sent again", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -505,7 +495,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @boundary @contract-shape:pure-function
 	it("takes a comment of at most 2000 characters", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const { user } = renderTheRefinementTab(
@@ -520,7 +509,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:unbounded-preservation
 	it("will not send an empty comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService();
@@ -537,7 +525,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(sizingLogService.addComment).not.toHaveBeenCalled();
 	});
 
-	// @us-12 @slice-12 @contract-shape:pure-function
 	it("marks a Work Item's comments in its Votes cell and warns of its open question in its Warnings cell, leaving the others unmarked", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
@@ -590,7 +577,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("lists what people wrote oldest first, naming who and on which day, and leaves out votes without words", async () => {
 		const key = aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -642,7 +628,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(dialog).not.toHaveTextContent(/voted|took back/);
 	});
 
-	// @us-12 @slice-12 @driving_port @contract-shape:pure-function
 	it("names the people whose current vote a count in the split is, on hovering or focusing it", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -689,7 +674,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(yesIfCount).toHaveAccessibleDescription(ANA);
 	});
 
-	// @us-12 @slice-12 @boundary @contract-shape:pure-function
 	it("reads the log without the browser's key for somebody signed in", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService();
@@ -711,7 +695,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		);
 	});
 
-	// @us-12 @slice-12 @contract-shape:pure-function
 	it("marks as open questions the entries the server calls open, even between two people sharing a name", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -750,7 +733,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(entries[2]).not.toHaveTextContent(/open question/i);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:pure-function
 	it("shows a comment as the text it is, never as markup", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -777,7 +759,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(dialog.querySelector("b, script")).toBeNull();
 	});
 
-	// @us-12 @us-17b @slice-12 @contract-shape:pure-function
 	it("never says where an entry came from", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -810,7 +791,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		}
 	});
 
-	// @us-12 @us-16 @slice-16 @contract-shape:pure-function
 	it("adds nothing to what people wrote when a vote is taken back", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const sizingLogService = aSizingLogService({
@@ -839,7 +819,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		).toBeNull();
 	});
 
-	// @us-11 @us-12 @slice-12 @boundary @contract-shape:pure-function
 	it("lets a reader who never voted read how the votes split, who cast them, and every comment", async () => {
 		aBrowserThatVotedBefore(JONAS);
 		const sizingLogService = aSizingLogService({
@@ -882,7 +861,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(MO);
 	});
 
-	// @us-12 @slice-12 @boundary @contract-shape:pure-function
 	it("says so when nobody has written anything about a Work Item, even when it has votes", async () => {
 		aBrowserThatVotedBefore(ANA);
 		const { user } = renderTheRefinementTab(
@@ -904,7 +882,6 @@ describe("Comments, conditions and questions on the Refinement tab", () => {
 		expect(within(dialog).queryAllByRole("listitem")).toHaveLength(0);
 	});
 
-	// @us-12 @slice-12 @error @contract-shape:pure-function
 	it.each([
 		{
 			why: "the Work Item left refinement",

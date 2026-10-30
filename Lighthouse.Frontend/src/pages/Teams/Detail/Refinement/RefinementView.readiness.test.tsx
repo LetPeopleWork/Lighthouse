@@ -127,7 +127,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		});
 	});
 
-	// @us-13 @slice-13 @driving_port @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:pure-function
 	it("says on each row whether it is Ready, what is still missing, or that it needs discussion", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({ readyByVotesCount: 1 }, [
@@ -160,7 +159,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(await theRowOf("GR-054")).toHaveTextContent("Needs discussion");
 	});
 
-	// @us-13 @slice-13 @boundary @contract-shape:pure-function
 	it("says one missing Yes in the singular and missing voters in the plural", async () => {
 		renderTheRefinementTab(
 			gravitysRefinement({}, [
@@ -179,7 +177,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(await theRowOf("GR-059")).toHaveTextContent("2 more voters needed");
 	});
 
-	// @us-13 @slice-13 @contract-shape:pure-function
 	it("gives readiness its own column, right after the votes", async () => {
 		renderTheRefinementTab(gravitysRefinement());
 
@@ -192,7 +189,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(columns.indexOf("Readiness")).toBe(columns.indexOf("Votes") + 1);
 	});
 
-	// @us-13 @slice-13 @contract-shape:pure-function
 	it("counts the Work Items the votes made Ready in the heading, on the heading's own line", async () => {
 		renderTheRefinementTab(gravitysRefinement({ readyByVotesCount: 1 }));
 
@@ -204,7 +200,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		expect(screen.getAllByRole("heading", { level: 2 })).toHaveLength(1);
 	});
 
-	// @us-13 @slice-13 @boundary @contract-shape:pure-function
 	it("says so when no Work Item is Ready by votes yet", async () => {
 		renderTheRefinementTab(gravitysRefinement({ readyByVotesCount: 0 }));
 
@@ -215,7 +210,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		).toBeVisible();
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("counts a Work Item a vote has just made Ready in the heading", async () => {
 		await castingTurnsItInto(
 			"Yes",
@@ -230,7 +224,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		).toBeVisible();
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("stops counting a Work Item a vote has just taken out of Ready", async () => {
 		await castingTurnsItInto(
 			"No",
@@ -354,7 +347,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		).toBeVisible();
 	});
 
-	// @us-13 @slice-13 @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:bounded-change
 	it("reports the vote the server says made a Work Item Ready to usage data", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
@@ -373,7 +365,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		});
 	});
 
-	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
 	it("reports no readiness for a vote on a Work Item that was Ready already", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 3, readiness: "Ready", missingVotes: null },
@@ -391,7 +382,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		);
 	});
 
-	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
 	it("reports no readiness when the server says another vote made the Work Item Ready", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 2, readiness: "MoreYesNeeded", missingVotes: 1 },
@@ -409,7 +399,6 @@ describe("The Refinement tab says what the votes make of each Work Item", () => 
 		);
 	});
 
-	// @us-13 @slice-13 @boundary @kpi-OUT-5510-K5-ready-before-the-day @contract-shape:unbounded-preservation
 	it("reports no readiness for a vote that leaves the Work Item short", async () => {
 		await castingYesTurnsItInto(
 			{ voteCount: 0, readiness: "MoreYesNeeded", missingVotes: 3 },

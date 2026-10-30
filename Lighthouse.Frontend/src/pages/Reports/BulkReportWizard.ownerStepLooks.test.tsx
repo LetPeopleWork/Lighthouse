@@ -34,7 +34,6 @@ const answeringOwners = (
 ) => aReportService({ getCreationOptions });
 
 describe("Who gets this report", () => {
-	// @us-02b @slice-02b @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it(`a coach whose Admin right went meanwhile is told why there is nothing to pick, instead of an empty list`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
@@ -62,7 +61,6 @@ describe("Who gets this report", () => {
 		).not.toBeInTheDocument();
 	});
 
-	// @walking_skeleton @driving_port @us-02b @slice-02b @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
 	it(`a coach who only reads Pulsar is offered Gravity and Zenith, alphabetically, and told only Admin owners are listed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
@@ -97,7 +95,6 @@ describe("Who gets this report", () => {
 		).toBeInTheDocument();
 	});
 
-	// @us-02b @slice-02b @contract-shape:bounded-change
 	it(`Select all picks every Team in its group and the button counts them`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
@@ -123,7 +120,6 @@ describe("Who gets this report", () => {
 		expect(screen.getByRole("button", { name: createCount(2) })).toBeEnabled();
 	});
 
-	// @us-02b @slice-02b @edge @contract-shape:pure-function
 	it(`with nobody picked yet nothing can be created`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
@@ -140,7 +136,6 @@ describe("Who gets this report", () => {
 		expect(screen.getByRole("button", { name: createCount(1) })).toBeEnabled();
 	});
 
-	// @us-02b @slice-02b @error @contract-shape:unbounded-preservation
 	it(`when permissions cannot be loaded the owner step shows its could-not-load look, never a permissive list`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
@@ -165,7 +160,6 @@ describe("Who gets this report", () => {
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
 	});
 
-	// @us-02b @slice-02b @error @contract-shape:unbounded-preservation
 	it(`after a failed permission load, Retry shows the loading look and then lists her Admin Teams`, async () => {
 		let permissionsArrive: () => void = () => undefined;
 		const permissions = {

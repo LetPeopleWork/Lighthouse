@@ -158,7 +158,6 @@ describe("The Reports tab on a Team page", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("sits between Refinement and Settings", async () => {
 		renderTheTeamPage("teamAdmin");
 
@@ -177,14 +176,12 @@ describe("The Reports tab on a Team page", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("is open to a reader", async () => {
 		renderTheTeamPage("reader");
 
 		expect(await theReportsTab()).toBeEnabled();
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("opens the Team's reports and puts the tab in the address", async () => {
 		renderTheTeamPage("reader");
 
@@ -198,7 +195,6 @@ describe("The Reports tab on a Team page", () => {
 		});
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("opens straight onto the Team's reports from an address that names the tab", async () => {
 		mockParams = { id: "1", tab: "reports" };
 		renderTheTeamPage("reader");
@@ -207,7 +203,6 @@ describe("The Reports tab on a Team page", () => {
 		expect(await theReportsTab()).toHaveAttribute("aria-selected", "true");
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("opens one report under the Reports tab from an address that names it", async () => {
 		mockParams = { id: "1", tab: "reports", reportId: "42" };
 		renderTheTeamPage("reader");

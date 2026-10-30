@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-08")]
     public partial class Slice08BlockedDrilldownTest : BlockedItemsAcceptanceTest
     {
-        // @driving_port @us-eb1 (happy: reconstruct membership at a past date from transition intervals)
+        // (happy: reconstruct membership at a past date from transition intervals)
         [Test]
         public async Task Items_blocked_at_a_past_date_are_reconstructed_from_transition_intervals()
         {
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogListsExactly(response, "BLK-1", "BLK-2");
         }
 
-        // @driving_port @us-eb1 (happy: latest bar reconstructs from live IsBlocked)
+        // (happy: latest bar reconstructs from live IsBlocked)
         [Test]
         public async Task The_latest_date_reconstructs_from_the_live_blocked_set()
         {
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogListsExactly(response, "NOW-1");
         }
 
-        // @invariant @us-eb1 (post-review bug fix: the latest-date set is the OPEN blocked population —
+        // (post-review bug fix: the latest-date set is the OPEN blocked population —
         // To Do + In Progress — matching the bar/overview count; a Done item that still matches the rule
         // must NOT appear, and a blocked To Do item MUST appear)
         [Test]
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogListsExactly(response, "TODO-BLK", "DOING-BLK");
         }
 
-        // @edge @us-eb1 (no items blocked at the clicked date -> honest empty, not an error)
+        // (no items blocked at the clicked date -> honest empty, not an error)
         [Test]
         public async Task A_date_with_no_blocked_items_returns_an_empty_dialog()
         {
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogIsEmpty(response);
         }
 
-        // @invariant @us-eb1 (reconciliation: reconstructed count == BlockedCountSnapshot for that date)
+        // (reconciliation: reconstructed count == BlockedCountSnapshot for that date)
         [Test]
         public async Task The_reconstructed_membership_count_reconciles_with_the_snapshot_count()
         {
@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheReconstructedCountMatchesTheSnapshot(response, expectedCount: 2);
         }
 
-        // @edge @us-eb1 (a date before capture started -> honest partial set, never a fabricated full history)
+        // (a date before capture started -> honest partial set, never a fabricated full history)
         [Test]
         public async Task A_date_before_capture_started_is_served_as_a_partial_set()
         {

@@ -193,7 +193,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	// @us-13 @slice-13 @driving_port @contract-shape:pure-function
 	it("shows three Yes votes from three voters, and discussion at one No or two “Yes, if…”, until the admin changes them", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings(STORED_WITHOUT_DISCUSSION_RULES),
@@ -221,7 +220,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-13 @slice-13 @driving_port @contract-shape:bounded-change
 	it("saves a changed number of Yes votes with the rest of readiness as it was", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -236,7 +234,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
 	it("refuses fewer than one Yes vote, says why and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -249,7 +246,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
 	it("refuses fewer voters than Yes votes, says why and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -264,7 +260,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("switches off the No rule on its own, keeping the “Yes, if…” rule", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -281,7 +276,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("saves a changed number of “Yes, if…” votes that send to discussion", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -296,7 +290,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("switches a rule back on at the threshold it had before", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -325,7 +318,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @contract-shape:bounded-change
 	it("switches on a rule stored as off at its default threshold", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -348,7 +340,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @error @contract-shape:unbounded-preservation
 	it.each([
 		{ field: NO_THRESHOLD, typed: "0" },
 		{ field: NO_THRESHOLD, typed: "" },
@@ -576,7 +567,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	// @us-13 @slice-13 @boundary @contract-shape:unbounded-preservation
 	it("saves nothing just because the form was opened", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 

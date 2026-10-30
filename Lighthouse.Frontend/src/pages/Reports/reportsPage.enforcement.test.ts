@@ -32,7 +32,6 @@ const sourcesCalling = (member: string): string[] =>
  * that, so no other caller can create reports and leave the lists showing what was there before.
  */
 describe("who creates reports for several owners", () => {
-	// @us-02a @slice-02a @contract-shape:unbounded-preservation
 	it("only the bulk creation hook asks the server to create reports in bulk", () => {
 		expect(sourcesCalling("createReportsInBulk")).toEqual([
 			"pages/Reports/useBulkReportCreation.ts",

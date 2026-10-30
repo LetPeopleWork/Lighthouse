@@ -62,7 +62,6 @@ const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
 
 describe("Story 6352: Parent Override Field says which way round it reads", () => {
-	// @driving_port @contract-shape:pure-function
 	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
@@ -71,14 +70,12 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).toHaveTextContent(/None/);
 	});
 
-	// @driving_port @contract-shape:pure-function
 	it("on a Jira Portfolio, the tip gives the same example", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira");
 
 		expect(await whenSamOpensTheTip()).toHaveTextContent(IS_CAUSED_BY);
 	});
 
-	// @contract-shape:pure-function
 	it("on an Azure DevOps Team, the tip asks for the field that holds the parent's id, not a Jira phrase", async () => {
 		await givenSamOpensTheSettingsOf("Team", "AzureDevOps");
 
@@ -87,7 +84,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).not.toHaveTextContent(IS_CAUSED_BY);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("once an Azure DevOps connection has loaded, the tip follows it, though the settings still say Jira", async () => {
 		await givenSamOpensTheSettingsOf(
 			"Team",
@@ -106,7 +102,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).not.toHaveTextContent(IS_CAUSED_BY);
 	});
 
-	// @edge @contract-shape:pure-function
 	it.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
 		"on a %s Team the tip stays tracker-neutral, without an example",
 		async (tracker) => {
@@ -119,7 +114,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		},
 	);
 
-	// @edge @contract-shape:pure-function
 	it("without an example, the tip reads as two sentences: which end the field reads, then what None does", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Linear");
 
@@ -128,7 +122,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("on a Team the tip speaks of the tenant's Ticket, never of a Work Item", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira", RenamedTerms);
 
@@ -137,7 +130,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).not.toHaveTextContent(/Work Item/);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("on a Portfolio the tip speaks of the tenant's Bet, never of a Feature", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira", RenamedTerms);
 
@@ -146,7 +138,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).not.toHaveTextContent(/Feature/);
 	});
 
-	// @contract-shape:pure-function
 	it("on a Team, Learn More opens the Team's Parent Override docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
@@ -156,7 +147,6 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		);
 	});
 
-	// @contract-shape:pure-function
 	it("on a Portfolio, Learn More opens the Portfolio's Parent Override docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira");
 

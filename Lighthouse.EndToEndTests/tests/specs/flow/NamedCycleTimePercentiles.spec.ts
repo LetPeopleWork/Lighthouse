@@ -103,7 +103,7 @@ async function assertNamedSelectionBehaviour(
 	await expect.poll(() => percentiles.hasRagChip()).toBe(true);
 }
 
-test("@walking_skeleton @premium delivery lead selects a named cycle time on the team Flow Overview percentiles and the values re-plot with a neutral RAG", async ({
+test("delivery lead selects a named cycle time on the team Flow Overview percentiles and the values re-plot with a neutral RAG", async ({
 	page,
 	request,
 	overviewPage,

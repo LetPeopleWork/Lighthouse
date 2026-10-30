@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         private static readonly string[] OnlyTheOneHeld = ["F-1"];
         private static readonly string[] OnlyTheSecondOfThem = ["F-2"];
 
-        // @walking_skeleton @driving_port
         [Test]
         public async Task Predecessor_links_recorded_in_the_tracker_become_a_count_on_the_feature_row()
         {

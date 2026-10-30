@@ -90,7 +90,6 @@ beforeEach(() => {
 });
 
 describe("Story 6355: the Release picker says why and invites searching", () => {
-	// @driving_port @contract-shape:pure-function
 	it("on Add Delivery's Jira Release tab, the empty picker reads Type to search Jira Releases", async () => {
 		const user = userEvent.setup();
 		await renderWithTerms(
@@ -119,7 +118,6 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 		);
 	});
 
-	// @contract-shape:pure-function
 	it("a Release without a date says it has no date in Jira and to set one there", async () => {
 		const user = userEvent.setup();
 		await givenDanaOpensTheSourceTab(allOptions);
@@ -130,7 +128,6 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 		expect(dateless).toHaveTextContent(THE_DATELESS_ROW_IN_JIRA);
 	});
 
-	// @edge @contract-shape:pure-function
 	it("a source the picker cannot name a tracker for speaks of the tenant's own word for it", async () => {
 		const user = userEvent.setup();
 		await givenDanaOpensTheSourceTab([datelessOption], {
@@ -149,7 +146,6 @@ describe("Story 6355: the Release picker says why and invites searching", () => 
 });
 
 describe("Story 6355: what stays as it is", () => {
-	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a Release without a date still cannot be picked", async () => {
 		const user = userEvent.setup();
 		const { onOptionPicked, deliveryService } =
@@ -165,7 +161,6 @@ describe("Story 6355: what stays as it is", () => {
 		expect(await thePicker()).toHaveValue("");
 	});
 
-	// @error @active-guard @contract-shape:unbounded-preservation
 	it("a Release gone from the board still reads No longer available, never the missing-date advice", async () => {
 		const user = userEvent.setup();
 		await givenDanaOpensTheSourceTab([retiredOption]);

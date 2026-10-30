@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Sixty days rather than thirty or ninety because the other scenarios in this file already open
         /// those two, so taking the one nobody else opens leaves all three exercised somewhere.
         /// </summary>
-        // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_look_back_fills_in_every_day_of_the_period_asked_for()
         {
@@ -53,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// thirty-day one has moved past the slow stretch. The ninety-day one is still inside it, and must
         /// read higher for it.
         /// </summary>
-        // @driving_port @us-02 @real-io @contract-shape:pure-function
         [Test]
         public async Task A_longer_look_back_still_carries_a_slow_stretch_the_shorter_one_has_left_behind()
         {
@@ -73,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// flight on the days between, at the age it had reached by each of them - not absent because it
         /// has since finished, and not at the age it finally reached.
         /// </summary>
-        // @driving_port @us-02 @real-io @contract-shape:pure-function
         [Test]
         public async Task An_item_counts_towards_a_past_day_at_the_age_it_had_reached_by_then()
         {
@@ -87,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheItemCountsTowardsThatDayAtTheAgeItHadThen(teamId, TodayDay.AddDays(-16), expectedAge: 5);
         }
 
-        // @us-02 @fidelity @real-io @contract-shape:pure-function
         [Test]
         public async Task An_age_day_worked_out_afterwards_reads_the_same_as_the_day_that_was_watched()
         {
@@ -102,7 +98,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             ThenTheDayCameBackTheSameAsWhenItWasWatched(teamId, asWatched);
         }
 
-        // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_portfolio_fills_in_its_delivery_cycle_time_the_same_way_a_team_does()
         {
@@ -122,7 +117,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// which is correctly left blank rather than drawn at zero. One delivery still in flight is what
         /// gives every day of the period something to report, the same way the team scenarios seed one.
         /// </summary>
-        // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
         public async Task A_portfolio_fills_in_its_delivery_age_tab_too()
         {
@@ -141,7 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// work already done. If it started again, a coach flicking between tabs would pay for the same
         /// history four times.
         /// </summary>
-        // @us-02 @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task Flicking_between_tabs_does_not_start_the_filling_over_again()
         {
@@ -162,7 +155,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// The comparison the combined widget exists for - is age climbing while finished cycle time
         /// looks steady - only works when both tabs cover the same period.
         /// </summary>
-        // @driving_port @us-02 @real-io @contract-shape:bounded-change
         [Test]
         public async Task Every_tab_covers_the_same_period_once_the_chart_has_filled_in()
         {
@@ -189,7 +181,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// Stating the whole span rather than only where it ends also says the fill reached the break. A
         /// pass that wrote nothing at all stops in the right place too.
         /// </summary>
-        // @us-02 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_age_tab_stops_where_the_team_stopped_being_watched()
         {
@@ -213,7 +204,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// scenario here is of a portfolio still being refreshed, where its last observation and today are
         /// one and the same day, so a reading anchored to today rather than to the break looks identical.
         /// </summary>
-        // @us-02 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task The_portfolio_age_tab_stops_where_the_portfolio_stopped_being_watched()
         {
@@ -238,7 +228,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// confident falsehood. The team here finished an item a day for a stretch and then nothing, so the
         /// days after that stretch are genuinely quiet and the tab must end where the work did.
         /// </summary>
-        // @us-02 @error @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_day_the_team_had_nothing_in_flight_is_left_blank_rather_than_drawn_at_zero()
         {

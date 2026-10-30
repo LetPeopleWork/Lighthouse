@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     [Category("slice-01")]
     public partial class Slice01ServerMarksStaleTest : StaleWorkItemsAcceptanceTest
     {
-        // @walking_skeleton @driving_port @real-io @contract-shape:unbounded-preservation
         [Test]
         public async Task A_flow_coach_reads_which_Work_Item_has_sat_too_long_in_Review_and_why()
         {
@@ -30,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheReadLeftWhatLighthouseHasStoredUnchanged(storedBefore);
         }
 
-        // @driving_port @real-io @contract-shape:pure-function
         [Test]
         public async Task A_flow_coach_reading_todays_work_in_progress_sees_which_Work_Item_has_sat_too_long()
         {
@@ -44,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsNotStale(read, "STORY-2");
         }
 
-        // @driving_port @real-io @contract-shape:pure-function
         [Test]
         public async Task A_Work_Item_is_judged_in_the_state_it_held_on_the_day_asked_about_not_the_one_it_holds_now()
         {
@@ -56,7 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "STORY-1", TimeInState(12, InProgress));
         }
 
-        // @driving_port @boundary @contract-shape:pure-function
         [TestCase(5, false)]
         [TestCase(6, true)]
         public async Task A_Work_Item_goes_stale_once_it_has_sat_in_its_state_longer_than_the_threshold(int daysInState, bool expectedStale)
@@ -69,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-1", expectedStale, expectedStale ? [TimeInState(daysInState, Review)] : []);
         }
 
-        // @driving_port @boundary @contract-shape:pure-function
         [TestCase(2, false)]
         [TestCase(3, true)]
         public async Task A_Blocked_Work_Item_goes_stale_on_the_day_it_reaches_the_blocked_threshold(int daysBlocked, bool expectedStale)
@@ -82,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-1", expectedStale, expectedStale ? [BlockedFor(daysBlocked)] : []);
         }
 
-        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task A_Blocked_Work_Item_under_the_blocked_threshold_is_not_stale_however_long_it_has_sat_in_its_state()
         {
@@ -95,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-1", expectedStale: false, [TimeInStateWhileBlocked(9, InProgress)]);
         }
 
-        // @driving_port @contract-shape:pure-function
         [Test]
         public async Task A_Blocked_Work_Item_is_stale_for_its_blocked_time_and_still_shows_how_long_it_has_sat_in_its_state()
         {
@@ -108,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "STORY-1", BlockedFor(4), TimeInStateWhileBlocked(12, InProgress));
         }
 
-        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task A_Work_Item_still_Blocked_in_its_state_is_not_stale_before_the_blocked_threshold_even_past_the_time_in_state_one()
         {
@@ -120,7 +112,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-1", expectedStale: false, [TimeInStateWhileBlocked(7, BlockedState)]);
         }
 
-        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task With_both_thresholds_off_no_Work_Item_is_stale_and_none_carries_a_reason()
         {
@@ -134,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsNotStale(read, "STORY-2");
         }
 
-        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task Turning_the_time_in_state_trigger_off_leaves_the_blocked_trigger_working()
         {
@@ -148,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "STORY-2", BlockedFor(3));
         }
 
-        // @driving_port @error @contract-shape:pure-function
         [Test]
         public async Task Turning_the_blocked_trigger_off_leaves_the_time_in_state_trigger_working()
         {
@@ -162,7 +151,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "STORY-2", expectedStale: false, [TimeInStateWhileBlocked(30, BlockedState)]);
         }
 
-        // @driving_port @contract-shape:pure-function
         // Chained: the same Work Item, read as of two consecutive days.
         [Test]
         public async Task A_Work_Item_is_judged_as_of_the_day_the_read_asks_about_not_today()
@@ -177,7 +165,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(onTheSixthDay, "STORY-1", TimeInState(6, Review));
         }
 
-        // @driving_port @edge @contract-shape:pure-function
         [Test]
         public async Task A_Work_Item_whose_state_entry_Lighthouse_never_saw_is_not_stale()
         {
@@ -189,7 +176,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsNotStale(read, "STORY-1");
         }
 
-        // @driving_port @boundary @contract-shape:pure-function
         [TestCase(5, false)]
         [TestCase(6, true)]
         public async Task A_Feature_goes_stale_once_it_has_sat_in_its_state_longer_than_the_Portfolios_threshold(int daysInState, bool expectedStale)
@@ -202,7 +188,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemReads(read, "EPIC-1", expectedStale, expectedStale ? [TimeInState(daysInState, InProgress)] : []);
         }
 
-        // @driving_port @contract-shape:pure-function
         [Test]
         public async Task A_Blocked_Feature_is_stale_for_its_blocked_time_against_the_Portfolios_blocked_threshold()
         {
@@ -215,7 +200,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "EPIC-1", BlockedFor(3), TimeInStateWhileBlocked(12, InProgress));
         }
 
-        // @driving_port @real-io @contract-shape:pure-function
         // Read for today, so the blocked rule decides and the open blocked spell says since when.
         [Test]
         public async Task A_Feature_Blocked_today_is_stale_for_the_days_since_its_open_blocked_spell_began()
@@ -229,7 +213,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemIsStaleBecause(read, "EPIC-1", BlockedFor(4), TimeInStateWhileBlocked(12, BlockedState));
         }
 
-        // @driving_port @error @contract-shape:unbounded-preservation
         // Green at hand-off on purpose: it holds today, and it is what keeps a read that never judges
         // staleness from starting to claim "not stale".
         [Test]
@@ -246,7 +229,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheReadLeftWhatLighthouseHasStoredUnchanged(storedBefore);
         }
 
-        // @driving_port @edge @contract-shape:pure-function
         // Pins today's behaviour, which this story does not change: without a day, the read answers
         // for no day at all.
         [Test]

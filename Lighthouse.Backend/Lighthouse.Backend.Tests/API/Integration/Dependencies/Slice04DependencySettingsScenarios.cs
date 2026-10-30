@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     {
         private static readonly string[] TheOneItWaitsOn = ["Retire the legacy importer"];
 
-        // @rbac @us-10 - "the switch starts off everywhere". A Portfolio that existed before this feature
+        // "the switch starts off everywhere". A Portfolio that existed before this feature
         // was built acts on its dependencies exactly as it did, without anybody going to look at it.
         [Test]
         public void A_Portfolio_acts_on_its_dependencies_until_somebody_says_otherwise()
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(ThePortfolioActsOnItsDependencies(portfolioId), Is.True);
         }
 
-        // @driving_adapter @us-10 - "Setting the dependencies aside leaves every one of them in plain
+        // "Setting the dependencies aside leaves every one of them in plain
         // sight". A shorter list, or one that named nothing, would read the same as an instance that has
         // no dependencies at all - which is the confusion this whole feature refuses.
         [Test]
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        // @us-04 - a reference somebody typed into a field of their own travels the whole way unchanged,
+        // a reference somebody typed into a field of their own travels the whole way unchanged,
         // so a reader can tell it from a link drawn in the work tracking system.
         [Test]
         public async Task A_dependency_read_from_a_named_field_says_so_all_the_way_to_the_reader()
@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(entries.Single().GetProperty("source").GetString(), Is.EqualTo("PortfolioField"));
         }
 
-        // @regression @us-10 - "no refresh asked for and nothing re-downloaded". A setting that needed a
+        // "no refresh asked for and nothing re-downloaded". A setting that needed a
         // full re-download to take effect is a setting nobody experiments with, and experimenting is the
         // entire point of this one.
         [Test]
@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(EveryStoredDependency(), Is.EqualTo(storedBefore));
         }
 
-        // @regression @us-10 - "putting it back changes nothing". Every verdict has to be the one it would
+        // "putting it back changes nothing". Every verdict has to be the one it would
         // have had all along, not one computed for the first time on a plan already being read.
         [Test]
         public async Task Acting_on_them_again_restores_every_verdict_exactly()
@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        // @error @us-10 - "A loop is still found while the dependencies are set aside". The loop check is
+        // "A loop is still found while the dependencies are set aside". The loop check is
         // what stops a forecast running forever, so the switch turns off what is acted on and never what is
         // looked for.
         [Test]
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        // @edge @us-10 - "Nothing is warned about while the dependencies are set aside". A refresh that
+        // "Nothing is warned about while the dependencies are set aside". A refresh that
         // still complained about a circle would be telling the operator off for a plan they asked for.
         [Test]
         public async Task A_refresh_says_nothing_about_dependencies_a_Portfolio_has_set_aside()
@@ -161,7 +161,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        // @edge @us-10 - a Feature waited on that this Portfolio cannot see is a broken link when the
+        // a Feature waited on that this Portfolio cannot see is a broken link when the
         // dependencies are being acted on, and nothing worth saying when they are not.
         [Test]
         public async Task A_wait_on_something_outside_the_Portfolio_goes_quiet_too()
@@ -178,7 +178,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             Assert.That(await TheReasonsAgainst("F-1"), Has.All.EqualTo("IgnoredByPortfolio"));
         }
 
-        // @edge @us-10 - "A dependency another Portfolio still honours keeps the verdict it had". A Feature
+        // "A dependency another Portfolio still honours keeps the verdict it had". A Feature
         // can belong to several Portfolios, and one of them trying out a different order must not decide
         // what another one's plan is allowed to see.
         [Test]
@@ -209,7 +209,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             }
         }
 
-        // @edge @us-10 - a Feature waited on that sits lower down in the order is the one thing worth
+        // a Feature waited on that sits lower down in the order is the one thing worth
         // saying about a dependency that is no reason to leave it out. While the dependencies are set
         // aside there is nothing to leave out, so there is nothing to say about the order either.
         [Test]

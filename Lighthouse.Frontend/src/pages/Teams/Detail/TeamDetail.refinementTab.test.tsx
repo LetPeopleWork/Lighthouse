@@ -276,7 +276,6 @@ describe("The Refinement tab on a Team page", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:pure-function
 	it("sits between Metrics and Reports", async () => {
 		renderTheTeamPage({ viewer: "teamAdmin", teamReads: [aTeam(true)] });
 
@@ -295,7 +294,6 @@ describe("The Refinement tab on a Team page", () => {
 		]);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	it("is switched off for a Team without refinement states and points its admin to Settings", async () => {
 		renderTheTeamPage({ viewer: "teamAdmin", teamReads: [aTeam(false)] });
 
@@ -306,7 +304,6 @@ describe("The Refinement tab on a Team page", () => {
 		expect(tooltip).toHaveTextContent(EDITOR_TOOLTIP);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	it("tells a reader, who has no Settings tab, that a Team admin has to choose the states", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(false)] });
 
@@ -318,7 +315,6 @@ describe("The Refinement tab on a Team page", () => {
 		expect(tooltip).not.toHaveTextContent(/settings/i);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// Every Community instance runs without sign-in, where everybody may edit the Team.
 	it("points everybody to Settings when roles are not enforced", async () => {
 		renderTheTeamPage({ viewer: "rbacOff", teamReads: [aTeam(false)] });
@@ -329,14 +325,12 @@ describe("The Refinement tab on a Team page", () => {
 		expect(tooltip).toHaveTextContent(EDITOR_TOOLTIP);
 	});
 
-	// @us-01 @slice-01 @contract-shape:pure-function
 	it("is switched on for a reader once the Team has refinement states", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
 
 		expect(await theRefinementTab()).toBeEnabled();
 	});
 
-	// @us-02 @slice-01 @boundary @contract-shape:pure-function
 	it("says the Team's own word for Refinement on the tab and in its tooltip", async () => {
 		terms.current = {
 			...defaultTerms,
@@ -354,7 +348,6 @@ describe("The Refinement tab on a Team page", () => {
 		);
 	});
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it("opens the Refinement view and puts the tab in the address", async () => {
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
 
@@ -366,7 +359,6 @@ describe("The Refinement tab on a Team page", () => {
 		});
 	});
 
-	// @us-02 @slice-02 @contract-shape:pure-function
 	it("opens straight onto the Refinement view from an address that names it", async () => {
 		mockParams = { id: "1", tab: "refinement" };
 		renderTheTeamPage({ viewer: "reader", teamReads: [aTeam(true)] });
@@ -374,7 +366,6 @@ describe("The Refinement tab on a Team page", () => {
 		expect(await screen.findByTestId("team-refinement-view")).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:pure-function
 	// The same way an address naming the Features tab of a Team without Features lands on Forecasts.
 	it("lands on Forecasts from an address naming the Refinement tab of a Team without refinement states", async () => {
 		mockParams = { id: "1", tab: "refinement" };
@@ -396,7 +387,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		terms.current = { ...defaultTerms };
 	});
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it("switches the tab on as soon as the save is accepted, without leaving Settings", async () => {
 		renderTheTeamPage({
 			viewer: "teamAdmin",
@@ -413,7 +403,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		await waitFor(async () => expect(await theRefinementTab()).toBeEnabled());
 	});
 
-	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @contract-shape:bounded-change
 	it("reports that the Team's refinement was set up, once", async () => {
 		renderTheTeamPage({
 			viewer: "teamAdmin",
@@ -431,7 +420,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		expect(reportsOfRefinementSetUp()).toHaveLength(1);
 	});
 
-	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
 	// An edit made while a save is on its way is sent as soon as that save is answered, before the page
 	// has drawn the answer, so the second save must not still believe the Team had no refinement states.
 	it("reports it once when a second save follows straight on from the first", async () => {
@@ -449,7 +437,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		expect(reportsOfRefinementSetUp()).toHaveLength(1);
 	});
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The save went through; failing to read the Team again afterwards says nothing about access to it.
 	it("keeps the settings open when reading the Team again after an accepted save fails", async () => {
 		renderTheTeamPage({
@@ -474,7 +461,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		).toBeVisible();
 	});
 
-	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
 	// The event counts Teams being set up, not saves; every later autosave would otherwise count again.
 	it("reports nothing when a Team that already had refinement states is saved again", async () => {
 		const { teamService } = renderTheTeamPage({
@@ -494,7 +480,6 @@ describe("Choosing the first refinement states switches the tab on", () => {
 		expect(reportsOfRefinementSetUp()).toHaveLength(0);
 	});
 
-	// @us-01 @slice-01 @kpi-OUT-5510-K1-refinement-set-up @error @contract-shape:bounded-change
 	it("reports nothing and keeps the tab switched off when the save is refused", async () => {
 		const { teamService } = renderTheTeamPage({
 			viewer: "teamAdmin",

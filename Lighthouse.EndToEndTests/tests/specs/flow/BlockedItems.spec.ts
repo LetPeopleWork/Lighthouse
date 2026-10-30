@@ -19,7 +19,7 @@ const DEMO_TEAM_NAME = "Team Zenith";
 const DEMO_BLOCKED_FIELD = "Type";
 const DEMO_BLOCKED_VALUE = "User Story";
 
-test("@walking_skeleton a config-admin saves a blocked rule and an item matching it reads blocked in the Blocked overview widget", async ({
+test("a config-admin saves a blocked rule and an item matching it reads blocked in the Blocked overview widget", async ({
 	page,
 	request,
 	overviewPage,
@@ -76,7 +76,7 @@ test("@walking_skeleton a config-admin saves a blocked rule and an item matching
 		.toMatch(/^(up|down|flat)$/);
 });
 
-test("@walking_skeleton clicking the latest bar on the Blocked Items Over Time chart drills through to the WorkItemsDialog listing the blocked items", async ({
+test("clicking the latest bar on the Blocked Items Over Time chart drills through to the WorkItemsDialog listing the blocked items", async ({
 	page,
 	request,
 	overviewPage,

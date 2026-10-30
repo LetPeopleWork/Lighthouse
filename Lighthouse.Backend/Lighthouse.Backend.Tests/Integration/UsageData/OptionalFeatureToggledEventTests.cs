@@ -79,7 +79,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             WhichWayOnTheWire,
         ];
 
-        // @walking_skeleton @driving_port @real-io @AC-1.1
         [Test]
         public async Task Switching_the_feature_order_setting_on_arrives_saying_which_setting_and_that_it_is_now_on()
         {
@@ -108,7 +107,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @AC-1.1
         [Test]
         public async Task Switching_it_back_off_arrives_as_one_more_event_saying_it_is_now_off()
         {
@@ -141,7 +139,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
         }
 
-        // @driving_port @real-io @error @AC-1.4
         [Test]
         [TestCase("refused")]
         [TestCase("never answered")]
@@ -173,7 +170,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// is refused for the name alone, so without that second half the refusal would be proved
         /// by a product that cannot read this event at all.
         /// </summary>
-        // @driving_port @real-io @error @AC-1.5
         [Test]
         [TestCase(OnlyWhichWay, TestName = "A setting switch that does not say which setting is refused")]
         [TestCase(OnlyWhichSetting, TestName = "A setting switch that does not say which way is refused")]
@@ -193,7 +189,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// forever lifting it. The screen does not report it, and this is what stops a message built
         /// by hand from reporting it anyway.
         /// </summary>
-        // @driving_port @real-io @error @AC-1.2 @AC-1.5
         [Test]
         [TestCase(NeverSendUsageData)]
         [TestCase("DeltaSync")]
@@ -204,7 +199,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await AssertItIsRefusedWhileTheCompleteMessageIsAccepted(ASettingSwitchedTo(setting, "true"));
         }
 
-        // @driving_port @real-io @error @AC-1.5
         [Test]
         [TestCase("\"true\"")]
         [TestCase("1")]
@@ -219,7 +213,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// being created that also says a setting was switched would put a switch in the numbers
         /// that nobody made.
         /// </summary>
-        // @driving_port @real-io @error @AC-1.5
         [Test]
         [TestCaseSource(nameof(EveryOtherEvent))]
         public async Task Any_other_event_that_says_a_setting_was_switched_is_refused(string name)
@@ -227,7 +220,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await AssertItIsRefusedOutright(AMessageAbout(name, WhatItNeedsToBeRead(name) + BothWhichSettingAndWhichWay));
         }
 
-        // @driving_port @real-io @error @AC-1.5
         [Test]
         [TestCase(OnlyWhichSetting)]
         [TestCase(OnlyWhichWay)]
@@ -242,7 +234,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// setting's own key, name or help text travelling alongside would fail here rather than in
         /// somebody else's database.
         /// </summary>
-        // @driving_port @real-io @AC-1.6
         [Test]
         public async Task Nothing_travels_with_a_setting_switch_beyond_which_setting_and_which_way()
         {

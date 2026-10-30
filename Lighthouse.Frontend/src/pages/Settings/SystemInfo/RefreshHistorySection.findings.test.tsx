@@ -120,7 +120,6 @@ const givenRefreshHistoryHolds = async (rows: RefreshLog[]) => {
 };
 
 describe("Refresh History says what a Portfolio's settings named that its latest full download did not find", () => {
-	// @walking_skeleton @driving_port @us-02 @ac-2.2 @kpi @contract-shape:pure-function
 	it("a named link nothing carries is shown with the links that were seen and when that was found", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows([NothingMatched]));
 
@@ -132,7 +131,6 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		expect(screen.getByText(TheAsOfLabel)).toBeInTheDocument();
 	});
 
-	// @error @us-01 @ac-1.3 @contract-shape:pure-function
 	it("a link type named by its name rather than one end asks which end is meant", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows([PointsBothWays]));
 
@@ -143,7 +141,6 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		).toBeInTheDocument();
 	});
 
-	// @error @us-03 @ac-3.10 @contract-shape:pure-function
 	it("a relation type named as the Parent Override Field says only the Dependency Field reads one", async () => {
 		await givenRefreshHistoryHolds(
 			paymentsPlatformRows([ARelationTypeAsParentOverride]),
@@ -156,7 +153,6 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		).toBeInTheDocument();
 	});
 
-	// @error @us-03 @ac-3.10 @contract-shape:pure-function
 	it("a relation type named as the owner field is named the way this instance names its Features", async () => {
 		await givenRefreshHistoryHolds(
 			paymentsPlatformRows([ARelationTypeAsFeatureOwner]),
@@ -169,7 +165,6 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		).toBeInTheDocument();
 	});
 
-	// @edge @active-guard @us-02 @ac-2.1 @contract-shape:unbounded-preservation
 	it("a full download that found nothing to say shows no finding and no label", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows([]));
 
@@ -181,7 +176,6 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		).not.toBeInTheDocument();
 	});
 
-	// @error @active-guard @us-02 @contract-shape:unbounded-preservation
 	it("rows from a backend that sends no findings still show their history", async () => {
 		await givenRefreshHistoryHolds(paymentsPlatformRows(undefined));
 

@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-04")]
     public partial class Slice04BlockedStalenessTest
     {
-        // @driving_port @us-04 (threshold round-trips)
+        // (threshold round-trips)
         [Test]
         public async Task The_blocked_staleness_threshold_is_saved_and_read_back()
         {
@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheThresholdIs(settings, 10);
         }
 
-        // @edge @us-04 (0 = disabled, and is the default)
+        // (0 = disabled, and is the default)
         [Test]
         public async Task A_new_team_defaults_the_blocked_staleness_threshold_to_zero()
         {
@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheThresholdIs(settings, 0);
         }
 
-        // @error @us-04 (below range)
+        // (below range)
         [Test]
         public async Task A_blocked_staleness_threshold_below_range_is_rejected()
         {
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheThresholdSaveIsRejected(save);
         }
 
-        // @error @us-04 (above range)
+        // (above range)
         [Test]
         public async Task A_blocked_staleness_threshold_above_range_is_rejected()
         {
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheThresholdSaveIsRejected(save);
         }
 
-        // @error @us-04 @rbac (config-admin gate; GREEN-when-enabled via pre-existing TeamWrite guard)
+        // (config-admin gate; GREEN-when-enabled via pre-existing TeamWrite guard)
         [Test]
         public async Task A_non_admin_cannot_change_the_blocked_staleness_threshold()
         {

@@ -47,7 +47,6 @@ const LIKELIHOODS_AT_50_AND_85 =
 	"The Team pulls at least the low end with 50% likelihood, and more than the high end with only 15% likelihood.";
 
 describe("describeNeed", () => {
-	// @need-over-one-cycle @contract-shape:pure-function
 	// Below the range the number is what the Team pulls until the Refinement after the next one.
 	it.each<[number, number, number, string]>([
 		[
@@ -83,7 +82,6 @@ describe("describeNeed", () => {
 		},
 	);
 
-	// @need-over-one-cycle @contract-shape:pure-function
 	// On a Refinement day the cycle runs from today to the next Refinement, which the message's title names.
 	it.each<[number, number, number, string]>([
 		[
@@ -174,7 +172,6 @@ describe("describeNeed", () => {
 		);
 	});
 
-	// @need-over-one-cycle @contract-shape:pure-function
 	it("says the Team's own word for Refinement", () => {
 		expect(
 			describeNeed({
@@ -184,7 +181,6 @@ describe("describeNeed", () => {
 		).toContain("is likely to pull until the Grooming after. Refine");
 	});
 
-	// @need-over-one-cycle @contract-shape:pure-function
 	it("says the Team's own word for Refinement on a Refinement day", () => {
 		expect(
 			describeNeed({
@@ -197,7 +193,6 @@ describe("describeNeed", () => {
 });
 
 describe("describeNeedOrigin", () => {
-	// @need-over-one-cycle @contract-shape:pure-function
 	// The forecast covers the working days between two Refinements in a row; on a Refinement day the first
 	// of them is today, so the dates read the same way whichever day it is.
 	it.each<[string, Partial<NeedOriginFacts>, string]>([

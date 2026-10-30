@@ -359,7 +359,6 @@ describe("ModifyTeamSettings", () => {
 		).toBeInTheDocument();
 	});
 
-	// @story-6313 @contract-shape:bounded-change
 	it("a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice", async () => {
 		const storyPoints = {
 			id: 13,

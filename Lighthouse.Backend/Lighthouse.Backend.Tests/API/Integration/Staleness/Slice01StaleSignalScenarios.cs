@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     [Category("slice-01")]
     public partial class Slice01StaleSignalTest : FasterUpdatesAcceptanceTest
     {
-        // @driving_port @contract-shape:bounded-change
         // Chained: the second refresh finds the same Work Item still stale and says nothing new.
         [Test]
         public async Task A_refresh_signals_a_Work_Item_going_stale_once_with_the_threshold_it_crossed()
@@ -29,7 +28,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @boundary @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_refresh_does_not_signal_a_Work_Item_that_has_sat_exactly_as_long_as_the_threshold()
         {
@@ -41,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_refresh_does_not_signal_a_Blocked_Work_Item_still_under_the_blocked_threshold()
         {
@@ -53,7 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenNoWorkItemWasSignalledAsStale();
         }
 
-        // @driving_port @contract-shape:bounded-change
         [Test]
         public async Task A_refresh_signals_a_Blocked_Work_Item_with_the_blocked_threshold_it_crossed()
         {
@@ -65,7 +61,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemWasSignalledAsStale(item, thresholdDays: 3);
         }
 
-        // @driving_port @contract-shape:bounded-change
         // With both triggers on, the threshold named is the blocked one, because that is the reason
         // that made the Work Item stale.
         [Test]
@@ -79,7 +74,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
             ThenTheWorkItemWasSignalledAsStale(item, thresholdDays: 3);
         }
 
-        // @driving_port @error @contract-shape:unbounded-preservation
         [Test]
         public async Task A_refresh_never_signals_staleness_while_both_thresholds_are_off()
         {

@@ -106,8 +106,8 @@ beforeEach(() => {
 	terms.set(TERMINOLOGY_KEYS.WORK_ITEM, "Work Item");
 });
 
-describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
-	it(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that held is shaded by how close it landed - Ocean Explorer's 30-day row over 8 weeks`, async () => {
+describe("each forecast graded by how close it landed", () => {
+	it(`a forecast that held is shaded by how close it landed - Ocean Explorer's 30-day row over 8 weeks`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const row = windowRow(periodGroup(theTableIn(dialog), 56), 30);
 
@@ -122,7 +122,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		});
 	});
 
-	it(`@kpi-OUT-6094-no-percentage-without-its-work-items a forecast that did not hold is graded by how far it fell short - the same row's 50th`, async () => {
+	it(`a forecast that did not hold is graded by how far it fell short - the same row's 50th`, async () => {
 		const dialog = await theDialogFor(oceanExplorerOverEightWeeks());
 		const cell = levelCell(
 			windowRow(periodGroup(theTableIn(dialog), 56), 30),
@@ -132,7 +132,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		expect(cell).toHaveStyle({ backgroundColor: gradeFill("NotHeld10To25") });
 	});
 
-	it(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a one-Work-Item miss on a small period shows the Work Item beside the percentage - Coastal Survey's week`, async () => {
+	it(`a one-Work-Item miss on a small period shows the Work Item beside the percentage - Coastal Survey's week`, async () => {
 		const dialog = await theDialogFor({
 			teamName: "Coastal Survey",
 			checks: [
@@ -155,7 +155,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		expect(cell).toHaveStyle({ backgroundColor: gradeFill("NotHeldOver25") });
 	});
 
-	it(`@error @kpi-OUT-6094-no-percentage-without-its-work-items a period in which nothing was delivered has no percentage: 0 against 0 held exactly, 2 against 0 did not hold by the most - Harbour Pilots' week`, async () => {
+	it(`a period in which nothing was delivered has no percentage: 0 against 0 held exactly, 2 against 0 did not hold by the most - Harbour Pilots' week`, async () => {
 		const dialog = await theDialogFor({
 			teamName: "Harbour Pilots",
 			checks: [
@@ -192,7 +192,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		{ actual: 99, forecast: 74, shown: "26%", grade: "HeldOver25" },
 		{ actual: 300, forecast: 299, shown: "1%", grade: "HeldWithin10" },
 	])(
-		`@boundary shows $shown for a forecast of $forecast against $actual, never a number its shade contradicts`,
+		`shows $shown for a forecast of $forecast against $actual, never a number its shade contradicts`,
 		async ({ actual, forecast, grade }) => {
 			const dialog = await theDialogFor({
 				checks: [
@@ -216,7 +216,7 @@ describe("@us-05 @slice-05 each forecast graded by how close it landed", () => {
 		},
 	);
 
-	it(`@error a check that could not run keeps its words and takes no grade colour`, async () => {
+	it(`a check that could not run keeps its words and takes no grade colour`, async () => {
 		const dialog = await theDialogFor({
 			unevaluable: HORIZON_DAYS.map((horizon) => ({
 				window: 14,

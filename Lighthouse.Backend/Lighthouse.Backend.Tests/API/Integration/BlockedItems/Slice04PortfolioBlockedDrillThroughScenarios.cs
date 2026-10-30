@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [Category("slice-04")]
     public partial class Slice04PortfolioBlockedDrillThroughTest
     {
-        // @walking_skeleton @driving_port @us-04 @contract-shape:pure-function (US-04 AC1)
+        // (US-04 AC1)
         [Test]
         [Category("walking_skeleton")]
         public async Task Clicking_a_past_bar_lists_the_features_whose_spell_covered_that_date()
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogListsExactly(response, "F-COVERED", "F-STILL-OPEN");
         }
 
-        // @driving_port @us-04 @contract-shape:pure-function (US-04 AC2 — latest/today bar reconstructs
+        // (US-04 AC2 — latest/today bar reconstructs
         // from the live rule set; covers the slice-08 carried finding: drive a TODAY-dated request)
         [Test]
         public async Task The_latest_bar_reconstructs_from_the_live_blocked_set()
@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogListsExactly(response, "F-LIVE-BLOCKED");
         }
 
-        // @edge @us-04 @contract-shape:pure-function (US-04 AC3 — pre-capture date: honest partial set,
+        // (US-04 AC3 — pre-capture date: honest partial set,
         // never a fabricated full history; the completeness note copy is a FE concern)
         [Test]
         public async Task A_date_before_capture_started_returns_the_reconstructable_set()
@@ -58,7 +58,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheDialogIsEmpty(response);
         }
 
-        // @invariant @us-04 @adr-099 @contract-shape:pure-function (US-04 AC4 — reconciliation-quiet probe:
+        // (US-04 AC4 — reconciliation-quiet probe:
         // reconstructed membership count equals the captured snapshot for the same date, so the guard
         // has nothing to log. A divergence here means capture is genuinely broken.)
         [Test]
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             ThenTheReconstructedCountIs(response, 2);
         }
 
-        // @edge @us-04 @adr-104 @contract-shape:pure-function (departure — read-side defensive
+        // (departure — read-side defensive
         // intersection mirrors the team shape: a feature no longer in the portfolio is excluded from
         // the drill-through even for dates inside its spell. The sweep that closes its spell row is a
         // DELIVER inner-loop pin; see distill/wave-decisions.md.)

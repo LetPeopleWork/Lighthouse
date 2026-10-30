@@ -25,7 +25,7 @@ const THE_OTHER_BLOCKER = "Asteroid Mining Program";
 //   - the blank cell, the heading's wording, the sort, and the link out to the tracker for a Feature
 //     that has a url -> columns.dependsOn.test.tsx
 testWithFeatures(
-	"@walking_skeleton a product owner sees, without leaving Lighthouse, that a Feature is waiting on two others",
+	"a product owner sees, without leaving Lighthouse, that a Feature is waiting on two others",
 	async ({ testData, overviewPage }) => {
 		expect(testData.portfolios.length).toBeGreaterThan(0);
 

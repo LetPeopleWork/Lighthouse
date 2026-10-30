@@ -54,7 +54,6 @@ const changeSegment = () =>
  * drew a line its definition does not list, or rounded one differently, would let the two disagree.
  */
 describe("every panel in the registry", () => {
-	// @us-05b @slice-05b @contract-shape:pure-function
 	it.each<[ReportMetricKey, Mark[]]>([
 		["cycle-time", ["dash", "better", "worse", "neutral"]],
 		["throughput", ["neutral"]],

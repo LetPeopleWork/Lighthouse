@@ -449,7 +449,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 	});
 
 	describe("the question before the save", () => {
-		// @walking_skeleton @driving_port @us-02 @contract-shape:bounded-change
 		it("adding a field and pressing Save asks whether to update the 4 Teams and 2 Portfolios on the connection", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 
@@ -469,7 +468,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(server.updateWorkTrackingSystemConnection).not.toHaveBeenCalled();
 		});
 
-		// @driving_port @us-02 @contract-shape:bounded-change
 		it("Save and update saves the new field without holding the updates back and returns to the overview", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -485,7 +483,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			thenNoNoticeAboutTheUpdatesIsShown();
 		});
 
-		// @us-02 @contract-shape:bounded-change
 		it.each(FieldEdits)(
 			"the question is asked whenever Priya %s",
 			async (_, edit) => {
@@ -500,7 +497,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("Cancel saves nothing and leaves Priya on the page with her new field still listed", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -515,7 +511,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(screen.getByDisplayValue(NordwindJiraDc)).toBeInTheDocument();
 		});
 
-		// @us-02 @contract-shape:pure-function
 		it.each([
 			[
 				"one of each",
@@ -561,7 +556,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		// @us-02 @contract-shape:pure-function
 		it("the explanation names the Teams and Portfolios in the words this instance uses", async () => {
 			await givenPriyaOpensNordwindJiraDc({ words: SquadsAndPrograms });
 			await whenPriyaAddsFixVersions();
@@ -574,7 +568,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			);
 		});
 
-		// @us-02 @contract-shape:unbounded-preservation
 		it("changing a field no longer promises it will load with the next refresh", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 
@@ -583,7 +576,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(screen.queryByText(TheFieldsAlert)).not.toBeInTheDocument();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("when someone else saved the connection first, Save and update says so and stays on the page", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc({
 				save: () => Promise.reject(new ApiError(409, "Conflict")),
@@ -605,7 +597,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 		// These guards predate the question and must keep holding alongside it.
 
 		// A new connection has no Team or Portfolio yet, and setting one up offers no Additional Fields to add.
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("setting up a new connection saves it without a question", async () => {
 			route.id = undefined;
 			const server = await givenPriyaSetsUpANewJiraConnection();
@@ -622,7 +613,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await thenSheIsBackOnTheOverview();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("a field change on a connection no Team or Portfolio uses is saved straight away without a question", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc({
 				usedBy: { teams: 0, portfolios: 0 },
@@ -636,7 +626,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await thenSheIsBackOnTheOverview();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it.each([
 			[
 				"a new name",
@@ -666,7 +655,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("a field Priya started to add and then cancelled asks no question", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
@@ -680,7 +668,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			thenNoQuestionIsAsked();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("a field Priya added and removed again before saving asks no question", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -696,7 +683,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 
 		// Stored values and rules hang off a field's id, and the server gives a field that comes back
 		// under a new id a fresh one, so it loads it again even though its name and reference are as before.
-		// @us-02 @contract-shape:bounded-change
 		it("a field Priya removed and added back with the same name and reference asks the question", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			whenPriyaRemovesStoryPoints();
@@ -709,7 +695,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			).toBeInTheDocument();
 		});
 
-		// @us-02 @contract-shape:bounded-change
 		it("swapping the names and references of two fields asks the question", async () => {
 			await givenPriyaOpensNordwindJiraDc({
 				fields: [
@@ -733,7 +718,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			).toBeInTheDocument();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("a field change the tracker refuses asks no question and saves nothing", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc({
 				validation: {
@@ -754,7 +738,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 	});
 
 	describe("save now, update later", () => {
-		// @us-03 @contract-shape:pure-function
 		it("the question offers to save only and says when the field fills in then", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -770,7 +753,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			).toBeInTheDocument();
 		});
 
-		// @driving_port @us-03 @contract-shape:bounded-change
 		it("Save only saves the new field, holds the updates back and returns to the overview", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -787,7 +769,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			thenNoNoticeAboutTheUpdatesIsShown();
 		});
 
-		// @kpi @us-03 @contract-shape:bounded-change
 		it.each([
 			["Save and update", "Now"],
 			["Save only", "Later"],
@@ -807,7 +788,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		// @error @us-03 @contract-shape:unbounded-preservation
 		it(`Cancel tells usage data nothing`, async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			await whenPriyaAddsFixVersions();
@@ -820,7 +800,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 		});
 
 		// The answer only counts once the save it chose has gone through; a refused save changed nothing.
-		// @error @us-03 @contract-shape:unbounded-preservation
 		it(`a save refused because someone else saved first tells usage data nothing`, async () => {
 			await givenPriyaOpensNordwindJiraDc({
 				save: () => Promise.reject(new ApiError(409, "Conflict")),
@@ -836,7 +815,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(theUsageDataSent()).toEqual([]);
 		});
 
-		// @error @us-03 @contract-shape:unbounded-preservation
 		it("a field change saved without a question tells usage data nothing", async () => {
 			await givenPriyaOpensNordwindJiraDc({
 				usedBy: { teams: 0, portfolios: 0 },
@@ -851,7 +829,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 	});
 
 	describe("while the answer is being saved", () => {
-		// @us-02 @contract-shape:bounded-change
 		it.each(["Save and update", "Save only"])(
 			"after %s the question stays open, that button is busy and no answer can be pressed until the save is done",
 			async (answer) => {
@@ -876,7 +853,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("Esc does not close the question while the save is on its way", async () => {
 			const saving = aSaveStillOnItsWay();
 			await givenPriyaOpensNordwindJiraDc({ save: saving.save });
@@ -895,7 +871,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await thenSheIsBackOnTheOverview();
 		});
 
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it("when someone else saved first, the question closes and the page says so", async () => {
 			const saving = aSaveStillOnItsWay();
 			await givenPriyaOpensNordwindJiraDc({ save: saving.save });
@@ -914,7 +889,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 		});
 
 		// Any other failure goes to the page's error handler; the question must not be left in the way.
-		// @error @us-02 @contract-shape:unbounded-preservation
 		it.each(["Save and update", "Save only"])(
 			"when the save fails for any other reason after %s, the question closes and can be answered again",
 			async (answer) => {
@@ -943,7 +917,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 	});
 
 	describe("a save that removes a field still in use", () => {
-		// @error @us-6304 @contract-shape:unbounded-preservation
 		it("says which field cannot go and who uses it, keeps her edit and stays on the page", async () => {
 			const server = await givenPriyaOpensNordwindJiraDc({
 				save: () => Promise.reject(theFieldIsStillInUse()),
@@ -962,7 +935,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(mockNavigate).not.toHaveBeenCalled();
 		});
 
-		// @error @us-6304 @contract-shape:unbounded-preservation
 		it("a stale save still says someone else changed the connection", async () => {
 			await givenPriyaOpensNordwindJiraDc({
 				save: () =>

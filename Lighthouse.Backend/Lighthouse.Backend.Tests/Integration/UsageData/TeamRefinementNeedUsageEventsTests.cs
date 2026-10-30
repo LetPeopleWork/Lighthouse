@@ -61,7 +61,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // --- When a vote happened ---
 
-        // @driving_port @real-io @us-04 @us-11 @slice-04 @kpi-OUT-5510-K4-votes-outside-the-meeting @contract-shape:bounded-change
         [TestCase(TeamSizingVoteCast, OnRefinementDay)]
         [TestCase(TeamSizingVoteCast, OnOtherDay)]
         [TestCase(TeamSizingReadinessReached, OnRefinementDay)]
@@ -76,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenOneEventReachedTheCollectorCarrying(handedIn, messages, name, EverythingThePageSaysTravelsWithAMoment, SizingMomentOnTheWire, moment);
         }
 
-        // @us-04 @slice-04 @contract-shape:bounded-change
         // The moments are appended to their list, so a number already counted never changes meaning.
         [TestCase(OnRefinementDay, NoCadence)]
         [TestCase(OnOtherDay, OnRefinementDay)]
@@ -85,7 +83,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         // --- Which verdict a Refinement day showed ---
 
-        // @driving_port @real-io @us-05 @slice-05 @kpi-OUT-5510-K3-in-range-on-refinement-day @contract-shape:bounded-change
         [TestCase("Below")]
         [TestCase("In")]
         [TestCase("Above")]
@@ -100,7 +97,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenOneEventReachedTheCollectorCarrying(handedIn, messages, TeamRefinementDayVerdictShown, EverythingThePageSaysTravelsWithAVerdict, VerdictOnTheWire, verdict);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:unbounded-preservation
         // The verdict is the whole reason the event exists; without it, or with anything beside it, it is refused.
         [TestCase("")]
         [TestCase(",\"refinementVerdict\":\"Mostly\"")]
@@ -117,7 +113,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenItIsRefusedAndNothingIsForwarded(refused);
         }
 
-        // @driving_port @real-io @us-05 @slice-05 @error @contract-shape:unbounded-preservation
         // Only the verdict event may carry a verdict.
         [Test]
         public async Task A_sizing_event_carrying_a_verdict_is_refused()
@@ -130,7 +125,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await ThenItIsRefusedAndNothingIsForwarded(refused);
         }
 
-        // @us-05 @slice-05 @contract-shape:bounded-change
         [Test]
         public void The_verdict_event_is_appended_to_the_list_of_names_never_inserted()
             => ThenIsAppendedAfter("UsageDataEventName", TeamRefinementDayVerdictShown, TeamSizingReadinessReached);

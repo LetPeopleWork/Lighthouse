@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     [Category("slice-01")]
     public partial class Slice01UpdateLogSignalTest
     {
-        // @walking_skeleton @driving_port @real-io @AC-1.1 @AC-1.3
         [Test]
         public async Task A_completed_team_update_says_what_it_did()
         {
@@ -34,7 +33,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenThatSummaryReportsItSucceeded();
         }
 
-        // @driving_port @real-io @AC-1.2 — the same line shape from the other half of the cycle.
+        // the same line shape from the other half of the cycle.
         [Test]
         public async Task A_completed_portfolio_update_says_the_same_thing_in_the_same_shape()
         {
@@ -51,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenThatSummaryReportsItSucceeded();
         }
 
-        // @driving_port @AC-1.7 @KPI-5 — the criterion that makes the summary readable at all.
+        // the criterion that makes the summary readable at all.
         [Test]
         public async Task A_team_update_writes_no_more_than_two_lines_the_operator_has_to_read()
         {
@@ -63,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorHadAtMostTwoLinesToRead();
         }
 
-        // @driving_port @AC-1.7 @KPI-5 — and the same budget on the portfolio half.
+        // and the same budget on the portfolio half.
         [Test]
         public async Task A_portfolio_update_writes_no_more_than_two_lines_the_operator_has_to_read()
         {
@@ -75,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheOperatorHadAtMostTwoLinesToRead();
         }
 
-        // @driving_port @AC-1.5 — three copies of the same announcement is the loudest single offender.
+        // three copies of the same announcement is the loudest single offender.
         [Test]
         public async Task A_team_update_announces_itself_once()
         {
@@ -87,7 +86,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheTeamIsAnnouncedAtMostOnce(team);
         }
 
-        // @driving_port @AC-1.6 — demoted, never deleted: the per-record stream stays available at Debug.
+        // demoted, never deleted: the per-record stream stays available at Debug.
         // Driven from the portfolio half, which is where the per-Feature narration is emitted.
         [Test]
         public async Task An_update_keeps_its_per_record_chatter_out_of_the_operators_log()
@@ -101,7 +100,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenThePerRecordDetailIsStillAvailableToWhoeverAsksForIt();
         }
 
-        // @driving_port @AC-1.8 — the numbers the summary reports are the numbers that get persisted.
+        // the numbers the summary reports are the numbers that get persisted.
         [Test]
         public async Task A_completed_team_update_records_the_mode_and_both_counts()
         {
@@ -114,7 +113,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ThenTheRecordedUpdateStillCarriesEverythingItAlwaysDid(team, itemCount: 2);
         }
 
-        // @error @driving_port @AC-1.9 — a failed update is the one an operator most needs to read.
+        // a failed update is the one an operator most needs to read.
         [Test]
         public async Task An_update_that_failed_still_says_what_it_did()
         {

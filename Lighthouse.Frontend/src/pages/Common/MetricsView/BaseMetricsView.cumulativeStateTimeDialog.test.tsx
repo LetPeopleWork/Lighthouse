@@ -253,7 +253,6 @@ const COULD_NOT_LOAD =
 	"These Work Items couldn't be loaded. Close and reopen to try again.";
 
 describe("the items behind a Cumulative Time per State bar", () => {
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it.each(["team", "portfolio"] as const)(
 		"on a %s's dashboard, the dialog opens at once in its loading look",
 		async (owner) => {
@@ -278,7 +277,6 @@ describe("the items behind a Cumulative Time per State bar", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @driving_port @contract-shape:pure-function
 	it.each(["team", "portfolio"] as const)(
 		"on a %s's dashboard, the items arrive with the days each contributed",
 		async (owner) => {
@@ -300,7 +298,6 @@ describe("the items behind a Cumulative Time per State bar", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it(
 		"says the items couldn't be loaded instead of opening nothing when the request fails",
 		async () => {
@@ -319,7 +316,6 @@ describe("the items behind a Cumulative Time per State bar", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-02 @slice-02 @error @contract-shape:pure-function
 	it(
 		"a late answer for the bar clicked before never lands in the next bar's dialog",
 		async () => {

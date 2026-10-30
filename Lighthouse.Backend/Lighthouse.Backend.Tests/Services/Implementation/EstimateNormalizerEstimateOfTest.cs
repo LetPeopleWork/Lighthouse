@@ -29,7 +29,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return item;
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
         public void EstimateOf_OwnerWithoutAnEstimationField_IsNothing()
         {
@@ -40,7 +39,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result, Is.Null);
         }
 
-        // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
         public void EstimateOf_NumericField_IsTheNumberTheChartPlots()
         {
@@ -54,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
         public void EstimateOf_CategoryField_IsTheCategorysPlaceInTheOwnersListAndItsName()
         {
@@ -68,7 +65,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
         public void EstimateOf_CategoryMissingFromTheOwnersList_IsUnmapped()
         {
@@ -77,7 +73,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result?.Status, Is.EqualTo(EstimateNormalizationStatus.Unmapped));
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase("")]
         [TestCase("about three")]
         public void EstimateOf_NothingUsableInANumericField_IsInvalid(string estimate)
@@ -87,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result?.Status, Is.EqualTo(EstimateNormalizationStatus.Invalid));
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [TestCase(false)]
         [TestCase(true)]
         public void EstimateOf_ItemThatNeverReceivedTheField_IsInvalidWithNothingToShow(bool categories)
@@ -105,7 +99,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // @us-01 @slice-01a @error @contract-shape:pure-function
         [Test]
         public void EstimatesOf_OwnerWithoutAnEstimationField_IsNothing()
         {
@@ -116,7 +109,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             Assert.That(result, Is.Null);
         }
 
-        // @us-01 @slice-01a @example @contract-shape:pure-function
         [Test]
         public void EstimatesOf_CountsTheItemsTheChartCanPlaceAndThoseItCannot()
         {
@@ -139,7 +131,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             }
         }
 
-        // @us-01 @slice-01a @example @contract-shape:pure-function
         [TestCaseSource(nameof(EstimatesAcrossBothModes))]
         public void EstimateOf_AgreesWithTheBatchTheChartReads(bool categories, string? estimate)
         {

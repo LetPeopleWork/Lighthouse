@@ -139,7 +139,6 @@ beforeEach(() => {
 });
 
 describe("A list of 100 rows or fewer looks unchanged", () => {
-	// @us-01 @slice-01 @regression @boundary @kpi-OUT-6202-short-lists-untouched @contract-shape:unbounded-preservation
 	it.each([0, 1, 100])(
 		"shows all of its %i rows and no footer",
 		(count) => {
@@ -153,7 +152,6 @@ describe("A list of 100 rows or fewer looks unchanged", () => {
 });
 
 describe("A list of more than 100 rows says how many it has and pages to the rest", () => {
-	// @us-01 @slice-01 @driving_port @boundary @contract-shape:bounded-change
 	it.each([
 		[101, "1–100 of 101"],
 		[143, "1–100 of 143"],
@@ -171,7 +169,6 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"puts the 101st row alone on the second page of a 101-row list",
 		async () => {
@@ -186,7 +183,6 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(
 		"reaches every row of a 243-row list, and the arrows lead back",
 		async () => {
@@ -205,7 +201,6 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(
 		"offers the previous and next page only, with no rows-per-page choice",
 		() => {
@@ -218,7 +213,6 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
 	// Paging is never remembered: the whole saved entry is the same after paging as before it.
 	it(
 		"leaves the saved layout of the list exactly as it was after paging",
@@ -239,7 +233,6 @@ describe("A list of more than 100 rows says how many it has and pages to the res
 });
 
 describe("Sorting and filtering a long list", () => {
-	// @us-01 @slice-01 @regression @contract-shape:bounded-change
 	it(
 		"sorts the whole list, so its overall first row opens the first page",
 		async () => {
@@ -254,7 +247,6 @@ describe("Sorting and filtering a long list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"goes back to the first page when the list is sorted on the second",
 		async () => {
@@ -271,7 +263,6 @@ describe("Sorting and filtering a long list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"opens the first page of what a column filter on the second page leaves, when that is still more than 100",
 		async () => {
@@ -286,7 +277,6 @@ describe("Sorting and filtering a long list", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// The Work Items dialog has no search of its own, so its column filter is how a list shrinks.
 	it(
 		"shows all 64 rows a column filter on the second page leaves, with no footer",
@@ -304,7 +294,6 @@ describe("Sorting and filtering a long list", () => {
 });
 
 describe("A long list whose rows change while a later page is open", () => {
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(
 		"shows all 64 rows and no footer when a reload brings the list down to 64",
 		async () => {
@@ -319,7 +308,6 @@ describe("A long list whose rows change while a later page is open", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"keeps the open page when a reload leaves more than 100 rows and the page still exists",
 		async () => {
@@ -334,7 +322,6 @@ describe("A long list whose rows change while a later page is open", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	it(
 		"lands on the last page left, never an empty one, when a reload removes the open page",
 		async () => {
@@ -354,7 +341,6 @@ describe("A long list whose rows change while a later page is open", () => {
 });
 
 describe("While a list is loading", () => {
-	// @us-01 @slice-01 @regression @contract-shape:unbounded-preservation
 	it(
 		"shows the loading look and no footer on a first load with no rows yet",
 		() => {
@@ -369,7 +355,6 @@ describe("While a list is loading", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @error @contract-shape:bounded-change
 	// A range left over from the previous answer under a loading overlay would be a stale count.
 	it(
 		"shows no footer while a 243-row list reloads, and the range again once it has",
@@ -448,7 +433,6 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 
 	const allNamesDescending = namesOf(aListOf(243)).reverse();
 
-	// @us-01 @slice-01 @regression @contract-shape:unbounded-preservation
 	it(
 		"exports all 243 rows, in the order shown, from the first page",
 		async () => {
@@ -462,7 +446,6 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
 	it(
 		"exports all 243 rows, in the order shown, from the second page",
 		async () => {
@@ -477,7 +460,6 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @regression @contract-shape:unbounded-preservation
 	it(
 		"copies all 243 rows, in the order shown, from the first page",
 		async () => {
@@ -491,7 +473,6 @@ describe("Export and Copy take the whole list, whichever page is open", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
 	it(
 		"copies all 243 rows, in the order shown, from the second page",
 		async () => {
@@ -533,7 +514,6 @@ describe("Turning a page brings the top of the list into view", () => {
 		]);
 	};
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(
 		"scrolls the top of the grid into view when the reader goes to the next page",
 		async () => {
@@ -546,7 +526,6 @@ describe("Turning a page brings the top of the list into view", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @driving_port @contract-shape:bounded-change
 	it(
 		"scrolls the top of the grid into view when the reader goes to the previous page",
 		async () => {
@@ -561,7 +540,6 @@ describe("Turning a page brings the top of the list into view", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:unbounded-preservation
 	it(
 		"never scrolls for a page change the reader did not ask for with an arrow",
 		async () => {
@@ -600,7 +578,6 @@ describe("A list follows what its page hands it on every render", () => {
 					?.textContent === "Row 001",
 		) as HTMLElement;
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"keeps the space its page asks for now, not the space it asked for first",
 		async () => {
@@ -628,7 +605,6 @@ describe("A list follows what its page hands it on every render", () => {
 		RENDER_HEAVY,
 	);
 
-	// @us-01 @slice-01 @boundary @contract-shape:bounded-change
 	it(
 		"shows the loading look its page hands it now, not the one it handed it first",
 		async () => {

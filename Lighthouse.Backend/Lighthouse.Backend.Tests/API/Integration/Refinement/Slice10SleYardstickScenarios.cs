@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-10")]
     public partial class Slice10SleYardstickTest : SizingVotesAcceptanceTest
     {
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:pure-function
         [Test]
         public async Task The_Teams_SLE_is_the_yardstick_every_voter_answers_against()
         {
@@ -28,7 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheSle, days: 7, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:pure-function
         [Test]
         public async Task Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time()
         {
@@ -39,7 +37,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         // The fallback samples the same window the Team's Throughput does, so old slow work does not
         // inflate the question.
         [Test]
@@ -53,7 +50,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         // The window counts today, so its first day is one day short of the Throughput history ago.
         [Test]
         public async Task Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback()
@@ -66,7 +62,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 60, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         [Test]
         public async Task Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback()
         {
@@ -78,7 +73,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @error @contract-shape:pure-function
         [Test]
         public async Task No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number()
         {
@@ -89,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, Unavailable, days: null, probability: null);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         [Test]
         public async Task Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished()
         {
@@ -101,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, Unavailable, days: null, probability: null);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         // An SLE needs both a probability and a number of days; either one alone is not a promise.
         [TestCase(85, 0)]
         [TestCase(0, 7)]
@@ -114,7 +106,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
         public async Task Setting_an_SLE_replaces_the_fallback_on_the_next_read()
         {
@@ -129,7 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheSameWorkItemsAreListed(before, after);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @contract-shape:bounded-change
         [Test]
         public async Task Clearing_the_SLE_brings_the_fallback_back_on_the_next_read()
         {
@@ -144,7 +134,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             ThenTheSameWorkItemsAreListed(before, after);
         }
 
-        // @driving_port @real-io @us-10 @slice-10 @boundary @contract-shape:pure-function
         // The question is the same whoever asks: the yardstick is the Team's, not the reader's.
         [Test]
         public async Task Every_voter_is_shown_the_same_yardstick()
