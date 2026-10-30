@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// </summary>
     internal static class PendingEpic6350
     {
-        public const string Slice03 = "Pending: Portfolios join the bulk creation (epic 6350, slice 03).";
-
         public const string Slice04 = "Pending: the owner step knows each owner's kept history (epic 6350, slice 04).";
 
         public const string Slice05 = "Pending: reports removed in bulk (epic 6350, slice 05).";

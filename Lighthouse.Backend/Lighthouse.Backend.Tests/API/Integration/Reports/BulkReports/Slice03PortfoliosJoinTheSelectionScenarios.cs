@@ -40,7 +40,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_she_only_reads_is_not_created_on()
         {
             TheInstanceHasAPremiumLicence();
@@ -78,7 +77,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_whose_kept_history_is_too_short_is_skipped_with_the_day_its_history_starts()
         {
             TheInstanceHasAPremiumLicence();
@@ -99,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice03)]
         public async Task A_Portfolio_deleted_while_the_run_is_under_way_is_one_row()
         {
             TheInstanceHasAPremiumLicence();
