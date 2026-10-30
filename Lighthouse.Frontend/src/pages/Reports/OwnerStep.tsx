@@ -10,7 +10,6 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { Link as RouterLink } from "react-router";
 import {
 	type IReportCreationOwner,
 	MOST_PER_BULK_RUN,
@@ -28,10 +27,11 @@ export const OVER_THE_CEILING_ID = "owners-over-the-ceiling";
 export const isOverTheCeiling = (pickedCount: number): boolean =>
 	pickedCount > MOST_PER_BULK_RUN;
 
-/** Why an owner cannot hold the window: when its kept history starts and when Then would start, both as shown. */
+/** Why an owner cannot hold the window: when its kept history starts and which window would start before that, and when, both as shown. */
 export interface OwnerLimit {
 	keptSince: string;
-	thenStarts: string;
+	window: "Then" | "Now";
+	windowStarts: string;
 }
 
 export type OwnerLimitOf = (owner: IReportCreationOwner) => OwnerLimit | null;
@@ -123,14 +123,15 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 						}
 					/>
 					{limit !== null && (
-						<Typography
-							id={limitId}
-							variant="body2"
-							color="text.secondary"
-							sx={{ pl: 4 }}
-						>
-							{`Kept history starts ${limit.keptSince}; Then starts ${limit.thenStarts}.`}{" "}
-							<Link component={RouterLink} to={settingsPathOf(owner)}>
+						<Typography variant="body2" color="text.secondary" sx={{ pl: 4 }}>
+							<span id={limitId}>
+								{`Kept history starts ${limit.keptSince}; ${limit.window} starts ${limit.windowStarts}.`}
+							</span>{" "}
+							<Link
+								href={settingsPathOf(owner)}
+								target="_blank"
+								rel="noopener noreferrer"
+							>
 								{`Open ${owner.ownerName} settings`}
 							</Link>
 						</Typography>

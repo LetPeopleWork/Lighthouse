@@ -89,28 +89,35 @@ const limitOfFor =
 			owner.earliestStart === null ? null : parseLocalDate(owner.earliestStart);
 		if (thenLength === null || thenEnd === null || keptSince === null)
 			return null;
-		const cannotHold =
+		const today = parseLocalDate(templates.today);
+		const tooLong: { window: "Then" | "Now"; start: Date }[] = [];
+		if (
 			ownerCannotHold(
-				{
-					side: "then",
-					end: thenEndDay,
-					lengthDays: thenLength,
-				},
+				{ side: "then", end: thenEndDay, lengthDays: thenLength },
 				templates,
 				owner,
-			) ||
-			(nowLength !== null &&
-				ownerCannotHold(
-					{ side: "now", lengthDays: nowLength },
-					templates,
-					owner,
-				));
-		return cannotHold
-			? {
+			)
+		)
+			tooLong.push({
+				window: "Then",
+				start: subDays(thenEnd, thenLength - 1),
+			});
+		if (
+			nowLength !== null &&
+			today !== null &&
+			ownerCannotHold({ side: "now", lengthDays: nowLength }, templates, owner)
+		)
+			tooLong.push({ window: "Now", start: subDays(today, nowLength - 1) });
+		const furthestBack = tooLong.sort(
+			(left, right) => left.start.getTime() - right.start.getTime(),
+		)[0];
+		return furthestBack === undefined
+			? null
+			: {
 					keptSince: format(keptSince, LONG_DAY),
-					thenStarts: format(subDays(thenEnd, thenLength - 1), LONG_DAY),
-				}
-			: null;
+					window: furthestBack.window,
+					windowStarts: format(furthestBack.start, LONG_DAY),
+				};
 	};
 
 const typeStepAt = (activeStep: number): ReportTypeStep<Draft> | undefined =>
@@ -271,6 +278,22 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	const limitOf = limitOfFor(draft, templates);
 	const canHold = (owner: IReportCreationOwner) => limitOf(owner) === null;
 
+	// A pick the new window cannot hold is dropped for good, not merely hidden until the window shortens again.
+	const changeDraft = (next: Draft) => {
+		const limitOfNext = limitOfFor(next, templates);
+		setDraft(next);
+		setPicked(
+			new Set(
+				[...teams, ...portfolios]
+					.filter(
+						(owner) =>
+							picked.has(ownerKeyOf(owner)) && limitOfNext(owner) === null,
+					)
+					.map(ownerKeyOf),
+			),
+		);
+	};
+
 	const selectAll = (owners: readonly IReportCreationOwner[]) =>
 		setPicked(
 			new Set([
@@ -329,7 +352,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 						activeStep={activeStep}
 						templates={templates}
 						draft={draft}
-						onChange={setDraft}
+						onChange={changeDraft}
 						ownersStatus={ownersStatus}
 						onRetryOwners={onRetryOwners}
 						teams={teams}

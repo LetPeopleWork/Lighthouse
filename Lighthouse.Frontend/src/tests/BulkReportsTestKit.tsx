@@ -113,8 +113,11 @@ export const OWNER_STEP = "Step 5 of 5 — Who gets this report?";
 export const TEAMS_GROUP = "Teams";
 export const PORTFOLIOS_GROUP = "Portfolios";
 export const selectAllOf = (group: string) => `Select all ${group}`;
-export const keptHistoryStarts = (keptSince: string, thenStarts: string) =>
-	`Kept history starts ${keptSince}; Then starts ${thenStarts}.`;
+export const keptHistoryStarts = (
+	keptSince: string,
+	windowStarts: string,
+	window: "Then" | "Now" = "Then",
+) => `Kept history starts ${keptSince}; ${window} starts ${windowStarts}.`;
 export const openSettingsOf = (name: string) => `Open ${name} settings`;
 export const ONLY_ADMIN_OWNERS =
 	"Only Teams and Portfolios you are Admin of are listed.";
