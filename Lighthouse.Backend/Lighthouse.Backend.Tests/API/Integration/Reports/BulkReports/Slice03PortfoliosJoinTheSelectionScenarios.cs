@@ -113,7 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice04)]
         public async Task Each_owners_history_start_in_the_creation_options_is_the_one_its_own_refusal_names()
         {
             var equinox = ATeamKeepingFinishedWorkSince("Equinox", EquinoxKeepsFinishedWorkSince);
