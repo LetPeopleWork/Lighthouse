@@ -202,6 +202,16 @@ describe("Step two: Then", () => {
 		).toBeNull();
 	});
 
+	it("labels its custom length Custom: and has no Custom button", async () => {
+		await openTheWizard();
+		await next();
+
+		const wizard = within(await theWizard());
+		expect(await theThenLengthField()).toBeVisible();
+		expect(wizard.getByText("Custom:", { exact: true })).toBeVisible();
+		expect(wizard.queryByRole("button", { name: "Custom" })).toBeNull();
+	});
+
 	it("offers a Portfolio's Then as 90 or 180 days with one click", async () => {
 		await openTheWizard(
 			aReportService({
@@ -465,6 +475,19 @@ describe("Step three: Now", () => {
 		expect(
 			within(await theWizard()).queryByRole("button", { name: "180 days" }),
 		).toBeNull();
+	});
+
+	it("names its length field with Length and or, and offers no Same as Then choice", async () => {
+		await openTheWizard();
+		await next();
+		await next();
+
+		const wizard = within(await theWizard());
+		expect(await theNowLengthField()).toBeVisible();
+		expect(wizard.getByText("Length", { exact: true })).toBeVisible();
+		expect(wizard.getByText("or", { exact: true })).toBeVisible();
+		expect(wizard.queryByRole("radio")).toBeNull();
+		expect(wizard.queryByRole("button", { name: "Custom" })).toBeNull();
 	});
 
 	it("offers a Portfolio's Now as 90 or 180 days with one click", async () => {

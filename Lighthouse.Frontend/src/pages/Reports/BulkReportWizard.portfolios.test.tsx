@@ -131,6 +131,52 @@ describe("Teams and Portfolios in one run", () => {
 		);
 	});
 
+	it(`the Teams group lists only Teams and the Portfolios group only Portfolios`, async () => {
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
+
+		await toTheOwnerStep(user);
+
+		const namesIn = (group: string) =>
+			within(screen.getByRole("group", { name: group }))
+				.getAllByRole("checkbox")
+				.map((box) => box.getAttribute("aria-label"));
+		expect(namesIn(TEAMS_GROUP)).toEqual([GRAVITY.name, ZENITH.name]);
+		expect(namesIn(PORTFOLIOS_GROUP)).toEqual([
+			APOLLO_PORTFOLIO.name,
+			NEUROLINK_CITY.name,
+			OCEAN_EXPLORER.name,
+		]);
+	});
+
+	it(`a group with nothing to pick is not shown at all`, async () => {
+		const onlyTeams = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions: vi
+					.fn()
+					.mockResolvedValue(creationOptionsFor(anOwnerToCreateOn(ZENITH))),
+			}),
+		});
+		await toTheOwnerStep(onlyTeams.user);
+		expect(screen.getByRole("group", { name: TEAMS_GROUP })).toBeVisible();
+		expect(screen.queryByRole("group", { name: PORTFOLIOS_GROUP })).toBeNull();
+		onlyTeams.unmount();
+
+		const onlyPortfolios = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions: vi
+					.fn()
+					.mockResolvedValue(
+						creationOptionsFor(anOwnerToCreateOn(OCEAN_EXPLORER)),
+					),
+			}),
+		});
+		await toTheOwnerStep(onlyPortfolios.user);
+		expect(screen.getByRole("group", { name: PORTFOLIOS_GROUP })).toBeVisible();
+		expect(screen.queryByRole("group", { name: TEAMS_GROUP })).toBeNull();
+	});
+
 	it(`a Portfolio the reader is not Admin of is not listed and Select all leaves it out`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
@@ -189,6 +235,50 @@ describe("Choosing the window for several owners", () => {
 		expect(
 			await screen.findByRole("radio", { name: SAME_AS_THEN }),
 		).toBeChecked();
+	});
+
+	const pressed = (name: string) =>
+		screen.getByRole("button", { name }).getAttribute("aria-pressed");
+	const wordsBesideTheField = () =>
+		Array.from(document.querySelectorAll(".MuiTypography-body2")).map(
+			(node) => node.textContent,
+		);
+
+	it(`Custom is pressed exactly while the length is not a preset, and pressing it empties the field`, async () => {
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
+
+		await toTheThenStep(user);
+		await user.click(await screen.findByRole("button", { name: "30 days" }));
+		expect(pressed("Custom")).toBe("false");
+		expect(pressed("30 days")).toBe("true");
+
+		await user.click(screen.getByRole("button", { name: "Custom" }));
+		expect(pressed("Custom")).toBe("true");
+		expect(pressed("30 days")).toBe("false");
+		expect(screen.getByRole("spinbutton", { name: /^Then/ })).toHaveValue(null);
+
+		await user.type(screen.getByRole("spinbutton", { name: /^Then/ }), "45");
+		expect(pressed("Custom")).toBe("true");
+		expect(wordsBesideTheField()).toEqual(["days"]);
+	});
+
+	it(`Now is chosen as Custom without a stray label, and Same as Then hides its field`, async () => {
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
+
+		await toTheThenStep(user);
+		await user.click(await screen.findByRole("button", { name: "30 days" }));
+		await user.click(screen.getByRole("button", { name: "Next" }));
+		expect(
+			await screen.findByRole("radio", { name: SAME_AS_THEN }),
+		).toBeChecked();
+		expect(screen.queryByRole("spinbutton", { name: /^Now/ })).toBeNull();
+		expect(screen.queryByRole("button", { name: "30 days" })).toBeNull();
+
+		await user.click(screen.getByRole("radio", { name: "Custom" }));
+		expect(screen.getByRole("radio", { name: "Custom" })).toBeChecked();
+		expect(screen.getByRole("radio", { name: SAME_AS_THEN })).not.toBeChecked();
+		expect(screen.getByRole("spinbutton", { name: /^Now/ })).toBeVisible();
+		expect(wordsBesideTheField()).toEqual(["days"]);
 	});
 
 	it(`a custom Then shorter than 14 days is refused before any owner is asked`, async () => {
