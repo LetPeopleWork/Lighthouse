@@ -109,6 +109,9 @@ export interface NotCreatedWords extends RefusalWords {
 	ownerName: string;
 }
 
+const noLongerAdminOf = (ownerName: string): string =>
+	`you are no longer Admin of ${ownerName}.`;
+
 const historyStartSentence = (words: NotCreatedWords): string =>
 	`its kept history starts ${oldestKeptDay(words.earliestStart)}. Keep more history under Closed Items Cutoff in its settings.`;
 
@@ -116,7 +119,7 @@ const historyStartSentence = (words: NotCreatedWords): string =>
 const NOT_CREATED_REASON: Partial<
 	Record<ReportRefusalCode, (words: NotCreatedWords) => string>
 > = {
-	"not-admin": (words) => `you are no longer Admin of ${words.ownerName}.`,
+	"not-admin": (words) => noLongerAdminOf(words.ownerName),
 	"owner-not-found": (words) => `${words.ownerName} no longer exists.`,
 	"report-cap-reached": (words) =>
 		`${words.ownerName} already has its one Then & Now report; Premium lifts this limit.`,
@@ -147,7 +150,7 @@ export const notRemovedLineFor = (
 	words: Readonly<{ ownerName: string }>,
 ): string =>
 	code === "not-admin"
-		? `Not removed: you are no longer Admin of ${words.ownerName}.`
+		? `Not removed: ${noLongerAdminOf(words.ownerName)}`
 		: `Not removed: ${COULD_NOT_DELETE}`;
 
 /** The sentence for a window the wizard itself refuses, worded as the server's refusal would be. */

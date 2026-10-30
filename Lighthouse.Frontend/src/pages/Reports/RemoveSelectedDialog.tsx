@@ -17,15 +17,13 @@ import type {
 	IReportRemovalOutcome,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { notRemovedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
-import { NotConfirmed } from "./BulkResult";
+import { NotConfirmed, reportsWord } from "./BulkResult";
 import { useBulkReportRemoval } from "./useBulkReportRemoval";
 
 const TITLE_ID = "remove-selected-reports-title";
 
 const NOT_CONFIRMED_REMOVED =
 	"It could not be confirmed which reports were removed.";
-
-const reportsWord = (count: number) => (count === 1 ? "report" : "reports");
 
 const headlineOf = (outcomes: readonly IReportRemovalOutcome[]): string => {
 	const removed = outcomes.filter(

@@ -25,7 +25,8 @@ export type BulkRun =
 	| { status: "error" }
 	| { status: "success"; outcomes: readonly IReportCreationOutcome[] };
 
-const reportsWord = (count: number) => (count === 1 ? "report" : "reports");
+export const reportsWord = (count: number) =>
+	count === 1 ? "report" : "reports";
 
 /** No answer came, so the run's outcome is unknown and the Reports page is where to see it. */
 export const NotConfirmed: React.FC<
