@@ -1,0 +1,82 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6431.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6431.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/components/Common/ActionButton/ActionButton.tsx:35-35",
+    "src/components/Common/ActionButton/ActionButton.tsx:63-63",
+    "src/components/Common/CreateWizards/WizardStepperFrame.tsx:59-59",
+    "src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:28-28",
+    "src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:34-34",
+    "src/pages/Common/Reports/wizard/thenAndNow/NowStep.tsx:38-76",
+    "src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx:22-22",
+    "src/pages/Common/Reports/wizard/thenAndNow/ThenStep.tsx:56-57",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:13-13",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:42-42",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:45-46",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:58-61",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:69-69",
+    "src/pages/Common/Reports/wizard/thenAndNow/WindowLengthControl.tsx:71-73",
+    "src/pages/Reports/BulkReportWizard.tsx:53-56",
+    "src/pages/Reports/BulkReportWizard.tsx:63-63",
+    "src/pages/Reports/BulkReportWizard.tsx:66-66",
+    "src/pages/Reports/BulkReportWizard.tsx:103-105",
+    "src/pages/Reports/BulkReportWizard.tsx:134-134",
+    "src/pages/Reports/BulkReportWizard.tsx:145-145",
+    "src/pages/Reports/BulkReportWizard.tsx:170-170",
+    "src/pages/Reports/BulkReportWizard.tsx:197-197",
+    "src/pages/Reports/BulkReportWizard.tsx:203-208",
+    "src/pages/Reports/BulkReportWizard.tsx:226-228",
+    "src/pages/Reports/BulkReportWizard.tsx:233-233",
+    "src/pages/Reports/BulkReportWizard.tsx:266-266",
+    "src/pages/Reports/BulkReportWizard.tsx:279-279",
+    "src/pages/Reports/BulkReportWizard.tsx:287-287",
+    "src/pages/Reports/BulkReportWizard.tsx:349-349",
+    "src/pages/Reports/BulkReportWizard.tsx:362-362",
+    "src/pages/Reports/OwnerStep.tsx:23-25",
+    "src/pages/Reports/OwnerStep.tsx:56-104",
+    "src/pages/Reports/OwnerStep.tsx:112-113",
+    "src/pages/Reports/OwnerStep.tsx:116-118",
+    "src/pages/Reports/OwnerStep.tsx:123-136",
+    "src/pages/Reports/OwnerStep.tsx:138-138",
+    "src/pages/Reports/OwnerStep.tsx:141-147",
+    "src/pages/Reports/OwnerStep.tsx:162-163",
+    "src/pages/Reports/OwnerStep.tsx:179-179",
+    "src/pages/Reports/OwnerStep.tsx:184-184",
+    "src/pages/Reports/ReportsPage.tsx:114-114"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6431-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6431"
+}
