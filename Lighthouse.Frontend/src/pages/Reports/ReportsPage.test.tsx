@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import {
 	aReportOn,
+	CREATE_REPORTS,
 	DELETE,
 	EMPTY,
 	EVERY_REPORT_COULD_NOT_LOAD,
@@ -118,6 +119,32 @@ describe("Every report in one place", () => {
 		expect(
 			screen.getByRole("link", { name: "Zenith, Squad" }),
 		).toBeInTheDocument();
+	});
+
+	// @us-01 @slice-01 @edge @contract-shape:pure-function
+	it(`the empty page and the disabled Create reports speak of the instance's own words for Team and Portfolio`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: aReportServiceListing(),
+			permissions: { adminOf: [] },
+			terms: {
+				...defaultTerms,
+				[TERMINOLOGY_KEYS.TEAM]: "Squad",
+				[TERMINOLOGY_KEYS.PORTFOLIO]: "Program",
+			},
+		});
+
+		expect(
+			await screen.findByText(
+				"Reports are created on a Squad's or Program's Reports tab, or here with Create reports.",
+				{ exact: true },
+			),
+		).toBeInTheDocument();
+		const button = screen.getByRole("button", { name: CREATE_REPORTS });
+		await waitFor(() => expect(button).toBeDisabled());
+		await user.hover(button.parentElement ?? button);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			/^You are not Admin of any Squad or Program\.$/,
+		);
 	});
 
 	// @driving_port @us-01 @slice-01 @contract-shape:pure-function

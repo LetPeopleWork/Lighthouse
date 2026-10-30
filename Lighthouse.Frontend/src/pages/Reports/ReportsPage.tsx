@@ -12,6 +12,8 @@ import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { type RbacState, useRbac } from "../../hooks/useRbac";
+import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
+import { useTerminology } from "../../services/TerminologyContext";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import ReportList, {
@@ -29,10 +31,7 @@ import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
-const EMPTY =
-	"Reports are created on a Team's or Portfolio's Reports tab, or here with Create reports.";
 const LIST_MIN_HEIGHT = 120;
-const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
 
 /** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
 const isAdminOfAny = ({
@@ -59,6 +58,7 @@ const useBulkCreation = (rbac: RbacState) => {
 	const [retrying, setRetrying] = useState(false);
 	const options = useReportCreationOptions(opening);
 	const { licenseStatus, status } = useLicenseRestrictions();
+	const { getTerm } = useTerminology();
 	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
 	const lacksAdmin = !rbac.isLoading && !isAdminOfAny(rbac);
 	const open = () => {
@@ -83,7 +83,11 @@ const useBulkCreation = (rbac: RbacState) => {
 	const button = (
 		<LicenseTooltip
 			canUseFeature={isPremium}
-			defaultTooltip={lacksAdmin ? NOT_ADMIN_OF_ANY : ""}
+			defaultTooltip={
+				lacksAdmin
+					? `You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`
+					: ""
+			}
 			checkStatus={licenseStatus ? "ready" : status}
 		>
 			<span>
@@ -119,6 +123,7 @@ const useBulkCreation = (rbac: RbacState) => {
 
 const ReportsPageContent: React.FC = () => {
 	const rbac = useRbac();
+	const { getTerm } = useTerminology();
 	const bulkCreation = useBulkCreation(rbac);
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
@@ -163,7 +168,9 @@ const ReportsPageContent: React.FC = () => {
 				>
 					{data !== undefined &&
 						(data.reports.length === 0 ? (
-							<Typography color="text.secondary">{EMPTY}</Typography>
+							<Typography color="text.secondary">
+								{`Reports are created on a ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}'s Reports tab, or here with Create reports.`}
+							</Typography>
 						) : (
 							<ReportList reports={data.reports} actions={actions} showOwner />
 						))}
