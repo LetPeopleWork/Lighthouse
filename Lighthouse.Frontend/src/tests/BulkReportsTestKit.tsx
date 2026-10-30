@@ -87,7 +87,7 @@ export const NEUROLINK_CITY: Owner = {
 export const QUARTER = "Quarter vs qtr";
 export const MONTH = "Month vs month";
 
-// The copy the maintainer settled in the sketch walk, pinned word for word.
+// User-facing copy, pinned word for word.
 export const REPORTS = "Reports";
 export const CREATE_REPORTS = "Create reports";
 export const EMPTY = `Reports are created on a Team's or Portfolio's Reports tab, or here with ${CREATE_REPORTS}.`;
@@ -114,6 +114,7 @@ export const createCount = (count: number) =>
 	count === 1 ? "Create 1 report" : `Create ${count} reports`;
 export const OWNERS_COULD_NOT_LOAD =
 	"Your Teams and Portfolios couldn't be loaded.";
+export const OWNERS_LOADING = "Loading your Teams and Portfolios";
 export const creating = (count: number) => `Creating ${count} reports…`;
 export const createdHeadline = (created: number, notCreated: number) =>
 	`${created} ${created === 1 ? "report" : "reports"} created, ${notCreated} not created`;
@@ -143,11 +144,10 @@ export const PREMIUM_LICENSE_TOOLTIP =
 	/^This feature requires a premium license\./;
 export const OWNERS_AT_MOST_50 = "Pick at most 50 Teams and Portfolios.";
 export const OPTIONS_COULD_NOT_LOAD = "What a report needs couldn't be loaded.";
-/** Provisional wording: the maintainer has not confirmed it yet. */
 export const NOTHING_SELECTED_TO_EXPORT = "Select at least one report.";
 export const DELETE = "Delete";
 
-/** The reason lines of a bulk result, word for word as the maintainer settled them. */
+/** The reason lines of a bulk result, word for word. */
 export const notCreatedBecause = {
 	notAdmin: (owner: Owner) =>
 		`Not created: you are no longer Admin of ${owner.name}.`,

@@ -58,6 +58,8 @@ describe("useRbac", () => {
 		const { result } = renderHook(() => useRbac());
 
 		expect(result.current.isLoading).toBe(true);
+		expect(result.current.isSystemAdmin).toBe(true);
+		expect(result.current.isTeamAdmin(99)).toBe(true);
 	});
 
 	it("exposes isSystemAdmin from summary", async () => {

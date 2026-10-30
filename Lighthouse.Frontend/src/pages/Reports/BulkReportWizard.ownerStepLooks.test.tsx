@@ -10,6 +10,7 @@ import {
 	ONLY_ADMIN_OWNERS,
 	OWNER_STEP,
 	OWNERS_COULD_NOT_LOAD,
+	OWNERS_LOADING,
 	PULSAR,
 	permissionsOfAdminOf,
 	pickOwner,
@@ -37,7 +38,14 @@ describe("Who gets this report", () => {
 	it(`a coach whose Admin right went meanwhile is told why there is nothing to pick, instead of an empty list`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
-				vi.fn().mockResolvedValue(creationOptionsFor()),
+				vi
+					.fn()
+					.mockResolvedValue(
+						creationOptionsFor(
+							anOwnerToCreateOn(GRAVITY),
+							anOwnerToCreateOn(PULSAR),
+						),
+					),
 			),
 			permissions: { adminOf: [ZENITH] },
 		});
@@ -49,6 +57,9 @@ describe("Who gets this report", () => {
 			screen.getByText(NOT_ADMIN_OF_ANY, { exact: true }),
 		).toBeInTheDocument();
 		expect(screen.queryAllByRole("checkbox")).toEqual([]);
+		expect(
+			screen.queryByRole("group", { name: TEAMS_GROUP }),
+		).not.toBeInTheDocument();
 	});
 
 	// @walking_skeleton @driving_port @us-02b @slice-02b @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
@@ -61,6 +72,7 @@ describe("Who gets this report", () => {
 						creationOptionsFor(
 							anOwnerToCreateOn(ZENITH),
 							anOwnerToCreateOn(GRAVITY),
+							anOwnerToCreateOn(PULSAR),
 						),
 					),
 			),
@@ -144,7 +156,13 @@ describe("Who gets this report", () => {
 		expect(
 			await screen.findByText(OWNERS_COULD_NOT_LOAD, { exact: true }),
 		).toBeInTheDocument();
+		expect(screen.getByRole("alert")).toHaveTextContent(OWNERS_COULD_NOT_LOAD);
 		expect(screen.getByRole("button", { name: RETRY })).toBeInTheDocument();
+		expect(screen.queryAllByRole("checkbox")).toEqual([]);
+		expect(
+			screen.queryByRole("group", { name: TEAMS_GROUP }),
+		).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
 	});
 
 	// @us-02b @slice-02b @error @contract-shape:unbounded-preservation
@@ -183,7 +201,9 @@ describe("Who gets this report", () => {
 		).toBeInTheDocument();
 		await user.click(screen.getByRole("button", { name: RETRY }));
 
-		expect(await screen.findByRole("progressbar")).toBeInTheDocument();
+		expect(
+			await screen.findByRole("progressbar", { name: OWNERS_LOADING }),
+		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
 		permissionsArrive();
 
