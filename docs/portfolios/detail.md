@@ -308,6 +308,8 @@ An archived delivery also stops being maintained: it no longer records daily met
 
 Expand a delivery and open its **Metrics** tab to see how the delivery has tracked over time. Where the feature forecasts answer *"where do we stand today?"*, these charts answer *"how has the picture changed, and is it getting better or worse?"*. They build forward from the moment the delivery is created — each daily snapshot adds a point — so the history grows richer the longer a delivery is live.
 
+Every chart carries an **ⓘ** button next to its title. It says in a line what the chart is for, lists **what you see** on it and **how to read it** — which shapes are good news and which are not — and links to the matching section below, so you can explain a chart to someone else without having to remember it.
+
 ### Burnup
 
 The burnup chart plots total scope against completed work over time.
@@ -320,11 +322,18 @@ The burnup chart plots total scope against completed work over time.
 
 The gap between Backlog and Done is the remaining work — watching the two lines converge (or diverge) tells you whether the delivery is closing in on completion or losing ground to scope growth.
 
+**How to read it**
+
+- **The gap narrows:** work is finishing faster than scope arrives. The delivery is closing in.
+- **The gap stays open or widens:** scope is arriving as fast as work finishes, or faster. Finishing more will not help on its own; the conversation is about what is being added.
+- **The Backlog line jumps:** scope was added on that day. Look at the Features over Time chart below to see which feature grew.
+- **A lot of the scope sits above the dashed line:** much of the delivery is still an estimate. Breaking those features down will move the Backlog line, up or down, so treat the remaining gap as rough until it does.
+
 ### Predictability
 
 The predictability chart tracks the forecast itself over time and offers two views via the toggle in its header.
 
-**How Likely?** shows the probability of hitting the target date on each day, plotted against coloured confidence bands (Risky → Certain).
+**How Likely?** shows, for each day, the chance of finishing by the target date. The line takes the colour of the level it is in: **Risky** up to 50 %, **Realistic** up to 70 %, **Confident** up to 85 %, and **Certain** above that.
 
 ![Delivery Predictability — How Likely](../assets/features/deliveryPredictabilityLikelihood.png)
 
@@ -336,13 +345,23 @@ The predictability chart tracks the forecast itself over time and offers two vie
 
 If you change a delivery's target date, the charts do **not** silently rewrite history. The target is recorded as it was on each snapshot, so the target line *steps* on the day it changed, and a marker highlights the change on the *How Likely?* view. This keeps the forecast honest: a sudden jump in likelihood is clearly attributable to a moved target rather than to real progress.
 
-### Fever Chart
+#### How to read it
 
-The fever chart places each feature in the delivery on a schedule-versus-confidence plot, coloured green / amber / red by risk, and animates the trail of how that position evolved.
+- **How Likely? rises:** the odds of making the target are improving — work is getting done, or scope came out.
+- **How Likely? falls, or sits in Risky:** the target is slipping out of reach. The earlier you see the slide, the more options you still have: cut scope, move the date, or change how the work is staffed.
+- **When? lines rise:** the forecasted finish is moving later. Lines that fall mean it is pulling in.
+- **When? lines spread apart:** the forecast is getting less certain — the gap between the 50th and the 95th percentile is the range you should be talking about, not a single date.
+- **A step in the target line:** the target was moved. Read any jump in the other lines around that day with that in mind.
+
+### Delivery Progress (Fever Chart)
+
+The **Delivery Progress** chart — often called a fever chart — places each feature in the delivery by how much of it is done (across) against how likely it is to be late (up). The background is split into green, amber and red zones, and **Run** animates the trail of how each feature's position evolved.
 
 ![Delivery Fever Chart](../assets/features/deliveryFever.png)
 
 Use the **Run** control to replay the trail over time. A feature drifting up into the red zone is consuming its buffer faster than it is making progress — an early-warning signal long before the target date arrives.
+
+**How to read it:** green is on track, amber needs watching, red needs action. A feature moving right is making progress; one moving up is becoming more likely to be late. Up and to the right at the same time is fine as long as it stays out of red.
 
 ### Features over Time
 
