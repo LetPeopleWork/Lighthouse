@@ -30,11 +30,14 @@ import {
 	moreThanYearsText,
 	yearsBeyondHorizon,
 } from "../Forecasts/forecastPercentileText";
+import ChartTitle from "./ChartTitle";
+import { DEFAULT_DELIVERY_TERMS, deliveryChartInfo } from "./deliveryChartInfo";
 
 interface DeliveryPredictabilityChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
 	height?: number;
+	deliveryTerm?: string;
 }
 
 type PredictabilityView = "likelihood" | "when";
@@ -363,9 +366,11 @@ const DeliveryPredictabilityChart = ({
 	history,
 	title = "Delivery Predictability",
 	height = 320,
+	deliveryTerm = DEFAULT_DELIVERY_TERMS.deliveryTerm,
 }: DeliveryPredictabilityChartProps): ReactElement => {
 	const theme = useTheme();
 	const [view, setView] = useState<PredictabilityView>("likelihood");
+	const info = deliveryChartInfo.predictability({ deliveryTerm });
 
 	const points = history.points;
 	const showWhen = view === "when";
@@ -387,7 +392,7 @@ const DeliveryPredictabilityChart = ({
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Typography variant="h6">{title}</Typography>
+				<ChartTitle title={title} info={info} />
 				<ToggleButtonGroup
 					exclusive
 					size="small"

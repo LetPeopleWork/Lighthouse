@@ -66,6 +66,7 @@ const getLatestChartProps = () => {
 		| {
 				series?: SeriesEntry[];
 				xAxis?: AxisEntry[];
+				yAxis?: AxisEntry[];
 				sx?: Record<string, { strokeDasharray?: string }>;
 				slotProps?: { legend?: LegendSlotProps };
 				children?: unknown;
@@ -225,6 +226,17 @@ describe("DeliveryBurnupChart", () => {
 		const date = new Date("2026-06-01T00:00:00Z");
 		expect(axis?.label).toBe("Date");
 		expect(axis?.valueFormatter?.(date)).toBe(date.toLocaleDateString());
+	});
+
+	it("labels the y-axis with the user's word for work items", () => {
+		render(
+			<DeliveryBurnupChart
+				history={getMockHistory()}
+				workItemsTerm="Tickets"
+			/>,
+		);
+
+		expect(getLatestChartProps()?.yAxis?.[0]?.label).toBe("Tickets");
 	});
 
 	it("lays the legend out along the top so it does not eat the plot", () => {

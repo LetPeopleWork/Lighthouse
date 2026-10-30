@@ -15,12 +15,21 @@ import type {
 } from "../../../models/Delivery/DeliveryMetricsHistory";
 import { appColors, getContrastText } from "../../../utils/theme/colors";
 import ChartLegend from "./ChartLegend";
+import ChartTitle from "./ChartTitle";
+import {
+	DEFAULT_DELIVERY_TERMS,
+	type DeliveryChartInfo,
+	deliveryChartInfo,
+} from "./deliveryChartInfo";
 import { deliveryEpicColors } from "./deliveryEpicColors";
 import { useLegendFilter } from "./useLegendFilter";
 
 export interface DeliveryEpicSizeChartProps {
 	history: DeliveryMetricsHistory;
 	featuresTerm?: string;
+	featureTerm?: string;
+	workItemsTerm?: string;
+	deliveryTerm?: string;
 	height?: number;
 }
 
@@ -28,13 +37,11 @@ const FORWARD_ONLY_EMPTY_STATE =
 	"This chart builds forward from today — no snapshots recorded yet.";
 
 const COUNT_AXIS_ID = "count";
-const COUNT_AXIS_LABEL = "Count";
 const COUNT_SERIES_ID = "epic-count";
 const COUNT_DATA_KEY = "epicCount";
 const LABEL_DATA_KEY = "label";
 
 const ITEMS_AXIS_ID = "items";
-const ITEMS_AXIS_LABEL = "Items";
 const ITEMS_STACK_ID = "epic-size";
 
 const HATCH_TILE = 8;
@@ -156,9 +163,11 @@ const EpicHatchDefs = ({ hatches }: { hatches: EpicHatch[] }): ReactElement => (
 
 const ChartCard = ({
 	title,
+	info,
 	children,
 }: {
 	title: string;
+	info: DeliveryChartInfo;
 	children: ReactNode;
 }): ReactElement => (
 	<Card
@@ -168,7 +177,7 @@ const ChartCard = ({
 		<CardContent
 			sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 		>
-			<Typography variant="h6">{title}</Typography>
+			<ChartTitle title={title} info={info} />
 			{children}
 		</CardContent>
 	</Card>
@@ -176,10 +185,19 @@ const ChartCard = ({
 
 const DeliveryEpicSizeChart = ({
 	history,
-	featuresTerm = "Features",
+	featuresTerm = DEFAULT_DELIVERY_TERMS.featuresTerm,
+	featureTerm = DEFAULT_DELIVERY_TERMS.featureTerm,
+	workItemsTerm = DEFAULT_DELIVERY_TERMS.workItemsTerm,
+	deliveryTerm = DEFAULT_DELIVERY_TERMS.deliveryTerm,
 	height = 320,
 }: DeliveryEpicSizeChartProps): ReactElement => {
 	const title = `${featuresTerm} over Time`;
+	const info = deliveryChartInfo.featuresOverTime({
+		workItemsTerm,
+		featureTerm,
+		featuresTerm,
+		deliveryTerm,
+	});
 	// Scopes this chart's pattern defs; the guillemets React 19 puts in a generated id are not safe
 	// inside url(#...).
 	const instanceId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -187,7 +205,7 @@ const DeliveryEpicSizeChart = ({
 
 	if (history.points.length === 0) {
 		return (
-			<ChartCard title={title}>
+			<ChartCard title={title} info={info}>
 				<Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
 					{FORWARD_ONLY_EMPTY_STATE}
 				</Typography>
@@ -276,10 +294,10 @@ const DeliveryEpicSizeChart = ({
 		: [];
 
 	return (
-		<ChartCard title={title}>
+		<ChartCard title={title} info={info}>
 			<ChartsContainer
 				dataset={dataset}
-				xAxis={[{ scaleType: "band", dataKey: LABEL_DATA_KEY }]}
+				xAxis={[{ scaleType: "band", dataKey: LABEL_DATA_KEY, label: "Date" }]}
 				yAxis={[
 					...itemsAxis,
 					// From zero always: an axis starting at the window's lowest count reads as a cliff.
@@ -291,7 +309,7 @@ const DeliveryEpicSizeChart = ({
 						id: COUNT_SERIES_ID,
 						type: "line",
 						dataKey: COUNT_DATA_KEY,
-						label: COUNT_AXIS_LABEL,
+						label: featuresTerm,
 						yAxisId: COUNT_AXIS_ID,
 						// Orange: the epic palette is a green-teal ramp, so the line needs a hue it never uses.
 						color: appColors.status.warning,
@@ -306,9 +324,9 @@ const DeliveryEpicSizeChart = ({
 				<MarkPlot />
 				<ChartsXAxis />
 				{hasSizes && (
-					<ChartsYAxis axisId={ITEMS_AXIS_ID} label={ITEMS_AXIS_LABEL} />
+					<ChartsYAxis axisId={ITEMS_AXIS_ID} label={workItemsTerm} />
 				)}
-				<ChartsYAxis axisId={COUNT_AXIS_ID} label={COUNT_AXIS_LABEL} />
+				<ChartsYAxis axisId={COUNT_AXIS_ID} label={featuresTerm} />
 				<ChartsTooltip />
 			</ChartsContainer>
 			{epics.length > 0 && (

@@ -1,11 +1,4 @@
-import {
-	Box,
-	Button,
-	Card,
-	CardContent,
-	Typography,
-	useTheme,
-} from "@mui/material";
+import { Button, Card, CardContent, Typography, useTheme } from "@mui/material";
 import { useXScale, useYScale } from "@mui/x-charts/hooks";
 import { ScatterChart } from "@mui/x-charts/ScatterChart";
 import type React from "react";
@@ -17,6 +10,8 @@ import {
 	feverZonePolygons,
 } from "../../../models/Delivery/FeverTrail";
 import ChartLegend, { type ChartLegendItem } from "./ChartLegend";
+import ChartTitle from "./ChartTitle";
+import { DEFAULT_DELIVERY_TERMS, deliveryChartInfo } from "./deliveryChartInfo";
 import { deliveryEpicColors } from "./deliveryEpicColors";
 import {
 	likelihoodTooltip,
@@ -32,6 +27,7 @@ interface DeliveryFeverChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
 	height?: number;
+	featureTerm?: string;
 }
 
 const FORWARD_ONLY_EMPTY_STATE =
@@ -66,9 +62,11 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 	history,
 	title = "Delivery Progress",
 	height = 320,
+	featureTerm = DEFAULT_DELIVERY_TERMS.featureTerm,
 }) => {
 	const theme = useTheme();
 	const { selected, isVisible, toggle, showAll } = useLegendFilter();
+	const info = deliveryChartInfo.progress({ featureTerm });
 	const chart = deriveFeatureFeverChart(history);
 	const maxLength = chart.features.reduce(
 		(longest, feature) => Math.max(longest, feature.points.length),
@@ -80,7 +78,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">{title}</Typography>
+					<ChartTitle title={title} info={info} />
 					<Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
 						{FORWARD_ONLY_EMPTY_STATE}
 					</Typography>
@@ -123,14 +121,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<Typography variant="h6">{title}</Typography>
+				<ChartTitle title={title} info={info}>
 					{canAnimate ? (
 						<Button
 							size="small"
@@ -141,7 +132,7 @@ const DeliveryFeverChart: React.FC<DeliveryFeverChartProps> = ({
 							{runButtonLabel(isRunning, frame)}
 						</Button>
 					) : null}
-				</Box>
+				</ChartTitle>
 				<ScatterChart
 					xAxis={[{ min: 0, max: 100, label: "Completion Rate (%)" }]}
 					yAxis={[{ min: 0, max: 100, label: "Chance of Being Late (%)" }]}

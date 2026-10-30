@@ -394,7 +394,6 @@ const ArchivedDeliveryRow: React.FC<ArchivedDeliveryRowProps> = ({
 						isLoading={isLoadingMetrics}
 						history={metricsHistory}
 						hasFailed={metricsFailed}
-						featuresTerm={featuresTerm}
 					/>
 				)}
 				{activeTab === "notes" && (

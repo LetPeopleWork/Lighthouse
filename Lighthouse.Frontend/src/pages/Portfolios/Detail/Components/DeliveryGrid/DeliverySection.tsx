@@ -824,7 +824,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 								isLoading={isLoadingMetrics}
 								history={metricsHistory}
 								hasFailed={metricsFailed}
-								featuresTerm={featuresTerm}
 							/>
 						)}
 						{activeTab === "timeline" && (

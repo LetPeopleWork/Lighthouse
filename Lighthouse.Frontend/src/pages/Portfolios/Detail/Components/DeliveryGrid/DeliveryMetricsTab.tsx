@@ -7,7 +7,9 @@ import DeliveryFeverChart from "../../../../../components/Common/Charts/Delivery
 import DeliveryPredictabilityChart from "../../../../../components/Common/Charts/DeliveryPredictabilityChart";
 import EnlargeableChart from "../../../../../components/Common/Charts/EnlargeableChart";
 import type { DeliveryMetricsHistory } from "../../../../../models/Delivery/DeliveryMetricsHistory";
+import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
+import { useTerminology } from "../../../../../services/TerminologyContext";
 
 export const MINIMUM_METRIC_SNAPSHOTS = 3;
 
@@ -54,15 +56,19 @@ interface DeliveryMetricsTabProps {
 	isLoading: boolean;
 	history: DeliveryMetricsHistory | null;
 	hasFailed?: boolean;
-	featuresTerm: string;
 }
 
 const DeliveryMetricsTab: React.FC<DeliveryMetricsTabProps> = ({
 	isLoading,
 	history,
 	hasFailed = false,
-	featuresTerm,
 }) => {
+	const { getTerm } = useTerminology();
+	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
+	const deliveryTerm = getTerm(TERMINOLOGY_KEYS.DELIVERY);
+
 	if (hasFailed) {
 		return (
 			<Typography variant="body2" color="error" sx={{ p: 2 }}>
@@ -95,13 +101,23 @@ const DeliveryMetricsTab: React.FC<DeliveryMetricsTabProps> = ({
 			<EnlargeableChart
 				ariaLabel="Delivery Burnup"
 				render={(height) => (
-					<DeliveryBurnupChart history={history} height={height} />
+					<DeliveryBurnupChart
+						history={history}
+						height={height}
+						workItemsTerm={workItemsTerm}
+						featuresTerm={featuresTerm}
+						deliveryTerm={deliveryTerm}
+					/>
 				)}
 			/>
 			<EnlargeableChart
 				ariaLabel="Delivery Predictability"
 				render={(height) => (
-					<DeliveryPredictabilityChart history={history} height={height} />
+					<DeliveryPredictabilityChart
+						history={history}
+						height={height}
+						deliveryTerm={deliveryTerm}
+					/>
 				)}
 			/>
 			<EnlargeableChart
@@ -109,15 +125,22 @@ const DeliveryMetricsTab: React.FC<DeliveryMetricsTabProps> = ({
 				render={(height) => (
 					<DeliveryEpicSizeChart
 						history={history}
-						featuresTerm={featuresTerm}
 						height={height}
+						featuresTerm={featuresTerm}
+						featureTerm={featureTerm}
+						workItemsTerm={workItemsTerm}
+						deliveryTerm={deliveryTerm}
 					/>
 				)}
 			/>
 			<EnlargeableChart
 				ariaLabel="Delivery Progress"
 				render={(height) => (
-					<DeliveryFeverChart history={history} height={height} />
+					<DeliveryFeverChart
+						history={history}
+						height={height}
+						featureTerm={featureTerm}
+					/>
 				)}
 			/>
 		</Box>

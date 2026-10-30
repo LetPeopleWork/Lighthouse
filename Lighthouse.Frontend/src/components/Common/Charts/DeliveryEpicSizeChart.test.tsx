@@ -347,13 +347,33 @@ describe("DeliveryEpicSizeChart size bars", () => {
 
 	it("scales and labels the bars on an items axis of their own", () => {
 		render(
-			<DeliveryEpicSizeChart history={historyOf([[sizedEpic("EPIC-A", 8)]])} />,
+			<DeliveryEpicSizeChart
+				history={historyOf([[sizedEpic("EPIC-A", 8)]])}
+				workItemsTerm="Tickets"
+			/>,
 		);
 
 		expect(screen.getByTestId(`mock-y-axis-${ITEMS_AXIS_ID}`)).toHaveAttribute(
 			"data-label",
-			"Items",
+			"Tickets",
 		);
+	});
+
+	it("labels the count axis with the user's word for features", () => {
+		render(
+			<DeliveryEpicSizeChart history={getMockHistory()} featuresTerm="Epics" />,
+		);
+
+		expect(screen.getByTestId(`mock-y-axis-${COUNT_AXIS_ID}`)).toHaveAttribute(
+			"data-label",
+			"Epics",
+		);
+	});
+
+	it("labels the date axis", () => {
+		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
+
+		expect(getLatestChartProps()?.xAxis?.[0]?.label).toBe("Date");
 	});
 
 	it("declares the count scale alone when no day carries a size", () => {

@@ -5,11 +5,16 @@ import type {
 	DeliveryMetricsHistory,
 	DeliveryMetricsHistoryPoint,
 } from "../../../models/Delivery/DeliveryMetricsHistory";
+import ChartTitle from "./ChartTitle";
+import { DEFAULT_DELIVERY_TERMS, deliveryChartInfo } from "./deliveryChartInfo";
 
 interface DeliveryBurnupChartProps {
 	history: DeliveryMetricsHistory;
 	title?: string;
 	height?: number;
+	workItemsTerm?: string;
+	featuresTerm?: string;
+	deliveryTerm?: string;
 }
 
 const FORWARD_ONLY_EMPTY_STATE =
@@ -96,14 +101,22 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 	history,
 	title = "Delivery Burnup",
 	height = 320,
+	workItemsTerm = DEFAULT_DELIVERY_TERMS.workItemsTerm,
+	featuresTerm = DEFAULT_DELIVERY_TERMS.featuresTerm,
+	deliveryTerm = DEFAULT_DELIVERY_TERMS.deliveryTerm,
 }) => {
 	const theme = useTheme();
+	const info = deliveryChartInfo.burnup({
+		workItemsTerm,
+		featuresTerm,
+		deliveryTerm,
+	});
 
 	if (history.points.length === 0) {
 		return (
 			<Card sx={{ p: 2, borderRadius: 2 }}>
 				<CardContent>
-					<Typography variant="h6">{title}</Typography>
+					<ChartTitle title={title} info={info} />
 					<Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
 						{FORWARD_ONLY_EMPTY_STATE}
 					</Typography>
@@ -127,7 +140,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 			<CardContent
 				sx={{ height: "100%", display: "flex", flexDirection: "column" }}
 			>
-				<Typography variant="h6">{title}</Typography>
+				<ChartTitle title={title} info={info} />
 				<LineChart
 					xAxis={[
 						{
@@ -138,6 +151,7 @@ const DeliveryBurnupChart: React.FC<DeliveryBurnupChartProps> = ({
 							valueFormatter: formatDate,
 						},
 					]}
+					yAxis={[{ label: workItemsTerm }]}
 					series={series}
 					height={height}
 					sx={BURNUP_SX}
