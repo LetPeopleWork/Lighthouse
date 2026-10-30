@@ -13,6 +13,10 @@ const PERMISSIVE_SUMMARY: UserAuthorizationSummary = {
 
 export interface RbacState {
 	isLoading: boolean;
+	/** True when the permissions could not be loaded; every other answer here is then the permissive fallback. */
+	loadFailed: boolean;
+	/** Asks for the permissions again. */
+	retry: () => void;
 	isRbacEnabled: boolean;
 	isSystemAdmin: boolean;
 	/** Currently equivalent to: user is Team Admin on at least one team. See DD-08 and OQ-D1 for the planned rename. */
@@ -29,9 +33,18 @@ export interface RbacState {
 export function useRbac(): RbacState {
 	const { rbacService } = useContext(ApiServiceContext);
 	const [isLoading, setIsLoading] = useState(true);
+	const [loadFailed, setLoadFailed] = useState(false);
+	const [attempt, setAttempt] = useState(0);
 	const [summary, setSummary] =
 		useState<UserAuthorizationSummary>(PERMISSIVE_SUMMARY);
 
+	const retry = useCallback(() => {
+		setIsLoading(true);
+		setLoadFailed(false);
+		setAttempt((current) => current + 1);
+	}, []);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: a new attempt is what asks again
 	useEffect(() => {
 		let cancelled = false;
 
@@ -45,6 +58,7 @@ export function useRbac(): RbacState {
 			.catch(() => {
 				if (!cancelled) {
 					setSummary(PERMISSIVE_SUMMARY);
+					setLoadFailed(true);
 				}
 			})
 			.finally(() => {
@@ -56,7 +70,7 @@ export function useRbac(): RbacState {
 		return () => {
 			cancelled = true;
 		};
-	}, [rbacService]);
+	}, [rbacService, attempt]);
 
 	const isTeamAdmin = useCallback(
 		(teamId: number): boolean => {
@@ -78,6 +92,8 @@ export function useRbac(): RbacState {
 
 	return {
 		isLoading,
+		loadFailed,
+		retry,
 		isRbacEnabled: summary.isRbacEnabled,
 		isSystemAdmin: summary.isSystemAdmin,
 		canCreateTeam: summary.canCreateTeam,

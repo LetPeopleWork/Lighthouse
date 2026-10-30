@@ -2,6 +2,7 @@ import {
 	Box,
 	Button,
 	Checkbox,
+	CircularProgress,
 	FormControlLabel,
 	FormGroup,
 	Stack,
@@ -23,7 +24,12 @@ export const ownerKeyOf = (
 export const isOverTheCeiling = (pickedCount: number): boolean =>
 	pickedCount > MOST_PER_BULK_RUN;
 
+/** Whether the owners to pick from are known: still on their way, could not be loaded, or here. */
+export type OwnersStatus = "loading" | "failed" | "ready";
+
 interface OwnerStepProps {
+	ownersStatus: OwnersStatus;
+	onRetry: () => void;
 	/** The owners that may be picked, in the order they are listed and sent. */
 	teams: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
@@ -34,13 +40,16 @@ interface OwnerStepProps {
 	disabled: boolean;
 }
 
-const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
+type OwnerListProps = Omit<
+	OwnerStepProps,
+	"ownersStatus" | "onRetry" | "stepNumber" | "stepCount"
+>;
+
+const OwnerList: React.FC<Readonly<OwnerListProps>> = ({
 	teams,
 	picked,
 	onToggle,
 	onSelectAll,
-	stepNumber,
-	stepCount,
 	disabled,
 }) => {
 	const { getTerm } = useTerminology();
@@ -50,10 +59,7 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 	).length;
 
 	return (
-		<Stack spacing={2}>
-			<Typography variant="h6" component="h3">
-				{`Step ${stepNumber} of ${stepCount} — Who gets this report?`}
-			</Typography>
+		<>
 			<FormGroup role="group" aria-labelledby={teamsHeadingId}>
 				<Box
 					sx={{
@@ -94,6 +100,40 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 				<Typography color="error" align="right">
 					{`Pick at most ${MOST_PER_BULK_RUN} ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}.`}
 				</Typography>
+			)}
+		</>
+	);
+};
+
+const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
+	ownersStatus,
+	onRetry,
+	stepNumber,
+	stepCount,
+	...list
+}) => {
+	const { getTerm } = useTerminology();
+	const ownersName = `${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}`;
+
+	return (
+		<Stack spacing={2}>
+			<Typography variant="h6" component="h3">
+				{`Step ${stepNumber} of ${stepCount} — Who gets this report?`}
+			</Typography>
+			{ownersStatus === "loading" && <CircularProgress />}
+			{ownersStatus === "failed" && (
+				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+					<Typography>{`Your ${ownersName} couldn't be loaded.`}</Typography>
+					<Button onClick={onRetry}>Retry</Button>
+				</Box>
+			)}
+			{ownersStatus === "ready" && list.teams.length === 0 && (
+				<Typography>
+					{`You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`}
+				</Typography>
+			)}
+			{ownersStatus === "ready" && list.teams.length > 0 && (
+				<OwnerList {...list} />
 			)}
 		</Stack>
 	);

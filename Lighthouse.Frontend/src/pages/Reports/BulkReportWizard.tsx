@@ -24,7 +24,11 @@ import {
 } from "../Common/Reports/wizard/reportTypes";
 import TypeStep from "../Common/Reports/wizard/TypeStep";
 import BulkResult, { type BulkRun } from "./BulkResult";
-import OwnerStep, { isOverTheCeiling, ownerKeyOf } from "./OwnerStep";
+import OwnerStep, {
+	isOverTheCeiling,
+	type OwnersStatus,
+	ownerKeyOf,
+} from "./OwnerStep";
 import { useBulkReportCreation } from "./useBulkReportCreation";
 
 const TITLE_ID = "bulk-report-wizard-title";
@@ -83,13 +87,17 @@ const nextActionOf = (
 const createActionOf = (
 	activeStep: number,
 	pickedCount: number,
+	ownersStatus: OwnersStatus,
 	onCreate: () => void,
 ): WizardFrameAction | undefined =>
 	activeStep === OWNER_STEP
 		? {
 				label: createLabelOf(pickedCount),
 				onClick: onCreate,
-				disabled: pickedCount === 0 || isOverTheCeiling(pickedCount),
+				disabled:
+					ownersStatus !== "ready" ||
+					pickedCount === 0 ||
+					isOverTheCeiling(pickedCount),
 			}
 		: undefined;
 
@@ -98,6 +106,8 @@ interface StepContentProps {
 	templates: IReportTemplates;
 	draft: Draft;
 	onChange: (draft: Draft) => void;
+	ownersStatus: OwnersStatus;
+	onRetryOwners: () => void;
 	teams: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
 	onToggle: (owner: IReportCreationOwner) => void;
@@ -112,6 +122,8 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	templates,
 	draft,
 	onChange,
+	ownersStatus,
+	onRetryOwners,
 	teams,
 	picked,
 	onToggle,
@@ -120,6 +132,8 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	if (activeStep === OWNER_STEP) {
 		return (
 			<OwnerStep
+				ownersStatus={ownersStatus}
+				onRetry={onRetryOwners}
 				teams={teams}
 				picked={picked}
 				onToggle={onToggle}
@@ -161,6 +175,8 @@ const runOf = (
 interface ReadyWizardProps {
 	options: IReportCreationOptions;
 	isTeamAdmin: IsTeamAdmin;
+	ownersStatus: OwnersStatus;
+	onRetryOwners: () => void;
 	onClose: () => void;
 }
 
@@ -168,6 +184,8 @@ interface ReadyWizardProps {
 const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	options,
 	isTeamAdmin,
+	ownersStatus,
+	onRetryOwners,
 	onClose,
 }) => {
 	const templates = useMemo(() => templatesForOwnersOf(options), [options]);
@@ -225,13 +243,20 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 					next={nextActionOf(activeStep, draft, templates, () =>
 						setActiveStep(activeStep + 1),
 					)}
-					primaryAction={createActionOf(activeStep, pickedTeams.length, create)}
+					primaryAction={createActionOf(
+						activeStep,
+						pickedTeams.length,
+						ownersStatus,
+						create,
+					)}
 				>
 					<StepContent
 						activeStep={activeStep}
 						templates={templates}
 						draft={draft}
 						onChange={setDraft}
+						ownersStatus={ownersStatus}
+						onRetryOwners={onRetryOwners}
 						teams={teams}
 						picked={picked}
 						onToggle={toggle}
@@ -290,6 +315,9 @@ interface BulkReportWizardProps {
 	options: IReportCreationOptions | undefined;
 	/** The page's own read of the viewer's roles, so the wizard lists only Teams the viewer is Admin of from its first frame. */
 	isTeamAdmin: IsTeamAdmin;
+	/** Whether the viewer's roles are on their way, could not be loaded, or are known, so the owner step never lists on a guess. */
+	ownersStatus: OwnersStatus;
+	onRetryOwners: () => void;
 	retrying: boolean;
 	onRetry: () => void;
 	onClose: () => void;
@@ -298,6 +326,8 @@ interface BulkReportWizardProps {
 const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 	options,
 	isTeamAdmin,
+	ownersStatus,
+	onRetryOwners,
 	retrying,
 	onRetry,
 	onClose,
@@ -308,6 +338,8 @@ const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 		<ReadyWizard
 			options={options}
 			isTeamAdmin={isTeamAdmin}
+			ownersStatus={ownersStatus}
+			onRetryOwners={onRetryOwners}
 			onClose={onClose}
 		/>
 	);

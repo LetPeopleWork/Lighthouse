@@ -23,6 +23,7 @@ import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import BulkReportWizard from "./BulkReportWizard";
+import type { OwnersStatus } from "./OwnerStep";
 import { useAllReports } from "./useAllReports";
 import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
@@ -44,6 +45,12 @@ const isAdminOfAny = ({
 	(summary.adminTeamIds?.length ?? 0) > 0 ||
 	(summary.adminPortfolioIds?.length ?? 0) > 0;
 
+/** A failed permission load is never read as "Admin everywhere" by the owner step, whatever the hook answers elsewhere. */
+const ownersStatusOf = ({ isLoading, loadFailed }: RbacState): OwnersStatus => {
+	if (isLoading) return "loading";
+	return loadFailed ? "failed" : "ready";
+};
+
 /** Create reports, and the wizard it opens once what a report needs has arrived for this opening. */
 const useBulkCreation = (rbac: RbacState) => {
 	// Counts every opening and never goes back, so no opening shares its key, or an earlier answer, with another.
@@ -54,6 +61,10 @@ const useBulkCreation = (rbac: RbacState) => {
 	const { licenseStatus, status } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
 	const lacksAdmin = !rbac.isLoading && !isAdminOfAny(rbac);
+	const retryOwners = () => {
+		if (rbac.loadFailed) rbac.retry();
+		if (options.isError) options.refetch();
+	};
 	const open = () => {
 		setRetrying(false);
 		openings.current += 1;
@@ -100,6 +111,8 @@ const useBulkCreation = (rbac: RbacState) => {
 			key={opening}
 			options={arrived ? options.data : undefined}
 			isTeamAdmin={rbac.isTeamAdmin}
+			ownersStatus={ownersStatusOf(rbac)}
+			onRetryOwners={retryOwners}
 			retrying={options.isFetching}
 			onRetry={retry}
 			onClose={close}

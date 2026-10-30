@@ -37,7 +37,7 @@ const answeringOwners = (
 
 describe("Who gets this report", () => {
 	// @us-02b @slice-02b @error @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
-	it.skip(`a coach whose Admin right went meanwhile is told why there is nothing to pick, instead of an empty list (${pending})`, async () => {
+	it(`a coach whose Admin right went meanwhile is told why there is nothing to pick, instead of an empty list`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
 				vi.fn().mockResolvedValue(creationOptionsFor()),
@@ -172,7 +172,7 @@ describe("Who gets this report", () => {
 	});
 
 	// @us-02b @slice-02b @error @contract-shape:unbounded-preservation
-	it.skip(`when permissions cannot be loaded the owner step shows its could-not-load look, never a permissive list (${pending})`, async () => {
+	it(`when permissions cannot be loaded the owner step shows its could-not-load look, never a permissive list`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
 				vi

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { UserAuthorizationSummary } from "../models/Authorization/RbacModels";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
@@ -151,5 +151,42 @@ describe("useRbac", () => {
 
 		expect(result.current.canCreateTeam).toBe(true);
 		expect(result.current.canCreatePortfolio).toBe(false);
+	});
+
+	it("has not failed to load while loading or after a good answer", async () => {
+		mockGetAuthorizationSummary.mockResolvedValue(makeSummary());
+		const { result } = renderHook(() => useRbac());
+
+		expect(result.current.loadFailed).toBe(false);
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.loadFailed).toBe(false);
+	});
+
+	it("says the load failed while still answering permissively", async () => {
+		mockGetAuthorizationSummary.mockRejectedValue(new Error("network error"));
+		const { result } = renderHook(() => useRbac());
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+		expect(result.current.loadFailed).toBe(true);
+		expect(result.current.isSystemAdmin).toBe(true);
+		expect(result.current.isTeamAdmin(99)).toBe(true);
+	});
+
+	it("retry loads again and clears the failure with the real answer", async () => {
+		mockGetAuthorizationSummary
+			.mockRejectedValueOnce(new Error("network error"))
+			.mockResolvedValue(makeSummary({ adminTeamIds: [3] }));
+		const { result } = renderHook(() => useRbac());
+		await waitFor(() => expect(result.current.loadFailed).toBe(true));
+
+		act(() => result.current.retry());
+
+		expect(result.current.isLoading).toBe(true);
+		expect(result.current.loadFailed).toBe(false);
+		await waitFor(() => expect(result.current.isLoading).toBe(false));
+		expect(result.current.loadFailed).toBe(false);
+		expect(result.current.isTeamAdmin(3)).toBe(true);
+		expect(result.current.isTeamAdmin(4)).toBe(false);
+		expect(mockGetAuthorizationSummary).toHaveBeenCalledTimes(2);
 	});
 });
