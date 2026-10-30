@@ -19,9 +19,9 @@ export interface RbacState {
 	retry: () => void;
 	isRbacEnabled: boolean;
 	isSystemAdmin: boolean;
-	/** Currently equivalent to: user is Team Admin on at least one team. See DD-08 and OQ-D1 for the planned rename. */
+	/** Currently equivalent to: user is Team Admin on at least one team. */
 	canCreateTeam: boolean;
-	/** Currently equivalent to: user is Portfolio Admin on at least one portfolio. See DD-08 and OQ-D1 for the planned rename. */
+	/** Currently equivalent to: user is Portfolio Admin on at least one portfolio. */
 	canCreatePortfolio: boolean;
 	/** Returns true if the current user is a Team Admin for the given team (by system-admin or explicit grant). */
 	isTeamAdmin: (teamId: number) => boolean;
@@ -34,18 +34,16 @@ export function useRbac(): RbacState {
 	const { rbacService } = useContext(ApiServiceContext);
 	const [isLoading, setIsLoading] = useState(true);
 	const [loadFailed, setLoadFailed] = useState(false);
-	const [attempt, setAttempt] = useState(0);
 	const [summary, setSummary] =
 		useState<UserAuthorizationSummary>(PERMISSIVE_SUMMARY);
 
 	const retry = useCallback(() => {
 		setIsLoading(true);
 		setLoadFailed(false);
-		setAttempt((current) => current + 1);
 	}, []);
 
-	// biome-ignore lint/correctness/useExhaustiveDependencies: a new attempt is what asks again
 	useEffect(() => {
+		if (!isLoading) return;
 		let cancelled = false;
 
 		rbacService
@@ -70,7 +68,7 @@ export function useRbac(): RbacState {
 		return () => {
 			cancelled = true;
 		};
-	}, [rbacService, attempt]);
+	}, [rbacService, isLoading]);
 
 	const isTeamAdmin = useCallback(
 		(teamId: number): boolean => {
