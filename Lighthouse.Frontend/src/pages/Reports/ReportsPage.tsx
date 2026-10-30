@@ -61,10 +61,6 @@ const useBulkCreation = (rbac: RbacState) => {
 	const { licenseStatus, status } = useLicenseRestrictions();
 	const isPremium = licenseStatus?.canUsePremiumFeatures === true;
 	const lacksAdmin = !rbac.isLoading && !isAdminOfAny(rbac);
-	const retryOwners = () => {
-		if (rbac.loadFailed) rbac.retry();
-		if (options.isError) options.refetch();
-	};
 	const open = () => {
 		setRetrying(false);
 		openings.current += 1;
@@ -112,7 +108,7 @@ const useBulkCreation = (rbac: RbacState) => {
 			options={arrived ? options.data : undefined}
 			isTeamAdmin={rbac.isTeamAdmin}
 			ownersStatus={ownersStatusOf(rbac)}
-			onRetryOwners={retryOwners}
+			onRetryOwners={rbac.retry}
 			retrying={options.isFetching}
 			onRetry={retry}
 			onClose={close}
