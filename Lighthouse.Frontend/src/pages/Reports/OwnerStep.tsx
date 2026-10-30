@@ -50,6 +50,12 @@ interface OwnerGroupProps {
 	disabled: boolean;
 }
 
+/** How the two kinds of owner are named together, in the reader's own terms. */
+const useOwnersName = (): string => {
+	const { getTerm } = useTerminology();
+	return `${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}`;
+};
+
 const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 	heading,
 	owners,
@@ -103,6 +109,7 @@ const OwnerList: React.FC<Readonly<OwnerListProps>> = ({
 	...group
 }) => {
 	const { getTerm } = useTerminology();
+	const ownersName = useOwnersName();
 	const pickedCount = [...teams, ...portfolios].filter((owner) =>
 		group.picked.has(ownerKeyOf(owner)),
 	).length;
@@ -124,11 +131,11 @@ const OwnerList: React.FC<Readonly<OwnerListProps>> = ({
 				/>
 			)}
 			<Typography variant="body2" color="text.secondary">
-				{`Only ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)} you are Admin of are listed.`}
+				{`Only ${ownersName} you are Admin of are listed.`}
 			</Typography>
 			{isOverTheCeiling(pickedCount) && (
 				<Typography color="error" align="right">
-					{`Pick at most ${MOST_PER_BULK_RUN} ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}.`}
+					{`Pick at most ${MOST_PER_BULK_RUN} ${ownersName}.`}
 				</Typography>
 			)}
 		</>
@@ -144,7 +151,7 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const noOwners = list.teams.length + list.portfolios.length === 0;
-	const ownersName = `${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}`;
+	const ownersName = useOwnersName();
 
 	return (
 		<Stack spacing={2}>
