@@ -93,6 +93,9 @@ describe("Who gets this report", () => {
 		expect(
 			screen.getByText(ONLY_ADMIN_OWNERS, { exact: true }),
 		).toBeInTheDocument();
+		expect(
+			screen.queryByText(NOT_ADMIN_OF_ANY, { exact: true }),
+		).not.toBeInTheDocument();
 	});
 
 	it(`Select all picks every Team in its group and the button counts them`, async () => {
@@ -158,6 +161,27 @@ describe("Who gets this report", () => {
 			screen.queryByRole("group", { name: TEAMS_GROUP }),
 		).not.toBeInTheDocument();
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
+		expect(
+			screen.queryByText(NOT_ADMIN_OF_ANY, { exact: true }),
+		).not.toBeInTheDocument();
+	});
+
+	it(`when permissions cannot be loaded and no Team is on offer either, it still does not claim she is Admin of none`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: answeringOwners(
+				vi.fn().mockResolvedValue(creationOptionsFor()),
+			),
+			permissions: "failing",
+		});
+
+		await toTheOwnerStep(user);
+
+		expect(
+			await screen.findByText(OWNERS_COULD_NOT_LOAD, { exact: true }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText(NOT_ADMIN_OF_ANY, { exact: true }),
+		).not.toBeInTheDocument();
 	});
 
 	it(`after a failed permission load, Retry shows the loading look and then lists her Admin Teams`, async () => {
@@ -199,6 +223,9 @@ describe("Who gets this report", () => {
 			await screen.findByRole("progressbar", { name: OWNERS_LOADING }),
 		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
+		expect(
+			screen.queryByText(NOT_ADMIN_OF_ANY, { exact: true }),
+		).not.toBeInTheDocument();
 		permissionsArrive();
 
 		const teams = await screen.findByRole("group", { name: TEAMS_GROUP });
