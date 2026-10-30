@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
 	anOwnerToCreateOn,
@@ -8,9 +8,11 @@ import {
 	everyReport,
 	GRAVITY,
 	keptHistoryStarts,
+	nextUntil,
 	OCEAN_EXPLORER,
+	OWNER_STEP,
 	openSettingsOf,
-	pendingEpic6350,
+	pickOwner,
 	renderTheReportsPage,
 	selectAllOf,
 	TEAMS_GROUP,
@@ -25,8 +27,6 @@ import { aReportService } from "../../tests/ReportsTestKit";
  * step still lists it, greyed and unpickable, says when its kept history starts and when Then would start, and
  * leads to its settings. The server answers each owner's kept-history start, so the browser holds no copy of it.
  */
-
-const pending = pendingEpic6350("04");
 
 // Today is 27 Oct 2026; a 90-day Then ending 29 Jul 2026 starts 1 May 2026, before Equinox's kept history.
 const equinoxKeepsSince30Jul = creationOptionsFor(
@@ -61,8 +61,17 @@ const toTheOwnerStepWithThenEnding29Jul = async (
 	await toTheOwnerStep(user, { thenPreset });
 };
 
+const backUntil = async (
+	user: Parameters<typeof toTheOwnerStep>[0],
+	reached: () => boolean,
+): Promise<void> => {
+	if (reached()) return;
+	await user.click(screen.getByRole("button", { name: "Back" }));
+	return backUntil(user, reached);
+};
+
 describe("Owners that cannot hold the window", () => {
-	it(`Equinox is listed but cannot be picked, and says why and where to change it (${pending})`, async () => {
+	it("Equinox is listed but cannot be picked, and says why and where to change it", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
@@ -84,7 +93,7 @@ describe("Owners that cannot hold the window", () => {
 		expect(whereTheReaderIs()).toBe(`/teams/${EQUINOX.id}/settings`);
 	});
 
-	it(`Select all picks every Team that can hold the window and leaves Equinox out (${pending})`, async () => {
+	it("Select all picks every Team that can hold the window and leaves Equinox out", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
@@ -103,7 +112,7 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("button", { name: createCount(2) })).toBeEnabled();
 	});
 
-	it.skip(`a shorter window that stays inside Equinox's kept history makes it pickable (${pending})`, async () => {
+	it("a shorter window that stays inside Equinox's kept history makes it pickable", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
@@ -114,7 +123,7 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.queryByText(/^Kept history starts/)).not.toBeInTheDocument();
 	});
 
-	it.skip(`a Then starting on the very day the kept history starts can be held (${pending})`, async () => {
+	it("a Then starting on the very day the kept history starts can be held", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
@@ -131,7 +140,47 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("checkbox", { name: EQUINOX.name })).toBeEnabled();
 	});
 
-	it(`when every owner picked cannot hold the window nothing can be created (${pending})`, async () => {
+	it("a pick made under a short window is dropped when going back makes the window too long for that owner", async () => {
+		const createReportsInBulk = vi.fn().mockResolvedValue([]);
+		const { user } = renderAsAdminOfEquinox({
+			reportService: aReportService({
+				getAllReports: vi.fn().mockResolvedValue(everyReport()),
+				getCreationOptions: vi.fn().mockResolvedValue(equinoxKeepsSince30Jul),
+				createReportsInBulk,
+			}),
+		});
+		await toTheOwnerStepWithThenEnding29Jul(user, "30 days");
+		await pickOwner(user, EQUINOX);
+		await pickOwner(user, ZENITH);
+		expect(screen.getByRole("button", { name: createCount(2) })).toBeEnabled();
+
+		await backUntil(
+			user,
+			() => screen.queryByRole("button", { name: "90 days" }) !== null,
+		);
+		await user.click(screen.getByRole("button", { name: "90 days" }));
+		await nextUntil(user, () => screen.queryByText(OWNER_STEP) !== null);
+
+		const equinox = screen.getByRole("checkbox", { name: EQUINOX.name });
+		expect(equinox).toBeDisabled();
+		expect(equinox).not.toBeChecked();
+		expect(
+			screen.getByText(keptHistoryStarts("30 Jul 2026", "1 May 2026"), {
+				exact: true,
+			}),
+		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: createCount(1) }));
+
+		await waitFor(() =>
+			expect(createReportsInBulk).toHaveBeenCalledWith(
+				expect.objectContaining({
+					owners: [{ ownerKind: "team", ownerId: ZENITH.id }],
+				}),
+			),
+		);
+	});
+
+	it("when every owner picked cannot hold the window nothing can be created", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
