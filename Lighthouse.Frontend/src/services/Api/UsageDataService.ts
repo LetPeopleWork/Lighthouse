@@ -45,6 +45,7 @@ export const UsageDataEventName = {
 	ReportPdfExportStarted: "ReportPdfExportStarted",
 	AllReportsListed: "AllReportsListed",
 	ReportBulkCreationStarted: "ReportBulkCreationStarted",
+	ReportBulkRemovalStarted: "ReportBulkRemovalStarted",
 } as const;
 
 export type UsageDataEventName =

@@ -67,5 +67,12 @@ namespace Lighthouse.Backend.Models.UsageData
         /// report made is counted as <see cref="ReportCreated"/> as well.
         /// </summary>
         ReportBulkCreationStarted = 22,
+
+        /// <summary>
+        /// Somebody confirmed Remove for the reports picked on the Reports page and the request was sent. It carries
+        /// nothing: not how many reports, not which, not their Teams or Portfolios. Each report it removed is counted as
+        /// <see cref="ReportDeleted"/> as well.
+        /// </summary>
+        ReportBulkRemovalStarted = 23,
     }
 }

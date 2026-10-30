@@ -167,7 +167,7 @@ describe("What the Reports page tells the usage data", () => {
 		]);
 	});
 
-	it.skip(`a bulk removal is told once, and one deleted report per report this run removed (${pendingEpic6350("05")})`, async () => {
+	it(`a bulk removal is told once, and one deleted report per report this run removed`, async () => {
 		const zenithsTrialRun = aReportOn(ZENITH, "Then & Now — trial run", {
 			id: 1003,
 		});

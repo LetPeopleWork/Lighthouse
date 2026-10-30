@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// </summary>
     internal static class PendingEpic6350
     {
-        public const string Slice05 = "Pending: reports removed in bulk (epic 6350, slice 05).";
-
         public const string Slice07 = "Pending: several reports exported as one PDF (epic 6350, slice 07).";
     }
 }
