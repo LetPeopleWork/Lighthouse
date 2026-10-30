@@ -108,9 +108,8 @@ const limitOfFor =
 			ownerCannotHold({ side: "now", lengthDays: nowLength }, templates, owner)
 		)
 			tooLong.push({ window: "Now", start: subDays(today, nowLength - 1) });
-		const furthestBack = tooLong.sort(
-			(left, right) => left.start.getTime() - right.start.getTime(),
-		)[0];
+		tooLong.sort((left, right) => left.start.getTime() - right.start.getTime());
+		const furthestBack = tooLong[0];
 		return furthestBack === undefined
 			? null
 			: {

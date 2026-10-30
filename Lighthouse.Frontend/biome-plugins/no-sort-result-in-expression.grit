@@ -1,0 +1,15 @@
+or {
+    `$list.sort($compare)[$index]`,
+    `$list.sort($compare).$member`,
+    `$list.sort()[$index]`,
+    `$list.sort().$member`,
+    `$list.reverse()[$index]`,
+    `$list.reverse().$member`,
+    `const $name = $list.sort($compare)`,
+    `const $name = $list.reverse()`,
+    `return $list.sort($compare)`,
+    `return $list.reverse()`
+} where {
+    $list <: or { JsIdentifierExpression(), JsStaticMemberExpression() },
+    register_diagnostic(span=$list, message="sort() and reverse() change the array in place and return that same array, so using their result reads as if a copy were made. Sort in a statement of its own, or sort a copy: [...list].sort(...).", severity="error")
+}

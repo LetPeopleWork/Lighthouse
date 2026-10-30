@@ -2,6 +2,7 @@
 	"$schema": "https://biomejs.dev/schemas/2.6.2/schema.json",
 	"plugins": [
 		"./biome-plugins/iterator-callbacks.grit",
+		"./biome-plugins/no-sort-result-in-expression.grit",
 		"./biome-plugins/mui-select-needs-label-id.grit",
 		"./biome-plugins/no-nested-template-literal.grit",
 		"./biome-plugins/no-ternary-in-template-in-ternary.grit",
