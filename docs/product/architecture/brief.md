@@ -10845,7 +10845,7 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
 - **A report already gone is answered removed with `already-gone`**: it has no owner left to check, so it skips the
   Admin check on purpose, nothing is written, and the browser does not count it as a deletion.
 - **Slow runs and slow reads are logged**: one `report-bulk-run` line per run, written as Warning
-  `report-bulk-run-slow` above 30 s (create) or 10 s (remove); `report-list-slow` and `report-creation-options-slow`
+  `report-bulk-run-slow` above 20 s (create) or 10 s (remove); `report-list-slow` and `report-creation-options-slow`
   above 2 s; each report keeps `report-creation-slow`.
 - **The wizard waits for what a report needs**: Create reports prefetches the creation options, keyed per opening
   (`["reportCreationOptions", opening]`), with a spinner in the button; the wizard opens at step 1 only once they are

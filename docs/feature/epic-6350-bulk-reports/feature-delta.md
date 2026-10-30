@@ -1044,7 +1044,7 @@ applied in this file.
 > **Revised after DEVOPS, 2026-10-27** (`devops/upstream-changes.md` DU-1 to DU-4 applied; DVQ-1 answered (a)):
 > DDD-9 a report already gone is answered `removed` with `code: "already-gone"`, so the browser counts
 > `ReportDeleted` only for reports the run removed; DDD-13 fixes the `report-bulk-run` fields, adds
-> `report-bulk-run-slow` (create > 30 s, remove > 10 s) and two slow-read Warnings (> 2 s); the usage placement
+> `report-bulk-run-slow` (create > 20 s, remove > 10 s) and two slow-read Warnings (> 2 s); the usage placement
 > table counts the Reports page as soon as its list shows (no dwell) and the combined-PDF event only for two or
 > more reports. ADR-266 items 5 and 8 updated to match.
 

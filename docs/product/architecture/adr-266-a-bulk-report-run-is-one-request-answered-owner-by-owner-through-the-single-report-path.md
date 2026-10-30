@@ -49,7 +49,7 @@ database context, where the next save would try it again.
    is small enough.
 8. One log line per run, `report-bulk-run` (Information): action, template key and window lengths (create), items
    asked, done, not done, refusals by code, elapsed ms; no names. Written as Warning `report-bulk-run-slow` above
-   30 s (create) or 10 s (remove). The cross-owner list and creation options warn above 2 s (`report-list-slow`,
+   20 s (create) or 10 s (remove). The cross-owner list and creation options warn above 2 s (`report-list-slow`,
    `report-creation-options-slow`). Each report keeps its own slow-creation line.
 
 ## Alternatives considered
