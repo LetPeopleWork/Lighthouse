@@ -9,7 +9,6 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { useId } from "react";
 import {
 	type IReportCreationOwner,
 	MOST_PER_BULK_RUN,
@@ -32,6 +31,8 @@ interface OwnerStepProps {
 	onRetry: () => void;
 	/** The owners that may be picked, in the order they are listed and sent. */
 	teams: readonly IReportCreationOwner[];
+	/** Listed after the Teams, in the order they are sent. */
+	portfolios: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
 	onToggle: (owner: IReportCreationOwner) => void;
 	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
@@ -40,6 +41,57 @@ interface OwnerStepProps {
 	disabled: boolean;
 }
 
+interface OwnerGroupProps {
+	heading: string;
+	owners: readonly IReportCreationOwner[];
+	picked: ReadonlySet<string>;
+	onToggle: (owner: IReportCreationOwner) => void;
+	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
+	disabled: boolean;
+}
+
+const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
+	heading,
+	owners,
+	picked,
+	onToggle,
+	onSelectAll,
+	disabled,
+}) => (
+	<FormGroup role="group" aria-label={heading}>
+		<Box
+			sx={{
+				display: "flex",
+				justifyContent: "space-between",
+				alignItems: "center",
+			}}
+		>
+			<Typography variant="subtitle1">{heading}</Typography>
+			<Button
+				size="small"
+				disabled={disabled}
+				onClick={() => onSelectAll(owners)}
+			>
+				Select all
+			</Button>
+		</Box>
+		{owners.map((owner) => (
+			<FormControlLabel
+				key={ownerKeyOf(owner)}
+				label={owner.ownerName}
+				control={
+					<Checkbox
+						checked={picked.has(ownerKeyOf(owner))}
+						disabled={disabled}
+						onChange={() => onToggle(owner)}
+						slotProps={{ input: { "aria-label": owner.ownerName } }}
+					/>
+				}
+			/>
+		))}
+	</FormGroup>
+);
+
 type OwnerListProps = Omit<
 	OwnerStepProps,
 	"ownersStatus" | "onRetry" | "stepNumber" | "stepCount"
@@ -47,52 +99,30 @@ type OwnerListProps = Omit<
 
 const OwnerList: React.FC<Readonly<OwnerListProps>> = ({
 	teams,
-	picked,
-	onToggle,
-	onSelectAll,
-	disabled,
+	portfolios,
+	...group
 }) => {
 	const { getTerm } = useTerminology();
-	const teamsHeadingId = useId();
-	const pickedCount = teams.filter((team) =>
-		picked.has(ownerKeyOf(team)),
+	const pickedCount = [...teams, ...portfolios].filter((owner) =>
+		group.picked.has(ownerKeyOf(owner)),
 	).length;
 
 	return (
 		<>
-			<FormGroup role="group" aria-labelledby={teamsHeadingId}>
-				<Box
-					sx={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<Typography id={teamsHeadingId} variant="subtitle1">
-						{getTerm(TERMINOLOGY_KEYS.TEAMS)}
-					</Typography>
-					<Button
-						size="small"
-						disabled={disabled}
-						onClick={() => onSelectAll(teams)}
-					>
-						Select all
-					</Button>
-				</Box>
-				{teams.map((team) => (
-					<FormControlLabel
-						key={ownerKeyOf(team)}
-						label={team.ownerName}
-						control={
-							<Checkbox
-								checked={picked.has(ownerKeyOf(team))}
-								disabled={disabled}
-								onChange={() => onToggle(team)}
-							/>
-						}
-					/>
-				))}
-			</FormGroup>
+			{teams.length > 0 && (
+				<OwnerGroup
+					heading={getTerm(TERMINOLOGY_KEYS.TEAMS)}
+					owners={teams}
+					{...group}
+				/>
+			)}
+			{portfolios.length > 0 && (
+				<OwnerGroup
+					heading={getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}
+					owners={portfolios}
+					{...group}
+				/>
+			)}
 			<Typography variant="body2" color="text.secondary">
 				{`Only ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)} you are Admin of are listed.`}
 			</Typography>
@@ -113,6 +143,7 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 	...list
 }) => {
 	const { getTerm } = useTerminology();
+	const noOwners = list.teams.length + list.portfolios.length === 0;
 	const ownersName = `${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}`;
 
 	return (
@@ -129,14 +160,12 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 					<Button onClick={onRetry}>Retry</Button>
 				</Box>
 			)}
-			{ownersStatus === "ready" && list.teams.length === 0 && (
+			{ownersStatus === "ready" && noOwners && (
 				<Typography>
 					{`You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`}
 				</Typography>
 			)}
-			{ownersStatus === "ready" && list.teams.length > 0 && (
-				<OwnerList {...list} />
-			)}
+			{ownersStatus === "ready" && !noOwners && <OwnerList {...list} />}
 		</Stack>
 	);
 };

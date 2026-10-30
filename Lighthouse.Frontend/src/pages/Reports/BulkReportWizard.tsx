@@ -47,21 +47,22 @@ const createLabelOf = (count: number): string =>
 const byName = (left: IReportCreationOwner, right: IReportCreationOwner) =>
 	left.ownerName.localeCompare(right.ownerName);
 
-type IsTeamAdmin = (teamId: number) => boolean;
+type IsAdmin = (ownerId: number) => boolean;
 
-/** The Teams the reader may create on, as the owner step lists them. */
-const useTeamsToCreateOn = (
+/** The owners of one kind the reader may create on, as the owner step lists them. */
+const useOwnersToCreateOn = (
 	options: IReportCreationOptions,
-	isTeamAdmin: IsTeamAdmin,
+	ownerKind: IReportCreationOwner["ownerKind"],
+	isAdmin: IsAdmin,
 ): IReportCreationOwner[] =>
 	useMemo(
 		() =>
 			options.owners
 				.filter(
-					(owner) => owner.ownerKind === "team" && isTeamAdmin(owner.ownerId),
+					(owner) => owner.ownerKind === ownerKind && isAdmin(owner.ownerId),
 				)
 				.sort(byName),
-		[options.owners, isTeamAdmin],
+		[options.owners, ownerKind, isAdmin],
 	);
 
 const typeStepAt = (activeStep: number): ReportTypeStep<Draft> | undefined =>
@@ -109,6 +110,7 @@ interface StepContentProps {
 	ownersStatus: OwnersStatus;
 	onRetryOwners: () => void;
 	teams: readonly IReportCreationOwner[];
+	portfolios: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
 	onToggle: (owner: IReportCreationOwner) => void;
 	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
@@ -125,6 +127,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	ownersStatus,
 	onRetryOwners,
 	teams,
+	portfolios,
 	picked,
 	onToggle,
 	onSelectAll,
@@ -135,6 +138,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 				ownersStatus={ownersStatus}
 				onRetry={onRetryOwners}
 				teams={teams}
+				portfolios={portfolios}
 				picked={picked}
 				onToggle={onToggle}
 				onSelectAll={onSelectAll}
@@ -174,22 +178,29 @@ const runOf = (
 
 interface ReadyWizardProps {
 	options: IReportCreationOptions;
-	isTeamAdmin: IsTeamAdmin;
+	isTeamAdmin: IsAdmin;
+	isPortfolioAdmin: IsAdmin;
 	ownersStatus: OwnersStatus;
 	onRetryOwners: () => void;
 	onClose: () => void;
 }
 
-/** One report, configured once, created for every Team picked; the single wizard's steps, then the owners. */
+/** One report, configured once, created for every Team and Portfolio picked; the single wizard's steps, then the owners. */
 const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	options,
 	isTeamAdmin,
+	isPortfolioAdmin,
 	ownersStatus,
 	onRetryOwners,
 	onClose,
 }) => {
 	const templates = useMemo(() => templatesForOwnersOf(options), [options]);
-	const teams = useTeamsToCreateOn(options, isTeamAdmin);
+	const teams = useOwnersToCreateOn(options, "team", isTeamAdmin);
+	const portfolios = useOwnersToCreateOn(
+		options,
+		"portfolio",
+		isPortfolioAdmin,
+	);
 	const creation = useBulkReportCreation();
 	const [activeStep, setActiveStep] = useState(TYPE_STEP);
 	const [draft, setDraft] = useState(type.forOwners.newDraft);
@@ -207,12 +218,14 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 			new Set([...picked, ...owners.map((owner) => ownerKeyOf(owner))]),
 		);
 
-	const pickedTeams = teams.filter((team) => picked.has(ownerKeyOf(team)));
+	const pickedOwners = [...teams, ...portfolios].filter((owner) =>
+		picked.has(ownerKeyOf(owner)),
+	);
 
 	const create = () =>
 		creation.mutate({
 			...type.forOwners.toNewReport(draft, templates),
-			owners: pickedTeams.map(({ ownerKind, ownerId }) => ({
+			owners: pickedOwners.map(({ ownerKind, ownerId }) => ({
 				ownerKind,
 				ownerId,
 			})),
@@ -245,7 +258,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 					)}
 					primaryAction={createActionOf(
 						activeStep,
-						pickedTeams.length,
+						pickedOwners.length,
 						ownersStatus,
 						create,
 					)}
@@ -258,6 +271,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 						ownersStatus={ownersStatus}
 						onRetryOwners={onRetryOwners}
 						teams={teams}
+						portfolios={portfolios}
 						picked={picked}
 						onToggle={toggle}
 						onSelectAll={selectAll}
@@ -265,7 +279,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 				</WizardStepperFrame>
 			) : (
 				<BulkResult
-					count={pickedTeams.length}
+					count={pickedOwners.length}
 					minimumLengthDays={options.minimumLengthDays}
 					run={run}
 					onDone={onClose}
@@ -313,8 +327,9 @@ const CouldNotLoad: React.FC<Readonly<CouldNotLoadProps>> = ({
 interface BulkReportWizardProps {
 	/** Undefined when it could not be loaded, or while Retry asks again. */
 	options: IReportCreationOptions | undefined;
-	/** The page's own read of the viewer's roles, so the wizard lists only Teams the viewer is Admin of from its first frame. */
-	isTeamAdmin: IsTeamAdmin;
+	/** The page's own read of the viewer's roles, so the wizard lists only Teams and Portfolios the viewer is Admin of from its first frame. */
+	isTeamAdmin: IsAdmin;
+	isPortfolioAdmin: IsAdmin;
 	/** Whether the viewer's roles are on their way, could not be loaded, or are known, so the owner step never lists on a guess. */
 	ownersStatus: OwnersStatus;
 	onRetryOwners: () => void;
@@ -326,6 +341,7 @@ interface BulkReportWizardProps {
 const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 	options,
 	isTeamAdmin,
+	isPortfolioAdmin,
 	ownersStatus,
 	onRetryOwners,
 	retrying,
@@ -338,6 +354,7 @@ const BulkReportWizard: React.FC<Readonly<BulkReportWizardProps>> = ({
 		<ReadyWizard
 			options={options}
 			isTeamAdmin={isTeamAdmin}
+			isPortfolioAdmin={isPortfolioAdmin}
 			ownersStatus={ownersStatus}
 			onRetryOwners={onRetryOwners}
 			onClose={onClose}

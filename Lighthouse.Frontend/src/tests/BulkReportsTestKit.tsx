@@ -370,7 +370,13 @@ export const renderTheReportsPage = (
 } => {
 	const reportService = scene.reportService ?? aReportService();
 	const permissions = scene.permissions ?? {
-		adminOf: [ZENITH, GRAVITY, OCEAN_EXPLORER],
+		adminOf: [
+			ZENITH,
+			GRAVITY,
+			OCEAN_EXPLORER,
+			APOLLO_PORTFOLIO,
+			NEUROLINK_CITY,
+		],
 	};
 	const rbacService = createMockRbacService();
 	rbacService.getAuthorizationSummary = vi.fn(() => {

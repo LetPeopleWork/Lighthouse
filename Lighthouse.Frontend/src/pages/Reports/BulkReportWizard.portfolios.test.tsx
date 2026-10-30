@@ -49,7 +49,7 @@ const creatingWith = (createReportsInBulk = vi.fn().mockResolvedValue([])) =>
 	});
 
 describe("Teams and Portfolios in one run", () => {
-	it.skip(`a coach creates one comparison for two Teams and Ocean Explorer in one go (${pending})`, async () => {
+	it(`a coach creates one comparison for two Teams and Ocean Explorer in one go (${pending})`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -80,7 +80,7 @@ describe("Teams and Portfolios in one run", () => {
 		);
 	});
 
-	it.skip(`Portfolios are listed after Teams, alphabetically, with their own Select all (${pending})`, async () => {
+	it(`Portfolios are listed after Teams, alphabetically, with their own Select all (${pending})`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheOwnerStep(user);
@@ -105,7 +105,7 @@ describe("Teams and Portfolios in one run", () => {
 		expect(screen.getByRole("button", { name: createCount(3) })).toBeEnabled();
 	});
 
-	it.skip(`only Portfolios may be picked, with no Team at all (${pending})`, async () => {
+	it(`only Portfolios may be picked, with no Team at all (${pending})`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),

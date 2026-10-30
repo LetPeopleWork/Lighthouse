@@ -111,6 +111,7 @@ const useBulkCreation = (rbac: RbacState) => {
 			key={opening}
 			options={arrived ? options.data : undefined}
 			isTeamAdmin={rbac.isTeamAdmin}
+			isPortfolioAdmin={rbac.isPortfolioAdmin}
 			ownersStatus={ownersStatusOf(rbac)}
 			onRetryOwners={rbac.retry}
 			retrying={options.isFetching}
