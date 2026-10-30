@@ -120,10 +120,12 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 			<Typography variant="h6" component="h3">
 				{`Step ${stepNumber} of ${stepCount} — Who gets this report?`}
 			</Typography>
-			{ownersStatus === "loading" && <CircularProgress />}
+			{ownersStatus === "loading" && (
+				<CircularProgress aria-label={`Loading your ${ownersName}`} />
+			)}
 			{ownersStatus === "failed" && (
 				<Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-					<Typography>{`Your ${ownersName} couldn't be loaded.`}</Typography>
+					<Typography role="alert">{`Your ${ownersName} couldn't be loaded.`}</Typography>
 					<Button onClick={onRetry}>Retry</Button>
 				</Box>
 			)}
