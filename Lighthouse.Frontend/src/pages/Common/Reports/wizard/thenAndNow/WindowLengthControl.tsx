@@ -10,6 +10,8 @@ import type { IReportOwner } from "../../../../../models/Reports/Report";
 import { reportWindowPresetsFor } from "../../panels/reportWindowPresets";
 import { lengthOf } from "./thenAndNowDraft";
 
+const CUSTOM = "custom";
+
 interface WindowLengthControlProps {
 	owner: IReportOwner;
 	length: string;
@@ -21,6 +23,8 @@ interface WindowLengthControlProps {
 	leadingLabel?: string;
 	customLabel: string;
 	presets?: readonly number[];
+	/** Offers "Custom" beside the presets, chosen whenever the length is not one of them. */
+	customChoice?: boolean;
 }
 
 /** A window's length: the owner's presets with one click, beside a field for any number of days. */
@@ -35,8 +39,11 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 	leadingLabel,
 	customLabel,
 	presets = reportWindowPresetsFor(owner),
+	customChoice = false,
 }) => {
 	const lengthDays = lengthOf(length);
+	const isPreset = presets.includes(lengthDays ?? 0);
+	const selected = customChoice && !isPreset ? CUSTOM : null;
 
 	return (
 		<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -48,9 +55,10 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 				size="small"
 				aria-label={presetsLabel}
 				disabled={disabled}
-				value={presets.includes(lengthDays ?? 0) ? lengthDays : null}
-				onChange={(_, preset: number | null) => {
-					if (preset !== null) onChange(String(preset));
+				value={isPreset ? lengthDays : selected}
+				onChange={(_, choice: number | typeof CUSTOM | null) => {
+					if (choice === CUSTOM) onChange("");
+					else if (choice !== null) onChange(String(choice));
 				}}
 			>
 				{presets.map((preset) => (
@@ -58,8 +66,11 @@ const WindowLengthControl: React.FC<Readonly<WindowLengthControlProps>> = ({
 						{`${preset} days`}
 					</ToggleButton>
 				))}
+				{customChoice && <ToggleButton value={CUSTOM}>Custom</ToggleButton>}
 			</ToggleButtonGroup>
-			<Typography variant="body2">{customLabel}</Typography>
+			{customLabel !== "" && (
+				<Typography variant="body2">{customLabel}</Typography>
+			)}
 			<TextField
 				type="number"
 				size="small"

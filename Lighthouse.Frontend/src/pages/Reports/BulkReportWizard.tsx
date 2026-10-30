@@ -163,6 +163,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 			onChange={onChange}
 			disabled={false}
 			windowPresets={type.forOwners.windowPresets}
+			forSeveralOwners
 		/>
 	);
 };

@@ -12,7 +12,6 @@ import {
 	nextUntil,
 	OCEAN_EXPLORER,
 	PORTFOLIOS_GROUP,
-	pendingEpic6350,
 	pickOwner,
 	pressCreateReports,
 	renderTheReportsPage,
@@ -31,8 +30,6 @@ import { aReportService, thenNeedsAtLeast } from "../../tests/ReportsTestKit";
  * at least 14, and Now as long as Then unless the reader says otherwise.
  */
 
-const pending = pendingEpic6350("03");
-
 const teamsAndPortfolios = creationOptionsFor(
 	anOwnerToCreateOn(ZENITH),
 	anOwnerToCreateOn(GRAVITY),
@@ -49,7 +46,7 @@ const creatingWith = (createReportsInBulk = vi.fn().mockResolvedValue([])) =>
 	});
 
 describe("Teams and Portfolios in one run", () => {
-	it(`a coach creates one comparison for two Teams and Ocean Explorer in one go (${pending})`, async () => {
+	it(`a coach creates one comparison for two Teams and Ocean Explorer in one go`, async () => {
 		const createReportsInBulk = vi
 			.fn()
 			.mockResolvedValue([
@@ -80,7 +77,7 @@ describe("Teams and Portfolios in one run", () => {
 		);
 	});
 
-	it(`Portfolios are listed after Teams, alphabetically, with their own Select all (${pending})`, async () => {
+	it(`Portfolios are listed after Teams, alphabetically, with their own Select all`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheOwnerStep(user);
@@ -105,7 +102,7 @@ describe("Teams and Portfolios in one run", () => {
 		expect(screen.getByRole("button", { name: createCount(3) })).toBeEnabled();
 	});
 
-	it(`only Portfolios may be picked, with no Team at all (${pending})`, async () => {
+	it(`only Portfolios may be picked, with no Team at all`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),
@@ -133,7 +130,7 @@ describe("Choosing the window for several owners", () => {
 		await user.click(await screen.findByRole("button", { name: "Next" }));
 	};
 
-	it.skip(`Then offers 30, 90 and 180 days or a custom length, and Now is as long as Then unless changed (${pending})`, async () => {
+	it(`Then offers 30, 90 and 180 days or a custom length, and Now is as long as Then unless changed`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheThenStep(user);
@@ -151,7 +148,7 @@ describe("Choosing the window for several owners", () => {
 		).toBeChecked();
 	});
 
-	it.skip(`a custom Then shorter than 14 days is refused before any owner is asked (${pending})`, async () => {
+	it(`a custom Then shorter than 14 days is refused before any owner is asked`, async () => {
 		const createReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),
@@ -168,7 +165,7 @@ describe("Choosing the window for several owners", () => {
 		expect(createReportsInBulk).not.toHaveBeenCalled();
 	});
 
-	it.skip(`a custom Then of exactly 14 days is accepted (${pending})`, async () => {
+	it(`a custom Then of exactly 14 days is accepted`, async () => {
 		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheThenStep(user);
@@ -190,7 +187,7 @@ describe("Choosing the window for several owners", () => {
 		await user.click(screen.getByRole("button", { name: createCount(1) }));
 	};
 
-	it.skip(`a custom Now length travels with the request (${pending})`, async () => {
+	it(`a custom Now length travels with the request`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),
@@ -215,7 +212,7 @@ describe("Choosing the window for several owners", () => {
 		);
 	});
 
-	it.skip(`Same as Then travels as no Now length (${pending})`, async () => {
+	it(`Same as Then travels as no Now length`, async () => {
 		const createReportsInBulk = vi.fn().mockResolvedValue([]);
 		const { user } = renderTheReportsPage({
 			reportService: creatingWith(createReportsInBulk),

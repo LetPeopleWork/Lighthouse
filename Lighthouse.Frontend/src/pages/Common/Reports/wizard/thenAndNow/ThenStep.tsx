@@ -19,6 +19,7 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 	onChange,
 	disabled,
 	windowPresets,
+	forSeveralOwners = false,
 	frozen = false,
 }) => {
 	const end = thenEndOf(draft, templates);
@@ -52,7 +53,8 @@ const ThenStep: React.FC<Readonly<ReportTypeStepProps<ThenAndNowDraft>>> = ({
 				fieldLabel="Then length in days"
 				presetsLabel="Then length presets"
 				minimumLengthDays={templates.minimumLengthDays}
-				customLabel="Custom:"
+				customLabel={forSeveralOwners ? "" : "Custom:"}
+				customChoice={forSeveralOwners}
 			/>
 			{days !== null && (
 				<Typography color="text.secondary">{daysLine}</Typography>

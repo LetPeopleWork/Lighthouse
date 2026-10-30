@@ -39,6 +39,8 @@ export interface ReportTypeStepProps<TDraft> {
 	frozen?: boolean;
 	/** The window lengths offered with one click, when they are not the owner's own. */
 	windowPresets?: readonly number[];
+	/** One window chosen for several owners: Then offers Custom, and Now is Same as Then unless changed. */
+	forSeveralOwners?: boolean;
 }
 
 export interface ReportTypeStep<TDraft> {
