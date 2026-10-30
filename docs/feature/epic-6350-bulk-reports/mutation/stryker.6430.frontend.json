@@ -1,0 +1,72 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6430.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6430.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/hooks/useRbac.ts:16-24",
+    "src/hooks/useRbac.ts:36-46",
+    "src/hooks/useRbac.ts:59-59",
+    "src/hooks/useRbac.ts:71-71",
+    "src/hooks/useRbac.ts:93-94",
+    "src/pages/Reports/OwnerStep.tsx:5-5",
+    "src/pages/Reports/OwnerStep.tsx:27-32",
+    "src/pages/Reports/OwnerStep.tsx:43-48",
+    "src/pages/Reports/OwnerStep.tsx:62-62",
+    "src/pages/Reports/OwnerStep.tsx:96-139",
+    "src/pages/Reports/BulkReportWizard.tsx:27-31",
+    "src/pages/Reports/BulkReportWizard.tsx:90-90",
+    "src/pages/Reports/BulkReportWizard.tsx:97-100",
+    "src/pages/Reports/BulkReportWizard.tsx:109-110",
+    "src/pages/Reports/BulkReportWizard.tsx:125-126",
+    "src/pages/Reports/BulkReportWizard.tsx:135-136",
+    "src/pages/Reports/BulkReportWizard.tsx:178-179",
+    "src/pages/Reports/BulkReportWizard.tsx:187-188",
+    "src/pages/Reports/BulkReportWizard.tsx:246-251",
+    "src/pages/Reports/BulkReportWizard.tsx:258-259",
+    "src/pages/Reports/BulkReportWizard.tsx:318-320",
+    "src/pages/Reports/BulkReportWizard.tsx:329-330",
+    "src/pages/Reports/BulkReportWizard.tsx:341-342",
+    "src/pages/Reports/ReportsPage.tsx:15-16",
+    "src/pages/Reports/ReportsPage.tsx:28-28",
+    "src/pages/Reports/ReportsPage.tsx:47-52",
+    "src/pages/Reports/ReportsPage.tsx:61-61",
+    "src/pages/Reports/ReportsPage.tsx:86-90",
+    "src/pages/Reports/ReportsPage.tsx:114-115",
+    "src/pages/Reports/ReportsPage.tsx:126-126",
+    "src/pages/Reports/ReportsPage.tsx:171-173"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6430-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6430"
+}
