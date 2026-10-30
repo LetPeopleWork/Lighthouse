@@ -2179,3 +2179,13 @@ none for a broken setup, apart from the guards that already hold. DS decisions a
   column (settles OQ-1).
 - The Remove tooltip's wording is settled at the slice 05 sketch.
 - The hand-throttled pass of the owner step runs now, before slice 04.
+
+### Maintainer decision (2026-10-30, slice 05 review H2)
+
+- When the permission summary fails to load, Remove on the Reports page is held back exactly as while it is still
+  loading: it stays disabled, whatever is picked. The permission hook answers a failed load as if the reader were
+  Admin everywhere, so letting Remove through would end in a "no longer Admin of" result that is not true.
+- Its tooltip reads exactly: "Your permissions couldn't be loaded. Reload the page to try again."
+- It reuses the existing Remove button and its tooltip; no new control, no Retry link. This sentence takes precedence
+  over the "not Admin of" sentence, and "Pick at most 50 reports." still wins over it above 50 picks.
+- `useRbac` and `mayEditReportsOf` stay unchanged; the per-row edit and delete actions are out of scope.
