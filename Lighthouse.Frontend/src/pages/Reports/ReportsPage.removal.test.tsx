@@ -6,6 +6,7 @@ import {
 	aReportOn,
 	CANCEL,
 	confirmLineOf,
+	EMPTY,
 	everyReport,
 	FILTER,
 	GRAVITY,
@@ -105,7 +106,8 @@ describe("Remove several reports at once", () => {
 			await screen.findByText(removedHeadline(3), { exact: true }),
 		).toBeInTheDocument();
 		expect(removeReportsInBulk).toHaveBeenCalledWith([801, 802, 803]);
-		await waitFor(() => expect(screen.queryAllByRole("row")).toHaveLength(1));
+		await user.click(screen.getByRole("button", { name: "Done" }));
+		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
 	it.skip(`Cancel removes nothing (${pending})`, async () => {
@@ -121,7 +123,8 @@ describe("Remove several reports at once", () => {
 		);
 
 		expect(removeReportsInBulk).not.toHaveBeenCalled();
-		expect(theReportNamesListed()).toEqual([QUARTER, QUARTER, MONTH]);
+		// Portfolios are listed before Teams, so Ocean Explorer's report comes first.
+		expect(theReportNamesListed()).toEqual([MONTH, QUARTER, QUARTER]);
 	});
 
 	it.skip(`the confirmation warns when one of them holds a Then that can no longer be rebuilt (${pending})`, async () => {
