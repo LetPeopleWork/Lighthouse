@@ -113,7 +113,7 @@ const legacyBreakdown = (count: number) =>
 		likelihood: 50,
 	}));
 
-/** One breakdown entry carrying the size Epic #5585 slice 02 records. */
+/** One breakdown entry carrying the size the delivery records for an epic. */
 const sizedEpic = (referenceId: string, totalItems: number) => ({
 	referenceId,
 	name: `Epic ${referenceId}`,
@@ -122,7 +122,7 @@ const sizedEpic = (referenceId: string, totalItems: number) => ({
 	totalItems,
 });
 
-/** Same, plus the estimate flag slice 03 draws. */
+/** Same, plus the flag marking the size as a portfolio default. */
 const flaggedEpic = (
 	referenceId: string,
 	totalItems: number,
@@ -169,13 +169,13 @@ describe("DeliveryEpicSizeChart count line", () => {
 		chartsContainerMock.mockClear();
 	});
 
-	it("plots one point per recorded day whose value is that day's epic count (AC-1.1)", () => {
+	it("plots one point per recorded day whose value is that day's epic count", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory([7, 7, 9])} />);
 
 		expect(getCountValues()).toEqual([7, 7, 9]);
 	});
 
-	it("labels each plotted point with the day it was recorded (AC-1.1)", () => {
+	it("labels each plotted point with the day it was recorded", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory([7, 7, 9])} />);
 
 		const props = getLatestChartProps();
@@ -186,20 +186,20 @@ describe("DeliveryEpicSizeChart count line", () => {
 		).toEqual(DATES.map((date) => new Date(date).toLocaleDateString()));
 	});
 
-	it("spaces the days evenly rather than by calendar distance (ADR-122)", () => {
+	it("spaces the days evenly rather than by calendar distance", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
 		expect(getLatestChartProps()?.xAxis?.[0]?.scaleType).toBe("band");
 	});
 
-	it("counts a day's epics from the breakdown recorded on that day (AC-1.6)", () => {
+	it("counts a day's epics from the breakdown recorded on that day", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory([4])} />);
 
 		expect(getCountValues()).toEqual([4]);
 		expect(chartsContainerMock).toHaveBeenCalled();
 	});
 
-	it("draws the count against its own right-hand scale so sizes can share the chart (ADR-122)", () => {
+	it("draws the count against its own right-hand scale so sizes can share the chart", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
 		const countAxis = getLatestChartProps()?.yAxis?.find(
@@ -209,7 +209,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 		expect(getCountSeries()?.yAxisId).toBe(COUNT_AXIS_ID);
 	});
 
-	it("draws the count as a line, not as another bar (ADR-122)", () => {
+	it("draws the count as a line, not as another bar", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
 		expect(getCountSeries()?.type).toBe("line");
@@ -217,7 +217,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 	});
 
 	it("picks the count line out against the bars behind it", () => {
-		// Review 2026-08-02: the line was theme.palette.primary.main and vanished into the stack, whose
+		// A line in the primary colour vanished into the stack, whose
 		// segments come from the same green-teal ramp. Orange is the one hue the epic palette never uses.
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
@@ -225,7 +225,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 	});
 
 	it("scales the count from zero so a flat line is not read as a cliff", () => {
-		// Review 2026-08-02: the axis started at the lowest count in the window (3), so a delivery that
+		// An axis starting at the lowest count in the window made a delivery that
 		// went 3 -> 6 looked like it had started from nothing.
 		render(<DeliveryEpicSizeChart history={getMockHistory()} />);
 
@@ -235,7 +235,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 		).toBe(0);
 	});
 
-	it("tells the forecaster the chart builds forward when nothing is recorded yet (AC-1.2)", () => {
+	it("tells the forecaster the chart builds forward when nothing is recorded yet", () => {
 		render(<DeliveryEpicSizeChart history={getEmptyHistory()} />);
 
 		expect(
@@ -246,7 +246,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 		expect(chartsContainerMock).not.toHaveBeenCalled();
 	});
 
-	it("names the chart after whatever this instance calls its epics (AC-1.5)", () => {
+	it("names the chart after whatever this instance calls its epics", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={getMockHistory()}
@@ -273,7 +273,7 @@ describe("DeliveryEpicSizeChart count line", () => {
 	});
 });
 
-// Epic #5585 slice 02 (US-02). Each day's bar carries one segment per epic, sized by that epic's
+// Each day's bar carries one segment per epic, sized by that epic's
 // total child items, so a backlog jump is attributable to a named epic instead of to "scope".
 describe("DeliveryEpicSizeChart size bars", () => {
 	beforeEach(() => {
@@ -303,7 +303,7 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		);
 	};
 
-	it("gives every epic on a day its own segment, sized by its items (AC-2.5)", () => {
+	it("gives every epic on a day its own segment, sized by its items", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
@@ -315,7 +315,7 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect(valuesFor("EPIC-B")).toEqual([3]);
 	});
 
-	it("stacks the day's epics into one bar rather than standing them side by side (AC-2.5)", () => {
+	it("stacks the day's epics into one bar rather than standing them side by side", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
@@ -327,7 +327,7 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect([...stacks][0]).toBeTruthy();
 	});
 
-	it("draws no bar for a day recorded before sizes were written (AC-2.5)", () => {
+	it("draws no bar for a day recorded before sizes were written", () => {
 		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
 
 		expect(barSeries()).toHaveLength(0);
@@ -335,8 +335,8 @@ describe("DeliveryEpicSizeChart size bars", () => {
 	});
 
 	it("declares no items scale when there is nothing to size against it", () => {
-		// DISTILL's resolved open question from slice 01: an axis with no series is a rendering risk for
-		// no gain, and a history recorded entirely before slice 02 has no bars at all.
+		// An axis with no series is a rendering risk for
+		// no gain, and a history recorded entirely before sizes were written has no bars at all.
 		render(<DeliveryEpicSizeChart history={getMockHistory([7])} />);
 
 		expect(
@@ -386,8 +386,8 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect(axes[0]?.id).toBe(COUNT_AXIS_ID);
 	});
 
-	it("keeps an epic that left the delivery on the days it was there (AC-2.6)", () => {
-		// D7: the segments stop, they do not disappear retroactively — that is how a scope cut stays
+	it("keeps an epic that left the delivery on the days it was there", () => {
+		// The segments stop; they do not disappear retroactively, which is how a scope cut stays
 		// visible. The epic keeps its series, so it keeps its legend entry.
 		render(
 			<DeliveryEpicSizeChart
@@ -403,7 +403,7 @@ describe("DeliveryEpicSizeChart size bars", () => {
 		expect(valuesFor("EPIC-B")).toEqual([3, 3, null]);
 	});
 
-	it("sizes the bars on their own left-hand scale, apart from the count (ADR-122)", () => {
+	it("sizes the bars on their own left-hand scale, apart from the count", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[sizedEpic("EPIC-A", 8), sizedEpic("EPIC-B", 3)]])}
@@ -420,7 +420,7 @@ describe("DeliveryEpicSizeChart size bars", () => {
 	});
 
 	it("leaves an epic out of the day's tooltip when it was not in the delivery yet", () => {
-		// Review 2026-08-02: every epic in the window got a tooltip row on every day, most of them blank.
+		// Without this, every epic in the window gets a tooltip row on every day, most of them blank.
 		// MUI's ChartsAxisTooltipContent drops a row whose formattedValue is null, so the formatter has to
 		// return null rather than the default empty string.
 		render(
@@ -438,8 +438,8 @@ describe("DeliveryEpicSizeChart size bars", () => {
 	});
 
 	it("colours each segment from the delivery-wide epic palette", () => {
-		// Review 2026-08-02: the fever chart beside this one colours the same epics, and the two only
-		// agree if both read the same map — one keyed on every recorded epic, not on this chart's subset.
+		// The fever chart beside this one colours the same epics, and the two only
+		// agree if both read the same map: one keyed on every recorded epic, not on this chart's subset.
 		const history = historyOf([
 			[
 				sizedEpic("EPIC-A", 8),
@@ -481,12 +481,12 @@ describe("DeliveryEpicSizeChart size bars", () => {
 	});
 });
 
-// Epic #5585 slice 03 (US-03). A segment sized by the portfolio default renders hatched, so the day an
+// A segment sized by the portfolio default renders hatched, so the day an
 // epic stopped being a guess is visible without hovering anything.
 //
 // These assert the SLOT CONTRACT — the renderer the chart hands to MUI-X, exercised directly with an
-// ownerState — rather than the series topology, so they hold under ADR-119 as originally written and
-// under its 2026-08-02 revision (one series per epic, renderer keyed on seriesId + dataIndex).
+// ownerState — rather than the series topology, so they hold however the series are laid out, as long as the renderer
+// is keyed on seriesId + dataIndex.
 describe("DeliveryEpicSizeChart estimate hatching", () => {
 	beforeEach(() => {
 		chartsContainerMock.mockClear();
@@ -524,7 +524,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 	const fillOf = (seriesId: string, dataIndex: number) =>
 		renderBar(seriesId, dataIndex)?.getAttribute("fill") ?? "";
 
-	it("hands BarPlot its own bar renderer so a segment can carry a pattern (ADR-119)", () => {
+	it("hands BarPlot its own bar renderer so a segment can carry a pattern", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
@@ -534,7 +534,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(getBarSlot()).toBeTypeOf("function");
 	});
 
-	it("hatches a segment whose size is the portfolio default (AC-3.2)", () => {
+	it("hatches a segment whose size is the portfolio default", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[flaggedEpic("EPIC-A", 8, true)]])}
@@ -544,7 +544,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(fillOf("EPIC-A", 0)).toMatch(/^url\(#/);
 	});
 
-	it("leaves a broken-down epic solid, in its own colour (AC-3.2)", () => {
+	it("leaves a broken-down epic solid, in its own colour", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([[flaggedEpic("EPIC-A", 8, false)]])}
@@ -565,8 +565,8 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		);
 	});
 
-	it("treats an epic with no flag as broken down, never as a guess (AC-3.5)", () => {
-		// Absence is not truth. Every snapshot recorded before slice 02 has no flag at all, and if
+	it("treats an epic with no flag as broken down, never as a guess", () => {
+		// Absence is not truth. Every snapshot recorded before sizes were recorded has no flag at all, and if
 		// absence read as "estimated" the whole of that history would render hatched.
 		render(
 			<DeliveryEpicSizeChart history={historyOf([[sizedEpic("EPIC-A", 8)]])} />,
@@ -575,7 +575,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(fillOf("EPIC-A", 0)).not.toMatch(/^url\(#/);
 	});
 
-	it("shows the day an epic stopped being a guess (AC-3.4)", () => {
+	it("shows the day an epic stopped being a guess", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([
@@ -591,7 +591,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(fillOf("EPIC-A", 2)).not.toMatch(/^url\(#/);
 	});
 
-	it("says in the tooltip that a hatched size is a default (AC-3.3)", () => {
+	it("says in the tooltip that a hatched size is a default", () => {
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([
@@ -603,7 +603,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		const seriesFor = (id: string) =>
 			getLatestChartProps()?.series?.find((entry) => entry.id === id);
 
-		// Wording shortened on review 2026-08-02 — AC-3.3's suggested sentence overran the tooltip row.
+		// Kept short: a longer sentence overran the tooltip row.
 		expect(seriesFor("EPIC-A")?.valueFormatter?.(8, { dataIndex: 0 })).toMatch(
 			/^8 \(estimated\)$/,
 		);
@@ -640,7 +640,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 		expect(id).toMatch(/^hatch-[a-zA-Z0-9]+-\d+$/);
 	});
 
-	it("gives each chart on the page its own pattern so two deliveries do not collide (AC-3.6)", () => {
+	it("gives each chart on the page its own pattern so two deliveries do not collide", () => {
 		const history = historyOf([[flaggedEpic("EPIC-A", 8, true)]]);
 
 		const { container } = render(
@@ -658,7 +658,7 @@ describe("DeliveryEpicSizeChart estimate hatching", () => {
 	});
 });
 
-// Epic #5585 slice 04 (US-04). A fifteen-epic delivery renders a fifteen-segment stack per day —
+// A fifteen-epic delivery renders a fifteen-segment stack per day —
 // legible as a total, useless for following one epic. The legend filters the bars, and it is collapsed
 // by default because filtering is a special-case action and the card already runs tall.
 describe("DeliveryEpicSizeChart legend filtering", () => {
@@ -704,8 +704,8 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(screen.queryByRole("button", { name: /legend/i })).toBeNull();
 	});
 
-	it("lists every epic in the window once, including one that has left (AC-4.1)", () => {
-		// D7: an epic that left the delivery still had days in the window, so it stays selectable.
+	it("lists every epic in the window once, including one that has left", () => {
+		// An epic that left the delivery still had days in the window, so it stays selectable.
 		render(
 			<DeliveryEpicSizeChart
 				history={historyOf([
@@ -721,7 +721,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(screen.getByRole("button", { name: "Epic EPIC-B" })).toBeVisible();
 	});
 
-	it("leaves only the chosen epic's bars when one is picked (AC-4.2)", () => {
+	it("leaves only the chosen epic's bars when one is picked", () => {
 		// Picking isolates. Chasing one epic out of fifteen must cost one click, not fourteen.
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
@@ -731,7 +731,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(barSeriesIds()).toEqual(["EPIC-B"]);
 	});
 
-	it("adds a second epic to the selection rather than replacing it (AC-4.2)", () => {
+	it("adds a second epic to the selection rather than replacing it", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
@@ -741,7 +741,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
 	});
 
-	it("returns to showing everything when the last pick is undone (AC-4.3)", () => {
+	it("returns to showing everything when the last pick is undone", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
@@ -751,7 +751,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
 	});
 
-	it("clears the whole filter in one action (AC-4.4)", () => {
+	it("clears the whole filter in one action", () => {
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
 		openLegend();
@@ -761,8 +761,8 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(barSeriesIds()).toEqual(["EPIC-A", "EPIC-B"]);
 	});
 
-	it("never filters the count line, which is a delivery-level fact (AC-4.5)", () => {
-		// D8: the count answers "how many epics were in the delivery that day". Filtering it to a
+	it("never filters the count line, which is a delivery-level fact", () => {
+		// The count answers "how many epics were in the delivery that day". Filtering it to a
 		// subset would make it read as a different number for the same day.
 		render(<DeliveryEpicSizeChart history={twoEpics()} />);
 
@@ -774,7 +774,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 		expect(getCountSeries()).toBeDefined();
 	});
 
-	it("filters one delivery's chart without touching another's (AC-4.6)", () => {
+	it("filters one delivery's chart without touching another's", () => {
 		const history = twoEpics();
 		render(
 			<>
@@ -790,7 +790,7 @@ describe("DeliveryEpicSizeChart legend filtering", () => {
 
 		// Asserted on each legend's own pressed state rather than on container props: filtering the
 		// first chart does not re-render the second, so the last ChartsContainer call is always the
-		// filtered one — reading it here would contradict AC-4.2 rather than test isolation.
+		// filtered one — reading it here would check the wrong chart's state rather than test isolation.
 		const entries = screen.getAllByRole("button", { name: "Epic EPIC-A" });
 		expect(entries[0]).toHaveAttribute("aria-pressed", "false");
 		expect(entries[1]).toHaveAttribute("aria-pressed", "true");

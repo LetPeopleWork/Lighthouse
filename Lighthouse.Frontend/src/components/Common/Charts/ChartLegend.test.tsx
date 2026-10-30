@@ -2,10 +2,9 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import ChartLegend from "./ChartLegend";
 
-// Epic #5585 slice 04 (US-04). The delivery Metrics cards run tall because a per-epic legend wraps to
+// The delivery Metrics cards run tall because a per-epic legend wraps to
 // eight lines on a real delivery, and filtering by legend is a special-case action — so the legend is
-// collapsed by default and costs one click to open. Extracted from DeliveryFeverChart's private
-// FeatureLegend so the fever chart and the size chart behave the same way on the same tab.
+// collapsed by default and costs one click to open. Shared by the fever and size charts so they behave the same way on the same tab.
 
 const items = [
 	{ id: "EPIC-A", label: "Checkout", color: "#111111" },
@@ -79,9 +78,9 @@ describe("ChartLegend", () => {
 		}
 	});
 
-	it("switches off the entries that were not picked (AC-4.2)", () => {
+	it("switches off the entries that were not picked", () => {
 		// Picking one entry isolates it. Every entry stays listed — that is how the forecaster adds a
-		// second one, and for the size chart it is how a departed epic stays reachable (D7).
+		// second one, and for the size chart it is how a departed epic stays reachable.
 		renderLegend({ selected: new Set(["EPIC-B"]) });
 
 		expand();
@@ -96,7 +95,7 @@ describe("ChartLegend", () => {
 		);
 	});
 
-	it("clears the whole selection in one action (AC-4.4)", () => {
+	it("clears the whole selection in one action", () => {
 		const onShowAll = vi.fn();
 		renderLegend({ selected: new Set(["EPIC-B"]), onShowAll });
 
@@ -115,7 +114,7 @@ describe("ChartLegend", () => {
 	});
 
 	it("says which way clicking it will go", () => {
-		// Review 2026-08-02: the toggle read as a label, not a control.
+		// The toggle must announce its state, or it reads as a label rather than a control.
 		renderLegend();
 
 		const toggle = screen.getByRole("button", { name: /legend/i });

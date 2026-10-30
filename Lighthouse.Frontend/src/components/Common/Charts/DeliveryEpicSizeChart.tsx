@@ -47,7 +47,7 @@ const ITEMS_STACK_ID = "epic-size";
 const HATCH_TILE = 8;
 const HATCH_STROKE_WIDTH = 3;
 const HATCH_STROKE_OPACITY = 0.6;
-// Terse on purpose: the sentence DISCUSS AC-3.3 suggested overran the tooltip row (review 2026-08-02).
+// Terse on purpose: a longer note overran the tooltip row.
 const DEFAULT_SIZE_NOTE = "(estimated)";
 
 interface EpicSeriesDescriptor {
@@ -80,7 +80,7 @@ const sizesOn = (point: DeliveryMetricsHistoryPoint): Map<string, number> => {
 	return sizes;
 };
 
-// AC-3.5: only a recorded flag makes an epic a guess. Every snapshot taken before slice 02 carries no
+// Only a recorded flag makes an epic a guess. Every snapshot taken before sizes were recorded carries no
 // flag at all, so reading absence as "estimated" would hatch the whole back-history.
 const defaultSizedOn = (point: DeliveryMetricsHistoryPoint): Set<string> => {
 	const estimated = new Set<string>();
@@ -92,7 +92,7 @@ const defaultSizedOn = (point: DeliveryMetricsHistoryPoint): Set<string> => {
 	return estimated;
 };
 
-// The props MUI-X hands a bar slot (ADR-119). Declared here rather than imported: the acceptance test
+// The props MUI-X hands a bar slot. Declared here rather than imported: the test
 // mocks the @mui/x-charts barrel, and a ninth named import from it would resolve to undefined.
 type EpicBarProps = Omit<SVGProps<SVGRectElement>, "color"> & {
 	seriesId: string | number;
@@ -105,7 +105,7 @@ type EpicBarProps = Omit<SVGProps<SVGRectElement>, "color"> & {
 	skipAnimation?: boolean;
 };
 
-// Sorted so an epic keeps its band and its colour from day to day (DESIGN OQ-4).
+// Sorted so an epic keeps its band and its colour from day to day.
 const collectSizedEpics = (
 	history: DeliveryMetricsHistory,
 ): EpicSeriesDescriptor[] => {
@@ -216,7 +216,7 @@ const DeliveryEpicSizeChart = ({
 	const epics = collectSizedEpics(history);
 	// Every recorded epic, not just the sized ones: the fever chart beside this one shares the map.
 	const colorByReferenceId = deliveryEpicColors(history);
-	// AC-4.5 / D8: only the stacked sizes are filtered — the count line below is a delivery-level fact.
+	// Only the stacked sizes are filtered; the count line below is a delivery-level fact.
 	const visibleEpics = epics.filter((epic) => isVisible(epic.referenceId));
 	const hasSizes = visibleEpics.length > 0;
 
@@ -225,7 +225,7 @@ const DeliveryEpicSizeChart = ({
 		estimatedByDay[dataIndex]?.has(referenceId) ?? false;
 
 	// Ids are instance-scoped so two deliveries expanded on the same page cannot reuse each other's
-	// pattern def (AC-3.6).
+	// pattern def.
 	const hatches: EpicHatch[] = epics.map((epic, index) => ({
 		referenceId: epic.referenceId,
 		id: `hatch-${instanceId}-${index}`,
@@ -269,7 +269,7 @@ const DeliveryEpicSizeChart = ({
 			[COUNT_DATA_KEY]: point.featureBreakdown.length,
 		};
 
-		// D7: a departed epic gets an explicit null, so its segments stop instead of vanishing.
+		// An epic that left the delivery gets an explicit null, so its segments stop instead of vanishing.
 		for (const epic of epics) {
 			row[sizeDataKey(epic.referenceId)] = sizes.get(epic.referenceId) ?? null;
 		}

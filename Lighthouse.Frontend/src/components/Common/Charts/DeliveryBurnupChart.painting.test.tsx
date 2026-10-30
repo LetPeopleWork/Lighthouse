@@ -3,10 +3,9 @@ import { describe, expect, it } from "vitest";
 import { parseDeliveryMetricsHistory } from "../../../models/Delivery/DeliveryMetricsHistory";
 import DeliveryBurnupChart from "./DeliveryBurnupChart";
 
-// Epic #5585 US-05. The sibling spec mocks LineChart and asserts the props the chart hands MUI-X; this
-// one renders the real chart, because the defect was about what actually reaches the SVG. DESIGN read
-// the cause as paint order — this file records that it is not: MUI-X composes AreaPlot before LinePlot,
-// so the estimated line is already on top and no z-order change could have helped it.
+// Renders the real chart rather than a mocked LineChart, because the defect was about what actually
+// reaches the SVG. Paint order is not the cause: MUI-X draws the area before the line, so the estimated
+// line is already on top and no z-order change could have helped it.
 const point = (date: string, doneWork: number, estimatedItemCount: number) => ({
 	date,
 	totalWork: 100,
@@ -36,7 +35,7 @@ const pathsOf = (container: HTMLElement) => [
 ];
 
 describe("DeliveryBurnupChart painting", () => {
-	it("draws the estimated line, and draws it after the Done area (AC-5.1)", () => {
+	it("draws the estimated line, and draws it after the Done area", () => {
 		const { container } = render(
 			<DeliveryBurnupChart history={estimatedUnderDone()} />,
 		);
@@ -55,7 +54,7 @@ describe("DeliveryBurnupChart painting", () => {
 		expect(estimatedLine).toBeGreaterThan(doneArea);
 	});
 
-	it("thins the Done fill so the line inside it stays readable (AC-5.1)", () => {
+	it("thins the Done fill so the line inside it stays readable", () => {
 		const { container } = render(
 			<DeliveryBurnupChart history={estimatedUnderDone()} />,
 		);
@@ -68,7 +67,7 @@ describe("DeliveryBurnupChart painting", () => {
 		);
 
 		// A band, not a bound: anything up to half-opaque still swallows a 2px dashed line, and anything
-		// under a sixth stops reading as a filled area at all (AC-5.2). Review 2026-08-02.
+		// under a sixth stops reading as a filled area at all.
 		expect(fillOpacity).toBeGreaterThanOrEqual(0.15);
 		expect(fillOpacity).toBeLessThanOrEqual(0.5);
 	});
@@ -101,7 +100,7 @@ describe("DeliveryBurnupChart painting", () => {
 		).toBeLessThanOrEqual(0.5);
 	});
 
-	it("keeps the estimated line dashed where it crosses the fill (AC-5.3)", () => {
+	it("keeps the estimated line dashed where it crosses the fill", () => {
 		const { container } = render(
 			<DeliveryBurnupChart history={estimatedUnderDone()} />,
 		);
@@ -113,7 +112,7 @@ describe("DeliveryBurnupChart painting", () => {
 		expect(getComputedStyle(estimated as Element).strokeDasharray).toBe("2 4");
 	});
 
-	it("still fills the Done curve as an area (AC-5.2)", () => {
+	it("still fills the Done curve as an area", () => {
 		const { container } = render(
 			<DeliveryBurnupChart history={estimatedUnderDone()} />,
 		);

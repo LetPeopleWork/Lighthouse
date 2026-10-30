@@ -141,7 +141,7 @@ describe("DeliveryFeverChart", () => {
 	});
 
 	it("colours each feature from the delivery-wide epic palette", () => {
-		// Review 2026-08-02: the size chart on the same tab colours the same epics. Both read this map,
+		// The size chart on the same tab colours the same epics. Both read this map,
 		// so an epic keeps one colour across the tab instead of one per chart.
 		//
 		// F-0 is un-forecastable and so never plotted here — and sorts ahead of the two that are. A map

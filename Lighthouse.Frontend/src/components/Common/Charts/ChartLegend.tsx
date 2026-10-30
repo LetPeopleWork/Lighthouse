@@ -61,9 +61,9 @@ const ChartLegendEntry = ({
 );
 
 // Collapsed by default: on a real delivery the entries wrap to eight lines and the Metrics card
-// already runs tall, while filtering is a special-case action worth one click (Epic #5585 US-04).
+// already runs tall, while filtering is a special-case action worth one click.
 // Clicking an entry picks it — picking isolates rather than hides, so chasing one epic out of
-// fifteen costs one click (AC-4.2, review 2026-08-02).
+// fifteen costs one click.
 const ChartLegend = ({
 	items,
 	selected,

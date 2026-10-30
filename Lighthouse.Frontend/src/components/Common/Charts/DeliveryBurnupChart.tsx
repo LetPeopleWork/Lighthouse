@@ -24,7 +24,7 @@ const ESTIMATED_SERIES_ID = "estimated";
 const ESTIMATED_SERIES_LABEL = "Estimated (not broken down)";
 const ESTIMATED_DASH_PATTERN = "2 4";
 const DONE_SERIES_ID = "done";
-// Thin enough to read the estimated line through, solid enough to still be an area (Epic #5585 US-05).
+// Thin enough to read the estimated line through, solid enough to still be an area.
 const DONE_AREA_FILL_OPACITY = 0.3;
 const BURNUP_SX = {
 	[`& .MuiLineChart-line[data-series="${ESTIMATED_SERIES_ID}"]`]: {
