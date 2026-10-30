@@ -70,17 +70,68 @@ vi.mock("@mui/x-charts", () => ({
 const DETAIL_PAGE =
 	"https://docs.lighthouse.letpeople.work/portfolios/detail.html";
 
-const BURNUP_COPY =
-	"Total scope against completed Tickets over time. The top line is everything in this Release and rises when scope is added; the filled area is what's done. The gap between them is the remaining work: a gap that narrows is closing in, a gap that stays open or widens is losing ground to added scope. A dashed line shows how much of the scope is still estimated, from Epics not yet broken down.";
-
-const PREDICTABILITY_COPY =
-	"How the forecast for this Release changed day by day. How Likely? shows the chance of finishing by the target date. The line's colour shows the level: Risky up to 50%, Realistic up to 70%, Confident up to 85%, Certain above that. When? shows the forecasted finish dates (50th to 95th percentile) against the target. Lines that rise mean the finish is slipping later; lines that fall mean it's pulling in.";
-
-const PROGRESS_COPY =
-	"Where each Epic stands: how much of it is done, against how likely it is to be late. Green is on track, amber needs watching, red needs action. Press Run to replay how each Epic moved. One drifting up into red is using up its buffer faster than it's making progress.";
-
-const FEATURES_COPY =
-	"Which Epic grew, and when. Each day is one bar, split into one band per Epic and sized by its Tickets. A band that suddenly grows is scope discovered inside that Epic. A hatched band is still an estimate rather than counted Tickets. The line, on the right-hand axis, counts how many Epics the Release held.";
+const CHART_POPOVERS = [
+	{
+		title: "Delivery Burnup",
+		anchor: "burnup",
+		purpose: "Total scope against completed Tickets over time.",
+		whatYouSee: [
+			"Top line: everything in this Release; rises when scope is added",
+			"Filled area: the Tickets done",
+			"Dashed line: scope still estimated, from Epics not yet broken down",
+		],
+		howToRead: [
+			"The gap between line and area is the remaining work",
+			"Gap narrowing: closing in",
+			"Gap open or widening: losing ground to added scope",
+		],
+	},
+	{
+		title: "Delivery Predictability",
+		anchor: "predictability",
+		purpose: "How the forecast for this Release changed day by day.",
+		whatYouSee: [
+			"How Likely?: the chance of finishing by the target date, one point per day",
+			"Line colour: Risky up to 50%, Realistic up to 70%, Confident up to 85%, Certain above",
+			"When?: the forecasted finish dates (50th–95th percentile) against the target date",
+		],
+		howToRead: [
+			"How Likely? rising: the odds of making the target are improving",
+			"When? lines rising: the finish is slipping later; falling: pulling in",
+			"A step in the target line: the target was moved, so read jumps around it with that in mind",
+		],
+	},
+	{
+		title: "Delivery Progress",
+		anchor: "delivery-progress-fever-chart",
+		purpose:
+			"Where each Epic stands: how much is done, against how likely it is to be late.",
+		whatYouSee: [
+			"One dot per Epic: further right = more done, higher = more likely to be late",
+			"Green, amber and red zones",
+			"Run replays how each Epic moved",
+		],
+		howToRead: [
+			"Green is on track, amber needs watching, red needs action",
+			"Drifting up into red: the Epic is using up its buffer faster than it is making progress",
+		],
+	},
+	{
+		title: "Epics over Time",
+		anchor: "features-over-time",
+		purpose: "Which Epic grew, and when.",
+		whatYouSee: [
+			"One bar per day, split into a band per Epic and sized by its Tickets",
+			"Hatched band: the size is still an estimate, not counted Tickets",
+			"The line (right-hand axis): how many Epics the Release held",
+		],
+		howToRead: [
+			"A band that suddenly grows: scope discovered inside that Epic",
+			"A band going from hatched to solid: the Epic was broken down",
+			"A band that ends: the Epic left the Release",
+		],
+	},
+];
 
 const history = parseDeliveryMetricsHistory({
 	deliveryDate: "2026-06-21T00:00:00Z",
@@ -125,21 +176,29 @@ const history = parseDeliveryMetricsHistory({
 	],
 });
 
+const listItemTexts = (list: HTMLElement): (string | null)[] =>
+	within(list)
+		.getAllByRole("listitem")
+		.map((item) => item.textContent);
+
 describe("DeliveryMetricsTab chart info buttons", () => {
-	it.each([
-		["Delivery Burnup", "burnup", BURNUP_COPY],
-		["Delivery Predictability", "predictability", PREDICTABILITY_COPY],
-		["Delivery Progress", "delivery-progress-fever-chart", PROGRESS_COPY],
-		["Epics over Time", "features-over-time", FEATURES_COPY],
-	])(
-		"%s explains itself in a popover that links to its docs section",
-		(title, anchor, copy) => {
+	it.each(CHART_POPOVERS)(
+		"$title explains itself in a popover that links to its docs section",
+		({ title, anchor, purpose, whatYouSee, howToRead }) => {
 			render(<DeliveryMetricsTab isLoading={false} history={history} />);
 
 			fireEvent.click(screen.getByRole("button", { name: `About ${title}` }));
 
 			const dialog = screen.getByRole("dialog", { name: `About ${title}` });
-			expect(within(dialog).getByText(copy)).toBeInTheDocument();
+			expect(within(dialog).getByText(purpose)).toBeInTheDocument();
+			expect(within(dialog).getByText("What you see")).toBeInTheDocument();
+			expect(within(dialog).getByText("How to read it")).toBeInTheDocument();
+
+			const lists = within(dialog).getAllByRole("list");
+			expect(lists).toHaveLength(2);
+			expect(listItemTexts(lists[0])).toEqual(whatYouSee);
+			expect(listItemTexts(lists[1])).toEqual(howToRead);
+
 			expect(
 				within(dialog).getByRole("link", { name: "Learn More" }),
 			).toHaveAttribute("href", `${DETAIL_PAGE}#${anchor}`);

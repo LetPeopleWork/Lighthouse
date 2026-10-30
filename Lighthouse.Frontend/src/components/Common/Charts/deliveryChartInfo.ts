@@ -16,7 +16,9 @@ export interface DeliveryChartTerms {
 }
 
 export interface DeliveryChartInfo {
-	readonly text: string;
+	readonly summary: string;
+	readonly whatYouSee: readonly string[];
+	readonly howToRead: readonly string[];
 	readonly learnMoreUrl: string;
 }
 
@@ -31,21 +33,50 @@ export const deliveryChartInfo = {
 		DeliveryChartTerms,
 		"workItemsTerm" | "featuresTerm" | "deliveryTerm"
 	>): DeliveryChartInfo => ({
-		text: `Total scope against completed ${workItemsTerm} over time. The top line is everything in this ${deliveryTerm} and rises when scope is added; the filled area is what's done. The gap between them is the remaining work: a gap that narrows is closing in, a gap that stays open or widens is losing ground to added scope. A dashed line shows how much of the scope is still estimated, from ${featuresTerm} not yet broken down.`,
+		summary: `Total scope against completed ${workItemsTerm} over time.`,
+		whatYouSee: [
+			`Top line: everything in this ${deliveryTerm}; rises when scope is added`,
+			`Filled area: the ${workItemsTerm} done`,
+			`Dashed line: scope still estimated, from ${featuresTerm} not yet broken down`,
+		],
+		howToRead: [
+			"The gap between line and area is the remaining work",
+			"Gap narrowing: closing in",
+			"Gap open or widening: losing ground to added scope",
+		],
 		learnMoreUrl: learnMoreUrl("burnup"),
 	}),
 
 	predictability: ({
 		deliveryTerm,
 	}: Pick<DeliveryChartTerms, "deliveryTerm">): DeliveryChartInfo => ({
-		text: `How the forecast for this ${deliveryTerm} changed day by day. How Likely? shows the chance of finishing by the target date. The line's colour shows the level: Risky up to 50%, Realistic up to 70%, Confident up to 85%, Certain above that. When? shows the forecasted finish dates (50th to 95th percentile) against the target. Lines that rise mean the finish is slipping later; lines that fall mean it's pulling in.`,
+		summary: `How the forecast for this ${deliveryTerm} changed day by day.`,
+		whatYouSee: [
+			"How Likely?: the chance of finishing by the target date, one point per day",
+			"Line colour: Risky up to 50%, Realistic up to 70%, Confident up to 85%, Certain above",
+			"When?: the forecasted finish dates (50th–95th percentile) against the target date",
+		],
+		howToRead: [
+			"How Likely? rising: the odds of making the target are improving",
+			"When? lines rising: the finish is slipping later; falling: pulling in",
+			"A step in the target line: the target was moved, so read jumps around it with that in mind",
+		],
 		learnMoreUrl: learnMoreUrl("predictability"),
 	}),
 
 	progress: ({
 		featureTerm,
 	}: Pick<DeliveryChartTerms, "featureTerm">): DeliveryChartInfo => ({
-		text: `Where each ${featureTerm} stands: how much of it is done, against how likely it is to be late. Green is on track, amber needs watching, red needs action. Press Run to replay how each ${featureTerm} moved. One drifting up into red is using up its buffer faster than it's making progress.`,
+		summary: `Where each ${featureTerm} stands: how much is done, against how likely it is to be late.`,
+		whatYouSee: [
+			`One dot per ${featureTerm}: further right = more done, higher = more likely to be late`,
+			"Green, amber and red zones",
+			`Run replays how each ${featureTerm} moved`,
+		],
+		howToRead: [
+			"Green is on track, amber needs watching, red needs action",
+			`Drifting up into red: the ${featureTerm} is using up its buffer faster than it is making progress`,
+		],
 		learnMoreUrl: learnMoreUrl("delivery-progress-fever-chart"),
 	}),
 
@@ -55,7 +86,17 @@ export const deliveryChartInfo = {
 		featuresTerm,
 		deliveryTerm,
 	}: DeliveryChartTerms): DeliveryChartInfo => ({
-		text: `Which ${featureTerm} grew, and when. Each day is one bar, split into one band per ${featureTerm} and sized by its ${workItemsTerm}. A band that suddenly grows is scope discovered inside that ${featureTerm}. A hatched band is still an estimate rather than counted ${workItemsTerm}. The line, on the right-hand axis, counts how many ${featuresTerm} the ${deliveryTerm} held.`,
+		summary: `Which ${featureTerm} grew, and when.`,
+		whatYouSee: [
+			`One bar per day, split into a band per ${featureTerm} and sized by its ${workItemsTerm}`,
+			`Hatched band: the size is still an estimate, not counted ${workItemsTerm}`,
+			`The line (right-hand axis): how many ${featuresTerm} the ${deliveryTerm} held`,
+		],
+		howToRead: [
+			`A band that suddenly grows: scope discovered inside that ${featureTerm}`,
+			`A band going from hatched to solid: the ${featureTerm} was broken down`,
+			`A band that ends: the ${featureTerm} left the ${deliveryTerm}`,
+		],
 		learnMoreUrl: learnMoreUrl("features-over-time"),
 	}),
 };
