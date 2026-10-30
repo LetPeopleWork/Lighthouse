@@ -7,6 +7,7 @@ import {
 	DialogTitle,
 	Typography,
 } from "@mui/material";
+import { format, subDays } from "date-fns";
 import type React from "react";
 import { useMemo, useState } from "react";
 import WizardStepperFrame, {
@@ -17,16 +18,24 @@ import type {
 	IReportCreationOptions,
 	IReportCreationOwner,
 } from "../../models/Reports/ReportsAcrossOwners";
+import { parseLocalDate } from "../../utils/date/localDate";
 import {
 	type ReportTypeStep,
 	reportTypes,
 	templatesForOwnersOf,
 } from "../Common/Reports/wizard/reportTypes";
+import { ownerCannotHold } from "../Common/Reports/wizard/reportWindowCheck";
 import TypeStep from "../Common/Reports/wizard/TypeStep";
+import {
+	lengthOf,
+	nowLengthOf,
+	thenEndOf,
+} from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
 import BulkResult, { type BulkRun } from "./BulkResult";
 import OwnerStep, {
 	isOverTheCeiling,
 	OVER_THE_CEILING_ID,
+	type OwnerLimitOf,
 	type OwnersStatus,
 	ownerKeyOf,
 } from "./OwnerStep";
@@ -65,6 +74,43 @@ const useOwnersToCreateOn = (
 				.sort(byName),
 		[options.owners, ownerKind, isAdmin],
 	);
+
+const LONG_DAY = "d MMM yyyy";
+
+/** What stops an owner from holding the window as configured so far, or null when it holds it. */
+const limitOfFor =
+	(draft: Draft, templates: IReportTemplates): OwnerLimitOf =>
+	(owner) => {
+		const thenLength = lengthOf(draft.thenLength);
+		const nowLength = lengthOf(nowLengthOf(draft));
+		const thenEnd = parseLocalDate(thenEndOf(draft, templates));
+		const keptSince =
+			owner.earliestStart === null ? null : parseLocalDate(owner.earliestStart);
+		if (thenLength === null || thenEnd === null || keptSince === null)
+			return null;
+		const cannotHold =
+			ownerCannotHold(
+				{
+					side: "then",
+					end: thenEndOf(draft, templates),
+					lengthDays: thenLength,
+				},
+				templates,
+				owner,
+			) ||
+			(nowLength !== null &&
+				ownerCannotHold(
+					{ side: "now", lengthDays: nowLength },
+					templates,
+					owner,
+				));
+		return cannotHold
+			? {
+					keptSince: format(keptSince, LONG_DAY),
+					thenStarts: format(subDays(thenEnd, thenLength - 1), LONG_DAY),
+				}
+			: null;
+	};
 
 const typeStepAt = (activeStep: number): ReportTypeStep<Draft> | undefined =>
 	activeStep > TYPE_STEP && activeStep < OWNER_STEP
@@ -116,6 +162,7 @@ interface StepContentProps {
 	teams: readonly IReportCreationOwner[];
 	portfolios: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
+	limitOf: OwnerLimitOf;
 	onToggle: (owner: IReportCreationOwner) => void;
 	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
 }
@@ -133,6 +180,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	teams,
 	portfolios,
 	picked,
+	limitOf,
 	onToggle,
 	onSelectAll,
 }) => {
@@ -144,6 +192,7 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 				teams={teams}
 				portfolios={portfolios}
 				picked={picked}
+				limitOf={limitOf}
 				onToggle={onToggle}
 				onSelectAll={onSelectAll}
 				stepNumber={activeStep + 1}
@@ -218,14 +267,21 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 		setPicked(next);
 	};
 
+	const limitOf = limitOfFor(draft, templates);
+	const canHold = (owner: IReportCreationOwner) => limitOf(owner) === null;
+
 	const selectAll = (owners: readonly IReportCreationOwner[]) =>
 		setPicked(
-			new Set([...picked, ...owners.map((owner) => ownerKeyOf(owner))]),
+			new Set([
+				...picked,
+				...owners.filter(canHold).map((owner) => ownerKeyOf(owner)),
+			]),
 		);
 
-	const pickedOwners = [...teams, ...portfolios].filter((owner) =>
-		picked.has(ownerKeyOf(owner)),
+	const pickedOwners = [...teams, ...portfolios].filter(
+		(owner) => picked.has(ownerKeyOf(owner)) && canHold(owner),
 	);
+	const pickedKeys = new Set(pickedOwners.map(ownerKeyOf));
 
 	const create = () =>
 		creation.mutate({
@@ -277,7 +333,8 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 						onRetryOwners={onRetryOwners}
 						teams={teams}
 						portfolios={portfolios}
-						picked={picked}
+						picked={pickedKeys}
+						limitOf={limitOf}
 						onToggle={toggle}
 						onSelectAll={selectAll}
 					/>

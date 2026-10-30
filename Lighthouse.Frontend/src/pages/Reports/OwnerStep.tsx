@@ -5,10 +5,12 @@ import {
 	CircularProgress,
 	FormControlLabel,
 	FormGroup,
+	Link,
 	Stack,
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { Link as RouterLink } from "react-router";
 import {
 	type IReportCreationOwner,
 	MOST_PER_BULK_RUN,
@@ -26,6 +28,17 @@ export const OVER_THE_CEILING_ID = "owners-over-the-ceiling";
 export const isOverTheCeiling = (pickedCount: number): boolean =>
 	pickedCount > MOST_PER_BULK_RUN;
 
+/** Why an owner cannot hold the window: when its kept history starts and when Then would start, both as shown. */
+export interface OwnerLimit {
+	keptSince: string;
+	thenStarts: string;
+}
+
+export type OwnerLimitOf = (owner: IReportCreationOwner) => OwnerLimit | null;
+
+const settingsPathOf = (owner: IReportCreationOwner): string =>
+	`/${owner.ownerKind === "team" ? "teams" : "portfolios"}/${owner.ownerId}/settings`;
+
 /** Whether the owners to pick from are known: still on their way, could not be loaded, or here. */
 export type OwnersStatus = "loading" | "failed" | "ready";
 
@@ -37,6 +50,7 @@ interface OwnerStepProps {
 	/** Listed after the Teams, in the order they are sent. */
 	portfolios: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
+	limitOf: OwnerLimitOf;
 	onToggle: (owner: IReportCreationOwner) => void;
 	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
 	stepNumber: number;
@@ -48,6 +62,7 @@ interface OwnerGroupProps {
 	heading: string;
 	owners: readonly IReportCreationOwner[];
 	picked: ReadonlySet<string>;
+	limitOf: OwnerLimitOf;
 	onToggle: (owner: IReportCreationOwner) => void;
 	onSelectAll: (owners: readonly IReportCreationOwner[]) => void;
 	disabled: boolean;
@@ -63,6 +78,7 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 	heading,
 	owners,
 	picked,
+	limitOf,
 	onToggle,
 	onSelectAll,
 	disabled,
@@ -85,20 +101,32 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 				Select all
 			</Button>
 		</Box>
-		{owners.map((owner) => (
-			<FormControlLabel
-				key={ownerKeyOf(owner)}
-				label={owner.ownerName}
-				control={
-					<Checkbox
-						checked={picked.has(ownerKeyOf(owner))}
-						disabled={disabled}
-						onChange={() => onToggle(owner)}
-						slotProps={{ input: { "aria-label": owner.ownerName } }}
+		{owners.map((owner) => {
+			const limit = limitOf(owner);
+			return (
+				<Box key={ownerKeyOf(owner)}>
+					<FormControlLabel
+						label={owner.ownerName}
+						control={
+							<Checkbox
+								checked={picked.has(ownerKeyOf(owner))}
+								disabled={disabled || limit !== null}
+								onChange={() => onToggle(owner)}
+								slotProps={{ input: { "aria-label": owner.ownerName } }}
+							/>
+						}
 					/>
-				}
-			/>
-		))}
+					{limit !== null && (
+						<Typography variant="body2" color="text.secondary" sx={{ pl: 4 }}>
+							{`Kept history starts ${limit.keptSince}; Then starts ${limit.thenStarts}.`}{" "}
+							<Link component={RouterLink} to={settingsPathOf(owner)}>
+								{`Open ${owner.ownerName} settings`}
+							</Link>
+						</Typography>
+					)}
+				</Box>
+			);
+		})}
 	</FormGroup>
 );
 

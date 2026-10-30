@@ -92,3 +92,16 @@ export const reportWindowCheck = (
 		? thenRefusal(entered.end, entered.lengthDays, bounds)
 		: nowRefusal(entered.lengthDays, bounds);
 };
+
+/** Whether the window would start before the day this owner's kept history begins, which only that owner's own bound can tell. */
+export const ownerCannotHold = (
+	entered: EnteredReportWindow,
+	bounds: ReportWindowBounds,
+	owner: { earliestStart: string | null },
+): boolean => {
+	const refusal = reportWindowCheck(entered, {
+		...bounds,
+		earliestStart: owner.earliestStart,
+	});
+	return refusal === "then-before-cutoff" || refusal === "now-before-cutoff";
+};

@@ -42,6 +42,18 @@ const theOwnersOffered = () =>
 		getCreationOptions: vi.fn().mockResolvedValue(equinoxKeepsSince30Jul),
 	});
 
+// The kit's default reader is not Admin of Equinox, and the owner step lists only owners its reader is Admin of.
+const renderAsAdminOfEquinox = (
+	scene: Pick<
+		NonNullable<Parameters<typeof renderTheReportsPage>[0]>,
+		"reportService"
+	>,
+) =>
+	renderTheReportsPage({
+		...scene,
+		permissions: { adminOf: [ZENITH, GRAVITY, EQUINOX, OCEAN_EXPLORER] },
+	});
+
 const toTheOwnerStepWithThenEnding29Jul = async (
 	user: Parameters<typeof toTheOwnerStep>[0],
 	thenPreset = "90 days",
@@ -50,8 +62,8 @@ const toTheOwnerStepWithThenEnding29Jul = async (
 };
 
 describe("Owners that cannot hold the window", () => {
-	it.skip(`Equinox is listed but cannot be picked, and says why and where to change it (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
+	it(`Equinox is listed but cannot be picked, and says why and where to change it (${pending})`, async () => {
+		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
 
@@ -72,8 +84,8 @@ describe("Owners that cannot hold the window", () => {
 		expect(whereTheReaderIs()).toBe(`/teams/${EQUINOX.id}/settings`);
 	});
 
-	it.skip(`Select all picks every Team that can hold the window and leaves Equinox out (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
+	it(`Select all picks every Team that can hold the window and leaves Equinox out (${pending})`, async () => {
+		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
 
@@ -92,7 +104,7 @@ describe("Owners that cannot hold the window", () => {
 	});
 
 	it.skip(`a shorter window that stays inside Equinox's kept history makes it pickable (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
+		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),
 		});
 
@@ -103,7 +115,7 @@ describe("Owners that cannot hold the window", () => {
 	});
 
 	it.skip(`a Then starting on the very day the kept history starts can be held (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
+		const { user } = renderAsAdminOfEquinox({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
 				getCreationOptions: vi
@@ -119,8 +131,8 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByRole("checkbox", { name: EQUINOX.name })).toBeEnabled();
 	});
 
-	it.skip(`when every owner picked cannot hold the window nothing can be created (${pending})`, async () => {
-		const { user } = renderTheReportsPage({
+	it(`when every owner picked cannot hold the window nothing can be created (${pending})`, async () => {
+		const { user } = renderAsAdminOfEquinox({
 			reportService: aReportService({
 				getAllReports: vi.fn().mockResolvedValue(everyReport()),
 				getCreationOptions: vi
@@ -133,6 +145,7 @@ describe("Owners that cannot hold the window", () => {
 
 		await toTheOwnerStepWithThenEnding29Jul(user);
 
+		expect(screen.getByRole("checkbox", { name: EQUINOX.name })).toBeDisabled();
 		expect(screen.getByRole("button", { name: createCount(0) })).toBeDisabled();
 	});
 });

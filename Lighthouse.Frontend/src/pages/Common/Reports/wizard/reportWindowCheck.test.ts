@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import boundaries from "../../../../tests/reportWindowBoundaries.json";
 import {
 	type EnteredReportWindow,
+	ownerCannotHold,
 	type ReportWindowBounds,
 	type ReportWindowRefusal,
 	reportWindowCheck,
@@ -86,5 +87,37 @@ describe("the edges of a report window, checked as the server checks them", () =
 		expect(answer(reportWindowCheck({ side: "now", lengthDays }, bounds))).toBe(
 			expected,
 		);
+	});
+});
+
+describe("an owner that cannot hold a window, by its own oldest kept day", () => {
+	it.each(rows)(
+		"answers $case by whether the window starts before it",
+		(row) => {
+			const bounds = boundsFor(row);
+
+			expect(
+				ownerCannotHold(entered(row), bounds, {
+					earliestStart: bounds.earliestStart,
+				}),
+			).toBe(row.refusal?.endsWith("before-cutoff") ?? false);
+		},
+	);
+
+	it("reads the owner's own oldest kept day, not the one the report types were answered with", () => {
+		const window: EnteredReportWindow = {
+			side: "then",
+			end: "2026-07-29",
+			lengthDays: 90,
+		};
+
+		expect(
+			ownerCannotHold(window, boundaries.bounds, { earliestStart: null }),
+		).toBe(false);
+		expect(
+			ownerCannotHold(window, boundaries.bounds, {
+				earliestStart: "2026-07-30",
+			}),
+		).toBe(true);
 	});
 });
