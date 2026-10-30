@@ -1,5 +1,5 @@
 import type { GridRowId } from "@mui/x-data-grid";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import { useState } from "react";
 import type { Mock } from "vitest";
@@ -935,5 +935,18 @@ describe("Picking rows with checkboxes", () => {
 		expect(rowCheckboxOf("Alice")).not.toBeChecked();
 		expect(rowCheckboxOf("Bob")).toBeChecked();
 		expect(rowCheckboxOf("Charlie")).not.toBeChecked();
+	});
+
+	it("drops the picks a column filter hides and keeps the ones it still shows", async () => {
+		const onPicked = vi.fn();
+		render(<PickingGrid initiallyPicked={[1, 2, 3]} onPicked={onPicked} />);
+		const user = userEvent.setup();
+
+		await user.click(screen.getByLabelText("Name column menu"));
+		await user.click(await screen.findByRole("menuitem", { name: /filter/i }));
+		await user.type(await screen.findByLabelText("Value"), "Bob");
+
+		await waitFor(() => expect(onPicked).toHaveBeenLastCalledWith([2]));
+		expect(rowCheckboxOf("Bob")).toBeChecked();
 	});
 });

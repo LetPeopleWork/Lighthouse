@@ -333,7 +333,7 @@ describe("Remove several reports at once", () => {
 });
 
 describe("Picking reports", () => {
-	it(`above 50 picked, Remove and Export PDF are disabled and say at most 50`, async () => {
+	it("above 50 picked, Remove is disabled and says at most 50", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH)),
@@ -397,7 +397,7 @@ describe("Picking reports", () => {
 		).toBeInTheDocument();
 	});
 
-	it(`Select all picks every row the filter shows, on every page`, async () => {
+	it("Select all picks every row, on every page", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 70)),
