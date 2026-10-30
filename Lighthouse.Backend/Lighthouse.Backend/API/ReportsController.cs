@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/reports")]
     [Route("api/latest/reports")]
     [ApiController]
-    public class ReportsController(IReportQueries queries, IReportOwnerLookup owners, IReportBulkCommands bulkCommands, IRbacAdministrationService rbacAdministrationService) : ControllerBase
+    public class ReportsController(IReportQueries queries, IReportOwnerLookup owners, IReportBulkCommands bulkCommands, IReportBulkRemover bulkRemover, IRbacAdministrationService rbacAdministrationService) : ControllerBase
     {
         [HttpGet]
         public async Task<ActionResult<ReportsAcrossOwners>> GetReports()
@@ -68,7 +68,7 @@ namespace Lighthouse.Backend.API
                 return ValidationProblem($"A removal holds at most {IReportBulkCommands.MostOwnersPerRun} reports.");
             }
 
-            var outcomes = await bulkCommands.RemoveEach(asked, new ReportOwnerWriteAccess(rbacAdministrationService, User));
+            var outcomes = await bulkRemover.RemoveEach(asked, new ReportOwnerWriteAccess(rbacAdministrationService, User));
             return Ok(new ReportBulkRemoval(outcomes));
         }
 

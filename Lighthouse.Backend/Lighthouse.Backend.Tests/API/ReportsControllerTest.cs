@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
         private ReportsController Subject()
-            => new(Mock.Of<IReportQueries>(), Mock.Of<IReportOwnerLookup>(), bulkCommands.Object, Mock.Of<IRbacAdministrationService>())
+            => new(Mock.Of<IReportQueries>(), Mock.Of<IReportOwnerLookup>(), bulkCommands.Object, Mock.Of<IReportBulkRemover>(), Mock.Of<IRbacAdministrationService>())
             {
                 ControllerContext = new ControllerContext
                 {

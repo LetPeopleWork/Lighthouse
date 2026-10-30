@@ -1338,6 +1338,7 @@ namespace Lighthouse.Backend
             services.AddScoped<IReportQueries, ReportQueries>();
             services.AddScoped<IReportCommands, ReportCommands>();
             services.AddScoped<IReportBulkCommands, ReportBulkCommands>();
+            services.AddScoped<IReportBulkRemover, ReportBulkRemover>();
         }
 
         private static void RegisterServices(WebApplicationBuilder builder)

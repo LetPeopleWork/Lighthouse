@@ -10836,8 +10836,8 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
   (`api/latest/reports`) filters by Read through `IRbacAdministrationService` and hands the module readable owners;
   for writes it hands in a capability (`IReportOwnerWriteAccess.MayWriteAsync(owner)`) bound to the caller over
   `CanWriteTeamAsync` / `CanWritePortfolioAsync`.
-- **A bulk run is a loop over the single path**: `ReportBulkCommands` calls `ReportCommands.Create` / `Delete` owner by
-  owner, sequentially; a failed owner is caught, its pending change discarded (`IReportWriter.DiscardPendingChanges`)
+- **A bulk run is a loop over the single path**: `ReportBulkCommands` calls `ReportCommands.Create` and
+  `ReportBulkRemover` calls `ReportCommands.Delete`, owner by owner, sequentially; a failed owner is caught, its pending change discarded (`IReportWriter.DiscardPendingChanges`)
   and answered `not-saved`; Admin (an async capability) checked when the run reaches that owner. One
   outcome per owner or report, in the order asked; never all-or-nothing. Premium for creation by `LicenseGuard`; a
   mid-run licence lapse is the existing cap refusal. Three refusal codes added: `owner-not-found`, `not-admin`,
@@ -10859,7 +10859,8 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
 ### Component changes
 
 - NEW, backend: `ReportsController` (`GET reports`, `GET reports/creation-options`, `POST reports/bulk`,
-  `POST reports/bulk-removal`), `IReportBulkCommands` / `ReportBulkCommands`, `IReportOwnerWriteAccess` and its
+  `POST reports/bulk-removal`), `IReportBulkCommands` / `ReportBulkCommands` (creation),
+  `IReportBulkRemover` / `ReportBulkRemover` (removal), `IReportOwnerWriteAccess` and its
   API-side adapter, outcome records, bulk request DTOs.
 - MODIFIED, backend: `IReportQueries` / `ReportQueries` (`ListAcross`, `CreationOptions`), `IReportReader` /
   `ReportRepository` (`ListForOwners`, `OwnerOf`), `IReportOwnerLookup` / `ReportOwnerLookup` (`All()` projection),
