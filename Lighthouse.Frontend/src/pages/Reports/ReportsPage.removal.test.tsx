@@ -73,7 +73,7 @@ const pickTheThree = async (
 const theConfirmation = () => screen.findByRole("dialog");
 
 describe("Remove several reports at once", () => {
-	it.skip(`a coach removes three trial reports on two Teams and a Portfolio, and they leave the list (${pending})`, async () => {
+	it(`a coach removes three trial reports on two Teams and a Portfolio, and they leave the list (${pending})`, async () => {
 		const getAllReports = theThreeOfThem()
 			.mockResolvedValueOnce(
 				everyReport(zenithsQuarter, gravitysQuarter, oceanExplorersMonth),
@@ -110,7 +110,7 @@ describe("Remove several reports at once", () => {
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
-	it.skip(`Cancel removes nothing (${pending})`, async () => {
+	it(`Cancel removes nothing (${pending})`, async () => {
 		const removeReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem(), removeReportsInBulk),
