@@ -2169,3 +2169,13 @@ Clients: `EVERY_REPORT`, `EVERY_REPORT_READ`; CLI `lhAgainst`; MCP `anAssistantL
 RED classification in `distill/red-classification.md`: every un-skipped scenario failed for a missing behaviour,
 none for a broken setup, apart from the guards that already hold. DS decisions and the AC traceability matrix are in
 `distill/wave-decisions.md`; `distill/upstream-issues.md` has none open that blocks DELIVER.
+
+### Maintainer decisions on the open questions (2026-10-30, after slice 03)
+
+- The could-not-load dialog title, the "Pick at most 50" placement, the generic line for a duplicate-metric refusal,
+  the Groups / FolderSpecial owner icons, UI-7 ("Select at least one report.") and UI-8 (the could-not-confirm
+  sentence for removal) stay as built.
+- The Reports page lists Portfolios first, then Teams, each alphabetically by owner name, until the reader sorts a
+  column (settles OQ-1).
+- The Remove tooltip's wording is settled at the slice 05 sketch.
+- The hand-throttled pass of the owner step runs now, before slice 04.
