@@ -1,0 +1,78 @@
+schema_version: 1
+feature_id: epic-6455-deeper-hierarchies
+updated: 2026-10-30
+ado: "#6455 Deeper hierarchies: portfolio items that are not direct parents of the team's items (supersedes #5806, #6119)"
+note: >
+  DISCOVER seed, 2026-10-30. Describes today's journey (as-is), which fails, so DIVERGE and DISCUSS can
+  design the to-be journey against it. Customers are anonymised (Customer A, Customer B). Tracker type
+  names (Story, Epic, Change, Business Epic) are the customers' literal issue types; terms in braces
+  ({feature}, {work items}, {portfolio}) render as the instance's configured words. Full evidence in
+  docs/feature/epic-6455-deeper-hierarchies/feature-delta.md.
+
+journeys:
+
+  - name: set-up-a-portfolio-at-a-level-two-steps-above-the-teams-items
+    status: as-is (fails)
+    goal: >
+      An admin whose organisation promises at a level two or more steps above the Teams' items (a Change
+      above Epics above Stories) sets up a {portfolio} at that level and expects to see when each of those
+      items will land.
+    persona: config-admin
+    consumer: delivery-forecaster
+    evidence: [Customer A (stopped), Customer B (warning in a real instance), maintainer-reported unnamed cases]
+    emotional_arc:
+      start: Hopeful - "We plan in Changes, so the Portfolio should be Changes."
+      middle: Confused - "Every Change says no child Work Items were found. Our Stories are all there."
+      end: Blocked - "The dates are guesses. I cannot show these to anyone." (Customer A stopped here.)
+    steps:
+      - id: 1
+        name: Create the {portfolio} with the top-level type as its {feature} type
+        action: Portfolio wizard -> {feature} types = Change (Customer A) / Business Epic (Customer B)
+        shared_artifacts:
+          - name: feature_type
+            source: Portfolio work item types
+        emotional_state: {entry: hopeful, exit: hopeful}
+        failure_modes:
+          - Nothing at setup says the Teams' {work items} must be direct children of these {features}
+      - id: 2
+        name: Teams refresh; the {portfolio} refreshes
+        action: background refresh
+        shared_artifacts:
+          - name: parent_reference
+            source: each {work item}'s direct parent (an Epic), WorkItemBase.ParentReferenceId
+        failure_modes:
+          - No {work item} names a Change as its parent, so every Change gets no {work items}
+          - The Team's Feature WIP counts Epics and lists them as "not tracked by Lighthouse"
+      - id: 3
+        name: Read the forecasts
+        action: Portfolio page -> {features} table
+        shared_artifacts:
+          - name: default_size_warning
+            source: featureWarningSentences.ts ("No child {work items} were found for this {feature} ...")
+        emotional_state: {entry: confused, exit: blocked}
+        failure_modes:
+          - Every date is built from the default {feature} size, not from real work
+          - The only partial workaround (Epic as {feature} type plus one rule-based Delivery per Change) is not suggested anywhere
+    open_questions:
+      - Do all Stories reach the top level through the same number of steps?
+      - Should the intermediate level (Epics) be visible, or only looked through?
+      - Which level does Team Feature WIP count?
+
+  - name: see-the-strategic-level-above-well-mapped-features
+    status: as-is (gap)
+    goal: >
+      A delivery lead whose Epics map cleanly onto {features} (value streams as {portfolios}) wants to say
+      when each initiative above them lands.
+    persona: delivery-lead-rte
+    evidence: [maintainer-reported, unnamed customers; Epic 5806 desk research]
+    emotional_arc:
+      start: Uneasy - "Leadership asks about initiatives; I have {feature} dates."
+      end: Unresolved - "I build the answer by hand from several {feature} dates."
+    failure_modes:
+      - The Parent column shows the initiative, but nothing rolls its {features} up into one date
+      - Only one level above the {feature} is fetched, so a Program above a Project is never seen
+
+changelog:
+  - date: 2026-10-30
+    feature: epic-6455-deeper-hierarchies
+    change: Created in DISCOVER as an as-is seed for shapes (a) and (b).
