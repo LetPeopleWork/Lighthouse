@@ -99,6 +99,26 @@ describe("Owners that cannot hold the window", () => {
 		expect(screen.getByText(OWNER_STEP)).toBeInTheDocument();
 	});
 
+	it("in the desktop app the settings link stays in the app, which opens no second window", async () => {
+		const desktop = globalThis as { __TAURI_INTERNALS__?: unknown };
+		desktop.__TAURI_INTERNALS__ = {};
+		try {
+			const { user } = renderAsAdminOfEquinox({
+				reportService: theOwnersOffered(),
+			});
+
+			await toTheOwnerStepWithThenEnding29Jul(user);
+
+			const settings = screen.getByRole("link", {
+				name: openSettingsOf(EQUINOX.name),
+			});
+			expect(settings).toHaveAttribute("href", `/teams/${EQUINOX.id}/settings`);
+			expect(settings).not.toHaveAttribute("target");
+		} finally {
+			delete desktop.__TAURI_INTERNALS__;
+		}
+	});
+
 	it("Select all picks every Team that can hold the window and leaves Equinox out", async () => {
 		const { user } = renderAsAdminOfEquinox({
 			reportService: theOwnersOffered(),

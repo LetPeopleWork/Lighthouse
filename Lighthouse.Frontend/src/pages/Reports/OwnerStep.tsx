@@ -10,12 +10,14 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { Link as RouterLink } from "react-router";
 import {
 	type IReportCreationOwner,
 	MOST_PER_BULK_RUN,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
+import { isTauriEnv } from "../../utils/tauri";
 
 export const ownerKeyOf = (
 	owner: Pick<IReportCreationOwner, "ownerKind" | "ownerId">,
@@ -38,6 +40,29 @@ export type OwnerLimitOf = (owner: IReportCreationOwner) => OwnerLimit | null;
 
 const settingsPathOf = (owner: IReportCreationOwner): string =>
 	`/${owner.ownerKind === "team" ? "teams" : "portfolios"}/${owner.ownerId}/settings`;
+
+/**
+ * In a browser the owner's settings open in a new tab, so the wizard keeps what the reader has entered. The desktop
+ * app opens no second window, so there the link moves within the app instead.
+ */
+const SettingsLink: React.FC<Readonly<{ owner: IReportCreationOwner }>> = ({
+	owner,
+}) => {
+	const name = `Open ${owner.ownerName} settings`;
+	return isTauriEnv() ? (
+		<Link component={RouterLink} to={settingsPathOf(owner)}>
+			{name}
+		</Link>
+	) : (
+		<Link
+			href={settingsPathOf(owner)}
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			{name}
+		</Link>
+	);
+};
 
 /** Whether the owners to pick from are known: still on their way, could not be loaded, or here. */
 export type OwnersStatus = "loading" | "failed" | "ready";
@@ -127,13 +152,7 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 							<span id={limitId}>
 								{`Kept history starts ${limit.keptSince}; ${limit.window} starts ${limit.windowStarts}.`}
 							</span>{" "}
-							<Link
-								href={settingsPathOf(owner)}
-								target="_blank"
-								rel="noopener noreferrer"
-							>
-								{`Open ${owner.ownerName} settings`}
-							</Link>
+							<SettingsLink owner={owner} />
 						</Typography>
 					)}
 				</Box>
