@@ -268,6 +268,12 @@ describe("DeliveryBurnupChart", () => {
 				/builds forward from today — no snapshots recorded yet/i,
 			),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Delivery Burnup" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "About Delivery Burnup" }),
+		).toBeInTheDocument();
 		expect(lineChartMock).not.toHaveBeenCalled();
 	});
 });

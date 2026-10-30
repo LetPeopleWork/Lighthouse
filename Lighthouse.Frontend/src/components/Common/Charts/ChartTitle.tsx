@@ -18,6 +18,7 @@ const ChartTitle = ({
 		sx={{
 			display: "flex",
 			alignItems: "center",
+			flexWrap: "wrap",
 			justifyContent: "space-between",
 			gap: 1,
 		}}

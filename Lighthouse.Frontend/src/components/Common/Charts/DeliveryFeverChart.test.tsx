@@ -237,8 +237,8 @@ describe("DeliveryFeverChart", () => {
 		const props = getLatestChartProps();
 		expect(props?.xAxis?.[0]?.min).toBe(0);
 		expect(props?.xAxis?.[0]?.max).toBe(100);
-		expect(props?.xAxis?.[0]?.label).toMatch(/completion/i);
-		expect(props?.yAxis?.[0]?.label).toMatch(/late/i);
+		expect(props?.xAxis?.[0]?.label).toBe("Completion Rate (%)");
+		expect(props?.yAxis?.[0]?.label).toBe("Chance of Being Late (%)");
 	});
 
 	it("shows the forward-only empty state and no chart when no feature was recorded", () => {
@@ -246,6 +246,12 @@ describe("DeliveryFeverChart", () => {
 
 		expect(
 			screen.getByText(/no feature snapshots recorded yet/i),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Delivery Progress" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "About Delivery Progress" }),
 		).toBeInTheDocument();
 		expect(scatterChartMock).not.toHaveBeenCalled();
 	});

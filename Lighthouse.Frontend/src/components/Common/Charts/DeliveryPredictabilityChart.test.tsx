@@ -199,7 +199,19 @@ describe("DeliveryPredictabilityChart likelihood view", () => {
 				/builds forward from today — no snapshots recorded yet/i,
 			),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Delivery Predictability" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "About Delivery Predictability" }),
+		).toBeInTheDocument();
 		expect(lineChartMock).not.toHaveBeenCalled();
+	});
+
+	it("labels the y-axis as a likelihood percentage", () => {
+		render(<DeliveryPredictabilityChart history={getMockHistory()} />);
+
+		expect(getLatestChartProps()?.yAxis?.[0]?.label).toBe("Likelihood (%)");
 	});
 
 	it("uses the default Delivery Predictability title when none is provided", () => {
@@ -338,6 +350,16 @@ describe("DeliveryPredictabilityChart when view", () => {
 			new Date("2026-06-12T00:00:00Z").getTime(),
 			new Date("2026-06-09T00:00:00Z").getTime(),
 		]);
+	});
+
+	it("labels the when-view y-axis as the forecast completion date", () => {
+		render(<DeliveryPredictabilityChart history={getMockWhenHistory()} />);
+
+		switchToWhenView();
+
+		expect(getLatestChartProps()?.yAxis?.[0]?.label).toBe(
+			"Forecast completion date",
+		);
 	});
 
 	it("plots the when view against a date y-axis", () => {

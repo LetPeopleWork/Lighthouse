@@ -243,6 +243,12 @@ describe("DeliveryEpicSizeChart count line", () => {
 				/builds forward from today — no snapshots recorded yet/i,
 			),
 		).toBeInTheDocument();
+		expect(
+			screen.getByRole("heading", { name: "Features over Time" }),
+		).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "About Features over Time" }),
+		).toBeInTheDocument();
 		expect(chartsContainerMock).not.toHaveBeenCalled();
 	});
 
