@@ -35,3 +35,12 @@ styling. jsdom computes no layout, so no unit test can see the difference, and a
 would pin CSS rather than behaviour. That is the same call earlier features made for spacing and wrap
 literals. What the component *does* (it shows the title, the `About <title>` button, the popover text,
 the Learn More link and the optional action) is killed by the chart and tab tests.
+
+## Re-run after the popover restructure (2026-10-30, rebased onto origin/main)
+
+The maintainer asked for each popover to split into "What you see" and "How to read it" lists, which
+changed `deliveryChartInfo.ts` and `ChartTitle.tsx` after the run above. An incremental re-run on the
+same config scored **82.28 %** (65 killed, 14 survived). `deliveryChartInfo.ts` is at 100 % (51
+killed), because the tab test pins every bullet in order. All 14 survivors are `sx` literals in
+`ChartTitle.tsx`: the header row, the section heading's `display`/`lineHeight`, the list's margin and
+indent, and `display: "list-item"`. They are styling, accepted on the same grounds as above.
