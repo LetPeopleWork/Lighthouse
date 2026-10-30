@@ -23,6 +23,16 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                 .OrderBy(report => report.Id)];
         }
 
+        public ReportOwner? OwnerOf(int reportId)
+        {
+            var owner = context.Reports.AsNoTracking()
+                .Where(report => report.Id == reportId)
+                .Select(report => new Report { TeamId = report.TeamId, PortfolioId = report.PortfolioId })
+                .SingleOrDefault();
+
+            return owner?.OwnedBy();
+        }
+
         public int CountOfTemplate(ReportOwner owner, string templateKey)
             => OwnedBy(owner).Count(report => report.TemplateKey == templateKey);
 

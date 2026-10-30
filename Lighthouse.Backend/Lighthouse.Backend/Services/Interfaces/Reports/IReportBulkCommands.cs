@@ -9,5 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
 
         /// <summary>Creates the same report for each owner, one after another in the order given, and answers every owner.</summary>
         Task<IReadOnlyList<ReportOwnerOutcome>> CreateForEach(IReadOnlyList<ReportOwner> owners, NewReport request, IReportOwnerWriteAccess writeAccess);
+
+        /// <summary>Removes each report from the owner the server finds for it, one after another in the order given, and answers every report.</summary>
+        Task<IReadOnlyList<ReportRemovalOutcome>> RemoveEach(IReadOnlyList<int> reportIds, IReportOwnerWriteAccess writeAccess);
     }
 }

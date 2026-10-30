@@ -85,6 +85,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
         }
 
         [Test]
+        public async Task A_report_names_its_own_owner_and_an_unknown_report_names_none()
+        {
+            var teamReport = await Stored(ReportOwner.Team(SharedId), "The Team's");
+            var portfolioReport = await Stored(ReportOwner.Portfolio(SharedId), "The Portfolio's");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(subject.OwnerOf(teamReport.Id), Is.EqualTo(ReportOwner.Team(SharedId)));
+                Assert.That(subject.OwnerOf(portfolioReport.Id), Is.EqualTo(ReportOwner.Portfolio(SharedId)));
+                Assert.That(subject.OwnerOf(portfolioReport.Id + 1), Is.Null);
+            }
+        }
+
+        [Test]
         public async Task Discarding_pending_changes_forgets_what_was_not_saved_and_keeps_what_was()
         {
             var stored = await Stored(ReportOwner.Team(SharedId), "Stored");

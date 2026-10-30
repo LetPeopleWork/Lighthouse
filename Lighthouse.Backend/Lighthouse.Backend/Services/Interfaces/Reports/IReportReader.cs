@@ -9,5 +9,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Reports
         IReadOnlyList<Report> ListForOwner(ReportOwner owner);
 
         IReadOnlyList<Report> ListForOwners(IReadOnlyCollection<ReportOwner> owners);
+
+        /// <summary>The Team or Portfolio the report belongs to, or null when no such report is stored.</summary>
+        ReportOwner? OwnerOf(int reportId);
     }
 }

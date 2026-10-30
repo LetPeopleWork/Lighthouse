@@ -25,4 +25,23 @@ namespace Lighthouse.Backend.Models.Reports
     }
 
     public sealed record ReportBulkCreation(IReadOnlyList<ReportOwnerOutcome> Outcomes);
+
+    public enum ReportRemovalStatus
+    {
+        [JsonStringEnumMemberName("removed")]
+        Removed,
+
+        [JsonStringEnumMemberName("notRemoved")]
+        NotRemoved,
+    }
+
+    /// <summary>What a run did for one report: removed, possibly by somebody else first, or not removed with the reason.</summary>
+    public sealed record ReportRemovalOutcome(int ReportId, ReportRemovalStatus Status, string? Code)
+    {
+        public static ReportRemovalOutcome Removed(int reportId, string? code = null) => new(reportId, ReportRemovalStatus.Removed, code);
+
+        public static ReportRemovalOutcome NotRemoved(int reportId, string code) => new(reportId, ReportRemovalStatus.NotRemoved, code);
+    }
+
+    public sealed record ReportBulkRemoval(IReadOnlyList<ReportRemovalOutcome> Outcomes);
 }

@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         private static readonly NewReport ATrialReport = TheMonthsComparison with { Name = TrialRun };
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_coach_removes_reports_on_two_Teams_and_a_Portfolio_in_one_go_on_a_Community_instance()
         {
             TheInstanceHasAPremiumLicence();

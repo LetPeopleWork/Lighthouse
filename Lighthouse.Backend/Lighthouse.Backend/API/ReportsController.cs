@@ -55,6 +55,13 @@ namespace Lighthouse.Backend.API
             return Ok(new ReportBulkCreation(outcomes));
         }
 
+        [HttpPost("bulk-removal")]
+        public async Task<ActionResult<ReportBulkRemoval>> RemoveEach([FromBody] ReportRemovalRequest request)
+        {
+            var outcomes = await bulkCommands.RemoveEach(request.ReportIds ?? [], new ReportOwnerWriteAccess(rbacAdministrationService, User));
+            return Ok(new ReportBulkRemoval(outcomes));
+        }
+
         /// <summary>
         /// The owners asked for, each once at the place it was first named, so the ceiling counts distinct owners;
         /// null when one lacks its id or names a kind that is neither Team nor Portfolio.

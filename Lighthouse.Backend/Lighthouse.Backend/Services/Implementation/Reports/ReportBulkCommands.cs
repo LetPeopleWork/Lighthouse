@@ -5,11 +5,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Reports
 {
-    public class ReportBulkCommands(IReportCommands commands, IReportWriter writer, IReportOwnerLookup ownerLookup, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportBulkCommands> logger) : IReportBulkCommands
+#pragma warning disable S107 // Removal finds each report's owner through the read port, on top of what creation already needs; grouping unrelated collaborators into one object only to stay under the threshold would hide which run uses which.
+    public class ReportBulkCommands(IReportCommands commands, IReportReader reader, IReportWriter writer, IReportOwnerLookup ownerLookup, IEnumerable<IReportTemplate> templates, ILighthouseClock clock, TimeProvider timeProvider, ILogger<ReportBulkCommands> logger) : IReportBulkCommands
+#pragma warning restore S107
     {
         public const double SlowCreationRunMilliseconds = 20_000;
 
+        public const double SlowRemovalRunMilliseconds = 10_000;
+
         private const string CreateAction = "create";
+
+        private const string RemoveAction = "remove";
 
         private const string UnknownTemplate = "unknown";
 
@@ -33,6 +39,44 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             {
                 LogCreationRun(request, owners.Count, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
             }
+        }
+
+        public async Task<IReadOnlyList<ReportRemovalOutcome>> RemoveEach(IReadOnlyList<int> reportIds, IReportOwnerWriteAccess writeAccess)
+        {
+            var started = timeProvider.GetTimestamp();
+
+            var outcomes = new List<ReportRemovalOutcome>(reportIds.Count);
+            try
+            {
+                foreach (var reportId in reportIds)
+                {
+                    outcomes.Add(await Remove(reportId, writeAccess));
+                }
+
+                return outcomes;
+            }
+            finally
+            {
+                LogRemovalRun(reportIds.Count, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
+            }
+        }
+
+        private async Task<ReportRemovalOutcome> Remove(int reportId, IReportOwnerWriteAccess writeAccess)
+        {
+            // A report already gone has no owner left whose Admin right could be checked, and removing it changes nothing.
+            if (reader.OwnerOf(reportId) is not ReportOwner owner)
+            {
+                return ReportRemovalOutcome.Removed(reportId, ReportRefusalCodes.AlreadyGone);
+            }
+
+            if (!await writeAccess.MayWriteAsync(owner))
+            {
+                return ReportRemovalOutcome.NotRemoved(reportId, ReportRefusalCodes.NotAdmin);
+            }
+
+            return await commands.Delete(owner, reportId) == ReportOutcomeStatus.Done
+                ? ReportRemovalOutcome.Removed(reportId)
+                : ReportRemovalOutcome.Removed(reportId, ReportRefusalCodes.AlreadyGone);
         }
 
         private async Task<ReportOwnerOutcome> CreateFor(ReportOwner owner, NewReport request, IReportOwnerWriteAccess writeAccess)
@@ -95,6 +139,25 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
 
             logger.LogInformation("report-bulk-run: {Action} with template {TemplateKey}, Then {ThenLengthDays} days and Now {NowLengthDays} days, {Asked} asked, {Done} done, {NotDone} not done, refused {RefusedByCode}, in {ElapsedMs} ms",
                 CreateAction, templateKey, thenLengthDays, nowLengthDays, asked, done, asked - done, refusedByCode, elapsedMs);
+        }
+
+        private void LogRemovalRun(int asked, List<ReportRemovalOutcome> outcomes, double elapsedMs)
+        {
+            var done = outcomes.Count(outcome => outcome.Status == ReportRemovalStatus.Removed);
+            var refusedByCode = outcomes
+                .Where(outcome => outcome.Status == ReportRemovalStatus.NotRemoved && outcome.Code is not null)
+                .GroupBy(outcome => outcome.Code!, StringComparer.Ordinal)
+                .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+
+            if (elapsedMs > SlowRemovalRunMilliseconds)
+            {
+                logger.LogWarning("report-bulk-run-slow: {Action}, {Asked} asked, {Done} done, {NotDone} not done, refused {RefusedByCode}, took {ElapsedMs} ms",
+                    RemoveAction, asked, done, asked - done, refusedByCode, elapsedMs);
+                return;
+            }
+
+            logger.LogInformation("report-bulk-run: {Action}, {Asked} asked, {Done} done, {NotDone} not done, refused {RefusedByCode}, in {ElapsedMs} ms",
+                RemoveAction, asked, done, asked - done, refusedByCode, elapsedMs);
         }
     }
 }

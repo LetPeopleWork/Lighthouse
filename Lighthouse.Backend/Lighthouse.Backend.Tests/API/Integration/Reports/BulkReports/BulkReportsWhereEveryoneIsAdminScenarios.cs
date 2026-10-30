@@ -56,7 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task Every_report_may_be_removed_in_one_run()
         {
             var gravity = ATeam("Gravity");

@@ -39,6 +39,9 @@ namespace Lighthouse.Backend.Models.Reports
 
         public const string NotSaved = "not-saved";
 
+        /// <summary>Not a refusal: a report removed before the run reached it, answered as removed but never counted as this run's deletion.</summary>
+        public const string AlreadyGone = "already-gone";
+
         /// <summary>A window refused for reaching before the owner's kept history; its answer also names the first day that history holds.</summary>
         public static bool NamesEarliestStart(string? code) => code is ThenBeforeCutoff or NowBeforeCutoff;
     }
