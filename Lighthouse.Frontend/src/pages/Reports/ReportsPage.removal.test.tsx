@@ -19,6 +19,7 @@ import {
 	notRemoved,
 	notRemovedBecause,
 	OCEAN_EXPLORER,
+	PERMISSIONS_COULD_NOT_LOAD,
 	PULSAR,
 	QUARTER,
 	removeButton,
@@ -217,6 +218,37 @@ describe("Remove several reports at once", () => {
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(
 			new RegExp(`^${notAdminOfSome(2, 3).replaceAll(".", "\\.")}$`),
 		);
+	});
+
+	it(`when her permissions could not be loaded, Remove is disabled and says to reload`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listing(theThreeOfThem()),
+			permissions: "failing",
+		});
+		await theReportsTable();
+
+		await selectTheRowOf(user, QUARTER, ZENITH);
+
+		const remove = screen.getByRole("button", { name: removeButton(1) });
+		expect(remove).toBeDisabled();
+		await user.hover(remove.parentElement ?? remove);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			new RegExp(`^${PERMISSIONS_COULD_NOT_LOAD.replaceAll(".", "\\.")}$`),
+		);
+	});
+
+	it(`when her permissions could not be loaded, pressing Remove asks nothing`, async () => {
+		const removeReportsInBulk = vi.fn();
+		const { user } = renderTheReportsPage({
+			reportService: listing(theThreeOfThem(), removeReportsInBulk),
+			permissions: "failing",
+		});
+
+		await pickTheThree(user);
+		fireEvent.click(screen.getByRole("button", { name: removeButton(3) }));
+
+		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		expect(removeReportsInBulk).not.toHaveBeenCalled();
 	});
 
 	it(`a report the server did not remove is named with its reason and stays listed`, async () => {

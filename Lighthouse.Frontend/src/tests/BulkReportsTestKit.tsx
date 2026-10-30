@@ -106,6 +106,8 @@ export const removeButton = (count: number) => `Remove (${count})`;
 export const exportButton = (count: number) => `Export PDF (${count})`;
 export const selectedCount = (count: number) => `${count} selected`;
 export const AT_MOST_50 = "Pick at most 50 reports.";
+export const PERMISSIONS_COULD_NOT_LOAD =
+	"Your permissions couldn't be loaded. Reload the page to try again.";
 export const notAdminOfSome = (notAdmin: number, selected: number) =>
 	`${notAdmin} of the ${selected} selected reports ${notAdmin === 1 ? "is" : "are"} on a Team or Portfolio you are not Admin of.`;
 export const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";

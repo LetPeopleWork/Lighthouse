@@ -138,14 +138,20 @@ const useBulkCreation = (rbac: RbacState) => {
 	return { button, wizard };
 };
 
-/** Why Remove is held back, or "" when it is not: too many picked outweighs picks on owners the reader cannot change. */
+/**
+ * Why Remove is held back, or "" when it is not. Too many picked comes first; then permissions that never arrived,
+ * because the hook then answers as if the reader were Admin everywhere; then picks on owners the reader cannot change.
+ */
 const removeBlockedBecause = (
 	picked: number,
+	permissionsFailed: boolean,
 	notAdmin: number,
 	getTerm: (key: string) => string,
 ): string => {
 	if (picked > MOST_PER_BULK_RUN)
 		return `Pick at most ${MOST_PER_BULK_RUN} reports.`;
+	if (permissionsFailed)
+		return "Your permissions couldn't be loaded. Reload the page to try again.";
 	if (notAdmin === 0) return "";
 	return `${notAdmin} of the ${picked} selected reports ${notAdmin === 1 ? "is" : "are"} on a ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)} you are not Admin of.`;
 };
@@ -168,7 +174,12 @@ const useSelectionRemoval = (
 	const notAdmin = rbac.isLoading
 		? 0
 		: picked.filter((report) => !mayEdit(ownerOfReport(report))).length;
-	const blockedBecause = removeBlockedBecause(picked.length, notAdmin, getTerm);
+	const blockedBecause = removeBlockedBecause(
+		picked.length,
+		rbac.loadFailed,
+		notAdmin,
+		getTerm,
+	);
 	const toolbar = (
 		<>
 			<Tooltip title={blockedBecause}>
