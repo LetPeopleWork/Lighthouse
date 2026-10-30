@@ -224,6 +224,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_slow_removal_run_warns_with_how_many_reports_were_asked_removed_and_not_removed()
+        {
+            eachDeleteTakes = TimeSpan.FromMilliseconds(10_001);
+            writeAccess.Setup(access => access.MayWriteAsync(Gravity)).ReturnsAsync(false);
+
+            await Subject().RemoveEach([OnZenith, OnGravity], writeAccess.Object);
+
+            var line = logger.Everything.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Level, Is.EqualTo(LogLevel.Warning));
+                Assert.That(line.Properties["Asked"], Is.EqualTo(2));
+                Assert.That(line.Properties["Done"], Is.EqualTo(1));
+                Assert.That(line.Properties["NotDone"], Is.EqualTo(1));
+                Assert.That(line.Properties["RefusedByCode"], Is.EqualTo(new Dictionary<string, int> { [ReportRefusalCodes.NotAdmin] = 1 }));
+            }
+        }
+
+        [Test]
+        public async Task A_report_already_gone_is_logged_as_done_and_never_as_refused()
+        {
+            const int Unknown = 99;
+
+            await Subject().RemoveEach([Unknown, OnZenith], MayWriteEvery());
+
+            var line = logger.Everything.Single();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(line.Properties["Done"], Is.EqualTo(2));
+                Assert.That(line.Properties["NotDone"], Is.Zero);
+                Assert.That(line.Properties["RefusedByCode"], Is.Empty);
+            }
+        }
+
+        [Test]
         public async Task A_removal_run_of_exactly_ten_seconds_is_not_yet_slow()
         {
             eachDeleteTakes = TimeSpan.FromSeconds(5);

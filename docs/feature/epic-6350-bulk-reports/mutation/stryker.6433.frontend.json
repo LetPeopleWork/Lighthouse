@@ -1,0 +1,62 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6433.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6433.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/pages/Reports/RemoveSelectedDialog.tsx",
+    "src/pages/Reports/useBulkReportRemoval.ts",
+    "src/pages/Reports/ReportsPage.tsx:145-218",
+    "src/pages/Reports/ReportsPage.tsx:227-227",
+    "src/pages/Reports/ReportsPage.tsx:248-251",
+    "src/pages/Reports/ReportsPage.tsx:279-279",
+    "src/pages/Reports/ReportsPage.tsx:288-288",
+    "src/pages/Reports/BulkResult.tsx:28-29",
+    "src/pages/Reports/BulkResult.tsx:32-43",
+    "src/pages/Reports/BulkResult.tsx:142-142",
+    "src/pages/Common/Reports/ReportList.tsx:290-293",
+    "src/pages/Common/Reports/ReportList.tsx:304-304",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:112-113",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:122-122",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:145-145",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:148-154",
+    "src/components/Common/DataGrid/DataGridBase.tsx:156-172",
+    "src/components/Common/DataGrid/DataGridBase.tsx:213-213",
+    "src/components/Common/DataGrid/DataGridBase.tsx:399-399",
+    "src/services/Api/ReportService.ts:146-153",
+    "src/models/Reports/ReportsAcrossOwners.ts:107-117"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6433-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6433"
+}

@@ -14,12 +14,14 @@ namespace Lighthouse.Backend.Tests.API
     public class ReportsControllerTest
     {
         private Mock<IReportBulkCommands> bulkCommands = null!;
+        private Mock<IReportBulkRemover> bulkRemover = null!;
         private IReadOnlyList<ReportOwner>? askedFor;
 
         [SetUp]
         public void SetUp()
         {
             askedFor = null;
+            bulkRemover = new Mock<IReportBulkRemover>();
             bulkCommands = new Mock<IReportBulkCommands>();
             bulkCommands
                 .Setup(commands => commands.CreateForEach(It.IsAny<IReadOnlyList<ReportOwner>>(), It.IsAny<NewReport>(), It.IsAny<IReportOwnerWriteAccess>()))
@@ -83,7 +85,33 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
-        private static string? DetailOf(ActionResult<ReportBulkCreation> answer)
+        [Test]
+        public async Task A_removal_naming_no_report_is_refused_saying_a_removal_needs_one()
+        {
+            var answer = await Subject().RemoveEach(new ReportRemovalRequest { ReportIds = [] });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DetailOf(answer), Is.EqualTo("A removal names at least one report."));
+                bulkRemover.VerifyNoOtherCalls();
+            }
+        }
+
+        [Test]
+        public async Task A_removal_over_the_ceiling_is_refused_naming_the_ceiling()
+        {
+            var tooMany = Enumerable.Range(1, IReportBulkCommands.MostOwnersPerRun + 1).ToList();
+
+            var answer = await Subject().RemoveEach(new ReportRemovalRequest { ReportIds = tooMany });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(DetailOf(answer), Is.EqualTo($"A removal holds at most {IReportBulkCommands.MostOwnersPerRun} reports."));
+                bulkRemover.VerifyNoOtherCalls();
+            }
+        }
+
+        private static string? DetailOf<T>(ActionResult<T> answer)
             => ((answer.Result as ObjectResult)?.Value as ProblemDetails)?.Detail;
 
         private static NewReportsForOwnersRequest ARunFor(IEnumerable<ReportOwnerKind?> kinds, IEnumerable<int> ids)
@@ -97,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API
             };
 
         private ReportsController Subject()
-            => new(Mock.Of<IReportQueries>(), Mock.Of<IReportOwnerLookup>(), bulkCommands.Object, Mock.Of<IReportBulkRemover>(), Mock.Of<IRbacAdministrationService>())
+            => new(Mock.Of<IReportQueries>(), Mock.Of<IReportOwnerLookup>(), bulkCommands.Object, bulkRemover.Object, Mock.Of<IRbacAdministrationService>())
             {
                 ControllerContext = new ControllerContext
                 {

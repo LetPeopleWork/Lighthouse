@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import type React from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { IReportListItem } from "../../../models/Reports/Report";
@@ -27,6 +28,44 @@ const aReport: IReportListItem = {
 	createdOn: "2026-10-02T09:00:00Z",
 	thenAndNow: { thenRebuildable: true },
 };
+
+const renderTheList = (props: React.ComponentProps<typeof ReportList>) =>
+	render(
+		<QueryClientProvider client={new QueryClient()}>
+			<ApiServiceContext.Provider value={createMockApiServiceContext({})}>
+				<MemoryRouter>
+					<ReportList {...props} />
+				</MemoryRouter>
+			</ApiServiceContext.Provider>
+		</QueryClientProvider>,
+	);
+
+describe("A report list nobody picks rows on", () => {
+	it("still narrows to the reports the filter matches", () => {
+		const zenithsReport = { ...aReport, ownerName: "Zenith" };
+		const gravitysReport = {
+			...aReport,
+			id: 8,
+			name: "Since July",
+			ownerId: 2,
+			ownerName: "Gravity",
+		};
+		renderTheList({
+			reports: [zenithsReport, gravitysReport],
+			showOwner: true,
+		});
+
+		fireEvent.change(
+			screen.getByRole("textbox", { name: "Filter: name / owner / type" }),
+			{ target: { value: "Gravity" } },
+		);
+
+		expect(
+			screen.getByRole("link", { name: "Since July" }),
+		).toBeInTheDocument();
+		expect(screen.queryByRole("link", { name: "Since August" })).toBeNull();
+	});
+});
 
 describe("A report list given no actions", () => {
 	it("lists the reports with their Type and day, and offers no Actions column and no icon", () => {

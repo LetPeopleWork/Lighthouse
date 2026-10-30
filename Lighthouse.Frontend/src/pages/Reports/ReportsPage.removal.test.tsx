@@ -362,6 +362,136 @@ describe("Remove several reports at once", () => {
 			within(screen.getByRole("dialog")).getByRole("progressbar"),
 		).toBeInTheDocument();
 	});
+
+	it(`the result counts only the reports removed, and names only the one that was not`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listing(
+				theThreeOfThem(),
+				vi
+					.fn()
+					.mockResolvedValue([
+						removed(801),
+						notRemoved(802, "not-admin"),
+						removed(803),
+					]),
+			),
+		});
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		await user.click(
+			within(await theConfirmation()).getByRole("button", {
+				name: removeCount(3),
+			}),
+		);
+
+		expect(
+			await screen.findByText(removedHeadline(2), { exact: true }),
+		).toBeInTheDocument();
+		expect(
+			within(screen.getByRole("dialog"))
+				.getAllByRole("listitem")
+				.map((item) => item.textContent),
+		).toEqual([`${QUARTER}${notRemovedBecause.notAdmin(GRAVITY)}`]);
+	});
+
+	it(`the confirmation warns in the plural when two Thens would be lost`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listing(
+				vi
+					.fn()
+					.mockResolvedValue(
+						everyReport(
+							{ ...zenithsQuarter, thenAndNow: { thenRebuildable: false } },
+							{ ...gravitysQuarter, thenAndNow: { thenRebuildable: false } },
+							oceanExplorersMonth,
+						),
+					),
+			),
+		});
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+
+		expect(
+			within(await theConfirmation()).getByText(
+				"2 of them have a Then that can no longer be rebuilt from the kept history; removing them loses them for good.",
+				{ exact: true },
+			),
+		).toBeInTheDocument();
+	});
+
+	it(`a picked report without a Then & Now carries no warning`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listing(
+				vi
+					.fn()
+					.mockResolvedValue(
+						everyReport({ ...zenithsQuarter, thenAndNow: undefined }),
+					),
+			),
+		});
+		await theReportsTable();
+
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await user.click(screen.getByRole("button", { name: removeButton(1) }));
+
+		const confirmation = await theConfirmation();
+		expect(within(confirmation).queryByRole("alert")).not.toBeInTheDocument();
+		expect(
+			within(confirmation).getByRole("button", { name: "Remove 1 report" }),
+		).toBeInTheDocument();
+	});
+
+	it(`Escape at the confirmation closes it, removes nothing and keeps what was picked`, async () => {
+		const removeReportsInBulk = vi.fn();
+		const { user } = renderTheReportsPage({
+			reportService: listing(theThreeOfThem(), removeReportsInBulk),
+		});
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		fireEvent.keyDown(
+			within(await theConfirmation()).getByRole("button", { name: CANCEL }),
+			{ key: "Escape" },
+		);
+
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(removeReportsInBulk).not.toHaveBeenCalled();
+		expect(
+			screen.getByText(selectedCount(3), { exact: true }),
+		).toBeInTheDocument();
+	});
+
+	it(`Escape on the result closes it and clears what was picked`, async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listing(
+				theThreeOfThem(),
+				vi.fn().mockResolvedValue([removed(801), removed(802), removed(803)]),
+			),
+		});
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		await user.click(
+			within(await theConfirmation()).getByRole("button", {
+				name: removeCount(3),
+			}),
+		);
+		await screen.findByText(removedHeadline(3), { exact: true });
+		fireEvent.keyDown(screen.getByRole("button", { name: "Done" }), {
+			key: "Escape",
+		});
+
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.getByText(selectedCount(0), { exact: true }),
+		).toBeInTheDocument();
+	});
 });
 
 describe("Picking reports", () => {

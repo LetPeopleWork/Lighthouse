@@ -208,6 +208,45 @@ describe("What the Reports page tells the usage data", () => {
 		]);
 	});
 
+	it(`a bulk removal tells one deleted report for each it removed, and none for one already gone`, async () => {
+		const zenithsTrialRun = aReportOn(ZENITH, "Then & Now — trial run", {
+			id: 1003,
+		});
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi
+					.fn()
+					.mockResolvedValue(
+						everyReport(zenithsQuarter, gravitysQuarter, zenithsTrialRun),
+					),
+				removeReportsInBulk: vi
+					.fn()
+					.mockResolvedValue([
+						removed(1001),
+						removed(1002),
+						removed(1003, "already-gone"),
+					]),
+			}),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, QUARTER, GRAVITY);
+		await selectTheRowOf(user, "Then & Now — trial run", ZENITH);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		await user.click(
+			within(await screen.findByRole("dialog")).getByRole("button", {
+				name: removeCount(3),
+			}),
+		);
+
+		await waitFor(() =>
+			expect(theEventsNamed("ReportDeleted")).toEqual([
+				[{ name: "ReportDeleted" }],
+				[{ name: "ReportDeleted" }],
+			]),
+		);
+	});
+
 	it.skip(`one PDF of several reports is told once, by name alone, and not as a single export (${pendingEpic6350("07")})`, async () => {
 		theFontsHaveLoaded();
 		const frames = aPrintFrameBrowser();
