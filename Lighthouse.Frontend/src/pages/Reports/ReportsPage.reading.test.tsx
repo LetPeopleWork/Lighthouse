@@ -10,6 +10,7 @@ import {
 	GRAVITY,
 	MONTH,
 	neverAnswered,
+	OCEAN_EXPLORER,
 	QUARTER,
 	renderTheReportsPage,
 	rowOf,
@@ -110,18 +111,27 @@ describe("The Owner column of the Reports page", () => {
 					.mockResolvedValue(
 						everyReport(
 							aReportOn(ZENITH, "Zenith's"),
+							aReportOn(OCEAN_EXPLORER, "Ocean Explorer's"),
 							aReportOn(GRAVITY, "Gravity's"),
 						),
 					),
 			}),
 		});
 		await theReportsTable();
-		expect(theReportNamesListed()).toEqual(["Zenith's", "Gravity's"]);
+		expect(theReportNamesListed()).toEqual([
+			"Ocean Explorer's",
+			"Gravity's",
+			"Zenith's",
+		]);
 
 		await user.click(screen.getByRole("columnheader", { name: "Owner" }));
 
 		await waitFor(() =>
-			expect(theReportNamesListed()).toEqual(["Gravity's", "Zenith's"]),
+			expect(theReportNamesListed()).toEqual([
+				"Gravity's",
+				"Ocean Explorer's",
+				"Zenith's",
+			]),
 		);
 	});
 
@@ -179,5 +189,33 @@ describe("The Owner column of the Reports page", () => {
 		await user.type(theFilter(), "then & now");
 
 		await waitFor(() => expect(theReportNamesListed()).toEqual([QUARTER]));
+	});
+});
+
+describe("The order the Reports page lists its reports in", () => {
+	it(`lists Portfolios first and then Teams, each alphabetically by name, whatever order the server sent`, async () => {
+		renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi
+					.fn()
+					.mockResolvedValue(
+						everyReport(
+							aReportOn(ZENITH, "on Zenith"),
+							aReportOn(OCEAN_EXPLORER, "on Ocean Explorer"),
+							aReportOn(GRAVITY, "on Gravity"),
+							aReportOn(APOLLO_PORTFOLIO, "on Apollo"),
+						),
+					),
+			}),
+		});
+
+		await theReportsTable();
+
+		expect(theReportNamesListed()).toEqual([
+			"on Apollo",
+			"on Ocean Explorer",
+			"on Gravity",
+			"on Zenith",
+		]);
 	});
 });

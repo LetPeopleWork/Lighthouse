@@ -12,6 +12,7 @@ import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { type RbacState, useRbac } from "../../hooks/useRbac";
+import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
@@ -31,6 +32,14 @@ import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
+
+/** Portfolios first, then Teams, each by owner name; a sort the reader picks in the table still overrides it. */
+const byOwner = (reports: IReportAcrossOwners[]): IReportAcrossOwners[] =>
+	[...reports].sort(
+		(a, b) =>
+			Number(a.ownerKind === "team") - Number(b.ownerKind === "team") ||
+			a.ownerName.localeCompare(b.ownerName),
+	);
 const LIST_MIN_HEIGHT = 120;
 
 /** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
@@ -173,7 +182,11 @@ const ReportsPageContent: React.FC = () => {
 								{`Reports are created on a ${getTerm(TERMINOLOGY_KEYS.TEAM)}'s or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}'s Reports tab, or here with Create reports.`}
 							</Typography>
 						) : (
-							<ReportList reports={data.reports} actions={actions} showOwner />
+							<ReportList
+								reports={byOwner(data.reports)}
+								actions={actions}
+								showOwner
+							/>
 						))}
 				</WidgetBody>
 			</Box>
