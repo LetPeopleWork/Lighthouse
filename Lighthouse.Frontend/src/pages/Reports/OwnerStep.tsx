@@ -87,6 +87,9 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 					/>
 				))}
 			</FormGroup>
+			<Typography variant="body2" color="text.secondary">
+				{`Only ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)} you are Admin of are listed.`}
+			</Typography>
 			{isOverTheCeiling(pickedCount) && (
 				<Typography color="error" align="right">
 					{`Pick at most ${MOST_PER_BULK_RUN} ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}.`}

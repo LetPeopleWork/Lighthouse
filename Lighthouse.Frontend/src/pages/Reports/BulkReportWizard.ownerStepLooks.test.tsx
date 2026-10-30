@@ -55,7 +55,7 @@ describe("Who gets this report", () => {
 	});
 
 	// @walking_skeleton @driving_port @us-02b @slice-02b @kpi-OUT-6350-G-per-owner-outcome-and-rbac @contract-shape:pure-function
-	it.skip(`a coach who only reads Pulsar is offered Gravity and Zenith, alphabetically, and told only Admin owners are listed (${pending})`, async () => {
+	it(`a coach who only reads Pulsar is offered Gravity and Zenith, alphabetically, and told only Admin owners are listed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
 				vi
@@ -89,7 +89,7 @@ describe("Who gets this report", () => {
 	});
 
 	// @us-02b @slice-02b @contract-shape:bounded-change
-	it.skip(`Select all picks every Team in its group and the button counts them (${pending})`, async () => {
+	it(`Select all picks every Team in its group and the button counts them`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
 				vi
@@ -115,7 +115,7 @@ describe("Who gets this report", () => {
 	});
 
 	// @us-02b @slice-02b @edge @contract-shape:pure-function
-	it.skip(`with nobody picked yet nothing can be created (${pending})`, async () => {
+	it(`with nobody picked yet nothing can be created`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: answeringOwners(
 				vi
