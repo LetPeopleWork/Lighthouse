@@ -284,12 +284,22 @@ export type Permissions =
 	| { readonly adminOf: readonly Owner[] }
 	| "rolesNotEnforced"
 	| "loading"
-	| "failing";
+	| "failing"
+	| { readonly answeredBy: () => Promise<PermissionsSummary> };
 
 export type Licence = "premium" | "community";
 
-const summaryOf = (permissions: Exclude<Permissions, "loading" | "failing">) =>
-	permissions === "rolesNotEnforced"
+type PermissionsSummary = ReturnType<typeof summaryOf>;
+
+/** What the permissions say about a reader who is Admin of exactly these owners. */
+export const permissionsOfAdminOf = (
+	adminOf: readonly Owner[],
+): PermissionsSummary => summaryOf({ adminOf });
+
+function summaryOf(
+	permissions: { readonly adminOf: readonly Owner[] } | "rolesNotEnforced",
+) {
+	return permissions === "rolesNotEnforced"
 		? {
 				isRbacEnabled: false,
 				isSystemAdmin: false,
@@ -310,6 +320,7 @@ const summaryOf = (permissions: Exclude<Permissions, "loading" | "failing">) =>
 					.filter((owner) => owner.kind === "portfolio")
 					.map((owner) => owner.id),
 			};
+}
 
 const licenceStatusOf = (licence: Licence): ILicenseStatus => ({
 	hasLicense: licence === "premium",
@@ -366,6 +377,8 @@ export const renderTheReportsPage = (
 		if (permissions === "loading") return neverAnswered();
 		if (permissions === "failing")
 			return Promise.reject(new Error("the network dropped"));
+		if (typeof permissions === "object" && "answeredBy" in permissions)
+			return permissions.answeredBy();
 		return Promise.resolve(summaryOf(permissions));
 	});
 	const licensingService = createMockLicensingService();
