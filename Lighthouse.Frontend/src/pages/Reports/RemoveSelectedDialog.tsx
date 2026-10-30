@@ -16,9 +16,14 @@ import type {
 	IReportAcrossOwners,
 	IReportRemovalOutcome,
 } from "../../models/Reports/ReportsAcrossOwners";
+import { notRemovedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
+import { NotConfirmed } from "./BulkResult";
 import { useBulkReportRemoval } from "./useBulkReportRemoval";
 
 const TITLE_ID = "remove-selected-reports-title";
+
+const NOT_CONFIRMED_REMOVED =
+	"It could not be confirmed which reports were removed.";
 
 const reportsWord = (count: number) => (count === 1 ? "report" : "reports");
 
@@ -85,20 +90,46 @@ const UnderWay: React.FC<Readonly<{ count: number }>> = ({ count }) => (
 	</DialogContent>
 );
 
+const NotRemovedLine: React.FC<
+	Readonly<{
+		outcome: IReportRemovalOutcome;
+		report: IReportAcrossOwners | undefined;
+	}>
+> = ({ outcome, report }) => (
+	<ListItem disableGutters sx={{ gap: 2 }}>
+		<Typography sx={{ flex: 1 }}>{report?.name ?? ""}</Typography>
+		<Typography color="error">
+			{notRemovedLineFor(outcome.code, {
+				ownerName: report?.ownerName ?? "",
+			})}
+		</Typography>
+	</ListItem>
+);
+
 const Result: React.FC<
 	Readonly<{
-		outcomes: readonly IReportRemovalOutcome[] | undefined;
+		reports: readonly IReportAcrossOwners[];
+		outcomes: readonly IReportRemovalOutcome[];
 		onDone: () => void;
 	}>
-> = ({ outcomes, onDone }) => (
+> = ({ reports, outcomes, onDone }) => (
 	<>
-		{outcomes !== undefined && (
-			<DialogContent>
-				<Typography variant="h6" component="p">
-					{headlineOf(outcomes)}
-				</Typography>
-			</DialogContent>
-		)}
+		<DialogContent>
+			<Typography variant="h6" component="p">
+				{headlineOf(outcomes)}
+			</Typography>
+			<List dense>
+				{outcomes
+					.filter((outcome) => outcome.status === "notRemoved")
+					.map((outcome) => (
+						<NotRemovedLine
+							key={outcome.reportId}
+							outcome={outcome}
+							report={reports.find((report) => report.id === outcome.reportId)}
+						/>
+					))}
+			</List>
+		</DialogContent>
 		<DialogActions>
 			<Button variant="contained" onClick={onDone}>
 				Done
@@ -130,7 +161,12 @@ const RemoveSelectedDialog: React.FC<Readonly<RemoveSelectedDialogProps>> = ({
 	};
 	const content = () => {
 		if (isPending) return <UnderWay count={reports.length} />;
-		if (isAnswered) return <Result outcomes={removal.data} onDone={onDone} />;
+		if (removal.isError)
+			return <NotConfirmed message={NOT_CONFIRMED_REMOVED} onDone={onDone} />;
+		if (removal.isSuccess)
+			return (
+				<Result reports={reports} outcomes={removal.data} onDone={onDone} />
+			);
 		return (
 			<Confirmation
 				reports={reports}

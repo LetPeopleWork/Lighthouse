@@ -139,6 +139,17 @@ export const notCreatedLineFor = (
 	words: NotCreatedWords,
 ): string => `Not created: ${notCreatedReasonOf(code, words)}`;
 
+export const COULD_NOT_DELETE = "This report couldn't be deleted. Try again.";
+
+/** The line for a report a bulk removal left in place; anything but lost Admin reads as removing one report does. */
+export const notRemovedLineFor = (
+	code: string | undefined,
+	words: Readonly<{ ownerName: string }>,
+): string =>
+	code === "not-admin"
+		? `Not removed: you are no longer Admin of ${words.ownerName}.`
+		: `Not removed: ${COULD_NOT_DELETE}`;
+
 /** The sentence for a window the wizard itself refuses, worded as the server's refusal would be. */
 export const windowRefusalCopyFor = (
 	refusal: ReportWindowRefusal,

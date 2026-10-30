@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ApiError } from "../../../../services/Api/ApiError";
 import {
 	notCreatedLineFor,
+	notRemovedLineFor,
 	type RefusalWords,
 	type ReportRefusalCode,
 	refusalCopyFor,
@@ -105,6 +106,24 @@ describe("notCreatedLineFor", () => {
 	])("asks to try again for an owner refused with %s", (_, code) => {
 		expect(notCreatedLineFor(code, { ...words, ownerName: "Zenith" })).toBe(
 			`Not created: ${COULD_NOT_CREATE}`,
+		);
+	});
+});
+
+describe("notRemovedLineFor", () => {
+	it("names the owner the reader is no longer Admin of", () => {
+		expect(notRemovedLineFor("not-admin", { ownerName: "Gravity" })).toBe(
+			"Not removed: you are no longer Admin of Gravity.",
+		);
+	});
+
+	it.each([
+		["a report that could not be saved", "not-saved"],
+		["no reason", undefined],
+		["a reason this version does not know", "x"],
+	])("asks to try again for %s, as removing one report does", (_, code) => {
+		expect(notRemovedLineFor(code, { ownerName: "Gravity" })).toBe(
+			"Not removed: This report couldn't be deleted. Try again.",
 		);
 	});
 });

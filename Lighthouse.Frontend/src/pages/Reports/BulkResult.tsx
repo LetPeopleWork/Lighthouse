@@ -27,6 +27,20 @@ export type BulkRun =
 
 const reportsWord = (count: number) => (count === 1 ? "report" : "reports");
 
+/** No answer came, so the run's outcome is unknown and the Reports page is where to see it. */
+export const NotConfirmed: React.FC<
+	Readonly<{ message: string; onDone: () => void }>
+> = ({ message, onDone }) => (
+	<>
+		<DialogContent>
+			<Typography>{message}</Typography>
+		</DialogContent>
+		<DialogActions>
+			<Button onClick={onDone}>Go to Reports</Button>
+		</DialogActions>
+	</>
+);
+
 const headlineOf = (outcomes: readonly IReportCreationOutcome[]): string => {
 	const created = outcomes.filter(
 		(outcome) => outcome.status === "created",
@@ -124,16 +138,7 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 	}
 
 	if (run.status === "error") {
-		return (
-			<>
-				<DialogContent>
-					<Typography>{NOT_CONFIRMED_CREATED}</Typography>
-				</DialogContent>
-				<DialogActions>
-					<Button onClick={onDone}>Go to Reports</Button>
-				</DialogActions>
-			</>
-		);
+		return <NotConfirmed message={NOT_CONFIRMED_CREATED} onDone={onDone} />;
 	}
 
 	return (

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IReportService } from "../../services/Api/ReportService";
 import {
@@ -20,7 +20,6 @@ import {
 	notRemovedBecause,
 	OCEAN_EXPLORER,
 	PULSAR,
-	pendingEpic6350,
 	QUARTER,
 	removeButton,
 	removeCount,
@@ -42,8 +41,6 @@ import { aReportService } from "../../tests/ReportsTestKit";
  * one of them and warns when one holds a Then that can no longer be rebuilt, and the server answers each report on
  * its own. Remove is offered only when the reader is Admin of every picked report's owner.
  */
-
-const pending = pendingEpic6350("05");
 
 const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 801 });
 const gravitysQuarter = aReportOn(GRAVITY, QUARTER, { id: 802 });
@@ -74,7 +71,7 @@ const pickTheThree = async (
 const theConfirmation = () => screen.findByRole("dialog");
 
 describe("Remove several reports at once", () => {
-	it(`a coach removes three trial reports on two Teams and a Portfolio, and they leave the list (${pending})`, async () => {
+	it(`a coach removes three trial reports on two Teams and a Portfolio, and they leave the list`, async () => {
 		const getAllReports = theThreeOfThem()
 			.mockResolvedValueOnce(
 				everyReport(zenithsQuarter, gravitysQuarter, oceanExplorersMonth),
@@ -111,7 +108,7 @@ describe("Remove several reports at once", () => {
 		expect(await screen.findByText(EMPTY, { exact: true })).toBeInTheDocument();
 	});
 
-	it(`Cancel removes nothing (${pending})`, async () => {
+	it(`Cancel removes nothing`, async () => {
 		const removeReportsInBulk = vi.fn();
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem(), removeReportsInBulk),
@@ -128,7 +125,7 @@ describe("Remove several reports at once", () => {
 		expect(theReportNamesListed()).toEqual([MONTH, QUARTER, QUARTER]);
 	});
 
-	it(`the confirmation warns when one of them holds a Then that can no longer be rebuilt (${pending})`, async () => {
+	it(`the confirmation warns when one of them holds a Then that can no longer be rebuilt`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi
@@ -153,7 +150,7 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	it(`with every Then still rebuildable the confirmation carries no warning (${pending})`, async () => {
+	it(`with every Then still rebuildable the confirmation carries no warning`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -168,7 +165,7 @@ describe("Remove several reports at once", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it(`with one picked report on an owner she only reads, Remove is disabled and says why (${pending})`, async () => {
+	it(`with one picked report on an owner she only reads, Remove is disabled and says why`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi
@@ -196,7 +193,7 @@ describe("Remove several reports at once", () => {
 		);
 	});
 
-	it(`with two picked reports on owners she only reads, the reason says they are (${pending})`, async () => {
+	it(`with two picked reports on owners she only reads, the reason says they are`, async () => {
 		const voyagersQuarter = aReportOn(VOYAGER, QUARTER, { id: 805 });
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -222,7 +219,7 @@ describe("Remove several reports at once", () => {
 		);
 	});
 
-	it.skip(`a report the server did not remove is named with its reason and stays listed (${pending})`, async () => {
+	it(`a report the server did not remove is named with its reason and stays listed`, async () => {
 		const getAllReports = vi
 			.fn()
 			.mockResolvedValueOnce(
@@ -255,10 +252,11 @@ describe("Remove several reports at once", () => {
 				exact: true,
 			}),
 		).toBeInTheDocument();
+		await user.click(screen.getByRole("button", { name: "Done" }));
 		await waitFor(() => expect(rowOf(QUARTER, GRAVITY)).toBeInTheDocument());
 	});
 
-	it.skip(`a report somebody else removed first counts as removed (${pending})`, async () => {
+	it(`a report somebody else removed first counts as removed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				theThreeOfThem(),
@@ -285,7 +283,7 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip(`when no answer arrives it says it cannot confirm what was removed (${pending})`, async () => {
+	it(`when no answer arrives it says it cannot confirm what was removed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				theThreeOfThem(),
@@ -306,7 +304,7 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip(`while the removal is under way the dialog cannot be closed (${pending})`, async () => {
+	it(`while the removal is under way the dialog cannot be closed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				theThreeOfThem(),
@@ -321,7 +319,11 @@ describe("Remove several reports at once", () => {
 				name: removeCount(3),
 			}),
 		);
-		await user.keyboard("{Escape}");
+		// The Remove button that held focus is gone by now, so Escape is pressed on the dialog itself.
+		fireEvent.keyDown(
+			within(await theConfirmation()).getByRole("progressbar"),
+			{ key: "Escape" },
+		);
 
 		expect(screen.getByRole("dialog")).toBeInTheDocument();
 		expect(
@@ -331,9 +333,7 @@ describe("Remove several reports at once", () => {
 });
 
 describe("Picking reports", () => {
-	const pendingSelection = pendingEpic6350("05");
-
-	it(`above 50 picked, Remove and Export PDF are disabled and say at most 50 (${pendingSelection})`, async () => {
+	it(`above 50 picked, Remove and Export PDF are disabled and say at most 50`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH)),
@@ -352,7 +352,7 @@ describe("Picking reports", () => {
 		);
 	});
 
-	it(`exactly 50 picked may still be removed (${pendingSelection})`, async () => {
+	it(`exactly 50 picked may still be removed`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 0)),
@@ -368,7 +368,7 @@ describe("Picking reports", () => {
 		).toBeEnabled();
 	});
 
-	it(`changing the filter clears what was picked (${pendingSelection})`, async () => {
+	it(`changing the filter clears what was picked`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -384,7 +384,7 @@ describe("Picking reports", () => {
 		).toBeDisabled();
 	});
 
-	it(`sorting keeps what was picked (${pendingSelection})`, async () => {
+	it(`sorting keeps what was picked`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -397,7 +397,7 @@ describe("Picking reports", () => {
 		).toBeInTheDocument();
 	});
 
-	it(`Select all picks every row the filter shows, on every page (${pendingSelection})`, async () => {
+	it(`Select all picks every row the filter shows, on every page`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 70)),
