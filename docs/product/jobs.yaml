@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-24
+updated: 2026-10-30
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -70,6 +70,7 @@ feature_context:
   - story-6354-skip-unchanged-forecasts
   - epic-6400-fast-with-many-features
   - story-6398-jira-release-loads-once
+  - epic-6455-deeper-hierarchies
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8677,3 +8678,103 @@ jobs:
       rationale: >
         Importance 4 - leaders ask for the cross-Team view and the informant wrote code to get it; not 5 on one
         informant. Satisfaction 1 - only per-owner setup and per-owner reading exist. Single informant.
+  - id: job-forecaster-know-when-each-promise-level-lands
+    title: Say when it lands, and how it flows, at every level my organisation promises at
+    persona: "delivery-forecaster (also delivery-lead-rte)"
+    feature_context: epic-6455-deeper-hierarchies
+    ado: "Epic #6455 Deeper hierarchies: portfolio items that are not direct parents of the team's items"
+    created: 2026-10-30
+    note: >
+      NEW in DIVERGE of epic-6455-deeper-hierarchies (2026-10-30), which supersedes Epics #5806 and #6119.
+      Changelog: 2026-10-30 created from diverge/job-analysis.md. It generalises
+      job-lead-answer-when-every-initiative-lands (epic-5806) from one level above the Feature to any number
+      of levels, and covers the case where the promise level is two or more steps above the Teams' Work Items
+      (shape a: Customer A, Story <- Epic <- Change <- Project <- Program; Customer B, Story <- Epic <- Feature
+      <- Business Epic) as well as the strategic level above well-mapped Features (shape b). Evidence: two
+      anonymised customers' real instances plus two more maintainer-reported, unnamed; the failure is
+      structural in the code (a Feature only receives Work Items whose own parent is that Feature). The
+      maintainer treats deeper hierarchies as a common case. Scores are desk estimates.
+    job_story: >
+      When my organisation plans and promises at levels above the items my Teams work on,
+      I want each of those levels to show when its items are likely to land, built from the Teams' real work,
+      and how that level is flowing,
+      so I can answer "when, and is it on track?" at the level the question is asked, without building it by
+      hand.
+    dimensions:
+      functional: >
+        Per item at each promise level: a likely-by date composed from the level below (never a default-size
+        guess when real Work Items exist beneath, and a visible count when some parts are default-sized), its
+        cycle time, throughput and WIP from its own states, and progress of what lies beneath.
+      emotional: >
+        From "every Change says no child Work Items were found; I cannot show these dates" to "this is our
+        structure, and the dates come from our Teams".
+      social: >
+        The forecaster shows dates at the organisation's own levels, in its own words, to a sponsor or
+        steering group; for a prospect, an evaluation that succeeds instead of stopping in onboarding.
+    forces:
+      push: >
+        Configuring the promise level as the Feature type yields default-size forecasts with a warning on
+        every Feature; the only partial workaround is one rule-based Delivery per top-level item, Premium,
+        by hand, with no flow metrics at that level.
+      pull: >
+        The Teams' forecasts and the joint "all done" composition already exist; levels the tracker already
+        holds could be named and shown.
+      anxiety: >
+        "Do we have to see the levels we do not care about?" "Are composed dates honest when the level below
+        is not broken down yet?"
+      habit: >
+        Planning in the tracker's own roadmap views or a spreadsheet, and using Lighthouse only for Teams.
+    opportunity_score:
+      importance: 5
+      current_satisfaction: 1
+      gap: 4
+      rationale: >
+        Importance 5 - without it the affected Portfolio's forecasts are unusable and a prospect stopped.
+        Satisfaction 1 - default-size guesses, or one hand-made Delivery per item. Desk estimates on a 1-10
+        scale in diverge/job-analysis.md (OS1 and OS2 I9 S1 = 17; OS4 13), mapped to this file's 1-5 by
+        halving and rounding.
+  - id: job-config-admin-describe-our-levels-once
+    title: Describe our levels to Lighthouse in our words, and see straight away what does not reach the level above
+    persona: config-admin
+    feature_context: epic-6455-deeper-hierarchies
+    ado: "Epic #6455"
+    created: 2026-10-30
+    note: >
+      NEW in DIVERGE of epic-6455-deeper-hierarchies. Changelog: 2026-10-30 created from
+      diverge/job-analysis.md. The setup half of job-forecaster-know-when-each-promise-level-lands.
+      Customer A's contact acted in this role and stopped; nothing at setup says the Teams' Work Items must
+      reach the Portfolio's Features. Maintainer decision 2026-10-30: an item that jumps a level is the
+      Parent Override Field's business, so the job is to notice it, not to repair it.
+    job_story: >
+      When I connect Lighthouse to a tracker whose structure has more levels than Work Item and Feature,
+      I want to describe our levels once, in our words, and see before saving how many items do not reach
+      the level above,
+      so the forecasts are right from the first refresh and I do not learn of a misconfiguration from a
+      warning on every Feature.
+    dimensions:
+      functional: >
+        Name each level, pick its tracker types and how it attaches; a count per level of items with no
+        parent at the next level and of parents with no children; today's two-level setup needs none of it.
+      emotional: >
+        From "did I skip a level without noticing?" to "Lighthouse told me which items do not reach the
+        level above".
+      social: >
+        The admin hands a working Portfolio to the forecasters on day one.
+    forces:
+      push: >
+        Setup accepts a Feature type that no Work Item points at, and the failure shows only later, as a
+        warning per Feature.
+      pull: >
+        The tracker already holds the levels; Lighthouse already knows which parents it does not track.
+      anxiety: >
+        "Will adding levels change the Portfolios that work today?" (It must not.)
+      habit: >
+        Picking the type the organisation talks about as the Feature type, and hoping.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - the onboarding failure in the evidence; held below 5 because decision 4 moved
+        skipping out of scope. Satisfaction 1 - only the per-Feature warning, after the fact. Desk estimates
+        (OS3 I7 S2 = 12, OS5 12 in diverge/job-analysis.md).

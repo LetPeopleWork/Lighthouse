@@ -109,3 +109,52 @@ through (13) · OA7 fetching it is affordable (9). Details and cheapest tests in
 - **Prevalence is treated as common.** The maintainer judges deeper hierarchies to be a common use case that Lighthouse must account for. G1's case count is accepted on that judgement plus the four reported customers (OA3 closed by decision).
 - **Jumping over a level is not Lighthouse's problem.** Items that skip a level can already be handled with the Parent Override Field. The new concept may require every item to go through all configured levels, and another option can be worked out later from feedback. O2/O6 shrink accordingly; the relay level is no longer required.
 - **Customer B is assumed to have the same problem as Customer A** until the 2026-11-02 session says otherwise.
+
+---
+
+# DIVERGE Decisions — epic-6455-deeper-hierarchies
+
+2026-10-30. Artifacts: `../diverge/job-analysis.md`, `../diverge/competitive-research.md` (top-up on Epic
+5806's), `../diverge/options-raw.md`, `../diverge/taste-evaluation.md`, `../recommendation.md`. Kept in this
+file because it already holds this feature's wave decisions; one file per feature is easier to follow than two.
+Peer review by `nw-diverger-reviewer` is pending.
+
+**[DV1] The job is strategic: "a defensible 'when, and how is it flowing?' at every level where the organisation
+promises".** Physical function: attach each item to the level above, compose forecasts upwards, read each
+level's own flow. Seven ODI outcomes; OS1/OS2 (a real forecast at the promise level, 17) and OS4 (a level
+above it, 13) are the most under-served.
+Source: `../feature-delta.md` (E1-E6, OST), maintainer decisions 2026-10-30.
+
+**[DV2] Under decision 4, shape (a) is shape (b) with more levels, so one direction serves both.** Making the
+Teams' direct parent the Feature and adding levels above it turns "the forecast level is two steps up" into
+"levels above correctly mapped Features". OA5 is answered yes: a Project/Program roll-up and an initiative view
+are both a level composed from the level below.
+Source: `../diverge/job-analysis.md` §4, §6.
+
+**[DV3] Recommended: Option 1, a level stack above the Feature, on the Portfolio (4.20).** Named levels declared
+per Portfolio; each composes "when" from the level below with the joint maths Deliveries use, and reads flow
+metrics from its own states. Team Feature WIP and the simulation's parallelism stay unchanged. Two-level
+Portfolios unchanged. Holds on the assumption that Customer B (2026-11-02) wants the top level forecast and
+accepts Epics as the Lighthouse Feature.
+Source: `../diverge/taste-evaluation.md` (wins under all four weightings tried).
+
+**[DV4] Dissent kept open for DISCUSS: a per-Portfolio "home level".** Customers who skip the intermediate level
+"do not care about those items", and Option 1 makes them the Features. If Customer B confirms, add a home level
+so the Portfolio opens on the promise level. The relay (Option 4) is not the fallback because of its Team
+Feature WIP problem.
+Source: maintainer answer (OA3), E2, `../recommendation.md`.
+
+**[DV5] Option 1's level data must be able to follow a connection default later** (the Parent Override Field
+pattern), so it can grow towards an instance-wide level model (Option 3) without a rewrite.
+Source: dissent in `../recommendation.md`; `ARCHITECTURE.md` "Settings an owner inherits from its connection".
+
+**[DV6] Not taken: Stacked Portfolios (3.55), Look-through relay (3.55), Parent-grouped Deliveries (3.50),
+Query-scoped items (2.90), Instance-wide Level Model (2.85).** Reasons in `../diverge/taste-evaluation.md` §2.
+The relay is judged against decision 4: hiding the intermediate level is no longer needed.
+
+**[DV7] v1 scope boundaries proposed for DISCUSS**: one parent per item per level (link-typed and multi-parent
+goal levels later); levels above the Feature are Premium, Feature level and Parent column free (prospect trial
+question open); a goal level answers only "when is the linked work done".
+
+**Open for the maintainer / Customer B session**: the eight questions at the end of `../recommendation.md`, first
+among them whether "Team → Agile Release Train → Program" names item levels or groups of Teams.
