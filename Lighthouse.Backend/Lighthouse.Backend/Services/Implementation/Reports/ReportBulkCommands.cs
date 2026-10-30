@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         {
             var started = timeProvider.GetTimestamp();
 
-            var outcomes = new List<ReportRemovalOutcome>(reportIds.Count);
+            var outcomes = new List<ReportRemovalOutcome>();
             try
             {
                 foreach (var reportId in reportIds)

@@ -201,8 +201,10 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   request body (`reportIds`, owner ids) and hands it to a service that allocates or loops per item fails
   the security rating. Fix: refuse the request in the controller when the list is missing, empty or longer
   than the run's ceiling, before any service sees it, as bulk report creation does with
-  `IReportBulkCommands.MostOwnersPerRun`. Not automated because: it is SonarCloud's taint analysis, which
-  runs only on the server; SonarAnalyzer.CSharp in the local build has no security rules.
+  `IReportBulkCommands.MostOwnersPerRun`. That check alone does not satisfy the analysis: never size a
+  collection from the request either (`new List<T>(ids.Count)` is still flagged behind the check), so leave
+  the capacity out. Not automated because: it is SonarCloud's taint analysis, which runs only on the server;
+  SonarAnalyzer.CSharp in the local build has no security rules.
 
 ### Design rules a compiler cannot see
 
