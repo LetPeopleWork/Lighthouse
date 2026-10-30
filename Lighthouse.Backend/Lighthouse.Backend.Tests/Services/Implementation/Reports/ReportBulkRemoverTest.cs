@@ -138,6 +138,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_report_deleted_by_somebody_else_while_its_removal_is_saved_is_answered_removed_as_already_gone_and_the_run_goes_on()
+        {
+            commands.Setup(port => port.Delete(Zenith, OnZenith)).ThrowsAsync(new DbUpdateConcurrencyException());
+
+            var outcomes = await Subject().RemoveEach([OnZenith, OnGravity], writeAccess.Object);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportRemovalOutcome.Removed(OnZenith, ReportRefusalCodes.AlreadyGone),
+                    ReportRemovalOutcome.Removed(OnGravity),
+                }));
+                writer.Verify(port => port.DiscardPendingChanges(), Times.Once);
+                Assert.That(logger.Everything.Where(line => line.Level == LogLevel.Warning), Is.Empty);
+            }
+        }
+
+        [Test]
         public async Task A_report_whose_removal_fails_to_save_is_answered_not_saved_its_pending_change_is_discarded_and_the_run_goes_on()
         {
             const string DatabaseMessage = "constraint failed on host db.internal";

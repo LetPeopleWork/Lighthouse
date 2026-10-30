@@ -49,6 +49,13 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             {
                 deleted = await commands.Delete(owner, reportId);
             }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Someone else deleted the report between loading and saving, so it is gone as asked. The stale delete
+                // is dropped so it cannot fail the save of the next report in the run.
+                writer.DiscardPendingChanges();
+                return ReportRemovalOutcome.Removed(reportId, ReportRefusalCodes.AlreadyGone);
+            }
             catch (DbUpdateException failure)
             {
                 return RemovalNotSaved(owner, reportId, failure);

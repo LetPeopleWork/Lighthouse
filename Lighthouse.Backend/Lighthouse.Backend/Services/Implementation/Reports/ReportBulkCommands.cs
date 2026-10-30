@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         {
             var started = timeProvider.GetTimestamp();
 
-            var outcomes = new List<ReportOwnerOutcome>(owners.Count);
+            var outcomes = new List<ReportOwnerOutcome>();
             try
             {
                 foreach (var owner in owners)
