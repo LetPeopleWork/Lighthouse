@@ -16,6 +16,8 @@ interface ActionButtonProps {
 	fullWidth?: boolean;
 	color?: "primary" | "secondary" | "success" | "error" | "info" | "warning";
 	autoFocus?: boolean;
+	/** The id of the element that explains why the button is disabled. */
+	describedBy?: string;
 }
 
 const ActionButton: React.FC<ActionButtonProps> = ({
@@ -30,6 +32,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	fullWidth = false,
 	color = "primary",
 	autoFocus = false,
+	describedBy,
 }) => {
 	const [internalIsWaiting, setInternalIsWaiting] = useState<boolean>(false);
 
@@ -57,6 +60,7 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 			onClick={handleClick}
 			disabled={disabled || isWaiting}
 			aria-busy={isWaiting}
+			aria-describedby={describedBy}
 			startIcon={!isWaiting && startIcon}
 			fullWidth={fullWidth}
 			color={color}

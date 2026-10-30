@@ -16,13 +16,17 @@ import {
 	pressCreateReports,
 	renderTheReportsPage,
 	SAME_AS_THEN,
-	SELECT_ALL,
+	selectAllOf,
 	TEAMS_GROUP,
 	THEN_PRESETS,
 	toTheOwnerStep,
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
-import { aReportService, thenNeedsAtLeast } from "../../tests/ReportsTestKit";
+import {
+	aReportService,
+	nowNeedsAtLeast,
+	thenNeedsAtLeast,
+} from "../../tests/ReportsTestKit";
 
 /**
  * Portfolios join the selection: one run may create the same comparison for Teams and Portfolios together. The
@@ -88,7 +92,9 @@ describe("Teams and Portfolios in one run", () => {
 		expect(groups).toEqual([TEAMS_GROUP, PORTFOLIOS_GROUP]);
 		const portfolios = screen.getByRole("group", { name: PORTFOLIOS_GROUP });
 		await user.click(
-			within(portfolios).getByRole("button", { name: SELECT_ALL }),
+			within(portfolios).getByRole("button", {
+				name: selectAllOf(PORTFOLIOS_GROUP),
+			}),
 		);
 		expect(
 			within(portfolios)
@@ -110,12 +116,49 @@ describe("Teams and Portfolios in one run", () => {
 
 		await toTheOwnerStep(user);
 		await pickOwner(user, OCEAN_EXPLORER);
+		const teams = screen.getByRole("group", { name: TEAMS_GROUP });
+		expect(within(teams).queryAllByRole("checkbox", { checked: true })).toEqual(
+			[],
+		);
 		await user.click(screen.getByRole("button", { name: createCount(1) }));
 
 		await waitFor(() =>
 			expect(createReportsInBulk).toHaveBeenCalledWith(
 				expect.objectContaining({
 					owners: [{ ownerKind: "portfolio", ownerId: OCEAN_EXPLORER.id }],
+				}),
+			),
+		);
+	});
+
+	it(`a Portfolio the reader is not Admin of is not listed and Select all leaves it out`, async () => {
+		const createReportsInBulk = vi.fn().mockResolvedValue([]);
+		const { user } = renderTheReportsPage({
+			reportService: creatingWith(createReportsInBulk),
+			permissions: {
+				adminOf: [ZENITH, GRAVITY, OCEAN_EXPLORER, NEUROLINK_CITY],
+			},
+		});
+
+		await toTheOwnerStep(user);
+		expect(
+			screen.queryByRole("checkbox", { name: APOLLO_PORTFOLIO.name }),
+		).not.toBeInTheDocument();
+		const portfolios = screen.getByRole("group", { name: PORTFOLIOS_GROUP });
+		await user.click(
+			within(portfolios).getByRole("button", {
+				name: selectAllOf(PORTFOLIOS_GROUP),
+			}),
+		);
+		await user.click(screen.getByRole("button", { name: createCount(2) }));
+
+		await waitFor(() =>
+			expect(createReportsInBulk).toHaveBeenCalledWith(
+				expect.objectContaining({
+					owners: [
+						{ ownerKind: "portfolio", ownerId: NEUROLINK_CITY.id },
+						{ ownerKind: "portfolio", ownerId: OCEAN_EXPLORER.id },
+					],
 				}),
 			),
 		);
@@ -149,10 +192,7 @@ describe("Choosing the window for several owners", () => {
 	});
 
 	it(`a custom Then shorter than 14 days is refused before any owner is asked`, async () => {
-		const createReportsInBulk = vi.fn();
-		const { user } = renderTheReportsPage({
-			reportService: creatingWith(createReportsInBulk),
-		});
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
 
 		await toTheThenStep(user);
 		await user.click(await screen.findByRole("button", { name: "Custom" }));
@@ -162,7 +202,60 @@ describe("Choosing the window for several owners", () => {
 			await screen.findByText(thenNeedsAtLeast(14), { exact: true }),
 		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
-		expect(createReportsInBulk).not.toHaveBeenCalled();
+	});
+
+	const toTheNowStep = async (
+		user: ReturnType<typeof renderTheReportsPage>["user"],
+	) => {
+		await toTheThenStep(user);
+		await user.click(await screen.findByRole("button", { name: "30 days" }));
+		await user.click(screen.getByRole("button", { name: "Next" }));
+		await user.click(await screen.findByRole("radio", { name: "Custom" }));
+	};
+
+	it(`a custom Now shorter than 14 days is refused`, async () => {
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
+
+		await toTheNowStep(user);
+		await user.type(screen.getByRole("spinbutton", { name: /^Now/ }), "13");
+
+		expect(
+			await screen.findByText(nowNeedsAtLeast(14), { exact: true }),
+		).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+	});
+
+	it(`a custom Now left empty cannot be moved past`, async () => {
+		const { user } = renderTheReportsPage({ reportService: creatingWith() });
+
+		await toTheNowStep(user);
+
+		expect(screen.getByRole("spinbutton", { name: /^Now/ })).toHaveValue(null);
+		expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+	});
+
+	it(`going back to Same as Then drops a typed custom Now from the request`, async () => {
+		const createReportsInBulk = vi.fn().mockResolvedValue([]);
+		const { user } = renderTheReportsPage({
+			reportService: creatingWith(createReportsInBulk),
+		});
+
+		await toTheNowStep(user);
+		await user.type(screen.getByRole("spinbutton", { name: /^Now/ }), "21");
+		await user.click(screen.getByRole("radio", { name: SAME_AS_THEN }));
+
+		expect(screen.getByRole("radio", { name: SAME_AS_THEN })).toBeChecked();
+		await createdForZenith(user);
+		await waitFor(() =>
+			expect(createReportsInBulk).toHaveBeenCalledWith(
+				expect.objectContaining({
+					thenAndNow: expect.objectContaining({
+						thenLengthDays: 30,
+						nowLengthDays: null,
+					}),
+				}),
+			),
+		);
 	});
 
 	it(`a custom Then of exactly 14 days is accepted`, async () => {

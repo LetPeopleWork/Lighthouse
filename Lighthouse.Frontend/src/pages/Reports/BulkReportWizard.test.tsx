@@ -26,6 +26,7 @@ import {
 	GO_TO_REPORTS,
 	GRAVITY,
 	LIGHTSPEED_TEAM,
+	manyOwners,
 	NOT_ADMIN_OF_ANY,
 	NOT_CONFIRMED_CREATED,
 	neverAnswered,
@@ -36,6 +37,7 @@ import {
 	OPTIONS_COULD_NOT_LOAD,
 	OWNERS_AT_MOST_50,
 	type Owner,
+	PORTFOLIOS_GROUP,
 	PREMIUM_LICENSE_TOOLTIP,
 	PULSAR,
 	pickOwner,
@@ -44,7 +46,7 @@ import {
 	RETRY,
 	renderTheReportsPage,
 	rowOf,
-	SELECT_ALL,
+	selectAllOf,
 	TEAMS_GROUP,
 	theReportsTable,
 	toTheOwnerStep,
@@ -400,7 +402,7 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 			await user.click(
 				within(screen.getByRole("group", { name: TEAMS_GROUP })).getByRole(
 					"button",
-					{ name: SELECT_ALL },
+					{ name: selectAllOf(TEAMS_GROUP) },
 				),
 			);
 
@@ -427,7 +429,66 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 			});
 
 			await toTheOwnerStep(user);
-			await user.click(screen.getByRole("button", { name: SELECT_ALL }));
+			await user.click(
+				screen.getByRole("button", { name: selectAllOf(TEAMS_GROUP) }),
+			);
+
+			expect(
+				screen.getByRole("button", { name: createCount(50) }),
+			).toBeEnabled();
+			expect(screen.queryByText(OWNERS_AT_MOST_50)).not.toBeInTheDocument();
+		},
+		RENDER_HEAVY,
+	);
+
+	const selectingAllIn = (
+		user: ReturnType<typeof renderTheReportsPage>["user"],
+		group: string,
+	) =>
+		user.click(
+			within(screen.getByRole("group", { name: group })).getByRole("button", {
+				name: selectAllOf(group),
+			}),
+		);
+
+	const pickingAllOf = async (
+		teamCount: number,
+		portfolioCount: number,
+	): Promise<void> => {
+		const owners = [
+			...manyOwners("team", teamCount),
+			...manyOwners("portfolio", portfolioCount),
+		];
+		const { user } = renderTheReportsPage({
+			reportService: offering(...owners),
+			permissions: { adminOf: owners },
+		});
+
+		await toTheOwnerStep(user);
+		await selectingAllIn(user, TEAMS_GROUP);
+		await selectingAllIn(user, PORTFOLIOS_GROUP);
+	};
+
+	it(
+		`30 Teams and 21 Portfolios make 51: Create is disabled and says at most 50`,
+		async () => {
+			await pickingAllOf(30, 21);
+
+			expect(
+				screen.getByRole("button", { name: createCount(51) }),
+			).toBeDisabled();
+			expect(screen.getByRole("alert")).toHaveTextContent(OWNERS_AT_MOST_50);
+			expect(
+				screen.getByRole("button", { name: createCount(51) }),
+			).toHaveAccessibleDescription(OWNERS_AT_MOST_50);
+		},
+		RENDER_HEAVY,
+	);
+
+	it(
+		`30 Teams and 20 Portfolios make exactly 50: Create is enabled, with no ceiling message`,
+		async () => {
+			await pickingAllOf(30, 20);
 
 			expect(
 				screen.getByRole("button", { name: createCount(50) }),

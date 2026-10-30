@@ -12,7 +12,7 @@ import {
 	openSettingsOf,
 	pendingEpic6350,
 	renderTheReportsPage,
-	SELECT_ALL,
+	selectAllOf,
 	TEAMS_GROUP,
 	toTheOwnerStep,
 	whereTheReaderIs,
@@ -81,7 +81,7 @@ describe("Owners that cannot hold the window", () => {
 		await user.click(
 			within(screen.getByRole("group", { name: TEAMS_GROUP })).getByRole(
 				"button",
-				{ name: SELECT_ALL },
+				{ name: selectAllOf(TEAMS_GROUP) },
 			),
 		);
 

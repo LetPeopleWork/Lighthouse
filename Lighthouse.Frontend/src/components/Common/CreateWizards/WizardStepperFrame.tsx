@@ -17,6 +17,8 @@ export interface WizardFrameAction {
 	label: string;
 	onClick: () => void | Promise<void>;
 	disabled: boolean;
+	/** The id of the element that says why the action is disabled, while it shows. */
+	describedBy?: string;
 	/** Set when the action creates something the license limits: it then says why it is disabled. */
 	licenseGate?: {
 		status: LicenseCheckStatus;
@@ -54,6 +56,7 @@ const WizardActionButton: React.FC<{ action: WizardFrameAction }> = ({
 			onClickHandler={() => Promise.resolve(action.onClick())}
 			buttonVariant="contained"
 			disabled={action.disabled}
+			describedBy={action.describedBy}
 		/>
 	);
 	if (!action.licenseGate) return button;

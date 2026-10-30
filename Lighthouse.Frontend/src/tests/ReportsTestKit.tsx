@@ -74,6 +74,8 @@ export const CUTOFF_REFUSAL =
 export const thenNeedsAtLeast = (days: number) =>
 	`Then needs at least ${days} days.`;
 export const THEN_TOO_SHORT = thenNeedsAtLeast(14);
+export const nowNeedsAtLeast = (days: number) =>
+	`Now needs at least ${days} days.`;
 export const THEN_TOO_LONG = "Then can't reach back that far.";
 export const NO_METRIC = "Choose at least one metric";
 export const NOT_CAPTURED = "Not captured for this report";

@@ -84,6 +84,14 @@ export const NEUROLINK_CITY: Owner = {
 	name: "NeuroLink City",
 };
 
+/** As many owners of one kind as asked for, named Crew 01.. for Teams and Fleet 01.. for Portfolios. */
+export const manyOwners = (kind: Owner["kind"], count: number): Owner[] =>
+	Array.from({ length: count }, (_, index) => ({
+		kind,
+		id: (kind === "team" ? 300 : 500) + index,
+		name: `${kind === "team" ? "Crew" : "Fleet"} ${String(index + 1).padStart(2, "0")}`,
+	}));
+
 export const QUARTER = "Quarter vs qtr";
 export const MONTH = "Month vs month";
 
@@ -104,7 +112,7 @@ export const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
 export const OWNER_STEP = "Step 5 of 5 — Who gets this report?";
 export const TEAMS_GROUP = "Teams";
 export const PORTFOLIOS_GROUP = "Portfolios";
-export const SELECT_ALL = "Select all";
+export const selectAllOf = (group: string) => `Select all ${group}`;
 export const keptHistoryStarts = (keptSince: string, thenStarts: string) =>
 	`Kept history starts ${keptSince}; Then starts ${thenStarts}.`;
 export const openSettingsOf = (name: string) => `Open ${name} settings`;

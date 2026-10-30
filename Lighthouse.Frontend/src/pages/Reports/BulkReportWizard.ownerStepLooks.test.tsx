@@ -16,7 +16,7 @@ import {
 	pickOwner,
 	RETRY,
 	renderTheReportsPage,
-	SELECT_ALL,
+	selectAllOf,
 	TEAMS_GROUP,
 	toTheOwnerStep,
 	ZENITH,
@@ -116,7 +116,7 @@ describe("Who gets this report", () => {
 		await user.click(
 			within(screen.getByRole("group", { name: TEAMS_GROUP })).getByRole(
 				"button",
-				{ name: SELECT_ALL },
+				{ name: selectAllOf(TEAMS_GROUP) },
 			),
 		);
 

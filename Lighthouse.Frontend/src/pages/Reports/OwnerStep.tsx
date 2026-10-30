@@ -20,6 +20,9 @@ export const ownerKeyOf = (
 	owner: Pick<IReportCreationOwner, "ownerKind" | "ownerId">,
 ): string => `${owner.ownerKind}:${owner.ownerId}`;
 
+/** Id of the message the disabled Create button points at while too many owners are picked. */
+export const OVER_THE_CEILING_ID = "owners-over-the-ceiling";
+
 export const isOverTheCeiling = (pickedCount: number): boolean =>
 	pickedCount > MOST_PER_BULK_RUN;
 
@@ -76,6 +79,7 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 			<Button
 				size="small"
 				disabled={disabled}
+				aria-label={`Select all ${heading}`}
 				onClick={() => onSelectAll(owners)}
 			>
 				Select all
@@ -134,7 +138,12 @@ const OwnerList: React.FC<Readonly<OwnerListProps>> = ({
 				{`Only ${ownersName} you are Admin of are listed.`}
 			</Typography>
 			{isOverTheCeiling(pickedCount) && (
-				<Typography color="error" align="right">
+				<Typography
+					id={OVER_THE_CEILING_ID}
+					role="alert"
+					color="error"
+					align="right"
+				>
 					{`Pick at most ${MOST_PER_BULK_RUN} ${ownersName}.`}
 				</Typography>
 			)}

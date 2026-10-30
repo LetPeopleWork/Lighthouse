@@ -26,6 +26,7 @@ import TypeStep from "../Common/Reports/wizard/TypeStep";
 import BulkResult, { type BulkRun } from "./BulkResult";
 import OwnerStep, {
 	isOverTheCeiling,
+	OVER_THE_CEILING_ID,
 	type OwnersStatus,
 	ownerKeyOf,
 } from "./OwnerStep";
@@ -99,6 +100,9 @@ const createActionOf = (
 					ownersStatus !== "ready" ||
 					pickedCount === 0 ||
 					isOverTheCeiling(pickedCount),
+				describedBy: isOverTheCeiling(pickedCount)
+					? OVER_THE_CEILING_ID
+					: undefined,
 			}
 		: undefined;
 
