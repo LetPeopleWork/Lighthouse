@@ -4,6 +4,7 @@ import type {
 	GridColumnResizeParams,
 	GridColumnVisibilityModel,
 	GridRenderCellParams,
+	GridRowSelectionModel,
 	GridRowSpacingParams,
 	GridValidRowModel,
 } from "@mui/x-data-grid";
@@ -31,6 +32,7 @@ import type {
 	ColumnVisibilityModel,
 	DataGridBaseProps,
 	DataGridColumn,
+	RowPicking,
 } from "./types";
 
 /**
@@ -148,6 +150,29 @@ function useSpacingInWholeList(
 }
 
 /**
+ * The grid's checkbox props, or none at all when the caller does not pick rows. The picks are always named one by
+ * one, never as "every row but these", so the caller reads them without knowing which rows the grid holds.
+ */
+function useRowPicking(picking: RowPicking | undefined) {
+	const selectedIds = picking?.selectedIds;
+	const onSelectionChange = picking?.onSelectionChange;
+	return useMemo(() => {
+		if (selectedIds === undefined || onSelectionChange === undefined) return {};
+		const rowSelectionModel: GridRowSelectionModel = {
+			type: "include",
+			ids: new Set(selectedIds),
+		};
+		return {
+			checkboxSelection: true,
+			disableRowSelectionExcludeModel: true,
+			rowSelectionModel,
+			onRowSelectionModelChange: (model: GridRowSelectionModel) =>
+				onSelectionChange([...model.ids]),
+		};
+	}, [selectedIds, onSelectionChange]);
+}
+
+/**
  * DataGridBase - A reusable data grid component with consistent functionality
  * Built on top of @mui/x-data-grid with additional features:
  * - Sorting on all columns
@@ -176,6 +201,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	slots,
 	getRowSpacing,
 	defaultColumnVisibilityModel,
+	checkboxSelection,
 }: Readonly<DataGridBaseProps<T>>): React.ReactElement {
 	// Check license status for premium features
 	const { licenseStatus } = useLicenseRestrictions();
@@ -184,6 +210,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	// Create API ref to access DataGrid API
 	const apiRef = useGridApiRef();
 	const spacingInWholeList = useSpacingInWholeList(apiRef, getRowSpacing);
+	const rowPicking = useRowPicking(checkboxSelection);
 
 	// Generate localStorage key for this grid's persisted state (visibility, order, widths, sort)
 	const storageKeyForState = `lighthouse:datagrid:${storageKey}:state`;
@@ -369,6 +396,7 @@ function DataGridBase<T extends GridValidRowModel>({
 					pageSizeOptions={[PAGE_SIZE]}
 					disableRowSelectionOnClick
 					hideFooterSelectedRowCount
+					{...rowPicking}
 					getRowHeight={() => "auto"}
 					slots={gridSlots}
 					getRowSpacing={spacingInWholeList}

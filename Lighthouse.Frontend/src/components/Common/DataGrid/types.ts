@@ -84,6 +84,14 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 	 * change to these defaults still reaches every column the user never touched.
 	 */
 	defaultColumnVisibilityModel?: ColumnVisibilityModel;
+	/** Puts a checkbox on every row and one over the header; without it the grid offers none. */
+	checkboxSelection?: RowPicking;
+}
+
+/** Which rows are picked is held by the caller, so it can act on them and decide when the picks are cleared. */
+export interface RowPicking {
+	selectedIds: readonly GridRowId[];
+	onSelectionChange: (selectedIds: GridRowId[]) => void;
 }
 
 /**

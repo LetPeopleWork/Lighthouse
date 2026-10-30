@@ -431,6 +431,39 @@ describe("ReportService", () => {
 		).rejects.toBeInstanceOf(ApiError);
 	});
 
+	it("removes several reports in one request and answers one outcome per report", async () => {
+		mockedAxios.post.mockResolvedValueOnce({
+			data: {
+				outcomes: [
+					{ reportId: 801, status: "removed", code: null },
+					{ reportId: 802, status: "removed", code: "already-gone" },
+					{ reportId: 803, status: "notRemoved", code: "not-admin" },
+				],
+			},
+		});
+
+		const outcomes = await subject.removeReportsInBulk([801, 802, 803]);
+
+		expect(mockedAxios.post).toHaveBeenCalledWith("/reports/bulk-removal", {
+			reportIds: [801, 802, 803],
+		});
+		expect(outcomes).toEqual([
+			{ reportId: 801, status: "removed", code: undefined },
+			{ reportId: 802, status: "removed", code: "already-gone" },
+			{ reportId: 803, status: "notRemoved", code: "not-admin" },
+		]);
+	});
+
+	it("refuses an answer to a removal that names an outcome it does not know", async () => {
+		mockedAxios.post.mockResolvedValueOnce({
+			data: { outcomes: [{ reportId: 801, status: "maybe" }] },
+		});
+
+		await expect(subject.removeReportsInBulk([801])).rejects.toBeInstanceOf(
+			ApiError,
+		);
+	});
+
 	it("refuses a list that is not the shape the server promises", async () => {
 		mockedAxios.get.mockResolvedValueOnce({
 			data: { reports: [{ id: 1, name: null }] },

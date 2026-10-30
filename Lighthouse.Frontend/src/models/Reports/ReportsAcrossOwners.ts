@@ -104,6 +104,18 @@ export const ReportCreationOptionsSchema: z.ZodType<IReportCreationOptions> =
 		),
 	});
 
+export const ReportRemovalOutcomesSchema: z.ZodType<{
+	outcomes: IReportRemovalOutcome[];
+}> = z.object({
+	outcomes: z.array(
+		z.object({
+			reportId: z.number(),
+			status: z.enum(["removed", "notRemoved"]),
+			code: optionalOnTheWire(z.string()),
+		}),
+	),
+});
+
 export const ReportCreationOutcomesSchema: z.ZodType<{
 	outcomes: IReportCreationOutcome[];
 }> = z.object({

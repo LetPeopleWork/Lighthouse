@@ -17,6 +17,7 @@ import {
 	type IReportsAcrossOwners,
 	ReportCreationOptionsSchema,
 	ReportCreationOutcomesSchema,
+	ReportRemovalOutcomesSchema,
 	ReportsAcrossOwnersSchema,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { BaseApiService } from "./BaseApiService";
@@ -140,12 +141,15 @@ export class ReportService extends BaseApiService implements IReportService {
 	}
 
 	public removeReportsInBulk(
-		_reportIds: number[],
+		reportIds: number[],
 	): Promise<IReportRemovalOutcome[]> {
-		return this.withErrorHandling(() =>
-			Promise.reject(
-				new Error("SCAFFOLD: removing reports in bulk is not built yet"),
-			),
-		);
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.post<unknown>(
+				"/reports/bulk-removal",
+				{ reportIds },
+			);
+			return BaseApiService.parse(ReportRemovalOutcomesSchema, response.data)
+				.outcomes;
+		});
 	}
 }

@@ -38,3 +38,15 @@ describe("who creates reports for several owners", () => {
 		]);
 	});
 });
+
+/**
+ * A removal reads every report list again once it is over, whatever it answered, so a removed report never lingers
+ * on a list. One hook makes the call and does that.
+ */
+describe("who removes several reports at once", () => {
+	it("only the bulk removal hook asks the server to remove reports in bulk", () => {
+		expect(sourcesCalling("removeReportsInBulk")).toEqual([
+			"pages/Reports/useBulkReportRemoval.ts",
+		]);
+	});
+});

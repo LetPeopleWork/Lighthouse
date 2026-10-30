@@ -1,4 +1,5 @@
 import AddIcon from "@mui/icons-material/Add";
+import DeleteIcon from "@mui/icons-material/Delete";
 import {
 	Box,
 	Button,
@@ -6,6 +7,7 @@ import {
 	Container,
 	Typography,
 } from "@mui/material";
+import type { GridRowId } from "@mui/x-data-grid";
 import type React from "react";
 import { useRef, useState } from "react";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
@@ -27,6 +29,7 @@ import { useReportEditing } from "../Common/Reports/useReportEditing";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import BulkReportWizard from "./BulkReportWizard";
 import type { OwnersStatus } from "./OwnerStep";
+import RemoveSelectedDialog from "./RemoveSelectedDialog";
 import { useAllReports } from "./useAllReports";
 import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
@@ -131,6 +134,49 @@ const useBulkCreation = (rbac: RbacState) => {
 	return { button, wizard };
 };
 
+/** The reports the reader picked, in the order picked, and Remove, which asks before removing them. */
+const useSelectionRemoval = (
+	reports: readonly IReportAcrossOwners[] | undefined,
+) => {
+	const [selectedIds, setSelectedIds] = useState<GridRowId[]>([]);
+	// Held from the moment Remove is pressed, so the dialog keeps naming them while the list is read again.
+	const [confirming, setConfirming] = useState<IReportAcrossOwners[] | null>(
+		null,
+	);
+	const picked = selectedIds.flatMap(
+		(id) => reports?.find((report) => report.id === id) ?? [],
+	);
+	const toolbar = (
+		<>
+			<Button
+				variant="outlined"
+				startIcon={<DeleteIcon />}
+				disabled={picked.length === 0}
+				onClick={() => setConfirming(picked)}
+			>
+				{`Remove (${picked.length})`}
+			</Button>
+			<Typography color="text.secondary">{`${picked.length} selected`}</Typography>
+		</>
+	);
+	const dialog =
+		confirming === null ? null : (
+			<RemoveSelectedDialog
+				reports={confirming}
+				onCancel={() => setConfirming(null)}
+				onDone={() => {
+					setConfirming(null);
+					setSelectedIds([]);
+				}}
+			/>
+		);
+	return {
+		picking: { selectedIds, onSelectionChange: setSelectedIds },
+		toolbar,
+		dialog,
+	};
+};
+
 const ReportsPageContent: React.FC = () => {
 	const rbac = useRbac();
 	const { getTerm } = useTerminology();
@@ -138,6 +184,7 @@ const ReportsPageContent: React.FC = () => {
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
+	const removal = useSelectionRemoval(data?.reports);
 	const { mayEdit } = mayEditReportsOf(rbac);
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);
@@ -158,7 +205,10 @@ const ReportsPageContent: React.FC = () => {
 			<Typography variant="h4" component="h1" sx={{ my: 2 }}>
 				Reports
 			</Typography>
-			<Box sx={{ display: "flex", mb: 2 }}>{bulkCreation.button}</Box>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+				{bulkCreation.button}
+				{removal.toolbar}
+			</Box>
 			<Box
 				data-testid="all-reports"
 				data-widget-status={status}
@@ -186,6 +236,7 @@ const ReportsPageContent: React.FC = () => {
 								reports={byOwner(data.reports)}
 								actions={actions}
 								showOwner
+								picking={removal.picking}
 							/>
 						))}
 				</WidgetBody>
@@ -194,6 +245,7 @@ const ReportsPageContent: React.FC = () => {
 			{deletion.dialog}
 			{pdfExport.frame}
 			{bulkCreation.wizard}
+			{removal.dialog}
 		</Container>
 	);
 };

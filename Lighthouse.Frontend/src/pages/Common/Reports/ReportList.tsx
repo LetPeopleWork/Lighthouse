@@ -14,7 +14,10 @@ import {
 import type React from "react";
 import { useMemo, useState } from "react";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
-import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
+import type {
+	DataGridColumn,
+	RowPicking,
+} from "../../../components/Common/DataGrid/types";
 import StyledLink from "../../../components/Common/StyledLink/StyledLink";
 import type {
 	IReportListItem,
@@ -55,6 +58,8 @@ interface ReportListProps {
 	actions?: ReportListActions;
 	/** Adds a column naming the Team or Portfolio each report is on. */
 	showOwner?: boolean;
+	/** Lets the reader pick rows by their checkboxes; without it the list offers none. */
+	picking?: RowPicking;
 }
 
 // Held back only in look while one PDF is prepared: a truly disabled icon would throw a keyboard reader's focus to
@@ -233,6 +238,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 	reports,
 	actions,
 	showOwner = false,
+	picking,
 }) => {
 	const { getTerm } = useTerminology();
 	const [filter, setFilter] = useState("");
@@ -292,6 +298,7 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 				storageKey={
 					owner === undefined ? "reports-all" : `reports-${owner.kind}`
 				}
+				checkboxSelection={picking}
 			/>
 		</>
 	);

@@ -1,5 +1,7 @@
+import type { GridRowId } from "@mui/x-data-grid";
 import { render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
+import { useState } from "react";
 import type { Mock } from "vitest";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
@@ -862,5 +864,76 @@ describe("Persistence (Order & Widths)", () => {
 			.getAllByRole("listitem")
 			.map((item) => item.textContent?.trim());
 		expect(offered).toEqual(["ID", "Email", "Age", "Name"]);
+	});
+});
+
+describe("Picking rows with checkboxes", () => {
+	const PickingGrid = ({
+		initiallyPicked = [],
+		onPicked = () => undefined,
+	}: {
+		initiallyPicked?: GridRowId[];
+		onPicked?: (ids: GridRowId[]) => void;
+	}) => {
+		const [picked, setPicked] = useState<GridRowId[]>(initiallyPicked);
+		return (
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey="test-grid"
+				checkboxSelection={{
+					selectedIds: picked,
+					onSelectionChange: (ids) => {
+						setPicked(ids);
+						onPicked(ids);
+					},
+				}}
+			/>
+		);
+	};
+
+	const checkboxesIn = (container: HTMLElement) =>
+		container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+
+	const rowCheckboxOf = (name: string) =>
+		within(
+			screen.getByText(name).closest('[role="row"]') as HTMLElement,
+		).getByRole("checkbox");
+
+	it("offers no checkbox when the grid is not asked for one", () => {
+		const { container } = render(
+			<DataGridBase
+				rows={mockRows}
+				columns={mockColumns}
+				storageKey="test-grid"
+			/>,
+		);
+
+		expect(checkboxesIn(container)).toHaveLength(0);
+	});
+
+	it("puts a checkbox on every row and one over the header when asked", () => {
+		const { container } = render(<PickingGrid />);
+
+		expect(checkboxesIn(container)).toHaveLength(mockRows.length + 1);
+	});
+
+	it("tells the caller the ids of the rows ticked so far", async () => {
+		const onPicked = vi.fn();
+		render(<PickingGrid onPicked={onPicked} />);
+		const user = userEvent.setup();
+
+		await user.click(rowCheckboxOf("Alice"));
+		await user.click(rowCheckboxOf("Charlie"));
+
+		expect(onPicked).toHaveBeenLastCalledWith([1, 3]);
+	});
+
+	it("shows ticked exactly the rows the caller holds as picked", () => {
+		render(<PickingGrid initiallyPicked={[2]} />);
+
+		expect(rowCheckboxOf("Alice")).not.toBeChecked();
+		expect(rowCheckboxOf("Bob")).toBeChecked();
+		expect(rowCheckboxOf("Charlie")).not.toBeChecked();
 	});
 });
