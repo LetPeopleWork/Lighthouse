@@ -51,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_on_an_owner_she_only_reads_is_not_removed_and_stays()
         {
             var gravity = ATeam("Gravity");
@@ -73,7 +72,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_somebody_else_removed_first_counts_as_removed_and_says_it_was_already_gone()
         {
             var zenith = ATeam("Zenith");
@@ -96,7 +94,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task Losing_Admin_while_the_run_is_under_way_is_answered_for_that_report_alone()
         {
             var zenith = ATeam("Zenith");
@@ -118,7 +115,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_whose_owner_was_deleted_counts_as_already_gone()
         {
             var voyager = ATeam("Voyager");

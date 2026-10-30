@@ -414,6 +414,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_report_removed_by_somebody_else_after_its_owner_was_found_is_answered_removed_as_already_gone_and_the_run_goes_on()
+        {
+            commands.Setup(port => port.Delete(Zenith, OnZenith)).ReturnsAsync(ReportOutcomeStatus.NotFound);
+
+            var outcomes = await Subject().RemoveEach([OnZenith, OnGravity], writeAccess.Object);
+
+            Assert.That(outcomes, Is.EqualTo(new[]
+            {
+                ReportRemovalOutcome.Removed(OnZenith, ReportRefusalCodes.AlreadyGone),
+                ReportRemovalOutcome.Removed(OnGravity),
+            }));
+        }
+
+        [Test]
+        public async Task A_report_whose_removal_fails_to_save_is_answered_not_saved_its_pending_change_is_discarded_and_the_run_goes_on()
+        {
+            const string DatabaseMessage = "constraint failed on host db.internal";
+            commands.Setup(port => port.Delete(Zenith, OnZenith)).ThrowsAsync(new DbUpdateException(DatabaseMessage, new InvalidOperationException(DatabaseMessage)));
+            writer.Setup(port => port.DiscardPendingChanges())
+                .Callback(() => commands.Verify(port => port.Delete(Gravity, It.IsAny<int>()), Times.Never));
+
+            var outcomes = await Subject().RemoveEach([OnZenith, OnGravity], writeAccess.Object);
+
+            var warning = logger.Everything.Single(line => line.Level == LogLevel.Warning);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportRemovalOutcome.NotRemoved(OnZenith, ReportRefusalCodes.NotSaved),
+                    ReportRemovalOutcome.Removed(OnGravity),
+                }));
+                writer.Verify(port => port.DiscardPendingChanges(), Times.Once);
+                Assert.That(warning.Properties["ReportId"], Is.EqualTo(OnZenith));
+                Assert.That(warning.Properties["ExceptionType"], Is.EqualTo(nameof(DbUpdateException)));
+                Assert.That(warning.Properties["InnerExceptionType"], Is.EqualTo(nameof(InvalidOperationException)));
+                Assert.That(warning.Message, Does.Not.Contain(DatabaseMessage));
+            }
+        }
+
+        [Test]
         public async Task A_removal_run_logs_one_report_bulk_run_line_with_its_counts()
         {
             eachDeleteTakes = TimeSpan.FromSeconds(2);

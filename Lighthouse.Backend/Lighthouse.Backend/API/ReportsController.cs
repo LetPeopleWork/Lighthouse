@@ -58,7 +58,17 @@ namespace Lighthouse.Backend.API
         [HttpPost("bulk-removal")]
         public async Task<ActionResult<ReportBulkRemoval>> RemoveEach([FromBody] ReportRemovalRequest request)
         {
-            var outcomes = await bulkCommands.RemoveEach(request.ReportIds ?? [], new ReportOwnerWriteAccess(rbacAdministrationService, User));
+            if (request.ReportIds is not { Count: > 0 } asked)
+            {
+                return ValidationProblem("A removal names at least one report.");
+            }
+
+            if (asked.Count > IReportBulkCommands.MostOwnersPerRun)
+            {
+                return ValidationProblem($"A removal holds at most {IReportBulkCommands.MostOwnersPerRun} reports.");
+            }
+
+            var outcomes = await bulkCommands.RemoveEach(asked, new ReportOwnerWriteAccess(rbacAdministrationService, User));
             return Ok(new ReportBulkRemoval(outcomes));
         }
 

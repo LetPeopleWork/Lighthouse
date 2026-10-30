@@ -74,9 +74,30 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return ReportRemovalOutcome.NotRemoved(reportId, ReportRefusalCodes.NotAdmin);
             }
 
-            return await commands.Delete(owner, reportId) == ReportOutcomeStatus.Done
+            ReportOutcomeStatus deleted;
+            try
+            {
+                deleted = await commands.Delete(owner, reportId);
+            }
+            catch (DbUpdateException failure)
+            {
+                return RemovalNotSaved(owner, reportId, failure);
+            }
+
+            return deleted == ReportOutcomeStatus.Done
                 ? ReportRemovalOutcome.Removed(reportId)
                 : ReportRemovalOutcome.Removed(reportId, ReportRefusalCodes.AlreadyGone);
+        }
+
+        private ReportRemovalOutcome RemovalNotSaved(ReportOwner owner, int reportId, DbUpdateException failure)
+        {
+            writer.DiscardPendingChanges();
+
+            // A database error's message can quote stored values or connection details, so only the type names are logged.
+            logger.LogWarning("Removal of report {ReportId} of {OwnerKind} {OwnerId} was not saved with {Reason}: {ExceptionType} ({InnerExceptionType})",
+                reportId, owner.Kind, owner.Id, ReportRefusalCodes.NotSaved, failure.GetType().Name, failure.InnerException?.GetType().Name);
+
+            return ReportRemovalOutcome.NotRemoved(reportId, ReportRefusalCodes.NotSaved);
         }
 
         private async Task<ReportOwnerOutcome> CreateFor(ReportOwner owner, NewReport request, IReportOwnerWriteAccess writeAccess)
@@ -93,7 +114,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             }
             catch (Exception failure) when (failure is DbUpdateException or ReportOwnerGoneException)
             {
-                return NotSaved(owner, failure);
+                return CreationNotSaved(owner, failure);
             }
 
             return created switch
@@ -105,7 +126,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             };
         }
 
-        private ReportOwnerOutcome NotSaved(ReportOwner owner, Exception failure)
+        private ReportOwnerOutcome CreationNotSaved(ReportOwner owner, Exception failure)
         {
             writer.DiscardPendingChanges();
 
