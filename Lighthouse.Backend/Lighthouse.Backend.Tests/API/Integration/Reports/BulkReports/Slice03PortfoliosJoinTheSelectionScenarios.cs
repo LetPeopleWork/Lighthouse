@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         private static readonly string[] OnlyTheQuarter = [TheQuarter];
 
         [Test]
-        [Ignore(PendingEpic6350.Slice03)]
         public async Task Teams_and_a_Portfolio_get_the_same_comparison_in_one_run()
         {
             TheInstanceHasAPremiumLicence();
@@ -61,7 +60,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice03)]
         public async Task A_run_of_Portfolios_only_creates_on_each()
         {
             TheInstanceHasAPremiumLicence();
