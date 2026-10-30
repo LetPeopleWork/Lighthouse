@@ -381,6 +381,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         }
 
         [Test]
+        public async Task A_report_named_twice_is_answered_once_where_it_was_first_named_and_removed_once()
+        {
+            var outcomes = await Subject().RemoveEach([OnZenith, OnGravity, OnZenith], MayWriteEvery());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcomes, Is.EqualTo(new[]
+                {
+                    ReportRemovalOutcome.Removed(OnZenith),
+                    ReportRemovalOutcome.Removed(OnGravity),
+                }));
+                commands.Verify(port => port.Delete(Zenith, OnZenith), Times.Once);
+            }
+        }
+
+        [Test]
         public async Task A_report_on_an_owner_the_caller_may_not_change_is_not_removed_and_the_run_goes_on()
         {
             writeAccess.Setup(access => access.MayWriteAsync(Gravity)).ReturnsAsync(false);

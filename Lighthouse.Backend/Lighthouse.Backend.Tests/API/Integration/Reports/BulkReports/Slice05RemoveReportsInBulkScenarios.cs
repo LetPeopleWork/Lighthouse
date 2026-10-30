@@ -132,7 +132,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task More_than_50_reports_are_refused_whole_and_nothing_is_removed()
         {
             var zenith = ATeam("Zenith");
@@ -146,7 +145,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_removal_naming_no_report_is_refused()
         {
             var zenith = ATeam("Zenith");
@@ -160,7 +158,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [Test]
-        [Ignore(PendingEpic6350.Slice05)]
         public async Task A_report_named_twice_is_removed_once_and_answered_once()
         {
             var zenith = ATeam("Zenith");

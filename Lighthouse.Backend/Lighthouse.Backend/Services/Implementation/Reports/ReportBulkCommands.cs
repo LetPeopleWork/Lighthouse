@@ -45,10 +45,11 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         {
             var started = timeProvider.GetTimestamp();
 
+            var distinctIds = reportIds.Distinct().ToList();
             var outcomes = new List<ReportRemovalOutcome>();
             try
             {
-                foreach (var reportId in reportIds)
+                foreach (var reportId in distinctIds)
                 {
                     outcomes.Add(await Remove(reportId, writeAccess));
                 }
@@ -57,7 +58,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             }
             finally
             {
-                LogRemovalRun(reportIds.Count, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
+                LogRemovalRun(distinctIds.Count, outcomes, timeProvider.GetElapsedTime(started).TotalMilliseconds);
             }
         }
 
