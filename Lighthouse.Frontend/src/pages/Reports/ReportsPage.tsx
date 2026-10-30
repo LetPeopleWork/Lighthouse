@@ -5,6 +5,7 @@ import {
 	Button,
 	CircularProgress,
 	Container,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import type { GridRowId } from "@mui/x-data-grid";
@@ -14,7 +15,10 @@ import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import SnackbarErrorHandler from "../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { type RbacState, useRbac } from "../../hooks/useRbac";
-import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
+import {
+	type IReportAcrossOwners,
+	MOST_PER_BULK_RUN,
+} from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
@@ -146,16 +150,23 @@ const useSelectionRemoval = (
 	const picked = selectedIds.flatMap(
 		(id) => reports?.find((report) => report.id === id) ?? [],
 	);
+	const aboveCeiling = picked.length > MOST_PER_BULK_RUN;
 	const toolbar = (
 		<>
-			<Button
-				variant="outlined"
-				startIcon={<DeleteIcon />}
-				disabled={picked.length === 0}
-				onClick={() => setConfirming(picked)}
+			<Tooltip
+				title={aboveCeiling ? `Pick at most ${MOST_PER_BULK_RUN} reports.` : ""}
 			>
-				{`Remove (${picked.length})`}
-			</Button>
+				<span>
+					<Button
+						variant="outlined"
+						startIcon={<DeleteIcon />}
+						disabled={picked.length === 0 || aboveCeiling}
+						onClick={() => setConfirming(picked)}
+					>
+						{`Remove (${picked.length})`}
+					</Button>
+				</span>
+			</Tooltip>
 			<Typography color="text.secondary">{`${picked.length} selected`}</Typography>
 		</>
 	);

@@ -287,7 +287,10 @@ const ReportList: React.FC<Readonly<ReportListProps>> = ({
 					size="small"
 					placeholder={FILTER_LABEL}
 					value={filter}
-					onChange={(event) => setFilter(event.target.value)}
+					onChange={(event) => {
+						setFilter(event.target.value);
+						picking?.onSelectionChange([]);
+					}}
 					slotProps={{ htmlInput: { "aria-label": FILTER_LABEL } }}
 					sx={{ mb: 1, minWidth: 300 }}
 				/>

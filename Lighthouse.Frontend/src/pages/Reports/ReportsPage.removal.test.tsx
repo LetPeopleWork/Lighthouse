@@ -306,7 +306,7 @@ describe("Remove several reports at once", () => {
 describe("Picking reports", () => {
 	const pendingSelection = pendingEpic6350("05");
 
-	it.skip(`above 50 picked, Remove and Export PDF are disabled and say at most 50 (${pendingSelection})`, async () => {
+	it(`above 50 picked, Remove and Export PDF are disabled and say at most 50 (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH)),
@@ -325,7 +325,7 @@ describe("Picking reports", () => {
 		);
 	});
 
-	it.skip(`exactly 50 picked may still be removed (${pendingSelection})`, async () => {
+	it(`exactly 50 picked may still be removed (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 0)),
@@ -341,7 +341,7 @@ describe("Picking reports", () => {
 		).toBeEnabled();
 	});
 
-	it.skip(`changing the filter clears what was picked (${pendingSelection})`, async () => {
+	it(`changing the filter clears what was picked (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -357,7 +357,7 @@ describe("Picking reports", () => {
 		).toBeDisabled();
 	});
 
-	it.skip(`sorting keeps what was picked (${pendingSelection})`, async () => {
+	it(`sorting keeps what was picked (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -370,7 +370,7 @@ describe("Picking reports", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip(`Select all picks every row the filter shows, on every page (${pendingSelection})`, async () => {
+	it(`Select all picks every row the filter shows, on every page (${pendingSelection})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 70)),
