@@ -1,0 +1,51 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6432.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6432.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/pages/Reports/BulkReportWizard.tsx:78-121",
+    "src/pages/Reports/BulkReportWizard.tsx:203-203",
+    "src/pages/Reports/BulkReportWizard.tsx:278-308",
+    "src/pages/Reports/BulkReportWizard.tsx:355-355",
+    "src/pages/Reports/BulkReportWizard.tsx:360-361",
+    "src/pages/Reports/OwnerStep.tsx:41-65",
+    "src/pages/Reports/OwnerStep.tsx:129-160",
+    "src/pages/Reports/ReportsPage.tsx:37-42",
+    "src/pages/Reports/ReportsPage.tsx:186-186",
+    "src/pages/Common/Reports/wizard/reportWindowCheck.ts:97-107"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6432-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6432"
+}
