@@ -197,6 +197,12 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   error-severity rules (S8969/S8970) that redden `Package App` but not `Verify Backend`. Fix: apply the
   bump locally, run `dotnet build`, fix or promote what it surfaces, then let the bump through. Not
   automated because: the new rules do not exist until someone takes the bump.
+- **S6639 (memory allocation from an unbounded request list)**: an endpoint that takes a list from the
+  request body (`reportIds`, owner ids) and hands it to a service that allocates or loops per item fails
+  the security rating. Fix: refuse the request in the controller when the list is missing, empty or longer
+  than the run's ceiling, before any service sees it, as bulk report creation does with
+  `IReportBulkCommands.MostOwnersPerRun`. Not automated because: it is SonarCloud's taint analysis, which
+  runs only on the server; SonarAnalyzer.CSharp in the local build has no security rules.
 
 ### Design rules a compiler cannot see
 
