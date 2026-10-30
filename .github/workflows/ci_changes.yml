@@ -43,6 +43,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          retries: 3
           script: |
             const { isGreenBase } = await import(`${process.env.GITHUB_WORKSPACE}/.github/scripts/green-base-run.mjs`);
             const workflow_id = 'ci.yml';
