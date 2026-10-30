@@ -32,6 +32,7 @@ import {
 	selectTheRowOf,
 	theReportNamesListed,
 	theReportsTable,
+	VOYAGER,
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
 import { aReportService } from "../../tests/ReportsTestKit";
@@ -127,7 +128,7 @@ describe("Remove several reports at once", () => {
 		expect(theReportNamesListed()).toEqual([MONTH, QUARTER, QUARTER]);
 	});
 
-	it.skip(`the confirmation warns when one of them holds a Then that can no longer be rebuilt (${pending})`, async () => {
+	it(`the confirmation warns when one of them holds a Then that can no longer be rebuilt (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi
@@ -152,7 +153,7 @@ describe("Remove several reports at once", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip(`with every Then still rebuildable the confirmation carries no warning (${pending})`, async () => {
+	it(`with every Then still rebuildable the confirmation carries no warning (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
 		});
@@ -167,7 +168,7 @@ describe("Remove several reports at once", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it.skip(`with one picked report on an owner she only reads, Remove is disabled and says why (${pending})`, async () => {
+	it(`with one picked report on an owner she only reads, Remove is disabled and says why (${pending})`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
 				vi
@@ -192,6 +193,32 @@ describe("Remove several reports at once", () => {
 		await user.hover(remove.parentElement ?? remove);
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(
 			new RegExp(`^${notAdminOfSome(1, 4).replaceAll(".", "\\.")}$`),
+		);
+	});
+
+	it(`with two picked reports on owners she only reads, the reason says they are (${pending})`, async () => {
+		const voyagersQuarter = aReportOn(VOYAGER, QUARTER, { id: 805 });
+		const { user } = renderTheReportsPage({
+			reportService: listing(
+				vi
+					.fn()
+					.mockResolvedValue(
+						everyReport(zenithsQuarter, pulsarsQuarter, voyagersQuarter),
+					),
+			),
+			permissions: { adminOf: [ZENITH] },
+		});
+		await theReportsTable();
+
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, QUARTER, PULSAR);
+		await selectTheRowOf(user, QUARTER, VOYAGER);
+
+		const remove = screen.getByRole("button", { name: removeButton(3) });
+		expect(remove).toBeDisabled();
+		await user.hover(remove.parentElement ?? remove);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			new RegExp(`^${notAdminOfSome(2, 3).replaceAll(".", "\\.")}$`),
 		);
 	});
 

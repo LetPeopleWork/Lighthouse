@@ -107,7 +107,7 @@ export const exportButton = (count: number) => `Export PDF (${count})`;
 export const selectedCount = (count: number) => `${count} selected`;
 export const AT_MOST_50 = "Pick at most 50 reports.";
 export const notAdminOfSome = (notAdmin: number, selected: number) =>
-	`${notAdmin} of the ${selected} selected reports is on a Team or Portfolio you are not Admin of.`;
+	`${notAdmin} of the ${selected} selected reports ${notAdmin === 1 ? "is" : "are"} on a Team or Portfolio you are not Admin of.`;
 export const NOT_ADMIN_OF_ANY = "You are not Admin of any Team or Portfolio.";
 export const OWNER_STEP = "Step 5 of 5 — Who gets this report?";
 export const TEAMS_GROUP = "Teams";

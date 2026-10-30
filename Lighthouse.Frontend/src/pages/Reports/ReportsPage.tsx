@@ -138,10 +138,25 @@ const useBulkCreation = (rbac: RbacState) => {
 	return { button, wizard };
 };
 
+/** Why Remove is held back, or "" when it is not: too many picked outweighs picks on owners the reader cannot change. */
+const removeBlockedBecause = (
+	picked: number,
+	notAdmin: number,
+	getTerm: (key: string) => string,
+): string => {
+	if (picked > MOST_PER_BULK_RUN)
+		return `Pick at most ${MOST_PER_BULK_RUN} reports.`;
+	if (notAdmin === 0) return "";
+	return `${notAdmin} of the ${picked} selected reports ${notAdmin === 1 ? "is" : "are"} on a ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)} you are not Admin of.`;
+};
+
 /** The reports the reader picked, in the order picked, and Remove, which asks before removing them. */
 const useSelectionRemoval = (
 	reports: readonly IReportAcrossOwners[] | undefined,
+	rbac: RbacState,
 ) => {
+	const { getTerm } = useTerminology();
+	const { mayEdit } = mayEditReportsOf(rbac);
 	const [selectedIds, setSelectedIds] = useState<GridRowId[]>([]);
 	// Held from the moment Remove is pressed, so the dialog keeps naming them while the list is read again.
 	const [confirming, setConfirming] = useState<IReportAcrossOwners[] | null>(
@@ -150,17 +165,20 @@ const useSelectionRemoval = (
 	const picked = selectedIds.flatMap(
 		(id) => reports?.find((report) => report.id === id) ?? [],
 	);
-	const aboveCeiling = picked.length > MOST_PER_BULK_RUN;
+	const notAdmin = rbac.isLoading
+		? 0
+		: picked.filter((report) => !mayEdit(ownerOfReport(report))).length;
+	const blockedBecause = removeBlockedBecause(picked.length, notAdmin, getTerm);
 	const toolbar = (
 		<>
-			<Tooltip
-				title={aboveCeiling ? `Pick at most ${MOST_PER_BULK_RUN} reports.` : ""}
-			>
+			<Tooltip title={blockedBecause}>
 				<span>
 					<Button
 						variant="outlined"
 						startIcon={<DeleteIcon />}
-						disabled={picked.length === 0 || aboveCeiling}
+						disabled={
+							picked.length === 0 || rbac.isLoading || blockedBecause !== ""
+						}
 						onClick={() => setConfirming(picked)}
 					>
 						{`Remove (${picked.length})`}
@@ -195,7 +213,7 @@ const ReportsPageContent: React.FC = () => {
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
-	const removal = useSelectionRemoval(data?.reports);
+	const removal = useSelectionRemoval(data?.reports, rbac);
 	const { mayEdit } = mayEditReportsOf(rbac);
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);

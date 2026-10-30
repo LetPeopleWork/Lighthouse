@@ -1,4 +1,5 @@
 import {
+	Alert,
 	Button,
 	CircularProgress,
 	Dialog,
@@ -28,31 +29,52 @@ const headlineOf = (outcomes: readonly IReportRemovalOutcome[]): string => {
 	return `${removed} ${reportsWord(removed)} removed`;
 };
 
+/** Removing a report whose Then the kept history no longer reaches loses that Then for good, so say so first. */
+const lostForGoodWarningOf = (
+	reports: readonly IReportAcrossOwners[],
+): string | undefined => {
+	const lost = reports.filter(
+		(report) => report.thenAndNow?.thenRebuildable === false,
+	).length;
+	if (lost === 0) return undefined;
+	return lost === 1
+		? "1 of them has a Then that can no longer be rebuilt from the kept history; removing it loses it for good."
+		: `${lost} of them have a Then that can no longer be rebuilt from the kept history; removing them loses them for good.`;
+};
+
 const Confirmation: React.FC<
 	Readonly<{
 		reports: readonly IReportAcrossOwners[];
 		onRemove: () => void;
 		onCancel: () => void;
 	}>
-> = ({ reports, onRemove, onCancel }) => (
-	<>
-		<DialogContent>
-			<List dense>
-				{reports.map((report) => (
-					<ListItem key={report.id} disableGutters>
-						{`${report.name} — ${report.ownerName}`}
-					</ListItem>
-				))}
-			</List>
-		</DialogContent>
-		<DialogActions>
-			<Button onClick={onCancel}>Cancel</Button>
-			<Button variant="contained" color="error" onClick={onRemove}>
-				{`Remove ${reports.length} ${reportsWord(reports.length)}`}
-			</Button>
-		</DialogActions>
-	</>
-);
+> = ({ reports, onRemove, onCancel }) => {
+	const warning = lostForGoodWarningOf(reports);
+	return (
+		<>
+			<DialogContent>
+				{warning !== undefined && (
+					<Alert severity="warning" sx={{ mb: 1 }}>
+						{warning}
+					</Alert>
+				)}
+				<List dense>
+					{reports.map((report) => (
+						<ListItem key={report.id} disableGutters>
+							{`${report.name} — ${report.ownerName}`}
+						</ListItem>
+					))}
+				</List>
+			</DialogContent>
+			<DialogActions>
+				<Button onClick={onCancel}>Cancel</Button>
+				<Button variant="contained" color="error" onClick={onRemove}>
+					{`Remove ${reports.length} ${reportsWord(reports.length)}`}
+				</Button>
+			</DialogActions>
+		</>
+	);
+};
 
 const UnderWay: React.FC<Readonly<{ count: number }>> = ({ count }) => (
 	<DialogContent>
