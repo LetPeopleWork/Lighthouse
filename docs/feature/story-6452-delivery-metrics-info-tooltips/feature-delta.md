@@ -83,6 +83,46 @@ have produced are recorded here so nothing is skipped silently.
     that *Feature*. A hatched band is still an estimate rather than counted *Work Items*. The line, on the
     right-hand axis, counts how many *Features* the *Delivery* held."
 
+### Popover structure (maintainer review of the running build, 2026-10-30)
+
+The single paragraph read as "one big blob". Each popover now has three parts: a one-line purpose in body
+text, then a **What you see** list, then a **How to read it** list, each under a small overline heading, and
+Learn More at the bottom. The control is still `InfoPopoverButton`, with the lists passed as its children.
+Bullets carry no trailing full stop. *Work Items*, *Feature(s)* and *Delivery* render the user's Terminology
+words. Scope is the four delivery charts only; restructuring the flow-metric widget popovers would be a
+story of its own.
+
+- **Delivery Burnup**
+  - Purpose: "Total scope against completed *Work Items* over time."
+  - What you see: "Top line: everything in this *Delivery*; rises when scope is added" · "Filled area: the
+    *Work Items* done" · "Dashed line: scope still estimated, from *Features* not yet broken down"
+  - How to read it: "The gap between line and area is the remaining work" · "Gap narrowing: closing in" ·
+    "Gap open or widening: losing ground to added scope"
+- **Delivery Predictability**
+  - Purpose: "How the forecast for this *Delivery* changed day by day."
+  - What you see: "How Likely?: the chance of finishing by the target date, one point per day" · "Line
+    colour: Risky up to 50%, Realistic up to 70%, Confident up to 85%, Certain above" · "When?: the
+    forecasted finish dates (50th–95th percentile) against the target date"
+  - How to read it: "How Likely? rising: the odds of making the target are improving" · "When? lines rising:
+    the finish is slipping later; falling: pulling in" · "A step in the target line: the target was moved, so
+    read jumps around it with that in mind"
+- **Delivery Progress**
+  - Purpose: "Where each *Feature* stands: how much is done, against how likely it is to be late."
+  - What you see: "One dot per *Feature*: further right = more done, higher = more likely to be late" ·
+    "Green, amber and red zones" · "Run replays how each *Feature* moved"
+  - How to read it: "Green is on track, amber needs watching, red needs action" · "Drifting up into red: the
+    *Feature* is using up its buffer faster than it is making progress" (reworded so no article sits before a renamed term)
+- **Features over Time**
+  - Purpose: "Which *Feature* grew, and when."
+  - What you see: "One bar per day, split into a band per *Feature* and sized by its *Work Items*" ·
+    "Hatched band: the size is still an estimate, not counted *Work Items*" · "The line (right-hand axis):
+    how many *Features* the *Delivery* held"
+  - How to read it: "A band that suddenly grows: scope discovered inside that *Feature*" · "A band going
+    from hatched to solid: the *Feature* was broken down" · "A band that ends: the *Feature* left the
+    *Delivery*"
+
+The single-paragraph copy above is superseded.
+
 ## DELIVER
 
 - **Slice 01** — `d43607cd7` feat, `a6492ee92` refactor (comments in plain words), `b64c8e4c8` tests + header wrap.
