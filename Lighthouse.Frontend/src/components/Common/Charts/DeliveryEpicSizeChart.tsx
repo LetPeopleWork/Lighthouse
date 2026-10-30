@@ -290,14 +290,21 @@ const DeliveryEpicSizeChart = ({
 	}));
 
 	const itemsAxis = hasSizes
-		? [{ id: ITEMS_AXIS_ID, position: "left" as const }]
+		? [{ id: ITEMS_AXIS_ID, position: "left" as const, width: 56 }]
 		: [];
 
 	return (
 		<ChartCard title={title} info={info}>
 			<ChartsContainer
 				dataset={dataset}
-				xAxis={[{ scaleType: "band", dataKey: LABEL_DATA_KEY, label: "Date" }]}
+				xAxis={[
+					{
+						scaleType: "band",
+						dataKey: LABEL_DATA_KEY,
+						label: "Date",
+						height: 56,
+					},
+				]}
 				yAxis={[
 					...itemsAxis,
 					// From zero always: an axis starting at the window's lowest count reads as a cliff.

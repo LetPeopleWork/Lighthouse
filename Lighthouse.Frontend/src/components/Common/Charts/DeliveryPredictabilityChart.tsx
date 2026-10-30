@@ -294,6 +294,7 @@ const WhenView = ({
 				{
 					scaleType: "time",
 					label: "Forecast completion date",
+					width: 90,
 					valueFormatter: formatDateValue,
 				},
 			]}
