@@ -103,6 +103,7 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 		</Box>
 		{owners.map((owner) => {
 			const limit = limitOf(owner);
+			const limitId = `owner-limit-${ownerKeyOf(owner)}`;
 			return (
 				<Box key={ownerKeyOf(owner)}>
 					<FormControlLabel
@@ -112,12 +113,22 @@ const OwnerGroup: React.FC<Readonly<OwnerGroupProps>> = ({
 								checked={picked.has(ownerKeyOf(owner))}
 								disabled={disabled || limit !== null}
 								onChange={() => onToggle(owner)}
-								slotProps={{ input: { "aria-label": owner.ownerName } }}
+								slotProps={{
+									input: {
+										"aria-label": owner.ownerName,
+										"aria-describedby": limit === null ? undefined : limitId,
+									},
+								}}
 							/>
 						}
 					/>
 					{limit !== null && (
-						<Typography variant="body2" color="text.secondary" sx={{ pl: 4 }}>
+						<Typography
+							id={limitId}
+							variant="body2"
+							color="text.secondary"
+							sx={{ pl: 4 }}
+						>
 							{`Kept history starts ${limit.keptSince}; Then starts ${limit.thenStarts}.`}{" "}
 							<Link component={RouterLink} to={settingsPathOf(owner)}>
 								{`Open ${owner.ownerName} settings`}

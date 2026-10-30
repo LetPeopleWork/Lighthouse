@@ -83,7 +83,8 @@ const limitOfFor =
 	(owner) => {
 		const thenLength = lengthOf(draft.thenLength);
 		const nowLength = lengthOf(nowLengthOf(draft));
-		const thenEnd = parseLocalDate(thenEndOf(draft, templates));
+		const thenEndDay = thenEndOf(draft, templates);
+		const thenEnd = parseLocalDate(thenEndDay);
 		const keptSince =
 			owner.earliestStart === null ? null : parseLocalDate(owner.earliestStart);
 		if (thenLength === null || thenEnd === null || keptSince === null)
@@ -92,7 +93,7 @@ const limitOfFor =
 			ownerCannotHold(
 				{
 					side: "then",
-					end: thenEndOf(draft, templates),
+					end: thenEndDay,
 					lengthDays: thenLength,
 				},
 				templates,
