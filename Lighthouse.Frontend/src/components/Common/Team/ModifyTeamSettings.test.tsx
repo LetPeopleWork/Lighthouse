@@ -651,6 +651,7 @@ describe("ModifyTeamSettings", () => {
 				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
 						toDoStates: ["In Arbeit"],
+						doingStates: ["Active", "Active Work"],
 						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
 					}),
 				),

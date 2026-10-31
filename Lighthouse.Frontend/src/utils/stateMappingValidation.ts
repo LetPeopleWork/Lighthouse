@@ -33,7 +33,7 @@ function validateUniqueNames(mappings: IStateMapping[]): string[] {
 	for (const mapping of mappings) {
 		const name = mapping.name.trim();
 		if (!name) continue;
-		const lower = name.toLowerCase();
+		const lower = normalise(name);
 		if (seen.has(lower)) {
 			errors.push(`Duplicate mapping name: "${name}".`);
 		} else {
@@ -48,7 +48,7 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 	const errors: string[] = [];
 	for (const mapping of mappings) {
 		for (const state of mapping.states) {
-			const lower = state.trim().toLowerCase();
+			const lower = normalise(state);
 			if (seen.has(lower)) {
 				errors.push(`Source state "${state}" is used in multiple mappings.`);
 			} else {
@@ -59,7 +59,7 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 	return errors;
 }
 
-function namesAStateOfAnotherMapping(
+function groupsAnotherMappingsName(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
 ): boolean {
@@ -80,7 +80,7 @@ function doingClashError(
 	if (
 		!wouldShadow(mapping, doingStates) ||
 		isApplied(mapping, doingStates, mappings) ||
-		namesAStateOfAnotherMapping(mapping, mappings)
+		groupsAnotherMappingsName(mapping, mappings)
 	) {
 		return [];
 	}

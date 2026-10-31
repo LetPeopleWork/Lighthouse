@@ -353,7 +353,7 @@ describe("reconcileDoingStates", () => {
 			expect(result).toEqual(["In Progress", "Group", "Prüfung"]);
 		});
 
-		it("takes a mapping into Doing when another mapping then groups the state it is named after", () => {
+		it("takes the grouping mapping into Doing and leaves out the mapping named after the state it groups", () => {
 			const result = reconcileDoingStates(
 				[named],
 				[named, group],
