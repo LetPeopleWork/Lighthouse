@@ -4,6 +4,7 @@ import {
 	aMomentLater,
 	aPrintDialog,
 	aPrintFrameBrowser,
+	BRANDING,
 	everyPrintFrameIsGone,
 	forgetTheBrowser,
 	openingThePrintPageDirectly,
@@ -77,6 +78,14 @@ describe("The Lighthouse mark is in the PDF", () => {
 		await aMomentLater();
 		expect(renderReadiness()).not.toBe("true");
 		expect(printDialog.timesOpened()).toBe(0);
+	});
+
+	it("leaves the credit off a page that could not be made", async () => {
+		theLighthouseMarkCannotLoad();
+		openingThePrintPageDirectly();
+
+		await screen.findByText(PART_OF_THE_PAGE_COULD_NOT_BE_LOADED);
+		expect(screen.queryByText(BRANDING)).toBeNull();
 	});
 
 	it("asks for the Lighthouse mark again on Retry and is ready once it is in", async () => {

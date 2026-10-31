@@ -81,6 +81,18 @@ const theElementsFixedOnPaper = (): HTMLElement[] =>
 		document.querySelectorAll<HTMLElement>("[data-render-ready] *"),
 	).filter((element) => whatPrintAsksOf(element, "position") === "fixed");
 
+/** Whether the report around the heading asks to begin on a fresh page when printed. */
+const startsAPageOfItsOwn = (heading: HTMLElement): boolean => {
+	for (
+		let element = heading.parentElement;
+		element !== null && element.dataset.renderReady === undefined;
+		element = element.parentElement
+	) {
+		if (whatPrintAsksOf(element, "break-before") === "page") return true;
+	}
+	return false;
+};
+
 const theTitlesShown = () =>
 	screen
 		.getAllByRole("heading", { level: 1 })
@@ -168,6 +180,32 @@ describe("the print page of several reports", () => {
 		vi.unstubAllGlobals();
 	});
 
+	it("is never ready to print when it names no report", async () => {
+		openThePrintPageOf("/print/reports");
+
+		await screen.findByText(NOTHING_NAMED, { exact: true });
+		expect(document.querySelector("[data-render-ready='true']")).toBeNull();
+		vi.unstubAllGlobals();
+	});
+
+	it("starts every report after the first on a page of its own", async () => {
+		openThePrintPageOf(
+			"/print/reports?reports=team-1-12,portfolio-2-7,team-1-13",
+		);
+
+		await waitFor(() =>
+			expect(
+				document.querySelector("[data-render-ready='true']"),
+			).not.toBeNull(),
+		);
+		expect(
+			screen
+				.getAllByRole("heading", { level: 1 })
+				.map((heading) => startsAPageOfItsOwn(heading)),
+		).toEqual([false, true, true]);
+		vi.unstubAllGlobals();
+	});
+
 	it("draws a report named twice once", async () => {
 		openThePrintPageOf(
 			"/print/reports?reports=team-1-12,portfolio-2-7,team-1-12",
@@ -205,5 +243,11 @@ describe("the reports a print address names", () => {
 
 	it("names none when the address names nothing", () => {
 		expect(printedReportsOf(null)).toEqual([]);
+	});
+
+	it("reads ids of several digits, and leaves out a part with anything before or after its report", () => {
+		expect(printedReportsOf("team-34-567,xteam-1-2,team-1-2x")).toEqual([
+			{ owner: { kind: "team", id: 34 }, reportId: 567 },
+		]);
 	});
 });

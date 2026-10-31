@@ -40,6 +40,7 @@ import {
 import {
 	aMomentLater,
 	aPrintFrameBrowser,
+	everyPrintFrameIsGone,
 	forgetTheBrowser,
 	theFontsCannotLoad,
 	theFontsHaveLoaded,
@@ -63,11 +64,13 @@ const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 901 });
 const gravitysMonth = aReportOn(GRAVITY, MONTH, { id: 902 });
 const voyagersQuarter = aReportOn(VOYAGER, QUARTER, { id: 903 });
 const pulsarsQuarter = aReportOn(PULSAR, QUARTER, { id: 904 });
+const zenithsMonth = aReportOn(ZENITH, MONTH, { id: 905 });
 const everyListedReport = [
 	zenithsQuarter,
 	gravitysMonth,
 	voyagersQuarter,
 	pulsarsQuarter,
+	zenithsMonth,
 ];
 
 /** Each report read by its id, under its listed name; the ids in `failing` cannot be read. */
@@ -147,6 +150,32 @@ describe("One PDF of several reports", () => {
 		await theFramesHavePrinted(frames, 1);
 		// The table lists Teams by name, so Gravity's report comes first, whichever was picked first.
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
+	});
+
+	it("once the print dialog closes the frame goes, Export PDF is ready again, and nothing says a PDF failed", async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				eachReportReads(),
+				zenithsQuarter,
+				gravitysMonth,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+		await theFramesHavePrinted(frames, 1);
+
+		frames.closeTheDialog();
+
+		await everyPrintFrameIsGone();
+		expect(
+			screen.getByRole("button", { name: exportButton(2) }),
+		).not.toHaveAttribute("aria-busy");
+		expect(
+			screen.queryByRole("dialog", { name: NO_PDF_WAS_MADE }),
+		).not.toBeInTheDocument();
 	});
 
 	it("the reports print in the table's order, as the reader sorted it", async () => {
@@ -405,6 +434,34 @@ describe("One PDF of several reports", () => {
 		).toBeInTheDocument();
 	});
 
+	it("Leave it out unpicks every report that failed", async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				eachReportReads([zenithsQuarter.id, voyagersQuarter.id]),
+				zenithsQuarter,
+				gravitysMonth,
+				voyagersQuarter,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await selectTheRowOf(user, QUARTER, VOYAGER);
+		await user.click(screen.getByRole("button", { name: exportButton(3) }));
+
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).getByRole("button", { name: LEAVE_IT_OUT }),
+		);
+
+		await theFramesHavePrinted(frames, 1);
+		expect(
+			screen.getByRole("button", { name: exportButton(1) }),
+		).toBeInTheDocument();
+	});
+
 	it("Leave it out is not offered when leaving the failed reports out would leave nothing to print", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -426,6 +483,61 @@ describe("One PDF of several reports", () => {
 				.getAllByRole("button")
 				.map((button) => button.textContent),
 		).toEqual([CANCEL, RETRY]);
+	});
+
+	it("Leave it out leaves out only the report that failed, not the other report of the same Team", async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				eachReportReads([zenithsMonth.id]),
+				zenithsQuarter,
+				zenithsMonth,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, ZENITH);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).getByRole("button", { name: LEAVE_IT_OUT }),
+		);
+
+		await theFramesHavePrinted(frames, 1);
+		expect(theReportTitlesPrinted()).toEqual([QUARTER]);
+	});
+
+	it("Cancel closes the word that no PDF was made, prints nothing and keeps what was picked", async () => {
+		const frames = aPrintFrameBrowser();
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				eachReportReads([voyagersQuarter.id]),
+				zenithsQuarter,
+				voyagersQuarter,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, QUARTER, VOYAGER);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).getByRole("button", { name: CANCEL }),
+		);
+
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).not.toBeInTheDocument(),
+		);
+		expect(frames.timesAFramePrinted()).toBe(0);
+		expect(
+			screen.getByRole("button", { name: exportButton(2) }),
+		).toBeInTheDocument();
 	});
 
 	it("Retry asks for the report again and prints once it arrives", async () => {
@@ -503,6 +615,22 @@ describe("One PDF of several reports", () => {
 		expect(await screen.findByRole("tooltip")).toHaveTextContent(
 			new RegExp(`^${AT_MOST_50.replaceAll(".", "\\.")}$`),
 		);
+	});
+
+	it("exactly 50 picked may still be exported as one PDF", async () => {
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				eachReportReads(),
+				...moreReportsThanTheCeiling(ZENITH, 0).reports,
+			),
+		});
+		await theReportsTable();
+
+		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
+
+		expect(
+			screen.getByRole("button", { name: exportButton(50) }),
+		).toBeEnabled();
 	});
 
 	it("with nothing picked Export PDF is disabled and says why", async () => {
