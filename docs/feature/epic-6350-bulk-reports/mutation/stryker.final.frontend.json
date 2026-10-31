@@ -1,0 +1,71 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.final.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-final.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/pages/Common/Reports/print/ReportPrintDocument.tsx:66-66",
+    "src/pages/Common/Reports/reportOwner.ts:8-10",
+    "src/pages/Common/Reports/reportOwner.ts:16-17",
+    "src/pages/Common/Reports/reportOwner.ts:20-20",
+    "src/pages/Common/Reports/reportOwner.ts:29-29",
+    "src/pages/Common/Reports/reportOwner.ts:33-33",
+    "src/pages/Common/Reports/reportOwner.ts:36-39",
+    "src/pages/Common/Reports/wizard/longDay.ts:2-2",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:76-76",
+    "src/pages/Common/Reports/wizard/reportRefusalCopy.ts:96-96",
+    "src/pages/Reports/BulkReportWizard.tsx:56-56",
+    "src/pages/Reports/BulkReportWizard.tsx:307-318",
+    "src/pages/Reports/BulkReportWizard.tsx:381-381",
+    "src/pages/Reports/BulkResult.tsx:38-48",
+    "src/pages/Reports/BulkResult.tsx:75-92",
+    "src/pages/Reports/BulkResult.tsx:99-99",
+    "src/pages/Reports/BulkResult.tsx:128-128",
+    "src/pages/Reports/BulkResult.tsx:165-165",
+    "src/pages/Reports/BulkResult.tsx:182-186",
+    "src/pages/Reports/OwnerStep.tsx:43-43",
+    "src/pages/Reports/OwnerStep.tsx:46-47",
+    "src/pages/Reports/OwnerStep.tsx:244-244",
+    "src/pages/Reports/RemoveSelectedDialog.tsx:150-150",
+    "src/pages/Reports/RemoveSelectedDialog.tsx:161-161",
+    "src/pages/Reports/useBulkCreation.tsx:62-62",
+    "src/pages/Reports/useBulkReportCreation.ts:37-40",
+    "src/pages/Reports/useBulkReportRemoval.ts:23-29",
+    "src/pages/Reports/useBulkReportRemoval.ts:31-41",
+    "src/pages/Reports/useBulkReportRemoval.ts:45-48",
+    "src/pages/Reports/useRowPicks.ts:23-28"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-final-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-final"
+}

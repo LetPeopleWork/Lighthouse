@@ -1,0 +1,20 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/ReportsController.cs",
+      "**/Models/Reports/ReportBulkOutcomes.cs",
+      "**/Services/Implementation/Reports/ReportBulkCommands.cs",
+      "**/Services/Implementation/Reports/ReportOwnerLookup.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Services.Implementation.Reports.ReportBulkCommandsTest|FullyQualifiedName~Services.Implementation.Reports.ReportOwnerLookupTest|FullyQualifiedName~Tests.API.ReportsControllerTest|FullyQualifiedName~Models.Reports|FullyQualifiedName~CreateForSeveralTeamsScenarios)&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
