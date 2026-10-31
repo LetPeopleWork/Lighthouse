@@ -13,7 +13,11 @@ import { Link } from "react-router";
 import type { IReportCreationOutcome } from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
-import { ownerTermKeyOf, reportPathOf } from "../Common/Reports/reportOwner";
+import {
+	ownerOfReport,
+	ownerTermKeyOf,
+	reportPathOf,
+} from "../Common/Reports/reportOwner";
 import { notCreatedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
 import { ownerKeyOf } from "./OwnerStep";
 
@@ -49,11 +53,6 @@ const headlineOf = (outcomes: readonly IReportCreationOutcome[]): string => {
 	return `${created} ${reportsWord(created)} created, ${outcomes.length - created} not created`;
 };
 
-const ownerOf = (outcome: IReportCreationOutcome) => ({
-	kind: outcome.ownerKind,
-	id: outcome.ownerId,
-});
-
 const CreatedStatus: React.FC<
 	Readonly<{ outcome: IReportCreationOutcome; reportId: number }>
 > = ({ outcome, reportId }) => (
@@ -61,7 +60,7 @@ const CreatedStatus: React.FC<
 		<Typography color="success.main">Created</Typography>
 		<Button
 			component={Link}
-			to={reportPathOf(ownerOf(outcome), reportId)}
+			to={reportPathOf(ownerOfReport(outcome), reportId)}
 			size="small"
 		>
 			Open
@@ -94,7 +93,7 @@ const OutcomeLine: React.FC<
 	Readonly<{ outcome: IReportCreationOutcome; minimumLengthDays: number }>
 > = ({ outcome, minimumLengthDays }) => {
 	const { getTerm } = useTerminology();
-	const ownerTerm = getTerm(ownerTermKeyOf(ownerOf(outcome)));
+	const ownerTerm = getTerm(ownerTermKeyOf(ownerOfReport(outcome)));
 	return (
 		<ListItem disableGutters sx={{ gap: 2 }}>
 			<Typography sx={{ flex: 1 }}>

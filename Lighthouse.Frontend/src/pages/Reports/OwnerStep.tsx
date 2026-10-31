@@ -18,6 +18,7 @@ import {
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { isTauriEnv } from "../../utils/tauri";
+import { ownerOfReport, ownerPathOf } from "../Common/Reports/reportOwner";
 
 export const ownerKeyOf = (
 	owner: Pick<IReportCreationOwner, "ownerKind" | "ownerId">,
@@ -39,7 +40,7 @@ export interface OwnerLimit {
 export type OwnerLimitOf = (owner: IReportCreationOwner) => OwnerLimit | null;
 
 const settingsPathOf = (owner: IReportCreationOwner): string =>
-	`/${owner.ownerKind === "team" ? "teams" : "portfolios"}/${owner.ownerId}/settings`;
+	`${ownerPathOf(ownerOfReport(owner))}/settings`;
 
 /**
  * In a browser the owner's settings open in a new tab, so the wizard keeps what the reader has entered. The desktop

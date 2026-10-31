@@ -7,6 +7,7 @@ import {
 	usageDataReportTemplateFor,
 	useUsageDataReporter,
 } from "../../services/UsageData/usageDataReporter";
+import { EVERY_REPORT_LIST_QUERY_KEY } from "../Common/Reports/reportOwner";
 
 /**
  * One report created for several owners in one request; every report list is read again afterwards. The usage data
@@ -33,6 +34,9 @@ export const useBulkReportCreation = () => {
 			}
 		},
 		// Also after a failure: some reports may have been created before the answer was lost.
-		onSettled: () => queryClient.invalidateQueries({ queryKey: ["reports"] }),
+		onSettled: () =>
+			queryClient.invalidateQueries({
+				queryKey: EVERY_REPORT_LIST_QUERY_KEY,
+			}),
 	});
 };
