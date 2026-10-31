@@ -16,6 +16,7 @@ const renderTheResult = () =>
 				count={theOutcomesOnTheWire.length}
 				minimumLengthDays={14}
 				run={{ status: "success", outcomes: theOutcomesOnTheWire }}
+				pickedNames={new Map()}
 				onDone={() => {}}
 			/>
 		</MemoryRouter>,

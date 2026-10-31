@@ -148,6 +148,8 @@ interface BulkResultProps {
 	count: number;
 	minimumLengthDays: number;
 	run: BulkRun;
+	/** The name each owner was picked under, by owner key, for a row the server leaves unnamed. */
+	pickedNames: ReadonlyMap<string, string>;
 	onDone: () => void;
 }
 
@@ -156,6 +158,7 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 	count,
 	minimumLengthDays,
 	run,
+	pickedNames,
 	onDone,
 }) => {
 	if (run.status === "pending") {
@@ -176,7 +179,11 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 					{run.outcomes.map((outcome) => (
 						<OutcomeLine
 							key={ownerKeyOf(outcome)}
-							outcome={outcome}
+							outcome={{
+								...outcome,
+								ownerName:
+									outcome.ownerName ?? pickedNames.get(ownerKeyOf(outcome)),
+							}}
 							minimumLengthDays={minimumLengthDays}
 						/>
 					))}

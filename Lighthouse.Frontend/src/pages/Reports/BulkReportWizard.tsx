@@ -304,6 +304,18 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 		(owner) => picked.has(ownerKeyOf(owner)) && canHold(owner),
 	);
 	const pickedKeys = new Set(pickedOwners.map(ownerKeyOf));
+	const pickedNames = useMemo(
+		() =>
+			new Map(
+				options.owners
+					.filter((owner) => picked.has(ownerKeyOf(owner)))
+					.map((owner): [string, string] => [
+						ownerKeyOf(owner),
+						owner.ownerName,
+					]),
+			),
+		[options.owners, picked],
+	);
 
 	const create = () =>
 		creation.mutate({
@@ -366,6 +378,7 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 					count={pickedOwners.length}
 					minimumLengthDays={options.minimumLengthDays}
 					run={run}
+					pickedNames={pickedNames}
 					onDone={onClose}
 				/>
 			)}

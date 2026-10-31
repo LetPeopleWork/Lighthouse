@@ -848,9 +848,34 @@ describe("Moving through the wizard", () => {
 		).toBeInTheDocument();
 	});
 
-	it(`an owner the answer leaves unnamed is spoken of as this Team`, async () => {
+	it(`a Team the answer leaves unnamed takes the name it was picked under`, async () => {
 		const unnamed = {
-			...notCreated(ZENITH, "owner-not-found"),
+			...notCreated(ZENITH, "not-admin"),
+			ownerName: undefined,
+		};
+		const { user } = renderTheReportsPage({
+			reportService: aReportServiceCreating(
+				vi.fn().mockResolvedValue([unnamed]),
+			),
+		});
+		await toTheOwnerStep(user);
+		await pickOwner(user, ZENITH);
+		await user.click(screen.getByRole("button", { name: createCount(1) }));
+
+		const result = await theResult();
+		expect(
+			await within(result).findByText(`Team ${ZENITH.name}`, { exact: true }),
+		).toBeInTheDocument();
+		expect(
+			within(result).getByText(notCreatedBecause.notAdmin(ZENITH), {
+				exact: true,
+			}),
+		).toBeInTheDocument();
+	});
+
+	it(`an owner neither the answer nor the picks name is spoken of as this Team`, async () => {
+		const unnamed = {
+			...notCreated({ kind: "team", id: 999, name: "" }, "owner-not-found"),
 			ownerName: undefined,
 		};
 		const { user } = renderTheReportsPage({
