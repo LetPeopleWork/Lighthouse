@@ -132,6 +132,11 @@ Two standing principles worth keeping visible here because they're easy to skip 
   crafters and designers, its `reviewer_model` for reviewers. The session runs on Opus and most nWave agents
   say `model: inherit`, so a dispatch without `model` quietly runs on Opus whatever the profile says. The
   project's own gates (mutation testing per feature, the AFK reviews) run under every profile.
+- **Share the slice-and-step table once the roadmap is approved.** As soon as the DELIVER roadmap passes its
+  review (in AFK mode too), post a short table in chat: one row per step, grouped by slice, with the step id
+  and what it delivers in plain words, plus each slice's step count. No test names. It tells the maintainer
+  how far a status update's "step 2 of 9" is from done; if a step is later split or added, say so and post
+  the updated table.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
