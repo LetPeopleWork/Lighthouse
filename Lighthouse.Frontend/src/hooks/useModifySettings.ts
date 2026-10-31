@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import type { IStateMapping } from "../models/Common/StateMapping";
 import type { IWorkTrackingSystemConnection } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
+import { withoutIncompleteMappings } from "../utils/stateMappingValidation";
 
 export interface ModifySettingsBase {
 	name: string;
@@ -77,6 +79,17 @@ function withToken<T extends ModifySettingsBase>(
 ): T {
 	if (token === undefined) return payload;
 	return { ...payload, concurrencyToken: token };
+}
+
+// The editor keeps a freshly added mapping in the settings while it is being filled in;
+// the server rejects the whole save if that row goes along.
+function withoutDraftMappings<T extends ModifySettingsBase>(settings: T): T {
+	return {
+		...settings,
+		stateMappings: withoutIncompleteMappings(
+			settings.stateMappings as IStateMapping[],
+		),
+	};
 }
 
 function updateListField<T extends ModifySettingsBase>(
@@ -332,10 +345,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			return;
 		}
 
-		const settingsToSave = {
+		const settingsToSave = withoutDraftMappings({
 			...settings,
 			workTrackingSystemConnectionId: selectedConnectionId,
-		} as TSettings;
+		} as TSettings);
 
 		unsentAutoSaveRef.current = settingsToSave;
 		const timer = setTimeout(() => {
@@ -419,10 +432,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		if (!settings) return;
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
-		const updated = {
+		const updated = withoutDraftMappings({
 			...settings,
 			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-		};
+		});
 
 		if (!modifyDefaultSettings) {
 			try {

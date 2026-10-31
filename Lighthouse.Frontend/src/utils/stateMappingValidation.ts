@@ -140,3 +140,9 @@ export function validateStateMappings(
 		...stateNameClashErrors(mappings, lists),
 	];
 }
+
+export function withoutIncompleteMappings(
+	mappings: IStateMapping[],
+): IStateMapping[] {
+	return mappings.filter((m) => m.name.trim() !== "" && m.states.length > 0);
+}
