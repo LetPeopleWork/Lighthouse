@@ -52,13 +52,21 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
                 return CreationNotSaved(owner, failure);
             }
 
-            return created switch
+            if (created.Status == ReportOutcomeStatus.NotFound)
+            {
+                return ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.OwnerNotFound);
+            }
+
+            // Looked up after the save, so an owner deleted while its report was being made is not named as if it were still there.
+            var facts = ownerLookup.Find(owner);
+            var outcome = created switch
             {
                 { Status: ReportOutcomeStatus.Done, Value: ReportRead read } => ReportOwnerOutcome.Created(owner, read.Id),
-                { Status: ReportOutcomeStatus.NotFound } => ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.OwnerNotFound),
-                _ when ReportRefusalCodes.NamesEarliestStart(created.Code) => ReportOwnerOutcome.NotCreated(owner, created.Code, EarliestStartOf(owner)),
+                _ when ReportRefusalCodes.NamesEarliestStart(created.Code) => ReportOwnerOutcome.NotCreated(owner, created.Code, EarliestStartOf(facts)),
                 _ => ReportOwnerOutcome.NotCreated(owner, created.Code),
             };
+
+            return outcome with { OwnerName = facts?.Name };
         }
 
         private ReportOwnerOutcome CreationNotSaved(ReportOwner owner, Exception failure)
@@ -72,8 +80,8 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
             return ReportOwnerOutcome.NotCreated(owner, ReportRefusalCodes.NotSaved);
         }
 
-        private DateOnly? EarliestStartOf(ReportOwner owner)
-            => ownerLookup.Find(owner) is ReportOwnerFacts facts ? ReportWindowPolicy.EarliestStart(clock.Today, facts.DoneItemsCutoffDays) : null;
+        private DateOnly? EarliestStartOf(ReportOwnerFacts? facts)
+            => facts is null ? null : ReportWindowPolicy.EarliestStart(clock.Today, facts.DoneItemsCutoffDays);
 
         private void LogCreationRun(NewReport request, int asked, List<ReportOwnerOutcome> outcomes, double elapsedMs)
         {

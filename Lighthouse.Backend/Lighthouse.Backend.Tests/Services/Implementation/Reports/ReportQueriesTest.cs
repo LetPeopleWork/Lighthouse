@@ -218,7 +218,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
             reader.Setup(r => r.GetForOwner(Lightspeed, It.IsAny<int>())).Returns((ReportOwner _, int id) => stored.Find(report => report.Id == id));
 
             var owners = new Mock<IReportOwnerLookup>();
-            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(KeepsAYear));
+            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts("Lightspeed", KeepsAYear));
             owners.Setup(o => o.All()).Returns(ownerRows ?? [new ReportOwnerRow(Apollo, "Apollo", KeepsAYear), new ReportOwnerRow(Lightspeed, "Lightspeed", KeepsAYear)]);
             reader.Setup(r => r.ListForOwners(It.IsAny<IReadOnlyCollection<ReportOwner>>()))
                 .Returns((IReadOnlyCollection<ReportOwner> asked) => [.. stored.Where(report => asked.Contains(report.OwnedBy()))]);

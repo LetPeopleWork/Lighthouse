@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 namespace Lighthouse.Backend.Tests.API.Integration.Reports
 {
     /// <summary>
@@ -14,6 +17,58 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     public class Slice03PortfoliosJoinTheSelectionScenarios : BulkReportsAcceptanceTest
     {
         private static readonly string[] OnlyTheQuarter = [TheQuarter];
+
+        private const string TheAnswerTheBrowserIsCheckedAgainst = "Lighthouse.Frontend/src/tests/bulkCreationAnswer.json";
+
+        private static readonly string[] IdsThatDifferPerDatabase = ["ownerId", "reportId"];
+
+        [Test]
+        public async Task Every_row_names_its_owner_whether_or_not_a_report_was_created_and_a_gone_owner_has_no_name()
+        {
+            TheInstanceHasAPremiumLicence();
+            var zenith = ATeam("Zenith");
+            var apollo = APortfolioKeepingFinishedWorkSince("Apollo", EquinoxKeepsFinishedWorkSince);
+            var gravity = ATeam("Gravity");
+            TheCallerIsAdminOf(zenith, apollo, gravity);
+            TheOwnerIsDeletedWhenTheRunReaches(gravity);
+
+            using var run = await CreateForEach(TheQuartersComparison, zenith, apollo, gravity);
+            var outcomes = await TheOutcomesOf(run);
+
+            Assert.That(outcomes.Select(outcome => (outcome.Status, outcome.OwnerName)),
+                Is.EqualTo(new[] { (Created, "Zenith"), (NotCreated, "Apollo"), (NotCreated, (string?)null) }));
+        }
+
+        // The browser's result dialog is tested against a copy of this answer, so the copy has to stay what the server really sends.
+        [Test]
+        public async Task The_answer_is_the_one_the_browsers_result_dialog_is_tested_against()
+        {
+            TheInstanceHasAPremiumLicence();
+            var zenith = ATeam("Zenith");
+            var apollo = APortfolioKeepingFinishedWorkSince("Apollo", EquinoxKeepsFinishedWorkSince);
+            TheCallerIsAdminOf(zenith, apollo);
+
+            using var run = await CreateForEach(TheQuartersComparison, zenith, apollo);
+            var answer = await AnswerOf(run);
+
+            var path = Path.Combine(RepositoryRoot(), TheAnswerTheBrowserIsCheckedAgainst.Replace('/', Path.DirectorySeparatorChar));
+            using var copy = JsonDocument.Parse(await File.ReadAllTextAsync(path));
+            Assert.That(WithTheIdsBlanked(answer), Is.EqualTo(WithTheIdsBlanked(copy.RootElement)));
+        }
+
+        private static string WithTheIdsBlanked(JsonElement answer)
+        {
+            var blanked = JsonNode.Parse(answer.GetRawText())!;
+            foreach (var outcome in blanked["outcomes"]!.AsArray().OfType<JsonObject>())
+            {
+                foreach (var id in IdsThatDifferPerDatabase.Where(id => outcome[id] is not null))
+                {
+                    outcome[id] = 0;
+                }
+            }
+
+            return blanked.ToJsonString();
+        }
 
         [Test]
         public async Task Teams_and_a_Portfolio_get_the_same_comparison_in_one_run()

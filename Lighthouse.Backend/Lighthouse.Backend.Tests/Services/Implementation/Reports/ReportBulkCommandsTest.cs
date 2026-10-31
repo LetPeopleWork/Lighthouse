@@ -157,23 +157,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [TestCase(ReportRefusalCodes.NowBeforeCutoff)]
         public async Task A_window_reaching_before_the_owners_kept_history_names_the_day_that_history_starts(string code)
         {
-            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts(90));
+            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts("Gravity", 90));
             commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.Refused(code));
 
             var outcomes = await Subject().CreateForEach([Zenith, Gravity], TheQuarter, writeAccess.Object);
 
-            Assert.That(outcomes[1], Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, code, new DateOnly(2026, 7, 29))));
+            Assert.That(outcomes[1], Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, code, new DateOnly(2026, 7, 29)) with { OwnerName = "Gravity" }));
         }
 
         [Test]
         public async Task Another_refusal_names_no_day_even_when_the_owner_keeps_a_short_history()
         {
-            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts(90));
+            owners.Setup(lookup => lookup.Find(Gravity)).Returns(new ReportOwnerFacts("Gravity", 90));
             commands.Setup(port => port.Create(Gravity, It.IsAny<NewReport>())).ReturnsAsync(ReportOutcome<ReportRead>.Refused(ReportRefusalCodes.ReportCapReached));
 
             var outcomes = await Subject().CreateForEach([Gravity], TheQuarter, writeAccess.Object);
 
-            Assert.That(outcomes.Single(), Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, ReportRefusalCodes.ReportCapReached)));
+            Assert.That(outcomes.Single(), Is.EqualTo(ReportOwnerOutcome.NotCreated(Gravity, ReportRefusalCodes.ReportCapReached) with { OwnerName = "Gravity" }));
         }
 
         [Test]

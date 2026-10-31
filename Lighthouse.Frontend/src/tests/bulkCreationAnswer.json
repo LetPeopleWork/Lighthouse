@@ -1,0 +1,22 @@
+{
+	"outcomes": [
+		{
+			"ownerKind": "Team",
+			"ownerId": 1,
+			"status": "created",
+			"reportId": 1,
+			"code": null,
+			"earliestStart": null,
+			"ownerName": "Zenith"
+		},
+		{
+			"ownerKind": "Portfolio",
+			"ownerId": 1,
+			"status": "notCreated",
+			"reportId": null,
+			"code": "then-before-cutoff",
+			"earliestStart": "2026-07-30",
+			"ownerName": "Apollo"
+		}
+	]
+}

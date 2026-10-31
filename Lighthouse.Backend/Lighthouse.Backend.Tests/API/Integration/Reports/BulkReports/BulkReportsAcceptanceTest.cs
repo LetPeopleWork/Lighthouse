@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         // --- Reading the answers ---
 
-        protected sealed record Outcome(string? OwnerKind, int? OwnerId, int? ReportId, string? Status, string? Code, string? EarliestStart);
+        protected sealed record Outcome(string? OwnerKind, int? OwnerId, int? ReportId, string? Status, string? Code, string? EarliestStart, string? OwnerName);
 
         protected static async Task<List<Outcome>> TheOutcomesOf(HttpResponseMessage response)
         {
@@ -296,7 +296,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 NumberOf(outcome, "reportId"),
                 TextOf(outcome, "status"),
                 TextOf(outcome, "code"),
-                TextOf(outcome, "earliestStart")))];
+                TextOf(outcome, "earliestStart"),
+                TextOf(outcome, "ownerName")))];
         }
 
         protected static int? NumberOf(JsonElement element, string property)

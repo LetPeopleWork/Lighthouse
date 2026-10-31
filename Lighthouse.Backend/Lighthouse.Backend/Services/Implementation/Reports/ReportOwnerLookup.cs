@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Services.Implementation.Reports
         public ReportOwnerFacts? Find(ReportOwner owner)
         {
             WorkTrackingSystemOptionsOwner? found = owner.Kind == ReportOwnerKind.Team ? teams.GetById(owner.Id) : portfolios.GetById(owner.Id);
-            return found is null ? null : new ReportOwnerFacts(found.DoneItemsCutoffDays);
+            return found is null ? null : new ReportOwnerFacts(found.Name, found.DoneItemsCutoffDays);
         }
 
         public IReadOnlyList<ReportOwnerRow> All()

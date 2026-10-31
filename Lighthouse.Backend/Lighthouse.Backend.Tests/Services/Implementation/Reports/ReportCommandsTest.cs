@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private ReportCommands Subject()
         {
             var owners = new Mock<IReportOwnerLookup>();
-            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(365));
+            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts("Lightspeed", 365));
             var timeProvider = new FakeTimeProvider(new DateTimeOffset(2026, 10, 2, 7, 0, 0, TimeSpan.Zero));
             var clock = new FakeLighthouseClock(timeProvider.GetUtcNow());
 

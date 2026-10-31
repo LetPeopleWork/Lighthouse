@@ -19,10 +19,14 @@ namespace Lighthouse.Backend.Models.Reports
 
     /// <summary>
     /// What a run did for one owner: created with the new report's id, or not created with the reason. A window
-    /// refused for reaching before the owner's kept history also names the first day that history holds.
+    /// refused for reaching before the owner's kept history also names the first day that history holds. The owner
+    /// is named when the run found it and the caller may write to it; a gone owner, or one the caller may not
+    /// change, goes unnamed, so a request naming ids the caller cannot see learns nothing about them.
     /// </summary>
     public sealed record ReportOwnerOutcome(ReportOwnerKind OwnerKind, int OwnerId, ReportCreationStatus Status, int? ReportId, string? Code, DateOnly? EarliestStart = null)
     {
+        public string? OwnerName { get; init; }
+
         public static ReportOwnerOutcome Created(ReportOwner owner, int reportId)
             => new(owner.Kind, owner.Id, ReportCreationStatus.Created, reportId, null);
 

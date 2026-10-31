@@ -34,13 +34,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         [Test]
         public void A_Team_is_found_among_the_Teams()
         {
-            Assert.That(subject.Find(ReportOwner.Team(SharedId)), Is.EqualTo(new ReportOwnerFacts(180)));
+            Assert.That(subject.Find(ReportOwner.Team(SharedId)), Is.EqualTo(new ReportOwnerFacts("Team Lightspeed", 180)));
         }
 
         [Test]
         public void A_Portfolio_is_found_among_the_Portfolios_never_as_the_Team_sharing_its_id()
         {
-            Assert.That(subject.Find(ReportOwner.Portfolio(SharedId)), Is.EqualTo(new ReportOwnerFacts(365)));
+            Assert.That(subject.Find(ReportOwner.Portfolio(SharedId)), Is.EqualTo(new ReportOwnerFacts("Project Apollo", 365)));
         }
 
         [Test]

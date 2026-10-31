@@ -419,7 +419,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Reports
         private static IReportOwnerLookup Owners()
         {
             var owners = new Mock<IReportOwnerLookup>();
-            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts(365));
+            owners.Setup(o => o.Find(Lightspeed)).Returns(new ReportOwnerFacts("Lightspeed", 365));
             return owners.Object;
         }
 

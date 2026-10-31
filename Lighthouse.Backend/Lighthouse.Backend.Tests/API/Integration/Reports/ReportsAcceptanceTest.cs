@@ -765,6 +765,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 : [];
         }
 
+        /// <summary>The checkout's root, where the tables shared with the browser's tests live.</summary>
+        protected static string RepositoryRoot()
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Lighthouse.sln")))
+            {
+                directory = directory.Parent;
+            }
+
+            return Directory.GetParent(directory?.FullName ?? throw new InvalidOperationException("Lighthouse.sln could not be found to anchor the tables shared with the browser."))!.FullName;
+        }
+
         protected static string? TextOf(JsonElement element, string property)
             => element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
                 ? value.GetString()

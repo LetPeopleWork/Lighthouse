@@ -65,17 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 ?? throw new InvalidOperationException($"{BoundaryTable} holds no table");
         }
 
-        private static string RepositoryRoot()
-        {
-            var directory = new DirectoryInfo(AppContext.BaseDirectory);
-            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Lighthouse.sln")))
-            {
-                directory = directory.Parent;
-            }
-
-            return Directory.GetParent(directory?.FullName ?? throw new InvalidOperationException("Lighthouse.sln could not be found to anchor the boundary table."))!.FullName;
-        }
-
         public sealed record BoundaryTableFile(BoundaryBounds Bounds, IReadOnlyList<BoundaryRow> Rows);
 
         public sealed record BoundaryBounds(string Today, string? EarliestStart, int MinimumLengthDays);
