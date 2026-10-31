@@ -15,6 +15,7 @@ import {
 	useUsageDataConsentIfKnown,
 } from "../hooks/useUsageDataConsent";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
+import { Portfolio, PortfolioSchema } from "../models/Portfolio/Portfolio";
 import type {
 	IReportAcrossOwners,
 	IReportCreationOptions,
@@ -23,6 +24,7 @@ import type {
 	IReportRemovalOutcome,
 	IReportsAcrossOwners,
 } from "../models/Reports/ReportsAcrossOwners";
+import { Team, TeamSchema } from "../models/Team/Team";
 import ReportsPage from "../pages/Reports/ReportsPage";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type { IReportService } from "../services/Api/ReportService";
@@ -31,7 +33,9 @@ import { TerminologyProvider } from "../services/TerminologyContext";
 import {
 	createMockApiServiceContext,
 	createMockLicensingService,
+	createMockPortfolioService,
 	createMockRbacService,
+	createMockTeamService,
 } from "./MockApiServiceProvider";
 import {
 	aTerminologyServiceAnswering,
@@ -91,6 +95,23 @@ export const manyOwners = (kind: Owner["kind"], count: number): Owner[] =>
 		id: (kind === "team" ? 300 : 500) + index,
 		name: `${kind === "team" ? "Crew" : "Fleet"} ${String(index + 1).padStart(2, "0")}`,
 	}));
+
+const NAMED_OWNERS: readonly Owner[] = [
+	ZENITH,
+	GRAVITY,
+	EQUINOX,
+	VOYAGER,
+	PULSAR,
+	LIGHTSPEED_TEAM,
+	OCEAN_EXPLORER,
+	APOLLO_PORTFOLIO,
+	NEUROLINK_CITY,
+];
+
+/** The name an owner is read under, such as when its report is printed; one no scenario names reads as its id. */
+const nameOf = (kind: Owner["kind"], id: number): string =>
+	NAMED_OWNERS.find((owner) => owner.kind === kind && owner.id === id)?.name ??
+	`${kind} ${id}`;
 
 export const QUARTER = "Quarter vs qtr";
 export const MONTH = "Month vs month";
@@ -408,6 +429,24 @@ export const renderTheReportsPage = (
 		reportService,
 		rbacService,
 		licensingService,
+		teamService: {
+			...createMockTeamService(),
+			getTeam: vi.fn((id: number) =>
+				Promise.resolve(
+					Team.fromParsed(TeamSchema.parse({ id, name: nameOf("team", id) })),
+				),
+			),
+		},
+		portfolioService: {
+			...createMockPortfolioService(),
+			getPortfolio: vi.fn((id: number) =>
+				Promise.resolve(
+					Portfolio.fromParsed(
+						PortfolioSchema.parse({ id, name: nameOf("portfolio", id) }),
+					),
+				),
+			),
+		},
 		terminologyService: aTerminologyServiceAnswering(
 			Promise.resolve(theTermsAnswer(scene.terms ?? defaultTerms)),
 		),

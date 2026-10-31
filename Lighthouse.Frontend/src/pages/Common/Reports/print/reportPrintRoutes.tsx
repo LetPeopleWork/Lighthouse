@@ -11,6 +11,7 @@ import type { PrintContentEffects, PrintTerms } from "./ReportPrintContent";
 import type { PrintEffectPort } from "./usePrintOnce";
 
 const ReportPrintPage = lazy(() => import("./ReportPrintPage"));
+const ReportsPrintPage = lazy(() => import("./ReportsPrintPage"));
 
 /**
  * What a test may stand in for at the print page's edge. The app passes nothing, and the page loads its fonts and
@@ -62,12 +63,12 @@ export const usePrintPagePorts = (): PrintPagePorts => {
 	return useMemo(() => ({ reads, terms }), [reads, terms]);
 };
 
-const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
-	const { reads, terms } = usePrintPagePorts();
-	const { loadFonts, loadPicture } = standIns;
-
-	// The page opened by its address never prints, so it is handed nothing that could.
-	const effects: PrintContentEffects = useMemo(() => {
+/** A page opened by its address never prints, so it is handed nothing that could. */
+const usePageEffects = ({
+	loadFonts,
+	loadPicture,
+}: PrintPageStandIns): PrintContentEffects =>
+	useMemo(() => {
 		const browser = browserPrintEffects(globalThis.window);
 		return {
 			setTitle: browser.setTitle,
@@ -75,6 +76,10 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 			loadPicture: loadPicture ?? browser.loadPicture,
 		};
 	}, [loadFonts, loadPicture]);
+
+const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
+	const { reads, terms } = usePrintPagePorts();
+	const effects = usePageEffects(standIns);
 
 	return (
 		<Suspense fallback={<WhileThePageLoads />}>
@@ -88,10 +93,24 @@ const PrintRoute: React.FC<PrintRouteProps> = ({ kind, standIns }) => {
 	);
 };
 
+const PrintBundleRoute: React.FC<{ readonly standIns: PrintPageStandIns }> = ({
+	standIns,
+}) => {
+	const { reads, terms } = usePrintPagePorts();
+	const effects = usePageEffects(standIns);
+
+	return (
+		<Suspense fallback={<WhileThePageLoads />}>
+			<ReportsPrintPage reads={reads} terms={terms} effects={effects} />
+		</Suspense>
+	);
+};
+
 /**
  * The print pages of a Team's and a Portfolio's reports, `/print/teams/:id/reports/:reportId` and its Portfolio
- * twin. The app mounts them beside its shell rather than inside it, so a printed report carries none of the
- * navigation, footer or prompts around every other page.
+ * twin, and of several reports as one PDF, `/print/reports?reports=team-3-12,portfolio-5-7`. The app mounts them
+ * beside its shell rather than inside it, so a printed report carries none of the navigation, footer or prompts
+ * around every other page.
  */
 export const reportPrintRoutes = (
 	standIns: PrintPageStandIns = {},
@@ -104,6 +123,10 @@ export const reportPrintRoutes = (
 		<Route
 			path="/print/portfolios/:id/reports/:reportId"
 			element={<PrintRoute kind="portfolio" standIns={standIns} />}
+		/>
+		<Route
+			path="/print/reports"
+			element={<PrintBundleRoute standIns={standIns} />}
 		/>
 	</>
 );

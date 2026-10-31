@@ -1,5 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
 	Box,
 	Button,
@@ -21,8 +22,10 @@ import {
 } from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
+import { isTauriOnMac } from "../../utils/tauri";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
+import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "../Common/Reports/pdfExportCopy";
 import ReportList, {
 	type ReportListActions,
 } from "../Common/Reports/ReportList";
@@ -37,6 +40,7 @@ import RemoveSelectedDialog from "./RemoveSelectedDialog";
 import { useAllReports } from "./useAllReports";
 import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useReportCreationOptions } from "./useReportCreationOptions";
+import { useReportsPdfExport } from "./useReportsPdfExport";
 
 const COULD_NOT_LOAD = "The reports couldn't be loaded.";
 
@@ -48,6 +52,8 @@ const byOwner = (reports: IReportAcrossOwners[]): IReportAcrossOwners[] =>
 			a.ownerName.localeCompare(b.ownerName),
 	);
 const LIST_MIN_HEIGHT = 120;
+// Held back only in look on the macOS desktop app, so the tooltip saying why still reaches a keyboard reader.
+const HELD_BACK_LOOK = { color: "action.disabled", cursor: "default" };
 
 /** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
 const isAdminOfAny = ({
@@ -156,20 +162,34 @@ const removeBlockedBecause = (
 	return `${notAdmin} of the ${picked} selected reports ${notAdmin === 1 ? "is" : "are"} on a ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)} you are not Admin of.`;
 };
 
-/** The reports the reader picked, in the order picked, and Remove, which asks before removing them. */
-const useSelectionRemoval = (
-	reports: readonly IReportAcrossOwners[] | undefined,
-	rbac: RbacState,
-) => {
+/** The reports the reader picked, in the order picked, and a way to read them in the order the table shows them. */
+const useRowPicks = (reports: readonly IReportAcrossOwners[] | undefined) => {
+	const [selectedIds, setSelectedIds] = useState<GridRowId[]>([]);
+	const tableOrder = useRef<(() => GridRowId[]) | undefined>(undefined);
+	const reportOf = (id: GridRowId) =>
+		reports?.find((report) => report.id === id) ?? [];
+	const picked = selectedIds.flatMap((id) => reportOf(id));
+	const inTableOrder = (): IReportAcrossOwners[] =>
+		(tableOrder.current?.() ?? selectedIds)
+			.filter((id) => selectedIds.includes(id))
+			.flatMap((id) => reportOf(id));
+	return {
+		picking: { selectedIds, onSelectionChange: setSelectedIds, tableOrder },
+		picked,
+		inTableOrder,
+		clear: () => setSelectedIds([]),
+	};
+};
+
+type RowPicks = ReturnType<typeof useRowPicks>;
+
+/** Remove, which asks before removing the picked reports. */
+const useSelectionRemoval = ({ picked, clear }: RowPicks, rbac: RbacState) => {
 	const { getTerm } = useTerminology();
 	const { mayEdit } = mayEditReportsOf(rbac);
-	const [selectedIds, setSelectedIds] = useState<GridRowId[]>([]);
 	// Held from the moment Remove is pressed, so the dialog keeps naming them while the list is read again.
 	const [confirming, setConfirming] = useState<IReportAcrossOwners[] | null>(
 		null,
-	);
-	const picked = selectedIds.flatMap(
-		(id) => reports?.find((report) => report.id === id) ?? [],
 	);
 	const notAdmin = rbac.isLoading
 		? 0
@@ -180,24 +200,21 @@ const useSelectionRemoval = (
 		notAdmin,
 		getTerm,
 	);
-	const toolbar = (
-		<>
-			<Tooltip title={blockedBecause}>
-				<span>
-					<Button
-						variant="outlined"
-						startIcon={<DeleteIcon />}
-						disabled={
-							picked.length === 0 || rbac.isLoading || blockedBecause !== ""
-						}
-						onClick={() => setConfirming(picked)}
-					>
-						{`Remove (${picked.length})`}
-					</Button>
-				</span>
-			</Tooltip>
-			<Typography color="text.secondary">{`${picked.length} selected`}</Typography>
-		</>
+	const button = (
+		<Tooltip title={blockedBecause}>
+			<span>
+				<Button
+					variant="outlined"
+					startIcon={<DeleteIcon />}
+					disabled={
+						picked.length === 0 || rbac.isLoading || blockedBecause !== ""
+					}
+					onClick={() => setConfirming(picked)}
+				>
+					{`Remove (${picked.length})`}
+				</Button>
+			</span>
+		</Tooltip>
 	);
 	const dialog =
 		confirming === null ? null : (
@@ -206,15 +223,39 @@ const useSelectionRemoval = (
 				onCancel={() => setConfirming(null)}
 				onDone={() => {
 					setConfirming(null);
-					setSelectedIds([]);
+					clear();
 				}}
 			/>
 		);
-	return {
-		picking: { selectedIds, onSelectionChange: setSelectedIds },
-		toolbar,
-		dialog,
-	};
+	return { button, dialog };
+};
+
+/** Export PDF, which prints every picked report as one PDF, in the order the table shows them; any reader may. */
+const useSelectionExport = ({ picked, inTableOrder }: RowPicks) => {
+	const pdfExport = useReportsPdfExport();
+	const label = `Export PDF (${picked.length})`;
+	const button = isTauriOnMac() ? (
+		<Tooltip describeChild title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
+			<Button
+				variant="outlined"
+				startIcon={<PictureAsPdfIcon />}
+				aria-disabled="true"
+				sx={HELD_BACK_LOOK}
+			>
+				{label}
+			</Button>
+		</Tooltip>
+	) : (
+		<Button
+			variant="outlined"
+			startIcon={<PictureAsPdfIcon />}
+			disabled={picked.length === 0}
+			onClick={() => pdfExport.exportPdf(inTableOrder())}
+		>
+			{label}
+		</Button>
+	);
+	return { button, frame: pdfExport.frame };
 };
 
 const ReportsPageContent: React.FC = () => {
@@ -224,7 +265,9 @@ const ReportsPageContent: React.FC = () => {
 	const { data, isFetching, isError, refetch } = useAllReports();
 	const status = queryStatusOf(isFetching, isError);
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
-	const removal = useSelectionRemoval(data?.reports, rbac);
+	const picks = useRowPicks(data?.reports);
+	const removal = useSelectionRemoval(picks, rbac);
+	const selectionExport = useSelectionExport(picks);
 	const { mayEdit } = mayEditReportsOf(rbac);
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);
@@ -247,7 +290,9 @@ const ReportsPageContent: React.FC = () => {
 			</Typography>
 			<Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
 				{bulkCreation.button}
-				{removal.toolbar}
+				{removal.button}
+				{selectionExport.button}
+				<Typography color="text.secondary">{`${picks.picked.length} selected`}</Typography>
 			</Box>
 			<Box
 				data-testid="all-reports"
@@ -276,7 +321,7 @@ const ReportsPageContent: React.FC = () => {
 								reports={byOwner(data.reports)}
 								actions={actions}
 								showOwner
-								picking={removal.picking}
+								picking={picks.picking}
 							/>
 						))}
 				</WidgetBody>
@@ -284,6 +329,7 @@ const ReportsPageContent: React.FC = () => {
 			{editing.element}
 			{deletion.dialog}
 			{pdfExport.frame}
+			{selectionExport.frame}
 			{bulkCreation.wizard}
 			{removal.dialog}
 		</Container>

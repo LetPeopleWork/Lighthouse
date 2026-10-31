@@ -110,7 +110,7 @@ describe("One PDF of several reports", () => {
 		forgetTheBrowser();
 	});
 
-	it.skip(`a coach exports the reports of two Teams as one PDF, each on a page of its own (${pending})`, async () => {
+	it("a coach exports the reports of two Teams as one PDF, each on a page of its own", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -126,10 +126,11 @@ describe("One PDF of several reports", () => {
 		await user.click(screen.getByRole("button", { name: exportButton(2) }));
 
 		await theFramesHavePrinted(frames, 1);
-		expect(theReportTitlesPrinted()).toEqual([QUARTER, MONTH]);
+		// The table lists Teams by name, so Gravity's report comes first, whichever was picked first.
+		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
 	});
 
-	it.skip(`the reports print in the table's order, as the reader sorted it (${pending})`, async () => {
+	it("the reports print in the table's order, as the reader sorted it", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -177,7 +178,7 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	it.skip(`a reader who is Admin of none of them may still export them (${pending})`, async () => {
+	it("a reader who is Admin of none of them may still export them", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(

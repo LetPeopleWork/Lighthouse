@@ -12,6 +12,7 @@ import {
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
 import PrintFrameHost from "./print/PrintFrameHost";
+import type { PrintedReport } from "./print/ReportPrintBundle";
 import type { PrintOutcome } from "./print/usePrintOnce";
 
 type Exported = Pick<IReport, "id" | "templateKey">;
@@ -45,6 +46,7 @@ export interface ReportPdfExport {
 interface Exporting {
 	readonly owner: IReportOwner;
 	readonly reportId: number;
+	readonly reports: readonly PrintedReport[];
 	/** Each export draws into a frame of its own, even for the same report. */
 	readonly attempt: number;
 }
@@ -104,6 +106,7 @@ export const useReportPdfExport = (
 		setExporting({
 			owner: reportOwner,
 			reportId,
+			reports: [{ owner: reportOwner, reportId }],
 			attempt: attempts.current,
 		});
 	};
@@ -153,8 +156,7 @@ export const useReportPdfExport = (
 			? null
 			: createElement(PrintFrameHost, {
 					key: exporting.attempt,
-					owner: exporting.owner,
-					reportId: exporting.reportId,
+					reports: exporting.reports,
 					tell: tellFor(exporting),
 				});
 

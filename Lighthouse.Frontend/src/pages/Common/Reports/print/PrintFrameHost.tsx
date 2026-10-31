@@ -3,7 +3,6 @@ import { CacheProvider } from "@emotion/react";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { IReportOwner } from "../../../../models/Reports/Report";
 import { lightTheme } from "../../../../utils/theme/appThemes";
 import {
 	browserPrintEffects,
@@ -11,10 +10,8 @@ import {
 	type PrintFrame,
 } from "./browserPrintEffects";
 import PrintSheet from "./PrintSheet";
-import ReportPrintContent, {
-	type PrintPageLook,
-	type PrintTerms,
-} from "./ReportPrintContent";
+import ReportPrintBundle, { type PrintedReport } from "./ReportPrintBundle";
+import type { PrintPageLook, PrintTerms } from "./ReportPrintContent";
 import { usePrintPagePorts } from "./reportPrintRoutes";
 import {
 	A_PART_COULD_NOT_BE_LOADED,
@@ -24,8 +21,8 @@ import {
 } from "./usePrintOnce";
 
 interface PrintFrameHostProps {
-	readonly owner: IReportOwner;
-	readonly reportId: number;
+	/** The reports to print as one PDF, in the order they print. */
+	readonly reports: readonly PrintedReport[];
 	/** Hears that the dialog is asked for, that it closed, or why no PDF could be made. */
 	readonly tell: (outcome: PrintOutcome) => void;
 }
@@ -115,8 +112,15 @@ const useTermsAskedForAgain = (
 };
 
 // The frame cannot be seen, so a read, a font or a picture that never arrives would leave the spinner turning with no
-// word; this leaves room for a slow connection's retried reads while still ending.
+// word; this leaves room for a slow connection's retried reads while still ending. Each further report adds its own
+// reads, fonts and charts to draw.
 const THE_TIME_A_FRAME_IS_GIVEN_MS = 30_000;
+const THE_TIME_EACH_FURTHER_REPORT_ADDS_MS = 2_000;
+
+/** How long a frame printing this many reports is given, from its mount to asking for the dialog. */
+export const timeAFrameIsGivenMs = (reportCount: number): number =>
+	THE_TIME_A_FRAME_IS_GIVEN_MS +
+	THE_TIME_EACH_FURTHER_REPORT_ADDS_MS * Math.max(0, reportCount - 1);
 
 interface Budgeted {
 	readonly timedOut: boolean;
@@ -124,18 +128,18 @@ interface Budgeted {
 	readonly tell: PrintFrameHostProps["tell"];
 }
 
-/** Gives the export a fixed time from the host's mount to asking for the dialog, and says when it has run out. */
-const useTimeToPrint = (tell: PrintFrameHostProps["tell"]): Budgeted => {
+/** Gives the export its time from the host's mount to asking for the dialog, and says when it has run out. */
+const useTimeToPrint = (
+	tell: PrintFrameHostProps["tell"],
+	budgetMs: number,
+): Budgeted => {
 	const [timedOut, setTimedOut] = useState(false);
 	const clock = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
 	useEffect(() => {
-		clock.current = setTimeout(
-			() => setTimedOut(true),
-			THE_TIME_A_FRAME_IS_GIVEN_MS,
-		);
+		clock.current = setTimeout(() => setTimedOut(true), budgetMs);
 		return () => clearTimeout(clock.current);
-	}, []);
+	}, [budgetMs]);
 
 	const tellAndStopTheClock = useCallback(
 		(outcome: PrintOutcome) => {
@@ -210,13 +214,12 @@ const InTheFrame: React.FC<InTheFrameProps> = ({
  * itself, so it shares the app's answers, and set in its own light page whatever the reader's theme, since only the
  * frame's document goes to the print dialog.
  */
-const PrintFrameHost: React.FC<PrintFrameHostProps> = ({
-	owner,
-	reportId,
-	tell,
-}) => {
+const PrintFrameHost: React.FC<PrintFrameHostProps> = ({ reports, tell }) => {
 	const { reads, terms } = usePrintPagePorts();
-	const { timedOut, tell: tellTheHost } = useTimeToPrint(tell);
+	const { timedOut, tell: tellTheHost } = useTimeToPrint(
+		tell,
+		timeAFrameIsGivenMs(reports.length),
+	);
 	const stillAskingForTheTerms = useTermsAskedForAgain(terms, timedOut);
 	const opened = useOpenedFrame(tellTheHost, timedOut);
 
@@ -229,16 +232,15 @@ const PrintFrameHost: React.FC<PrintFrameHostProps> = ({
 				<CacheProvider value={cache}>
 					<ThemeProvider theme={lightTheme}>
 						<CssBaseline />
-						<ReportPrintContent
-							owner={owner}
-							reportId={reportId}
+						<ReportPrintBundle
+							reports={reports}
 							reads={reads}
 							terms={terms}
 							effects={effects}
 							timedOut={timedOut}
-							renderSheet={(look, report) => (
+							renderSheet={(look, drawn) => (
 								<InTheFrame look={look} effects={effects} tell={tellTheHost}>
-									{report}
+									{drawn}
 								</InTheFrame>
 							)}
 						/>

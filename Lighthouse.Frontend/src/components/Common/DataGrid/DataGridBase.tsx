@@ -149,6 +149,20 @@ function useSpacingInWholeList(
 	}, [apiRef, getRowSpacing]);
 }
 
+/** Hands the caller a way to read the rows' order when it acts on them, rather than following every sort. */
+function useTableOrderReader(
+	apiRef: GridApiRef,
+	tableOrder: RowPicking["tableOrder"],
+) {
+	useEffect(() => {
+		if (tableOrder === undefined) return;
+		tableOrder.current = () => apiRef.current?.getSortedRowIds() ?? [];
+		return () => {
+			tableOrder.current = undefined;
+		};
+	}, [apiRef, tableOrder]);
+}
+
 /**
  * The grid's checkbox props, or none at all when the caller does not pick rows. The picks are always named one by
  * one, never as "every row but these", so the caller reads them without knowing which rows the grid holds.
@@ -293,6 +307,7 @@ function DataGridBase<T extends GridValidRowModel>({
 	}, []);
 
 	useMovingOffAPageThatIsGone(apiRef);
+	useTableOrderReader(apiRef, checkboxSelection?.tableOrder);
 
 	// Convert DataGridColumn to GridColDef
 	const gridColumns = useMemo(() => {

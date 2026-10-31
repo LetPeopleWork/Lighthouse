@@ -92,6 +92,8 @@ export interface DataGridBaseProps<T extends GridValidRowModel> {
 export interface RowPicking {
 	selectedIds: readonly GridRowId[];
 	onSelectionChange: (selectedIds: GridRowId[]) => void;
+	/** Filled by the grid with a way to read every row's id in the order it shows them now, as the reader sorted them. */
+	tableOrder?: { current: (() => GridRowId[]) | undefined };
 }
 
 /**
