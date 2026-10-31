@@ -58,7 +58,7 @@ interface ModifyProjectSettingsProps {
 	notSavedReason?: string;
 }
 
-// Bug #5613: autosave is the only save trigger, so an invalid form has to name what blocks it.
+// Autosave is the only save trigger, so an invalid form has to name what blocks it.
 function portfolioAutoSaveBlockers(
 	s: IPortfolioSettings,
 	system: IWorkTrackingSystemConnection | null,
@@ -191,7 +191,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const stateMappingErrors = useMemo(() => {
 		if (!projectSettings) return [];
-		return validateStateMappings(projectSettings.stateMappings, projectSettings);
+		return validateStateMappings(
+			projectSettings.stateMappings,
+			projectSettings,
+		);
 	}, [projectSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>

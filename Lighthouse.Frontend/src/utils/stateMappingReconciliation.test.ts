@@ -129,7 +129,6 @@ describe("reconcileDoingStates", () => {
 				name: "Verification",
 				states: ["QA", "Testing"],
 			};
-			// After creating prev mapping: QA absorbed, Testing still in Doing
 			const doingStates = ["Dev", "Review", "Testing", "Verification"];
 
 			const result = reconcileDoingStates([prev], [next], doingStates);
@@ -354,7 +353,6 @@ describe("reconcileDoingStates", () => {
 				name: "Verification",
 				states: ["QA", "Testing"],
 			};
-			// Case variation in Doing list
 			const doingStates = ["Dev", "VERIFICATION", "Review"];
 
 			const result = reconcileDoingStates([prev], [], doingStates);
@@ -383,15 +381,9 @@ describe("reconcileDoingStates", () => {
 			const next: IStateMapping = { name: "VERIFICATION", states: ["QA"] };
 			const doingStates = ["Dev", "Verification"];
 
-			// Same states, same name (different case) → treated as unchanged
 			const result = reconcileDoingStates([prev], [next], doingStates);
 
-			// Mapping name stayed (possibly updated casing), no spurious changes
-			const hasVerification = result.some(
-				(s) => s.toLowerCase() === "verification",
-			);
-			expect(hasVerification).toBe(true);
-			expect(result).not.toContain("QA");
+			expect(result).toEqual(["Dev", "Verification"]);
 		});
 	});
 });

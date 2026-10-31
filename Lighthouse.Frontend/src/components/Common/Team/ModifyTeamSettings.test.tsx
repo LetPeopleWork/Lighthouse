@@ -600,7 +600,7 @@ describe("ModifyTeamSettings", () => {
 			expect(warning).toHaveTextContent(
 				'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
 			);
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			await waitPastTheDebounce();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 			fireEvent.change(screen.getByLabelText("Mapping Name"), {

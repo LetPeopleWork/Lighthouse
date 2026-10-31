@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MappingNameUsedInDirectStateList_IsValid()
+        public void Validate_MappingNameDifferentFromAllItsStates_IsValid()
         {
             var mappings = new List<StateMapping>
             {
@@ -140,11 +140,11 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MappingNameUsedInDirectStateListCaseInsensitive_IsValid()
+        public void Validate_MappingNameEqualToOwnSourceStateIgnoringCase_IsValid()
         {
             var mappings = new List<StateMapping>
             {
-                new() { Name = "Implementation", States = ["Active", "Resolved"] }
+                new() { Name = "Implementation", States = ["implementation", "Resolved"] }
             };
 
             var result = StateMappingValidator.Validate(mappings);
@@ -153,7 +153,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MappingNameEqualToAStateInTheCategoryLists_CannotBeToldApartFromTheMappingItself_IsValid()
+        public void Validate_MappingNamedLikeAStateOutsideItsSourceStates_IsValid()
         {
             var mappings = new List<StateMapping>
             {

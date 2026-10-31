@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { IStateMapping } from "../models/Common/StateMapping";
-import { type IStateLists, validateStateMappings } from "./stateMappingValidation";
+import {
+	type IStateLists,
+	validateStateMappings,
+} from "./stateMappingValidation";
 
 const lists = (
 	doingStates: string[] = [],
@@ -59,7 +62,10 @@ describe("validateStateMappings", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "In Arbeit", states: ["In Progress"] },
 		];
-		const result = validateStateMappings(mappings, lists(["In Arbeit", "In Progress"]));
+		const result = validateStateMappings(
+			mappings,
+			lists(["In Arbeit", "In Progress"]),
+		);
 		expect(result).toEqual([
 			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
 		]);

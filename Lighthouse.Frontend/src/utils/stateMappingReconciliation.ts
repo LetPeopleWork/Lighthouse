@@ -66,26 +66,20 @@ export function reconcileDoingStates(
 
 	let result = [...doingStates];
 
-	// Undo effects of removed or changed mappings
 	for (const [key, prev] of prevByName) {
 		const next = nextByName.get(key);
 		if ((!next || statesChanged(prev, next)) && isApplied(prev, doingStates)) {
-			// Remove mapping name from Doing
 			result = result.filter((s) => normalise(s) !== key);
-			// Restore source states (append in their original order)
 			result = [...result, ...prev.states];
 		}
 	}
 
-	// Apply effects of added or changed mappings
 	for (const [key, next] of nextByName) {
 		const prev = prevByName.get(key);
 		if (next.states.length === 0 || wouldShadow(next, result)) continue;
 		if (!prev || statesChanged(prev, next)) {
-			// Remove source states from Doing
 			const sourceKeys = new Set(next.states.map(normalise));
 			result = result.filter((s) => !sourceKeys.has(normalise(s)));
-			// Append mapping name if not already present
 			if (!result.some((s) => normalise(s) === key)) {
 				result = [...result, next.name.trim()];
 			}

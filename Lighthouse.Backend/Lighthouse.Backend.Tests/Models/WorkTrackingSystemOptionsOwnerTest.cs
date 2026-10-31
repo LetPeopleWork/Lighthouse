@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void A_mapping_named_after_one_of_its_own_states_keeps_both_raw_states_in_every_category()
+        public void AllStates_MappingNamedAfterOneOfItsOwnStates_KeepsBothRawStates()
         {
             var subject = CreateSubject();
             subject.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Arbeit", "In Progress"] });
