@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Shared path classifier used by `.github/workflows/ci_changes.yml` and
 # `Scripts/test-selection/dev-test.sh` to decide which connector integration
-# suites, and whether the backend suite, a change touches. Every classify_* function takes a newline-separated
-# list of changed paths (as `git diff --name-only` would emit) and echoes
-# "true" or "false".
+# suites, and whether the backend suite, a change touches. Every classify_*
+# function takes a newline-separated list of changed paths (as
+# `git diff --name-only` would emit) and echoes "true" or "false".
 
 BACKEND_REGEX='^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/|\.github/actions/)'
 JIRA_REGEX='^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/'

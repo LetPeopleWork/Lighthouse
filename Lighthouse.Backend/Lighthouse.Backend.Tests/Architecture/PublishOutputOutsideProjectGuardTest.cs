@@ -14,6 +14,16 @@ namespace Lighthouse.Backend.Tests.Architecture
             "StrykerOutput", ".stryker-tmp", "dist", "coverage", "playwright-report", "test-results",
         ];
 
+        // Files that publish or package the backend; the scan must reach all of them.
+        private static readonly string[] KnownConsumers =
+        [
+            ".github/actions/build-backend/action.yml",
+            ".github/actions/package-app/action.yml",
+            ".github/workflows/ci_package-macos-standalone.yml",
+            "Lighthouse.Frontend/package.json",
+            "Dockerfile",
+        ];
+
         [Test]
         public void NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder()
         {
@@ -30,15 +40,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "Publish the backend to artifacts/publish/<rid> at the repository root, not into the project folder, " +
                 "where the next publish would nest inside this one. Offenders: " + string.Join(", ", offenders));
         }
-
-        private static readonly string[] KnownConsumers =
-        [
-            ".github/actions/build-backend/action.yml",
-            ".github/actions/package-app/action.yml",
-            ".github/workflows/ci_package-macos-standalone.yml",
-            "Lighthouse.Frontend/package.json",
-            "Dockerfile",
-        ];
 
         [Test]
         public void TheScanSeesTheFilesThatConsumeThePublishOutput()
