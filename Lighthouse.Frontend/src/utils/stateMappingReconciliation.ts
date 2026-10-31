@@ -13,6 +13,33 @@ function indexByName(mappings: IStateMapping[]): Map<string, IStateMapping> {
 	return map;
 }
 
+/**
+ * True when the mapping's name is already a Doing state the mapping does not
+ * itself contain. The backend expands a Doing entry equal to a mapping name
+ * into that mapping's states, so such a state would be silently dropped.
+ */
+export function wouldShadow(m: IStateMapping, doing: string[]): boolean {
+	const key = normalise(m.name);
+	if (!key) return false;
+	const inDoing = doing.some((s) => normalise(s) === key);
+	return inDoing && !m.states.some((s) => normalise(s) === key);
+}
+
+/**
+ * True when the mapping has been taken into the Doing list: it has a name and
+ * states, and none of its states (other than one equal to its own name) is
+ * still listed there.
+ */
+function isApplied(m: IStateMapping, doing: string[]): boolean {
+	const key = normalise(m.name);
+	if (!key || m.states.length === 0) return false;
+	const doingKeys = new Set(doing.map(normalise));
+	return m.states.every((s) => {
+		const stateKey = normalise(s);
+		return stateKey === key || !doingKeys.has(stateKey);
+	});
+}
+
 function statesChanged(a: IStateMapping, b: IStateMapping): boolean {
 	const ak = [...a.states].map(normalise).sort((a, b) => a.localeCompare(b));
 	const bk = [...b.states].map(normalise).sort((a, b) => a.localeCompare(b));
@@ -41,7 +68,7 @@ export function reconcileDoingStates(
 	// Undo effects of removed or changed mappings
 	for (const [key, prev] of prevByName) {
 		const next = nextByName.get(key);
-		if (!next || statesChanged(prev, next)) {
+		if ((!next || statesChanged(prev, next)) && isApplied(prev, doingStates)) {
 			// Remove mapping name from Doing
 			result = result.filter((s) => normalise(s) !== key);
 			// Restore source states (append in their original order)
@@ -52,6 +79,7 @@ export function reconcileDoingStates(
 	// Apply effects of added or changed mappings
 	for (const [key, next] of nextByName) {
 		const prev = prevByName.get(key);
+		if (next.states.length === 0 || wouldShadow(next, result)) continue;
 		if (!prev || statesChanged(prev, next)) {
 			// Remove source states from Doing
 			const sourceKeys = new Set(next.states.map(normalise));

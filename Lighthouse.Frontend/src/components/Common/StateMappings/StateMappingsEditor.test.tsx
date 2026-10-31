@@ -266,12 +266,43 @@ describe("StateMappingsEditor", () => {
 				screen.getByRole("option", { name: "In Review" }),
 			).toBeInTheDocument();
 
-			// "Active" and "Closed" are mapping names → must NOT appear as options
+			// "Active" belongs to another mapping → must NOT appear as an option
 			expect(
 				screen.queryByRole("option", { name: "Active" }),
 			).not.toBeInTheDocument();
+			// "Closed" is this mapping's own name → it may group that state
 			expect(
-				screen.queryByRole("option", { name: "Closed" }),
+				screen.getByRole("option", { name: "Closed" }),
+			).toBeInTheDocument();
+		});
+
+		it("offers a mapping its own name as a source while hiding other mappings' names", async () => {
+			const user = userEvent.setup();
+			const mappings: IStateMapping[] = [
+				{ name: "In Arbeit", states: [] },
+				{ name: "Review", states: ["QA"] },
+			];
+
+			render(
+				<StateMappingsEditor
+					stateMappings={mappings}
+					doingStates={["In Arbeit", "In Progress", "Review"]}
+					onChange={mockOnChange}
+				/>,
+			);
+
+			await act(async () => {
+				await user.click(screen.getAllByRole("combobox")[0]);
+			});
+
+			expect(
+				screen.getByRole("option", { name: "In Arbeit" }),
+			).toBeInTheDocument();
+			expect(
+				screen.getByRole("option", { name: "In Progress" }),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByRole("option", { name: "Review" }),
 			).not.toBeInTheDocument();
 		});
 
@@ -307,15 +338,18 @@ describe("StateMappingsEditor", () => {
 				screen.queryByRole("option", { name: "Group A" }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("option", { name: "Group B" }),
-			).not.toBeInTheDocument();
+				screen.getByRole("option", { name: "Group B" }),
+			).toBeInTheDocument();
 		});
 
 		it("shows 'No Doing states available' when all Doing states are used", async () => {
 			const user = userEvent.setup();
-			const mappings: IStateMapping[] = [{ name: "Active", states: [] }];
-			// Only mapping names in doingStates — no raw states left
-			const doingStates = ["Active"];
+			const mappings: IStateMapping[] = [
+				{ name: "Active", states: [] },
+				{ name: "Other", states: ["Dev"] },
+			];
+			// Only another mapping's name in doingStates — no raw states left
+			const doingStates = ["Other"];
 
 			render(
 				<StateMappingsEditor
@@ -325,7 +359,7 @@ describe("StateMappingsEditor", () => {
 				/>,
 			);
 
-			const combobox = screen.getByRole("combobox");
+			const combobox = screen.getAllByRole("combobox")[0];
 			await act(async () => {
 				await user.click(combobox);
 			});

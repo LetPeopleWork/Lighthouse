@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { IStateMapping } from "../models/Common/StateMapping";
-import { reconcileDoingStates } from "./stateMappingReconciliation";
+import {
+	reconcileDoingStates,
+	wouldShadow,
+} from "./stateMappingReconciliation";
 
 describe("reconcileDoingStates", () => {
 	it("returns empty array when all inputs are empty", () => {
@@ -51,21 +54,16 @@ describe("reconcileDoingStates", () => {
 			);
 		});
 
-		it("does not duplicate mapping name when it is already in Doing states", () => {
+		it("leaves Doing alone when the mapping name is already a Doing state the mapping does not contain", () => {
 			const mapping: IStateMapping = {
 				name: "Verification",
 				states: ["QA"],
 			};
-			// Edge case: mapping name already present before explicit reconciliation
 			const doingStates = ["Dev", "Verification", "QA"];
 
 			const result = reconcileDoingStates([], [mapping], doingStates);
 
-			const count = result.filter(
-				(s) => s.toLowerCase() === "verification",
-			).length;
-			expect(count).toBe(1);
-			expect(result).not.toContain("QA");
+			expect(result).toEqual(["Dev", "Verification", "QA"]);
 		});
 
 		it("ignores mappings with empty names", () => {
@@ -216,6 +214,106 @@ describe("reconcileDoingStates", () => {
 			expect(result).not.toContain("QA");
 			expect(result).toContain("Review");
 			expect(result).toContain("Testing");
+		});
+	});
+
+	describe("a mapping named after a Doing state", () => {
+		it("keeps Doing as it is while the mapping has no states, then groups the state once it is picked", () => {
+			const doing = ["In Arbeit", "In Progress"];
+			const named: IStateMapping = { name: "In Arbeit", states: [] };
+			const withProgress: IStateMapping = {
+				name: "In Arbeit",
+				states: ["In Progress"],
+			};
+			const withBoth: IStateMapping = {
+				name: "In Arbeit",
+				states: ["In Progress", "In Arbeit"],
+			};
+
+			const afterNaming = reconcileDoingStates([], [named], doing);
+			const afterFirstPick = reconcileDoingStates(
+				[named],
+				[withProgress],
+				afterNaming,
+			);
+			const afterSecondPick = reconcileDoingStates(
+				[withProgress],
+				[withBoth],
+				afterFirstPick,
+			);
+
+			expect(afterNaming).toEqual(["In Arbeit", "In Progress"]);
+			expect(afterFirstPick).toEqual(["In Arbeit", "In Progress"]);
+			expect(afterSecondPick).toEqual(["In Arbeit"]);
+		});
+
+		it("does not touch Doing while a name is typed letter by letter, and keeps an unrelated state that is a prefix of it", () => {
+			const target = "Review DE/EN";
+			let previous: IStateMapping[] = [{ name: "", states: [] }];
+			const doing = ["Review", "Testing"];
+
+			for (let length = 1; length <= target.length; length++) {
+				const next = [{ name: target.slice(0, length), states: [] }];
+				expect(reconcileDoingStates(previous, next, doing)).toEqual([
+					"Review",
+					"Testing",
+				]);
+				previous = next;
+			}
+
+			const withTesting: IStateMapping[] = [
+				{ name: target, states: ["Testing"] },
+			];
+			expect(reconcileDoingStates(previous, withTesting, doing)).toEqual([
+				"Review",
+				"Review DE/EN",
+			]);
+		});
+
+		it("leaves Doing exactly as it was when an empty mapping is added and deleted", () => {
+			const doing = ["Dev", "Review"];
+			const empty: IStateMapping = { name: "", states: [] };
+			const named: IStateMapping = { name: "Dev", states: [] };
+
+			expect(reconcileDoingStates([], [empty], doing)).toEqual(doing);
+			expect(reconcileDoingStates([empty], [], doing)).toEqual(doing);
+			expect(reconcileDoingStates([named], [], doing)).toEqual(doing);
+		});
+
+		it("leaves the name in Doing when a mapping is deleted after its state was put back by hand", () => {
+			const mapping: IStateMapping = { name: "Verification", states: ["QA"] };
+
+			const result = reconcileDoingStates(
+				[mapping],
+				[],
+				["Verification", "QA"],
+			);
+
+			expect(result).toEqual(["Verification", "QA"]);
+		});
+	});
+
+	describe("wouldShadow", () => {
+		it("is true when the name is a Doing state the mapping does not contain", () => {
+			expect(
+				wouldShadow({ name: " in arbeit ", states: ["In Progress"] }, [
+					"In Arbeit",
+				]),
+			).toBe(true);
+		});
+
+		it("is false when the mapping contains the state it is named after", () => {
+			expect(
+				wouldShadow({ name: "In Arbeit", states: ["in arbeit"] }, [
+					"In Arbeit",
+				]),
+			).toBe(false);
+		});
+
+		it("is false when the name is not in Doing", () => {
+			expect(wouldShadow({ name: "Group", states: ["QA"] }, ["QA"])).toBe(
+				false,
+			);
 		});
 	});
 

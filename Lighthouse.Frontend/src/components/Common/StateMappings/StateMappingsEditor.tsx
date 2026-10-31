@@ -42,12 +42,15 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 	const mappingIds = useRef<string[]>([]);
 
 	/** Returns Doing states available as sources for the given mapping index.
-	 *  Excludes mapping names (they cannot be nested) and states already
-	 *  present in any mapping.
+	 *  Excludes the names of the other mappings (they cannot be nested) and
+	 *  states already present in this mapping. A mapping's own name stays
+	 *  offered, so it can group the state it is named after.
 	 */
 	const getAvailableSourceOptions = (mappingIndex: number): string[] => {
 		const allMappingNames = new Set(
-			stateMappings.map((m) => m.name.trim().toLowerCase()),
+			stateMappings
+				.filter((_, i) => i !== mappingIndex)
+				.map((m) => m.name.trim().toLowerCase()),
 		);
 		const currentMappingStates = new Set(
 			(stateMappings[mappingIndex]?.states ?? []).map((s) =>
