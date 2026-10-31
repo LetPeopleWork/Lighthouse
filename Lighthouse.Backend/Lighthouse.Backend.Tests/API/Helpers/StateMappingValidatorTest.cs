@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 
@@ -110,6 +111,41 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Assert.That(result.IsValid, Is.False);
                 Assert.That(result.Errors, Has.Some.Contains("Resolved"));
             }
+        }
+
+        [Test]
+        public void Validate_SourceStateInMultipleMappings_NamesTheStateAndEachMappingOnce()
+        {
+            var mappings = new List<StateMapping>
+            {
+                new() { Name = "Group A", States = ["Resolved", "Resolved"] },
+                new() { Name = "Group B", States = ["Resolved"] }
+            };
+
+            var result = StateMappingValidator.Validate(mappings);
+
+            Assert.That(
+                result.Errors,
+                Is.EqualTo(new List<string> { "Source state 'Resolved' appears in multiple mappings: 'Group A', 'Group B'." }));
+        }
+
+        [Test]
+        public void ValidateSettings_SourceStateInMultipleMappings_ReportsTheClashOfTheSettingsMappings()
+        {
+            var settings = new TeamSettingDto
+            {
+                StateMappings =
+                [
+                    new StateMappingDto { Name = "Group A", States = ["Active"] },
+                    new StateMappingDto { Name = "Group B", States = ["Active"] }
+                ]
+            };
+
+            var result = StateMappingValidator.ValidateSettings(settings);
+
+            Assert.That(
+                result.Errors,
+                Is.EqualTo(new List<string> { "Source state 'Active' appears in multiple mappings: 'Group A', 'Group B'." }));
         }
 
         [Test]
