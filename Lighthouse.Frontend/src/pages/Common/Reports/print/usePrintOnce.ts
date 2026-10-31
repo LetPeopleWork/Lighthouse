@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { PrintedReport } from "./bundleState";
 import type { PrintPageState } from "./printPageState";
 
 export const THE_REPORT_COULD_NOT_BE_LOADED =
@@ -30,6 +31,8 @@ export type PrintOutcome =
 			readonly kind: "failed";
 			readonly message: string;
 			readonly retry: boolean;
+			/** The reports of a PDF of several that could not be read, in print order; absent when a part of the page failed. */
+			readonly failedReports?: readonly PrintedReport[];
 	  };
 
 /** Something the PDF needed could not be had, and a fresh attempt may get it. */
@@ -43,6 +46,7 @@ export const A_PART_COULD_NOT_BE_LOADED: PrintOutcome = {
 export interface PrintFailureLook {
 	readonly message?: string;
 	readonly retry: boolean;
+	readonly failedReports?: readonly PrintedReport[];
 }
 
 /** The frame window's print dialog and its closing: all the print-once rule asks of the browser. */
@@ -110,8 +114,18 @@ export const usePrintOnce = ({
 			kind: "failed",
 			message: failure.message ?? THE_REPORT_COULD_NOT_BE_LOADED,
 			retry: failure.retry,
+			...(failure.failedReports === undefined
+				? {}
+				: { failedReports: failure.failedReports }),
 		});
-	}, [state, failure.message, failure.retry, port, tell]);
+	}, [
+		state,
+		failure.message,
+		failure.retry,
+		failure.failedReports,
+		port,
+		tell,
+	]);
 
 	useEffect(
 		() =>

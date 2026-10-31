@@ -1,4 +1,4 @@
-import type { PrintedReport } from "./ReportPrintBundle";
+import type { PrintedReport } from "./bundleState";
 
 const ONE_REPORT = /^(team|portfolio)-(\d+)-(\d+)$/;
 

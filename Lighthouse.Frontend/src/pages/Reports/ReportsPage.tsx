@@ -180,6 +180,10 @@ const useRowPicks = (reports: readonly IReportAcrossOwners[] | undefined) => {
 		picked,
 		inTableOrder,
 		clear: () => setSelectedIds([]),
+		unpick: (unpicked: readonly IReportAcrossOwners[]) =>
+			setSelectedIds((ids) =>
+				ids.filter((id) => !unpicked.some((report) => report.id === id)),
+			),
 	};
 };
 
@@ -243,8 +247,8 @@ const exportBlockedBecause = (picked: number): string => {
  * Export PDF, which prints every picked report as one PDF, in the order the table shows them; any reader may. On the
  * macOS desktop app no PDF can be made at all, so that reason wins over any about the picks.
  */
-const useSelectionExport = ({ picked, inTableOrder }: RowPicks) => {
-	const pdfExport = useReportsPdfExport();
+const useSelectionExport = ({ picked, inTableOrder, unpick }: RowPicks) => {
+	const pdfExport = useReportsPdfExport(unpick);
 	const label = `Export PDF (${picked.length})`;
 	const blockedBecause = pdfExport.preparing
 		? ""

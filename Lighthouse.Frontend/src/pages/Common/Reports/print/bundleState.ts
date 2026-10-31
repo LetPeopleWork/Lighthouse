@@ -1,3 +1,11 @@
+import type { IReportOwner } from "../../../../models/Reports/Report";
+
+/** One report to print, by its owner and id. */
+export interface PrintedReport {
+	readonly owner: IReportOwner;
+	readonly reportId: number;
+}
+
 /** How far one report in a PDF of several has got. */
 export type BundlePartState = "preparing" | "ready" | "failed";
 

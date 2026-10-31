@@ -11,8 +11,8 @@ import {
 	usageDataReportTemplateOf,
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
+import type { PrintedReport } from "./print/bundleState";
 import PrintFrameHost from "./print/PrintFrameHost";
-import type { PrintedReport } from "./print/ReportPrintBundle";
 import type { PrintOutcome } from "./print/usePrintOnce";
 
 type Exported = Pick<IReport, "id" | "templateKey">;

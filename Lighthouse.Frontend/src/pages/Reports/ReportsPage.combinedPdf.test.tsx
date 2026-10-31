@@ -27,7 +27,6 @@ import {
 	neverAnswered,
 	PART_OF_THE_PAGE_FAILED,
 	PULSAR,
-	pendingEpic6350,
 	QUARTER,
 	RETRY,
 	renderTheReportsPage,
@@ -56,8 +55,6 @@ import {
  * export what they can read. If a report cannot be loaded no PDF is made; the reader is told which one and may
  * leave it out, unless that would leave nothing to print.
  */
-
-const pending = pendingEpic6350("07");
 
 const zenithsQuarter = aReportOn(ZENITH, QUARTER, { id: 901 });
 const gravitysMonth = aReportOn(GRAVITY, MONTH, { id: 902 });
@@ -197,7 +194,7 @@ describe("One PDF of several reports", () => {
 		await theFramesHavePrinted(frames, 1);
 	});
 
-	it.skip(`a report that cannot be loaded stops the PDF and is named (${pending})`, async () => {
+	it("a report that cannot be loaded stops the PDF and is named", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -228,7 +225,7 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	it.skip(`Leave it out unpicks the report that failed and prints the rest (${pending})`, async () => {
+	it("Leave it out unpicks the report that failed and prints the rest", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -251,13 +248,14 @@ describe("One PDF of several reports", () => {
 		);
 
 		await theFramesHavePrinted(frames, 1);
-		expect(theReportTitlesPrinted()).toEqual([QUARTER, MONTH]);
+		// The PDF follows the table, which lists Teams by name: Gravity's report before Zenith's.
+		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
 		expect(
 			screen.getByRole("button", { name: exportButton(2) }),
 		).toBeInTheDocument();
 	});
 
-	it.skip(`Leave it out is not offered when leaving the failed reports out would leave nothing to print (${pending})`, async () => {
+	it("Leave it out is not offered when leaving the failed reports out would leave nothing to print", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
 				eachReportReads([zenithsQuarter.id, voyagersQuarter.id]),
@@ -280,7 +278,7 @@ describe("One PDF of several reports", () => {
 		).toEqual([CANCEL, RETRY]);
 	});
 
-	it.skip(`Retry asks for the report again and prints once it arrives (${pending})`, async () => {
+	it("Retry asks for the report again and prints once it arrives", async () => {
 		const frames = aPrintFrameBrowser();
 		const getReport = eachReportReads();
 		getReport.mockRejectedValueOnce(new Error("the network dropped"));
@@ -305,7 +303,7 @@ describe("One PDF of several reports", () => {
 		await theFramesHavePrinted(frames, 1);
 	});
 
-	it.skip(`when part of the page cannot be loaded no PDF is made and it says so (${pending})`, async () => {
+	it("when part of the page cannot be loaded no PDF is made and it says so", async () => {
 		theFontsCannotLoad("fail outright");
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({

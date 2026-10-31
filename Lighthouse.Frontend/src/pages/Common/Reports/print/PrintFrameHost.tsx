@@ -9,8 +9,9 @@ import {
 	openPrintFrame,
 	type PrintFrame,
 } from "./browserPrintEffects";
+import type { PrintedReport } from "./bundleState";
 import PrintSheet from "./PrintSheet";
-import ReportPrintBundle, { type PrintedReport } from "./ReportPrintBundle";
+import ReportPrintBundle from "./ReportPrintBundle";
 import type { PrintPageLook, PrintTerms } from "./ReportPrintContent";
 import { usePrintPagePorts } from "./reportPrintRoutes";
 import {

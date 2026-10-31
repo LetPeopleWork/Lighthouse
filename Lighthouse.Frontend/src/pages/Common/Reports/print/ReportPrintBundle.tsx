@@ -1,8 +1,11 @@
 import { Box } from "@mui/material";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { IReportOwner } from "../../../../models/Reports/Report";
-import { type BundlePartState, bundleStateOf } from "./bundleState";
+import {
+	type BundlePartState,
+	bundleStateOf,
+	type PrintedReport,
+} from "./bundleState";
 import type { PrintPageState } from "./printPageState";
 import type { PrintReadPort } from "./printReadPort";
 import ReportPrintContent, {
@@ -10,12 +13,6 @@ import ReportPrintContent, {
 	type PrintPageLook,
 	type PrintTerms,
 } from "./ReportPrintContent";
-
-/** One report to print, by its owner and id. */
-export interface PrintedReport {
-	readonly owner: IReportOwner;
-	readonly reportId: number;
-}
 
 /** The name the PDF of several reports is offered under. */
 export const SEVERAL_REPORTS_TITLE = "Lighthouse reports";
@@ -56,7 +53,14 @@ const Part: React.FC<PartProps> = ({ partKey, look, tell, children }) => {
 	return <>{children}</>;
 };
 
-/** Where the whole PDF stands: ready when every report is, and failed as its first failed report, in the given order. */
+const isAReportReadFailure = (state: PrintPageState): boolean =>
+	state === "failedRetryable" || state === "failedFinal";
+
+/**
+ * Where the whole PDF stands: ready when every report is. A failure waits until no report is still preparing, so the
+ * reader is told of every report that could not be read, in the given order, all at once, and the PDF takes on the
+ * first one's look. With no report unread, it fails as the first part of the page that failed.
+ */
 const bundleLookOf = (
 	reports: readonly PrintedReport[],
 	looks: Readonly<Record<string, PrintPageLook>>,
@@ -71,11 +75,20 @@ const bundleLookOf = (
 		})),
 	);
 	if (bundle.look === "ready") return READY_LOOK;
-	if (bundle.look === "preparing") return PREPARING_LOOK;
-	return (
-		partLooks.find((look) => partStateOf(look.state) === "failed") ??
-		PREPARING_LOOK
+	if (partLooks.some((look) => look.state === "preparing"))
+		return PREPARING_LOOK;
+	const failedReports = reports.filter((_, index) =>
+		isAReportReadFailure(partLooks[index].state),
 	);
+	const firstFailed =
+		partLooks.find((look) => isAReportReadFailure(look.state)) ??
+		partLooks.find((look) => partStateOf(look.state) === "failed");
+	if (firstFailed === undefined) return PREPARING_LOOK;
+	if (failedReports.length === 0) return firstFailed;
+	return {
+		state: firstFailed.state,
+		failure: { ...firstFailed.failure, failedReports },
+	};
 };
 
 interface ReportPrintBundleProps {
