@@ -1129,7 +1129,13 @@ describe("ModifyProjectSettings", () => {
 
 			fireEvent.click(screen.getByText("Change General"));
 
-			await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stateMappings: [{ name: "First", states: ["Review"] }],
+					}),
+				),
+			);
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();

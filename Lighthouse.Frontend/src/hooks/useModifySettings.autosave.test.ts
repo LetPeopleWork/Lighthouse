@@ -305,7 +305,7 @@ describe("auto-save and auto-refresh state mappings (validity gate)", () => {
 		vi.useRealTimers();
 	});
 
-	it("fires no save when a mapping group name is left empty", async () => {
+	it("fires no save and no refresh while a blocking validation reason is reported", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const additionalFetch = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(

@@ -787,12 +787,22 @@ describe("ModifyTeamSettings", () => {
 		});
 
 		it("shows no warning for a mapping that was just added, and other edits still save", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				stateMappings: [{ name: "First", states: ["Review"] }],
+			});
 			await renderModifyTeamSettings();
 
 			fireEvent.click(screen.getByText("Add State Mapping"));
 			fireEvent.click(screen.getByText("Add ToDo"));
 
-			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stateMappings: [{ name: "First", states: ["Review"] }],
+					}),
+				),
+			);
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
