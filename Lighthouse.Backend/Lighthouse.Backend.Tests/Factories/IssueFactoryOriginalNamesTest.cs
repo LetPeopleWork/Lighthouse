@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Factories
             using var statuses = JsonDocument.Parse(JiraWireFormat.TheStatusListOf(JiraWireFormat.AGermanReadersStatuses));
             using var issueTypes = JsonDocument.Parse(JiraWireFormat.TheIssueTypeListOf(JiraWireFormat.AGermanReadersIssueTypes));
 
-            return JiraOriginalNames.FromLists(statuses.RootElement, issueTypes.RootElement);
+            return JiraOriginalNames.Combining(JiraOriginalNames.FromStatusList(statuses.RootElement), JiraOriginalNames.FromIssueTypeList(issueTypes.RootElement));
         }
 
         private static Issue TheIssueIn(string json, JiraOriginalNames? originalNames)

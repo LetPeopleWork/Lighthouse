@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using var statuses = JsonDocument.Parse(statusList);
             using var issueTypes = JsonDocument.Parse(issueTypeList);
 
-            return JiraOriginalNames.FromLists(statuses.RootElement, issueTypes.RootElement);
+            return JiraOriginalNames.Combining(JiraOriginalNames.FromStatusList(statuses.RootElement), JiraOriginalNames.FromIssueTypeList(issueTypes.RootElement));
         }
     }
 }

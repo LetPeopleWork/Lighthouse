@@ -30,9 +30,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             this.readsNamesAsReported = readsNamesAsReported;
         }
 
-        public static JiraOriginalNames FromLists(JsonElement statusList, JsonElement issueTypeList)
-            => new(NamesById(statusList), CategoriesById(statusList), NamesById(issueTypeList), false);
-
         /// <summary>The names and categories of a status list read on its own, as Data Center gives them.</summary>
         public static JiraOriginalNames FromStatusList(JsonElement statusList)
             => new(NamesById(statusList), CategoriesById(statusList), [], false);

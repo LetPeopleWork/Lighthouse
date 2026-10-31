@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The status code and reason phrase as Jira sent them, for a list that came back unusable, e.g.
         /// <c>503 (Service Unavailable)</c>; empty when the exception is not about such an answer.
         /// </summary>
-        public string HowJiraAnswered { get; set; } = string.Empty;
+        public string HowJiraAnswered { get; internal set; } = string.Empty;
 
         /// <summary>
         /// Nothing in the configuration narrows what to fetch - no types, no states, no query of the
