@@ -171,7 +171,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const stateMappingErrors = useMemo(() => {
 		if (!teamSettings) return [];
-		return validateStateMappings(teamSettings.stateMappings, teamSettings);
+		return validateStateMappings(
+			teamSettings.stateMappings || [],
+			teamSettings,
+		);
 	}, [teamSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>

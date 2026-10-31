@@ -913,7 +913,7 @@ describe("ModifyProjectSettings", () => {
 			expect(warning).toHaveTextContent("Add at least one To Do State");
 		});
 
-		it("holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed", async () => {
+		it("holds back autosave while a mapping is named after a Doing state it does not group, and saves once the mappings are replaced", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
 				doingStates: ["In Arbeit", "In Progress"],
@@ -937,10 +937,11 @@ describe("ModifyProjectSettings", () => {
 
 			fireEvent.click(screen.getByText("Change General"));
 
-			const warning = await screen.findByTestId("settings-blocking-warning");
-			expect(warning).toHaveTextContent(
-				'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
-			);
+			expect(
+				await screen.findByText(
+					'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+				),
+			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 
@@ -957,6 +958,75 @@ describe("ModifyProjectSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
+		});
+
+		it("holds back autosave while a mapping is named after a state another mapping groups", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				doingStates: ["In Progress", "Group", "In Arbeit"],
+				stateMappings: [
+					{ name: "Group", states: ["In Arbeit"] },
+					{ name: "In Arbeit", states: ["Review"] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			expect(
+				await screen.findByText(
+					'Mapping "In Arbeit" has the same name as a state grouped by mapping "Group". Choose another name.',
+				),
+			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+		});
+
+		it("holds back autosave while a mapping is named after a Done state", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				doneStates: ["In Arbeit"],
+				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			expect(
+				await screen.findByText(
+					'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
+				),
+			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
 		it("holds back autosave while a mapping is named after a To Do state", async () => {
@@ -983,10 +1053,11 @@ describe("ModifyProjectSettings", () => {
 
 			fireEvent.click(screen.getByText("Change State Mapping"));
 
-			const warning = await screen.findByTestId("settings-blocking-warning");
-			expect(warning).toHaveTextContent(
-				'Mapping "Group" has the same name as the To Do state "Group". Choose another name.',
-			);
+			expect(
+				await screen.findByText(
+					'Mapping "Group" has the same name as the To Do state "Group". Choose another name.',
+				),
+			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
