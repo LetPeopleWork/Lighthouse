@@ -32,7 +32,7 @@ import {
 	nowLengthOf,
 	thenEndOf,
 } from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
-import BulkResult, { type BulkRun } from "./BulkResult";
+import BulkResult, { type BulkRun, reportsWord } from "./BulkResult";
 import OwnerStep, {
 	isOverTheCeiling,
 	OVER_THE_CEILING_ID,
@@ -53,7 +53,7 @@ const STEP_LABELS = ["Type", ...type.steps.map((step) => step.label), "Owners"];
 const OWNER_STEP = STEP_LABELS.length - 1;
 
 const createLabelOf = (count: number): string =>
-	count === 1 ? "Create 1 report" : `Create ${count} reports`;
+	`Create ${count} ${reportsWord(count)}`;
 
 const byName = (left: IReportCreationOwner, right: IReportCreationOwner) =>
 	left.ownerName.localeCompare(right.ownerName);

@@ -4,10 +4,9 @@ import { useRef, useState } from "react";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import type { RbacState } from "../../hooks/useRbac";
-import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import BulkReportWizard from "./BulkReportWizard";
-import type { OwnersStatus } from "./OwnerStep";
+import { notAdminOfAnyOwner, type OwnersStatus } from "./OwnerStep";
 import { useReportCreationOptions } from "./useReportCreationOptions";
 
 /** Whether the viewer administers at least one Team or Portfolio, so has somewhere to create reports. */
@@ -60,11 +59,7 @@ export const useBulkCreation = (rbac: RbacState) => {
 	const button = (
 		<LicenseTooltip
 			canUseFeature={isPremium}
-			defaultTooltip={
-				lacksAdmin
-					? `You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`
-					: ""
-			}
+			defaultTooltip={lacksAdmin ? notAdminOfAnyOwner(getTerm) : ""}
 			checkStatus={licenseStatus ? "ready" : status}
 		>
 			<span>

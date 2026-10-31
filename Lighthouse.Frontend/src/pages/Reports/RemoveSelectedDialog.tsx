@@ -1,14 +1,12 @@
 import {
 	Alert,
 	Button,
-	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
 	List,
 	ListItem,
-	Stack,
 	Typography,
 } from "@mui/material";
 import type React from "react";
@@ -17,7 +15,7 @@ import type {
 	IReportRemovalOutcome,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { notRemovedLineFor } from "../Common/Reports/wizard/reportRefusalCopy";
-import { NotConfirmed, reportsWord } from "./BulkResult";
+import { NotConfirmed, reportsWord, UnderWay } from "./BulkResult";
 import { useBulkReportRemoval } from "./useBulkReportRemoval";
 
 const TITLE_ID = "remove-selected-reports-title";
@@ -78,15 +76,6 @@ const Confirmation: React.FC<
 		</>
 	);
 };
-
-const UnderWay: React.FC<Readonly<{ count: number }>> = ({ count }) => (
-	<DialogContent>
-		<Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-			<CircularProgress size={24} />
-			<Typography>{`Removing ${count} ${reportsWord(count)}…`}</Typography>
-		</Stack>
-	</DialogContent>
-);
 
 const NotRemovedLine: React.FC<
 	Readonly<{
@@ -158,7 +147,7 @@ const RemoveSelectedDialog: React.FC<Readonly<RemoveSelectedDialogProps>> = ({
 		else onCancel();
 	};
 	const content = () => {
-		if (isPending) return <UnderWay count={reports.length} />;
+		if (isPending) return <UnderWay doing="Removing" count={reports.length} />;
 		if (removal.isError)
 			return <NotConfirmed message={NOT_CONFIRMED_REMOVED} onDone={onDone} />;
 		if (removal.isSuccess)

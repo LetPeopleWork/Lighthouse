@@ -42,6 +42,10 @@ export type OwnerLimitOf = (owner: IReportCreationOwner) => OwnerLimit | null;
 const settingsPathOf = (owner: IReportCreationOwner): string =>
 	`${ownerPathOf(ownerOfReport(owner))}/settings`;
 
+/** Said wherever the reader has no Team or Portfolio to create a report on. */
+export const notAdminOfAnyOwner = (getTerm: (key: string) => string): string =>
+	`You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`;
+
 /**
  * In a browser the owner's settings open in a new tab, so the wizard keeps what the reader has entered. The desktop
  * app opens no second window, so there the link moves within the app instead.
@@ -237,9 +241,7 @@ const OwnerStep: React.FC<Readonly<OwnerStepProps>> = ({
 				</Box>
 			)}
 			{ownersStatus === "ready" && noOwners && (
-				<Typography>
-					{`You are not Admin of any ${getTerm(TERMINOLOGY_KEYS.TEAM)} or ${getTerm(TERMINOLOGY_KEYS.PORTFOLIO)}.`}
-				</Typography>
+				<Typography>{notAdminOfAnyOwner(getTerm)}</Typography>
 			)}
 			{ownersStatus === "ready" && !noOwners && <OwnerList {...list} />}
 		</Stack>

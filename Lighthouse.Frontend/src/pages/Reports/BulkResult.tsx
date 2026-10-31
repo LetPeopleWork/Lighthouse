@@ -32,6 +32,19 @@ export type BulkRun =
 export const reportsWord = (count: number) =>
 	count === 1 ? "report" : "reports";
 
+/** A bulk run sent and not yet answered, such as "Creating 3 reports…". */
+export const UnderWay: React.FC<Readonly<{ doing: string; count: number }>> = ({
+	doing,
+	count,
+}) => (
+	<DialogContent>
+		<Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
+			<CircularProgress size={24} />
+			<Typography>{`${doing} ${count} ${reportsWord(count)}…`}</Typography>
+		</Stack>
+	</DialogContent>
+);
+
 /** No answer came, so the run's outcome is unknown and the Reports page is where to see it. */
 export const NotConfirmed: React.FC<
 	Readonly<{ message: string; onDone: () => void }>
@@ -127,14 +140,7 @@ const BulkResult: React.FC<Readonly<BulkResultProps>> = ({
 	onDone,
 }) => {
 	if (run.status === "pending") {
-		return (
-			<DialogContent>
-				<Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-					<CircularProgress size={24} />
-					<Typography>{`Creating ${count} ${reportsWord(count)}…`}</Typography>
-				</Stack>
-			</DialogContent>
-		);
+		return <UnderWay doing="Creating" count={count} />;
 	}
 
 	if (run.status === "error") {
