@@ -1,0 +1,47 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "/storage/repos/Lighthouse/docs/feature/epic-6350-bulk-reports/mutation/vitest.stryker.6434.mutation.ts",
+    "related": false
+  },
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/stryker-incremental-6434.json",
+  "mutate": [
+    "packages/cli/src/reportCommands.ts:121-158",
+    "packages/client/src/reportWording.ts:161-161",
+    "packages/client/src/reportWording.ts:213-289",
+    "packages/client/src/index.ts:2509-2509",
+    "packages/mcp-core/src/reportTools.ts:88-99",
+    "packages/mcp-core/src/reportTools.ts:213-230",
+    "packages/cli/src/commandResult.ts:38-39"
+  ],
+  "ignorePatterns": [
+    "dist",
+    "dist-types",
+    "coverage",
+    "reports",
+    "agent-output"
+  ],
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "jsonReporter": {
+    "fileName": "reports/mutation/mutation-6434.json"
+  },
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": null
+  },
+  "concurrency": 4,
+  "timeoutMS": 30000,
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "inPlace": true,
+  "disableTypeChecks": false
+}
