@@ -11,6 +11,7 @@ import {
 	parseLocalDate,
 } from "../../../../../utils/date/localDate";
 import { panelFor } from "../../panels/reportPanelRegistry";
+import { LONG_DAY } from "../longDay";
 import {
 	type EnteredReportWindow,
 	type ReportWindowRefusal,
@@ -136,8 +137,6 @@ export const nowRefusalOf = (
 		(lengthDays) => ({ side: "now", lengthDays }),
 		templates,
 	);
-
-const LONG_DAY = "d MMM yyyy";
 
 const daysFromTo = (startDay: Date, endDay: Date): string => {
 	const startFormat =

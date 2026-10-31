@@ -5,6 +5,7 @@ import { ApiError } from "../../../../services/Api/ApiError";
 import { useTerminology } from "../../../../services/TerminologyContext";
 import { parseLocalDate } from "../../../../utils/date/localDate";
 import { ownerTermKeyOf } from "../reportOwner";
+import { LONG_DAY } from "./longDay";
 import type {
 	ReportWindowBounds,
 	ReportWindowRefusal,
@@ -71,7 +72,7 @@ export const capSentenceFor = (ownerTerm: string): string =>
 
 const oldestKeptDay = (earliestStart: string | null): string => {
 	const day = earliestStart === null ? null : parseLocalDate(earliestStart);
-	return day === null ? "the oldest kept day" : format(day, "d MMM yyyy");
+	return day === null ? "the oldest kept day" : format(day, LONG_DAY);
 };
 
 const cutoffRefusal = (side: "Then" | "Now", words: RefusalWords): string =>

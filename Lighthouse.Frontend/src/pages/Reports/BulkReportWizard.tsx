@@ -19,6 +19,7 @@ import type {
 	IReportCreationOwner,
 } from "../../models/Reports/ReportsAcrossOwners";
 import { parseLocalDate } from "../../utils/date/localDate";
+import { LONG_DAY } from "../Common/Reports/wizard/longDay";
 import {
 	type ReportTypeStep,
 	reportTypes,
@@ -74,8 +75,6 @@ const useOwnersToCreateOn = (
 				.sort(byName),
 		[options.owners, ownerKind, isAdmin],
 	);
-
-const LONG_DAY = "d MMM yyyy";
 
 /** What stops an owner from holding the window as configured so far, or null when it holds it. */
 const limitOfFor =
