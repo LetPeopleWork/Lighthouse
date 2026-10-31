@@ -33,7 +33,7 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	saveSettings: (settings: TSettings) => Promise<TSettings | undefined>;
 	validateSettings: (settings: TSettings) => Promise<boolean>;
 	modifyDefaultSettings: boolean;
-	// Returns one human-readable reason per field blocking the save; empty means valid (Bug #5613).
+	// Returns one human-readable reason per field blocking the save; empty means valid.
 	validateForm: (
 		settings: TSettings,
 		selectedSystem: IWorkTrackingSystemConnection | null,
@@ -101,7 +101,7 @@ function updateListField<T extends ModifySettingsBase>(
 	}
 }
 
-// Bug #5628: the only three inputs connector validation actually reads.
+// The only three inputs connector validation actually reads.
 function connectorFingerprint(payload: ModifySettingsBase): string {
 	return JSON.stringify({
 		workTrackingSystemConnectionId: payload.workTrackingSystemConnectionId,
@@ -174,7 +174,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	const dispatchSaveRef = useRef<(payload: TSettings) => void>(() => {});
 
-	// Bug #5628: auto-save never blocks the write, so validation reports on what was persisted.
+	// Auto-save never blocks the write, so validation reports on what was persisted.
 	const maybeValidateAfterSave = useCallback(
 		(payload: TSettings, isLatest: () => boolean) => {
 			if (modifyDefaultSettings || !isLatest()) return;

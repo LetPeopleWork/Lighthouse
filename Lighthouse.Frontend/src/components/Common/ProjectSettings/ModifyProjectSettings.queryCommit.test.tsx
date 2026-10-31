@@ -84,7 +84,7 @@ describe("ModifyProjectSettings query field", () => {
 		const portfolioService = createMockPortfolioService();
 		portfolioService.getPortfolios = vi.fn().mockResolvedValue([]);
 
-		render(
+		const view = render(
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
 					licensingService,
@@ -106,7 +106,7 @@ describe("ModifyProjectSettings query field", () => {
 
 		const query = await screen.findByLabelText("JQL Query");
 		await waitFor(() => expect(query).toHaveValue("type = Epic"));
-		return { query, user: userEvent.setup() };
+		return { query, user: userEvent.setup(), leaveThePage: view.unmount };
 	};
 
 	beforeEach(() => {
@@ -163,6 +163,34 @@ describe("ModifyProjectSettings query field", () => {
 		await user.type(query, "x");
 		await user.keyboard("{Backspace}");
 		await user.tab();
+		await waitPastTheDebounce();
+
+		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+	});
+
+	it("saves the edited query when the page is left straight after the field", async () => {
+		const { query, user, leaveThePage } = await openPortfolioSettings();
+
+		await user.click(query);
+		await user.type(query, " AND project = LH");
+		await user.tab();
+		leaveThePage();
+		await waitPastTheDebounce();
+
+		expect(mockSaveProjectSettings).toHaveBeenCalledTimes(1);
+		expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+			expect.objectContaining({
+				dataRetrievalValue: "type = Epic AND project = LH",
+			}),
+		);
+	});
+
+	it("saves nothing when the page is left without an edit", async () => {
+		const { query, user, leaveThePage } = await openPortfolioSettings();
+
+		await user.click(query);
+		await user.tab();
+		leaveThePage();
 		await waitPastTheDebounce();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();

@@ -192,6 +192,7 @@ describe("ModifyTeamSettings query field", () => {
 		const { user, leaveThePage } = await openTeamSettings();
 
 		await user.clear(screen.getByLabelText("Name"));
+		expect(screen.getByLabelText("Name")).toHaveValue("");
 		leaveThePage();
 		await waitPastTheDebounce();
 
