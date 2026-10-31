@@ -1,5 +1,11 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
-import { isApplied, wouldShadow } from "./stateMappingReconciliation";
+import {
+	groupingMappingOf,
+	isApplied,
+	listedAs,
+	normalise,
+	wouldShadow,
+} from "./stateMappingReconciliation";
 
 export interface IStateLists {
 	toDoStates: string[];
@@ -53,23 +59,6 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 	return errors;
 }
 
-function normalise(s: string): string {
-	return s.trim().toLowerCase();
-}
-
-function listedAs(states: string[], name: string): string | undefined {
-	return states.find((s) => normalise(s) === normalise(name));
-}
-
-function groupingMappingOf(
-	mapping: IStateMapping,
-	mappings: IStateMapping[],
-): IStateMapping | undefined {
-	return mappings.find(
-		(other) => other !== mapping && listedAs(other.states, mapping.name),
-	);
-}
-
 function namesAStateOfAnotherMapping(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
@@ -81,7 +70,8 @@ function namesAStateOfAnotherMapping(
 
 // A mapping already taken into Doing legitimately appears there under its own
 // name, so only a mapping whose source states are still listed is a clash. A
-// mapping that groups another mapping's name is reported through that mapping.
+// mapping that itself groups another mapping's name is not reported here: the
+// other mapping's own error already says to rename it.
 function doingClashError(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],

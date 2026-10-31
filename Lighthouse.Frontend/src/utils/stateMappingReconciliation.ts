@@ -1,7 +1,25 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
 
-function normalise(s: string): string {
+export function normalise(s: string): string {
 	return s.trim().toLowerCase();
+}
+
+export function listedAs(states: string[], name: string): string | undefined {
+	return states.find((s) => normalise(s) === normalise(name));
+}
+
+/**
+ * The other mapping that groups a state equal to this mapping's name, if any.
+ * Such a name is never taken into Doing: it would stand for the other
+ * mapping's state and hide the state it replaces.
+ */
+export function groupingMappingOf(
+	mapping: IStateMapping,
+	mappings: IStateMapping[],
+): IStateMapping | undefined {
+	return mappings.find(
+		(other) => other !== mapping && listedAs(other.states, mapping.name),
+	);
 }
 
 function indexByName(mappings: IStateMapping[]): Map<string, IStateMapping> {
@@ -76,7 +94,12 @@ export function reconcileDoingStates(
 
 	for (const [key, next] of nextByName) {
 		const prev = prevByName.get(key);
-		if (next.states.length === 0 || wouldShadow(next, result)) continue;
+		if (
+			next.states.length === 0 ||
+			wouldShadow(next, result) ||
+			groupingMappingOf(next, nextMappings)
+		)
+			continue;
 		if (!prev || statesChanged(prev, next)) {
 			const sourceKeys = new Set(next.states.map(normalise));
 			result = result.filter((s) => !sourceKeys.has(normalise(s)));

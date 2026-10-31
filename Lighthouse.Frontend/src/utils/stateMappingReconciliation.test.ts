@@ -4,6 +4,7 @@ import {
 	reconcileDoingStates,
 	wouldShadow,
 } from "./stateMappingReconciliation";
+import { validateStateMappings } from "./stateMappingValidation";
 
 describe("reconcileDoingStates", () => {
 	it("returns empty array when all inputs are empty", () => {
@@ -291,6 +292,75 @@ describe("reconcileDoingStates", () => {
 			);
 
 			expect(result).toEqual(["Verification", "QA"]);
+		});
+	});
+
+	describe("a mapping named after a state another mapping groups", () => {
+		const group: IStateMapping = { name: "Group", states: ["In Arbeit"] };
+		const unnamed: IStateMapping = { name: "In Arbeit", states: [] };
+		const named: IStateMapping = { name: "In Arbeit", states: ["Review"] };
+		const emptyLists = (doingStates: string[]) => ({
+			toDoStates: [],
+			doingStates,
+			doneStates: [],
+		});
+
+		it("is not taken into Doing, and deleting the grouping mapping puts the state back and reports the clash", () => {
+			const grouped = reconcileDoingStates(
+				[],
+				[group],
+				["In Arbeit", "In Progress", "Review"],
+			);
+			const afterNaming = reconcileDoingStates(
+				[group],
+				[group, unnamed],
+				grouped,
+			);
+			const afterStates = reconcileDoingStates(
+				[group, unnamed],
+				[group, named],
+				afterNaming,
+			);
+			const afterDelete = reconcileDoingStates(
+				[group, named],
+				[named],
+				afterStates,
+			);
+
+			expect(grouped).toEqual(["In Progress", "Review", "Group"]);
+			expect(afterNaming).toEqual(["In Progress", "Review", "Group"]);
+			expect(afterStates).toEqual(["In Progress", "Review", "Group"]);
+			expect(
+				validateStateMappings([group, named], emptyLists(afterStates)),
+			).toEqual([
+				'Mapping "In Arbeit" has the same name as a state grouped by mapping "Group". Choose another name.',
+			]);
+			expect(afterDelete).toEqual(["In Progress", "Review", "In Arbeit"]);
+			expect(validateStateMappings([named], emptyLists(afterDelete))).toEqual([
+				'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+			]);
+		});
+
+		it("is taken into Doing normally once it is renamed", () => {
+			const renamed: IStateMapping = { name: "Prüfung", states: ["Review"] };
+
+			const result = reconcileDoingStates(
+				[group, named],
+				[group, renamed],
+				["In Progress", "Review", "Group"],
+			);
+
+			expect(result).toEqual(["In Progress", "Group", "Prüfung"]);
+		});
+
+		it("takes a mapping into Doing when another mapping then groups the state it is named after", () => {
+			const result = reconcileDoingStates(
+				[named],
+				[named, group],
+				["In Progress", "In Arbeit"],
+			);
+
+			expect(result).toEqual(["In Progress", "Group"]);
 		});
 	});
 
