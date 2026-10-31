@@ -2,6 +2,7 @@ import type React from "react";
 import { useParams } from "react-router";
 import type { IReportOwner } from "../../../../models/Reports/Report";
 import { reportsPathOf } from "../reportOwner";
+import { withTheCredit } from "./CreditFooter";
 import PrintSheet from "./PrintSheet";
 import type { PrintReadPort } from "./printReadPort";
 import ReportPrintContent, {
@@ -40,7 +41,7 @@ const ReportPrintPage: React.FC<ReportPrintPageProps> = ({
 			effects={effects}
 			renderSheet={(look, report) => (
 				<PrintSheet ready={look.state === "ready"} reportsPath={reportsPath}>
-					{report}
+					{withTheCredit(look, report)}
 				</PrintSheet>
 			)}
 		/>

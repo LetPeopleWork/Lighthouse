@@ -13,8 +13,9 @@ import {
 	BRANDING,
 	elementsPrintedAs,
 	lightspeed,
-	thePrintOnlyDeclarations,
+	theFooter,
 	theTermsAnswer,
+	whatPrintAsksOf,
 } from "../../../../tests/ReportPrintTestKit";
 import {
 	aReportService,
@@ -69,6 +70,17 @@ const openThePrintPageOf = (address: string) => {
 	return { print, getReport };
 };
 
+/** Whether the group, or something in it, asks on paper for the given height. */
+const keepsRoomFor = (group: HTMLElement, height: string): boolean =>
+	[group, ...Array.from(group.querySelectorAll<HTMLElement>("*"))].some(
+		(element) => whatPrintAsksOf(element, "height") === height,
+	);
+
+const theElementsFixedOnPaper = (): HTMLElement[] =>
+	Array.from(
+		document.querySelectorAll<HTMLElement>("[data-render-ready] *"),
+	).filter((element) => whatPrintAsksOf(element, "position") === "fixed");
+
 const theTitlesShown = () =>
 	screen
 		.getAllByRole("heading", { level: 1 })
@@ -93,9 +105,10 @@ describe("the print page of several reports", () => {
 		vi.unstubAllGlobals();
 	});
 
-	// Something fixed to the page prints on every sheet of the document, so with several reports every report's line
-	// would stack on every sheet. A table's own header and footer groups repeat only on the sheets that table spans.
-	it("gives each report its own running line and footer, repeated only on that report's pages", async () => {
+	// A table's own header and footer groups repeat only on the sheets that table spans, so each report's line stays on
+	// its own pages. The credit is the same for every report, so it is fixed to the page once and prints at the foot of
+	// every sheet; each report keeps an empty footer group as tall as the credit, so no panel runs under it.
+	it("gives each report its own running line and room for the credit, which prints once at the foot of every sheet", async () => {
 		openThePrintPageOf("/print/reports?reports=portfolio-2-7,team-1-12");
 
 		await waitFor(() =>
@@ -103,22 +116,26 @@ describe("the print page of several reports", () => {
 				document.querySelector("[data-render-ready='true']"),
 			).not.toBeNull(),
 		);
+		expect(screen.getAllByText(BRANDING)).toHaveLength(1);
+		const credit = theFooter();
+		expect(whatPrintAsksOf(credit, "position")).toBe("fixed");
+		expect(whatPrintAsksOf(credit, "bottom")).toMatch(/^0(px)?$/);
+		const creditHeight = whatPrintAsksOf(credit, "height");
+		expect(creditHeight).toMatch(/^[1-9]\d*mm$/);
+
 		const titles = screen.getAllByRole("heading", { level: 1 });
 		const reports = elementsPrintedAs("table");
 		const lines = elementsPrintedAs("table-header-group");
-		const footers = elementsPrintedAs("table-footer-group");
+		const rooms = elementsPrintedAs("table-footer-group");
 		expect(reports).toHaveLength(2);
 		expect(lines).toHaveLength(2);
-		expect(footers).toHaveLength(2);
+		expect(rooms).toHaveLength(2);
 		for (const [index, name] of [PORTFOLIOS_REPORT, TEAMS_REPORT].entries()) {
-			const [report, line, footer] = [
-				reports[index],
-				lines[index],
-				footers[index],
-			];
+			const [report, line, room] = [reports[index], lines[index], rooms[index]];
 			expect(report.contains(titles[index])).toBe(true);
 			expect(report.contains(line)).toBe(true);
-			expect(report.contains(footer)).toBe(true);
+			expect(report.contains(room)).toBe(true);
+			expect(report.contains(credit)).toBe(false);
 			expect(line.contains(titles[index])).toBe(false);
 			const header = within(line).queryByText(name)?.closest("header");
 			expect(
@@ -126,13 +143,13 @@ describe("the print page of several reports", () => {
 				`${name}'s running line is not in its own header group`,
 			).toBeTruthy();
 			expect(within(line).getByText(/^Produced /)).toBeInTheDocument();
-			const credit = within(footer).queryByText(BRANDING)?.closest("footer");
+			expect(whatPrintAsksOf(room, "break-inside")).toBe("avoid");
 			expect(
-				credit,
-				`${name}'s credit is not in its own footer group`,
-			).toBeTruthy();
+				keepsRoomFor(room, creditHeight),
+				`${name} keeps no room for the credit at the foot of its sheets`,
+			).toBe(true);
 		}
-		expect(thePrintOnlyDeclarations()).not.toMatch(/position:\s*fixed/);
+		expect(theElementsFixedOnPaper()).toEqual([credit]);
 		vi.unstubAllGlobals();
 	});
 

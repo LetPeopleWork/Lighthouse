@@ -30,8 +30,8 @@ import {
  * Every printed page says what it is and who made the tool: one line at the top naming the owner, the report, its
  * two windows and when it was produced, and the Lighthouse mark with its credit at the bottom. The first page also
  * carries the report's name as its big title, under that line. jsdom cannot paginate, so what is pinned is what
- * makes the browser repeat the line and the footer on each page: the report printed as a table, the line its header
- * group and the footer its footer group, each a fixed height, so they sit above and below the panels on every page.
+ * makes the browser repeat the line and the footer on each page: the report printed as a table with the line as its
+ * header group, and the footer fixed to the page with an empty footer group of its height keeping room for it.
  */
 
 const thePrintedReportOf = async (owner: IReportOwner) => {
@@ -165,7 +165,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 		}
 	});
 
-	// Page numbers were offered and declined.
+	// Page numbers were offered and declined. Something fixed to the page prints at the same place on every sheet.
 	it(`repeats the Lighthouse mark and its credit at the bottom of every printed page, with no page numbers`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
@@ -174,7 +174,8 @@ describe("Every printed page carries the report's line and the credit", () => {
 		expect(
 			within(footer).getByRole("img", { name: /Lighthouse/ }),
 		).toBeVisible();
-		expect(whatPrintAsksOf(footer, "position")).not.toBe("fixed");
+		expect(whatPrintAsksOf(footer, "position")).toBe("fixed");
+		expect(whatPrintAsksOf(footer, "bottom")).toMatch(/^0(px)?$/);
 		const height = whatPrintAsksOf(footer, "height");
 		expect(height, "the footer takes no fixed height on paper").toMatch(/\d/);
 
@@ -184,7 +185,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 			"no room is kept at the bottom of each page",
 		).toHaveLength(1);
 		const [room] = roomBelow;
-		expect(room.contains(footer)).toBe(true);
+		expect(room.contains(footer)).toBe(false);
 		expect(keepsRoomFor(room, height)).toBe(true);
 		const report = room.parentElement as HTMLElement;
 		for (const part of thePanelsAndSummary()) {
@@ -228,7 +229,7 @@ describe("Every printed page carries the report's line and the credit", () => {
 	});
 
 	// The browser repeats a table's header and footer groups on every sheet, and Chrome only does so for a group
-	// that may not break; on the screen those groups show the line and the footer as they are.
+	// that may not break; on the screen the line shows as it is, and the empty room for the footer is not drawn.
 	it(`prints the report as a full-width table whose repeated groups keep a gap to the report and never break`, async () => {
 		await thePrintedReportOf(LIGHTSPEED);
 
@@ -242,16 +243,18 @@ describe("Every printed page carries the report's line and the credit", () => {
 			"table-row-group",
 		);
 
+		expect(getComputedStyle(roomAbove).display).not.toBe("none");
+		expect(getComputedStyle(roomBelow).display).toBe("none");
 		for (const room of [roomAbove, roomBelow]) {
-			expect(getComputedStyle(room).display).not.toBe("none");
 			expect(whatPrintAsksOf(room, "break-inside")).toBe("avoid");
 		}
 		expect(whatPrintAsksOf(theRunningLine(), "margin-bottom")).toMatch(
 			A_LENGTH_ON_PAPER,
 		);
-		expect(whatPrintAsksOf(theFooter(), "margin-top")).toMatch(
-			A_LENGTH_ON_PAPER,
+		const roomsGap = Array.from(roomBelow.querySelectorAll("*")).map(
+			(element) => whatPrintAsksOf(element, "margin-top"),
 		);
+		expect(roomsGap.some((gap) => A_LENGTH_ON_PAPER.test(gap))).toBe(true);
 		expect(whatPrintAsksOf(theRunningLine(), "height")).toMatch(
 			A_LENGTH_ON_PAPER,
 		);

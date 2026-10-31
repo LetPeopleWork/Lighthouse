@@ -2,7 +2,6 @@ import { Box, Divider, Stack, Typography } from "@mui/material";
 import { format } from "date-fns";
 import type React from "react";
 import { memo } from "react";
-import LighthouseLogo from "../../../../components/App/LetPeopleWork/LighthouseLogo";
 import type {
 	IReport,
 	IReportOwner,
@@ -13,18 +12,17 @@ import { DASH } from "../panels/thenNowComparison";
 import { ownerTermKeyOf } from "../reportOwner";
 import ThenAndNowSummary from "../ThenAndNowSummary";
 import { windowDaysOf } from "../wizard/thenAndNow/thenAndNowDraft";
+import { FOOTER_HEIGHT, GAP_TO_THE_FOOTER } from "./CreditFooter";
 
-const BRANDING = "Made with Lighthouse by LetPeopleWork · letpeople.work";
 const PRODUCED_AT = "d MMM yyyy, HH:mm";
 
 /**
- * On paper the report is a table, with the line as its header group and the footer as its footer group. The browser
- * repeats a table's header and footer groups at the top and bottom of every sheet the table runs over, and only
- * those, so when several reports share one document each sheet carries the line and footer of its own report. Each
- * group keeps a fixed height, so a report's pages all look alike.
+ * On paper the report is a table, with the line as its header group. The browser repeats a table's header and footer
+ * groups at the top and bottom of every sheet the table runs over, and only those, so when several reports share one
+ * document each sheet carries the line of its own report. The footer group stays empty: it keeps room at the foot of
+ * each sheet for the credit, which the document prints once, fixed to the page.
  */
 const LINE_HEIGHT = "10mm";
-const FOOTER_HEIGHT = "16mm";
 const GAP_TO_THE_REPORT = "4mm";
 
 /** The summary is read as one piece, so a page break never lands inside it. */
@@ -55,20 +53,11 @@ const NAME_PART = {
 };
 const DATE_PART = { ...NAME_PART, flexShrink: 0 };
 
-const CREDIT_FOOTER = {
-	display: "flex",
-	alignItems: "center",
-	gap: 2,
-	borderTop: 1,
-	borderColor: "divider",
-	"@media print": {
-		boxSizing: "border-box",
-		height: FOOTER_HEIGHT,
-		marginTop: GAP_TO_THE_REPORT,
-	},
+const ROOM_FOR_THE_CREDIT = {
+	"@media print": { height: FOOTER_HEIGHT, marginTop: GAP_TO_THE_FOOTER },
 };
 
-/** On the screen the line, the report and the footer simply stack, a little apart. */
+/** On the screen the line and the report simply stack, a little apart. */
 const THE_REPORT = {
 	...SUMMARY_KEPT_WHOLE,
 	display: "flex",
@@ -78,14 +67,17 @@ const THE_REPORT = {
 };
 const THE_REPORT_BODY = { "@media print": { display: "table-row-group" } };
 
-// Chrome repeats a header or footer group on every sheet only when the group may not break; without that it prints
-// the line or footer on the report's first sheet alone, and the next sheet's panels start at the very top.
+// Chrome repeats a header or footer group on every sheet only when the group may not break; without that it keeps
+// the group on the report's first sheet alone, so the next sheet's panels start at the very top or run under the credit.
 const repeatedAs = (group: "table-header-group" | "table-footer-group") => ({
 	"@media print": { display: group, breakInside: "avoid" },
 });
 
 const THE_LINES_GROUP = repeatedAs("table-header-group");
-const THE_FOOTERS_GROUP = repeatedAs("table-footer-group");
+const THE_ROOM_FOR_THE_CREDIT = {
+	display: "none",
+	...repeatedAs("table-footer-group"),
+};
 
 /** The owner as the header names it, in the instance's own word for its kind: "Team Lightspeed". */
 export const ownerLineOf = (
@@ -110,8 +102,8 @@ interface ReportPrintDocumentProps {
 
 /**
  * The report as it goes on paper: a line on every page saying whose report it is, which windows it compares and when
- * it was made; the report's name as the first page's title; the screen's summary and panels; and on every page the
- * mark of the tool that made it.
+ * it was made; the report's name as the first page's title; the screen's summary and panels; and room at the foot of
+ * every page for the credit the document carries.
  */
 const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 	report,
@@ -151,11 +143,8 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 				/>
 				<ReportPanels report={report} />
 			</Stack>
-			<Box sx={THE_FOOTERS_GROUP}>
-				<Box component="footer" sx={CREDIT_FOOTER}>
-					<LighthouseLogo linksHome={false} />
-					<Typography variant="body2">{BRANDING}</Typography>
-				</Box>
+			<Box sx={THE_ROOM_FOR_THE_CREDIT}>
+				<Box sx={ROOM_FOR_THE_CREDIT} />
 			</Box>
 		</Box>
 	);

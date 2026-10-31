@@ -6,6 +6,7 @@ import {
 	bundleStateOf,
 	type PrintedReport,
 } from "./bundleState";
+import { withTheCredit } from "./CreditFooter";
 import type { PrintPageState } from "./printPageState";
 import type { PrintReadPort } from "./printReadPort";
 import ReportPrintContent, {
@@ -88,8 +89,8 @@ interface ReportPrintBundleProps {
 }
 
 /**
- * Several reports as one document, in the given order, each from a page of its own with its own running line and
- * footer. A single report keeps its own title; several share one, so the PDF is not named after whichever drew last.
+ * Several reports as one document, in the given order, each from a page of its own with its own running line, and
+ * one credit for the whole document. A single report keeps its own title; several share one, so the PDF is not named after whichever drew last.
  */
 const ReportPrintBundle: React.FC<ReportPrintBundleProps> = ({
 	reports,
@@ -143,7 +144,7 @@ const ReportPrintBundle: React.FC<ReportPrintBundleProps> = ({
 	// Kept while nothing it is made of changes, so the failure it carries is the same object from one drawing to the next.
 	const look = useMemo(() => bundleLookOf(reports, looks), [reports, looks]);
 
-	return renderSheet(look, drawn);
+	return renderSheet(look, withTheCredit(look, drawn));
 };
 
 export default ReportPrintBundle;
