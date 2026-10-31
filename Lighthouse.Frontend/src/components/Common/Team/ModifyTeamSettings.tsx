@@ -97,8 +97,8 @@ function teamAutoSaveBlockers(
 			s.refinement,
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
+		...stateNameClashErrors(s.stateMappings, s),
 	);
-	reasons.push(...stateNameClashErrors(s.stateMappings, s));
 	if (isDefault) {
 		return reasons;
 	}
