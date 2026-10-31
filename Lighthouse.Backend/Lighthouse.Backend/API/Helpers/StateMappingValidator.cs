@@ -63,21 +63,6 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add($"Source state '{duplicate.Key}' appears in multiple mappings: {involvedMappings}.");
             }
 
-            var mappingNameSet = new HashSet<string>(
-                mappings
-                    .Where(m => !string.IsNullOrWhiteSpace(m.Name))
-                    .Select(m => m.Name),
-                StringComparer.OrdinalIgnoreCase);
-
-            var directStateSet = new HashSet<string>(
-                allDirectStates.Where(s => !mappingNameSet.Contains(s)),
-                StringComparer.OrdinalIgnoreCase);
-
-            foreach (var mapping in mappings.Where(m => !string.IsNullOrWhiteSpace(m.Name) && directStateSet.Contains(m.Name)))
-            {
-                errors.Add($"State mapping name '{mapping.Name}' collides with a direct state name.");
-            }
-
             return new StateMappingValidationResult(errors);
         }
     }

@@ -163,7 +163,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        public void Validate_MappingNameMatchesRawStateInDirectList_IsValid()
+        public void Validate_MappingNameEqualToAStateInTheCategoryLists_CannotBeToldApartFromTheMappingItself_IsValid()
         {
             var mappings = new List<StateMapping>
             {
