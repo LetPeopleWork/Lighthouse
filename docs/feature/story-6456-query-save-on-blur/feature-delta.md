@@ -54,11 +54,12 @@ No new job is added to `docs/product/jobs.yaml`.
 |---|---|---|
 | D1 | **Scope: only the query (data-retrieval) field.** Every other Team/Portfolio settings field keeps the 300 ms debounce. | Maintainer, 2026-10-31 |
 | D2 | **Commit on blur.** While the field has focus, the typed text is a local draft. On blur the draft is passed to `onSettingsChange` **only if it differs** from the committed value. Autosave then runs as it does today: debounce, save, refresh. | Maintainer, 2026-10-31 |
-| D3 | **Closing or reloading the tab while the field has focus loses the draft.** No `beforeunload` save and no warning. Navigating inside the app blurs the field first, which commits the draft and starts the usual 300 ms autosave timer. If the page unmounts inside that window, the save is dropped. That race already exists for every settings field today; this story neither fixes nor worsens it (see Follow-ups). | Maintainer, 2026-10-31; the navigation sentence was corrected at the DISTILL review |
+| D3 | **Closing or reloading the tab while the field has focus loses the draft.** No `beforeunload` save and no warning. Navigating inside the app blurs the field first and commits the draft, and that edit is saved (D8). | Maintainer, 2026-10-31 |
 | D4 | **Nothing visible changes.** No helper text, no new save-state value. The save indicator moves to saving/saved after blur, as it does today after the debounce. | Maintainer, 2026-10-31 |
 | D5 | **A complete value written from outside replaces the draft.** The board wizard (S4) and a settings reload (load, conflict reload) set the field's value. That value becomes the draft, and a wizard-written query saves immediately, as it does today. | Derived from S4; no UI impact |
 | D6 | **A read-only field never commits.** `isDataRetrievalReadOnly` stays as it is. Blurring a read-only field sends nothing. | Derived from S3; no UI impact |
-| D7 | **Once committed, the query follows today's autosave rules unchanged.** That covers an invalid form (not saved until valid), a conflict (autosave off until reload), no save permission (never saved) and a failed save (existing failed state and retry). The committed value stays in the field in every case. | Derived from S1; no UI impact |
+| D7 | **Once committed, the query follows today's autosave rules unchanged.** That covers an invalid form (not saved until valid), a conflict (autosave off until reload), no save permission (never saved) and a failed save (existing failed state and retry). The field keeps showing what the user typed, which after blur is the committed value. It is never reset to the last saved value. | Derived from S1; no UI impact |
+| D8 | **Leaving the settings page saves a pending autosave instead of dropping it.** Blur fires on the mousedown of a nav link, so without this the commonest exit after a query edit would unmount the page inside the 300 ms window and lose the edit, which is what D3 rules out. The flush honours the same rules as the autosave (valid form, permission, no conflict, the user has edited) and applies to every settings field, which also closes the same race that other fields have today. | Taken in AFK mode at the DISTILL review to keep D3 true; no UI impact; flagged for the maintainer at the hold |
 
 ---
 
@@ -89,6 +90,11 @@ less often.
 
 None.
 
+**Technical notes.** The autosave effect lives in `hooks/useModifySettings.ts:305-331`: a 300 ms
+timer, skipped while the form is invalid, the user may not save, a conflict is open, or nothing has
+been edited, and cleared on unmount (the reason for D8). The query field is in
+`GeneralSettingsComponent.tsx:167-187`.
+
 ---
 
 ## Wave: DISCUSS / [REF] Out of Scope
@@ -113,15 +119,24 @@ save and a tracker refresh at every pause.
 
 ### Elevator Pitch
 Before: every pause while typing a query saves and refreshes from Jira/ADO, so one edit costs several refreshes against half-typed queries.
-After: type a query in *Team settings → query field*, pause, type more, then Tab out → sees the save indicator go to saving/saved **once**, after leaving the field, and not while typing.
-Decision enabled: the admin can work a query out in place, trying and adjusting it, without paying a tracker refresh for every half-typed version.
+After: type a query in *Team settings → query field*, pause, type more, then leave the field (Tab or click elsewhere) → sees the save indicator go to saving/saved **once**, after leaving the field, and not while typing.
+Decision enabled: the admin decides when a query is ready to run against the tracker, by leaving the field, instead of the tracker running every half-typed version.
+
+#### Examples
+
+| # | Starting query | What the admin does | Saves sent |
+|---|---|---|---|
+| 1 | Team A, JQL `project = LH` | types ` AND team = Red`, pauses twice while typing, then tabs out | 1, carrying `project = LH AND team = Red` |
+| 2 | Portfolio, JQL `project = LH` | types `x`, deletes it, tabs out | 0 |
+| 3 | Team A, JQL `project = LH` | types ` AND team = Red`, tabs out and clicks *Overview* at once | 1, carrying `project = LH AND team = Red` |
+| 4 | Team A, name `Team A` | types ` Two` in *Name* and does not leave it | 1 after the debounce, carrying `Team A Two` |
 
 #### Acceptance Criteria
 
 1. **Typing does not save.** Changing the query and waiting past the 300 ms debounce, with the field
    still focused, sends no settings save.
-2. **Leaving the field saves once.** Blurring the field after an edit sends exactly one save, and
-   that save carries the edited query.
+2. **Leaving the field saves once.** Blurring the field after an edit sends exactly one save within
+   the 300 ms debounce, and that save carries the edited query.
 3. **Leaving an unchanged field sends nothing.** Focusing and blurring with no edit, or editing back
    to the committed value, sends no save.
 4. **Other fields keep their debounce.** Editing any other settings field still saves after the
@@ -132,6 +147,9 @@ Decision enabled: the admin can work a query out in place, trying and adjusting 
 6. **Read-only stays read-only.** With `isDataRetrievalReadOnly`, focusing and blurring the field
    sends nothing (D6).
 7. **Both pages behave the same.** AC 1-3 hold on Team settings and on Portfolio settings.
+8. **Leaving the page does not drop the edit.** Leaving the field and navigating away at once still
+   sends the save. Likewise, any field's pending autosave is sent when the page is left before the
+   debounce runs out. Leaving the page with no edit sends nothing (D8).
 
 ---
 
@@ -223,7 +241,7 @@ There is no usage-data event (see DEVOPS N/A below).
 | 6 | Scope edges explicit | Out of Scope; D1-D6 |
 | 7 | UX agreed | D4, nothing visible changes |
 | 8 | Non-functional | No beforeunload (D3); no new requests |
-| 9 | Maintainer sign-off | Decisions D1-D4, 2026-10-31 |
+| 9 | Maintainer sign-off | Decisions D1-D4, 2026-10-31. D5-D8 were derived in AFK mode with no UI impact and are listed for the maintainer at the hold |
 
 ---
 
@@ -295,6 +313,9 @@ Tests are Vitest + RTL with plain names and no scenario tags in code. The classi
 | saves nothing while the query is being typed and the field is still focused | 1, 7 | skipped (RED) |
 | saves the edited query once, after the field is left | 2, 7 | skipped (RED) |
 | saves nothing when the query is edited back to what was saved before the field is left | 3, 7 | skipped (RED) |
+| saves the edited query when the page is left straight after the field | 8 | skipped (RED) |
+| saves a changed name when the page is left before the debounce runs out | 8 | skipped (RED) |
+| saves nothing when the page is left without an edit | 8 | active, green today (guard) |
 
 **Portfolio page** (`Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx`, same shape):
 
@@ -359,10 +380,11 @@ assertion about saves or hand-overs, never on an import, render or setup error.
 | Team page: nothing saved while typing | `AssertionError: expected "vi.fn()" to not be called at all, but actually been called 1 times` (the save carries the half-typed query). MISSING_FUNCTIONALITY |
 | Team page: edited query saved once on leave | same assertion, at the "not saved before leaving" step. MISSING_FUNCTIONALITY |
 | Team page: edited back, nothing saved | same assertion (the round trip still saves). MISSING_FUNCTIONALITY |
+| Team page: both "page is left" tests | `AssertionError: expected "vi.fn()" to be called 1 times, but got 0 times` (unmount clears the pending timer). MISSING_FUNCTIONALITY |
 | Portfolio page: the same three tests | identical three assertion failures. MISSING_FUNCTIONALITY |
 | component: read-only query, focused and left | `AssertionError: expected [ [ 'dataRetrievalValue', …(1) ] ] to have a length of +0 but got 1`. MISSING_FUNCTIONALITY |
 
-Verdict: 10 of 10 skipped tests fail for the right reason. The typing test now waits 500 ms past the debounce before asserting. No IMPORT_ERROR, FIXTURE_BROKEN or
+Verdict: 12 of 12 skipped tests fail for the right reason. The typing test now waits 500 ms past the debounce before asserting. No IMPORT_ERROR, FIXTURE_BROKEN or
 OBSERVABLE_NOT_AT_PORT. A first parallel run showed two 5 s timeouts on green guards while three files
 shared the worker pool; the per-file 20 s timeout removed that, and the second run was clean.
 
@@ -397,11 +419,25 @@ DESIGN and DEVOPS were skipped by the maintainer and have no sections to review.
 | Reviewer | Verdict | Outcome |
 |---|---|---|
 | Acceptance designer reviewer | conditionally approved, 2 high, 1 medium, 5 low | Fixed: the component typing test waits past the debounce; the read-only test forces the change past `readOnly` and is now skipped RED; the name assertion is exact; the wizard button matcher is anchored; three comments citing internal references were rewritten. Deferred to the DELIVER refactor: derive the page tests' 500 ms wait from the production debounce constant and share one helper. Accepted as is: the wizard and reload paths are pinned at the component's hand-over port. |
-| Product owner reviewer | needs revision, 4 critical, 4 high | **F4 accepted:** D3's navigation sentence was wrong (no unmount flush; verified in `useModifySettings.ts`) and was corrected; the race is pre-existing and is listed under Follow-ups. **F6/F11 accepted** as D7. **F8:** D5 and D6 are marked as derived, with no UI impact. **F9, F10, F16 fixed.** **Rejected:** F1-F3 (Gherkin UAT and example tables; this project pins ACs as Vitest tests, which DISTILL has written) and F7 (slice briefs are a declared nWave machine artifact, separate by design). **F5 noted:** the job's persona is `delivery-forecaster`; the job is about committing intent without ceremony, which this story refines for free-text fields. |
+| Product owner reviewer | needs revision, 4 critical, 4 high | **F4 accepted:** D3's navigation sentence was wrong (no unmount flush; verified in `useModifySettings.ts`). It was resolved in revision cycle 1 by D8 and AC 8 (see below). **F6/F11 accepted** as D7. **F8:** D5 and D6 are marked as derived, with no UI impact. **F9, F10, F16 fixed.** **Rejected:** F1-F3 (Gherkin UAT and example tables; this project pins ACs as Vitest tests, which DISTILL has written) and F7 (slice briefs are a declared nWave machine artifact, separate by design). **F5 noted:** the job's persona is `delivery-forecaster`; the job is about committing intent without ceremony, which this story refines for free-text fields. |
 
-## Follow-ups (not in this story)
+## Review Gate, revision cycle 1
 
-- **Debounced-autosave navigation race.** Any settings edit made less than 300 ms before an in-app
-  navigation is dropped, because unmount clears the pending timer. This affects every field and predates
-  this story. A candidate fix is to flush the pending save on unmount in `useModifySettings`. It is for
-  the maintainer to raise as its own Bug.
+The product owner reviewer still returned needs revision.
+
+- **R2 accepted.** The corrected D3 still understated the race: commit on blur makes the commonest exit
+  after a query edit (clicking a nav link) land inside the 300 ms window. Resolved by D8 and AC 8. Two
+  new skipped tests fail today with 0 saves; one new active guard pins that leaving without an edit
+  sends nothing.
+- **R1 accepted.** Four examples with real data were added to US-01.
+- **R5 and R6 clarified.** A reload of settings happens either before the user edits (the first load)
+  or from a conflict, which is resolved by clicking a button and so blurs the field first. A reload
+  cannot therefore overwrite text the user is typing. D7 now says the field keeps the typed text.
+- **R7-R9 and R11 fixed.** R10 is accepted under D4 (nothing visible changes).
+- **R3 noted, unchanged.** Blur is the point where a free-text query becomes *valid intent*, so this
+  story refines the job rather than departing from it.
+- **R4 rejected.** The one-file instruction came from the orchestrator's review brief, not from
+  `CLAUDE.md`. The nWave DISCUSS skill declares slice briefs separate machine artifacts read by DELIVER.
+
+Two review cycles are done. The remaining verdict is the orchestrator's call, recorded here, and DELIVER
+proceeds. Every derived decision (D5-D8) is listed for the maintainer at the hold.

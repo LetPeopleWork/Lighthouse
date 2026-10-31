@@ -75,7 +75,7 @@ describe("ModifyTeamSettings query field", () => {
 			} as unknown as ITeamService,
 		});
 
-		render(
+		const view = render(
 			<ApiServiceContext.Provider value={context}>
 				<ModifyTeamSettings
 					title="Modify Team Settings"
@@ -89,7 +89,7 @@ describe("ModifyTeamSettings query field", () => {
 
 		const query = await screen.findByLabelText("JQL Query");
 		await waitFor(() => expect(query).toHaveValue("project = LH"));
-		return { query, user: userEvent.setup() };
+		return { query, user: userEvent.setup(), leaveThePage: view.unmount };
 	};
 
 	beforeEach(() => {
@@ -156,6 +156,47 @@ describe("ModifyTeamSettings query field", () => {
 		await user.type(query, "x");
 		await user.keyboard("{Backspace}");
 		await user.tab();
+		await waitPastTheDebounce();
+
+		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+	});
+
+	it.skip("saves the edited query when the page is left straight after the field", async () => {
+		const { query, user, leaveThePage } = await openTeamSettings();
+
+		await user.click(query);
+		await user.type(query, " AND team = Red");
+		await user.tab();
+		leaveThePage();
+		await waitPastTheDebounce();
+
+		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
+		expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+			expect.objectContaining({
+				dataRetrievalValue: "project = LH AND team = Red",
+			}),
+		);
+	});
+
+	it.skip("saves a changed name when the page is left before the debounce runs out", async () => {
+		const { user, leaveThePage } = await openTeamSettings();
+
+		await user.type(screen.getByLabelText("Name"), " Two");
+		leaveThePage();
+		await waitPastTheDebounce();
+
+		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
+		expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+			expect.objectContaining({ name: "Team A Two" }),
+		);
+	});
+
+	it("saves nothing when the page is left without an edit", async () => {
+		const { query, user, leaveThePage } = await openTeamSettings();
+
+		await user.click(query);
+		await user.tab();
+		leaveThePage();
 		await waitPastTheDebounce();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
