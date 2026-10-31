@@ -417,3 +417,33 @@ Neither stale file nor an `artifacts` or in-project `publish` folder is in the c
 - CI green on the push (`ci_backend`, standalone packaging, codesign and verify workflows, Docker build).
 - The macOS job reads `ARM64_DIR` only on `main` runs; locally `artifacts/publish/osx-arm64` exists, which is the part checkable here.
 - The `changes` job log showing `backend=true` for an `.github/actions/`-only change.
+
+### Same-tree comparison (orchestrator, 2026-10-31) — supersedes the size deltas above
+
+The before/after comparison above published "before" in a separate checkout, and its executable came out about
+3 % smaller on every platform. Publishing commit `727c8dcb8` (new path) in that same separate checkout gave the
+"before" sizes too, so the gap followed the checkout, not the output path. To isolate the one variable this Story
+changes, the old in-project `-o` path and the new `artifacts/publish/<rid>` path were published one after the
+other from **this** worktree, with the CI flags, and listed by name and byte size
+(`scratchpad/same-tree-compare.sh`):
+
+| RID | Old path vs new path | Files | Bytes |
+|---|---|---|---|
+| linux-x64 | identical names and sizes | 219 | 156,362,705 |
+| win-x64 | identical names and sizes | 224 | 160,980,439 |
+| osx-arm64 | identical names and sizes | 220 | 167,065,048 |
+
+**Behaviour-free: confirmed.** The published file set and every file's size are unchanged by the move.
+
+Second publish into the same folder (linux-x64):
+
+| Path | First publish | Second publish | Nested `publish/` inside |
+|---|---|---|---|
+| old, in the project folder | 219 files | 206 files | **1** (the nesting this Story removes) |
+| new, `artifacts/publish/` | 219 files | 206 files | 0 |
+
+The 13 files missing after a second publish into the same folder (`Factories/DemoData/*.csv` and
+`certs/LighthouseCert.pfx`, all `CopyToOutputDirectory=PreserveNewest`) go missing on **both** paths, so this predates
+the Story and is not caused by it. CI always publishes into a fresh folder, so releases are unaffected; a developer
+who runs `update-sidecar` twice gets a sidecar without demo data and certificate. Recorded as a finding for the
+maintainer, not fixed here (it would change what a repeat publish produces).
