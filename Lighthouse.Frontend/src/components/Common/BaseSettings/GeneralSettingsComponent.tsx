@@ -8,7 +8,7 @@ import {
 	TextField,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRbac } from "../../../hooks/useRbac";
 import type { IBoardInformation } from "../../../models/Boards/BoardInformation";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
@@ -129,6 +129,21 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 
 	const isDataRetrievalReadOnly = schema?.inputKind !== "freetext";
 
+	const committedQuery = settings?.dataRetrievalValue ?? "";
+	const [queryDraft, setQueryDraft] = useState(committedQuery);
+
+	// A value arriving from outside (wizard, reload) replaces what was being typed.
+	useEffect(() => {
+		setQueryDraft(committedQuery);
+	}, [committedQuery]);
+
+	const commitQuery = () => {
+		if (isDataRetrievalReadOnly || queryDraft === committedQuery) {
+			return;
+		}
+		onSettingsChange("dataRetrievalValue" as keyof T, queryDraft as T[keyof T]);
+	};
+
 	return (
 		<InputGroup title={title}>
 			<Grid size={{ xs: 12 }}>
@@ -172,13 +187,9 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 						margin="normal"
 						placeholder={schema?.placeholder ?? undefined}
 						helperText={schema?.helpText ?? undefined}
-						value={settings?.dataRetrievalValue ?? ""}
-						onChange={(e) =>
-							onSettingsChange(
-								"dataRetrievalValue" as keyof T,
-								e.target.value as T[keyof T],
-							)
-						}
+						value={queryDraft}
+						onChange={(e) => setQueryDraft(e.target.value)}
+						onBlur={commitQuery}
 						slotProps={{
 							input: {
 								readOnly: isDataRetrievalReadOnly,

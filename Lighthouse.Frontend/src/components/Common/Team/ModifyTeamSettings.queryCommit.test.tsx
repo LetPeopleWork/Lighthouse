@@ -119,7 +119,7 @@ describe("ModifyTeamSettings query field", () => {
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	it.skip("saves nothing while the query is being typed and the field is still focused", async () => {
+	it("saves nothing while the query is being typed and the field is still focused", async () => {
 		const { query, user } = await openTeamSettings();
 
 		await user.click(query);
@@ -129,7 +129,7 @@ describe("ModifyTeamSettings query field", () => {
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	it.skip("saves the edited query once, after the field is left", async () => {
+	it("saves the edited query once, after the field is left", async () => {
 		const { query, user } = await openTeamSettings();
 
 		await user.click(query);
@@ -149,7 +149,7 @@ describe("ModifyTeamSettings query field", () => {
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
 	});
 
-	it.skip("saves nothing when the query is edited back to what was saved before the field is left", async () => {
+	it("saves nothing when the query is edited back to what was saved before the field is left", async () => {
 		const { query, user } = await openTeamSettings();
 
 		await user.click(query);

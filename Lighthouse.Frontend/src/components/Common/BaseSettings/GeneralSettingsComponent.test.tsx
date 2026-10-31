@@ -121,7 +121,17 @@ describe("GeneralSettingsComponent", () => {
 	it("calls onSettingsChange with correct arguments when work item query changes", () => {
 		render(
 			<GeneralSettingsComponent
-				settings={testSettings}
+				settings={{
+					...testSettings,
+					dataRetrievalSchema: {
+						key: "jira.jql",
+						displayLabel: "JQL Query",
+						inputKind: "freetext",
+						isRequired: true,
+						isWorkItemTypesRequired: true,
+						wizardHint: null,
+					},
+				}}
 				workTrackingSystems={mockWorkTrackingSystems}
 				selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
 				onSettingsChange={mockOnSettingsChange}
@@ -131,6 +141,7 @@ describe("GeneralSettingsComponent", () => {
 		fireEvent.change(screen.getByLabelText("JQL Query"), {
 			target: { value: "Updated Query" },
 		});
+		fireEvent.blur(screen.getByLabelText("JQL Query"));
 
 		expect(mockOnSettingsChange).toHaveBeenCalledWith(
 			"dataRetrievalValue",
@@ -1138,7 +1149,7 @@ describe("GeneralSettingsComponent", () => {
 				/>,
 			);
 
-		it.skip("hands over no change while the query is being typed", async () => {
+		it("hands over no change while the query is being typed", async () => {
 			const user = userEvent.setup();
 			renderQueryField();
 
@@ -1151,7 +1162,7 @@ describe("GeneralSettingsComponent", () => {
 			expect(query).toHaveValue("project = LH AND team = Red");
 		});
 
-		it.skip("hands over the edited query once, when the field is left", async () => {
+		it("hands over the edited query once, when the field is left", async () => {
 			const user = userEvent.setup();
 			renderQueryField();
 
@@ -1165,7 +1176,7 @@ describe("GeneralSettingsComponent", () => {
 			]);
 		});
 
-		it.skip("hands over nothing when the query is edited back to what it was", async () => {
+		it("hands over nothing when the query is edited back to what it was", async () => {
 			const user = userEvent.setup();
 			renderQueryField();
 
@@ -1197,7 +1208,7 @@ describe("GeneralSettingsComponent", () => {
 			expect(mockOnSettingsChange).toHaveBeenCalledWith("name", "Team AZ");
 		});
 
-		it.skip("hands over nothing from a read-only query that is focused and left", () => {
+		it("hands over nothing from a read-only query that is focused and left", () => {
 			renderQueryField({
 				...aTeamWithAFreetextQuery(),
 				dataRetrievalValue: "team-uuid-123",
