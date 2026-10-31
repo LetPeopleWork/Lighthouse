@@ -13,6 +13,8 @@ Every Team and every Portfolio has a **Reports** tab, between *Metrics* and *Set
 
 More types will be added over time. Everything on this page applies to all of them.
 
+To see every report in one place, or to create or remove reports for many Teams and Portfolios at once, use the [Reports page](#the-reports-page).
+
 - TOC
 {:toc}
 
@@ -92,13 +94,114 @@ In the Standalone app on macOS, Export PDF is not available: the button and the 
 
 If printing does not work for you, please let us know in our [Slack community](https://join.slack.com/t/let-people-work/shared_invite/zt-38df4z4sy-iqJEo6S8kmIgIfsgsV0J1A).
 
+# The Reports Page
+
+![Reports page](../assets/features/reports_page.png)
+
+**Reports** in the top navigation, between *Features* and *System Settings*, opens one table with every report you can read, across all Teams and Portfolios. Use it when you want to find a report without knowing which Team or Portfolio holds it, or to act on several reports at once.
+
+The table has the columns **Name**, **Type**, **Owner**, **Created** and *Actions*. The **Owner** column shows the name of the Team or Portfolio the report belongs to, with an icon for which of the two it is. Click the name to open that Team or Portfolio. Portfolios are listed first, then Teams, each sorted by name. Click a column header to sort the table differently.
+
+The row icons are the same as on a Reports tab: export as PDF, edit and delete. Edit and delete show only on rows of Teams and Portfolios you may change.
+
+## Finding Reports
+
+Type in the **Filter: name / owner / type** box above the table. A report stays in the list when what you typed appears in its name, in its owner's name, in the word for the owner's kind (for example *Team*), or in its Type. Changing the filter clears the rows you had selected.
+
+## Selecting Reports
+
+Tick the checkbox at the start of a row to select a report, or the checkbox in the header to select the whole list. Above the table, the buttons **Create reports**, **Remove** and **Export PDF** act on the selection. Next to them, the page counts the rows you picked, for example "3 selected".
+
+- **Remove (n)** and **Export PDF (n)** show how many reports are selected.
+- A button that cannot be used right now says why when you hover over it.
+- One run acts on at most **50** reports. With more selected, **Remove** and **Export PDF** are held back, and their hint reads "Pick at most 50 reports."
+
+While the list is loading, it is dimmed under a small spinner. If it cannot be loaded, the page says "The reports couldn't be loaded." and offers a retry. If there are no reports yet, it tells you that they are created on a Team's or Portfolio's Reports tab, or here with **Create reports**.
+
+# Creating Reports for Many Teams and Portfolios
+
+{: .note}
+Creating reports for several Teams and Portfolios at once is a [Premium](../licensing/licensing.html#licensed-features) feature.
+
+When several Teams or Portfolios need the same report, for example a Then & Now before and after a change you rolled out everywhere, you do not have to create it once per Team or Portfolio. On the Reports page, click **Create reports**. The wizard asks for the report's settings once and creates one report on every Team and Portfolio you pick.
+
+The steps are the ones of [creating a single report](#creating-a-report): **Type**, then the steps of the Type you chose, then a last step, **Owners**. For a Then & Now report, see [Creating Then & Now Reports for Many Owners](./thenandnow.html#creating-reports-for-many-teams-and-portfolios).
+
+![Choosing the Teams and Portfolios](../assets/features/report_bulk_owners.png)
+
+## Choosing the Teams and Portfolios
+
+The last step is titled "Who gets this report?". It lists your Teams and your Portfolios in two groups, each with a **Select all** button. Only the Teams and Portfolios you are Admin of are listed, and the step says so.
+
+A Team or Portfolio whose kept history is too short for the windows you chose cannot be picked. Its checkbox is disabled, and under its name the wizard tells you why, for example "Kept history starts 15 Oct 2025; Then starts 3 Jun 2025.", with a link **Open *name* settings**. The link opens that Team's or Portfolio's settings in a new browser tab, so what you entered in the wizard stays. In the Standalone app, which has no tabs, it opens in the same window. If you change the windows so that an owner can no longer hold them, it is removed from your picks.
+
+You can pick at most **50** Teams and Portfolios in one run. With more, the step says "Pick at most 50 Teams and Portfolios." and **Create** stays disabled. Create several rounds if you need more.
+
+When you are ready, click **Create *n* reports**. The button shows how many Teams and Portfolios you picked.
+
+## The Result
+
+![Result of a bulk creation](../assets/features/report_bulk_result.png)
+
+While Lighthouse works, the dialog says, for example, "Creating 3 reports…". Then it lists every Team and Portfolio you picked on its own line, by name, with an icon for whether it is a Team or a Portfolio (the same icons as the **Owner** column), under a headline such as "2 reports created, 1 not created".
+
+- **Created**: the report exists. Click **Open** to see it. It opens in a new browser tab, and the dialog stays open, so you can open the others one after the other. In the Standalone app, which has no tabs, **Open** opens the report in the same window.
+- **Not created**: the line says why, for example:
+  - "Not created: its kept history starts 15 Oct 2025. Keep more history under Closed Items Cutoff in its settings."
+  - "Not created: *name* already has its one Then & Now report; Premium lifts this limit."
+  - "Not created: you are no longer Admin of *name*."
+  - "Not created: *name* no longer exists."
+  - "Not created: it couldn't be saved. Try again."
+
+One owner that is not created never stops the others. Lighthouse checks every Team and Portfolio on its own, on the server, so a refusal for one does not undo the reports made for the rest. Click **Done** to close the dialog.
+
+If Lighthouse cannot tell what happened, the dialog says "It could not be confirmed which reports were created." and offers **Go to Reports**. Look at the Reports page to see which reports exist.
+
+# Removing Several Reports
+
+Select the reports on the Reports page and click **Remove (n)**. A dialog lists each report with its name and its Team or Portfolio. Nothing is removed until you click **Remove *n* reports** there. Removing cannot be undone.
+
+If a Then & Now report's Then can no longer be rebuilt from the history Lighthouse keeps, the dialog warns you first that removing it loses that Then for good.
+
+**Remove** is available only when you may edit every selected report. If you may not, it is disabled and its hint reads, for example, "2 of the 3 selected reports are on a Team or Portfolio you are not Admin of." Unselect those rows and try again. If your permissions could not be loaded, the hint says "Your permissions couldn't be loaded. Reload the page to try again."
+
+The result lists "*n* reports removed" and, for each report that stayed, a line starting "Not removed:" with the reason, for example that you are no longer Admin of its Team or Portfolio. A report someone else removed first counts as removed. Click **Done** to close the dialog and clear the selection.
+
+# A PDF of Several Reports
+
+Select two or more reports and click **Export PDF (n)** above the table. Lighthouse prepares them as one PDF and opens your browser's print dialog, as for [a single report](#export-pdf). Choose **Save as PDF** as the destination.
+
+- **The reports follow the order of the table**, as sorted and filtered when you click.
+- **Every report starts on a page of its own**, with its own line at the top of each page: the Team or Portfolio, the report's name, its windows and when the PDF was produced.
+- **There is one footer** with the Lighthouse mark and "Made with Lighthouse by LetPeopleWork · letpeople.work". It closes the whole document.
+- Your browser suggests the file name "Lighthouse reports", rather than the name of one report.
+
+Everyone who can read the reports can export them. You can select up to **50** reports. With none selected the button's hint reads "Select at least one report.", and with more than 50 it reads "Pick at most 50 reports." With exactly one report selected, **Export PDF (1)** gives the report's own PDF, as its row's icon does.
+
+While the PDF is prepared, the button shows a small spinner, and the PDF icons in the rows wait. Lighthouse reads every report again, so the PDF shows the values as they are at that moment. Nothing is stored.
+
+## When No PDF Can Be Made
+
+If a report cannot be read, no print dialog opens. Instead, a dialog titled **No PDF was made** names each report that could not be read, for example: Team Zenith's report "Then & Now — 90 days to 15 Oct 2026" couldn't be loaded. If a part of the page failed rather than a report, it says "Part of the page couldn't be loaded, so no PDF was made." It offers:
+
+- **Cancel**: close the dialog and change nothing.
+- **Leave it out**: unselect the reports that failed and print the rest. It is offered only when something is left to print.
+- **Retry**: try all the selected reports again.
+
+## The Standalone App on macOS
+
+As for a single report, **Export PDF (n)** is greyed out in the [Standalone app](../Installation/standalone.html) on macOS, and its hint says "PDF export is not available in the macOS desktop app. To export PDFs on a Mac, run Lighthouse with Docker and open it in your browser." Elsewhere it works in Chrome, Firefox and the Standalone app on Windows and Linux.
+
 # Who Can Do What
 
 | | Can do it |
 |---|---|
 | Read the Reports tab and open a report | Everyone who can see the Team or Portfolio |
-| Export a report as a PDF | Everyone who can read the report |
+| See a report on the Reports page | Everyone who can read the report. Rows of Teams and Portfolios you cannot read are not listed |
+| Export a report, or several, as a PDF | Everyone who can read the reports |
 | Create, edit and delete reports | System Admins, and the Team Admins or Portfolio Admins of that Team or Portfolio |
+| Create reports for several Teams and Portfolios | The same people, for each Team or Portfolio they are Admin of. The wizard lists only those, and Lighthouse checks every one again when it creates (Premium) |
+| Remove several reports | Only when you may delete every selected report |
 
 Without [role-based access control](../settings/rbac.html), everyone can create, edit and delete reports.
 
@@ -116,7 +219,9 @@ Community includes **one report of each Type per Team and per Portfolio**: one T
 
 Once a Team or Portfolio has its report of a Type, *Create Report* is disabled, and the message under it says what to do: "Community includes 1 Then & Now report per Team. Delete it, or use Premium for unlimited reports."
 
-[Export PDF](#export-pdf) is part of Community and needs no licence. Exporting does not count against the limit: you can export any report as often as you like.
+[Export PDF](#export-pdf), the [Reports page](#the-reports-page), [removing several reports](#removing-several-reports) and [a PDF of several reports](#a-pdf-of-several-reports) are part of Community and need no licence. Exporting does not count against the limit: you can export any report as often as you like.
+
+[Creating reports for many Teams and Portfolios](#creating-reports-for-many-teams-and-portfolios) at once is part of Premium. Without Premium, **Create reports** on the Reports page is disabled. You can still create each Team's or Portfolio's one report from its own Reports tab. In a bulk run on Premium there is no limit per Team or Portfolio, but one run takes at most 50 Teams and Portfolios.
 
 {: .note}
 If your licence expires, nothing is deleted. Every report stays readable, and you can still edit and delete it. You can create new reports again once a Team or Portfolio is below the limit.

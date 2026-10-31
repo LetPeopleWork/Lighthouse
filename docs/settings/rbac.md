@@ -65,6 +65,10 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | Create, edit and delete [reports](../reports/reports.html) on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
 | Read [reports](../reports/reports.html) on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | [Export a report as a PDF](../reports/reports.html#export-pdf): anyone who can read the report | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
+| See a report on the [Reports page](../reports/reports.html#the-reports-page) | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
+| [Create reports for several Teams and Portfolios](../reports/reports.html#creating-reports-for-many-teams-and-portfolios) at once (Premium) | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
+| [Remove several reports](../reports/reports.html#removing-several-reports): only when you may delete every selected report | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
+| [Export several reports as one PDF](../reports/reports.html#a-pdf-of-several-reports): anyone who can read the reports | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
 | Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
 | List work tracking system connections | ✅ | ✅ | ✅ | ✅ |

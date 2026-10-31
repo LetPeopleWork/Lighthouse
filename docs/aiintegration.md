@@ -143,6 +143,17 @@ Use `--portfolio-id` instead of `--team-id` for a Portfolio's reports. The same 
 - **Raw values.** With `--json` (or over MCP), you get the report as Lighthouse sends it: both windows and every value, unrounded, with no change or percentage worked out. For a Then & Now report, Then is the value frozen when the report was created, never rebuilt from today's metrics. Without `--json`, `lh` prints a short summary: the report's name, its Team or Portfolio and its windows.
 - **Your own permissions.** A reader without access to the Team or Portfolio is told so. A Lighthouse older than Reports is named as the reason, with a hint to upgrade.
 
+To list every report you can read, across all your Teams and Portfolios, leave out the owner:
+
+```bash
+LIGHTHOUSE_API_KEY=<key> lh report list --json
+```
+
+Each report carries its owner's kind and name (`ownerKind`, `ownerName`) next to its id, name, type and creation date. The MCP tool `lighthouse_report_list` does the same and takes no arguments. Reports of Teams and Portfolios you cannot read are left out, as on the [Reports page](./reports/reports.html#the-reports-page). To read one of them, look up its Team's or Portfolio's id with `lh team list` or `lh portfolio list`, then use `report get` or the `get` tools above.
+
+{: .note}
+Listing every report needs `lighthouse-cli` and the MCP servers from the next release of the Lighthouse clients, which has not shipped yet. Until then, list a Team's or a Portfolio's reports with `--team-id` or `--portfolio-id`.
+
 To lay a report out as a dashboard or a document, with the change and the percentage exactly as the Reports tab shows them, use the [Skill for Reports](#skill-for-reports).
 
 ## MCP for AI Clients

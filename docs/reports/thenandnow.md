@@ -36,6 +36,16 @@ Both windows need at least 14 days. Lighthouse keeps finished Work Items only fo
 {: .note}
 Every metric's Then values are frozen, even for metrics you do not show. If you show a metric later, its Then values are already there.
 
+# Creating Reports for Many Teams and Portfolios
+
+With Premium you can create the same Then & Now report for many Teams and Portfolios at once, with **Create reports** on the [Reports page](./reports.html#creating-reports-for-many-teams-and-portfolios). The steps **Then**, **Now** and **Metrics & name** are asked once, and a last step, **Owners**, picks who gets the report.
+
+- **The windows are the same for every owner.** You choose the day Then ends on and its length (30, 90 or 180 days, or any number of days from 14), and Now's length: **Same as Then** or **Custom**. Each owner's Then is frozen from its own history, as for a single report.
+- **Every owner must hold both windows.** Each Team and Portfolio keeps finished Work Items for as long as its own **Closed Items Cutoff** says. An owner whose kept history starts after the first day of Then or Now cannot be picked, and the Owners step shows when its history starts. To include it, shorten the windows, or keep more history under Closed Items Cutoff in that owner's settings first.
+- **The report's name and metrics are the ones you chose.** Every owner gets a report with these settings.
+
+On Community, a Team or Portfolio holds one Then & Now report. An owner that already has its one report is not created, and the result says so.
+
 # Reading the Report
 
 The page starts with the report's name, then a summary, then one panel per metric.
