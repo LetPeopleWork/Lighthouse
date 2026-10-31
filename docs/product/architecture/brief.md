@@ -10889,13 +10889,13 @@ Feature: epic-6350-bulk-reports (ADO Epic #6350) · Wave: DESIGN · 2026-10-27 �
 ### ADR References (this feature)
 
 - [ADR-265](./adr-265-reports-across-owners-are-read-from-one-endpoint-filtered-on-the-server-with-each-row-naming-its-owner.md):
-  reports across owners are read from one endpoint, filtered on the server, each row naming its owner. **Proposed
-  2026-10-27.**
+  reports across owners are read from one endpoint, filtered on the server, each row naming its owner. **Accepted
+  2026-10-31.**
 - [ADR-266](./adr-266-a-bulk-report-run-is-one-request-answered-owner-by-owner-through-the-single-report-path.md): a
-  bulk report run is one request answered owner by owner, through the single report's path. **Proposed 2026-10-27.**
+  bulk report run is one request answered owner by owner, through the single report's path. **Accepted 2026-10-31.**
 - [ADR-267](./adr-267-several-reports-print-as-one-document-from-the-same-hidden-frame-ready-only-when-every-report-is.md):
-  several reports print as one document from the same hidden frame, ready only when every report is. **Proposed
-  2026-10-27.**
+  several reports print as one document from the same hidden frame, ready only when every report is. **Accepted
+  2026-10-31.**
 - Relied on, unchanged: ADR-219 to ADR-222, ADR-245, ADR-246, ADR-247, ADR-255, ADR-259.
 
 ## Application Architecture — stories-6367-6369-kernel-and-repository-ratchets

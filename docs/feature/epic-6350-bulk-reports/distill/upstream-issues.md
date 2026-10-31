@@ -10,5 +10,5 @@ None blocks DELIVER.
 | UI-4 | The plain-language reasons for "Not created" / "Not removed" were not worded. | **Closed by NMD-12**; pinned word for word. |
 | UI-5 | No copy for more than 50 owners picked in the owner step. | **Closed by NMD-13**; "Pick at most 50 Teams and Portfolios." pinned, group Select all uncapped. |
 | UI-6 | The default "Then ends on" day was not stated. | **Closed by NMD-14**; the request's `thenEndDate` is pinned for 30 / 90 / 180 days. |
-| UI-7 | The reason shown on Export PDF when nothing is selected is not worded by any decision (NMD-1 asks for one). | **Open, for the maintainer at the slice 07 sketch.** Pinned as "Select at least one report." in one kit constant (DS-15). |
-| UI-8 | "It could not be confirmed which reports were removed." mirrors NMD-7's creation sentence; NMD-7 says only "the could-not-confirm look" for removal. | **Open, low.** One kit constant (DS-8). |
+| UI-7 | The reason shown on Export PDF when nothing is selected is not worded by any decision (NMD-1 asks for one). | **Settled 2026-10-30: stays as built (maintainer).** Pinned as "Select at least one report." in one kit constant (DS-15). |
+| UI-8 | "It could not be confirmed which reports were removed." mirrors NMD-7's creation sentence; NMD-7 says only "the could-not-confirm look" for removal. | **Settled 2026-10-30: stays as built (maintainer).** One kit constant (DS-8). |

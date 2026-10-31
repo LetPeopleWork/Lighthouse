@@ -1,6 +1,6 @@
 # ADR-265: Reports across owners are read from one endpoint, filtered on the server, each row naming its owner
 
-**Status**: Proposed (DESIGN, 2026-10-27, PROPOSE mode).
+**Status**: Accepted, built on main 2026-10-31 (not yet released). Proposed (DESIGN, 2026-10-27, PROPOSE mode).
 **Feature**: `epic-6350-bulk-reports` (Epic #6350, slices 01, 02a–04, 06)
 **Relies on**: ADR-219 to ADR-222 (a report belongs to one owner; reads go through a port with no write member; owner
 scoping in the application ports, authorisation in the controllers), ADR-247 (clients read reports raw).

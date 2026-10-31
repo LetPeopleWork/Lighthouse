@@ -1,6 +1,6 @@
 # ADR-267: Several reports print as one document from the same hidden frame, ready only when every report is
 
-**Status**: Proposed (DESIGN, 2026-10-27, PROPOSE mode). The ceiling N = 50 was LOCKED by the maintainer on
+**Status**: Accepted, built on main 2026-10-31 (not yet released). Proposed (DESIGN, 2026-10-27, PROPOSE mode). The ceiling N = 50 was LOCKED by the maintainer on
 2026-10-27; it drops to 25 if a 50-report print fails in the Linux desktop app.
 **Feature**: `epic-6350-bulk-reports` (Epic #6350, slice 07)
 **Relies on**: ADR-245 (the print page and its read-only port), ADR-246 (bundled typeface and drawn marks), ADR-255

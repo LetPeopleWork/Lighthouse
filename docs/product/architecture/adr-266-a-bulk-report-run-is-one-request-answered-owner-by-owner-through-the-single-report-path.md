@@ -1,6 +1,6 @@
 # ADR-266: A bulk report run is one request answered owner by owner, through the single report's path
 
-**Status**: Proposed (DESIGN, 2026-10-27, PROPOSE mode). Items 1, 6 and 7 LOCKED by the maintainer on 2026-10-27:
+**Status**: Accepted, built on main 2026-10-31 (not yet released). Proposed (DESIGN, 2026-10-27, PROPOSE mode). Items 1, 6 and 7 LOCKED by the maintainer on 2026-10-27:
 one request with owners processed one by one; N = 50 (dropping to 25 if a 50-report print fails in the Linux desktop
 app); the run finishes when the browser stops listening. Revised after DEVOPS, 2026-10-27: items 5 (already-gone
 marker) and 8 (log fields and slow lines).
