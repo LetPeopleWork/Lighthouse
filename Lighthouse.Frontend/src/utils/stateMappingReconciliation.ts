@@ -44,13 +44,34 @@ export function wouldShadow(m: IStateMapping, doing: string[]): boolean {
 }
 
 /**
- * True when the mapping has been taken into the Doing list: it has a name and
+ * True when another mapping in the list groups one of this mapping's states.
+ * Neither mapping can then be taken into Doing: both would claim the state.
+ */
+export function sharesStateWithAnother(
+	m: IStateMapping,
+	mappings: IStateMapping[],
+): boolean {
+	return mappings.some(
+		(other) =>
+			other !== m &&
+			m.states.some((s) => listedAs(other.states, s) !== undefined),
+	);
+}
+
+/**
+ * True when the mapping, judged within its mapping list, has been taken into
+ * the Doing list: it shares no state with another mapping, has a name and
  * states, its name is listed there, and none of its states (other than one
  * equal to its own name) still is.
  */
-export function isApplied(m: IStateMapping, doing: string[]): boolean {
+export function isApplied(
+	m: IStateMapping,
+	doing: string[],
+	mappings: IStateMapping[],
+): boolean {
 	const key = normalise(m.name);
 	if (!key || m.states.length === 0) return false;
+	if (sharesStateWithAnother(m, mappings)) return false;
 	const doingKeys = new Set(doing.map(normalise));
 	if (!doingKeys.has(key)) return false;
 	return m.states.every((s) => {
@@ -86,7 +107,10 @@ export function reconcileDoingStates(
 
 	for (const [key, prev] of prevByName) {
 		const next = nextByName.get(key);
-		if ((!next || statesChanged(prev, next)) && isApplied(prev, doingStates)) {
+		if (
+			(!next || statesChanged(prev, next)) &&
+			isApplied(prev, doingStates, prevMappings)
+		) {
 			result = result.filter((s) => normalise(s) !== key);
 			result = [...result, ...prev.states];
 		}
@@ -97,10 +121,17 @@ export function reconcileDoingStates(
 		if (
 			next.states.length === 0 ||
 			wouldShadow(next, result) ||
-			groupingMappingOf(next, nextMappings)
+			groupingMappingOf(next, nextMappings) ||
+			sharesStateWithAnother(next, nextMappings)
 		)
 			continue;
-		if (!prev || statesChanged(prev, next)) {
+		// A mapping that was left out because it shared a state is taken in
+		// once the sharing ends, although its own definition did not change.
+		if (
+			!prev ||
+			statesChanged(prev, next) ||
+			sharesStateWithAnother(prev, prevMappings)
+		) {
 			const sourceKeys = new Set(next.states.map(normalise));
 			result = result.filter((s) => !sourceKeys.has(normalise(s)));
 			if (!result.some((s) => normalise(s) === key)) {

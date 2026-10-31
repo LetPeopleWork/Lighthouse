@@ -79,7 +79,7 @@ function doingClashError(
 ): string[] {
 	if (
 		!wouldShadow(mapping, doingStates) ||
-		isApplied(mapping, doingStates) ||
+		isApplied(mapping, doingStates, mappings) ||
 		namesAStateOfAnotherMapping(mapping, mappings)
 	) {
 		return [];

@@ -364,6 +364,88 @@ describe("reconcileDoingStates", () => {
 		});
 	});
 
+	describe("mappings that share a source state", () => {
+		const emptyLists = (doingStates: string[]) => ({
+			toDoStates: [],
+			doingStates,
+			doneStates: [],
+		});
+		const clash =
+			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.';
+		const duplicate = 'Source state "Review" is used in multiple mappings.';
+
+		it("deleting a clashing mapping after another mapping took its source state keeps the raw state of the same name in Doing", () => {
+			const clashing: IStateMapping = {
+				name: "In Arbeit",
+				states: ["Review"],
+			};
+			const rival: IStateMapping = { name: "Coding", states: ["Review"] };
+
+			const afterClashing = reconcileDoingStates(
+				[],
+				[clashing],
+				["In Progress", "In Arbeit", "Review"],
+			);
+			const afterRival = reconcileDoingStates(
+				[clashing],
+				[clashing, rival],
+				afterClashing,
+			);
+			const afterDelete = reconcileDoingStates(
+				[clashing, rival],
+				[rival],
+				afterRival,
+			);
+
+			expect(afterClashing).toEqual(["In Progress", "In Arbeit", "Review"]);
+			expect(
+				validateStateMappings([clashing], emptyLists(afterClashing)),
+			).toEqual([clash]);
+			expect(afterRival).toEqual(["In Progress", "In Arbeit", "Review"]);
+			expect(
+				validateStateMappings([clashing, rival], emptyLists(afterRival)),
+			).toEqual([duplicate, clash]);
+			expect(afterDelete).toEqual(["In Progress", "In Arbeit", "Coding"]);
+			expect(validateStateMappings([rival], emptyLists(afterDelete))).toEqual(
+				[],
+			);
+		});
+
+		it("keeps an applied mapping applied when a second mapping picks the same state, and leaves the second one out", () => {
+			const applied: IStateMapping = { name: "Coding", states: ["Review"] };
+			const second: IStateMapping = { name: "Testing", states: ["Review"] };
+
+			const afterApplied = reconcileDoingStates(
+				[],
+				[applied],
+				["In Progress", "Review"],
+			);
+			const afterSecond = reconcileDoingStates(
+				[applied],
+				[applied, second],
+				afterApplied,
+			);
+			const afterRemoval = reconcileDoingStates(
+				[applied, second],
+				[applied],
+				afterSecond,
+			);
+
+			expect(afterApplied).toEqual(["In Progress", "Coding"]);
+			expect(afterSecond).toEqual(["In Progress", "Coding"]);
+			expect(
+				validateStateMappings([applied, second], emptyLists(afterSecond)),
+			).toEqual([
+				duplicate,
+				'Mapping "Coding" has the same name as the Doing state "Coding". Add "Coding" to this mapping to group it, or choose another name.',
+			]);
+			expect(afterRemoval).toEqual(["In Progress", "Coding"]);
+			expect(
+				validateStateMappings([applied], emptyLists(afterRemoval)),
+			).toEqual([]);
+		});
+	});
+
 	describe("wouldShadow", () => {
 		it("is true when the name is a Doing state the mapping does not contain", () => {
 			expect(
