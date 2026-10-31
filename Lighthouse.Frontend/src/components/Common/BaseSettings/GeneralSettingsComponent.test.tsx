@@ -12,6 +12,7 @@ import {
 	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
+import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
 
 // Opening a board picker needs a system administrator, so most tests render as one.
@@ -1156,7 +1157,7 @@ describe("GeneralSettingsComponent", () => {
 			const query = screen.getByLabelText("JQL Query");
 			await user.click(query);
 			await user.type(query, " AND team = Red");
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			await waitPastTheDebounce();
 
 			expect(queryChanges()).toHaveLength(0);
 			expect(query).toHaveValue("project = LH AND team = Red");

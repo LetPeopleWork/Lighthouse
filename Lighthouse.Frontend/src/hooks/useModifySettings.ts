@@ -47,7 +47,7 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	autoSave?: AutoSaveOptions;
 }
 
-const DEBOUNCE_MS = 300;
+export const DEBOUNCE_MS = 300;
 
 const CONCURRENCY_CONFLICT_STATUS = 409;
 

@@ -10,6 +10,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
+import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -34,10 +35,6 @@ vi.mock("../../../hooks/useRbac", () => ({
 
 // Each test waits past the 300 ms debounce in real time, on top of a full page render.
 vi.setConfig({ testTimeout: 20000 });
-
-const PAST_THE_DEBOUNCE_MS = 500;
-const waitPastTheDebounce = () =>
-	new Promise((resolve) => setTimeout(resolve, PAST_THE_DEBOUNCE_MS));
 
 describe("ModifyTeamSettings query field", () => {
 	const mockSaveTeamSettings = vi.fn();

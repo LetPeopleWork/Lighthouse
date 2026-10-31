@@ -12,6 +12,7 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
+import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -36,10 +37,6 @@ vi.mock("../../../hooks/useRbac", () => ({
 
 // Each test waits past the 300 ms debounce in real time, on top of a full page render.
 vi.setConfig({ testTimeout: 20000 });
-
-const PAST_THE_DEBOUNCE_MS = 500;
-const waitPastTheDebounce = () =>
-	new Promise((resolve) => setTimeout(resolve, PAST_THE_DEBOUNCE_MS));
 
 describe("ModifyProjectSettings query field", () => {
 	const mockSaveProjectSettings = vi.fn();
