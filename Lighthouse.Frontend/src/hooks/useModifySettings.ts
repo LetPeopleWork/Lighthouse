@@ -92,6 +92,11 @@ function withoutDraftMappings<T extends ModifySettingsBase>(settings: T): T {
 	};
 }
 
+// What autosave compares: the payload as it would be saved, minus the token, which changes on every save.
+function savedForm(payload: ModifySettingsBase): string {
+	return JSON.stringify({ ...payload, concurrencyToken: undefined });
+}
+
 function updateListField<T extends ModifySettingsBase>(
 	prev: T | null,
 	key: keyof T,
@@ -148,6 +153,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const isSavingRef = useRef(false);
 	const pendingPayloadRef = useRef<TSettings | null>(null);
 	const lastValidatedFingerprintRef = useRef<string | null>(null);
+	const persistedFormRef = useRef<string | null>(null);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -262,6 +268,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				.then(
 					(result) => {
 						hasInteractedRef.current = false;
+						persistedFormRef.current = savedForm(payload);
 						applyRefreshedToken(result);
 						applyIfLatest("saved");
 						if (autoRefreshOnSave && isLatest()) {
@@ -300,12 +307,18 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		const freshSettings = await getSettingsRef.current();
 		hasConflictRef.current = false;
 		hasInteractedRef.current = false;
-		setSettings(freshSettings);
-		setSelectedWorkTrackingSystem(
+		const system =
 			workTrackingSystems.find(
 				(s) => s.id === freshSettings.workTrackingSystemConnectionId,
-			) ?? null,
+			) ?? null;
+		persistedFormRef.current = savedForm(
+			withoutDraftMappings({
+				...freshSettings,
+				workTrackingSystemConnectionId: system?.id ?? 0,
+			}),
 		);
+		setSettings(freshSettings);
+		setSelectedWorkTrackingSystem(system);
 		setSaveState("idle");
 	}, [workTrackingSystems]);
 
@@ -350,6 +363,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			workTrackingSystemConnectionId: selectedConnectionId,
 		} as TSettings);
 
+		// While a save is in flight the persisted form is about to change, so it is no yardstick yet.
+		if (
+			!isSavingRef.current &&
+			savedForm(settingsToSave) === persistedFormRef.current
+		) {
+			return;
+		}
+
 		unsentAutoSaveRef.current = settingsToSave;
 		const timer = setTimeout(() => {
 			unsentAutoSaveRef.current = null;
@@ -375,13 +396,19 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 					getSettingsRef.current(),
 					getWorkTrackingSystemsRef.current(),
 				]);
-				setSettings(fetchedSettings);
-				setWorkTrackingSystems(systems);
-				setSelectedWorkTrackingSystem(
+				const system =
 					systems.find(
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
-					) ?? null,
+					) ?? null;
+				persistedFormRef.current = savedForm(
+					withoutDraftMappings({
+						...fetchedSettings,
+						workTrackingSystemConnectionId: system?.id ?? 0,
+					}),
 				);
+				setSettings(fetchedSettings);
+				setWorkTrackingSystems(systems);
+				setSelectedWorkTrackingSystem(system);
 				// On mount, only load display-dependent data (e.g. the teams dropdown). Triggering a
 				// backend re-sync just because the edit view opened is bad UX; the sync runs on save
 				// (refreshOnSave) and on relevant changes (reloadDependentData), via additionalFetch.

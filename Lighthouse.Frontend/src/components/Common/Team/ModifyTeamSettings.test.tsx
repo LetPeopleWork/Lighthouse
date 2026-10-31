@@ -472,13 +472,19 @@ describe("ModifyTeamSettings", () => {
 	it("auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure", async () => {
 		const validTeamSettings = createMockTeamSettings();
 		validTeamSettings.id = 42;
+		validTeamSettings.stateMappings = [
+			{ name: "In Review", states: ["Review"] },
+			{ name: "Blocked", states: ["Waiting"] },
+		];
 		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
 
 		await renderModifyTeamSettings();
 
 		mockUpdateTeamData.mockClear();
 
-		fireEvent.click(screen.getByText("Add State Mapping"));
+		fireEvent.click(
+			screen.getAllByRole("button", { name: "remove mapping" })[0],
+		);
 
 		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 		await waitFor(() =>
@@ -490,7 +496,7 @@ describe("ModifyTeamSettings", () => {
 
 		mockUpdateTeamData.mockRejectedValueOnce(new Error("refresh failed"));
 
-		fireEvent.click(screen.getByText("Add State Mapping"));
+		fireEvent.click(screen.getByRole("button", { name: "remove mapping" }));
 
 		expect(
 			await screen.findByRole("button", { name: "Reload now" }),
