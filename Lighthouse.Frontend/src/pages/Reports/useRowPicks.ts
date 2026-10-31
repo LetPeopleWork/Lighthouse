@@ -20,10 +20,12 @@ export const useRowPicks = (
 		picked,
 		inTableOrder,
 		clear: () => setSelectedIds([]),
-		unpick: (unpicked: readonly IReportAcrossOwners[]) =>
-			setSelectedIds((ids) =>
-				ids.filter((id) => !unpicked.some((report) => report.id === id)),
-			),
+		unpick: (unpicked: readonly IReportAcrossOwners[]) => {
+			const unpickedIds = new Set<GridRowId>(
+				unpicked.map((report) => report.id),
+			);
+			setSelectedIds((ids) => ids.filter((id) => !unpickedIds.has(id)));
+		},
 	};
 };
 
