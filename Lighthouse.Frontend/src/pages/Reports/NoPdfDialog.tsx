@@ -15,6 +15,7 @@ import { PART_OF_THE_PAGE_COULD_NOT_BE_LOADED } from "../Common/Reports/print/us
 import { ownerOfReport, ownerTermKeyOf } from "../Common/Reports/reportOwner";
 
 const TITLE_ID = "no-pdf-was-made-title";
+const DESCRIPTION_ID = "no-pdf-was-made-description";
 
 interface NoPdfDialogProps {
 	/** The reports that could not be read, in print order; none when a part of the page failed. */
@@ -40,17 +41,21 @@ const NoPdfDialog: React.FC<NoPdfDialogProps> = ({
 			open
 			onClose={onCancel}
 			aria-labelledby={TITLE_ID}
+			aria-describedby={DESCRIPTION_ID}
 			maxWidth="sm"
 			fullWidth
 		>
 			<DialogTitle id={TITLE_ID}>No PDF was made</DialogTitle>
-			<DialogContent>
+			<DialogContent id={DESCRIPTION_ID}>
 				{failedReports.length === 0 ? (
 					<Typography>{PART_OF_THE_PAGE_COULD_NOT_BE_LOADED}</Typography>
 				) : (
 					<List dense>
 						{failedReports.map((report) => (
-							<ListItem key={`${report.ownerKind}-${report.id}`} disableGutters>
+							<ListItem
+								key={`${report.ownerKind}-${report.ownerId}-${report.id}`}
+								disableGutters
+							>
 								{lineOf(report)}
 							</ListItem>
 						))}

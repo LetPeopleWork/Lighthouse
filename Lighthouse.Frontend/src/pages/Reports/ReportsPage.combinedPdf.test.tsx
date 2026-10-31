@@ -364,6 +364,9 @@ describe("One PDF of several reports", () => {
 				exact: true,
 			}),
 		).toBeInTheDocument();
+		expect(failure).toHaveAccessibleDescription(
+			couldNotLoadTheReportOf(VOYAGER, QUARTER),
+		);
 		expect(
 			within(failure)
 				.getAllByRole("button")
@@ -472,6 +475,7 @@ describe("One PDF of several reports", () => {
 		expect(
 			within(failure).getByText(PART_OF_THE_PAGE_FAILED, { exact: true }),
 		).toBeInTheDocument();
+		expect(failure).toHaveAccessibleDescription(PART_OF_THE_PAGE_FAILED);
 		expect(
 			within(failure)
 				.getAllByRole("button")
