@@ -1,0 +1,34 @@
+{
+	"packageManager": "pnpm",
+	"testRunner": "vitest",
+	"plugins": ["@stryker-mutator/vitest-runner"],
+	"vitest": {
+		"configFile": "vitest.stryker.mutation.ts"
+	},
+	"reporters": ["clear-text", "progress", "json"],
+	"coverageAnalysis": "perTest",
+	"incrementalFile": "reports/mutation/stryker-incremental-6458.json",
+	"concurrency": 1,
+	"timeoutMS": 120000,
+	"inPlace": true,
+	"disableTypeChecks": false,
+	"ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+	"mutate": [
+		"src/utils/stateMappingValidation.ts:110-166",
+		"src/hooks/useModifySettings.ts:84-99",
+		"src/hooks/useModifySettings.ts:269-273",
+		"src/hooks/useModifySettings.ts:305-325",
+		"src/hooks/useModifySettings.ts:359-375",
+		"src/hooks/useModifySettings.ts:397-412",
+		"src/hooks/useModifySettings.ts:460-467",
+		"src/components/Common/Team/ModifyTeamSettings.tsx:101-101",
+		"src/components/Common/Team/ModifyTeamSettings.tsx:241-244",
+		"src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:105-105",
+		"src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:249-252",
+		"src/components/Common/StateMappings/CycleTimesEditor.tsx:51-53",
+		"src/components/Common/StateMappings/WaitStatesEditor.tsx:25-27"
+	],
+	"thresholds": { "high": 90, "low": 80, "break": 0 },
+	"jsonReporter": { "fileName": "reports/mutation/stryker-6458-frontend.json" },
+	"tempDirName": ".stryker-tmp-6458"
+}

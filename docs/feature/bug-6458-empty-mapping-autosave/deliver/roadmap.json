@@ -1,0 +1,100 @@
+{
+  "roadmap": {
+    "project_id": "bug-6458-empty-mapping-autosave",
+    "created_at": "2026-10-31",
+    "total_steps": 2,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6458, part (b) only. Frontend only (Lighthouse.Frontend: useModifySettings, stateMappingValidation, Team/Portfolio autosave blockers). No backend, DTO, connector or migration change. Part (a), typed category entries, goes to a separate DESIGN wave.",
+    "goal": "Clicking Add mapping, or leaving a mapping half filled, never sends that mapping to the backend, so no save answers 400 for it and other edits keep saving; a complete set of mappings the backend would reject (duplicate name, a source state in two mappings) pauses autosave with the editor's own message instead of failing the save.",
+    "base_commit": "03b033c30927cc21958eba071be8cc47134090d0",
+    "paradigm_note": "No DISTILL wave for a bugfix: RED is a crafter-authored regression test failing on today's code."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6454 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-31",
+    "notes": "Fix sites verified by the orchestrator: useModifySettings autosave effect (settingsToSave :333-336, also used by the unmount flush at :308-323) and handleSave (:418-425); stateNameClashErrors filters incomplete mappings (stateMappingValidation.ts:122-123); blockers built in teamAutoSaveBlockers (ModifyTeamSettings.tsx:95-101) and ModifyProjectSettings.tsx:104; blockers render in the existing settings-blocking-warning Alert."
+  },
+  "user_decisions": [
+    "Root cause B confirmed; split (b) now, (a) to DESIGN (2026-10-31).",
+    "B1 (drop incomplete rows from the payload) over pausing autosave for a draft row.",
+    "B2 approved as sketched: duplicate-name and shared-source-state errors for complete mappings join the existing 'Your changes are not being saved' list, editor wording unchanged.",
+    "B3 (show the 400 message in the save indicator) is out.",
+    "Rigor profile standard (crafter sonnet, reviewer haiku)."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6458-typed-category-entries/rca.md (section 3 Branch B, section 6.1)",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Branch A: typed category entries / raw-state lists (DESIGN wave on #6458).",
+    "B3: surfacing the backend 400 body text.",
+    "Docs (finalize, after the maintainer confirms)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "An unfinished mapping is never saved; a complete but invalid set pauses autosave",
+      "description": "B1 drops draft mapping rows from every save payload; B2 builds the mapping autosave blockers from the editor's own rules for complete mappings.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Leave incomplete mapping rows out of every settings save",
+          "description": "B1. A pure helper drops mappings with a blank (trimmed) name or no states from stateMappings. useModifySettings applies it where the autosave payload is built (so the debounced save and the leave-page flush both use it) and in handleSave (manual save and validate on the create pages). The row stays in the local settings, so the editor keeps showing it with its field errors.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+          "scenario_name": "adding an empty mapping autosaves the settings without that mapping and keeps the row in the editor",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "RED first: a hook test that adds {name:'', states:[]} to stateMappings and lets the debounce fire fails on today's code because saveSettings receives the empty mapping.",
+            "Regression tests (exact payloads): empty mapping; name 'In' with no states; states ['X'] with blank or whitespace-only name -> saveSettings is called and its stateMappings excludes the row while keeping every complete mapping in its original order. A complete mapping is sent unchanged.",
+            "The local settings still hold the draft row after the save resolves (the editor does not lose it); check the success path does not overwrite settings from the save result, and pin it.",
+            "The leave-page flush (unmount with an unsent autosave) and handleSave/validateSettings also send the payload without draft rows.",
+            "If the hook test file name differs (e.g. .test.ts), use the existing one; put the helper next to the mapping rules in stateMappingValidation.ts unless an existing helper already fits.",
+            "Commit: `fix(state-mapping): do not save a mapping that is still being filled in`.",
+            "pnpm test green; pnpm build zero errors/warnings (check git status after: prebuild runs biome --write)."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (frontend section). ModifySettingsBase.stateMappings is unknown[]; type the helper against IStateMapping without widening the base contract more than needed. No comment that cites bug numbers or RCA ids; no nWave scenario tags in tests."
+        },
+        {
+          "id": "01-02",
+          "name": "Pause autosave for a complete set of mappings the backend would reject",
+          "description": "B2. The mapping autosave blocker (today stateNameClashErrors) becomes one exported function built from the same rules validateStateMappings shows, minus the draft-only field rules, run over complete mappings only: duplicate names, a source state in two mappings, and the existing name clashes. Team and Portfolio blockers call it instead of stateNameClashErrors; validateStateMappings keeps showing everything.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+          "scenario_name": "two complete mappings sharing a source state pause autosave with the editor's message",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/splendid-jingling-boole/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "dependencies": ["01-01"],
+          "criteria": [
+            "RED first: A=[X], B=[X] (both named) gives no autosave blocker on today's code.",
+            "Blocker tests (exact strings, editor wording unchanged): A=[X],B=[X] -> ['Source state \"X\" is used in multiple mappings.']; QA=[X],QA=[Y] -> ['Duplicate mapping name: \"QA\".']; existing clash cases unchanged.",
+            "Draft rows never block: an empty row, 'QA' with no states next to a complete 'QA', and a nameless row with states ['X'] next to a complete A=[X] all give no blocker (they are not saved, per 01-01).",
+            "Field errors ('has an empty name', 'has no source states') never appear in the blocker list; validateStateMappings output is unchanged for every existing test.",
+            "One component test per page (Team, Portfolio): two complete mappings sharing a state show the message in settings-blocking-warning and no save is sent; an Add mapping click shows no settings-blocking-warning and other edits still save.",
+            "Commit: `fix(state-mapping): pause autosave for mappings the server would reject`.",
+            "pnpm test green; pnpm build zero errors/warnings (check git status after)."
+          ],
+          "implementation_notes": "Keep one source for each rule so the editor list and the gate cannot drift. If stateNameClashErrors has no other caller after the change, fold it into the new function rather than keep two exports. No comment that cites bug numbers or RCA ids."
+        }
+      ]
+    }
+  ]
+}
