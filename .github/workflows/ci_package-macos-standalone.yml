@@ -79,7 +79,7 @@ jobs:
           TARGET_TRIPLE="aarch64-apple-darwin"
           SIDECAR_DIR="./Lighthouse.Frontend/src-tauri/binaries"
           RESOURCES_DIR="./Lighthouse.Frontend/src-tauri/resources"
-          ARM64_DIR="./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64"
+          ARM64_DIR="./artifacts/publish/osx-arm64"
 
           mkdir -p "${SIDECAR_DIR}"
           mkdir -p "${RESOURCES_DIR}"
@@ -132,7 +132,7 @@ jobs:
           binary="${SIDECAR_DIR}/Lighthouse.Backend-aarch64-apple-darwin"
 
           echo "Patching rpath on: $binary"
-          # Remove any stale rpath entries pointing to the old publish dir
+          # Remove any stale rpath entries the publish step left in the binary
           existing_rpaths=$(otool -l "$binary" | grep -A2 LC_RPATH | grep path | awk '{print $2}' || true)
           while IFS= read -r rp; do
             [ -n "$rp" ] && install_name_tool -delete_rpath "$rp" "$binary" 2>/dev/null || true

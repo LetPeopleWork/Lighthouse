@@ -3,8 +3,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class PublishOutputOutsideProjectGuardTest
     {
-        private const string PendingReason = "pending: the build files still publish into the backend project folder; the consumers move first, then this guard is switched on";
-
         // Publishing inside the project folder makes the SDK pick up the output's *.json as content, so the
         // output nests inside itself on the next publish.
         private const string InProjectPublishFolder = "Lighthouse.Backend/Lighthouse.Backend/publish";
@@ -17,7 +15,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         [Test]
-        [Ignore(PendingReason)]
         public void NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder()
         {
             var offenders = BuildFiles()
