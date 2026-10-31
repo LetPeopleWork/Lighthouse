@@ -478,7 +478,7 @@ from one tree, old and new are sha256-identical. Its exact cause in that checkou
 - **F3, F4, F8**: fixed in the guard commit `6015a5e7d` (MSBuild files scanned, repository root pinned, known-gap list
   corrected). **F2 label**: fixed in `163115971` (the connector classifier label no longer reads as `github_changes`),
   together with the plain-words comment in `ci_changes.yml`.
-- **F2** (classifier tests run by no workflow): accepted, pre-existing gap; follow-up candidate.
+- **F2** (classifier tests run by no workflow): fixed on the maintainer's word — the `changes` job now runs `test-path-classifier.sh` right after checkout, so a broken rule stops every CI run. Red check: with the `.github/actions/` part reverted, the script exits 1 naming two cases.
 - **F5** (guard runs only when the backend suite runs): accepted, documented lag.
 - **F6** (`printf | grep -q` under pipefail with very large diffs): deferred; latent, a pattern shared by every
   classifier function, and the step runs without pipefail today.

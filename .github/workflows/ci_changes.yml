@@ -38,6 +38,10 @@ jobs:
         with:
           fetch-depth: 0
     
+      - name: Test the path classifier
+        # Every job below is switched on or off by these rules, so a broken rule must stop the run here.
+        run: bash Scripts/test-selection/test-path-classifier.sh
+
       - name: Find last successful workflow run
         id: last_success
         if: github.ref == 'refs/heads/main'
