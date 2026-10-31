@@ -26,6 +26,7 @@ import { isTauriOnMac } from "../../utils/tauri";
 import { WidgetBody } from "../Common/MetricsView/WidgetShell";
 import { queryStatusOf } from "../Common/MetricsView/widgetStatus";
 import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "../Common/Reports/pdfExportCopy";
+import { exportPdfButtonProps } from "../Common/Reports/preparingLook";
 import ReportList, {
 	type ReportListActions,
 } from "../Common/Reports/ReportList";
@@ -144,6 +145,8 @@ const useBulkCreation = (rbac: RbacState) => {
 	return { button, wizard };
 };
 
+const TOO_MANY_PICKED = `Pick at most ${MOST_PER_BULK_RUN} reports.`;
+
 /**
  * Why Remove is held back, or "" when it is not. Too many picked comes first; then permissions that never arrived,
  * because the hook then answers as if the reader were Admin everywhere; then picks on owners the reader cannot change.
@@ -154,8 +157,7 @@ const removeBlockedBecause = (
 	notAdmin: number,
 	getTerm: (key: string) => string,
 ): string => {
-	if (picked > MOST_PER_BULK_RUN)
-		return `Pick at most ${MOST_PER_BULK_RUN} reports.`;
+	if (picked > MOST_PER_BULK_RUN) return TOO_MANY_PICKED;
 	if (permissionsFailed)
 		return "Your permissions couldn't be loaded. Reload the page to try again.";
 	if (notAdmin === 0) return "";
@@ -230,10 +232,23 @@ const useSelectionRemoval = ({ picked, clear }: RowPicks, rbac: RbacState) => {
 	return { button, dialog };
 };
 
-/** Export PDF, which prints every picked report as one PDF, in the order the table shows them; any reader may. */
+/** Why Export PDF is held back, or "" when it is not. */
+const exportBlockedBecause = (picked: number): string => {
+	if (picked === 0) return "Select at least one report.";
+	if (picked > MOST_PER_BULK_RUN) return TOO_MANY_PICKED;
+	return "";
+};
+
+/**
+ * Export PDF, which prints every picked report as one PDF, in the order the table shows them; any reader may. On the
+ * macOS desktop app no PDF can be made at all, so that reason wins over any about the picks.
+ */
 const useSelectionExport = ({ picked, inTableOrder }: RowPicks) => {
 	const pdfExport = useReportsPdfExport();
 	const label = `Export PDF (${picked.length})`;
+	const blockedBecause = pdfExport.preparing
+		? ""
+		: exportBlockedBecause(picked.length);
 	const button = isTauriOnMac() ? (
 		<Tooltip describeChild title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>
 			<Button
@@ -246,14 +261,21 @@ const useSelectionExport = ({ picked, inTableOrder }: RowPicks) => {
 			</Button>
 		</Tooltip>
 	) : (
-		<Button
-			variant="outlined"
-			startIcon={<PictureAsPdfIcon />}
-			disabled={picked.length === 0}
-			onClick={() => pdfExport.exportPdf(inTableOrder())}
-		>
-			{label}
-		</Button>
+		<Tooltip title={blockedBecause}>
+			<span>
+				<Button
+					variant="outlined"
+					disabled={blockedBecause !== ""}
+					{...exportPdfButtonProps(
+						pdfExport.preparing,
+						() => pdfExport.exportPdf(inTableOrder()),
+						<PictureAsPdfIcon />,
+					)}
+				>
+					{label}
+				</Button>
+			</span>
+		</Tooltip>
 	);
 	return { button, frame: pdfExport.frame };
 };

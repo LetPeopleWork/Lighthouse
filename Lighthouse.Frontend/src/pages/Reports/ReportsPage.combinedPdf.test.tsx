@@ -153,7 +153,7 @@ describe("One PDF of several reports", () => {
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
 	});
 
-	it.skip(`while the reports load, Export PDF shows it is preparing and nothing prints yet (${pending})`, async () => {
+	it("while the reports load, Export PDF shows it is preparing and nothing prints yet", async () => {
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
@@ -334,7 +334,7 @@ describe("One PDF of several reports", () => {
 		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
-	it.skip(`above 50 picked, Export PDF is disabled and says at most 50 (${pending})`, async () => {
+	it("above 50 picked, Export PDF is disabled and says at most 50", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
 				eachReportReads(),
@@ -355,7 +355,7 @@ describe("One PDF of several reports", () => {
 		);
 	});
 
-	it.skip(`with nothing picked Export PDF is disabled and says why (${pending})`, async () => {
+	it("with nothing picked Export PDF is disabled and says why", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(eachReportReads(), zenithsQuarter),
 		});

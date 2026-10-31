@@ -2,7 +2,6 @@ import {
 	Box,
 	Breadcrumbs,
 	Button,
-	CircularProgress,
 	Link,
 	Stack,
 	Tooltip,
@@ -12,6 +11,7 @@ import type React from "react";
 import { Link as RouterLink } from "react-router";
 import { isTauriOnMac } from "../../../utils/tauri";
 import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
+import { exportPdfButtonProps, PREPARING_LOOK } from "./preparingLook";
 
 interface ThenAndNowHeaderProps {
 	reportsPath: string;
@@ -28,13 +28,6 @@ interface ThenAndNowHeaderProps {
 	/** Given only to somebody who may delete the report, once it has been read. */
 	onDelete?: () => void;
 }
-
-// Disabled only in look while preparing: a truly disabled button would throw a keyboard reader's focus to the page.
-const PREPARING_LOOK = {
-	color: "action.disabled",
-	borderColor: "action.disabledBackground",
-	cursor: "default",
-};
 
 const ExportPdfButton: React.FC<{
 	readonly onExport: () => void;
@@ -53,12 +46,8 @@ const ExportPdfButton: React.FC<{
 	return (
 		<Button
 			variant="outlined"
-			onClick={preparing ? undefined : onExport}
 			disabled={waiting}
-			aria-disabled={preparing ? "true" : undefined}
-			aria-busy={preparing ? "true" : undefined}
-			startIcon={preparing ? <CircularProgress size={20} /> : undefined}
-			sx={preparing ? PREPARING_LOOK : undefined}
+			{...exportPdfButtonProps(preparing, onExport)}
 		>
 			Export PDF
 		</Button>
