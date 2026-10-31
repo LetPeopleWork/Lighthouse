@@ -8,7 +8,8 @@
 		"./biome-plugins/no-ternary-in-template-in-ternary.grit",
 		"./biome-plugins/use-dataset-for-data-attributes.grit",
 		"./biome-plugins/use-state-pair-naming.grit",
-		"./biome-plugins/wrap-own-reducer.grit"
+		"./biome-plugins/wrap-own-reducer.grit",
+		"./biome-plugins/merge-consecutive-push.grit"
 	],
 	"linter": {
 		"rules": {
