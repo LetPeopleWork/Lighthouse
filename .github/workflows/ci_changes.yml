@@ -194,8 +194,8 @@ jobs:
           frontend=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.Frontend/|\.nvmrc$|Scripts/test-timings/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
           e2e=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.EndToEndTests/|\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
 
-          # Per-connector path detection (slice-03b / CS-H). Workflow file changes
-          # propagate to every output so a ci.*.yml edit reruns everything.
+          # Per-connector path detection. A CI workflow edit can break any connector,
+          # so a change to one reruns all of them.
           jira_connector=$(classify_jira "$diff_list")
           ado_connector=$(classify_ado "$diff_list")
           linear_connector=$(classify_linear "$diff_list")
