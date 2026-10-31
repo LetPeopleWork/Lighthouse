@@ -22,11 +22,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public string Rank { get; set;}
 
-        public string IssueType { get; set;}
+        public string? IssueType { get; set;}
 
         public JsonElement Fields { get; set; }
 
-        public string State { get; set;}
+        public string? State { get; set;}
 
         public List<string> Labels { get; set; }
 

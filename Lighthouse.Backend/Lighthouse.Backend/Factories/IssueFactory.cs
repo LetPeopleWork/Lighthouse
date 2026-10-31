@@ -29,8 +29,8 @@ namespace Lighthouse.Backend.Factories
             var parentKey = GetParentFromFields(fields);
             var labels = GetLabelsFromFields(fields);
             var rank = GetRankFromFields(fields, rankField);
-            var issueType = GetIssueTypeFromFields(fields);
-            var state = GetStateFromFields(fields);
+            var issueType = GetIssueTypeFromFields(fields, originalNames);
+            var state = GetStateFromFields(fields, originalNames);
 
             var (startedDate, closedDate) = GetStartedAndClosedDate(json, workitemQueryOwner, state);
 
@@ -243,8 +243,13 @@ namespace Lighthouse.Backend.Factories
                 });
         }
 
-        private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string state)
+        private static (DateTime? startedDate, DateTime? closedDate) GetStartedAndClosedDate(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? state)
         {
+            if (state is null)
+            {
+                return (null, null);
+            }
+
             var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
 
             var rawToDoStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.ToDoStates);
@@ -278,14 +283,22 @@ namespace Lighthouse.Backend.Factories
             return (startedDate, closedDate);
         }
 
-        private static string GetIssueTypeFromFields(JsonElement fields)
+        private static string? GetIssueTypeFromFields(JsonElement fields, JiraOriginalNames? originalNames)
         {
-            return fields.GetProperty(JiraFieldNames.IssueTypeFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
+            var (id, name) = IdAndNameOf(fields, JiraFieldNames.IssueTypeFieldName);
+            return originalNames is null ? name : originalNames.IssueTypeNameFor(id, name);
         }
 
-        private static string GetStateFromFields(JsonElement fields)
+        private static string? GetStateFromFields(JsonElement fields, JiraOriginalNames? originalNames)
         {
-            return fields.GetProperty(JiraFieldNames.StatusFieldName).GetProperty(JiraFieldNames.NamePropertyName).ToString();
+            var (id, name) = IdAndNameOf(fields, JiraFieldNames.StatusFieldName);
+            return originalNames is null ? name : originalNames.StatusNameFor(id, name);
+        }
+
+        private static (string? Id, string Name) IdAndNameOf(JsonElement fields, string fieldName)
+        {
+            var field = fields.GetProperty(fieldName);
+            return (StringOrNull(field, JiraFieldNames.IdPropertyName), field.GetProperty(JiraFieldNames.NamePropertyName).ToString());
         }
 
         private string GetRankFromFields(JsonElement fields, string rankFieldName)

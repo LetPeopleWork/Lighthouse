@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.Factories
         private static readonly DateTime ClosedAt = new(2026, 3, 9, 15, 30, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore("The factory does not ask the original names yet")]
         public void A_German_payload_gives_the_state_and_type_an_English_account_would_see()
         {
             var issue = TheIssueIn(AGermanIssue(), AGermanReadersNames());
@@ -33,7 +32,6 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        [Ignore("The factory does not ask the original names yet")]
         public void Started_and_closed_dates_are_the_same_whichever_language_the_account_reads()
         {
             var read = TheIssueIn(AGermanIssue(), AGermanReadersNames());
@@ -70,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        [Ignore("The factory does not ask the original names yet")]
         public void A_non_null_id_the_lists_lack_is_never_given_the_name_the_payload_carried()
         {
             var issue = TheIssueIn(
@@ -79,8 +76,8 @@ namespace Lighthouse.Backend.Tests.Factories
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(issue.State, Is.Not.EqualTo("Wird überprüft"));
-                Assert.That(issue.IssueType, Is.Not.EqualTo("Aufgabe"));
+                Assert.That(issue.State, Is.Null);
+                Assert.That(issue.IssueType, Is.Null);
             }
         }
 
