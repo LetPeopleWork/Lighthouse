@@ -32,11 +32,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([], [mapping], doingStates);
 
-			expect(result).not.toContain("QA");
-			expect(result).not.toContain("Testing");
-			expect(result).toContain("Verification");
-			expect(result).toContain("Dev");
-			expect(result).toContain("Review");
+			expect(result).toEqual(["Dev", "Review", "Verification"]);
 		});
 
 		it("preserves order of unaffected Doing states before the appended mapping name", () => {
@@ -86,11 +82,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([mapping], [], doingStates);
 
-			expect(result).not.toContain("Verification");
-			expect(result).toContain("QA");
-			expect(result).toContain("Testing");
-			expect(result).toContain("Dev");
-			expect(result).toContain("Review");
+			expect(result).toEqual(["Dev", "Review", "QA", "Testing"]);
 		});
 
 		it("appends restored source states after remaining Doing states", () => {
@@ -133,11 +125,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([prev], [next], doingStates);
 
-			expect(result).toContain("Verification");
-			expect(result).not.toContain("Testing");
-			expect(result).not.toContain("QA");
-			expect(result).toContain("Dev");
-			expect(result).toContain("Review");
+			expect(result).toEqual(["Dev", "Review", "Verification"]);
 		});
 
 		it("reconciles when source states are reduced", () => {
@@ -153,11 +141,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([prev], [next], doingStates);
 
-			expect(result).toContain("Verification");
-			expect(result).toContain("Testing");
-			expect(result).not.toContain("QA");
-			expect(result).toContain("Dev");
-			expect(result).toContain("Review");
+			expect(result).toEqual(["Dev", "Review", "Testing", "Verification"]);
 		});
 
 		it("reconciles when a mapping is renamed", () => {
@@ -173,12 +157,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([prev], [next], doingStates);
 
-			expect(result).not.toContain("Verification");
-			expect(result).toContain("Quality Gates");
-			expect(result).not.toContain("QA");
-			expect(result).not.toContain("Testing");
-			expect(result).toContain("Dev");
-			expect(result).toContain("Review");
+			expect(result).toEqual(["Dev", "Review", "Quality Gates"]);
 		});
 	});
 
@@ -192,10 +171,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates(mappings, [mappings[0]], doingStates);
 
-			expect(result).toContain("Track A");
-			expect(result).not.toContain("Track B");
-			expect(result).toContain("QA");
-			expect(result).toContain("Testing");
+			expect(result).toEqual(["Track A", "QA", "Testing"]);
 		});
 
 		it("handles adding multiple mappings at once", () => {
@@ -207,12 +183,7 @@ describe("reconcileDoingStates", () => {
 
 			const result = reconcileDoingStates([], next, doingStates);
 
-			expect(result).toContain("Group A");
-			expect(result).toContain("Group B");
-			expect(result).not.toContain("Dev");
-			expect(result).not.toContain("QA");
-			expect(result).toContain("Review");
-			expect(result).toContain("Testing");
+			expect(result).toEqual(["Review", "Testing", "Group A", "Group B"]);
 		});
 	});
 

@@ -149,6 +149,10 @@ describe("validateStateMappings", () => {
 			{ name: "Active", states: ["Working"] },
 		];
 		const result = validateStateMappings(mappings, lists());
-		expect(result.length).toBeGreaterThanOrEqual(3);
+		expect(result).toEqual([
+			"Mapping at position 1 has an empty name.",
+			'Mapping "at position 1" has no source states.',
+			'Duplicate mapping name: "Active".',
+		]);
 	});
 });
