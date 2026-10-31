@@ -14,7 +14,7 @@ export const PREPARING_LOOK = {
  */
 export const exportPdfButtonProps = (
 	preparing: boolean,
-	onExport: (() => void) | undefined,
+	onExport: () => void,
 	startIcon?: React.ReactNode,
 ) => ({
 	onClick: preparing ? undefined : onExport,
