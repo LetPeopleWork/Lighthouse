@@ -30,6 +30,7 @@ import { reportPrintRoutes } from "./reportPrintRoutes";
  */
 
 const TEAMS_REPORT = "Team quarter";
+const NOTHING_NAMED = "No reports were named to print.";
 const PORTFOLIOS_REPORT = "Portfolio quarter";
 
 const openThePrintPageOf = (address: string) => {
@@ -134,6 +135,35 @@ describe("the print page of several reports", () => {
 		expect(thePrintOnlyDeclarations()).not.toMatch(/position:\s*fixed/);
 		vi.unstubAllGlobals();
 	});
+
+	it.each([
+		"/print/reports",
+		"/print/reports?reports=",
+		"/print/reports?reports=epic-1-2,team-x-1",
+	])("says so when %s names no report it can read", async (address) => {
+		const { print, getReport } = openThePrintPageOf(address);
+
+		expect(
+			await screen.findByText(NOTHING_NAMED, { exact: true }),
+		).toBeVisible();
+		expect(getReport).not.toHaveBeenCalled();
+		expect(print).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
+	});
+
+	it("draws a report named twice once", async () => {
+		openThePrintPageOf(
+			"/print/reports?reports=team-1-12,portfolio-2-7,team-1-12",
+		);
+
+		await waitFor(() =>
+			expect(
+				document.querySelector("[data-render-ready='true']"),
+			).not.toBeNull(),
+		);
+		expect(theTitlesShown()).toEqual([TEAMS_REPORT, PORTFOLIOS_REPORT]);
+		vi.unstubAllGlobals();
+	});
 });
 
 describe("the reports a print address names", () => {
@@ -143,6 +173,16 @@ describe("the reports a print address names", () => {
 		).toEqual([
 			{ owner: { kind: "team", id: 3 }, reportId: 12 },
 			{ owner: { kind: "portfolio", id: 5 }, reportId: 7 },
+		]);
+	});
+
+	it("names a report given twice once, where it was first named", () => {
+		expect(
+			printedReportsOf("team-3-12,portfolio-3-12,team-3-12,team-4-12"),
+		).toEqual([
+			{ owner: { kind: "team", id: 3 }, reportId: 12 },
+			{ owner: { kind: "portfolio", id: 3 }, reportId: 12 },
+			{ owner: { kind: "team", id: 4 }, reportId: 12 },
 		]);
 	});
 

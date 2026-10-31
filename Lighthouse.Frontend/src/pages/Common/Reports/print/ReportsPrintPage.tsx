@@ -1,3 +1,4 @@
+import { Typography } from "@mui/material";
 import type React from "react";
 import { useMemo } from "react";
 import { useSearchParams } from "react-router";
@@ -6,6 +7,9 @@ import { printedReportsOf } from "./printedReportsQuery";
 import type { PrintReadPort } from "./printReadPort";
 import ReportPrintBundle from "./ReportPrintBundle";
 import type { PrintContentEffects, PrintTerms } from "./ReportPrintContent";
+
+const NOTHING_NAMED = "No reports were named to print.";
+const REPORTS_PATH = "/reports";
 
 interface ReportsPrintPageProps {
 	readonly reads: PrintReadPort;
@@ -26,6 +30,14 @@ const ReportsPrintPage: React.FC<ReportsPrintPageProps> = ({
 	const query = searchParams.get("reports");
 	const reports = useMemo(() => printedReportsOf(query), [query]);
 
+	if (reports.length === 0) {
+		return (
+			<PrintSheet ready={false} reportsPath={REPORTS_PATH}>
+				<Typography color="text.secondary">{NOTHING_NAMED}</Typography>
+			</PrintSheet>
+		);
+	}
+
 	return (
 		<ReportPrintBundle
 			reports={reports}
@@ -33,7 +45,7 @@ const ReportsPrintPage: React.FC<ReportsPrintPageProps> = ({
 			terms={terms}
 			effects={effects}
 			renderSheet={(look, drawn) => (
-				<PrintSheet ready={look.state === "ready"} reportsPath="/reports">
+				<PrintSheet ready={look.state === "ready"} reportsPath={REPORTS_PATH}>
 					{drawn}
 				</PrintSheet>
 			)}
