@@ -798,12 +798,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             foreach (var id in statusIds.Except(missingIds))
             {
                 var name = names.StatusNameFor(id, string.Empty);
-                var (categoryKey, categoryName) = names.StatusCategoryOf(id);
 
                 if (name is null)
                 {
                     continue;
                 }
+
+                var (categoryKey, categoryName) = names.StatusCategoryOf(id);
 
                 switch (categoryKey ?? categoryName)
                 {
@@ -868,14 +869,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var json = await response.Content.ReadAsStringAsync();
             var data = JsonDocument.Parse(json);
 
-            var boardIssues = data.RootElement
-                .GetProperty(JiraFieldNames.IssuesFieldName)
-                .EnumerateArray()
-                .Select(issue => issue.GetProperty("fields").GetProperty("issuetype"))
-                .Select(issueType => (
-                    Id: issueType.TryGetProperty(JiraFieldNames.IdPropertyName, out var id) && id.ValueKind == JsonValueKind.String ? id.GetString() : null,
-                    Name: issueType.GetProperty("name").GetString() ?? string.Empty))
-                .ToList();
+            var boardIssues = IssueTypesOfBoardIssues(data.RootElement);
 
             JiraOriginalNames names;
             IReadOnlyList<string> missingIds;
@@ -903,9 +897,24 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     missingId);
             }
 
+            return OriginalIssueTypeNames(boardIssues, names);
+        }
+
+        private static List<(string? Id, string Name)> IssueTypesOfBoardIssues(JsonElement boardIssuesResponse)
+            => boardIssuesResponse
+                .GetProperty(JiraFieldNames.IssuesFieldName)
+                .EnumerateArray()
+                .Select(issue => issue.GetProperty("fields").GetProperty("issuetype"))
+                .Select(issueType => (
+                    Id: issueType.TryGetProperty(JiraFieldNames.IdPropertyName, out var id) && id.ValueKind == JsonValueKind.String ? id.GetString() : null,
+                    Name: issueType.GetProperty("name").GetString() ?? string.Empty))
+                .ToList();
+
+        private static List<string> OriginalIssueTypeNames(IEnumerable<(string? Id, string Name)> boardIssueTypes, JiraOriginalNames names)
+        {
             var issueTypeNames = new List<string>();
 
-            foreach (var (typeId, name) in boardIssues)
+            foreach (var (typeId, name) in boardIssueTypes)
             {
                 var original = names.IssueTypeNameFor(typeId, name);
 
@@ -2367,6 +2376,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             await SetStoredFieldKeys(client, workItemQueryOwner.WorkTrackingSystemConnectionId);
 
             var readFor = ReadForOwnerOf(workItemQueryOwner, maxResultsOverride);
+
+            // A list Jira refuses has to stop the refresh before the first page of issues is asked for.
             await OriginalNamesOf(client, deployment, readFor, cancellationToken);
 
             Task<JiraOriginalNames> NamesCovering(IReadOnlyList<JsonElement> page)
@@ -2430,37 +2441,50 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
             var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);
 
-            var listsToReadAgain = OriginalNameLists.None;
-            if (lists.HasFlag(OriginalNameLists.Statuses) && !statusListReadAgainThisRefresh)
-            {
-                listsToReadAgain |= OriginalNameLists.Statuses;
-            }
-
-            if (lists.HasFlag(OriginalNameLists.IssueTypes) && !issueTypeListReadAgainThisRefresh)
-            {
-                listsToReadAgain |= OriginalNameLists.IssueTypes;
-            }
+            var listsToReadAgain = ListsNotYetReadAgain(lists);
 
             if ((missingStatusIds.Count == 0 && missingIssueTypeIds.Count == 0) || listsToReadAgain == OriginalNameLists.None)
             {
                 return (names, missingStatusIds, missingIssueTypeIds);
             }
 
-            if (listsToReadAgain.HasFlag(OriginalNameLists.Statuses))
+            ForgetForReadingAgain(listsToReadAgain);
+
+            names = await OriginalNamesOf(client, deployment, readFor, cancellationToken, lists);
+
+            return (names, names.StatusIdsItDoesNotKnow(statusIds), names.IssueTypeIdsItDoesNotKnow(issueTypeIds));
+        }
+
+        private OriginalNameLists ListsNotYetReadAgain(OriginalNameLists lists)
+        {
+            var notYetReadAgain = OriginalNameLists.None;
+
+            if (lists.HasFlag(OriginalNameLists.Statuses) && !statusListReadAgainThisRefresh)
+            {
+                notYetReadAgain |= OriginalNameLists.Statuses;
+            }
+
+            if (lists.HasFlag(OriginalNameLists.IssueTypes) && !issueTypeListReadAgainThisRefresh)
+            {
+                notYetReadAgain |= OriginalNameLists.IssueTypes;
+            }
+
+            return notYetReadAgain;
+        }
+
+        private void ForgetForReadingAgain(OriginalNameLists lists)
+        {
+            if (lists.HasFlag(OriginalNameLists.Statuses))
             {
                 statusListReadAgainThisRefresh = true;
                 statusNamesReadThisRefresh = null;
             }
 
-            if (listsToReadAgain.HasFlag(OriginalNameLists.IssueTypes))
+            if (lists.HasFlag(OriginalNameLists.IssueTypes))
             {
                 issueTypeListReadAgainThisRefresh = true;
                 issueTypeNamesReadThisRefresh = null;
             }
-
-            names = await OriginalNamesOf(client, deployment, readFor, cancellationToken, lists);
-
-            return (names, names.StatusIdsItDoesNotKnow(statusIds), names.IssueTypeIdsItDoesNotKnow(issueTypeIds));
         }
 
         private static string? IdOfField(JsonElement jsonIssue, string fieldName)
@@ -2499,19 +2523,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return JiraOriginalNames.AsReported;
             }
 
-            var statuses = lists.HasFlag(OriginalNameLists.Statuses)
-                ? await StatusNamesOf(client, readFor, cancellationToken)
-                : null;
-            var issueTypes = lists.HasFlag(OriginalNameLists.IssueTypes)
-                ? await IssueTypeNamesOf(client, readFor, cancellationToken)
-                : null;
-
-            if (statuses is null || issueTypes is null)
+            switch (lists)
             {
-                return (statuses ?? issueTypes)!;
-            }
+                case OriginalNameLists.Statuses:
+                    return await StatusNamesOf(client, readFor, cancellationToken);
+                case OriginalNameLists.IssueTypes:
+                    return await IssueTypeNamesOf(client, readFor, cancellationToken);
+                default:
+                    var statuses = await StatusNamesOf(client, readFor, cancellationToken);
+                    var issueTypes = await IssueTypeNamesOf(client, readFor, cancellationToken);
 
-            return JiraOriginalNames.Combining(statuses, issueTypes);
+                    return JiraOriginalNames.Combining(statuses, issueTypes);
+            }
         }
 
         private async Task<JiraOriginalNames> StatusNamesOf(
