@@ -1,5 +1,12 @@
 import type React from "react";
-import { createElement, useCallback, useEffect, useRef, useState } from "react";
+import {
+	createElement,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	type SnackbarAction,
 	type TakeTheMessageBack,
@@ -124,12 +131,16 @@ export const useReportPdfExport = (
 		};
 
 	const exporting = frames.current;
+	const printing = useMemo(
+		() => (exporting === undefined ? [] : [exporting.printing]),
+		[exporting],
+	);
 	const frame =
 		exporting === undefined
 			? null
 			: createElement(PrintFrameHost, {
 					key: exporting.attempt,
-					reports: [exporting.printing],
+					reports: printing,
 					tell: tellFor(exporting),
 				});
 

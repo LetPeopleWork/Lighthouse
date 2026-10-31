@@ -1,5 +1,5 @@
 import type React from "react";
-import { createElement, Fragment, useState } from "react";
+import { createElement, Fragment, useMemo, useState } from "react";
 import type { IReportListItem } from "../../models/Reports/Report";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
 import { UsageDataEventName } from "../../services/Api/UsageDataService";
@@ -128,12 +128,16 @@ export const useReportsPdfExport = (
 				});
 
 	const exporting = frames.current;
+	const printing = useMemo(
+		() => exporting?.printing.map(printedReportOf) ?? [],
+		[exporting],
+	);
 	const frameHost =
 		exporting === undefined
 			? null
 			: createElement(PrintFrameHost, {
 					key: exporting.attempt,
-					reports: exporting.printing.map(printedReportOf),
+					reports: printing,
 					tell: tellFor(exporting),
 				});
 

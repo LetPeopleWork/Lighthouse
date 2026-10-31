@@ -140,7 +140,10 @@ const ReportPrintBundle: React.FC<ReportPrintBundleProps> = ({
 		);
 	});
 
-	return renderSheet(bundleLookOf(reports, looks), drawn);
+	// Kept while nothing it is made of changes, so the failure it carries is the same object from one drawing to the next.
+	const look = useMemo(() => bundleLookOf(reports, looks), [reports, looks]);
+
+	return renderSheet(look, drawn);
 };
 
 export default ReportPrintBundle;
