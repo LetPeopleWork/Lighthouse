@@ -46,9 +46,9 @@ namespace Lighthouse.Backend.API
                 return ValidationProblem("A run names at least one owner, and every owner needs a known kind and its id.");
             }
 
-            if (asked.Count > IReportBulkCommands.MostOwnersPerRun)
+            if (asked.Count > ReportBulkRun.MostPerRun)
             {
-                return ValidationProblem($"A run holds at most {IReportBulkCommands.MostOwnersPerRun} Teams and Portfolios.");
+                return ValidationProblem($"A run holds at most {ReportBulkRun.MostPerRun} Teams and Portfolios.");
             }
 
             var outcomes = await bulkCommands.CreateForEach(asked, newReport, new ReportOwnerWriteAccess(rbacAdministrationService, User));
@@ -63,9 +63,9 @@ namespace Lighthouse.Backend.API
                 return ValidationProblem("A removal names at least one report.");
             }
 
-            if (asked.Count > IReportBulkCommands.MostOwnersPerRun)
+            if (asked.Count > ReportBulkRun.MostPerRun)
             {
-                return ValidationProblem($"A removal holds at most {IReportBulkCommands.MostOwnersPerRun} reports.");
+                return ValidationProblem($"A removal holds at most {ReportBulkRun.MostPerRun} reports.");
             }
 
             var outcomes = await bulkRemover.RemoveEach(asked, new ReportOwnerWriteAccess(rbacAdministrationService, User));

@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task A_run_naming_one_Team_twice_counts_it_once_against_the_ceiling_and_keeps_its_first_place()
         {
-            var distinct = Enumerable.Range(1, IReportBulkCommands.MostOwnersPerRun).Select(ReportOwner.Team).ToList();
+            var distinct = Enumerable.Range(1, ReportBulkRun.MostPerRun).Select(ReportOwner.Team).ToList();
             var named = new List<ReportOwner>([.. distinct, distinct[0]]);
 
             var answer = await Subject().CreateForEach(ARunFor(named.Select(owner => (ReportOwnerKind?)owner.Kind), named.Select(owner => owner.Id)));
@@ -74,13 +74,13 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task A_run_over_the_ceiling_is_refused_naming_the_ceiling()
         {
-            var tooMany = Enumerable.Range(1, IReportBulkCommands.MostOwnersPerRun + 1).ToList();
+            var tooMany = Enumerable.Range(1, ReportBulkRun.MostPerRun + 1).ToList();
 
             var answer = await Subject().CreateForEach(ARunFor(tooMany.Select(_ => (ReportOwnerKind?)ReportOwnerKind.Team), tooMany));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(DetailOf(answer), Is.EqualTo($"A run holds at most {IReportBulkCommands.MostOwnersPerRun} Teams and Portfolios."));
+                Assert.That(DetailOf(answer), Is.EqualTo($"A run holds at most {ReportBulkRun.MostPerRun} Teams and Portfolios."));
                 bulkCommands.VerifyNoOtherCalls();
             }
         }
@@ -100,13 +100,13 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         public async Task A_removal_over_the_ceiling_is_refused_naming_the_ceiling()
         {
-            var tooMany = Enumerable.Range(1, IReportBulkCommands.MostOwnersPerRun + 1).ToList();
+            var tooMany = Enumerable.Range(1, ReportBulkRun.MostPerRun + 1).ToList();
 
             var answer = await Subject().RemoveEach(new ReportRemovalRequest { ReportIds = tooMany });
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(DetailOf(answer), Is.EqualTo($"A removal holds at most {IReportBulkCommands.MostOwnersPerRun} reports."));
+                Assert.That(DetailOf(answer), Is.EqualTo($"A removal holds at most {ReportBulkRun.MostPerRun} reports."));
                 bulkRemover.VerifyNoOtherCalls();
             }
         }

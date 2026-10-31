@@ -2,6 +2,12 @@ using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.Models.Reports
 {
+    public static class ReportBulkRun
+    {
+        /// <summary>The most Teams and Portfolios one bulk creation may name, and the most reports one bulk removal may name; a longer request is refused whole.</summary>
+        public const int MostPerRun = 50;
+    }
+
     public enum ReportCreationStatus
     {
         [JsonStringEnumMemberName("created")]
