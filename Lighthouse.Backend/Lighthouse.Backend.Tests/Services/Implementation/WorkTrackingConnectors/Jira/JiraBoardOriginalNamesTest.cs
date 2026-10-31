@@ -357,7 +357,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The board load still reads the lists on its own")]
         public async Task Loading_the_board_reads_the_status_list_once_and_the_work_item_type_list_once()
         {
             var paths = new List<string>();
@@ -376,7 +375,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The board load and the refresh do not share one read of each list yet")]
         public async Task A_board_load_then_a_refresh_on_one_connector_reads_each_list_once()
         {
             var instance = new JiraInstanceStub()

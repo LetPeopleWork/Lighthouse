@@ -72,7 +72,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Waiting for the original names to be read")]
         public async Task The_demo_board_lists_the_same_states_and_types_through_both_accounts()
         {
             var inEnglish = await english.GetBoardInformation(englishConnection, DemoBoard);
@@ -89,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Waiting for the original names to be read")]
         public async Task The_scrum_board_lists_the_custom_German_status_next_to_the_English_ones_through_both_accounts()
         {
             var inEnglish = await english.GetBoardInformation(englishConnection, ScrumBoard);
@@ -107,7 +105,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Waiting for the original names to be read")]
         public async Task A_board_naming_one_state_under_several_status_ids_lists_it_once_through_both_accounts()
         {
             var inEnglish = await english.GetBoardInformation(englishConnection, DuplicateNamesBoard);
@@ -127,7 +124,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Waiting for the original names to be read")]
         public async Task The_demo_projects_work_items_have_the_same_states_types_and_dates_through_both_accounts()
         {
             var board = await english.GetBoardInformation(englishConnection, DemoBoard);
@@ -153,7 +149,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Waiting for the original names to be read")]
         public async Task The_item_in_the_custom_German_status_has_that_state_through_both_accounts()
         {
             var board = await english.GetBoardInformation(englishConnection, ScrumBoard);
