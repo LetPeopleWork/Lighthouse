@@ -51,9 +51,9 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.2",
-		"@stryker-mutator/core": "^10.0.0",
-		"@stryker-mutator/typescript-checker": "^10.0.0",
-		"@stryker-mutator/vitest-runner": "^10.0.0",
+		"@stryker-mutator/core": "^10.1.1",
+		"@stryker-mutator/typescript-checker": "^10.1.1",
+		"@stryker-mutator/vitest-runner": "^10.1.1",
 		"@tauri-apps/cli": "^2.12.4",
 		"@testing-library/dom": "^10.4.2",
 		"@testing-library/jest-dom": "^7.0.1",
