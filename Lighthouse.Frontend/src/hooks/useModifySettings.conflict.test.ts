@@ -255,6 +255,91 @@ describe("optimistic concurrency on settings auto-save", () => {
 		expect(result.current.saveState).not.toBe("conflict");
 	});
 
+	it("remembers the reloaded connection so reverting an edit after a reload sends no save", async () => {
+		const saveSettings = vi
+			.fn()
+			.mockRejectedValueOnce(conflict())
+			.mockResolvedValue(undefined);
+		const getSettings = vi
+			.fn()
+			.mockResolvedValueOnce(makeSettings({ concurrencyToken: "stale" }))
+			.mockResolvedValueOnce(
+				makeSettings({
+					dataRetrievalValue: "server-value",
+					concurrencyToken: "fresh",
+				}),
+			);
+		const args = makeArgs({ saveSettings, getSettings });
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "edited"));
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(result.current.saveState).toBe("conflict"));
+		await act(async () => {
+			await result.current.reloadAfterConflict();
+		});
+		await waitFor(() =>
+			expect(result.current.settings?.dataRetrievalValue).toBe("server-value"),
+		);
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "changed"));
+		act(() =>
+			result.current.updateSettings("dataRetrievalValue", "server-value"),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+
+		expect(saveSettings).toHaveBeenCalledTimes(1);
+	});
+
+	it("completes a reload after a conflict when the server connection matches no known system", async () => {
+		const saveSettings = vi.fn().mockRejectedValue(conflict());
+		const getSettings = vi
+			.fn()
+			.mockResolvedValueOnce(makeSettings({ concurrencyToken: "stale" }))
+			.mockResolvedValueOnce(
+				makeSettings({
+					workTrackingSystemConnectionId: 99,
+					dataRetrievalValue: "server-value",
+					concurrencyToken: "fresh",
+				}),
+			);
+		const args = makeArgs({ saveSettings, getSettings });
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "edited"));
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(result.current.saveState).toBe("conflict"));
+
+		await act(async () => {
+			await result.current.reloadAfterConflict();
+		});
+
+		expect(result.current.saveState).toBe("idle");
+		expect(result.current.settings?.dataRetrievalValue).toBe("server-value");
+	});
+
+	it("still loads when the stored connection matches none of the known systems", async () => {
+		const args = makeArgs({
+			getSettings: vi
+				.fn()
+				.mockResolvedValue(
+					makeSettings({ workTrackingSystemConnectionId: 99 }),
+				),
+		});
+		const { result } = renderHook(() => useModifySettings(args));
+
+		await waitFor(() => expect(result.current.loading).toBe(false));
+		expect(result.current.settings).not.toBeNull();
+	});
+
 	it("keeps the generic error path for non-409 failures", async () => {
 		const saveSettings = vi.fn().mockRejectedValue(new ApiError(500, "boom"));
 		const args = makeArgs({ saveSettings });
