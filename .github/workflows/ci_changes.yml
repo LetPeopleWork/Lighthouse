@@ -187,14 +187,15 @@ jobs:
           git diff --name-only $base_ref HEAD
           
           github_changes=$(git diff --name-only $base_ref HEAD | grep -q ^.github/workflows/ci.*\.yml && echo 'true' || echo 'false')
-          backend=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
+          . Scripts/test-selection/path-classifier.sh
+          diff_list=$(git diff --name-only $base_ref HEAD)
+          backend=$(classify_backend "$diff_list")
+          if [ "$github_changes" == "true" ]; then backend="true"; fi
           frontend=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.Frontend/|\.nvmrc$|Scripts/test-timings/)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
           e2e=$(git diff --name-only $base_ref HEAD | grep -Eq '^(Lighthouse.EndToEndTests/|\.nvmrc$)' || [ "$github_changes" == "true" ] && echo 'true' || echo 'false')
 
           # Per-connector path detection (slice-03b / CS-H). Workflow file changes
           # propagate to every output so a ci.*.yml edit reruns everything.
-          . Scripts/test-selection/path-classifier.sh
-          diff_list=$(git diff --name-only $base_ref HEAD)
           jira_connector=$(classify_jira "$diff_list")
           ado_connector=$(classify_ado "$diff_list")
           linear_connector=$(classify_linear "$diff_list")

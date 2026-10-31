@@ -104,6 +104,13 @@ assert "release: github=true"            "$(classify_github "$diff_release")"   
 assert "jira-only: github=false"         "$(classify_github "$diff_jira_only")"    "false"
 assert "docs-only: github=false"         "$(classify_github "$diff_docs_only")"    "false"
 
+# Scenario 16: the backend suite runs for backend sources, backend tests and test-timing scripts
+assert "backend: backend source=true"    "$(classify_backend "$diff_shared_enum")"  "true"
+assert "backend: backend tests=true"     "$(classify_backend "$diff_linear_only")"  "true"
+assert "backend: test-timings=true"      "$(classify_backend $'Scripts/test-timings/merge.sh')" "true"
+assert "backend: docs+frontend=false"    "$(classify_backend "$diff_docs_only")"    "false"
+assert "backend: .github/actions=false"  "$(classify_backend $'.github/actions/publish/action.yml')" "false"
+
 echo
 echo "passed: $pass"
 echo "failed: $fail"
