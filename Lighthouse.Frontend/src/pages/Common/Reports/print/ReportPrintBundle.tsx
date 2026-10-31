@@ -15,7 +15,7 @@ import ReportPrintContent, {
 } from "./ReportPrintContent";
 
 /** The name the PDF of several reports is offered under. */
-export const SEVERAL_REPORTS_TITLE = "Lighthouse reports";
+const SEVERAL_REPORTS_TITLE = "Lighthouse reports";
 
 const PREPARING_LOOK: PrintPageLook = {
 	state: "preparing",
@@ -27,8 +27,8 @@ const READY_LOOK: PrintPageLook = { state: "ready", failure: { retry: false } };
 const ON_A_PAGE_OF_ITS_OWN = { breakBefore: "page" };
 
 const partStateOf = (state: PrintPageState): BundlePartState => {
-	if (state === "ready" || state === "preparing") return state;
-	return "failed";
+	if (state === "failedRetryable" || state === "failedFinal") return "failed";
+	return state;
 };
 
 const keyOf = ({ owner, reportId }: PrintedReport) =>
@@ -53,41 +53,24 @@ const Part: React.FC<PartProps> = ({ partKey, look, tell, children }) => {
 	return <>{children}</>;
 };
 
-const isAReportReadFailure = (state: PrintPageState): boolean =>
-	state === "failedRetryable" || state === "failedFinal";
-
-/**
- * Where the whole PDF stands: ready when every report is. A failure waits until no report is still preparing, so the
- * reader is told of every report that could not be read, in the given order, all at once, and the PDF takes on the
- * first one's look. With no report unread, it fails as the first part of the page that failed.
- */
+/** The whole PDF's look: a failed PDF takes the failing report's look and names every report that could not be read. */
 const bundleLookOf = (
 	reports: readonly PrintedReport[],
 	looks: Readonly<Record<string, PrintPageLook>>,
 ): PrintPageLook => {
-	const partLooks = reports.map(
-		(report) => looks[keyOf(report)] ?? PREPARING_LOOK,
-	);
 	const bundle = bundleStateOf(
-		reports.map((report, index) => ({
-			reportId: report.reportId,
-			state: partStateOf(partLooks[index].state),
-		})),
+		reports.map((report) => {
+			const look = looks[keyOf(report)] ?? PREPARING_LOOK;
+			return { ...report, state: partStateOf(look.state), look };
+		}),
 	);
+	if (bundle.look === "preparing") return PREPARING_LOOK;
 	if (bundle.look === "ready") return READY_LOOK;
-	if (partLooks.some((look) => look.state === "preparing"))
-		return PREPARING_LOOK;
-	const failedReports = reports.filter((_, index) =>
-		isAReportReadFailure(partLooks[index].state),
-	);
-	const firstFailed =
-		partLooks.find((look) => isAReportReadFailure(look.state)) ??
-		partLooks.find((look) => partStateOf(look.state) === "failed");
-	if (firstFailed === undefined) return PREPARING_LOOK;
-	if (failedReports.length === 0) return firstFailed;
+	const { look } = bundle.failingAs;
+	if (bundle.failedReports.length === 0) return look;
 	return {
-		state: firstFailed.state,
-		failure: { ...firstFailed.failure, failedReports },
+		state: look.state,
+		failure: { ...look.failure, failedReports: bundle.failedReports },
 	};
 };
 
