@@ -8778,3 +8778,45 @@ jobs:
         Importance 4 - the onboarding failure in the evidence; held below 5 because decision 4 moved
         skipping out of scope. Satisfaction 1 - only the per-Feature warning, after the fact. Desk estimates
         (OS3 I7 S2 = 12, OS5 12 in diverge/job-analysis.md).
+
+  - id: job-config-admin-configure-jira-in-its-original-names
+    title: Configure a Jira Team in the original names, whatever language the token account uses
+    persona: config-admin
+    feature_context: story-6453-jira-original-names
+    created: 2026-10-31
+    note: >
+      NEW in DISCUSS of story-6453-jira-original-names (ADO #6453). Jira Cloud translates status, status
+      category and issue type names into the token account's profile language; Lighthouse matched on those
+      names, so a German token account got an empty Load from board. Maintainer decision 2026-10-31: always
+      the original (untranslated) names, no migration of stored translated names.
+    job_story: >
+      When I connect Lighthouse to Jira with a token whose account uses a language other than English,
+      I want Lighthouse to show and match the same status and work item type names an English account gets,
+      so loading from a board fills my states, every item lands in the right state, and I never guess which
+      language to type.
+    dimensions:
+      functional: >
+        Load from board fills To Do / Doing / Done and the work item types with original names, each once;
+        refresh reads current state and type in those names (history already is original).
+      emotional: >
+        From "is it broken, or do I need German names?" to "it loaded, I saved it".
+      social: >
+        The admin can hand the setup to a colleague with another language and nothing changes.
+    forces:
+      push: >
+        Load from board shows nothing; suggestions show names twice; no hint which language applies.
+      pull: >
+        Jira already keeps an original name per status and type, and stable IDs everywhere.
+      anxiety: >
+        "Will my Team configured in German break?" Teams configured in German stop matching by decision and need Load
+        from board again; with the one full refresh after the upgrade (DD-11), Teams configured in English on a German-token
+        account are repaired without admin action.
+      habit: >
+        Typing the names as the Jira UI shows them, in the admin's own language.
+    opportunity_score:
+      importance: 4
+      current_satisfaction: 1
+      gap: 3
+      rationale: >
+        Importance 4 - blocks Load from board for any non-English token account on Jira Cloud. Satisfaction 1 -
+        the only workaround is guessing translated names, which the board load still cannot fill.
