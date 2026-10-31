@@ -194,3 +194,48 @@ Unchanged: Dockerfile -o /app/publish, bin/ + obj/, ci_codesign-windows (its own
 - Publish root: `artifacts/publish/<rid>` at the repo root, as recommended.
 - Ratchet: add the guard test (empty offender list, fails on an empty scan).
 - DESIGN approved; go to DEVOPS.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-10-31)
+
+Every platform decision is the project's existing one. S11 changes where the backend's publish output is written
+and read; nothing is deployed, built or served differently.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | Unchanged. The release artifacts (win-x64, linux-x64, osx-arm64 single files, the Docker image, the Standalone bundles) carry the same file set; only the runner-local folder they are staged in moves to `artifacts/publish/<rid>`. |
+| CI/CD platform | GitHub Actions, existing workflows. No new job or workflow. One edit to `ci_changes.yml` (below). |
+| Branching | Trunk-based on `main`. |
+| Observability | N/A, because no runtime behaviour changes. |
+| Continuous learning / flags | N/A, because there is nothing a user can see to roll out. |
+| Mutation testing | **N/A, because S11 adds no production code.** The only C# is the guard test; the rest is YAML, JSON and an ignore file. Recorded at the final gate rather than run on an empty mutate set. |
+| Usage-data event | **N/A, because S11 is behaviour-free build housekeeping**: nothing a user does changes, so there is no use to count. |
+| Security | No secret, permission or token scope changes. `package-app`'s upload paths change, not what is uploaded. |
+
+## Wave: DEVOPS / [REF] CI pipeline outline
+
+- **Publish and package:** `build-backend` (`publish: 'true'`) writes `artifacts/publish/<rid>` and strips
+  `appsettings.Development.json` there; `package-app` chmods and uploads from there; `ci_package-macos-standalone`
+  reads `ARM64_DIR` from there. Upload artifact names stay the same, so every downstream `download-artifact` is
+  unaffected.
+- **Where the guard runs:** the backend unit suite (`ci_backend` via `ci_changes.yml` → `backend=true`). Today
+  `backend` is true for `Lighthouse.Backend/`, `Scripts/test-timings/` and any `.github/workflows/ci*.yml` change.
+  **Maintainer decision (2026-10-31): widen this so `.github/actions/**` changes also run the backend suite**,
+  because the composite actions hold 9 of the 14 old references. The widening goes into the `backend` regex only,
+  not into `github_changes`: `github_changes` also fans out to every live-connector output, and an action edit
+  should not make real Jira, Linear, ADO and ServiceNow calls (the Linear key is shared with CI). DISTILL pins it.
+- **Accepted lag:** a change to `Lighthouse.Frontend/package.json` or the `Dockerfile` alone does not run the
+  backend suite; a reintroduced path there is caught on the next backend run. Accepted because both change often
+  (Renovate) and running the backend on each would cost far more than the lag.
+- **Sonar:** the guard is test code; `dotnet build` with `TreatWarningsAsErrors` must stay clean.
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+See `environments.yaml`: a clean CI checkout on all three runners, and a developer checkout that still holds the
+old in-project `publish/`. Nothing installs or runs differently between them.
+
+## Wave: DEVOPS / [REF] Risks for DISTILL and DELIVER
+
+- **The verify workflows.** `ci_verifywindows` / `ci_verifymacos` use their own `./publish/` for downloaded
+  bundles and the Standalone's pid and log. They are not consumers and must not be edited by a careless replace.
+- **Behaviour-free proof needs a real publish.** DELIVER publishes each RID before and after (old `-o` vs new) and
+  compares `find -type f` lists and sizes, excluding the nested `publish/` junk from the before side.

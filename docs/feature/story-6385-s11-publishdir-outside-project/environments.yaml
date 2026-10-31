@@ -1,0 +1,46 @@
+# Environment inventory - story-6385-s11-publishdir-outside-project
+# Consumed by DISTILL for environmental realism.
+#
+# Behaviour-free: the backend's publish output moves from inside the project folder to artifacts/publish/<rid>
+# at the repo root. What is published (files, sizes) does not change; only where CI, packaging and the frontend's
+# update-sidecar script write and read it. One architecture test guards the old path.
+
+target_environments:
+  - name: clean
+    description: >
+      A fresh checkout on a CI runner: `build-backend` publishes win-x64, linux-x64 and osx-arm64 to
+      artifacts/publish/<rid>, `package-app` uploads them, the Standalone packaging jobs pick them up.
+    platform: [linux, macos, windows]
+    preconditions: []
+  - name: with-stale-in-project-publish
+    description: >
+      A developer checkout that still holds Lighthouse.Backend/Lighthouse.Backend/publish/ from before (the main
+      checkout has 151 MB, nested three deep). The new path must not read it, a publish must not pick up its
+      *.json as content again, and it must stay out of a Docker build context only once the maintainer deletes it
+      (it is not in .dockerignore; the new artifacts/ is).
+    platform: [linux, macos, windows]
+    preconditions:
+      - "Lighthouse.Backend/Lighthouse.Backend/publish/ present from an earlier publish"
+
+coexistence_matrix:
+  - tool: Docker build (Dockerfile, -o /app/publish inside the image)
+    must_not_break: true
+    note: "Unchanged; .dockerignore gains `artifacts` so local publish output stays out of the build context"
+  - tool: ci_codesign-windows (downloads into ./artifacts/server and ./artifacts/standalone)
+    must_not_break: true
+    note: "Different job and disjoint sub-folders from artifacts/publish"
+  - tool: Tauri Standalone packaging (Linux, macOS, Windows jobs; build-tauri-local.sh uses ./temp_publish)
+    must_not_break: true
+  - tool: Stryker.NET, EF migration DLL HintPaths, test output
+    must_not_break: true
+    note: "bin/ and obj/ do not move"
+  - tool: lefthook pre-commit (secret scan, Biome)
+    must_not_break: true
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest, macos-latest, windows-latest]
+  Developer: [Linux, macOS, Windows]
+
+deployment_assumptions:
+  - "Ships with the next regular Lighthouse release; the release artifacts are byte-for-byte the same file set"
+  - "Rollback is reverting the path strings; nothing is persisted"
