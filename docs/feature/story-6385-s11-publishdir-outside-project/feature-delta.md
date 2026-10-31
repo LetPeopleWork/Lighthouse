@@ -57,19 +57,19 @@ From the Epic's `feature-delta.md`, by heading. Linked, not copied:
 
 ## Wave: PICK-UP / Checklist
 
-- [ ] Behaviour-free: published file set identical per RID (CI sequence: minus the nested JSON copies, see Demo Evidence), size within noise; routes, DTOs, pixels, topologies unchanged.
-- [ ] Existing API, E2E and response tests green unmodified.
-- [ ] Ratchet in the same change: whatever guard DESIGN chooses against the old path coming back (or "none, because …" stated).
-- [ ] Moves separate from edits (here: the path change is one edit commit per consumer group, no code moves).
-- [ ] Re-count before designing (done above).
-- [ ] Mutation last, on frozen code: N/A expected, because no production C# or TS changes; DESIGN confirms.
-- [ ] `ARCHITECTURE.md` and any ADR whose decision changed, updated in the same change.
-- [ ] Payoff proven: local nesting gone after two publishes in a row; CI and release pipelines green on the new path.
-- [ ] No user-facing release notes.
-- [ ] One context at a time: N/A, because no context is packaged.
-- [ ] Terminology: N/A, no new names in user-facing text.
-- [ ] Cross-cutting re-check answered (above).
-- [ ] `pnpm build` and `dotnet build` clean before push.
+- [x] Behaviour-free: published file set identical per RID (CI sequence: minus the nested JSON copies, see Demo Evidence), size within noise; routes, DTOs, pixels, topologies unchanged.
+- [x] Existing API, E2E and response tests green unmodified.
+- [x] Ratchet in the same change: whatever guard DESIGN chooses against the old path coming back (or "none, because …" stated).
+- [x] Moves separate from edits (here: the path change is one edit commit per consumer group, no code moves).
+- [x] Re-count before designing (done above).
+- [x] Mutation last, on frozen code: N/A expected, because no production C# or TS changes; DESIGN confirms.
+- [x] `ARCHITECTURE.md` and any ADR whose decision changed, updated in the same change.
+- [x] Payoff proven: local nesting gone after two publishes in a row; CI and release pipelines green on the new path.
+- [x] No user-facing release notes.
+- [x] One context at a time: N/A, because no context is packaged.
+- [x] Terminology: N/A, no new names in user-facing text.
+- [x] Cross-cutting re-check answered (above).
+- [x] `pnpm build` and `dotnet build` clean before push.
 
 ## Wave: DESIGN / [REF] Options
 
