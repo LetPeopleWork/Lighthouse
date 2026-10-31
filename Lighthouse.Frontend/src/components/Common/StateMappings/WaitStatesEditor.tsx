@@ -3,6 +3,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
+import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -21,9 +22,9 @@ const WaitStatesEditor: React.FC<WaitStatesEditorProps> = ({
 }) => {
 	const [isConfigured, setIsConfigured] = useState(waitStates.length > 0);
 
-	const mappingNames = stateMappings
-		.filter((mapping) => mapping.name.trim() !== "")
-		.map((mapping) => mapping.name);
+	const mappingNames = withoutIncompleteMappings(stateMappings).map(
+		(mapping) => mapping.name,
+	);
 
 	const suggestions = [...doingStates, ...mappingNames];
 

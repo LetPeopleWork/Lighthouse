@@ -25,6 +25,7 @@ import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation"
 import {
 	mappingAutoSaveBlockers,
 	validateStateMappings,
+	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -245,11 +246,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={false}
-							stateMappingNames={
-								projectSettings.stateMappings
-									?.filter((m) => m.name.trim() !== "")
-									.map((m) => m.name) || []
-							}
+							stateMappingNames={withoutIncompleteMappings(
+								projectSettings.stateMappings ?? [],
+							).map((m) => m.name)}
 						/>
 
 						<StateMappingsEditor

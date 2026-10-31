@@ -140,7 +140,9 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
+		stateMappingNames,
 	}: {
+		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -150,6 +152,9 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
+			<div data-testid="state-mapping-names">
+				{(stateMappingNames ?? []).join("|")}
+			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -791,6 +796,22 @@ describe("ModifyTeamSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
+		});
+
+		it("offers only complete mappings as state options", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "Half", states: [] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
+				/^First$/,
+			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {
