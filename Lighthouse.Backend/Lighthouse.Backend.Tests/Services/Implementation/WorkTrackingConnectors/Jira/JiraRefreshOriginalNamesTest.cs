@@ -115,7 +115,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the original names yet")]
         public async Task A_status_that_appears_after_the_lists_are_read_again_is_resolved_with_one_extra_read_of_each_list()
         {
             var instance = new JiraInstanceStub()
@@ -137,7 +136,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the original names yet")]
         public async Task A_second_missing_id_in_the_same_refresh_fails_without_a_third_read()
         {
             var instance = new JiraInstanceStub().ReadBy(JiraWireFormat.AGermanReadersStatuses, JiraWireFormat.AGermanReadersIssueTypes);

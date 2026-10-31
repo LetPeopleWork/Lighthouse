@@ -69,7 +69,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(false, "Portfolio")]
         [TestCase(true, "Validation")]
         [TestCase(false, "Validation")]
-        [Ignore("The refresh does not check the ids against the lists yet")]
         public async Task An_id_the_list_still_lacks_after_one_more_read_stops_the_refresh_naming_the_id(bool statusList, string owner)
         {
             var instance = AnInstanceWhoseSearchReportsAnIdTheListsLack(statusList);
@@ -94,7 +93,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore("The refresh does not check the ids against the lists yet")]
         public async Task An_id_the_list_still_lacks_is_logged_at_error_naming_the_id(bool statusList)
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();

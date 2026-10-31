@@ -110,6 +110,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private JiraOriginalNames? originalNamesReadThisRefresh;
 
+        private bool listsReadAgainThisRefresh;
+
         /// <summary>
         /// The Portfolios already told this refresh that their Dependency Field names a phrase several link
         /// types share. A refresh reads a Portfolio's Features in more than one download, and the same
@@ -2289,15 +2291,85 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             await SetStoredFieldKeys(client, workItemQueryOwner.WorkTrackingSystemConnectionId);
 
-            var originalNames = await OriginalNamesOf(client, deployment, ReadForOwnerOf(workItemQueryOwner, maxResultsOverride), cancellationToken);
+            var readFor = ReadForOwnerOf(workItemQueryOwner, maxResultsOverride);
+            await OriginalNamesOf(client, deployment, readFor, cancellationToken);
+
+            Task<JiraOriginalNames> NamesCovering(IReadOnlyList<JsonElement> page)
+                => OriginalNamesCoveringOrThrow(client, deployment, readFor, page, cancellationToken);
 
             if (deployment == JiraDeployment.Cloud)
             {
-                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride, originalNames, cancellationToken);
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride, NamesCovering, cancellationToken);
             }
 
-            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride, originalNames, cancellationToken);
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride, NamesCovering, cancellationToken);
         }
+
+        /// <summary>
+        /// The names to read a page of issues with. An id Jira reports but its lists lack may simply be newer
+        /// than the lists were when they were read, so the lists are read once more; an id still missing after
+        /// that stops the refresh, because the only name left to give it is a translated one.
+        /// </summary>
+        private async Task<JiraOriginalNames> OriginalNamesCoveringOrThrow(
+            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
+        {
+            var (names, missingStatusIds, missingIssueTypeIds) = await NamesAndTheIdsStillMissing(client, deployment, readFor, page, cancellationToken);
+
+            if (missingStatusIds.Count > 0)
+            {
+                throw LoggedAsError(JiraReadException.StatusIdNotInList(readFor, missingStatusIds[0]));
+            }
+
+            if (missingIssueTypeIds.Count > 0)
+            {
+                throw LoggedAsError(JiraReadException.IssueTypeIdNotInList(readFor, missingIssueTypeIds[0]));
+            }
+
+            return names;
+        }
+
+        private JiraReadException LoggedAsError(JiraReadException refused)
+        {
+            logger.LogError("{Detail}", refused.Verdict.TechnicalDetails);
+            return refused;
+        }
+
+        /// <summary>
+        /// Looks the page's status and type ids up, and when some are missing reads both lists again - at most
+        /// once for the life of this connector - before answering which ids are still missing.
+        /// </summary>
+        private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingStatusIds, IReadOnlyList<string> MissingIssueTypeIds)> NamesAndTheIdsStillMissing(
+            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
+        {
+            var statusIds = page.Select(issue => IdOfField(issue, JiraFieldNames.StatusFieldName)).ToList();
+            var issueTypeIds = page.Select(issue => IdOfField(issue, JiraFieldNames.IssueTypeFieldName)).ToList();
+
+            var names = await OriginalNamesOf(client, deployment, readFor, cancellationToken);
+            var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
+            var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);
+
+            if ((missingStatusIds.Count == 0 && missingIssueTypeIds.Count == 0) || listsReadAgainThisRefresh)
+            {
+                return (names, missingStatusIds, missingIssueTypeIds);
+            }
+
+            listsReadAgainThisRefresh = true;
+            originalNamesReadThisRefresh = null;
+
+            names = await OriginalNamesOf(client, deployment, readFor, cancellationToken);
+
+            return (names, names.StatusIdsItDoesNotKnow(statusIds), names.IssueTypeIdsItDoesNotKnow(issueTypeIds));
+        }
+
+        private static string? IdOfField(JsonElement jsonIssue, string fieldName)
+            => jsonIssue.TryGetProperty(JiraFieldNames.FieldsFieldName, out var fields)
+                && fields.ValueKind == JsonValueKind.Object
+                && fields.TryGetProperty(fieldName, out var field)
+                && field.ValueKind == JsonValueKind.Object
+                && field.TryGetProperty(JiraFieldNames.IdPropertyName, out var id)
+                && id.ValueKind == JsonValueKind.String
+                    ? id.GetString()
+                    : null;
 
         private static JiraReadException.ReadFor ReadForOwnerOf(IWorkItemQueryOwner owner, int? maxResultsOverride)
         {
@@ -2406,7 +2478,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return false;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, JiraOriginalNames originalNames, CancellationToken cancellationToken)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, Func<IReadOnlyList<JsonElement>, Task<JiraOriginalNames>> namesCovering, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var startAt = 0;
@@ -2448,7 +2520,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
 
-                foreach (var jsonIssue in jsonResponse.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
+                var page = jsonResponse.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray().ToList();
+                var originalNames = await namesCovering(page);
+
+                foreach (var jsonIssue in page)
                 {
                     var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, originalNames: originalNames);
                     issues.Add(issue);
@@ -2464,7 +2539,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// could only ever replace the sentence naming what was wrong with a notice about an endpoint the
         /// operator never chose to call.
         /// </summary>
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, JiraOriginalNames originalNames, CancellationToken cancellationToken)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, Func<IReadOnlyList<JsonElement>, Task<JiraOriginalNames>> namesCovering, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
@@ -2476,8 +2551,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 maxResultsOverride ?? ResolveIssuesPerRequest(owner.WorkTrackingSystemConnection),
                 SinglePage: maxResultsOverride.HasValue);
 
-            var rejection = await WalkCloudSearchPages(client, request, async jsonIssue =>
-                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName, originalNames, cancellationToken)), cancellationToken);
+            var originalNames = JiraOriginalNames.AsReported;
+
+            var rejection = await WalkCloudSearchPages(
+                client,
+                request,
+                async jsonIssue => issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName, originalNames, cancellationToken)),
+                cancellationToken,
+                async page => originalNames = await namesCovering(page));
 
             if (rejection is not null)
             {
@@ -2658,7 +2739,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// identity sweep go through it, which is what keeps the two enumerating the same result set.
         /// Answers what Jira said when it rejects a page, and null when every page came back.
         /// </summary>
-        private static async Task<JiraRefusal?> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken)
+        private static async Task<JiraRefusal?> WalkCloudSearchPages(HttpClient client, CloudSearchRequest request, Func<JsonElement, Task> onIssue, CancellationToken cancellationToken, Func<IReadOnlyList<JsonElement>, Task>? onPage = null)
         {
             string? nextPageToken = null;
             var pageCount = 0;
@@ -2681,7 +2762,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 using var json = JsonDocument.Parse(body);
 
-                foreach (var jsonIssue in json.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
+                var page = json.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray().ToList();
+
+                if (onPage is not null)
+                {
+                    await onPage(page);
+                }
+
+                foreach (var jsonIssue in page)
                 {
                     await onIssue(jsonIssue);
                 }
