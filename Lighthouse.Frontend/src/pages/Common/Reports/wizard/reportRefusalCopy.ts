@@ -17,6 +17,7 @@ export type ReportRefusalCode =
 	| "name-missing"
 	| "name-too-long"
 	| "no-metric-shown"
+	| "duplicate-metric"
 	| "unknown-metric"
 	| "metric-not-captured"
 	| "template-not-supported"
@@ -92,6 +93,7 @@ const REFUSAL_COPY: Record<ReportRefusalCode, (words: RefusalWords) => string> =
 		"name-missing": () => "Give the report a name.",
 		"name-too-long": () => "A report name can be at most 200 characters.",
 		"no-metric-shown": () => "Choose at least one metric",
+		"duplicate-metric": () => "A metric is listed twice.",
 		"unknown-metric": () =>
 			"One of the chosen metrics isn't known to this version of Lighthouse.",
 		"metric-not-captured": () =>
