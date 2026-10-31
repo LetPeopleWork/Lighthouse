@@ -188,3 +188,9 @@ Unchanged: Dockerfile -o /app/publish, bin/ + obj/, ci_codesign-windows (its own
 2. Folder name: `artifacts/publish/<rid>` shares the `artifacts/` root with `ci_codesign-windows.yml`'s downloads (different job, disjoint sub-folders). Acceptable, or prefer a distinct root such as `out/publish/<rid>`? That needs a `.gitignore` line.
 3. Does the test-selection path classifier run the backend architecture tests when only `.github/**` and `package.json` change? If not, the guard runs only on the next backend change. DISTILL checks this; a decision is needed only if the classifier needs a rule.
 4. The maintainer deletes the stray local `Lighthouse.Backend/Lighthouse.Backend/publish/` in the main checkout (151 MB, untracked) after DELIVER; not touched here.
+
+## Wave: DESIGN / [REF] Maintainer decisions (2026-10-31)
+
+- Publish root: `artifacts/publish/<rid>` at the repo root, as recommended.
+- Ratchet: add the guard test (empty offender list, fails on an empty scan).
+- DESIGN approved; go to DEVOPS.
