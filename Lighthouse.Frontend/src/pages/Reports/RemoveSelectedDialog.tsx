@@ -158,7 +158,7 @@ const RemoveSelectedDialog: React.FC<Readonly<RemoveSelectedDialogProps>> = ({
 			<Confirmation
 				reports={reports}
 				onCancel={onCancel}
-				onRemove={() => removal.mutate(reports.map((report) => report.id))}
+				onRemove={() => removal.mutate(reports)}
 			/>
 		);
 	};

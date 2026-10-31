@@ -36,6 +36,7 @@ import {
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
 import { aReportService } from "../../tests/ReportsTestKit";
+import { ownerOfReport, reportQueryKeyOf } from "../Common/Reports/reportOwner";
 
 /**
  * Remove several reports at once, from the Reports page. The reader picks rows, confirms a dialog that lists every
@@ -491,6 +492,40 @@ describe("Remove several reports at once", () => {
 		expect(
 			screen.getByText(selectedCount(0), { exact: true }),
 		).toBeInTheDocument();
+	});
+
+	it(`each report the removal took, or found already gone, is forgotten, and one it could not remove is kept`, async () => {
+		const removeReportsInBulk = vi
+			.fn()
+			.mockResolvedValue([
+				removed(801),
+				removed(802, "already-gone"),
+				notRemoved(803, "not-admin"),
+			]);
+		const { user, queryClient } = renderTheReportsPage({
+			reportService: listing(theThreeOfThem(), removeReportsInBulk),
+		});
+		const readBefore = [zenithsQuarter, gravitysQuarter, oceanExplorersMonth];
+		const keyOf = (report: (typeof readBefore)[number]) =>
+			reportQueryKeyOf(ownerOfReport(report), report.id);
+		for (const report of readBefore) {
+			queryClient.setQueryData(keyOf(report), report);
+		}
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		await user.click(
+			within(await theConfirmation()).getByRole("button", {
+				name: removeCount(3),
+			}),
+		);
+		await screen.findByText(removedHeadline(2), { exact: true });
+
+		expect(
+			readBefore.map(
+				(report) => queryClient.getQueryData(keyOf(report)) !== undefined,
+			),
+		).toEqual([false, false, true]);
 	});
 });
 
