@@ -260,4 +260,14 @@ describe("Every printed page carries the report's line and the credit", () => {
 		);
 		expect(whatPrintAsksOf(theFooter(), "height")).toMatch(A_LENGTH_ON_PAPER);
 	});
+
+	// A table sized by its content grows as wide as the line's uncut name, pushing the page past the paper's edge;
+	// a fixed layout holds the table to the page's width, so the name is cut with its ellipsis instead.
+	it(`holds the printed table to the page's width, however long the names in the line`, async () => {
+		await thePrintedReportOf(LIGHTSPEED);
+
+		const [roomAbove] = theGroupsPrintedAs("table-header-group");
+		const report = roomAbove.parentElement as HTMLElement;
+		expect(whatPrintAsksOf(report, "table-layout")).toBe("fixed");
+	});
 });

@@ -63,7 +63,7 @@ const THE_REPORT = {
 	display: "flex",
 	flexDirection: "column",
 	gap: 2,
-	"@media print": { display: "table", width: "100%" },
+	"@media print": { display: "table", width: "100%", tableLayout: "fixed" },
 };
 const THE_REPORT_BODY = { "@media print": { display: "table-row-group" } };
 
