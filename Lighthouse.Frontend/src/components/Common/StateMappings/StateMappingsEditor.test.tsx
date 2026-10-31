@@ -342,6 +342,30 @@ describe("StateMappingsEditor", () => {
 			).toBeInTheDocument();
 		});
 
+		it("does not offer a state the mapping already groups", async () => {
+			const user = userEvent.setup();
+			const mappings: IStateMapping[] = [{ name: "Group", states: ["QA"] }];
+
+			render(
+				<StateMappingsEditor
+					stateMappings={mappings}
+					doingStates={["QA", "Review"]}
+					onChange={mockOnChange}
+				/>,
+			);
+
+			await act(async () => {
+				await user.click(screen.getByRole("combobox"));
+			});
+
+			expect(
+				screen.getByRole("option", { name: "Review" }),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByRole("option", { name: "QA" }),
+			).not.toBeInTheDocument();
+		});
+
 		it("shows 'No Doing states available' when all Doing states are used", async () => {
 			const user = userEvent.setup();
 			const mappings: IStateMapping[] = [

@@ -155,4 +155,70 @@ describe("validateStateMappings", () => {
 			'Duplicate mapping name: "Active".',
 		]);
 	});
+
+	it("treats a name of only spaces as empty and labels the mapping by its position", () => {
+		const mappings: IStateMapping[] = [{ name: "   ", states: [] }];
+		const result = validateStateMappings(mappings, lists());
+		expect(result).toEqual([
+			"Mapping at position 1 has an empty name.",
+			'Mapping "at position 1" has no source states.',
+		]);
+	});
+
+	it("labels a mapping without states by its name without surrounding spaces", () => {
+		const mappings: IStateMapping[] = [{ name: " Active ", states: [] }];
+		const result = validateStateMappings(mappings, lists());
+		expect(result).toEqual(['Mapping "Active" has no source states.']);
+	});
+
+	it("reports each name of only spaces as empty without calling them duplicates", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "", states: ["QA"] },
+			{ name: " ", states: ["Testing"] },
+		];
+		const result = validateStateMappings(mappings, lists());
+		expect(result).toEqual([
+			"Mapping at position 1 has an empty name.",
+			"Mapping at position 2 has an empty name.",
+		]);
+	});
+
+	it("names a duplicate mapping without surrounding spaces", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "Active", states: ["QA"] },
+			{ name: "  active ", states: ["Testing"] },
+		];
+		const result = validateStateMappings(mappings, lists());
+		expect(result).toEqual(['Duplicate mapping name: "active".']);
+	});
+
+	it("names the mapping and the Doing state without surrounding spaces", () => {
+		const mappings: IStateMapping[] = [
+			{ name: " In Arbeit ", states: ["In Progress"] },
+		];
+		const result = validateStateMappings(
+			mappings,
+			lists(["In Arbeit", "In Progress"]),
+		);
+		expect(result).toEqual([
+			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+		]);
+	});
+
+	it("names both mappings without surrounding spaces when a name is a state another mapping groups", () => {
+		const mappings: IStateMapping[] = [
+			{ name: " Active ", states: ["QA"] },
+			{ name: " Group ", states: ["active"] },
+		];
+		const result = validateStateMappings(mappings, lists());
+		expect(result).toEqual([
+			'Mapping "Active" has the same name as a state grouped by mapping "Group". Choose another name.',
+		]);
+	});
+
+	it("reports no clash with a To Do state for a mapping whose name is only spaces", () => {
+		const mappings: IStateMapping[] = [{ name: " ", states: ["QA"] }];
+		const result = validateStateMappings(mappings, lists([], [""]));
+		expect(result).toEqual(["Mapping at position 1 has an empty name."]);
+	});
 });

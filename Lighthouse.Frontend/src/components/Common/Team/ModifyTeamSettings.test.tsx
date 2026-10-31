@@ -734,6 +734,23 @@ describe("ModifyTeamSettings", () => {
 			);
 		});
 
+		it("tells the user which source state is used in more than one mapping", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				doingStates: ["Dev"],
+				stateMappings: [
+					{ name: "First", states: ["QA"] },
+					{ name: "Second", states: ["QA"] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			expect(
+				screen.getByText('Source state "QA" is used in multiple mappings.'),
+			).toBeInTheDocument();
+		});
+
 		it("renders no warning while the form can be saved", async () => {
 			await renderModifyTeamSettings();
 
