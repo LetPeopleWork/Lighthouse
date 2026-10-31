@@ -1,5 +1,5 @@
 import type React from "react";
-import { createElement, Fragment, useEffect, useRef, useState } from "react";
+import { createElement, Fragment, useState } from "react";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
 import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
@@ -7,6 +7,10 @@ import type { PrintedReport } from "../Common/Reports/print/bundleState";
 import PrintFrameHost from "../Common/Reports/print/PrintFrameHost";
 import type { PrintOutcome } from "../Common/Reports/print/usePrintOnce";
 import { ownerOfReport } from "../Common/Reports/reportOwner";
+import {
+	type PrintFrameAttempt,
+	usePrintFrameAttempts,
+} from "../Common/Reports/usePrintFrameAttempts";
 import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import NoPdfDialog from "./NoPdfDialog";
 
@@ -19,11 +23,7 @@ export interface ReportsPdfExport {
 	readonly frame: React.ReactNode;
 }
 
-interface Exporting {
-	readonly reports: readonly IReportAcrossOwners[];
-	/** Each export draws into a frame of its own. */
-	readonly attempt: number;
-}
+type Exporting = PrintFrameAttempt<readonly IReportAcrossOwners[]>;
 
 interface NoPdf {
 	readonly reports: readonly IReportAcrossOwners[];
@@ -63,21 +63,14 @@ export const useReportsPdfExport = (
 ): ReportsPdfExport => {
 	const reportUsage = useUsageDataReporter();
 	const single = useReportPdfExport(undefined);
-	const attempts = useRef(0);
-	const [exporting, setExporting] = useState<Exporting | undefined>();
+	const frames = usePrintFrameAttempts<readonly IReportAcrossOwners[]>();
 	const [preparing, setPreparing] = useState(false);
 	const [noPdf, setNoPdf] = useState<NoPdf | undefined>();
-	const frameRemoval = useRef<ReturnType<typeof setTimeout> | undefined>(
-		undefined,
-	);
-
-	useEffect(() => () => clearTimeout(frameRemoval.current), []);
 
 	const printFromAFreshFrame = (reports: readonly IReportAcrossOwners[]) => {
-		attempts.current += 1;
 		setNoPdf(undefined);
 		setPreparing(true);
-		setExporting({ reports, attempt: attempts.current });
+		frames.start(reports);
 	};
 
 	const isPreparing = preparing || single.preparingId !== undefined;
@@ -92,21 +85,12 @@ export const useReportsPdfExport = (
 		printFromAFreshFrame(reports);
 	};
 
-	// Never inside the dialog's own closing: some browsers say it closed before print() has returned.
-	const removeTheFrameOf = (attempt: number) => {
-		frameRemoval.current = setTimeout(() =>
-			setExporting((current) =>
-				current?.attempt === attempt ? undefined : current,
-			),
-		);
-	};
-
 	const tellFor =
-		({ reports, attempt }: Exporting) =>
+		({ printing: reports, attempt }: Exporting) =>
 		(outcome: PrintOutcome): void => {
 			setPreparing(false);
 			if (outcome.kind === "printing") return;
-			removeTheFrameOf(attempt);
+			frames.removeTheFrameOf(attempt);
 			if (outcome.kind === "failed")
 				setNoPdf({
 					reports,
@@ -133,12 +117,13 @@ export const useReportsPdfExport = (
 					onCancel: () => setNoPdf(undefined),
 				});
 
+	const exporting = frames.current;
 	const frameHost =
 		exporting === undefined
 			? null
 			: createElement(PrintFrameHost, {
 					key: exporting.attempt,
-					reports: exporting.reports.map(printedReportOf),
+					reports: exporting.printing.map(printedReportOf),
 					tell: tellFor(exporting),
 				});
 
