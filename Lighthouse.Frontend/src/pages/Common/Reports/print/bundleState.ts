@@ -1,5 +1,3 @@
-export const __SCAFFOLD__ = true;
-
 /** How far one report in a PDF of several has got. */
 export type BundlePartState = "preparing" | "ready" | "failed";
 
@@ -14,6 +12,14 @@ export interface IBundleState {
 	failedReportIds: number[];
 }
 
-export const bundleStateOf = (_parts: readonly IBundlePart[]): IBundleState => {
-	throw new Error("SCAFFOLD: the combined PDF is not built yet");
+export const bundleStateOf = (parts: readonly IBundlePart[]): IBundleState => {
+	const failedReportIds = parts
+		.filter((part) => part.state === "failed")
+		.map((part) => part.reportId);
+	if (failedReportIds.length > 0) {
+		return { look: "failed", failedReportIds };
+	}
+	const everyReady =
+		parts.length > 0 && parts.every((part) => part.state === "ready");
+	return { look: everyReady ? "ready" : "preparing", failedReportIds };
 };
