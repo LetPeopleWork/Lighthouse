@@ -16,8 +16,8 @@ target_environments:
     description: >
       A developer checkout that still holds Lighthouse.Backend/Lighthouse.Backend/publish/ from before (the main
       checkout has 151 MB, nested three deep). The new path must not read it, a publish must not pick up its
-      *.json as content again, and it must stay out of a Docker build context only once the maintainer deletes it
-      (it is not in .dockerignore; the new artifacts/ is).
+      *.json as content again, and it stays out of a Docker build context because .dockerignore lists both the old
+      in-project publish folder and the new artifacts/ folder.
     platform: [linux, macos, windows]
     preconditions:
       - "Lighthouse.Backend/Lighthouse.Backend/publish/ present from an earlier publish"
@@ -25,7 +25,22 @@ target_environments:
 coexistence_matrix:
   - tool: Docker build (Dockerfile, -o /app/publish inside the image)
     must_not_break: true
-    note: "Unchanged; .dockerignore gains `artifacts` so local publish output stays out of the build context"
+    note: "Unchanged; .dockerignore gains `artifacts` and the old in-project publish folder, trimming the build context only"
+  - tool: Docker build with the stale in-project publish/ present on disk
+    must_not_break: true
+    note: "Verified by building with the stale folder present: it is ignored, so the context does not carry it; the image's published files are unchanged"
+  - tool: Frontend `update-sidecar` script (Lighthouse.Frontend/package.json)
+    must_not_break: true
+    note: "Publishes linux-x64 and copies into src-tauri; verified by running `pnpm run update-sidecar` before and after and comparing names and sizes"
+  - tool: ci_verifysqlite, ci_verifypostgres, ci_verifyauth, ci_release (download Lighthouse-linux-x64 / win-x64 by artifact name)
+    must_not_break: true
+    note: "Artifact names are unchanged, so the downloads are unaffected; verified by those workflows being green on the push"
+  - tool: Guard test in the backend unit suite (PublishOutputOutsideProjectGuardTest)
+    must_not_break: true
+    note: "Runs under ci_backend; it reads build files but not .dockerignore, so the new ignore line does not trip it"
+  - tool: ci_verifywindows / ci_verifymacos (their own ./publish/ for downloaded bundles and the Standalone's pid and log)
+    must_not_break: true
+    note: "Not consumers of the backend publish output; must not be touched by a replace of the old path"
   - tool: ci_codesign-windows (downloads into ./artifacts/server and ./artifacts/standalone)
     must_not_break: true
     note: "Different job and disjoint sub-folders from artifacts/publish"
@@ -33,13 +48,18 @@ coexistence_matrix:
     must_not_break: true
   - tool: Stryker.NET, EF migration DLL HintPaths, test output
     must_not_break: true
-    note: "bin/ and obj/ do not move"
+    note: "bin/ and obj/ do not move. Verified by the unmodified backend test run; Stryker's test-case filters name specific classes, so they are unaffected by a new test class"
   - tool: lefthook pre-commit (secret scan, Biome)
     must_not_break: true
+    note: "Runs on commit, so the commits themselves are the verification"
 
 platform_coverage:
-  CI: [GitHub Actions ubuntu-latest, macos-latest, windows-latest]
+  CI:
+    on_pull_request: "build-backend publishes all three RIDs and package-app uploads them on whichever runner the package jobs use; the macOS packaging job's read of ARM64_DIR runs only on main"
+    on_main_only: "macOS Standalone packaging (the ARM64_DIR read), Docker and release jobs"
+    runners: [GitHub Actions ubuntu-latest, macos-latest, windows-latest]
   Developer: [Linux, macOS, Windows]
+  Local_proof: "linux-x64, win-x64 and osx-arm64 are all published on Linux (cross-publish) and compared there; no macOS runner is needed for the proof"
 
 deployment_assumptions:
   - "Ships with the next regular Lighthouse release; the release artifacts are byte-for-byte the same file set"

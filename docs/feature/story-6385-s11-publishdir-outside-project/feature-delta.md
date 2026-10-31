@@ -39,7 +39,7 @@ From the Epic's `feature-delta.md`, by heading. Linked, not copied:
 |---|---|
 | Output nests: `…/publish/linux-x64/publish/...` | Confirmed, three levels deep in the main checkout: `publish/linux-x64/publish/linux-x64/publish`. |
 | ~151 MB locally | **151 MB** (`du -sh` on the main checkout). |
-| Consumers: CI workflows, release workflow, Dockerfiles, Standalone packaging scripts | **4 files, 14 references**: `.github/actions/build-backend/action.yml` (6: three `-o`, three `rm` of `appsettings.Development.json`), `.github/actions/package-app/action.yml` (3: `chmod`, two artifact paths), `.github/workflows/ci_package-macos-standalone.yml` (1: `ARM64_DIR`), `Lighthouse.Frontend/package.json` `update-sidecar` script (3 in one line). |
+| Consumers: CI workflows, release workflow, Dockerfiles, Standalone packaging scripts | **4 files, 13 references on 11 lines**: `.github/actions/build-backend/action.yml` (6: three `-o`, three `rm` of `appsettings.Development.json`), `.github/actions/package-app/action.yml` (3: `chmod`, two artifact paths), `.github/workflows/ci_package-macos-standalone.yml` (1: `ARM64_DIR`), `Lighthouse.Frontend/package.json` `update-sidecar` script (3 in one line). Correction: this row first said 14; the parts always summed to 13 (6+3+1+3), on 11 distinct lines because the three `update-sidecar` references share one line. |
 | Dockerfile | Publishes to `/app/publish` inside the image already, so not a consumer. **But** `.dockerignore` excludes `**/bin` and `**/obj`, not `publish/`, so a local publish folder enters the Docker build context through `COPY ["Lighthouse.Backend/", "."]`. For DESIGN to weigh. |
 | Website / helm repos | `website`, `lighthouse-platform`, `lighthouse-clients`: **no reference** to the old path. |
 | `ci_verifymacos.yml` / `ci_verifywindows.yml` mention `publish/` | Not consumers: a `./publish/` folder of the downloaded DMG and the Standalone's runtime pid/log, unrelated to the project folder. |
@@ -96,9 +96,9 @@ Dockerfile's `-o /app/publish` would override it anyway.
 | D1 | Publish output moves to repo-root `artifacts/publish/<rid>` (Option A). Option C rejected: moves bin/obj, out of scope. |
 | D2 | No `PublishDir` default and no csproj or `Directory.Build.props` change: a bare publish already lands in `bin/`, excluded by the SDK. |
 | D3 | No `<Content Remove="publish\**">`: nothing in the repo publishes there any more, and the ratchet (D5) stops it coming back. |
-| D4 | `.dockerignore` gains one line, `artifacts`, so a local publish folder stays out of the build context. Changes nothing published. A stray old `Lighthouse.Backend/Lighthouse.Backend/publish/` is deleted by the maintainer locally (it is untracked), not excluded. |
+| D4 | `.dockerignore` gains two lines: `artifacts` (a local publish folder at the new root) and `Lighthouse.Backend/Lighthouse.Backend/publish` (a stale in-project folder from before). Both only trim the Docker build context; the image's published files are unchanged. The guard does not scan `.dockerignore` (its file name does not start with `Dockerfile`, and it is not a consumer), so the second line does not trip it. The maintainer still deletes the stray old folder locally (it is untracked). |
 | D5 | Ratchet: one small architecture test with an empty offender list (a plain rule, per ADR-268's last bullet), see Ratchet. |
-| D6 | One slice, three commits: consumers, `.dockerignore`, guard. No code move, no production C# or TS change, so mutation testing is N/A. |
+| D6 | One slice, four commits (see Slices and commit plan). No code move beyond the pure move of the `backend` change rule, no production C# or TS change, so mutation testing is N/A. |
 | D7 | No ADR: a path change with one obvious home and no trade-off that outlives the Story. |
 | D8 | No C4 diagrams: housekeeping, no container, component or boundary changes. |
 | D9 | `Lighthouse.Frontend/build-tauri-local.sh` publishes to `./temp_publish` (frontend folder, not the Web SDK project), so it is not a consumer and does not change. |
@@ -114,10 +114,11 @@ Old = `./Lighthouse.Backend/Lighthouse.Backend/publish/<rid>` (Frontend script: 
 | `.github/actions/package-app/action.yml` | `chmod -R +x` path and the two `upload-artifact` `path:` values: old → new. Artifact names unchanged; uploaded contents are the same files. | 3 |
 | `.github/workflows/ci_package-macos-standalone.yml` | `ARM64_DIR` (line ~82): old → new. | 1 |
 | `Lighthouse.Frontend/package.json` `update-sidecar` | `-o`, the `cp …/Lighthouse` source and the `cp -r …/.` source: `../Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64` → `../artifacts/publish/linux-x64`. The project argument stays. | 3 |
-| `.dockerignore` | Add `artifacts`. | +1 |
+| `.dockerignore` | Add `artifacts` and `Lighthouse.Backend/Lighthouse.Backend/publish`. | +2 |
+| `.github/workflows/ci_changes.yml`, `Scripts/test-selection/path-classifier.sh`, `Scripts/test-selection/test-path-classifier.sh` | The `backend` change rule moves out of inline YAML into `BACKEND_REGEX` + `classify_backend()` in `path-classifier.sh` (ci_changes.yml already sources that file); then the regex widens to include `^\.github/actions/`, with a test case in `test-path-classifier.sh`. See the commit plan. | new |
 | `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PublishOutputOutsideProjectGuardTest.cs` | New (see Ratchet). | new |
 
-Verified not to change: `ci_package-linux-standalone.yml` and `ci_package-win-standalone.yml` (no reference to the path; they consume the composite action's output or artifacts by name), `ci_codesign-windows.yml` (downloads by artifact name into its own `./artifacts/...`), `ci_verifymacos.yml` / `ci_verifywindows.yml` (their `publish/` is unrelated), `Dockerfile` (`-o /app/publish` inside the image), `.gitignore` (`artifacts/` and `publish/` already ignored), `Lighthouse.Backend.csproj`, `Directory.Build.props`, `.github/actions/README.md`, `ARCHITECTURE.md`, `docs/` and the product docs: none mention the path (searched; the only `publish` hits are publish/subscribe prose and the unrelated verify folders).
+Verified not to change: `ci_package-linux-standalone.yml` and `ci_package-win-standalone.yml` (no reference to the path; they consume the composite action's output or artifacts by name), `ci_codesign-windows.yml` (downloads by artifact name into its own `./artifacts/...`), `ci_verifymacos.yml` / `ci_verifywindows.yml` (their `publish/` is unrelated), `Dockerfile` (`-o /app/publish` inside the image), `.gitignore` (`artifacts/` and `publish/` already ignored), `Lighthouse.Backend.csproj`, `Directory.Build.props`, `.github/actions/README.md`, `ARCHITECTURE.md`, `docs/` and the product docs: no build or doc consumer. Problem-statement prose in the Epic names the old path and needs no change (the only other `publish` hits are publish/subscribe prose and the unrelated verify folders).
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
@@ -128,12 +129,15 @@ Verified not to change: `ci_package-linux-standalone.yml` and `ci_package-win-st
 | `artifacts/` ignore | `.gitignore` line 63 | Already ignores the new location | REUSE | No ignore change. |
 | `publish/` ignore | `.gitignore` line 180 | Covers the old location | REUSE | Left in place; harmless and still covers a stray local folder. |
 | `bin/…/publish` default | SDK | A bare `dotnet publish` already stays outside the Content globs | REUSE | Why no `PublishDir` default (D2). |
-| Source-scanning guard style | `PostgresContainerSharingGuardTest.cs`, `ProductionSource.cs` | Read repo text files, assert a non-empty scan | CREATE NEW (one test file, same shape) | `ProductionSource` only walks `*.cs` under the backend, so it cannot see workflows or `package.json`; the new test copies its shape (find the repo root, assert the scan was not empty) rather than widening that helper. |
-| `.dockerignore` | root | Already excludes `**/bin`, `**/obj` | EXTEND | One line. |
+| Source-scanning guard style | `PostgresContainerSharingGuardTest.cs`, `ProductionSource.cs` | Read repo text files | CREATE NEW (one test file, same shape) | `ProductionSource` only walks `*.cs` under the backend, so it cannot see workflows or `package.json`; the new test copies its shape (find the repo root by `Lighthouse.sln`) rather than widening that helper. The sibling asserts only that it found the solution file, not that its scan was non-empty; the new test adds that assertion itself. |
+| `.dockerignore` | root | Already excludes `**/bin`, `**/obj` | EXTEND | Two lines. |
+| `backend` change rule | `.github/workflows/ci_changes.yml` (inline), `Scripts/test-selection/path-classifier.sh` | The file ci_changes.yml already sources holds the per-connector classifiers | EXTEND | The rule moves there as `classify_backend()`, covered by `test-path-classifier.sh`. |
 
 ## Wave: DESIGN / [REF] Ratchet
 
-Decision: a guard, kept small. `PublishOutputOutsideProjectGuardTest` reads the tracked build files (`.github/**/*.yml`, `Dockerfile`, `Lighthouse.Frontend/package.json`, `*.sh` and `*.ps1` under `Lighthouse.Frontend`, `Lighthouse.Backend` and `Scripts`) and fails, naming file and line, if any contains `Lighthouse.Backend/Lighthouse.Backend/publish`. The needle is split in the source so the test does not match itself. It also asserts the scan found the workflow and `package.json` files, so it cannot pass by looking at nothing.
+Decision: a guard, kept small. `PublishOutputOutsideProjectGuardTest` does a filesystem walk of the repository from its root (not the git-tracked set) and reads `.github/**/*.yml|yaml`, `Dockerfile*`, every `package.json` and every `*.sh` and `*.ps1` (so `Scripts/test-selection/`, `Lighthouse.Frontend` and `Lighthouse.Backend` are all covered), minus pruned folders (`node_modules`, `bin`, `obj`, `.git`, `artifacts`, `.claude`, `target`, and generated output: `StrykerOutput`, `.stryker-tmp`, `dist`, `coverage`, `playwright-report`, `test-results`); symlinked folders are not followed. It fails, naming file and line, if a line contains `Lighthouse.Backend/Lighthouse.Backend/publish`, matched case-insensitively with runs of `\` and `/` collapsed to one `/` (so Windows paths, lower-case paths and JSON-escaped double backslashes are caught). It also asserts the scan found the known consumer files, so it cannot pass by looking at nothing.
+
+Known gap, accepted and not tested: a relative `-o publish` run with the project folder as the working directory never spells out the project folder, so the guard cannot see it.
 
 Offender list: **empty**. There is no offender left after the change, so under ADR-268 it is a plain rule with no list and no "only shrinks" bookkeeping. It guards only the one path that caused the nesting; a general "no `-o` inside a project folder" rule is rejected as heavier than the risk. Cost: about 30 lines, runs with the normal architecture tests, no new package.
 
@@ -149,20 +153,21 @@ Only DELIVER runs publishes. Proof of behaviour-free, per RID (`linux-x64` local
 4. Run the publish twice in a row to the new path: no `publish/` directory appears inside `artifacts/publish/<rid>` and the second listing equals the first.
 5. After the maintainer deletes the old local folder and both publishes ran, `find Lighthouse.Backend/Lighthouse.Backend -path '*/publish/*'` finds nothing.
 6. `pnpm run update-sidecar` (linux) leaves `src-tauri/binaries` and `src-tauri/resources` with the same contents as before.
-7. The new guard test fails when one old-path string is put back (red check) and is green on the change.
-8. CI green on the push: `ci_backend`, the Windows, Linux and macOS standalone packaging, the codesign and verify workflows, and the Docker build. The macOS job is the only runner for the `ARM64_DIR` edit, so it is the proof for that line.
+7. The new guard test fails when one old-path string is put back (red check, with `[Ignore]` removed locally and restored; commit 3 removes it for good) and is green on the change.
+8. CI green on the push: `ci_backend`, the Windows, Linux and macOS standalone packaging, the codesign and verify workflows, and the Docker build. The `ARM64_DIR` read runs only on `main` (see DEVOPS), so a PR proves the publish, not that line; DELIVER checks the osx-arm64 folder exists at the new path locally.
 
 Existing API, E2E and response tests run unmodified. `pnpm build` and `dotnet build` clean before push. Mutation: N/A, because the only C# added is a test.
 
 ## Wave: DESIGN / [REF] Slices and commit plan
 
-One slice (S, under a day). Three focused commits, each green on its own:
+One slice (S, under a day). Four focused commits, each green on its own (revised after the DISTILL review: the classifier work comes first so the consumer commit runs the backend suite):
 
-1. `build(publish): publish backend output to artifacts/publish instead of the project folder` — the four consumers (producer and readers move together).
-2. `build(docker): keep local artifacts out of the build context` — `.dockerignore`.
-3. `test(publish): guard against publishing inside the backend project folder` — the new test, committed after commit 1 so the tree is green (DELIVER sees it red first by running it against the old strings).
+1. `refactor(ci): move the backend change rule into path-classifier.sh` — a pure move: the same regex becomes `BACKEND_REGEX` + `classify_backend()`, `ci_changes.yml` calls it, and `github_changes` still ORs in as before.
+2. `ci: run the backend suite when a composite action changes` — the regex widens to `^\.github/actions/`, with a test case in `test-path-classifier.sh` proving an actions-only diff gives `backend=true` while the `ci*.yml`-only `github_changes` stays false.
+3. `build(publish): publish backend output to artifacts/publish instead of the project folder` — the four consumers (producer and readers move together; split by consumer group if preferred) plus the guard test. The commit that moves the last consumer also removes `[Ignore(...)]` and the pending-reason constant from the guard, so the tree is green. DELIVER sees the guard red first by running it, `[Ignore]` removed locally, against the old strings.
+4. `build(docker): keep local publish output out of the build context` — the two `.dockerignore` lines.
 
-No code moves; every commit is an edit.
+Only commit 1 moves code; the rest are edits.
 
 ## Wave: DESIGN / [REF] Before → after
 
@@ -178,7 +183,7 @@ Readers of publish/<rid>:                              Readers of artifacts/publ
   package-app    (chmod, upload-artifact)               ci_package-macos-standalone (ARM64_DIR)
   macos-standalone (ARM64_DIR)                          Frontend `update-sidecar` (cp to src-tauri)
   Frontend `update-sidecar`
-Docker context: Lighthouse.Backend/ incl. publish/    Docker context: `artifacts` ignored
+Docker context: Lighthouse.Backend/ incl. publish/    Docker context: `artifacts` and the old publish/ ignored
 Unchanged: Dockerfile -o /app/publish, bin/ + obj/, ci_codesign-windows (its own ./artifacts/server, /standalone)
 ```
 
@@ -220,12 +225,24 @@ and read; nothing is deployed, built or served differently.
 - **Where the guard runs:** the backend unit suite (`ci_backend` via `ci_changes.yml` → `backend=true`). Today
   `backend` is true for `Lighthouse.Backend/`, `Scripts/test-timings/` and any `.github/workflows/ci*.yml` change.
   **Maintainer decision (2026-10-31): widen this so `.github/actions/**` changes also run the backend suite**,
-  because the composite actions hold 9 of the 14 old references. The widening goes into the `backend` regex only,
+  because the composite actions hold 9 of the 13 old references. The widening goes into the `backend` regex only,
   not into `github_changes`: `github_changes` also fans out to every live-connector output, and an action edit
-  should not make real Jira, Linear, ADO and ServiceNow calls (the Linear key is shared with CI). DISTILL pins it.
-- **Accepted lag:** a change to `Lighthouse.Frontend/package.json` or the `Dockerfile` alone does not run the
-  backend suite; a reintroduced path there is caught on the next backend run. Accepted because both change often
+  should not make real Jira, Linear, ADO and ServiceNow calls (the Linear key is shared with CI). The rule moves
+  into `Scripts/test-selection/path-classifier.sh` first (see the commit plan) so the widening is a committed shell test.
+- **No live calls from the widening, checked 2026-10-31:** every test file carrying a `*Integration` connector
+  category also carries `Category("Integration")` (grep returned no exception), so the filtered backend run never
+  reaches a live connector.
+- **Action-edit fan-out:** the `packageapp` and `verify*` jobs are not gated by change outputs and run on any push;
+  the E2E job need not run. The Standalone, Docker and release jobs are `main`-only. An edit to the
+  `build-frontend` action skips the frontend job; that is outside S11's scope.
+- **macOS packaging:** the job reads `ARM64_DIR` only on `main` runs (job `if: github.ref == 'refs/heads/main'`), so a
+  PR proves the publish but not the read. DELIVER therefore runs the osx-arm64 publish locally and checks the folder
+  exists at the new path.
+- **Accepted lag:** a change to `Lighthouse.Frontend/package.json`, the `Dockerfile`, a `*.sh` or `*.ps1` outside
+  `Lighthouse.Backend/`, or a non-`ci*` `.github/workflows/*.yml` alone does not run the backend suite; a
+  reintroduced path there is caught on the next backend run. Accepted because the first two change often
   (Renovate) and running the backend on each would cost far more than the lag.
+- **Commit 3 outline:** the guard loses its `[Ignore]` and pending-reason constant in the commit that moves the last consumer.
 - **Sonar:** the guard is test code; `dotnet build` with `TreatWarningsAsErrors` must stay clean.
 
 ## Wave: DEVOPS / [REF] Environment matrix
@@ -238,4 +255,90 @@ old in-project `publish/`. Nothing installs or runs differently between them.
 - **The verify workflows.** `ci_verifywindows` / `ci_verifymacos` use their own `./publish/` for downloaded
   bundles and the Standalone's pid and log. They are not consumers and must not be edited by a careless replace.
 - **Behaviour-free proof needs a real publish.** DELIVER publishes each RID before and after (old `-o` vs new) and
-  compares `find -type f` lists and sizes, excluding the nested `publish/` junk from the before side.
+  compares file lists and sizes by the mechanical rule in the verification procedure, excluding the nested
+  `publish/` junk from the before side.
+
+## Wave: DISTILL / [REF] Scenarios
+
+Classification stays here, not in the code (project rule: no nWave tags in tests). Reconciliation: DESIGN and DEVOPS agree (path, guard, `.github/actions/**` in `backend` only); no DISCUSS-level decision exists for this Story, so 0 contradictions.
+
+| # | Scenario | Layer | What it observes | Test or verification step | State |
+|---|---|---|---|---|---|
+| 1 | No build file writes or reads the backend publish output inside the backend project folder | Architecture test (reads repo text) | `file:line` of every `.github/**/*.yml\|yaml`, `Dockerfile*`, `package.json`, `*.sh`, `*.ps1` mentioning the old path (both `./` and `../` forms; case-insensitive; runs of `\` and `/` collapsed) | `PublishOutputOutsideProjectGuardTest.NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder` | pending (`[Ignore]`) until the consumers move |
+| 2 | The scan sees the files that consume the publish output (not vacuous) | Architecture test | Scan includes `build-backend/action.yml`, `package-app/action.yml`, `ci_package-macos-standalone.yml`, `Lighthouse.Frontend/package.json`, `Dockerfile` | `TheScanSeesTheFilesThatConsumeThePublishOutput` | green today (stays green) |
+| 3 | Only the in-project path is recognised (error paths: must not flag `./publish/`, `publish/lighthouse.pid`, `/app/publish`, `./temp_publish`, the new `./artifacts/publish/…`) | Architecture test, table of sample lines (11 cases: 6 positive incl. `../`, backslash, lower-case Windows path and JSON-escaped double backslash; 5 negative) | the pattern is specific | `OnlyThePathInsideTheBackendProjectFolderIsRecognised` | green today (stays green) |
+| 4 | Consumers point at the new root (build-backend `-o` + `rm`, package-app, macOS `ARM64_DIR`, `update-sidecar`) | none | n/a | **No new test.** Scenario 1 proves the old path is gone; CI green on the push proves the new one is right (publish, package; the macOS job reads `ARM64_DIR` only on `main`, so the local osx-arm64 cross-publish proves the folder at the new path; `update-sidecar` by verification step 6). A test asserting the new strings would restate the YAML. | verification-only |
+| 5 | `.dockerignore` lists `artifacts` and the old in-project publish folder | none | n/a | **No test; DELIVER checklist.** Two lines, no behaviour; the Docker build in CI plus `grep -n '^artifacts$' .dockerignore` and `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$' .dockerignore` at commit 4. A test would restate the file. | verification-only |
+| 6 | A change only under `.github/actions/` sets `backend=true` but not `github_changes` | Committed shell test, written in DELIVER with the extraction | `backend` / `github_changes` for sample diffs | A case in `Scripts/test-selection/test-path-classifier.sh` against `classify_backend()` in `path-classifier.sh` (the `backend` rule moves there from inline YAML first, as a pure move; then the regex widens to `^\.github/actions/`). Proves an actions-only diff gives `backend=true` and the `ci*.yml`-only `github_changes` stays false. | pending, red today (`.github/actions/…` gives `backend=false`); written in DELIVER |
+| 7 | Behaviour-free proof: same file set per RID, two publishes do not nest | Real publish | file list and sizes | Verification step 1 and 3 | verification-only |
+
+Counts: 13 NUnit cases in the new class, 1 pending (scenario 1) and 12 green (scenarios 2 and 3); 1 committed shell test to write in DELIVER (scenario 6); 3 verification-only items (scenarios 4, 5 and 7). Non-happy paths: scenario 2 and the 5 negative cases of scenario 3; the Story has one happy path.
+
+## Wave: DISTILL / [REF] Behaviour-free guarantee
+
+Nothing in production C# or TS changes, so these stay green unmodified; DELIVER runs them and edits none:
+
+- Backend: `dotnet build` (zero warnings) and `dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"` (includes the architecture tests, the API/response tests and `PostgresContainerSharingGuardTest`).
+- Frontend: `pnpm test` and `pnpm build` (Biome + `tsc`; `package.json` is touched by the `update-sidecar` edit).
+- E2E: the Playwright walking skeletons through their usual command, unmodified (they never read the publish folder; run to prove the guarantee).
+- Script test: `bash Scripts/test-selection/test-path-classifier.sh`, run after the extraction and the widening; it gains the scenario 6 case and every existing case stays green, which shows the widening did not alter the connector classifiers.
+- CI on the push: `ci_backend`, Windows, Linux and macOS standalone packaging, codesign and verify workflows, Docker build.
+- Environmental noise per CLAUDE.md (2 Licensing tests in a worktree, 10 `ReleaseServiceTest` under load) is not a regression.
+
+## Wave: DISTILL / [REF] Verification procedure
+
+Behaviour-free proof, run by DELIVER before the push. `WORK` is a scratch folder outside the repo.
+
+1. Published file set per RID, all three compared locally on Linux: `linux-x64`, `win-x64` (a win-x64 publish cross-builds on Linux) and `osx-arm64` (cross-publish). The macOS runner is not needed for this proof.
+   - Before: on unmodified HEAD, with `Lighthouse.Backend/Lighthouse.Backend/publish/` deleted first, run the exact CI command, e.g. `dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend`, then `rm -f <dir>/appsettings.Development.json`.
+   - After: on HEAD plus the change, the same command with `-o ./artifacts/publish/linux-x64`, same `rm`.
+   - List each side with name and byte size (portable on GNU and BSD), the before side excluding the nested folder:
+     ```
+     list() { (cd "$1" && find . -type f $2 | LC_ALL=C sort | while IFS= read -r f; do printf '%s\t%s\n' "$f" "$(wc -c < "$f" | tr -d ' ')"; done); }
+     list ./Lighthouse.Backend/Lighthouse.Backend/publish/<rid> "-not -path './publish/*'" > $WORK/before-<rid>.tsv
+     list ./artifacts/publish/<rid> "" > $WORK/after-<rid>.tsv
+     ```
+   - Pass rule: every file present on both sides; every size delta listed; a delta above 0.1% of the file, or any delta on a non-binary file (anything but executables and libraries: no extension, `.dll`, `.exe`, `.so`, `.dylib`, `.pdb`), fails. Computed by:
+     ```
+     LC_ALL=C join -t "$(printf '\t')" -a1 -a2 -e MISSING -o 0,1.2,2.2 $WORK/before-<rid>.tsv $WORK/after-<rid>.tsv |
+       awk -F'\t' 'BEGIN{bad=0} $2=="MISSING"||$3=="MISSING"{print "FAIL not on both sides:",$1; bad=1; next}
+         $2!=$3{d=($3>$2?$3-$2:$2-$3); m=($3>$2?$3:$2); bin=($1 ~ /\.(dll|exe|so|dylib|pdb)$/ || $1 !~ /\.[^\/]+$/);
+                print "size delta:",$1,$2,$3,d; if(!bin||d*1000>m){print "FAIL"; bad=1}}
+         END{exit bad}'
+     ```
+     Exit status 0 and an empty or fully-listed delta output is the pass. `appsettings.Development.json` is absent in both.
+2. Classifier widening (scenario 6) is a committed shell test, not a procedure step: DELIVER writes it in `test-path-classifier.sh` with the extraction (see the commit plan) and runs `bash Scripts/test-selection/test-path-classifier.sh`. Expected after the widening: `.github/actions/build-backend/action.yml` gives `backend=true` and `github_changes=false`; `.github/workflows/ci_backend.yml` gives both true; `Lighthouse.Frontend/package.json` and `docs/readme.md` give `backend=false`. After the pure-move commit the existing cases stay green and the `backend` regex is unchanged; `frontend` and `e2e` lines are untouched throughout.
+3. Two publishes in a row to the new path: no `publish` directory appears inside `artifacts/publish/linux-x64`, and the second `find` listing equals the first.
+4. After the maintainer deletes the old local folder and both publishes ran, `find Lighthouse.Backend/Lighthouse.Backend -path '*/publish/*'` prints nothing.
+5. `grep -n '^artifacts$' .dockerignore` and `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$' .dockerignore` each find their line (scenario 5).
+6. `pnpm run update-sidecar` (Linux): `src-tauri/binaries` and `src-tauri/resources` hold the same names and sizes as before (same `find` comparison).
+7. Red check of the guard: remove `[Ignore]` locally for the check and restore it afterwards (commit 3 removes it for good, in the commit that moves the last consumer); put one old-path string back and the guard names that `file:line`; remove it and it is green.
+8. CI green on the push. The macOS job reads `ARM64_DIR` only on `main` runs, so a PR proves the publish, not that read: DELIVER checks the osx-arm64 folder exists at the new path from the local cross-publish (step 1). The `changes` job log shows `backend=true` for a change under `.github/actions/` without the connector outputs.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PublishOutputOutsideProjectGuardTest.cs`, beside `PostgresContainerSharingGuardTest.cs`, which it mirrors (finds `Lighthouse.sln`, scans text, asserts the scan was not empty). `ProductionSource` is not reused: it walks only `*.cs` under the backend project. The scan starts at the repository root (parent of the folder holding `Lighthouse.sln`) and prunes `node_modules`, `bin`, `obj`, `.git`, `artifacts`, `.claude` (nested worktrees in the main checkout), `target` and generated output (`StrykerOutput`, `.stryker-tmp`, `dist`, `coverage`, `playwright-report`, `test-results`) while walking; symlinked folders are skipped. Matching is case-insensitive with runs of `\` and `/` collapsed. `.dockerignore` is not scanned (not a `Dockerfile*` name, not a consumer).
+
+## Wave: DISTILL / [REF] Right-reason RED
+
+Run with the `[Ignore]` removed locally (restored afterwards; the delivered file keeps it): 1 failed, 12 passed. The guard failed on its own assertion, 11 offenders in exactly the 4 consumer files:
+
+```
+.github/actions/build-backend/action.yml:48, :49, :52, :59, :60, :61
+.github/actions/package-app/action.yml:38, :44, :50
+.github/workflows/ci_package-macos-standalone.yml:82
+Lighthouse.Frontend/package.json:20
+```
+
+The baseline counts 13 references on 11 lines (the earlier 14 was a miscount); the three `update-sidecar` references share line 20. The two guard-support tests were green unchanged, so the scan reaches the right files.
+
+## Wave: DISTILL / Open points
+
+- Scenario 6 is now a committed shell test (maintainer decision below): DELIVER extracts the `backend` rule into `path-classifier.sh` and writes the case.
+- DELIVER removes the `[Ignore]` and the pending-reason constant in commit 3, the commit that moves the last consumer.
+
+## Wave: DISTILL / [REF] Maintainer decisions (2026-10-31, after the review gate)
+
+- The `backend` change rule moves out of inline YAML into `Scripts/test-selection/path-classifier.sh` as `BACKEND_REGEX` + `classify_backend()` (`ci_changes.yml` already sources that file; its tests are in `test-path-classifier.sh`). Two DELIVER commits: a pure move (same regex; `ci_changes.yml` calls `classify_backend`; `github_changes` still ORs in), then the widening to `^\.github/actions/` with a test case proving an actions-only diff gives `backend=true` and the `ci*.yml`-only `github_changes` stays false.
+- `.dockerignore` also gets `Lighthouse.Backend/Lighthouse.Backend/publish`, next to `artifacts`.
+- Commit 3 removes `[Ignore(...)]` and the pending-reason constant in the commit that moves the last consumer.
