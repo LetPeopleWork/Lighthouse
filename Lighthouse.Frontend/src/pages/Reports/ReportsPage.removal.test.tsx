@@ -527,6 +527,40 @@ describe("Remove several reports at once", () => {
 			),
 		).toEqual([false, false, true]);
 	});
+
+	it(`the report forgotten is the one removed, not one picked before it`, async () => {
+		const removeReportsInBulk = vi
+			.fn()
+			.mockResolvedValue([
+				notRemoved(801, "not-admin"),
+				removed(802),
+				removed(803),
+			]);
+		const { user, queryClient } = renderTheReportsPage({
+			reportService: listing(theThreeOfThem(), removeReportsInBulk),
+		});
+		const readBefore = [zenithsQuarter, gravitysQuarter, oceanExplorersMonth];
+		const keyOf = (report: (typeof readBefore)[number]) =>
+			reportQueryKeyOf(ownerOfReport(report), report.id);
+		for (const report of readBefore) {
+			queryClient.setQueryData(keyOf(report), report);
+		}
+
+		await pickTheThree(user);
+		await user.click(screen.getByRole("button", { name: removeButton(3) }));
+		await user.click(
+			within(await theConfirmation()).getByRole("button", {
+				name: removeCount(3),
+			}),
+		);
+		await screen.findByText(removedHeadline(2), { exact: true });
+
+		expect(
+			readBefore.map(
+				(report) => queryClient.getQueryData(keyOf(report)) !== undefined,
+			),
+		).toEqual([true, false, false]);
+	});
 });
 
 // Every test here renders a page of 50 to 101 grid rows, which takes seconds in jsdom on a loaded runner.
