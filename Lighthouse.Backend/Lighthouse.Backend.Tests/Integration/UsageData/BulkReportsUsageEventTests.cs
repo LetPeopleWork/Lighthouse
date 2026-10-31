@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Lighthouse.Backend.Tests.API.Integration.Reports;
 
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
@@ -62,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05")]
-        [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
+        [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07")]
         public async Task The_event_travels_with_its_name_and_nothing_else(string name)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -91,8 +90,8 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("ReportBulkCreationStarted", ",\"updates\":\"Now\"", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-05,slice-05")]
         [TestCase("ReportBulkRemovalStarted", ",\"refinementVerdict\":\"In\"", Category = "us-05,slice-05")]
-        [TestCase("ReportCombinedPdfExportStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
-        [TestCase("ReportCombinedPdfExportStarted", ",\"route\":\"TeamDetail_Reports\"", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
+        [TestCase("ReportCombinedPdfExportStarted", ",\"reportTemplate\":\"ThenAndNow\"", Category = "us-07,slice-07")]
+        [TestCase("ReportCombinedPdfExportStarted", ",\"route\":\"TeamDetail_Reports\"", Category = "us-07,slice-07")]
         public async Task The_event_carrying_anything_beside_its_name_is_refused(string name, string parts)
         {
             var token = await ABrowserThatAgreedAsync();
@@ -107,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("AllReportsListed", Category = "us-01,slice-01")]
         [TestCase("ReportBulkCreationStarted", Category = "us-02a,slice-02a")]
         [TestCase("ReportBulkRemovalStarted", Category = "us-05,slice-05")]
-        [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
+        [TestCase("ReportCombinedPdfExportStarted", Category = "us-07,slice-07")]
         public void The_event_is_appended_after_the_PDF_export_never_inserted(string name)
         {
             var named = TheEventsUsageDataNames();
@@ -136,7 +135,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         [TestCase("Every report was listed", Category = "us-01,slice-01")]
         [TestCase("Reports were created for several Teams or Portfolios", Category = "us-02a,slice-02a")]
         [TestCase("Several reports were removed at once", Category = "us-05,slice-05")]
-        [TestCase("Several reports were exported as one PDF", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
+        [TestCase("Several reports were exported as one PDF", Category = "us-07,slice-07")]
         public void The_usage_data_page_has_one_row_for_the_event_saying_nothing_travels_with_it(string rowSays)
         {
             var rows = RowsStartingWith(rowSays);
@@ -150,7 +149,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
 
         [TestCase("A report was created", "Create reports", Category = "us-02a,slice-02a")]
         [TestCase("A report was deleted", "already gone", Category = "us-05,slice-05")]
-        [TestCase("A report was exported as a PDF", "one report selected", Category = "us-07,slice-07", Ignore = PendingEpic6350.Slice07)]
+        [TestCase("A report was exported as a PDF", "one report selected", Category = "us-07,slice-07")]
         public void The_usage_data_page_says_what_the_bulk_actions_add_to_an_existing_event(string rowSays, string itNowSays)
         {
             var rows = RowsStartingWith(rowSays);

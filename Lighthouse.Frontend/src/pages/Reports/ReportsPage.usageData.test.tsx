@@ -10,12 +10,14 @@ import {
 	everyReport,
 	exportButton,
 	GRAVITY,
+	LEAVE_IT_OUT,
+	NO_PDF_WAS_MADE,
 	notCreated,
 	notRemoved,
 	PULSAR,
-	pendingEpic6350,
 	pickOwner,
 	QUARTER,
+	RETRY,
 	removeButton,
 	removeCount,
 	removed,
@@ -247,7 +249,7 @@ describe("What the Reports page tells the usage data", () => {
 		);
 	});
 
-	it.skip(`one PDF of several reports is told once, by name alone, and not as a single export (${pendingEpic6350("07")})`, async () => {
+	it("one PDF of several reports is told once, by name alone, and not as a single export", async () => {
 		theFontsHaveLoaded();
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -271,7 +273,7 @@ describe("What the Reports page tells the usage data", () => {
 		forgetTheBrowser();
 	});
 	// One report picked makes the same PDF as the report's own Export, so it counts as that.
-	it.skip(`exporting exactly one picked report is told as the single export, never as one PDF of several (${pendingEpic6350("07")})`, async () => {
+	it("exporting exactly one picked report is told as the single export, never as one PDF of several", async () => {
 		theFontsHaveLoaded();
 		const frames = aPrintFrameBrowser();
 		const { user } = renderTheReportsPage({
@@ -291,6 +293,51 @@ describe("What the Reports page tells the usage data", () => {
 			[{ name: "ReportPdfExportStarted", reportTemplate: "ThenAndNow" }],
 		]);
 		expect(theEventsNamed("ReportCombinedPdfExportStarted")).toEqual([]);
+		forgetTheBrowser();
+	});
+
+	// Both finish the PDF the reader already asked for, so neither is a second export.
+	it("a Retry and a Leave it out on one PDF of several reports count nothing more", async () => {
+		theFontsHaveLoaded();
+		const frames = aPrintFrameBrowser();
+		const { user } = renderTheReportsPage({
+			reportService: aReportService({
+				getAllReports: vi
+					.fn()
+					.mockResolvedValue(everyReport(zenithsQuarter, gravitysQuarter)),
+				getReport: vi.fn((_owner, reportId: number) =>
+					reportId === zenithsQuarter.id
+						? Promise.reject(new Error("the network dropped"))
+						: Promise.resolve(theEngagementStartReport({ id: reportId })),
+				),
+			}),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, QUARTER, GRAVITY);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).getByRole("button", { name: RETRY }),
+		);
+		await waitFor(() =>
+			expect(
+				screen.queryByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).not.toBeInTheDocument(),
+		);
+		await user.click(
+			within(
+				await screen.findByRole("dialog", { name: NO_PDF_WAS_MADE }),
+			).getByRole("button", { name: LEAVE_IT_OUT }),
+		);
+		await theFramesHavePrinted(frames, 1);
+
+		expect(theEventsNamed("ReportCombinedPdfExportStarted")).toEqual([
+			[{ name: "ReportCombinedPdfExportStarted" }],
+		]);
+		expect(theEventsNamed("ReportPdfExportStarted")).toEqual([]);
 		forgetTheBrowser();
 	});
 

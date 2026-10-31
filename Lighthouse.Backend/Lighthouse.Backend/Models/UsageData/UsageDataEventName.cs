@@ -74,5 +74,12 @@ namespace Lighthouse.Backend.Models.UsageData
         /// <see cref="ReportDeleted"/> as well.
         /// </summary>
         ReportBulkRemovalStarted = 23,
+
+        /// <summary>
+        /// Somebody chose Export PDF for two or more reports picked on the Reports page, counted when chosen, before
+        /// anything is printed. It carries nothing: not how many reports, not which, not their Teams or Portfolios, and
+        /// not whether a file was saved. Exporting exactly one picked report counts as <see cref="ReportPdfExportStarted"/>.
+        /// </summary>
+        ReportCombinedPdfExportStarted = 24,
     }
 }

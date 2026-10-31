@@ -50,9 +50,6 @@ import { aReportService, defaultTerms } from "./ReportsTestKit";
  * permissions, the licence and the instance's terms come from their own services as they do in the app.
  */
 
-export const pendingEpic6350 = (slice: string) =>
-	`pending: every report in one place (epic 6350, slice ${slice})`;
-
 /** The instance's day every example is set on. */
 export const TODAY = "2026-10-27";
 

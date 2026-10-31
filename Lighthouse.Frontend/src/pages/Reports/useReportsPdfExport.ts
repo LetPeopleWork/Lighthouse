@@ -1,10 +1,13 @@
 import type React from "react";
 import { createElement, Fragment, useEffect, useRef, useState } from "react";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
+import { UsageDataEventName } from "../../services/Api/UsageDataService";
+import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
 import type { PrintedReport } from "../Common/Reports/print/bundleState";
 import PrintFrameHost from "../Common/Reports/print/PrintFrameHost";
 import type { PrintOutcome } from "../Common/Reports/print/usePrintOnce";
 import { ownerOfReport } from "../Common/Reports/reportOwner";
+import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import NoPdfDialog from "./NoPdfDialog";
 
 export interface ReportsPdfExport {
@@ -52,11 +55,14 @@ const failedAmong = (
 /**
  * Exports several reports, of any owners, as one PDF from a hidden frame on the Reports page. The frame goes again a
  * turn after its dialog closes, or as soon as no PDF can be made; then a dialog names each report that could not be
- * read and offers to leave them out, which unpicks them, or to ask again.
+ * read and offers to leave them out, which unpicks them, or to ask again. Exactly one report is the report's own
+ * export, printed and counted as that.
  */
 export const useReportsPdfExport = (
 	unpick: (reports: readonly IReportAcrossOwners[]) => void,
 ): ReportsPdfExport => {
+	const reportUsage = useUsageDataReporter();
+	const single = useReportPdfExport(undefined);
 	const attempts = useRef(0);
 	const [exporting, setExporting] = useState<Exporting | undefined>();
 	const [preparing, setPreparing] = useState(false);
@@ -74,8 +80,15 @@ export const useReportsPdfExport = (
 		setExporting({ reports, attempt: attempts.current });
 	};
 
+	const isPreparing = preparing || single.preparingId !== undefined;
+
 	const exportPdf = (reports: readonly IReportAcrossOwners[]) => {
-		if (preparing || reports.length === 0) return;
+		if (isPreparing || reports.length === 0) return;
+		if (reports.length === 1) {
+			single.exportPdf(reports[0], ownerOfReport(reports[0]));
+			return;
+		}
+		reportUsage({ name: UsageDataEventName.ReportCombinedPdfExportStarted });
 		printFromAFreshFrame(reports);
 	};
 
@@ -131,7 +144,7 @@ export const useReportsPdfExport = (
 
 	return {
 		exportPdf,
-		preparing,
-		frame: createElement(Fragment, null, frameHost, dialog),
+		preparing: isPreparing,
+		frame: createElement(Fragment, null, frameHost, dialog, single.frame),
 	};
 };
