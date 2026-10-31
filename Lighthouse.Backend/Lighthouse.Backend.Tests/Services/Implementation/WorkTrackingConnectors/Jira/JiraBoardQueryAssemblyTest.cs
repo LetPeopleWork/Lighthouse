@@ -1111,6 +1111,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal)
                         => $"{{\"deploymentType\":\"{deploymentType}\"}}",
                     _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal) => "[]",
+                    _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                     _ => "{}",
                 };
 

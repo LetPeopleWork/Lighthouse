@@ -35,7 +35,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(false, HttpStatusCode.OK, "[]", 200, "OK")]
         [TestCase(true, HttpStatusCode.OK, AGatewayPage, 200, "OK")]
         [TestCase(false, HttpStatusCode.OK, "{}", 200, "OK")]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_list_that_cannot_be_read_stops_a_Team_refresh_with_the_sentence_the_administrator_reads(
             bool statusList, HttpStatusCode answer, string body, int code, string status)
         {
@@ -51,7 +50,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(true, HttpStatusCode.ServiceUnavailable, ServiceUnavailableBody, 503, "ServiceUnavailable")]
         [TestCase(false, HttpStatusCode.OK, "[]", 200, "OK")]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_list_that_cannot_be_read_stops_a_Portfolio_refresh_without_saying_what_was_kept(
             bool statusList, HttpStatusCode answer, string body, int code, string status)
         {
@@ -135,7 +133,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(true, HttpStatusCode.Forbidden, ForbiddenBody, 403, "Forbidden")]
         [TestCase(false, HttpStatusCode.OK, "[]", 200, "OK")]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_list_that_cannot_be_read_fails_the_settings_check_without_a_last_refresh_to_keep(
             bool statusList, HttpStatusCode answer, string body, int code, string status)
         {
@@ -153,7 +150,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(true, HttpStatusCode.ServiceUnavailable, ServiceUnavailableBody, "status_list_unreadable", ListEndpointOfStatuses, "503 ServiceUnavailable")]
         [TestCase(false, HttpStatusCode.Forbidden, ForbiddenBody, "issue_type_list_unreadable", ListEndpointOfTypes, "403 Forbidden")]
         [TestCase(true, HttpStatusCode.OK, "[]", "status_list_unreadable", ListEndpointOfStatuses, "200 OK")]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task The_refusal_carries_its_code_and_the_request_with_what_Jira_said_and_names_no_input(
             bool statusList, HttpStatusCode answer, string body, string expectedCode, string route, string answered)
         {
@@ -172,7 +168,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(true, HttpStatusCode.ServiceUnavailable, ServiceUnavailableBody)]
         [TestCase(false, HttpStatusCode.OK, AGatewayPage)]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task The_refusal_is_logged_at_error_with_the_request_and_Jiras_answer(bool statusList, HttpStatusCode answer, string body)
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
@@ -192,7 +187,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_refusal_stops_the_refresh_before_any_issue_is_turned_into_a_work_item()
         {
             var instance = AnInstanceRefusing(statusList: true, HttpStatusCode.ServiceUnavailable, ServiceUnavailableBody)

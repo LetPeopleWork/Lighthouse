@@ -2343,7 +2343,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private static async Task<JsonDocument> ReadList(
+        private async Task<JsonDocument> ReadList(
             HttpClient client,
             string route,
             Func<JiraReadException.ReadFor, HttpStatusCode, string, JiraReadException> refusal,
@@ -2353,12 +2353,36 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var response = await client.GetAsync(route, cancellationToken);
             var body = await response.Content.ReadAsStringAsync(cancellationToken);
 
-            if (!response.IsSuccessStatusCode)
+            var list = response.IsSuccessStatusCode ? ParseAsNonEmptyArray(body) : null;
+
+            if (list is null)
             {
-                throw refusal(readFor, response.StatusCode, body);
+                var refused = refusal(readFor, response.StatusCode, body);
+                logger.LogError("{Detail}", refused.Verdict.TechnicalDetails);
+                throw refused;
             }
 
-            return JsonDocument.Parse(body);
+            return list;
+        }
+
+        private static JsonDocument? ParseAsNonEmptyArray(string body)
+        {
+            try
+            {
+                var document = JsonDocument.Parse(body);
+
+                if (document.RootElement.ValueKind == JsonValueKind.Array && document.RootElement.GetArrayLength() > 0)
+                {
+                    return document;
+                }
+
+                document.Dispose();
+                return null;
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
         }
 
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)

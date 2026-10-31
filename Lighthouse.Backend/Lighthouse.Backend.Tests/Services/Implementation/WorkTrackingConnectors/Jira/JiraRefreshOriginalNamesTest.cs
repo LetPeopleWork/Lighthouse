@@ -266,7 +266,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_list_that_could_not_be_read_is_asked_for_again_on_the_next_refresh()
         {
             var instance = new JiraInstanceStub().Serving(JiraWireFormat.AnIssueSeenIn("PAY-1", "10001", "Story", "1", "To Do"));
