@@ -191,6 +191,16 @@ describe("ModifyTeamSettings query field", () => {
 		);
 	});
 
+	it("saves nothing when the page is left while the form is invalid", async () => {
+		const { user, leaveThePage } = await openTeamSettings();
+
+		await user.clear(screen.getByLabelText("Name"));
+		leaveThePage();
+		await waitPastTheDebounce();
+
+		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+	});
+
 	it("saves nothing when the page is left without an edit", async () => {
 		const { query, user, leaveThePage } = await openTeamSettings();
 

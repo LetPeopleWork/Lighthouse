@@ -1,0 +1,124 @@
+{
+  "roadmap": {
+    "project_id": "story-6456-query-save-on-blur",
+    "created_at": "2026-10-31T07:47:35Z",
+    "total_steps": 2,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "slice": "slice-01-query-commits-on-blur",
+    "ado": "User Story #6456",
+    "goal": "The Team/Portfolio query field saves once, when the admin leaves it, instead of at every typing pause. Leaving the settings page sends a pending autosave instead of dropping it, so an edit committed by a blur that fires on the mousedown of a nav link is not lost."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6456-query-save-on-blur/feature-delta.md",
+    "slice_brief": "docs/feature/story-6456-query-save-on-blur/slices/slice-01-query-commits-on-blur.md",
+    "scenarios": [
+      "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx",
+      "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+      "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx",
+      "Lighthouse.Frontend/src/hooks/useModifySettings.autosave.test.ts"
+    ]
+  },
+  "out_of_scope": [
+    "Changing the timing of any other settings field: every other Team/Portfolio field keeps the 300 ms debounce (D1)",
+    "A beforeunload save or warning: closing or reloading the tab while the query field has focus loses the draft (D3)",
+    "Any visible change: no helper text, no new save-state value, no new copy or layout (D4)",
+    "The create wizards, which do not use GeneralSettingsComponent; the board wizard on the Modify pages is in scope and must keep saving at once (D5)",
+    "The backend and the tracker refresh itself: one refresh still costs what it costs",
+    "A Portfolio-page version of the leave-the-page tests: the flush lives in the shared hook and is pinned on the Team page",
+    "Usage-data events, docs and E2E changes: no E2E spec relies on per-keystroke saving of the query; docs are checked at finalize"
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "The query saves once, when the field is left",
+      "description": "The query field keeps a local draft and hands it over on blur only when it changed, then the autosave hook stops dropping a pending save when the page unmounts.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The query commits when the field is left",
+          "agent": "nw-software-crafter",
+          "description": "GeneralSettingsComponent keeps the query as a local draft and calls onSettingsChange on blur only when the draft differs from the committed value.",
+          "criteria": [
+            "Changing the query while the field is focused hands nothing to onSettingsChange, and on the Team and Portfolio pages sends no settings save even after the debounce has passed",
+            "Leaving the field after an edit hands over the edited query exactly once, and the Team and Portfolio pages send exactly one save carrying it",
+            "Editing the query back to the committed value and leaving the field hands over nothing and sends no save",
+            "Focusing and leaving the field without an edit still hands over nothing (existing guard stays green)",
+            "A read-only query (isDataRetrievalReadOnly) that is focused and left hands over nothing, even when a change is forced past readOnly",
+            "A changed name is handed over at once without a blur (component guard) and saves after the debounce (Team page guard); both stay green. AC 4's second half holds by construction, because leaving the query for another field blurs it first, so no test is missing",
+            "A query written by the board wizard is handed over at once, without the field being focused or left (existing guard stays green)",
+            "A query value arriving from outside through a props change replaces what was being typed (existing guard stays green)",
+            "The existing test 'calls onSettingsChange with correct arguments when work item query changes' leaves the field with a blur after the change and still passes",
+            "Every currently active test in the three test files stays green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx",
+          "scenario_name": "the query is committed when the field is left",
+          "dependencies": [],
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx"
+          ],
+          "estimated_hours": 2,
+          "implementation_notes": "Un-skip in this order, one at a time, in GeneralSettingsComponent.test.tsx describe 'the query is committed when the field is left': 'hands over no change while the query is being typed' (AC 1), 'hands over the edited query once, when the field is left' (AC 2), 'hands over nothing when the query is edited back to what it was' (AC 3), 'hands over nothing from a read-only query that is focused and left' (AC 6). That is the 4 it.skip tests. In the same commit as the first two, change the existing test 'calls onSettingsChange with correct arguments when work item query changes' from fireEvent.change alone to change then fireEvent.blur; it expects a hand-over per change and goes red otherwise. Then un-skip the 3 page tests in each of ModifyTeamSettings.queryCommit.test.tsx and ModifyProjectSettings.queryCommit.test.tsx ('saves nothing while the query is being typed and the field is still focused', 'saves the edited query once, after the field is left', 'saves nothing when the query is edited back to what was saved before the field is left'); they need no further production code. Production shape: the query TextField (multiline, 4 rows, GeneralSettingsComponent.tsx around lines 167-187) becomes a controlled field over a local draft state; onChange only updates the draft; onBlur calls onSettingsChange('dataRetrievalValue', draft) only when the field is not read-only and the draft differs from the current prop value. A props change to the committed value must replace the draft (sync from props, covers the board wizard hand-over via handleWizardComplete, a settings reload and a conflict reload), so the draft never swallows an outside value. The wizard path keeps calling onSettingsChange directly and does not go through the draft commit. The field must never be reset to the last saved value: after blur the shown text is the committed value. No new helper text, copy or save-state value (D4). Comments only if the why is not readable from the code, written for a stranger, never citing D-numbers, AC numbers or ADR ids. Do not write nWave scenario tags into the code. GATES: pnpm test; pnpm build (Biome + tsc, zero warnings; check git status afterwards because prebuild runs biome check --write); read the Frontend section of docs/ci-learnings.md before writing. Conventional commit: feat(settings): the query saves when the field is left. Mutation testing (StrykerJS on the changed component, kill rate 80%) runs last, on frozen code, in the final gates."
+        },
+        {
+          "id": "01-02",
+          "name": "Leaving the settings page sends a pending autosave",
+          "agent": "nw-software-crafter",
+          "description": "useModifySettings flushes a pending debounced autosave when the page unmounts instead of clearing the timer and dropping it.",
+          "criteria": [
+            "Leaving the Team settings page straight after leaving the query field sends the save carrying the edited query",
+            "Leaving the page before the debounce has run out sends a pending change to another field, such as a changed name",
+            "Leaving the page with no edit pending sends nothing (existing guard stays green)",
+            "The flush honours the autosave rules: it is sent only when autosave is enabled, saving is permitted, the form is valid, the user has interacted, and no conflict is open",
+            "A page left while the form is invalid sends nothing (active guard 'saves nothing when the page is left while the form is invalid' stays green); the same holds for no save permission and an open conflict, by reusing the effect's own conditions rather than a second copy of them", "The unmount flush sends the save only: it does not run the page refresh (additionalFetch) or change save state, because the page is gone; the backend reacts to the save itself",
+            "Every test in useModifySettings.autosave.test.ts and the other useModifySettings test files stays green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+          "scenario_name": "saves the edited query when the page is left straight after the field",
+          "dependencies": [
+            "01-01"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/hooks/useModifySettings.ts",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx"
+          ],
+          "estimated_hours": 2,
+          "implementation_notes": "Un-skip in ModifyTeamSettings.queryCommit.test.tsx: 'saves the edited query when the page is left straight after the field' (needs 01-01 so the blur commits the query) and 'saves a changed name when the page is left before the debounce runs out' (AC 8, every field). The active guard 'saves nothing when the page is left without an edit' must stay green. Production: the autosave effect in hooks/useModifySettings.ts (around lines 305-331) sets a 300 ms timer and clears it on cleanup, which on unmount drops the pending save. Change the unmount path to flush instead: when a timer is pending, fire the same save the timer would have fired, subject to the same conditions the effect checks (enabled, canSave, form valid, interacted, no conflict). Track whether a save is pending (a ref) so that leaving with nothing pending sends nothing, and make sure the cleanup that runs on every dependency change (a new edit re-arms the timer) still just clears the timer and does not flush; only a real unmount flushes. The flush reads the latest settings through a ref, not the closure of the render that armed the timer. The save fired at unmount skips the refresh-on-save path (additionalFetch) and the save-state updates (saving, saved, failed): the page is gone, so neither has anyone to show to. The existing useModifySettings.autosave.test.ts must stay green; run it together with the other useModifySettings.*.test.ts files. Comments only if the why is not readable from the code, written for a stranger, never citing D-numbers or ADR ids. Do not write nWave scenario tags into the code. GATES: pnpm test; pnpm build (Biome + tsc, zero warnings; check git status afterwards); docs/ci-learnings.md Frontend section. Conventional commit: fix(settings): leaving the settings page sends a pending autosave."
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      "Lighthouse.Frontend/src/components/Common/BaseSettings/",
+      "Lighthouse.Frontend/src/hooks/"
+    ],
+    "test_directories": [
+      "Lighthouse.Frontend/src/components/Common/BaseSettings/",
+      "Lighthouse.Frontend/src/components/Common/Team/",
+      "Lighthouse.Frontend/src/components/Common/ProjectSettings/",
+      "Lighthouse.Frontend/src/hooks/"
+    ],
+    "excluded_patterns": [
+      "node_modules/**",
+      "dist/**",
+      "coverage/**",
+      "**/*.d.ts"
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer",
+    "reviewed_at": "2026-10-31",
+    "notes": "Conditionally approved, 0 blockers; 12 of 12 skipped tests claimed, no orphans. Both highs on 01-02 resolved by the orchestrator: an active guard now pins that leaving with an invalid form sends nothing, and the unmount flush is fixed as save-only (no page refresh, no save-state change). Lows: 01-01 covers 10 scenarios sharing one production change, kept as one step; the stale React warning requirement was dropped; the name criterion and the AC 4 second-half note were reworded."
+  }
+}
