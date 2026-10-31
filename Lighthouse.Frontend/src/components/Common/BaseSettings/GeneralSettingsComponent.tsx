@@ -50,8 +50,8 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 	const { isSystemAdmin } = useRbac();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
 
-	// Every wizard reads through /wizards/*, which is System Admin only (ADR-126) — offering the
-	// button to anyone else only buys them a 403.
+	// Every wizard reads through /wizards/*, which only a system administrator may call, so
+	// offering the button to anyone else only buys them a 403.
 	const availableWizards =
 		selectedWorkTrackingSystem && isSystemAdmin
 			? getWizardsForSystem(
