@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it } from "vitest";
 import { ReportCreationOutcomesSchema } from "../../models/Reports/ReportsAcrossOwners";
@@ -23,15 +23,20 @@ const renderTheResult = () =>
 	);
 
 describe("The bulk creation result, read from the server's own answer", () => {
-	it("names each owner after its kind, whether or not its report was created", () => {
+	it("names each owner as it is called, its kind shown by an icon rather than a word before the name", () => {
 		renderTheResult();
 
+		const zenith = screen.getByText("Zenith", { exact: true }).closest("li");
+		const apollo = screen.getByText("Apollo", { exact: true }).closest("li");
+		expect(zenith).not.toBeNull();
+		expect(apollo).not.toBeNull();
 		expect(
-			screen.getByText("Team Zenith", { exact: true }),
+			within(zenith as HTMLElement).getByTitle("Team"),
 		).toBeInTheDocument();
 		expect(
-			screen.getByText("Portfolio Apollo", { exact: true }),
+			within(apollo as HTMLElement).getByTitle("Portfolio"),
 		).toBeInTheDocument();
+		expect(screen.queryByText("Team Zenith", { exact: true })).toBeNull();
 	});
 
 	it("keeps a not-created owner's reason on its row", () => {

@@ -844,7 +844,7 @@ describe("Moving through the wizard", () => {
 			await within(result).findByText(createdHeadline(1, 0), { exact: true }),
 		).toBeInTheDocument();
 		expect(
-			within(result).getByText(`Team ${ZENITH.name}`, { exact: true }),
+			within(result).getByText(ZENITH.name, { exact: true }),
 		).toBeInTheDocument();
 	});
 
@@ -864,7 +864,7 @@ describe("Moving through the wizard", () => {
 
 		const result = await theResult();
 		expect(
-			await within(result).findByText(`Team ${ZENITH.name}`, { exact: true }),
+			await within(result).findByText(ZENITH.name, { exact: true }),
 		).toBeInTheDocument();
 		expect(
 			within(result).getByText(notCreatedBecause.notAdmin(ZENITH), {

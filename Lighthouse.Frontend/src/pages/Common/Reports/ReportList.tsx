@@ -1,7 +1,5 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import FolderSpecialIcon from "@mui/icons-material/FolderSpecial";
-import GroupsIcon from "@mui/icons-material/Groups";
 import HistoryToggleOffIcon from "@mui/icons-material/HistoryToggleOff";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import {
@@ -27,6 +25,7 @@ import type { IReportAcrossOwners } from "../../../models/Reports/ReportsAcrossO
 import { useTerminology } from "../../../services/TerminologyContext";
 import { parseLocalDate } from "../../../utils/date/localDate";
 import { isTauriOnMac } from "../../../utils/tauri";
+import { OwnerKindIcon } from "./OwnerKindIcon";
 import { PDF_EXPORT_UNAVAILABLE_ON_MAC } from "./pdfExportCopy";
 import { ownerOfReport, ownerTermKeyOf, reportPathOf } from "./reportOwner";
 import { CANNOT_BE_REBUILT } from "./thenRebuildCopy";
@@ -179,10 +178,9 @@ const OwnerLink: React.FC<{ readonly report: IReportAcrossOwners }> = ({
 }) => {
 	const { getTerm } = useTerminology();
 	const owner = ownerOfReport(report);
-	const KindIcon = owner.kind === "team" ? GroupsIcon : FolderSpecialIcon;
 	return (
 		<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-			<KindIcon fontSize="small" color="action" />
+			<OwnerKindIcon kind={owner.kind} />
 			<StyledLink
 				to={`/${owner.kind}s/${owner.id}`}
 				aria-label={`${report.ownerName}, ${getTerm(ownerTermKeyOf(owner))}`}

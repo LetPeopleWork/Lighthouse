@@ -15,6 +15,7 @@ import type { IReportCreationOutcome } from "../../models/Reports/ReportsAcrossO
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
 import { isTauriEnv } from "../../utils/tauri";
+import { OwnerKindIcon } from "../Common/Reports/OwnerKindIcon";
 import {
 	ownerOfReport,
 	ownerTermKeyOf,
@@ -128,9 +129,10 @@ const OutcomeLine: React.FC<
 	const ownerTerm = getTerm(ownerTermKeyOf(ownerOfReport(outcome)));
 	return (
 		<ListItem disableGutters sx={{ gap: 2 }}>
-			<Typography sx={{ flex: 1 }}>
-				{`${ownerTerm} ${outcome.ownerName ?? ""}`.trim()}
-			</Typography>
+			<Stack direction="row" spacing={1} sx={{ flex: 1, alignItems: "center" }}>
+				<OwnerKindIcon kind={ownerOfReport(outcome).kind} title={ownerTerm} />
+				<Typography>{outcome.ownerName ?? ""}</Typography>
+			</Stack>
 			{outcome.status === "created" && outcome.reportId !== undefined ? (
 				<CreatedStatus outcome={outcome} reportId={outcome.reportId} />
 			) : (
