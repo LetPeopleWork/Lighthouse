@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ExpectedTestFailure } from "../../../tests/ExpectedTestFailure";
@@ -253,5 +253,34 @@ describe("ActionButton component", () => {
 
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 		expect(screen.queryByText(buttonText)).toBeInTheDocument();
+	});
+
+	it("leaves the page alone when its minimum wait ends after it is gone", async () => {
+		vi.useFakeTimers();
+		const rejections: unknown[] = [];
+		const onRejection = (reason: unknown) => rejections.push(reason);
+		process.on("unhandledRejection", onRejection);
+		try {
+			const { unmount } = render(
+				<ActionButton
+					buttonText="Save"
+					onClickHandler={vi.fn().mockResolvedValue(undefined)}
+				/>,
+			);
+			fireEvent.click(screen.getByRole("button", { name: "Save" }));
+			unmount();
+			// A test environment torn down before the wait ends has no window left.
+			vi.stubGlobal("window", undefined);
+			await vi.advanceTimersByTimeAsync(300);
+			vi.unstubAllGlobals();
+			vi.useRealTimers();
+			await new Promise((resolve) => setImmediate(resolve));
+
+			expect(rejections).toEqual([]);
+		} finally {
+			vi.unstubAllGlobals();
+			process.off("unhandledRejection", onRejection);
+			vi.useRealTimers();
+		}
 	});
 });

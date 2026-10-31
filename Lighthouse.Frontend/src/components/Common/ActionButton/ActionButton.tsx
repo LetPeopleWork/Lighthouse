@@ -1,6 +1,6 @@
 import { Button, CircularProgress, useTheme } from "@mui/material";
 import type React from "react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type ButtonVariant = "text" | "outlined" | "contained";
 
@@ -35,6 +35,14 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 	describedBy,
 }) => {
 	const [internalIsWaiting, setInternalIsWaiting] = useState<boolean>(false);
+	const isMounted = useRef(true);
+
+	useEffect(() => {
+		isMounted.current = true;
+		return () => {
+			isMounted.current = false;
+		};
+	}, []);
 
 	const theme = useTheme();
 
@@ -48,7 +56,8 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 				new Promise((resolve) => setTimeout(resolve, 300)),
 			]);
 		} finally {
-			setInternalIsWaiting(false);
+			// The minimum wait can outlive the button: the click may navigate away or close its dialog.
+			if (isMounted.current) setInternalIsWaiting(false);
 		}
 	};
 
