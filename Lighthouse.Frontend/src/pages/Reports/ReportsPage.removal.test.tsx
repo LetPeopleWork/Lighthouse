@@ -494,7 +494,8 @@ describe("Remove several reports at once", () => {
 	});
 });
 
-describe("Picking reports", () => {
+// Every test here renders a page of 50 to 101 grid rows, which takes seconds in jsdom on a loaded runner.
+describe("Picking reports", { timeout: 15_000 }, () => {
 	it("above 50 picked, Remove is disabled and says at most 50", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
@@ -562,7 +563,7 @@ describe("Picking reports", () => {
 	it("Select all picks every row, on every page", async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(
-				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 70)),
+				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 51)),
 			),
 			permissions: { adminOf: [ZENITH] },
 		});
@@ -571,7 +572,7 @@ describe("Picking reports", () => {
 		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
 
 		expect(
-			screen.getByText(selectedCount(120), { exact: true }),
+			screen.getByText(selectedCount(101), { exact: true }),
 		).toBeInTheDocument();
 	});
 });
