@@ -11,6 +11,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
+import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
 vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
@@ -606,10 +607,50 @@ describe("ModifyTeamSettings", () => {
 				target: { value: "Active Work" },
 			});
 
-			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						doingStates: ["In Arbeit", "Active Work"],
+						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
+					}),
+				),
+			);
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
+		});
+
+		it("holds back autosave while a mapping is named after a To Do state, and saves once it is renamed", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				toDoStates: ["In Arbeit"],
+				doingStates: ["Active"],
+				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+			});
+
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add Done"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent(
+				'Mapping "In Arbeit" has the same name as the To Do state "In Arbeit". Choose another name.',
+			);
+			await waitPastTheDebounce();
+			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "Active Work" },
+			});
+
+			await waitFor(() =>
+				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						toDoStates: ["In Arbeit"],
+						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
+					}),
+				),
+			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {

@@ -27,13 +27,14 @@ export function wouldShadow(m: IStateMapping, doing: string[]): boolean {
 
 /**
  * True when the mapping has been taken into the Doing list: it has a name and
- * states, and none of its states (other than one equal to its own name) is
- * still listed there.
+ * states, its name is listed there, and none of its states (other than one
+ * equal to its own name) still is.
  */
 export function isApplied(m: IStateMapping, doing: string[]): boolean {
 	const key = normalise(m.name);
 	if (!key || m.states.length === 0) return false;
 	const doingKeys = new Set(doing.map(normalise));
+	if (!doingKeys.has(key)) return false;
 	return m.states.every((s) => {
 		const stateKey = normalise(s);
 		return stateKey === key || !doingKeys.has(stateKey);
@@ -86,7 +87,7 @@ export function reconcileDoingStates(
 			result = result.filter((s) => !sourceKeys.has(normalise(s)));
 			// Append mapping name if not already present
 			if (!result.some((s) => normalise(s) === key)) {
-				result = [...result, next.name];
+				result = [...result, next.name.trim()];
 			}
 		}
 	}

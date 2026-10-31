@@ -270,6 +270,37 @@ describe("reconcileDoingStates", () => {
 			]);
 		});
 
+		it("groups the states again after they were picked first and the name is typed letter by letter", () => {
+			const target = "In Arbeit";
+			const states = ["In Arbeit", "In Progress"];
+			let previous: IStateMapping[] = [{ name: "", states }];
+			let doing = [...states];
+
+			for (let length = 1; length <= target.length; length++) {
+				const next = [{ name: target.slice(0, length), states }];
+				doing = reconcileDoingStates(previous, next, doing);
+				expect(doing).toEqual([target.slice(0, length).trim()]);
+				previous = next;
+			}
+
+			expect(doing).toEqual(["In Arbeit"]);
+		});
+
+		it("adds the mapping name without surrounding spaces", () => {
+			const mapping: IStateMapping = { name: " Verification ", states: ["QA"] };
+
+			expect(reconcileDoingStates([], [mapping], ["Dev", "QA"])).toEqual([
+				"Dev",
+				"Verification",
+			]);
+		});
+
+		it("does not put the states back when the mapping's name was removed from Doing by hand", () => {
+			const mapping: IStateMapping = { name: "Verification", states: ["QA"] };
+
+			expect(reconcileDoingStates([mapping], [], ["Dev"])).toEqual(["Dev"]);
+		});
+
 		it("leaves Doing exactly as it was when an empty mapping is added and deleted", () => {
 			const doing = ["Dev", "Review"];
 			const empty: IStateMapping = { name: "", states: [] };

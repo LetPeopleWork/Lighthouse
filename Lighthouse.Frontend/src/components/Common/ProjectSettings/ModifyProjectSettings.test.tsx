@@ -18,6 +18,7 @@ import {
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
+import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
 vi.mock("./PortfolioSizeNote", () => ({ default: () => null }));
@@ -945,10 +946,49 @@ describe("ModifyProjectSettings", () => {
 
 			fireEvent.click(screen.getByText("Change State Mapping"));
 
-			await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+			await waitFor(() =>
+				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						doingStates: ["In Arbeit", "In Progress", "Group"],
+						stateMappings: [{ name: "Group", states: ["Active"] }],
+					}),
+				),
+			);
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
+		});
+
+		it("holds back autosave while a mapping is named after a To Do state", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				toDoStates: ["Group"],
+				stateMappings: [],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change State Mapping"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent(
+				'Mapping "Group" has the same name as the To Do state "Group". Choose another name.',
+			);
+			await waitPastTheDebounce();
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
 		it("renders no warning while the form can be saved", async () => {

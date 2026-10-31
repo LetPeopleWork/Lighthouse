@@ -23,7 +23,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
-	shadowedDoingStateErrors,
+	stateNameClashErrors,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -98,7 +98,7 @@ function teamAutoSaveBlockers(
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
 	);
-	reasons.push(...shadowedDoingStateErrors(s.stateMappings, s.doingStates));
+	reasons.push(...stateNameClashErrors(s.stateMappings, s));
 	if (isDefault) {
 		return reasons;
 	}
@@ -171,10 +171,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const stateMappingErrors = useMemo(() => {
 		if (!teamSettings) return [];
-		return validateStateMappings(
-			teamSettings.stateMappings,
-			teamSettings.doingStates,
-		);
+		return validateStateMappings(teamSettings.stateMappings, teamSettings);
 	}, [teamSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>

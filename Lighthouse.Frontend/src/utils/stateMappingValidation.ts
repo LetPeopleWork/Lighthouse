@@ -1,6 +1,12 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
 import { isApplied, wouldShadow } from "./stateMappingReconciliation";
 
+export interface IStateLists {
+	toDoStates: string[];
+	doingStates: string[];
+	doneStates: string[];
+}
+
 function validateMappingFields(mappings: IStateMapping[]): string[] {
 	return mappings.flatMap((mapping, i) => {
 		const errors: string[] = [];
@@ -47,36 +53,100 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 	return errors;
 }
 
+function normalise(s: string): string {
+	return s.trim().toLowerCase();
+}
+
+function listedAs(states: string[], name: string): string | undefined {
+	return states.find((s) => normalise(s) === normalise(name));
+}
+
+function groupingMappingOf(
+	mapping: IStateMapping,
+	mappings: IStateMapping[],
+): IStateMapping | undefined {
+	return mappings.find(
+		(other) => other !== mapping && listedAs(other.states, mapping.name),
+	);
+}
+
+function namesAStateOfAnotherMapping(
+	mapping: IStateMapping,
+	mappings: IStateMapping[],
+): boolean {
+	return mappings.some(
+		(other) => other !== mapping && listedAs(mapping.states, other.name),
+	);
+}
+
 // A mapping already taken into Doing legitimately appears there under its own
-// name, so only a mapping whose source states are still listed is a clash.
-export function shadowedDoingStateErrors(
+// name, so only a mapping whose source states are still listed is a clash. A
+// mapping that groups another mapping's name is reported through that mapping.
+function doingClashError(
+	mapping: IStateMapping,
 	mappings: IStateMapping[],
 	doingStates: string[],
 ): string[] {
+	if (
+		!wouldShadow(mapping, doingStates) ||
+		isApplied(mapping, doingStates) ||
+		namesAStateOfAnotherMapping(mapping, mappings)
+	) {
+		return [];
+	}
+	const name = mapping.name.trim();
+	return [
+		`Mapping "${name}" has the same name as the Doing state "${listedAs(doingStates, name)}". Add "${name}" to this mapping to group it, or choose another name.`,
+	];
+}
+
+function listClashError(
+	mapping: IStateMapping,
+	listLabel: string,
+	states: string[],
+): string[] {
+	const listed = listedAs(states, mapping.name);
+	return listed === undefined
+		? []
+		: [
+				`Mapping "${mapping.name.trim()}" has the same name as the ${listLabel} state "${listed}". Choose another name.`,
+			];
+}
+
+function groupedElsewhereError(
+	mapping: IStateMapping,
+	mappings: IStateMapping[],
+): string[] {
+	const grouping = groupingMappingOf(mapping, mappings);
+	return grouping
+		? [
+				`Mapping "${mapping.name.trim()}" has the same name as a state grouped by mapping "${grouping.name.trim()}". Choose another name.`,
+			]
+		: [];
+}
+
+export function stateNameClashErrors(
+	mappings: IStateMapping[],
+	{ toDoStates, doingStates, doneStates }: IStateLists,
+): string[] {
 	return mappings
-		.filter(
-			(m) =>
-				m.states.length > 0 &&
-				wouldShadow(m, doingStates) &&
-				!isApplied(m, doingStates),
-		)
-		.map((m) => {
-			const name = m.name.trim();
-			const doingState = doingStates.find(
-				(s) => s.trim().toLowerCase() === name.toLowerCase(),
-			);
-			return `Mapping "${name}" has the same name as the Doing state "${doingState}". Add "${name}" to this mapping to group it, or choose another name.`;
-		});
+		.filter((m) => m.states.length > 0 && normalise(m.name) !== "")
+		.flatMap((m) => [
+			...doingClashError(m, mappings, doingStates),
+			...listClashError(m, "To Do", toDoStates),
+			...listClashError(m, "Done", doneStates),
+			...groupedElsewhereError(m, mappings),
+		]);
 }
 
 export function validateStateMappings(
 	mappings: IStateMapping[],
-	doingStates: string[],
+	lists: IStateLists,
 ): string[] {
 	return [
 		...validateMappingFields(mappings),
 		...validateUniqueNames(mappings),
 		...validateUniqueStates(mappings),
-		...shadowedDoingStateErrors(mappings, doingStates),
+		...stateNameClashErrors(mappings, lists),
 	];
 }
