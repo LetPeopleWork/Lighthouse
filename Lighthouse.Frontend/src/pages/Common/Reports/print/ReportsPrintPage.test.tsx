@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import type { IReportOwner } from "../../../../models/Reports/Report";
@@ -10,7 +10,10 @@ import {
 	apollo,
 	aTeamServiceAnswering,
 	aTerminologyServiceAnswering,
+	BRANDING,
+	elementsPrintedAs,
 	lightspeed,
+	thePrintOnlyDeclarations,
 	theTermsAnswer,
 } from "../../../../tests/ReportPrintTestKit";
 import {
@@ -86,6 +89,49 @@ describe("the print page of several reports", () => {
 		expect(getReport).toHaveBeenCalledWith({ kind: "team", id: 1 }, 12);
 		expect(document.title).toBe("Lighthouse reports");
 		expect(print).not.toHaveBeenCalled();
+		vi.unstubAllGlobals();
+	});
+
+	// Something fixed to the page prints on every sheet of the document, so with several reports every report's line
+	// would stack on every sheet. A table's own header and footer groups repeat only on the sheets that table spans.
+	it("gives each report its own running line and footer, repeated only on that report's pages", async () => {
+		openThePrintPageOf("/print/reports?reports=portfolio-2-7,team-1-12");
+
+		await waitFor(() =>
+			expect(
+				document.querySelector("[data-render-ready='true']"),
+			).not.toBeNull(),
+		);
+		const titles = screen.getAllByRole("heading", { level: 1 });
+		const reports = elementsPrintedAs("table");
+		const lines = elementsPrintedAs("table-header-group");
+		const footers = elementsPrintedAs("table-footer-group");
+		expect(reports).toHaveLength(2);
+		expect(lines).toHaveLength(2);
+		expect(footers).toHaveLength(2);
+		for (const [index, name] of [PORTFOLIOS_REPORT, TEAMS_REPORT].entries()) {
+			const [report, line, footer] = [
+				reports[index],
+				lines[index],
+				footers[index],
+			];
+			expect(report.contains(titles[index])).toBe(true);
+			expect(report.contains(line)).toBe(true);
+			expect(report.contains(footer)).toBe(true);
+			expect(line.contains(titles[index])).toBe(false);
+			const header = within(line).queryByText(name)?.closest("header");
+			expect(
+				header,
+				`${name}'s running line is not in its own header group`,
+			).toBeTruthy();
+			expect(within(line).getByText(/^Produced /)).toBeInTheDocument();
+			const credit = within(footer).queryByText(BRANDING)?.closest("footer");
+			expect(
+				credit,
+				`${name}'s credit is not in its own footer group`,
+			).toBeTruthy();
+		}
+		expect(thePrintOnlyDeclarations()).not.toMatch(/position:\s*fixed/);
 		vi.unstubAllGlobals();
 	});
 });

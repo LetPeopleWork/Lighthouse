@@ -18,9 +18,10 @@ const BRANDING = "Made with Lighthouse by LetPeopleWork · letpeople.work";
 const PRODUCED_AT = "d MMM yyyy, HH:mm";
 
 /**
- * On paper the line and the footer are fixed to the page, so the browser prints them on every sheet. The report runs
- * as a table whose header and footer groups the browser also repeats on every sheet; those groups are as tall as the
- * line and the footer, so no panel runs underneath either of them.
+ * On paper the report is a table, with the line as its header group and the footer as its footer group. The browser
+ * repeats a table's header and footer groups at the top and bottom of every sheet the table runs over, and only
+ * those, so when several reports share one document each sheet carries the line and footer of its own report. Each
+ * group keeps a fixed height, so a report's pages all look alike.
  */
 const LINE_HEIGHT = "10mm";
 const FOOTER_HEIGHT = "16mm";
@@ -31,19 +32,11 @@ const SUMMARY_KEPT_WHOLE = {
 	"& [data-report-summary]": { breakInside: "avoid" },
 };
 
-const FIXED_TO_THE_PAGE = {
-	position: "fixed",
-	left: 0,
-	right: 0,
-	boxSizing: "border-box",
-	bgcolor: "background.paper",
-} as const;
-
 const RUNNING_LINE = {
 	"@media print": {
-		...FIXED_TO_THE_PAGE,
-		top: 0,
+		boxSizing: "border-box",
 		height: LINE_HEIGHT,
+		marginBottom: GAP_TO_THE_REPORT,
 		display: "flex",
 		flexDirection: "column",
 		justifyContent: "flex-end",
@@ -68,32 +61,31 @@ const CREDIT_FOOTER = {
 	gap: 2,
 	borderTop: 1,
 	borderColor: "divider",
-	"@media print": { ...FIXED_TO_THE_PAGE, bottom: 0, height: FOOTER_HEIGHT },
+	"@media print": {
+		boxSizing: "border-box",
+		height: FOOTER_HEIGHT,
+		marginTop: GAP_TO_THE_REPORT,
+	},
 };
 
-const THE_REPORT = { "@media print": { display: "table", width: "100%" } };
+/** On the screen the line, the report and the footer simply stack, a little apart. */
+const THE_REPORT = {
+	...SUMMARY_KEPT_WHOLE,
+	display: "flex",
+	flexDirection: "column",
+	gap: 2,
+	"@media print": { display: "table", width: "100%" },
+};
 const THE_REPORT_BODY = { "@media print": { display: "table-row-group" } };
 
-const roomFor = (
-	group: "table-header-group" | "table-footer-group",
-	height: string,
-	gap: { readonly marginTop: string } | { readonly marginBottom: string },
-) => ({
-	// Chrome repeats a header or footer group on every sheet only when the group may not break; without that it
-	// keeps the room on the first sheet alone and the next sheet's panel prints under the line.
-	group: {
-		display: "none",
-		"@media print": { display: group, breakInside: "avoid" },
-	},
-	spacer: { "@media print": { height, ...gap } },
+// Chrome repeats a header or footer group on every sheet only when the group may not break; without that it prints
+// the line or footer on the report's first sheet alone, and the next sheet's panels start at the very top.
+const repeatedAs = (group: "table-header-group" | "table-footer-group") => ({
+	"@media print": { display: group, breakInside: "avoid" },
 });
 
-const ROOM_FOR_THE_LINE = roomFor("table-header-group", LINE_HEIGHT, {
-	marginBottom: GAP_TO_THE_REPORT,
-});
-const ROOM_FOR_THE_FOOTER = roomFor("table-footer-group", FOOTER_HEIGHT, {
-	marginTop: GAP_TO_THE_REPORT,
-});
+const THE_LINES_GROUP = repeatedAs("table-header-group");
+const THE_FOOTERS_GROUP = repeatedAs("table-footer-group");
 
 /** The owner as the header names it, in the instance's own word for its kind: "Team Lightspeed". */
 export const ownerLineOf = (
@@ -129,47 +121,43 @@ const ReportPrintDocument: React.FC<ReportPrintDocumentProps> = ({
 	const { thenWindow, nowWindow } = report.thenAndNow;
 
 	return (
-		<Stack spacing={2} sx={SUMMARY_KEPT_WHOLE}>
-			<Box component="header" sx={RUNNING_LINE}>
-				<Box sx={LINE_PARTS}>
-					<Typography variant="caption" component="p" sx={NAME_PART}>
-						{ownerLine}
-					</Typography>
-					<Typography variant="caption" component="p" sx={NAME_PART}>
-						{report.name}
-					</Typography>
-					<Typography variant="caption" component="p" sx={DATE_PART}>
-						{`Then ${daysOf(thenWindow)} · Now ${daysOf(nowWindow)}`}
-					</Typography>
-					<Typography variant="caption" component="p" sx={DATE_PART}>
-						{`Produced ${format(producedAt, PRODUCED_AT)}`}
-					</Typography>
-				</Box>
-				<Divider sx={{ mt: 0.5 }} />
-			</Box>
-			<Box sx={THE_REPORT}>
-				<Box sx={ROOM_FOR_THE_LINE.group}>
-					<Box sx={ROOM_FOR_THE_LINE.spacer} />
-				</Box>
-				<Stack spacing={2} sx={THE_REPORT_BODY}>
-					<Typography variant="h4" component="h1">
-						{report.name}
-					</Typography>
-					<ThenAndNowSummary
-						thenAndNow={report.thenAndNow}
-						shownMetricKeys={report.shownMetricKeys}
-					/>
-					<ReportPanels report={report} />
-				</Stack>
-				<Box sx={ROOM_FOR_THE_FOOTER.group}>
-					<Box sx={ROOM_FOR_THE_FOOTER.spacer} />
+		<Box sx={THE_REPORT}>
+			<Box sx={THE_LINES_GROUP}>
+				<Box component="header" sx={RUNNING_LINE}>
+					<Box sx={LINE_PARTS}>
+						<Typography variant="caption" component="p" sx={NAME_PART}>
+							{ownerLine}
+						</Typography>
+						<Typography variant="caption" component="p" sx={NAME_PART}>
+							{report.name}
+						</Typography>
+						<Typography variant="caption" component="p" sx={DATE_PART}>
+							{`Then ${daysOf(thenWindow)} · Now ${daysOf(nowWindow)}`}
+						</Typography>
+						<Typography variant="caption" component="p" sx={DATE_PART}>
+							{`Produced ${format(producedAt, PRODUCED_AT)}`}
+						</Typography>
+					</Box>
+					<Divider sx={{ mt: 0.5 }} />
 				</Box>
 			</Box>
-			<Box component="footer" sx={CREDIT_FOOTER}>
-				<LighthouseLogo linksHome={false} />
-				<Typography variant="body2">{BRANDING}</Typography>
+			<Stack spacing={2} sx={THE_REPORT_BODY}>
+				<Typography variant="h4" component="h1">
+					{report.name}
+				</Typography>
+				<ThenAndNowSummary
+					thenAndNow={report.thenAndNow}
+					shownMetricKeys={report.shownMetricKeys}
+				/>
+				<ReportPanels report={report} />
+			</Stack>
+			<Box sx={THE_FOOTERS_GROUP}>
+				<Box component="footer" sx={CREDIT_FOOTER}>
+					<LighthouseLogo linksHome={false} />
+					<Typography variant="body2">{BRANDING}</Typography>
+				</Box>
 			</Box>
-		</Stack>
+		</Box>
 	);
 };
 
