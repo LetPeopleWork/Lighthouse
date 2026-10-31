@@ -441,3 +441,34 @@ The product owner reviewer still returned needs revision.
 
 Two review cycles are done. The remaining verdict is the orchestrator's call, recorded here, and DELIVER
 proceeds. Every derived decision (D5-D8) is listed for the maintainer at the hold.
+
+---
+
+## Wave: DELIVER / [REF] Slice 01 Review
+
+Reviewer `nw-software-crafter-reviewer` on `haiku`: needs revision, 0 blockers, 2 high, 4 medium, 5 low. One
+revision pass taken by the orchestrator (commit ac1be4767):
+
+| Finding | Outcome |
+|---|---|
+| H1: an edit made while a save is in flight is lost when that save returns a fresh token (the success path resets the "user has edited" flag) | **Pre-existing**, from 2026-05-30 (`git blame` on the reset line); affects every settings field; not caused or worsened by this slice. Listed as a follow-up Bug candidate below. |
+| H2: the query focused and the page left without a blur (browser Back) loses the draft | **Accepted as a limitation**, same class as the tab-close loss in D3. Recorded below for the maintainer. |
+| M1: a failed save at unmount is silent | Accepted. The page is gone, and like a tab close there is nowhere to show it. |
+| M2: the conflict, no-permission, disabled and in-flight branches of the flush have no test | Deferred to the mutation gate, which will show any survivor; the flush reuses the effect's own conditions. |
+| M3: DES phase timestamps are batched per step | Noted; DES integrity passes. |
+| M4: two refreshes after leaving during an in-flight save | Accepted as wasteful, not harmful; rare. |
+| L1: real-time wait in the component test | Kept: an earlier review asked for it, to catch a debounce added inside the component. |
+| L2: the invalid-form guard did not prove the form was invalid | Fixed: asserts the name is empty before leaving. |
+| L3: the leave-page tests ran only on Team | Fixed: Portfolio now has "saves the edited query when the page is left straight after the field" and "saves nothing when the page is left without an edit". |
+| L4: Bug-number comments in `useModifySettings.ts` | Fixed: rewritten as plain reasons. |
+| L5: alt-tab blurs the field and so commits | Intended: leaving the window is leaving the field. |
+
+## Follow-ups for the maintainer
+
+- **Bug candidate: an edit made during an in-flight save can be dropped.** In `useModifySettings.ts` the
+  save-success path sets `hasInteractedRef.current = false` and then writes the refreshed concurrency
+  token into settings. That re-runs the autosave effect, which clears the newer edit's timer and then
+  returns early because the flag is now false. This affects every Team and Portfolio settings field and
+  predates this story.
+- **Limitation: browser Back with the query field still focused** removes the field without a blur, so
+  the draft is not committed. This is the same class as the tab-close loss accepted in D3.
