@@ -21,6 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ".github/actions/package-app/action.yml",
             ".github/workflows/ci_package-macos-standalone.yml",
             "Lighthouse.Frontend/package.json",
+            "Lighthouse.Backend/Lighthouse.Backend/Lighthouse.Backend.csproj",
             "Dockerfile",
         ];
 
@@ -107,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             return name.StartsWith("Dockerfile", StringComparison.Ordinal)
                 || name == "package.json"
-                || extension is ".sh" or ".ps1"
+                || extension is ".sh" or ".ps1" or ".csproj" or ".props" or ".targets"
                 || (inGithubFolder && extension is ".yml" or ".yaml");
         }
 
@@ -120,7 +121,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
 
             Assert.That(directory?.Parent, Is.Not.Null, "Could not locate Lighthouse.sln to anchor the build file scan.");
-            return directory!.Parent!.FullName;
+            var root = directory!.Parent!.FullName;
+
+            Assert.That(
+                Directory.Exists(Path.Combine(root, ".github")) && Directory.Exists(Path.Combine(root, "Lighthouse.Backend")),
+                Is.True,
+                $"Expected the folder above Lighthouse.sln to be the repository root, holding .github and Lighthouse.Backend, but found {root}.");
+            return root;
         }
     }
 }
