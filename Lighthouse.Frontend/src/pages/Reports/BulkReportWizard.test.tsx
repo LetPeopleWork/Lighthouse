@@ -256,9 +256,41 @@ describe("Create reports for several Teams", () => {
 			2,
 		);
 
-		await user.click(within(result).getAllByRole("link", { name: OPEN })[0]);
+		const open = within(result).getAllByRole("link", { name: OPEN })[0];
+		expect(open).toHaveAttribute("href", `/teams/${ZENITH.id}/reports/601`);
+		expect(open).toHaveAttribute("target", "_blank");
+		expect(open).toHaveAttribute("rel", "noopener noreferrer");
+		expect(within(open).getByTestId("OpenInNewIcon")).toBeInTheDocument();
 
-		expect(whereTheReaderIs()).toBe(`/teams/${ZENITH.id}/reports/601`);
+		await user.click(open);
+
+		expect(screen.getByRole("dialog")).toBeInTheDocument();
+		expect(whereTheReaderIs()).toBe("/reports");
+	});
+
+	it("in the desktop app, which opens no second window, Open moves to the report in place and the result closes", async () => {
+		const desktop = globalThis as { __TAURI_INTERNALS__?: unknown };
+		desktop.__TAURI_INTERNALS__ = {};
+		try {
+			const { user } = renderTheReportsPage({
+				reportService: aReportServiceCreating(
+					vi.fn().mockResolvedValue([created(ZENITH, 601)]),
+				),
+			});
+			await toTheOwnerStep(user);
+			await pickOwner(user, ZENITH);
+			await user.click(screen.getByRole("button", { name: createCount(1) }));
+
+			const result = await theResult();
+			const open = await within(result).findByRole("link", { name: OPEN });
+			expect(open).not.toHaveAttribute("target");
+			await user.click(open);
+
+			expect(whereTheReaderIs()).toBe(`/teams/${ZENITH.id}/reports/601`);
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		} finally {
+			delete desktop.__TAURI_INTERNALS__;
+		}
 	});
 
 	it(`when every Team is refused the headline says none was created and each line says why`, async () => {

@@ -1,3 +1,4 @@
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import {
 	Button,
 	CircularProgress,
@@ -9,10 +10,11 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
-import { Link } from "react-router";
+import { Link, useHref } from "react-router";
 import type { IReportCreationOutcome } from "../../models/Reports/ReportsAcrossOwners";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import { useTerminology } from "../../services/TerminologyContext";
+import { isTauriEnv } from "../../utils/tauri";
 import {
 	ownerOfReport,
 	ownerTermKeyOf,
@@ -66,18 +68,35 @@ const headlineOf = (outcomes: readonly IReportCreationOutcome[]): string => {
 	return `${created} ${reportsWord(created)} created, ${outcomes.length - created} not created`;
 };
 
+/**
+ * In a browser the report opens in a new tab, so the result stays to open the others from. The desktop app opens no
+ * second window, so there Open moves to the report in place.
+ */
+const OpenReport: React.FC<Readonly<{ path: string }>> = ({ path }) => {
+	const href = useHref(path);
+	return isTauriEnv() ? (
+		<Button component={Link} to={path} size="small">
+			Open
+		</Button>
+	) : (
+		<Button
+			href={href}
+			target="_blank"
+			rel="noopener noreferrer"
+			size="small"
+			endIcon={<OpenInNewIcon />}
+		>
+			Open
+		</Button>
+	);
+};
+
 const CreatedStatus: React.FC<
 	Readonly<{ outcome: IReportCreationOutcome; reportId: number }>
 > = ({ outcome, reportId }) => (
 	<>
 		<Typography color="success.main">Created</Typography>
-		<Button
-			component={Link}
-			to={reportPathOf(ownerOfReport(outcome), reportId)}
-			size="small"
-		>
-			Open
-		</Button>
+		<OpenReport path={reportPathOf(ownerOfReport(outcome), reportId)} />
 	</>
 );
 
