@@ -30,7 +30,7 @@ export function wouldShadow(m: IStateMapping, doing: string[]): boolean {
  * states, and none of its states (other than one equal to its own name) is
  * still listed there.
  */
-function isApplied(m: IStateMapping, doing: string[]): boolean {
+export function isApplied(m: IStateMapping, doing: string[]): boolean {
 	const key = normalise(m.name);
 	if (!key || m.states.length === 0) return false;
 	const doingKeys = new Set(doing.map(normalise));

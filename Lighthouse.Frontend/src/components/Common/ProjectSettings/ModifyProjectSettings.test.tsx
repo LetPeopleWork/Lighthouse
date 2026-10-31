@@ -912,6 +912,45 @@ describe("ModifyProjectSettings", () => {
 			expect(warning).toHaveTextContent("Add at least one To Do State");
 		});
 
+		it("holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				doingStates: ["In Arbeit", "In Progress"],
+				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent(
+				'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+			);
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+
+			fireEvent.click(screen.getByText("Change State Mapping"));
+
+			await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+
 		it("renders no warning while the form can be saved", async () => {
 			renderWithProvider(
 				<ModifyProjectSettings

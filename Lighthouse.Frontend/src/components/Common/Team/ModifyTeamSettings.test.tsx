@@ -584,6 +584,34 @@ describe("ModifyTeamSettings", () => {
 			expect(warning).toHaveTextContent("Add at least one Work Item Type");
 		});
 
+		it("holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				doingStates: ["In Arbeit", "In Progress"],
+				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+			});
+
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(warning).toHaveTextContent(
+				'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+			);
+			await new Promise((resolve) => setTimeout(resolve, 500));
+			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "Active Work" },
+			});
+
+			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+
 		it("renders no warning while the form can be saved", async () => {
 			await renderModifyTeamSettings();
 

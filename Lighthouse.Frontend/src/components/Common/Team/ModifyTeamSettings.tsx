@@ -22,7 +22,10 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
-import { validateStateMappings } from "../../../utils/stateMappingValidation";
+import {
+	shadowedDoingStateErrors,
+	validateStateMappings,
+} from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
@@ -95,6 +98,7 @@ function teamAutoSaveBlockers(
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
 	);
+	reasons.push(...shadowedDoingStateErrors(s.stateMappings, s.doingStates));
 	if (isDefault) {
 		return reasons;
 	}
@@ -167,11 +171,10 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const stateMappingErrors = useMemo(() => {
 		if (!teamSettings) return [];
-		return validateStateMappings(teamSettings.stateMappings, [
-			...teamSettings.toDoStates,
-			...teamSettings.doingStates,
-			...teamSettings.doneStates,
-		]);
+		return validateStateMappings(
+			teamSettings.stateMappings,
+			teamSettings.doingStates,
+		);
 	}, [teamSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>

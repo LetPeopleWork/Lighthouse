@@ -1,4 +1,5 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
+import { isApplied, wouldShadow } from "./stateMappingReconciliation";
 
 function validateMappingFields(mappings: IStateMapping[]): string[] {
 	return mappings.flatMap((mapping, i) => {
@@ -46,35 +47,36 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 	return errors;
 }
 
-function validateNoDirectStateConflicts(
+// A mapping already taken into Doing legitimately appears there under its own
+// name, so only a mapping whose source states are still listed is a clash.
+export function shadowedDoingStateErrors(
 	mappings: IStateMapping[],
-	directStates: string[],
+	doingStates: string[],
 ): string[] {
-	const mappingNames = new Set(
-		mappings.map((m) => m.name.trim().toLowerCase()).filter(Boolean),
-	);
-	const directLower = new Set(
-		directStates
-			.map((s) => s.trim().toLowerCase())
-			.filter((s) => !mappingNames.has(s)),
-	);
 	return mappings
-		.map((m) => m.name.trim())
-		.filter((name) => name && directLower.has(name.toLowerCase()))
-		.map(
-			(name) =>
-				`Mapping name "${name}" conflicts with a directly configured state.`,
-		);
+		.filter(
+			(m) =>
+				m.states.length > 0 &&
+				wouldShadow(m, doingStates) &&
+				!isApplied(m, doingStates),
+		)
+		.map((m) => {
+			const name = m.name.trim();
+			const doingState = doingStates.find(
+				(s) => s.trim().toLowerCase() === name.toLowerCase(),
+			);
+			return `Mapping "${name}" has the same name as the Doing state "${doingState}". Add "${name}" to this mapping to group it, or choose another name.`;
+		});
 }
 
 export function validateStateMappings(
 	mappings: IStateMapping[],
-	directStates: string[],
+	doingStates: string[],
 ): string[] {
 	return [
 		...validateMappingFields(mappings),
 		...validateUniqueNames(mappings),
 		...validateUniqueStates(mappings),
-		...validateNoDirectStateConflicts(mappings, directStates),
+		...shadowedDoingStateErrors(mappings, doingStates),
 	];
 }

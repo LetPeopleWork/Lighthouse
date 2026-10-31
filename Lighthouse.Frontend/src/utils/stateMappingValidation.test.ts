@@ -49,31 +49,39 @@ describe("validateStateMappings", () => {
 		);
 	});
 
-	it("allows mapping name used in direct state lists (intended workflow)", () => {
+	it("reports a mapping named after a Doing state it does not contain", () => {
 		const mappings: IStateMapping[] = [
-			{ name: "Implementation", states: ["Active", "Resolved"] },
+			{ name: "In Arbeit", states: ["In Progress"] },
 		];
-		const directStates = ["New", "Implementation", "Done"];
-		const result = validateStateMappings(mappings, directStates);
+		const result = validateStateMappings(mappings, [
+			"In Arbeit",
+			"In Progress",
+		]);
+		expect(result).toEqual([
+			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+		]);
+	});
+
+	it("allows a mapping named after a Doing state it contains", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "In Arbeit", states: ["In Arbeit", "In Progress"] },
+		];
+		const result = validateStateMappings(mappings, ["In Arbeit"]);
 		expect(result).toEqual([]);
 	});
 
-	it("allows mapping name used in direct state lists case-insensitively", () => {
+	it("allows a mapping already taken into the Doing list under its own name", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "Implementation", states: ["Active", "Resolved"] },
 		];
-		const directStates = ["New", "implementation", "Done"];
-		const result = validateStateMappings(mappings, directStates);
+		const result = validateStateMappings(mappings, ["Implementation"]);
 		expect(result).toEqual([]);
 	});
 
-	it("allows mapping name matching raw state in direct state list", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "In Progress", states: ["Working"] },
-		];
-		const directStates = ["New", "In Progress", "Done"];
-		const result = validateStateMappings(mappings, directStates);
-		expect(result).toEqual([]);
+	it("reports no name clash for a mapping that has no states yet", () => {
+		const mappings: IStateMapping[] = [{ name: "In Arbeit", states: [] }];
+		const result = validateStateMappings(mappings, ["In Arbeit"]);
+		expect(result).toEqual(['Mapping "In Arbeit" has no source states.']);
 	});
 
 	it("returns multiple errors for multiple issues", () => {

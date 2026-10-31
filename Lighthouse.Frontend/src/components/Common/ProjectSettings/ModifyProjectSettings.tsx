@@ -22,7 +22,10 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
-import { validateStateMappings } from "../../../utils/stateMappingValidation";
+import {
+	shadowedDoingStateErrors,
+	validateStateMappings,
+} from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
@@ -98,6 +101,7 @@ function portfolioAutoSaveBlockers(
 	if (s.doneStates.length === 0) {
 		reasons.push("Add at least one Done State");
 	}
+	reasons.push(...shadowedDoingStateErrors(s.stateMappings, s.doingStates));
 	if (isDefault) {
 		return reasons;
 	}
@@ -187,11 +191,10 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const stateMappingErrors = useMemo(() => {
 		if (!projectSettings) return [];
-		return validateStateMappings(projectSettings.stateMappings, [
-			...projectSettings.toDoStates,
-			...projectSettings.doingStates,
-			...projectSettings.doneStates,
-		]);
+		return validateStateMappings(
+			projectSettings.stateMappings,
+			projectSettings.doingStates,
+		);
 	}, [projectSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
