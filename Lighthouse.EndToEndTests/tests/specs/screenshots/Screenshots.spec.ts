@@ -3,7 +3,11 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
-import { followTheConnectionsEstimation } from "../../helpers/api/teams";
+import {
+	deleteTeam,
+	followTheConnectionsEstimation,
+	keepHistoryFor,
+} from "../../helpers/api/teams";
 import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
@@ -38,6 +42,7 @@ import { WaitStatesEditor } from "../../models/metrics/WaitStatesEditor";
 import { WorkItemAgingChart } from "../../models/metrics/WorkItemAgingChart";
 import { DeliveryMetricsTab } from "../../models/portfolios/Deliveries/DeliveryMetricsTab";
 import { DeliveryTimelineTab } from "../../models/portfolios/Deliveries/DeliveryTimelineTab";
+import type { ReportOwnerName } from "../../models/reports/AllReportsPage";
 
 const DEMO_SCENARIO_ID = 0;
 const testWithDemo = testWithDemoData(DEMO_SCENARIO_ID);
@@ -819,6 +824,87 @@ testWithOldItems(
 		const wizard = await reports.goToThenStep();
 
 		await takeDialogScreenshot(wizard, "features/report_wizard.png");
+	},
+);
+
+// The dependencies scenario seeds five Teams and a Portfolio, all with history enough for the wizard's default
+// window. Creating for several owners is Premium, which CI covers by uploading a licence before Playwright runs.
+const testWithManyOwners = testWithDemoData(12);
+const ZENITH: ReportOwnerName = { name: "Team Zenith", kind: "Team" };
+const GRAVITY: ReportOwnerName = { name: "Team Gravity", kind: "Team" };
+const LIGHTSPEED: ReportOwnerName = { name: "Team Lightspeed", kind: "Team" };
+const OCEAN_EXPLORER: ReportOwnerName = {
+	name: "Project Ocean Explorer",
+	kind: "Portfolio",
+};
+const QUARTER_REPORT = "Quarter against the last";
+const RELEASE_REPORT = "Release check";
+
+testWithManyOwners(
+	"Take @screenshot of the Reports page with reports picked",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(ZENITH.name);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const reports = await overviewPage.lightHousePage.goToReports();
+		await reports.createForEach(
+			[ZENITH, GRAVITY, LIGHTSPEED, OCEAN_EXPLORER],
+			QUARTER_REPORT,
+		);
+		await reports.createForEach([ZENITH, OCEAN_EXPLORER], RELEASE_REPORT);
+
+		await reports.select(QUARTER_REPORT, GRAVITY);
+		await reports.select(QUARTER_REPORT, LIGHTSPEED);
+		await reports.select(RELEASE_REPORT, OCEAN_EXPLORER);
+		await reports.waitForSelected(3);
+
+		await takePageScreenshot(overviewPage.page, "features/reports_page.png", 3);
+	},
+);
+
+testWithManyOwners(
+	"Take @screenshot of the bulk report wizard choosing owners",
+	async ({ testData, request, overviewPage }) => {
+		expect(testData.teams.map((team) => team.name)).toContain(ZENITH.name);
+		// Meridian keeps 100 days of history, less than the 180 days the default window reaches back.
+		await keepHistoryFor(request, "Team Meridian", 100);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const reports = await overviewPage.lightHousePage.goToReports();
+		await reports.openBulkWizardAtOwners(QUARTER_REPORT);
+		await reports.pickOwners([ZENITH, GRAVITY, OCEAN_EXPLORER]);
+		await expect(reports.keptHistoryNote).toBeVisible();
+
+		await takeDialogScreenshot(
+			reports.dialog,
+			"features/report_bulk_owners.png",
+		);
+	},
+);
+
+testWithManyOwners(
+	"Take @screenshot of the bulk report result with an owner not created",
+	async ({ testData, request, overviewPage }) => {
+		const lightspeed = testData.teams.find(
+			(team) => team.name === LIGHTSPEED.name,
+		);
+		expect(lightspeed).toBeDefined();
+
+		await overviewPage.lightHousePage.goToOverview();
+		const reports = await overviewPage.lightHousePage.goToReports();
+		await reports.openBulkWizardAtOwners(QUARTER_REPORT);
+		await reports.pickOwners([ZENITH, GRAVITY, LIGHTSPEED]);
+		// Deleted after it was picked, so the run comes back with one owner it could not create a report for.
+		await deleteTeam(request, lightspeed?.id ?? 0);
+		await reports.createPicked(3, 2, 1);
+		await expect(
+			reports.resultLine(`Not created: ${LIGHTSPEED.name} no longer exists.`),
+		).toBeVisible();
+
+		await takeDialogScreenshot(
+			reports.dialog,
+			"features/report_bulk_result.png",
+		);
 	},
 );
 

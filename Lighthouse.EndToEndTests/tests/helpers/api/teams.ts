@@ -70,3 +70,41 @@ export async function followTheConnectionsEstimation(
 		);
 	}
 }
+
+/** Has the named Team keep only its last `days` of finished work, so a long report window no longer fits it. */
+export async function keepHistoryFor(
+	api: APIRequestContext,
+	teamName: string,
+	days: number,
+): Promise<void> {
+	const teams = (await (await api.get("/api/latest/teams")).json()) as {
+		id: number;
+		name: string;
+	}[];
+	const team = teams.find((t) => t.name === teamName);
+	if (!team) {
+		throw new Error(`No Team named ${teamName}`);
+	}
+
+	const settings = await (
+		await api.get(`/api/latest/teams/${team.id}/settings`)
+	).json();
+	const response = await api.put(`/api/latest/teams/${team.id}`, {
+		data: { ...settings, doneItemsCutoffDays: days },
+	});
+	if (!response.ok()) {
+		throw new Error(
+			`Could not have ${teamName} keep ${days} days: ${response.status()} ${await response.text()}`,
+		);
+	}
+}
+
+export async function deleteTeam(
+	api: APIRequestContext,
+	teamId: number,
+): Promise<void> {
+	const response = await api.delete(`/api/latest/teams/${teamId}`);
+	if (!response.ok()) {
+		throw new Error(`Could not delete Team ${teamId}: ${response.status()}`);
+	}
+}

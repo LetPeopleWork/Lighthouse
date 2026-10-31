@@ -59,11 +59,8 @@ export class AllReportsPage {
 			.filter({ has: this.page.getByRole("link", ownerLinkName(owner)) });
 	}
 
-	/** Creates one report, with the wizard's window as it opens, for every owner named as its checkbox reads. */
-	async createForEach(
-		owners: readonly ReportOwnerName[],
-		reportName: string,
-	): Promise<AllReportsPage> {
+	/** Opens the wizard and goes through its steps as they come, to the one that asks who gets the report. */
+	async openBulkWizardAtOwners(reportName: string): Promise<void> {
 		await this.waitUntilReady();
 		await this.createReportsButton.click();
 		// The wizard opens only once what a report needs has arrived, so each step is waited for by its own words.
@@ -80,18 +77,63 @@ export class AllReportsPage {
 		await this.dialog
 			.getByText("Step 5 of 5 — Who gets this report?")
 			.waitFor();
+	}
 
+	async pickOwners(owners: readonly ReportOwnerName[]): Promise<void> {
 		for (const owner of owners) {
 			await this.dialog.getByRole("checkbox", { name: owner.name }).check();
 		}
+	}
+
+	/** The line saying why an owner cannot be picked: how far back its kept history reaches. */
+	get keptHistoryNote(): Locator {
+		return this.dialog.getByText(/Kept history starts/);
+	}
+
+	/** Creates for the owners picked and waits for the result to say how many were and were not created. */
+	async createPicked(
+		pickedCount: number,
+		created: number,
+		notCreated: number,
+	): Promise<void> {
 		await this.dialog
-			.getByRole("button", { name: `Create ${owners.length} reports` })
+			.getByRole("button", { name: `Create ${pickedCount} reports` })
 			.click();
 		await this.dialog
-			.getByText(`${owners.length} reports created, 0 not created`)
+			.getByText(`${created} reports created, ${notCreated} not created`)
 			.waitFor();
+	}
+
+	/** Creates one report, with the wizard's window as it opens, for every owner named as its checkbox reads. */
+	async createForEach(
+		owners: readonly ReportOwnerName[],
+		reportName: string,
+	): Promise<AllReportsPage> {
+		await this.openBulkWizardAtOwners(reportName);
+		await this.pickOwners(owners);
+		await this.createPicked(owners.length, owners.length, 0);
 		await this.dialog.getByRole("button", { name: "Done" }).click();
 		return this.waitUntilReady();
+	}
+
+	resultLine(text: string): Locator {
+		return this.dialog.getByText(text);
+	}
+
+	/** Ticks the row's checkbox. */
+	async select(reportName: string, owner: ReportOwnerName): Promise<void> {
+		await this.rowOf(reportName, owner).getByRole("checkbox").check();
+	}
+
+	/** Waits until the page counts the picked rows and offers its actions on them. */
+	async waitForSelected(count: number): Promise<void> {
+		await this.page.getByText(`${count} selected`, { exact: true }).waitFor();
+		await this.page
+			.getByRole("button", { name: `Remove (${count})` })
+			.waitFor();
+		await this.page
+			.getByRole("button", { name: `Export PDF (${count})` })
+			.waitFor();
 	}
 
 	async open(reportName: string, owner: ReportOwnerName): Promise<ReportPage> {
