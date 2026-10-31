@@ -60,13 +60,13 @@ The developer's journey is in `docs/product/journeys/epic-6264-modular-monolith.
 
 | Decide the shape | Guard what exists | Package the contexts | Narrow the ports | Thin the adapters & services | Strengthen the domain | Close the kernel & contracts | Frontend mirror |
 |---|---|---|---|---|---|---|---|
-| S01, S02 | S04a, S05a, S11 | S03a–h | S05b–g, S06 | S07a–d, S12a–c | S08, S13, S10 | S04b, S09a, S09b | FE1–FE6 |
+| S01, S02 | S04a, S05a, S11 | S03a–h | S05b–g, S06 | S07a–d, S12a–c | S08, S13, S10 | S04b, S09a, S09b | FE1–FE7 |
 
 ### Pick-up groups (an order of preference, not a schedule)
 
 - **G0. Independent and cheap; can go first**: S04a, S05a, S11, FE1. Each one adds a ratchet or fixes housekeeping, depends on nothing, and is useful even if the Epic stops there.
 - **G1. Decide**: S01 (bounded contexts, context map and layout ADR) → S02 (Metrics pilot). **S02 is a gate**: its lessons-learned amend the ADR and decide whether and how S03* continue (risk: churn without payoff).
-- **G2. Can run before or alongside packaging** (they narrow and thin, so packaging moves less): S12c (before any S03 moves that context's DTOs), S12a, S12b, S05b, S05c, S05d, S05e, S06, S07a–d, S08 (catalogue step), FE4, FE5, FE6.
+- **G2. Can run before or alongside packaging** (they narrow and thin, so packaging moves less): S12c (before any S03 moves that context's DTOs), S12a, S12b, S05b, S05c, S05d, S05e, S06, S07a–d, S08 (catalogue step), FE4, FE5, FE6, FE7.
 - **G3. Packaging, one context per Story, after S02's gate**: S03a–h, FE2 (per module), FE3.
 - **G4. End states**: S04b (after all S03*), S05g (after S05a–f and the remaining callers), S09a (after all S03*).
 - **G4b. After S08's catalogue**: S13 (aggregate boundaries in persistence; the Forecast pilot can start as soon as S08 has named the Forecast aggregate, before or alongside S10).
@@ -96,7 +96,8 @@ G1  S01 ==> S02 (pilot gate) ======================+
     S03c (Forecasting packaged) --> S13 (soft; the Forecast aggregate's home)
     S03a..h ==> S10 (spike first)
     S01 (glossary) --> FE6, backend renames in S06/S03*
-    FE1 --> FE3, FE4, FE5;   FE4 --> FE2 per module (soft)
+    FE1 --> FE3, FE4, FE5, FE7;   FE4 --> FE2 per module (soft)
+    FE5 <-> FE7 (soft, either order: smaller units are easier to test directly)
 ```
 
 ### Priority Rationale
@@ -483,6 +484,17 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
   - [ ] **Out of FE6**: the wire field `Feature.projects`. It is an API contract read by Lighthouse-Clients CLI/MCP and needs a versioned-API decision, recorded as out of scope. Also not drift: Jira `projectKey`, `getStatesForProjects`, `/suggestions/*/projects` (tracker-native "project").
   - [ ] Backend counterpart (`GetFeaturesForProject`) is handled in S06 (connector port) or in the owning context's S03 Story, not here.
 
+#### FE7 — Frontend tests run in milliseconds: fix the slow ones, keep them fast
+
+`@infrastructure` · job_id: infrastructure-only · **Size L** (split per hotspot at DESIGN) · Depends on: FE1 (soft, done), FE5 (soft, either order) · Brief: `slices/slice-40-fe7-fast-frontend-tests.md` · Added 2026-10-31 (maintainer)
+
+- infrastructure_rationale: on PR #1977 the frontend suite took 438 s, 71 % of it in the tests themselves. `ReportsPage.removal.test.tsx` took 48 s for 22 tests, and one of them now times out at random on a loaded runner. Many tests render a whole page in jsdom to check plain logic that would test in milliseconds as a function or hook.
+- Elevator Pitch. **Before**: a page-level test of a pick limit takes seconds and flakes under load. **After**: `pnpm test` fails, naming the test, when a test exceeds the time budget, and the allow-list of slow tests only shrinks. **Decision enabled**: CI stops failing at random on frontend timeouts.
+- AC:
+  - [ ] DESIGN profiles the suite and records which cost dominates, before any fix.
+  - [ ] Time-budget ratchet with a named allow-list (ADR-268 / ADR-269 style), failing on a newcomer and on a stale entry.
+  - [ ] Coverage and the Stryker kill rate of the touched area do not drop; production behaviour and pixels unchanged. Tests themselves change by design (see the brief's note on "behaviour-free").
+
 ## Wave: DISCUSS / [REF] Out of scope
 
 - **CI test speed notes from the brief** (template DB per scenario, one Postgres container per run, Vitest `isolate: false`, frontend change-based selection): **Story #6302**. The one exception kept: module-based CI test selection is noted as a payoff under S09a/S09b.
@@ -543,6 +555,7 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 | 10 | Production files where "Project" means Portfolio | **≈21** (survey) | **0** (documented exceptions excluded) | grep per FE6 AC | FE6 |
 | 11 | Frontend production files > 1000 lines | ≥ 2 known (2034, 1201), exact count at FE5 DESIGN | **0** or each justified | `wc -l` sweep | FE5 |
 | 13 | Rows loaded and query time for a Feature load and a Portfolio load (restored production-like dev DB) | measured at S13's DESIGN (today every Feature load includes Forecasts→SimulationResults and StartForecasts→SimulationResults) | set at S13's DESIGN (pilot: no forecast rows loaded by a Feature load) | before/after measurement on `Restore-DbBackup.ps1` data (EF query logging + timing) | S13 |
+| 14 | Frontend test time | suite **438 s** on CI, 71 % in tests; slowest file 48 s for 22 tests (PR #1977, survey); exact per-test baseline at FE7 DESIGN | no test over the budget set at FE7 DESIGN, apart from a shrinking named allow-list | Vitest JSON reporter durations | FE7 |
 | 12 | Mutation score on touched code | per area at pick-up | **not lower**; ≥ 80% on new code | Stryker.NET / Stryker | all |
 
 ### Guardrails (must NOT degrade)
@@ -691,6 +704,7 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6393 | FE5 Split wide units |
 | #6394 | FE6 "Project" → Portfolio naming in the frontend |
 | #6395 | S13 Aggregate boundaries in persistence |
+| #6457 | FE7 Frontend tests run in milliseconds: fix the slow ones, keep them fast (created 2026-10-31) |
 
 ## Wave: DISCUSS / [REF] Improvement log
 
