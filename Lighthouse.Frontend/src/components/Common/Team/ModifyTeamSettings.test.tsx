@@ -747,8 +747,44 @@ describe("ModifyTeamSettings", () => {
 			await renderModifyTeamSettings();
 
 			expect(
-				screen.getByText('Source state "QA" is used in multiple mappings.'),
+				screen.getAllByText('Source state "QA" is used in multiple mappings.'),
+			).toHaveLength(2);
+		});
+
+		it("holds back autosave while two complete mappings share a source state", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				doingStates: ["Dev"],
+				stateMappings: [
+					{ name: "First", states: ["QA"] },
+					{ name: "Second", states: ["QA"] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(
+				within(warning).getByText(
+					'Source state "QA" is used in multiple mappings.',
+				),
 			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows no warning for a mapping that was just added, and other edits still save", async () => {
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add State Mapping"));
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
 		});
 
 		it("renders no warning while the form can be saved", async () => {

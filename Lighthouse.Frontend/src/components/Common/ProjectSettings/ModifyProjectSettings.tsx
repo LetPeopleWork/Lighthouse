@@ -23,7 +23,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
-	stateNameClashErrors,
+	mappingAutoSaveBlockers,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -101,7 +101,7 @@ function portfolioAutoSaveBlockers(
 	if (s.doneStates.length === 0) {
 		reasons.push("Add at least one Done State");
 	}
-	reasons.push(...stateNameClashErrors(s.stateMappings, s));
+	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s));
 	if (isDefault) {
 		return reasons;
 	}

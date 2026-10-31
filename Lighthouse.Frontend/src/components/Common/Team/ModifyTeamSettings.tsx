@@ -23,7 +23,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
-	stateNameClashErrors,
+	mappingAutoSaveBlockers,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -97,7 +97,7 @@ function teamAutoSaveBlockers(
 			s.refinement,
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
-		...stateNameClashErrors(s.stateMappings, s),
+		...mappingAutoSaveBlockers(s.stateMappings, s),
 	);
 	if (isDefault) {
 		return reasons;

@@ -115,7 +115,7 @@ function groupedElsewhereError(
 		: [];
 }
 
-export function stateNameClashErrors(
+function stateNameClashErrors(
 	mappings: IStateMapping[],
 	{ toDoStates, doingStates, doneStates }: IStateLists,
 ): string[] {
@@ -129,16 +129,34 @@ export function stateNameClashErrors(
 		]);
 }
 
+function mappingRuleErrors(
+	mappings: IStateMapping[],
+	lists: IStateLists,
+): string[] {
+	return [
+		...validateUniqueNames(mappings),
+		...validateUniqueStates(mappings),
+		...stateNameClashErrors(mappings, lists),
+	];
+}
+
 export function validateStateMappings(
 	mappings: IStateMapping[],
 	lists: IStateLists,
 ): string[] {
 	return [
 		...validateMappingFields(mappings),
-		...validateUniqueNames(mappings),
-		...validateUniqueStates(mappings),
-		...stateNameClashErrors(mappings, lists),
+		...mappingRuleErrors(mappings, lists),
 	];
+}
+
+// Rows still being filled in are never saved, so only complete mappings can
+// make the server reject a save.
+export function mappingAutoSaveBlockers(
+	mappings: IStateMapping[],
+	lists: IStateLists,
+): string[] {
+	return mappingRuleErrors(withoutIncompleteMappings(mappings), lists);
 }
 
 export function withoutIncompleteMappings(

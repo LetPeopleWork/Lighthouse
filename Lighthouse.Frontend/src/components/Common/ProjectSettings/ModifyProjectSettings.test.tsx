@@ -1062,6 +1062,74 @@ describe("ModifyProjectSettings", () => {
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
+		it("holds back autosave while two complete mappings share a source state", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "Second", states: ["Review"] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(
+				within(warning).getByText(
+					'Source state "Review" is used in multiple mappings.',
+				),
+			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows no warning for a mapping row still being filled in, and other edits still save", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "", states: [] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+
 		it("renders no warning while the form can be saved", async () => {
 			renderWithProvider(
 				<ModifyProjectSettings

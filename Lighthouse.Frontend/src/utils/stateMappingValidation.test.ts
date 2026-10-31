@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { IStateMapping } from "../models/Common/StateMapping";
 import {
 	type IStateLists,
+	mappingAutoSaveBlockers,
 	validateStateMappings,
 } from "./stateMappingValidation";
 
@@ -220,5 +221,64 @@ describe("validateStateMappings", () => {
 		const mappings: IStateMapping[] = [{ name: " ", states: ["QA"] }];
 		const result = validateStateMappings(mappings, lists([], [""]));
 		expect(result).toEqual(["Mapping at position 1 has an empty name."]);
+	});
+});
+
+describe("mappingAutoSaveBlockers", () => {
+	it("names a source state used in two complete mappings", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "A", states: ["X"] },
+			{ name: "B", states: ["X"] },
+		];
+		expect(mappingAutoSaveBlockers(mappings, lists())).toEqual([
+			'Source state "X" is used in multiple mappings.',
+		]);
+	});
+
+	it("names a mapping name used twice by complete mappings", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "QA", states: ["X"] },
+			{ name: "QA", states: ["Y"] },
+		];
+		expect(mappingAutoSaveBlockers(mappings, lists())).toEqual([
+			'Duplicate mapping name: "QA".',
+		]);
+	});
+
+	it("still reports a mapping named after a Doing state it does not group", () => {
+		const mappings: IStateMapping[] = [
+			{ name: "In Arbeit", states: ["In Progress"] },
+		];
+		expect(
+			mappingAutoSaveBlockers(mappings, lists(["In Arbeit", "In Progress"])),
+		).toEqual([
+			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+		]);
+	});
+
+	it.each([
+		["an empty row", [{ name: "", states: [] }]],
+		[
+			"a name without states next to a complete mapping of that name",
+			[
+				{ name: "QA", states: [] },
+				{ name: "QA", states: ["X"] },
+			],
+		],
+		[
+			"a nameless row next to a complete mapping sharing its state",
+			[
+				{ name: "", states: ["X"] },
+				{ name: "A", states: ["X"] },
+			],
+		],
+	])("does not block for %s, because it is not saved", (_, mappings) => {
+		expect(mappingAutoSaveBlockers(mappings, lists())).toEqual([]);
+	});
+
+	it("leaves field errors to the editor", () => {
+		const mappings: IStateMapping[] = [{ name: "", states: [] }];
+		expect(mappingAutoSaveBlockers(mappings, lists())).toEqual([]);
+		expect(validateStateMappings(mappings, lists())).not.toEqual([]);
 	});
 });
