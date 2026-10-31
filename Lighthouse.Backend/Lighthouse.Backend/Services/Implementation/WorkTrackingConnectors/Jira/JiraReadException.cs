@@ -30,6 +30,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// The status code and reason phrase as Jira sent them, for a list that came back unusable, e.g.
+        /// <c>503 (Service Unavailable)</c>; empty when the exception is not about such an answer.
+        /// </summary>
+        public string HowJiraAnswered { get; set; } = string.Empty;
+
+        /// <summary>
         /// Nothing in the configuration narrows what to fetch - no types, no states, no query of the
         /// operator's - so the JQL comes out saying nothing at all. Jira answers an empty query with either
         /// every issue on the instance or none of them, depending on a setting Lighthouse cannot see from

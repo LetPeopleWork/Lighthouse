@@ -81,7 +81,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load still sorts by the translated category name")]
         public async Task A_deployment_that_cannot_be_identified_still_gets_the_original_names()
         {
             var board = await LoadingTheBoard(AnInstance(JiraWireFormat.AGermanReadersStatuses, issueTypes: JiraWireFormat.AGermanReadersIssueTypes,
@@ -209,7 +208,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task The_work_item_types_are_the_original_names_each_once()
         {
             var board = await LoadingTheBoard(AnInstance(
@@ -221,7 +219,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task Two_types_with_the_same_original_name_are_listed_once_ignoring_case()
         {
             var issueTypes = new[]
@@ -239,7 +236,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task A_type_id_the_list_still_lacks_after_one_more_read_is_left_out_with_a_warning_naming_the_id()
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
@@ -262,7 +258,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task A_type_id_that_appears_after_one_more_read_is_reported_by_its_original_name()
         {
             var paths = new List<string>();
@@ -286,7 +281,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(HttpStatusCode.ServiceUnavailable, "<html>Service Unavailable</html>", "503 (Service Unavailable)")]
         [TestCase(HttpStatusCode.OK, "[]", "200 (OK)")]
         [TestCase(HttpStatusCode.OK, "<html>Sign in</html>", "200 (OK)")]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task A_work_item_type_list_that_cannot_be_read_gives_no_types_and_a_warning_naming_the_answer(
             HttpStatusCode answer, string body, string answerInTheWarning)
         {
@@ -307,7 +301,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board work item types are still the names in the board's issues")]
         public async Task A_status_list_that_cannot_be_read_gives_no_states_but_the_types_are_still_original()
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();

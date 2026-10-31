@@ -37,6 +37,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         public static JiraOriginalNames FromStatusList(JsonElement statusList)
             => new(NamesById(statusList), CategoriesById(statusList), [], false);
 
+        /// <summary>The names of an issue type list read on its own.</summary>
+        public static JiraOriginalNames FromIssueTypeList(JsonElement issueTypeList)
+            => new([], [], NamesById(issueTypeList), false);
+
+        /// <summary>The status names and categories of one reading together with the type names of another.</summary>
+        public static JiraOriginalNames Combining(JiraOriginalNames statuses, JiraOriginalNames issueTypes)
+            => new(statuses.statusNames, statuses.statusCategories, issueTypes.issueTypeNames, false);
+
         /// <summary>The language-independent key and the display name of the status category the id belongs to.</summary>
         public (string? Key, string? Name) StatusCategoryOf(string statusId)
             => statusCategories.GetValueOrDefault(statusId);
