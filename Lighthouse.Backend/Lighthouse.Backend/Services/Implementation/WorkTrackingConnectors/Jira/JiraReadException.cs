@@ -82,28 +82,37 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// <summary>Whose refresh, or which screen, a list that could not be read stops.</summary>
         public enum ReadFor { TeamRefresh, PortfolioRefresh, Validation }
 
+        private const string TeamKeepsItsWorkItems = " Nothing was changed; the Team keeps the work items from its last refresh.";
+
+        private static string KeptStateSentence(ReadFor readFor)
+            => readFor == ReadFor.TeamRefresh ? TeamKeepsItsWorkItems : string.Empty;
+
         public static JiraReadException StatusListRefused(ReadFor readFor, HttpStatusCode status, string whatJiraSaid)
             => new(ConnectionValidationResult.Failure(
                 "status_list_unreadable",
-                string.Empty,
+                "Lighthouse could not read the list of statuses on this Jira instance, so it cannot tell which "
+                + $"state each work item is in. Jira answered {(int)status} ({status}).{KeptStateSentence(readFor)}",
                 $"GET {JiraRestRoutes.Status} answered {(int)status} {status}. {whatJiraSaid}"));
 
         public static JiraReadException IssueTypeListRefused(ReadFor readFor, HttpStatusCode status, string whatJiraSaid)
             => new(ConnectionValidationResult.Failure(
                 "issue_type_list_unreadable",
-                string.Empty,
+                "Lighthouse could not read the list of work item types on this Jira instance, so it cannot tell "
+                + $"which type each work item is. Jira answered {(int)status} ({status}).{KeptStateSentence(readFor)}",
                 $"GET {JiraRestRoutes.IssueType} answered {(int)status} {status}. {whatJiraSaid}"));
 
         public static JiraReadException StatusIdNotInList(ReadFor readFor, string statusId)
             => new(ConnectionValidationResult.Failure(
                 "status_id_not_in_list",
-                string.Empty,
+                $"Jira reported a status (id {statusId}) that is not in its list of statuses on this Jira instance, "
+                + $"so Lighthouse cannot tell which state each work item is in.{KeptStateSentence(readFor)}",
                 $"Status id {statusId} is not in the answer of GET {JiraRestRoutes.Status} (read twice)."));
 
         public static JiraReadException IssueTypeIdNotInList(ReadFor readFor, string issueTypeId)
             => new(ConnectionValidationResult.Failure(
                 "issue_type_id_not_in_list",
-                string.Empty,
+                $"Jira reported a work item type (id {issueTypeId}) that is not in its list of work item types on this "
+                + $"Jira instance, so Lighthouse cannot tell which type each work item is.{KeptStateSentence(readFor)}",
                 $"Issue type id {issueTypeId} is not in the answer of GET {JiraRestRoutes.IssueType} (read twice)."));
 
         private static JiraReadException Unreadable(string filterId, HttpStatusCode status, string whatCameBack)

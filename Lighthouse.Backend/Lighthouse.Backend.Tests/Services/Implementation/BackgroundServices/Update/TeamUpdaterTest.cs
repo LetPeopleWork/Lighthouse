@@ -613,7 +613,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        [Ignore("Jira's status list is not refused with its own sentence yet")]
         public void TriggerUpdate_JiraCouldNotReadItsStatusList_TheReasonSaysSoAndThatTheTeamKeepsItsWorkItems()
         {
             var team = CreateTeam(Now.AddDays(-1));
@@ -637,7 +636,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
         }
 
         [Test]
-        [Ignore("Jira's issue type list is not refused with its own sentence yet")]
         public void TriggerUpdate_JiraCouldNotReadItsWorkItemTypeList_TheReasonSaysSoAndThatTheTeamKeepsItsWorkItems()
         {
             var team = CreateTeam(Now.AddDays(-1));
@@ -699,7 +697,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
 
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore("Jira's missing status or type id is not refused with its own sentence yet")]
         public void TriggerUpdate_JiraReportedAnIdItsListLacks_TheReasonNamesTheIdAndSaysTheTeamKeepsItsWorkItems(bool statusId)
         {
             var team = CreateTeam(Now.AddDays(-1));
