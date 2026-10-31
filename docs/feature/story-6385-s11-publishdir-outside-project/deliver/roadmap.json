@@ -1,0 +1,123 @@
+{
+  "roadmap": {
+    "project_id": "story-6385-s11-publishdir-outside-project",
+    "created_at": "2026-10-31",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story 6385 (S11): backend dotnet publish output moves from Lighthouse.Backend/Lighthouse.Backend/publish/<rid> to repo-root artifacts/publish/<rid>, so a second publish no longer nests inside the project folder and the local folder stays out of the Docker build context. Behaviour-free: the published file set per RID is identical, no production C# or TS changes. Four commits in order: pure move of the backend change rule into path-classifier.sh, widening it to .github/actions/, moving the four consumers together with un-ignoring the guard test, then .dockerignore plus the full verification procedure."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "S11: publish output outside the project folder",
+      "description": "Single slice, profile standard, mutation testing N/A (no production code). Commits are focused and each is green on its own. Nothing is pushed.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Move the backend change rule into path-classifier.sh as a pure move",
+          "description": "Commit type: `refactor(ci): move the backend change rule into path-classifier.sh`. Read docs/ci-learnings.md (backend section) first and pre-apply its rules. Move the inline `backend` change rule from .github/workflows/ci_changes.yml into Scripts/test-selection/path-classifier.sh as BACKEND_REGEX plus classify_backend(). ci_changes.yml (which already sources path-classifier.sh) calls classify_backend; github_changes is still ORed into backend exactly as before. The regex is copied unchanged. Add a case to Scripts/test-selection/test-path-classifier.sh that pins today's behaviour (a backend path gives backend=true; .github/actions/... still gives backend=false at this point). Comments rare, written for a stranger, no internal references (no ADR, story or scenario ids). Backend tests only with --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\" (never unfiltered); in a worktree exactly 2 Licensing failures are environmental (the gitignored valid_not_expired_license.json under Lighthouse.Backend.Tests is absent) - do not chase. `dotnet build` must have 0 warnings if run. Git commands prefixed LEAN_CTX_DISABLED=1. Never push.",
+          "criteria": [
+            "`bash Scripts/test-selection/test-path-classifier.sh` exits 0 with every pre-existing case still passing, plus the new case pinning the current backend regex (an .github/actions/ path still gives backend=false)",
+            "Scripts/test-selection/path-classifier.sh defines BACKEND_REGEX and classify_backend(); `grep -n 'BACKEND_REGEX' Scripts/test-selection/path-classifier.sh` finds both",
+            "ci_changes.yml no longer holds the inline backend regex and calls classify_backend; github_changes is still ORed into backend (compare the regex VALUE, not the diff: source path-classifier.sh, print BACKEND_REGEX, and compare it with the string removed from the YAML; they must be identical)",
+            "The frontend, e2e and connector classifier lines are untouched",
+            "The workflow file still parses as YAML (`python3 -c \"import yaml,sys; yaml.safe_load(open('.github/workflows/ci_changes.yml'))\"` exits 0)"
+          ],
+          "files_to_modify": [
+            ".github/workflows/ci_changes.yml",
+            "Scripts/test-selection/path-classifier.sh",
+            "Scripts/test-selection/test-path-classifier.sh"
+          ],
+          "test_file": "Scripts/test-selection/test-path-classifier.sh",
+          "scenario_name": "Scenario 6 (preparation): pure move of the backend rule into classify_backend(), existing behaviour pinned by a shell case",
+          "dependencies": []
+        },
+        {
+          "id": "01-02",
+          "name": "Run the backend suite when a composite action changes",
+          "description": "Commit type: `ci: run the backend suite when a composite action changes`. Read docs/ci-learnings.md (backend section) first. Widen BACKEND_REGEX in Scripts/test-selection/path-classifier.sh to also match `^\\.github/actions/`. The case committed in 01-01 (a `.github/actions/...` path gives backend=false) is flipped to backend=true here; the widening is what turns it green. Add the Scenario 6 case to Scripts/test-selection/test-path-classifier.sh: an actions-only diff (e.g. .github/actions/build-backend/action.yml) gives backend=true and github_changes=false; .github/workflows/ci_backend.yml gives both true; Lighthouse.Frontend/package.json and docs/readme.md give backend=false. The ci*.yml-only github_changes rule and the connector outputs (jira, linear, ado, servicenow) stay false for an actions-only diff. Comments rare, for a stranger, no internal references. Backend tests only with the CLAUDE.md filter (never unfiltered); 2 Licensing failures in a worktree are environmental. Git commands prefixed LEAN_CTX_DISABLED=1. Never push.",
+          "criteria": [
+            "`bash Scripts/test-selection/test-path-classifier.sh` exits 0 including the new cases",
+            "An actions-only diff (.github/actions/build-backend/action.yml) gives backend=true, github_changes=false and every connector output false",
+            "A diff of .github/workflows/ci_backend.yml gives backend=true and github_changes=true (unaffected by the widening)",
+            "Lighthouse.Frontend/package.json and docs/readme.md give backend=false",
+            "The case 01-01 committed (an .github/actions/ path gives backend=false) is flipped to backend=true; it fails (red) before the regex edit and passes (green) after it",
+            "A separate case shows github_changes and the connector outputs stay false for that actions-only diff",
+            "Before the regex edit the flipped case fails and after it passes; the existing connector classifier cases stay green unchanged"
+          ],
+          "files_to_modify": [
+            "Scripts/test-selection/path-classifier.sh",
+            "Scripts/test-selection/test-path-classifier.sh"
+          ],
+          "test_file": "Scripts/test-selection/test-path-classifier.sh",
+          "scenario_name": "Scenario 6: A change only under .github/actions/ sets backend=true but not github_changes",
+          "dependencies": [
+            "01-01"
+          ]
+        },
+        {
+          "id": "01-03",
+          "name": "Publish backend output to artifacts/publish and un-ignore the guard",
+          "description": "Commit type: `build(publish): publish backend output to artifacts/publish instead of the project folder`. Read docs/ci-learnings.md (backend section) first. Move the four consumers from ./Lighthouse.Backend/Lighthouse.Backend/publish/<rid> to ./artifacts/publish/<rid> (rid: win-x64, linux-x64, osx-arm64): .github/actions/build-backend/action.yml (3 `-o` + 3 `rm -f .../appsettings.Development.json`; the trailing project argument ./Lighthouse.Backend/Lighthouse.Backend stays); .github/actions/package-app/action.yml (chmod -R +x path + 2 upload-artifact paths; artifact names unchanged); .github/workflows/ci_package-macos-standalone.yml (ARM64_DIR); Lighthouse.Frontend/package.json update-sidecar script (`../Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64` -> `../artifacts/publish/linux-x64`, 3 references on one line; project argument stays). In the same commit remove `[Ignore(...)]` and the pending-reason constant from Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PublishOutputOutsideProjectGuardTest.cs so the guard runs green. Do NOT touch ci_verifywindows.yml / ci_verifymacos.yml (their ./publish is unrelated), the Dockerfile's /app/publish, or Lighthouse.Frontend/build-tauri-local.sh. Optional: reword the macOS workflow comment 'Remove any stale rpath entries pointing to the old publish dir' so it states its reason without naming the old dir. Comments rare, for a stranger, no internal references (no ADR, story or scenario ids). Verify: `dotnet build` in Lighthouse.Backend with 0 warnings; backend tests only with --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\" (never unfiltered), at minimum the guard class and the architecture tests; in a worktree exactly 2 Licensing failures are environmental (gitignored valid_not_expired_license.json, copy from /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/**/ if needed) - do not chase; `bash Scripts/test-selection/test-path-classifier.sh` must pass; `node -e \"JSON.parse(require('fs').readFileSync('Lighthouse.Frontend/package.json'))\"` must pass; `pnpm test` and `pnpm build` in Lighthouse.Frontend must pass with zero errors and zero warnings (prebuild runs `biome check --write`: check `git status` afterwards and include a rewritten file only if it is package.json). Also run the full CLAUDE.md-filtered backend `dotnet test` (all suites); expect 0 failures (the Licensing fixture is already copied into the worktree). Git commands prefixed LEAN_CTX_DISABLED=1. Never push.",
+          "criteria": [
+            "`git grep -n -i 'Lighthouse.Backend/Lighthouse.Backend/publish'` over .github, Lighthouse.Frontend/package.json, Dockerfile* and Scripts finds no line (the only remaining hit may be .dockerignore after step 01-04)",
+            "Quick check, architecture class only: `dotnet test --filter \"FullyQualifiedName~PublishOutputOutsideProjectGuardTest\"` in Lighthouse.Backend passes all 13 cases with no ignored test (scenario 1 now green; scenarios 2 and 3 stay green)",
+            "`dotnet build` in Lighthouse.Backend completes with 0 warnings",
+            "The full backend run `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` (all suites) shows 0 failures (the Licensing fixture is already in the worktree; only the 2 Licensing tests would be environmental)",
+            "`pnpm test` in Lighthouse.Frontend passes",
+            "`pnpm build` in Lighthouse.Frontend completes with zero errors and zero warnings, and `git status` afterwards shows no file rewritten by Biome other than Lighthouse.Frontend/package.json",
+            "`node -e \"JSON.parse(require('fs').readFileSync('Lighthouse.Frontend/package.json'))\"` exits 0 and update-sidecar contains `../artifacts/publish/linux-x64` three times",
+            "`bash Scripts/test-selection/test-path-classifier.sh` exits 0",
+            "ci_verifywindows.yml, ci_verifymacos.yml, Dockerfile and Lighthouse.Frontend/build-tauri-local.sh are unchanged (`git diff --stat` shows none of them)",
+            "The 3 `-o` values, 3 `rm -f` paths, chmod and 2 upload paths in the composite actions and ARM64_DIR all read artifacts/publish/<rid>"
+          ],
+          "files_to_modify": [
+            ".github/actions/build-backend/action.yml",
+            ".github/actions/package-app/action.yml",
+            ".github/workflows/ci_package-macos-standalone.yml",
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PublishOutputOutsideProjectGuardTest.cs"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PublishOutputOutsideProjectGuardTest.cs",
+          "scenario_name": "Scenario 1: PublishOutputOutsideProjectGuardTest.NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder (Scenario 4 consumers move: verification-only, proven by scenario 1)",
+          "dependencies": [
+            "01-02"
+          ]
+        },
+        {
+          "id": "01-04",
+          "name": "Keep local publish output out of the Docker context and run the verification procedure",
+          "description": "Commit type: `build(docker): keep local publish output out of the build context`, then the DISTILL Verification procedure run in full, with its output recorded in docs/feature/story-6385-s11-publishdir-outside-project/feature-delta.md under `## Wave: DELIVER / [REF] Demo Evidence`, committed separately as `docs(build): demo evidence for publish output outside the project folder` AFTER the `build(docker)` commit (never in the same commit). E2E Playwright is not run in this step: the orchestrator runs it once at the final gates, which accounts for the behaviour-free guarantee. After the .dockerignore change run the full CLAUDE.md-filtered backend `dotnet test` again (all suites, 0 failures expected). Read docs/ci-learnings.md (backend section) first. Add `artifacts` and `Lighthouse.Backend/Lighthouse.Backend/publish` as lines to .dockerignore (each on its own line, exact text, so `grep -n '^artifacts$'` and `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$'` match). Verification procedure (WORK = a scratch folder outside the repo, e.g. /tmp/claude-1000/-storage-repos-Lighthouse/fc714078-9629-4b6a-8b54-88a12a415b3e/scratchpad/): Map to the DISTILL procedure: (1) = procedure step 1; (2) = step 3; (3) = step 4; (4) = step 5; (5) = step 6; (6) = step 7; (7) docker build-context check is an ADDITION, not in the DISTILL procedure. (1) 'Before' MUST be published from the 01-02 commit (the last commit that still has the old consumer paths; the crafter resolves its hash from `LEAN_CTX_DISABLED=1 git log`) - use `LEAN_CTX_DISABLED=1 git worktree add <scratchpad>/before <01-02-commit>` and run the exact old CI command there for linux-x64, win-x64 and osx-arm64 (e.g. `dotnet publish -c Release -r <rid> --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o ./Lighthouse.Backend/Lighthouse.Backend/publish/<rid> ./Lighthouse.Backend/Lighthouse.Backend`, then rm -f appsettings.Development.json), list name+size with the list() helper excluding the nested publish folder; 'after' is the same command with -o ./artifacts/publish/<rid> in this worktree; compare mechanically with the join/awk pass rule from the feature-delta (exit 0; every size delta listed; appsettings.Development.json absent on both sides); remove the before worktree afterwards (`LEAN_CTX_DISABLED=1 git worktree remove --force`). (2) Two publishes in a row to artifacts/publish/linux-x64: no `publish` directory inside and the second listing equals the first. (3) `find Lighthouse.Backend/Lighthouse.Backend -path '*/publish/*'` prints nothing in this worktree. (4) grep both .dockerignore lines. (5) `pnpm run update-sidecar` (Linux) before vs after: src-tauri/binaries and src-tauri/resources same names and sizes (the before side from the before worktree); restore any generated files afterwards so the tree stays clean. (6) Red check of the guard: put one old-path string back in a consumer file, run the guard test (it names that file:line), revert it. (7) Docker build-context check with a stale Lighthouse.Backend/Lighthouse.Backend/publish folder present, only if docker is available - if not, record that in the evidence and skip only that check. CI-only items (green on push, ARM64_DIR read on main) are recorded as pending the push, not run. Comments rare, for a stranger, no internal references. `dotnet build` 0 warnings; backend tests only with the CLAUDE.md filter (never unfiltered); 2 Licensing failures in a worktree are environmental. `bash Scripts/test-selection/test-path-classifier.sh` must pass. Git commands prefixed LEAN_CTX_DISABLED=1. Never push.",
+          "criteria": [
+            "`grep -n '^artifacts$' .dockerignore` and `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$' .dockerignore` each print exactly one matching line",
+            "For linux-x64, win-x64 and osx-arm64 the before/after comparison command exits 0: every file is on both sides and every size delta is listed and within the pass rule; appsettings.Development.json is absent on both sides",
+            "The full CLAUDE.md-filtered backend `dotnet test` (all suites) shows 0 failures after the .dockerignore change",
+            "The 'before' listing was produced from a worktree at the 01-02 commit (the last with the old consumer paths) and that worktree is removed afterwards (`LEAN_CTX_DISABLED=1 git worktree list` shows no scratchpad entry)",
+            "Two consecutive publishes to artifacts/publish/linux-x64 leave no `publish` directory inside it and the second `find` listing equals the first",
+            "`find Lighthouse.Backend/Lighthouse.Backend -path '*/publish/*'` prints nothing",
+            "`pnpm run update-sidecar` before and after leaves src-tauri/binaries and src-tauri/resources with identical names and sizes",
+            "With one old-path string temporarily put back, the guard test fails naming that file:line; after reverting it is green and `git status` shows that file unchanged",
+            "A docker build-context check with the stale folder present shows the folder excluded, or the evidence states docker is unavailable and only that check was skipped",
+            "feature-delta.md gains `## Wave: DELIVER / [REF] Demo Evidence` quoting the commands and their output, including the osx-arm64 folder existing at artifacts/publish/osx-arm64 and the CI-only items marked pending the push"
+          ],
+          "files_to_modify": [
+            ".dockerignore",
+            "docs/feature/story-6385-s11-publishdir-outside-project/feature-delta.md"
+          ],
+          "test_file": "docs/feature/story-6385-s11-publishdir-outside-project/feature-delta.md",
+          "scenario_name": "Scenarios 5 and 7 (verification-only): DISTILL Verification procedure steps 1-7 (publish before/after per RID, two publishes do not nest, stale-folder check, .dockerignore grep, update-sidecar, guard red check)",
+          "dependencies": [
+            "01-03"
+          ]
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "pending",
+    "reviewer": "none yet",
+    "reviewed_at": "2026-10-31",
+    "notes": "Four steps map 1:1 to the approved commit plan. Scenario 1 -> 01-03; scenario 6 -> 01-01/01-02; scenarios 4, 5, 7 verification-only -> 01-03/01-04. Scenarios 2 and 3 are green today and stay green."
+  }
+}

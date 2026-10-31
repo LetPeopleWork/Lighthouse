@@ -342,3 +342,8 @@ The baseline counts 13 references on 11 lines (the earlier 14 was a miscount); t
 - The `backend` change rule moves out of inline YAML into `Scripts/test-selection/path-classifier.sh` as `BACKEND_REGEX` + `classify_backend()` (`ci_changes.yml` already sources that file; its tests are in `test-path-classifier.sh`). Two DELIVER commits: a pure move (same regex; `ci_changes.yml` calls `classify_backend`; `github_changes` still ORs in), then the widening to `^\.github/actions/` with a test case proving an actions-only diff gives `backend=true` and the `ci*.yml`-only `github_changes` stays false.
 - `.dockerignore` also gets `Lighthouse.Backend/Lighthouse.Backend/publish`, next to `artifacts`.
 - Commit 3 removes `[Ignore(...)]` and the pending-reason constant in the commit that moves the last consumer.
+
+## Wave: DELIVER / [REF] Rigor profile (maintainer, 2026-10-31)
+
+- One slice, profile **standard**: crafter `sonnet`, reviewer `haiku`, refactor pass and review on, mutation N/A (no production code). Run in AFK mode: slice wrap-up refactor + review, nothing pushed.
+- Roadmap: 4 steps, one per approved commit; integrity check exit 0; review needs_revision (0 blockers), one revision pass, every finding applied and re-checked by the orchestrator (2026-10-31). E2E Playwright runs once at the final gates.
