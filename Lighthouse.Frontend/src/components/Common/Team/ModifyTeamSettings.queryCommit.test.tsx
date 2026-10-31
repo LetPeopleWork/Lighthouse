@@ -161,7 +161,7 @@ describe("ModifyTeamSettings query field", () => {
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	it.skip("saves the edited query when the page is left straight after the field", async () => {
+	it("saves the edited query when the page is left straight after the field", async () => {
 		const { query, user, leaveThePage } = await openTeamSettings();
 
 		await user.click(query);
@@ -178,7 +178,7 @@ describe("ModifyTeamSettings query field", () => {
 		);
 	});
 
-	it.skip("saves a changed name when the page is left before the debounce runs out", async () => {
+	it("saves a changed name when the page is left before the debounce runs out", async () => {
 		const { user, leaveThePage } = await openTeamSettings();
 
 		await user.type(screen.getByLabelText("Name"), " Two");

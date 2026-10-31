@@ -302,7 +302,29 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		dispatchSave(payload);
 	}, [dispatchSave]);
 
+	// The save the debounce timer is about to send, kept so that leaving the page sends it
+	// instead of dropping it. Empty whenever the autosave conditions do not hold.
+	const unsentAutoSaveRef = useRef<TSettings | null>(null);
+
+	useEffect(
+		() => () => {
+			const unsent = unsentAutoSaveRef.current;
+			if (!unsent || hasConflictRef.current) return;
+			unsentAutoSaveRef.current = null;
+			if (isSavingRef.current) {
+				pendingPayloadRef.current = unsent;
+				return;
+			}
+			// The page is gone, so no save state or refresh is shown for this write.
+			saveSettingsRef
+				.current(withToken(unsent, tokenRef.current))
+				.catch(() => undefined);
+		},
+		[],
+	);
+
 	useEffect(() => {
+		unsentAutoSaveRef.current = null;
 		if (!autoSaveEnabled || !autoSaveCanSave || !formValid) {
 			return;
 		}
@@ -315,7 +337,9 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			workTrackingSystemConnectionId: selectedConnectionId,
 		} as TSettings;
 
+		unsentAutoSaveRef.current = settingsToSave;
 		const timer = setTimeout(() => {
+			unsentAutoSaveRef.current = null;
 			dispatchSave(settingsToSave);
 		}, autoSaveDebounceMs);
 
