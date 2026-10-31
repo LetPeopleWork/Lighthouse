@@ -14,10 +14,10 @@ import { ownerOfReport } from "../Common/Reports/reportOwner";
 import { mayEditReportsOf } from "../Common/Reports/useMayEditReports";
 import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
-import { useReportPdfExport } from "../Common/Reports/useReportPdfExport";
 import { useAllReports } from "./useAllReports";
 import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useBulkCreation } from "./useBulkCreation";
+import { useReportsPdfExport } from "./useReportsPdfExport";
 import { useRowPicks } from "./useRowPicks";
 import { useSelectionExport, useSelectionRemoval } from "./useSelectionActions";
 
@@ -41,14 +41,15 @@ const ReportsPageContent: React.FC = () => {
 	useAllReportsListedReporter(status === "ready" && data !== undefined);
 	const picks = useRowPicks(data?.reports);
 	const removal = useSelectionRemoval(picks, rbac);
-	const selectionExport = useSelectionExport(picks);
+	const pdfExport = useReportsPdfExport(picks.unpick);
+	const selectionExport = useSelectionExport(picks, pdfExport);
 	const { mayEdit } = mayEditReportsOf(rbac);
 	const deletion = useReportDeletion(undefined);
 	const editing = useReportEditing(undefined);
-	const pdfExport = useReportPdfExport(undefined);
 	const actions: ReportListActions = {
-		onExportPdf: (report) => pdfExport.exportPdf(report, ownerOfReport(report)),
+		onExportPdf: pdfExport.exportOne,
 		preparingId: pdfExport.preparingId,
+		exportHeldBack: pdfExport.preparing,
 		editor: {
 			onEdit: (report) => editing.ask(report, ownerOfReport(report)),
 			onDelete: (report) => deletion.ask(report, ownerOfReport(report)),
@@ -103,7 +104,6 @@ const ReportsPageContent: React.FC = () => {
 			{editing.element}
 			{deletion.dialog}
 			{pdfExport.frame}
-			{selectionExport.frame}
 			{bulkCreation.wizard}
 			{removal.dialog}
 		</Container>

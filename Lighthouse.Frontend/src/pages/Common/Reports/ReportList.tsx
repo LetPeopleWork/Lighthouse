@@ -45,6 +45,8 @@ export interface ReportListActions {
 	onExportPdf: (report: IReportListItem) => void;
 	/** The report whose PDF is being prepared, whose icon waits while every other PDF icon is held back. */
 	preparingId: number | undefined;
+	/** Holds back every PDF icon while some other PDF on the page is prepared, such as one of several reports. */
+	exportHeldBack?: boolean;
 	editor?: ReportListEditorActions;
 	/** Narrows the editor's icons to the rows it may change, when the rows have different owners. */
 	mayEditRow?: (report: IReportListItem) => boolean;
@@ -70,7 +72,8 @@ const ExportPdfButton: React.FC<{
 	readonly report: IReportListItem;
 	readonly actions: ReportListActions;
 }> = ({ report, actions }) => {
-	const isHeldBack = actions.preparingId !== undefined;
+	const isHeldBack =
+		actions.preparingId !== undefined || actions.exportHeldBack === true;
 	if (isTauriOnMac()) {
 		return (
 			<Tooltip describeChild title={PDF_EXPORT_UNAVAILABLE_ON_MAC}>

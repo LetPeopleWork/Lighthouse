@@ -1,5 +1,6 @@
 import type React from "react";
 import { createElement, Fragment, useState } from "react";
+import type { IReportListItem } from "../../models/Reports/Report";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
 import { UsageDataEventName } from "../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../services/UsageData/usageDataReporter";
@@ -17,8 +18,12 @@ import NoPdfDialog from "./NoPdfDialog";
 export interface ReportsPdfExport {
 	/** Prints the reports as one PDF, in the order given; a second choice while one is prepared does nothing. */
 	readonly exportPdf: (reports: readonly IReportAcrossOwners[]) => void;
+	/** Prints one report as its own PDF, as its row's icon does; nothing while any PDF is prepared. */
+	readonly exportOne: (report: IReportListItem) => void;
 	/** Whether a PDF is being prepared, until its print dialog has been asked for. */
 	readonly preparing: boolean;
+	/** The report printed as its own PDF while that is prepared. */
+	readonly preparingId: number | undefined;
 	/** The hidden frame the reports are printed from, and the word that no PDF was made, while there is either. */
 	readonly frame: React.ReactNode;
 }
@@ -56,7 +61,7 @@ const failedAmong = (
  * Exports several reports, of any owners, as one PDF from a hidden frame on the Reports page. The frame goes again a
  * turn after its dialog closes, or as soon as no PDF can be made; then a dialog names each report that could not be
  * read and offers to leave them out, which unpicks them, or to ask again. Exactly one report is the report's own
- * export, printed and counted as that.
+ * export, printed and counted as that. One instance serves the whole page, so only one PDF is ever prepared at once.
  */
 export const useReportsPdfExport = (
 	unpick: (reports: readonly IReportAcrossOwners[]) => void,
@@ -75,10 +80,15 @@ export const useReportsPdfExport = (
 
 	const isPreparing = preparing || single.preparingId !== undefined;
 
+	const exportOne = (report: IReportListItem) => {
+		if (isPreparing) return;
+		single.exportPdf(report, ownerOfReport(report));
+	};
+
 	const exportPdf = (reports: readonly IReportAcrossOwners[]) => {
 		if (isPreparing || reports.length === 0) return;
 		if (reports.length === 1) {
-			single.exportPdf(reports[0], ownerOfReport(reports[0]));
+			exportOne(reports[0]);
 			return;
 		}
 		reportUsage({ name: UsageDataEventName.ReportCombinedPdfExportStarted });
@@ -129,7 +139,9 @@ export const useReportsPdfExport = (
 
 	return {
 		exportPdf,
+		exportOne,
 		preparing: isPreparing,
+		preparingId: single.preparingId,
 		frame: createElement(Fragment, null, frameHost, dialog, single.frame),
 	};
 };

@@ -30,6 +30,7 @@ import {
 	QUARTER,
 	RETRY,
 	renderTheReportsPage,
+	rowOf,
 	selectTheRowOf,
 	theReportNamesListed,
 	theReportsTable,
@@ -44,6 +45,7 @@ import {
 	theFontsHaveLoaded,
 	theFramesHavePrinted,
 	theFramesPage,
+	thePrintFrames,
 } from "../../tests/ReportPrintTestKit";
 import {
 	aReportService,
@@ -98,6 +100,11 @@ const readsHeldBack = () => {
 	});
 	return { getReport, release: () => release() };
 };
+
+const theRowsPdfIcon = (reportName: string, owner: typeof ZENITH) =>
+	within(rowOf(reportName, owner)).getByRole("button", {
+		name: `Export ${reportName} as PDF`,
+	});
 
 const listingAndReading = (
 	getReport: IReportService["getReport"],
@@ -232,6 +239,62 @@ describe("One PDF of several reports", () => {
 
 		await theFramesHavePrinted(frames, 1);
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
+	});
+
+	it("while a PDF of several is prepared, a row's PDF icon is held back and starts no second", async () => {
+		const frames = aPrintFrameBrowser();
+		const getReport = vi.fn(() => neverAnswered());
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				getReport,
+				zenithsQuarter,
+				gravitysMonth,
+				voyagersQuarter,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+		await waitFor(() => expect(thePrintFrames()).toHaveLength(1));
+
+		const voyagersIcon = theRowsPdfIcon(QUARTER, VOYAGER);
+		await user.click(voyagersIcon);
+		await aMomentLater();
+
+		expect(thePrintFrames()).toHaveLength(1);
+		expect(getReport).toHaveBeenCalledTimes(2);
+		expect(frames.timesAFramePrinted()).toBe(0);
+		expect(voyagersIcon).toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("while a row's PDF is prepared, Export PDF is held back and starts no second", async () => {
+		const frames = aPrintFrameBrowser();
+		const getReport = vi.fn(() => neverAnswered());
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				getReport,
+				zenithsQuarter,
+				gravitysMonth,
+				voyagersQuarter,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await user.click(theRowsPdfIcon(QUARTER, VOYAGER));
+		await waitFor(() => expect(thePrintFrames()).toHaveLength(1));
+
+		const exportSeveral = screen.getByRole("button", {
+			name: exportButton(2),
+		});
+		expect(exportSeveral).toHaveAttribute("aria-busy", "true");
+		await user.click(exportSeveral);
+		await aMomentLater();
+
+		expect(thePrintFrames()).toHaveLength(1);
+		expect(getReport).toHaveBeenCalledTimes(1);
+		expect(frames.timesAFramePrinted()).toBe(0);
 	});
 
 	it("while the reports load, Export PDF shows it is preparing and nothing prints yet", async () => {

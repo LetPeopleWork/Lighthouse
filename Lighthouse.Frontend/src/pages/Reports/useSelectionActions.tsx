@@ -15,7 +15,7 @@ import { exportPdfButtonProps } from "../Common/Reports/preparingLook";
 import { ownerOfReport } from "../Common/Reports/reportOwner";
 import { mayEditReportsOf } from "../Common/Reports/useMayEditReports";
 import RemoveSelectedDialog from "./RemoveSelectedDialog";
-import { useReportsPdfExport } from "./useReportsPdfExport";
+import type { ReportsPdfExport } from "./useReportsPdfExport";
 import type { RowPicks } from "./useRowPicks";
 
 // Held back only in look on the macOS desktop app, so the tooltip saying why still reaches a keyboard reader.
@@ -101,12 +101,10 @@ const exportBlockedBecause = (picked: number): string => {
  * Export PDF, which prints every picked report as one PDF, in the order the table shows them; any reader may. On the
  * macOS desktop app no PDF can be made at all, so that reason wins over any about the picks.
  */
-export const useSelectionExport = ({
-	picked,
-	inTableOrder,
-	unpick,
-}: RowPicks) => {
-	const pdfExport = useReportsPdfExport(unpick);
+export const useSelectionExport = (
+	{ picked, inTableOrder }: RowPicks,
+	pdfExport: ReportsPdfExport,
+) => {
 	const label = `Export PDF (${picked.length})`;
 	const blockedBecause = pdfExport.preparing
 		? ""
@@ -139,5 +137,5 @@ export const useSelectionExport = ({
 			</span>
 		</Tooltip>
 	);
-	return { button, frame: pdfExport.frame };
+	return { button };
 };
