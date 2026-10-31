@@ -1,0 +1,22 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": { "configFile": "vitest.stryker.mutation.ts" },
+  "reporters": ["clear-text", "progress", "json"],
+  "coverageAnalysis": "perTest",
+  "incrementalFile": "reports/mutation/stryker-incremental-6456.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": ["/dist", "/coverage", "/playwright-report", "/reports"],
+  "mutate": [
+    "src/components/Common/BaseSettings/GeneralSettingsComponent.tsx:132-145",
+    "src/components/Common/BaseSettings/GeneralSettingsComponent.tsx:190-192",
+    "src/hooks/useModifySettings.ts:305-345"
+  ],
+  "thresholds": { "high": 90, "low": 80, "break": 0 },
+  "jsonReporter": { "fileName": "reports/mutation/stryker-6456-frontend.json" },
+  "tempDirName": ".stryker-tmp-6456"
+}

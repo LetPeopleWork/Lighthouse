@@ -188,6 +188,31 @@ describe("ModifyTeamSettings query field", () => {
 		);
 	});
 
+	it("saves the latest edit after the save already on its way, when the page is left meanwhile", async () => {
+		let finishFirstSave: () => void = () => {};
+		mockSaveTeamSettings.mockImplementationOnce(
+			() =>
+				new Promise<undefined>((resolve) => {
+					finishFirstSave = () => resolve(undefined);
+				}),
+		);
+		const { user, leaveThePage } = await openTeamSettings();
+
+		await user.type(screen.getByLabelText("Name"), " Two");
+		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1));
+		await user.type(screen.getByLabelText("Name"), " Three");
+		leaveThePage();
+		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
+
+		finishFirstSave();
+		await waitPastTheDebounce();
+
+		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(2);
+		expect(mockSaveTeamSettings).toHaveBeenLastCalledWith(
+			expect.objectContaining({ name: "Team A Two Three" }),
+		);
+	});
+
 	it("saves nothing when the page is left while the form is invalid", async () => {
 		const { user, leaveThePage } = await openTeamSettings();
 
