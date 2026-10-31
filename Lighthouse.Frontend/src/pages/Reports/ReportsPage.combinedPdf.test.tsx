@@ -37,6 +37,7 @@ import {
 	ZENITH,
 } from "../../tests/BulkReportsTestKit";
 import {
+	aMomentLater,
 	aPrintFrameBrowser,
 	forgetTheBrowser,
 	theFontsCannotLoad,
@@ -83,6 +84,20 @@ const eachReportReads = (
 					}),
 				),
 	);
+
+/** Every report read as eachReportReads would, but held back until `release` is called. */
+const readsHeldBack = () => {
+	let release: () => void = () => undefined;
+	const released = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const answers = eachReportReads();
+	const getReport = vi.fn(async (owner: IReportOwner, reportId: number) => {
+		await released;
+		return answers(owner, reportId);
+	});
+	return { getReport, release: () => release() };
+};
 
 const listingAndReading = (
 	getReport: IReportService["getReport"],
@@ -132,6 +147,41 @@ describe("One PDF of several reports", () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
 				eachReportReads(),
+				gravitysMonth,
+				zenithsQuarter,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await selectTheRowOf(user, QUARTER, ZENITH);
+
+		// Gravity's report is listed first, and the table would show it first too, so only sorting Z to A puts Zenith's first.
+		const byName = screen.getByRole("columnheader", { name: /^Name/ });
+		await user.click(byName);
+		await user.click(byName);
+		await waitFor(() =>
+			expect(theReportNamesListed()).toEqual([QUARTER, MONTH]),
+		);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await theFramesHavePrinted(frames, 1);
+		expect(theReportTitlesPrinted()).toEqual([QUARTER, MONTH]);
+	});
+
+	it("nothing prints while one of the reports is still on its way, and the PDF holds both once it arrives", async () => {
+		const frames = aPrintFrameBrowser();
+		let answerGravity: () => void = () => undefined;
+		const gravityAnswers = new Promise<void>((resolve) => {
+			answerGravity = resolve;
+		});
+		const answers = eachReportReads();
+		const getReport = vi.fn(async (owner: IReportOwner, reportId: number) => {
+			if (reportId === gravitysMonth.id) await gravityAnswers;
+			return answers(owner, reportId);
+		});
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				getReport,
 				zenithsQuarter,
 				gravitysMonth,
 			),
@@ -139,12 +189,46 @@ describe("One PDF of several reports", () => {
 		await theReportsTable();
 		await selectTheRowOf(user, QUARTER, ZENITH);
 		await selectTheRowOf(user, MONTH, GRAVITY);
-
-		await user.click(screen.getByRole("columnheader", { name: /^Name/ }));
-		await waitFor(() =>
-			expect(theReportNamesListed()).toEqual([MONTH, QUARTER]),
-		);
 		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await waitFor(() => expect(theReportTitlesPrinted()).toEqual([QUARTER]));
+		await aMomentLater();
+		expect(frames.timesAFramePrinted()).toBe(0);
+
+		answerGravity();
+
+		await theFramesHavePrinted(frames, 1);
+		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
+		await aMomentLater();
+		expect(frames.timesAFramePrinted()).toBe(1);
+	});
+
+	it("picks and sorting changed while the PDF is prepared leave it as it was when Export PDF was pressed", async () => {
+		const frames = aPrintFrameBrowser();
+		const reads = readsHeldBack();
+		const { user } = renderTheReportsPage({
+			reportService: listingAndReading(
+				reads.getReport,
+				zenithsQuarter,
+				gravitysMonth,
+			),
+		});
+		await theReportsTable();
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		await selectTheRowOf(user, MONTH, GRAVITY);
+		await user.click(screen.getByRole("button", { name: exportButton(2) }));
+
+		await selectTheRowOf(user, QUARTER, ZENITH);
+		const byName = screen.getByRole("columnheader", { name: /^Name/ });
+		await user.click(byName);
+		await user.click(byName);
+		await waitFor(() =>
+			expect(theReportNamesListed()).toEqual([QUARTER, MONTH]),
+		);
+		expect(
+			screen.getByRole("button", { name: exportButton(1) }),
+		).toBeInTheDocument();
+		reads.release();
 
 		await theFramesHavePrinted(frames, 1);
 		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
@@ -285,12 +369,12 @@ describe("One PDF of several reports", () => {
 		const { user } = renderTheReportsPage({
 			reportService: listingAndReading(
 				getReport,
-				voyagersQuarter,
+				gravitysMonth,
 				zenithsQuarter,
 			),
 		});
 		await theReportsTable();
-		await selectTheRowOf(user, QUARTER, VOYAGER);
+		await selectTheRowOf(user, MONTH, GRAVITY);
 		await selectTheRowOf(user, QUARTER, ZENITH);
 		await user.click(screen.getByRole("button", { name: exportButton(2) }));
 
@@ -301,6 +385,7 @@ describe("One PDF of several reports", () => {
 		);
 
 		await theFramesHavePrinted(frames, 1);
+		expect(theReportTitlesPrinted()).toEqual([MONTH, QUARTER]);
 	});
 
 	it("when part of the page cannot be loaded no PDF is made and it says so", async () => {
