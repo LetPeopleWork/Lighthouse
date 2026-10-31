@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
             var json = CreateFlaggedIssueJson();
 
             var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>())
-                .CreateIssueFromJson(json.RootElement, owner, flaggedField: FlaggedFieldReference);
+                .CreateIssueFromJson(json.RootElement, owner, JiraOriginalNames.AsReported, flaggedField: FlaggedFieldReference);
 
             Assert.That(issue.Labels, Does.Not.Contain(JiraFieldNames.FlaggedName),
                 "IssueFactory must not inject a synthetic \"Flagged\" label — the Jira flag is consumed only as the " +

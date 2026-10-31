@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Factories
 
         // flaggedField stays on the signature because callers still resolve the flagged custom-field key, but the
         // flag now reaches a work item only through its additional field, so this factory no longer reads it.
-        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, string? rankFieldName = null, string? flaggedField = null, JiraOriginalNames? originalNames = null)
+        public Issue CreateIssueFromJson(JsonElement json, IWorkItemQueryOwner workitemQueryOwner, JiraOriginalNames originalNames, string? rankFieldName = null, string? flaggedField = null)
         {
             // If the rank field is not set, use the default one and try our luck
             var rankField = !string.IsNullOrEmpty(rankFieldName) ? rankFieldName : DefaultRankField;
@@ -283,16 +283,16 @@ namespace Lighthouse.Backend.Factories
             return (startedDate, closedDate);
         }
 
-        private static string? GetIssueTypeFromFields(JsonElement fields, JiraOriginalNames? originalNames)
+        private static string? GetIssueTypeFromFields(JsonElement fields, JiraOriginalNames originalNames)
         {
             var (id, name) = IdAndNameOf(fields, JiraFieldNames.IssueTypeFieldName);
-            return originalNames is null ? name : originalNames.IssueTypeNameFor(id, name);
+            return originalNames.IssueTypeNameFor(id, name);
         }
 
-        private static string? GetStateFromFields(JsonElement fields, JiraOriginalNames? originalNames)
+        private static string? GetStateFromFields(JsonElement fields, JiraOriginalNames originalNames)
         {
             var (id, name) = IdAndNameOf(fields, JiraFieldNames.StatusFieldName);
-            return originalNames is null ? name : originalNames.StatusNameFor(id, name);
+            return originalNames.StatusNameFor(id, name);
         }
 
         private static (string? Id, string Name) IdAndNameOf(JsonElement fields, string fieldName)

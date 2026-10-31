@@ -35,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.Key, Is.EqualTo("LGHTHSDMO-12"));
         }
@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json.AsObject().Remove(JiraFieldNames.KeyPropertyName);
             });
 
-            Assert.Throws<KeyNotFoundException>(() => CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner));
+            Assert.Throws<KeyNotFoundException>(() => CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported));
         }
 
         [Test]
@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.Title, Is.EqualTo("Story 2"));
         }
@@ -69,7 +69,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"].AsObject().Remove(JiraFieldNames.SummaryFieldName);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.Title, Is.EqualTo(string.Empty));
         }
@@ -79,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.ParentKey, Is.EqualTo("LGHTHSDMO-1"));
         }
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"].AsObject().Remove(JiraFieldNames.ParentFieldName);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.ParentKey, Is.EqualTo(string.Empty));
         }
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.Rank, Is.EqualTo("0|i0007z:"));
         }
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"].AsObject().Remove("customfield_10019");
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.Rank, Is.EqualTo("00000|"));
         }
@@ -128,7 +128,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json.AsObject().Remove(JiraFieldNames.ChangelogFieldName);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.ClosedDate, Is.Null);
         }
@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json.AsObject().Remove(JiraFieldNames.ChangelogFieldName);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.StartedDate, Is.Null);
         }
@@ -154,7 +154,7 @@ namespace Lighthouse.Backend.Tests.Factories
             var theInstantJiraNames = new DateTime(2024, 4, 7, 7, 40, 12, 704, DateTimeKind.Utc);
             TheHostZoneIsAwayFromUtcAt(theInstantJiraNames);
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"][JiraFieldNames.CreatedDateFieldName] = "garbage";
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.CreatedDate, Is.EqualTo(DateTime.MinValue));
         }
@@ -185,7 +185,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"][JiraFieldNames.CreatedDateFieldName] = string.Empty;
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.CreatedDate, Is.EqualTo(DateTime.MinValue));
         }
@@ -195,7 +195,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument();
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             Assert.That(issue.State, Is.EqualTo("Doing"));
         }
@@ -208,7 +208,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 json["fields"][JiraFieldNames.StatusFieldName][JiraFieldNames.NamePropertyName] = "Backlog";
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,7 +231,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -257,7 +257,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -285,7 +285,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -313,7 +313,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -342,7 +342,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -374,7 +374,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -411,7 +411,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -441,7 +441,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -467,7 +467,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -493,7 +493,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -518,7 +518,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -614,7 +614,7 @@ namespace Lighthouse.Backend.Tests.Factories
                 ]);
             });
 
-            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            var issue = CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -689,7 +689,7 @@ namespace Lighthouse.Backend.Tests.Factories
         {
             var jsonDocument = CreateJsonDocument(shapeIt);
 
-            return CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner);
+            return CreateIssueFactory().CreateIssueFromJson(jsonDocument.RootElement, workItemQueryOwner, JiraOriginalNames.AsReported);
         }
 
         private WorkItemStateTransition TheOnlyTransitionOfAStatusChangeStamped(string stamp)

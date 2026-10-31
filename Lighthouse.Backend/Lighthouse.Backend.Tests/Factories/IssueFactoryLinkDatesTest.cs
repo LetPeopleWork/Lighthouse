@@ -396,7 +396,7 @@ namespace Lighthouse.Backend.Tests.Factories
             using var document = JsonDocument.Parse(json);
 
             return new IssueFactory(Mock.Of<ILogger<IssueFactory>>())
-                .CreateIssueFromJson(document.RootElement, JiraConnectorTestSetup.ATeamOnJiraCloud());
+                .CreateIssueFromJson(document.RootElement, JiraConnectorTestSetup.ATeamOnJiraCloud(), JiraOriginalNames.AsReported);
         }
     }
 }

@@ -84,7 +84,7 @@ namespace Lighthouse.Backend.Tests.Factories
         [Test]
         public void Reading_without_original_names_keeps_what_the_payload_carried()
         {
-            var issue = TheIssueIn(AGermanIssue(), originalNames: null);
+            var issue = TheIssueIn(AGermanIssue(), JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -114,12 +114,12 @@ namespace Lighthouse.Backend.Tests.Factories
             return JiraOriginalNames.Combining(JiraOriginalNames.FromStatusList(statuses.RootElement), JiraOriginalNames.FromIssueTypeList(issueTypes.RootElement));
         }
 
-        private static Issue TheIssueIn(string json, JiraOriginalNames? originalNames)
+        private static Issue TheIssueIn(string json, JiraOriginalNames originalNames)
         {
             using var document = JsonDocument.Parse(json);
 
             return new IssueFactory(Mock.Of<ILogger<IssueFactory>>())
-                .CreateIssueFromJson(document.RootElement, JiraConnectorTestSetup.ATeamOnJiraCloud(), originalNames: originalNames);
+                .CreateIssueFromJson(document.RootElement, JiraConnectorTestSetup.ATeamOnJiraCloud(), originalNames);
         }
     }
 }

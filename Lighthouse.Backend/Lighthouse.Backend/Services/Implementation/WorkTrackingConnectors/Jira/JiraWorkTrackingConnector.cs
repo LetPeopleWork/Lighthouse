@@ -1861,6 +1861,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
         {
+            var state = issue.State
+                ?? throw new InvalidOperationException($"Issue {issue.Key} reached the work item factory without a state.");
+
             var url = $"{SiteAddressOf(workItemQueryOwner.WorkTrackingSystemConnection)}/browse/{issue.Key}";
 
             var additionalFieldDefs = workItemQueryOwner.WorkTrackingSystemConnection.AdditionalFieldDefinitions;
@@ -1876,10 +1879,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 StartedDate = issue.StartedDate,
                 Order = issue.Rank,
                 Type = issue.IssueType,
-                State = workItemQueryOwner.MapRawStateToMappedName(issue.State!),
+                State = workItemQueryOwner.MapRawStateToMappedName(state),
                 Url = url,
                 Tags = issue.Labels,
-                StateCategory = workItemQueryOwner.MapStateToStateCategory(issue.State!),
+                StateCategory = workItemQueryOwner.MapStateToStateCategory(state),
                 SyncedTransitions = WorkItemStateTransitionMapper.MapToMappedStates(issue.StateTransitions, workItemQueryOwner),
                 TransitionsAreItsWholeHistory = issue.HasItsWholeHistory,
             };
@@ -2681,7 +2684,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 foreach (var jsonIssue in page)
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, originalNames: originalNames);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, originalNames, rankFieldName);
                     issues.Add(issue);
                 }
             }
@@ -2869,7 +2872,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
             }
 
-            return issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName, originalNames: originalNames);
+            return issueFactory.CreateIssueFromJson(issueToProcess, owner, originalNames, rankFieldName);
         }
 
         private sealed record CloudSearchRequest(string Jql, string Fields, bool ExpandChangelog, int PageLimit, bool SinglePage);
