@@ -373,6 +373,92 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(states.ToDoStates, Is.EqualTo(["Visible"]));
         }
 
+        [Test]
+        [Ignore("Suggestions still compare names with their letter case")]
+        public async Task GetWorkItemTypesForTeams_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling()
+        {
+            var first = CreateTeam();
+            first.WorkItemTypes.Clear();
+            first.WorkItemTypes.AddRange(["Story", "Bug"]);
+            var second = CreateTeam();
+            second.Id = 2;
+            second.WorkItemTypes.Clear();
+            second.WorkItemTypes.AddRange(["story", "BUG", "Task"]);
+
+            var response = await CreateSubject().GetWorkItemTypesForTeams();
+
+            Assert.That(((OkObjectResult)response.Result!).Value, Is.EqualTo(new List<string> { "Story", "Bug", "Task" }));
+        }
+
+        [Test]
+        [Ignore("Suggestions still compare names with their letter case")]
+        public async Task GetWorkItemTypesForProjects_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling()
+        {
+            var first = CreateProject();
+            first.WorkItemTypes.Clear();
+            first.WorkItemTypes.Add("Epic");
+            var second = CreateProject();
+            second.Id = 2;
+            second.WorkItemTypes.Clear();
+            second.WorkItemTypes.AddRange(["epic", "Initiative"]);
+
+            var response = await CreateSubject().GetWorkItemTypesForProjects();
+
+            Assert.That(((OkObjectResult)response.Result!).Value, Is.EqualTo(new List<string> { "Epic", "Initiative" }));
+        }
+
+        [Test]
+        [Ignore("Suggestions still compare names with their letter case")]
+        public async Task GetStatesForTeams_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling()
+        {
+            var first = CreateTeam();
+            SetStates(first, ["To Do"], ["In Progress"], ["Done"]);
+            var second = CreateTeam();
+            second.Id = 2;
+            SetStates(second, ["to do", "Backlog"], ["in progress", "IN REVIEW"], ["DONE", "Closed"]);
+
+            var response = await CreateSubject().GetStatesForTeams();
+            var states = (StatesCollectionDto)((OkObjectResult)response.Result!).Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(states.ToDoStates, Is.EqualTo(new List<string> { "To Do", "Backlog" }));
+                Assert.That(states.DoingStates, Is.EqualTo(new List<string> { "In Progress", "IN REVIEW" }));
+                Assert.That(states.DoneStates, Is.EqualTo(new List<string> { "Done", "Closed" }));
+            }
+        }
+
+        [Test]
+        [Ignore("Suggestions still compare names with their letter case")]
+        public async Task GetStatesForProjects_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling()
+        {
+            var first = CreateProject();
+            SetStates(first, ["To Do"], ["In Progress"], ["Done"]);
+            var second = CreateProject();
+            second.Id = 2;
+            SetStates(second, ["TO DO"], ["in progress", "Review"], ["done"]);
+
+            var response = await CreateSubject().GetStatesForProjects();
+            var states = (StatesCollectionDto)((OkObjectResult)response.Result!).Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(states.ToDoStates, Is.EqualTo(new List<string> { "To Do" }));
+                Assert.That(states.DoingStates, Is.EqualTo(new List<string> { "In Progress", "Review" }));
+                Assert.That(states.DoneStates, Is.EqualTo(new List<string> { "Done" }));
+            }
+        }
+
+        private static void SetStates(WorkTrackingSystemOptionsOwner owner, string[] toDo, string[] doing, string[] done)
+        {
+            owner.ToDoStates.Clear();
+            owner.ToDoStates.AddRange(toDo);
+            owner.DoingStates.Clear();
+            owner.DoingStates.AddRange(doing);
+            owner.DoneStates.Clear();
+            owner.DoneStates.AddRange(done);
+        }
+
         private Portfolio CreateProject()
         {
             var project = new Portfolio

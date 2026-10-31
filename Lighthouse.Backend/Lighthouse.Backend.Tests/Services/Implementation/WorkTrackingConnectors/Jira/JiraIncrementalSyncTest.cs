@@ -1318,6 +1318,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Ok("[]");
                 }
 
+                if (JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList)
+                {
+                    return Ok(theNameList);
+                }
+
                 if (path.EndsWith("/changelog", StringComparison.Ordinal) && changelogPagesServed < ChangelogPages.Count)
                 {
                     return Ok(ChangelogPages[changelogPagesServed++]);

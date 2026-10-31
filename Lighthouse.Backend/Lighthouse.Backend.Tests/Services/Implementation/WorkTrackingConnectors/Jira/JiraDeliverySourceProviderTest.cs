@@ -1342,6 +1342,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     return Ok("{\"deploymentType\":\"Cloud\"}");
                 }
 
+                if (JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList)
+                {
+                    return Ok(theNameList);
+                }
+
                 if (path.EndsWith("/project/search", StringComparison.Ordinal))
                 {
                     if (LostItsProjectSearch)

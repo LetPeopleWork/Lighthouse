@@ -540,6 +540,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             var body = path switch
             {
                 _ when path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal) => JiraWireFormat.ACloudDeployment,
+                _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.EndsWith(JiraWireFormat.CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
                 _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => JiraWireFormat.TheFieldListDefining([]),
                 _ when path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)

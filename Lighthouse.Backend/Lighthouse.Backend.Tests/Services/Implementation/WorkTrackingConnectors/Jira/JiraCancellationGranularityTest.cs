@@ -156,6 +156,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                             => "{\"deploymentType\":\"Cloud\"}",
                         _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal)
                             => "[]",
+                        _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                         _ when path.Contains("rest/api/3/search/jql", StringComparison.Ordinal)
                             => APageOfIssuesWithLongChangelogs(),
                         _ => "{}",
@@ -219,6 +220,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     => $"{{\"deploymentType\":\"{deployment}\"}}",
                 _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal)
                     => "[]",
+                _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.Contains("rest/api/latest/search", StringComparison.Ordinal)
                     => $"{{\"startAt\":0,\"maxResults\":50,\"total\":{TotalTheTrackerClaims},\"issues\":[]}}",
                 _ when path.Contains("rest/api/3/search/jql", StringComparison.Ordinal)

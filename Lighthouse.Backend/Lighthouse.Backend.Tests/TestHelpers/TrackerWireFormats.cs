@@ -51,12 +51,123 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 return TheFieldListDefining([]);
             }
 
+            if (TheNameListAnsweredAt(path) is { } nameList)
+            {
+                return nameList;
+            }
+
             if (path.Contains(SearchEndpoint, StringComparison.Ordinal))
             {
                 return OnePageOf(issues);
             }
 
             return "{}";
+        }
+
+        /// <summary>The JQL a search was sent with, read out of its body.</summary>
+        public static string JqlOfSearch(string searchBody) => SearchBody.ValueIn(searchBody, "jql");
+
+        public const string StatusListEndpoint = "rest/api/latest/status";
+
+        public const string IssueTypeListEndpoint = "rest/api/latest/issuetype";
+
+        /// <summary>
+        /// What a Cloud instance answers when asked for its statuses or its issue types, for a fixture that
+        /// only needs the connector to get past those two reads. Null for any other path, so a fixture adds
+        /// one line in front of its own routing. The ids match what <see cref="AnIssueSeenIn"/> hands out.
+        /// </summary>
+        public static string? TheNameListAnsweredAt(string path)
+        {
+            if (path.EndsWith(StatusListEndpoint, StringComparison.Ordinal))
+            {
+                return TheStatusListOf(AnEnglishStatuses);
+            }
+
+            return path.EndsWith(IssueTypeListEndpoint, StringComparison.Ordinal)
+                ? TheIssueTypeListOf(AnEnglishIssueTypes)
+                : null;
+        }
+
+        public static IReadOnlyList<string> AnEnglishStatuses { get; } =
+        [
+            AStatus("1", "To Do", "To Do", "new", "To Do"),
+            AStatus("3", "In Progress", "In Progress", "indeterminate", "In Progress"),
+            AStatus("5", "Done", "Done", "done", "Done"),
+        ];
+
+        public static IReadOnlyList<string> AnEnglishIssueTypes { get; } =
+        [
+            AnIssueType("10001", "Story", "Story"),
+            AnIssueType("10002", "Bug", "Bug"),
+            AnIssueType("10003", "Epic", "Epic"),
+        ];
+
+        /// <summary>
+        /// The same instance as a German account reads it: names and category names translated, ids,
+        /// category keys and <c>untranslatedName</c> exactly as for an English account.
+        /// </summary>
+        public static IReadOnlyList<string> AGermanReadersStatuses { get; } =
+        [
+            AStatus("1", "Zu erledigen", "To Do", "new", "Zu erledigen"),
+            AStatus("3", "In Arbeit", "In Progress", "indeterminate", "In Arbeit"),
+            AStatus("4", "QA & Testing", "QA & Testing", "indeterminate", "In Arbeit"),
+            AStatus("5", "Fertig", "Done", "done", "Fertig"),
+            AStatus("9", "Abgebrochen", "Canceled", "done", "Fertig"),
+        ];
+
+        public static IReadOnlyList<string> AGermanReadersIssueTypes { get; } =
+        [
+            AnIssueType("10001", "Geschichte", "Story"),
+            AnIssueType("10002", "Fehler", "Bug"),
+            AnIssueType("10003", "Epic", "Epic"),
+        ];
+
+        public static string TheStatusListOf(IEnumerable<string> statuses) => "[" + string.Join(",", statuses) + "]";
+
+        public static string TheIssueTypeListOf(IEnumerable<string> issueTypes) => "[" + string.Join(",", issueTypes) + "]";
+
+        /// <summary>
+        /// One entry of the status list as Jira Cloud writes it. <paramref name="untranslatedName"/> is left
+        /// out when null, as Data Center and old instances leave it out; <paramref name="categoryKey"/> is
+        /// left out when null for the same reason.
+        /// </summary>
+        public static string AStatus(string id, string name, string? untranslatedName, string? categoryKey, string categoryName)
+            => "{\"id\":\"" + id + "\",\"name\":\"" + name + "\""
+                + Written("untranslatedName", untranslatedName)
+                + ",\"statusCategory\":{\"name\":\"" + categoryName + "\""
+                + Written("key", categoryKey) + "}}";
+
+        public static string AnIssueType(string id, string name, string? untranslatedName)
+            => "{\"id\":\"" + id + "\",\"name\":\"" + name + "\"" + Written("untranslatedName", untranslatedName) + "}";
+
+        /// <summary>An issue whose type and status carry a name and no id, as a hand-built payload or an old instance sends it.</summary>
+        public static string AnIssueCarryingNamesOnly(string key, string issueType, string status)
+            => "{\"key\": \"" + key + "\", \"fields\": {\"summary\": \"" + key + " summary\""
+                + ", \"issuetype\": {\"name\": \"" + issueType + "\"}"
+                + ", \"status\": {\"name\": \"" + status + "\"}"
+                + ", \"created\": \"2026-01-01T00:00:00.000+0000\", \"updated\": \"2026-01-02T00:00:00.000+0000\""
+                + ", \"labels\": [], \"issuelinks\": []}}";
+
+        /// <summary>
+        /// An issue as the search endpoint writes it: type and status carry an id and the name in the
+        /// language of the account reading, and never an <c>untranslatedName</c>.
+        /// </summary>
+        public static string AnIssueSeenIn(
+            string key, string issueTypeId, string issueTypeName, string statusId, string statusName,
+            IEnumerable<string>? histories = null)
+        {
+            var entries = (histories ?? []).ToList();
+            var fields = "{\"summary\": \"" + key + " summary\""
+                + ", \"issuetype\": {\"id\": \"" + issueTypeId + "\", \"name\": \"" + issueTypeName + "\"}"
+                + ", \"status\": {\"id\": \"" + statusId + "\", \"name\": \"" + statusName + "\"}"
+                + ", \"created\": \"2026-01-01T00:00:00.000+0000\""
+                + ", \"updated\": \"2026-01-02T00:00:00.000+0000\""
+                + ", \"labels\": [], \"issuelinks\": []}";
+            var changelog = "{\"startAt\": 0, \"maxResults\": " + entries.Count.ToString(CultureInfo.InvariantCulture)
+                + ", \"total\": " + entries.Count.ToString(CultureInfo.InvariantCulture)
+                + ", \"histories\": [" + string.Join(",", entries) + "]}";
+
+            return "{\"key\": \"" + key + "\", \"fields\": " + fields + ", \"changelog\": " + changelog + "}";
         }
 
         /// <summary>

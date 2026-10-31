@@ -26,6 +26,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         public const string Status = "rest/api/latest/status";
 
+        public const string IssueType = "rest/api/latest/issuetype";
+
         public const string IssueLinkType = "rest/api/latest/issueLinkType";
 
         public const string ProjectList = "rest/api/2/project";

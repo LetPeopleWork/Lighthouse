@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -1097,6 +1098,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never,
                 "Removal is a set difference against what the query returned. Run against a fetch that threw, "
                 + "it deletes every Work Item the team has - and their blocked spells do not come back.");
+        }
+
+        /// <summary>
+        /// Jira would not hand over its status list, so the refresh cannot tell which state each item is in.
+        /// What the Team already holds has to stay exactly as it was, and the fingerprint must not move on,
+        /// so the next refresh is retried the same way: the sentence shown to the administrator promises it.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_JiraStatusListCouldNotBeRead_LeavesTheStoredWorkItemsAsTheyWere()
+        {
+            var team = CreateTeam();
+            team.FetchFingerprint = "fingerprint-of-the-last-refresh";
+
+            AddWorkItemForTeam(team);
+            AddWorkItemForTeam(team);
+            var held = workItems.Select(item => (item.ReferenceId, item.State, item.Type, item.StateCategory)).ToList();
+
+            workTrackingConnectorMock.Setup(x => x.GetWorkItemsForTeam(team, CancellationToken.None))
+                .ThrowsAsync(JiraReadException.StatusListRefused(
+                    JiraReadException.ReadFor.TeamRefresh, System.Net.HttpStatusCode.ServiceUnavailable, "{}"));
+
+            var subject = CreateSubject();
+
+            await Assert.ThatAsync(() => subject.UpdateWorkItemsForTeam(team), Throws.InstanceOf<JiraReadException>());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems.Select(item => (item.ReferenceId, item.State, item.Type, item.StateCategory)), Is.EqualTo(held));
+                Assert.That(team.FetchFingerprint, Is.EqualTo("fingerprint-of-the-last-refresh"));
+            }
+
+            workItemRepositoryMock.Verify(x => x.Add(It.IsAny<WorkItem>()), Times.Never);
+            workItemRepositoryMock.Verify(x => x.Update(It.IsAny<WorkItem>()), Times.Never);
+            workItemRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
+            workItemRepositoryMock.Verify(x => x.Save(), Times.Never);
         }
 
         /// <summary>

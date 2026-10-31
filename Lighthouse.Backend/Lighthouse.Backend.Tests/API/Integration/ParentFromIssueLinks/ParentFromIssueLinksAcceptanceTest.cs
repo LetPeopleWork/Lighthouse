@@ -155,6 +155,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             {
                 _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal)
                     => (HttpStatusCode.OK, JiraWireFormat.ACloudDeployment),
+                _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList
+                    => (HttpStatusCode.OK, theNameList),
                 _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal)
                     => (credentialCheckStatus, "{\"accountId\":\"someone\"}"),
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)

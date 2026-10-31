@@ -619,6 +619,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             var body = path switch
             {
                 _ when path.EndsWith(ServerInfoEndpoint, StringComparison.Ordinal) => JiraWireFormat.ACloudDeployment,
+                _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.EndsWith(CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
                 _ when path.EndsWith(FieldListEndpoint, StringComparison.Ordinal)
                     => JiraWireFormat.TheFieldListDefining(customFieldsTheInstanceDefines),

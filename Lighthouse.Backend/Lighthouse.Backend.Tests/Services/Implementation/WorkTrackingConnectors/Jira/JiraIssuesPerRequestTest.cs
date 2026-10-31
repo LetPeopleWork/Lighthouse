@@ -119,6 +119,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     => $"{{\"deploymentType\":\"{deploymentType}\"}}",
                 _ when path.EndsWith("rest/api/latest/field", StringComparison.Ordinal)
                     => "[]",
+                _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.Contains("rest/api/latest/search", StringComparison.Ordinal)
                     => "{\"startAt\":0,\"maxResults\":1000,\"total\":0,\"issues\":[]}",
                 _ when path.Contains("rest/api/3/search/jql", StringComparison.Ordinal)

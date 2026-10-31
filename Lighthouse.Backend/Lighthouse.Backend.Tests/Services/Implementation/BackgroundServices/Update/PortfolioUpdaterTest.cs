@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Interfaces;
@@ -902,6 +903,74 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.BackgroundServices.Up
             CreateTeamSubject().TriggerUpdate(team.Id);
 
             Assert.That(ReadReason(teamLoggerMock), Is.EqualTo(ReadReason(loggerMock)));
+        }
+
+        [Test]
+        [Ignore("Jira's issue type list is not refused with its own sentence yet")]
+        public void TriggerUpdate_JiraCouldNotReadItsWorkItemTypeList_TheReasonSaysSoWithoutSayingWhatWasKept()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(JiraReadException.IssueTypeListRefused(
+                    JiraReadException.ReadFor.PortfolioRefresh,
+                    System.Net.HttpStatusCode.Forbidden, "{}"));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    ReadReason(loggerMock),
+                    Is.EqualTo("The work tracking system could not be read for this refresh: Lighthouse could not read the list of work item types on this Jira instance, "
+                        + "so it cannot tell which type each work item is. Jira answered 403 (Forbidden)."));
+                Assert.That(recordedRefresh?.Success, Is.False);
+            }
+        }
+
+        [Test]
+        [Ignore("Jira's status list is not refused with its own sentence yet")]
+        public void TriggerUpdate_JiraCouldNotReadItsStatusList_TheReasonSaysSoWithoutSayingWhatWasKept()
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(JiraReadException.StatusListRefused(JiraReadException.ReadFor.PortfolioRefresh, System.Net.HttpStatusCode.ServiceUnavailable, "{}"));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    ReadReason(loggerMock),
+                    Is.EqualTo("The work tracking system could not be read for this refresh: Lighthouse could not read the list of statuses on this Jira instance, "
+                        + "so it cannot tell which state each work item is in. Jira answered 503 (ServiceUnavailable)."));
+                Assert.That(recordedRefresh?.Success, Is.False);
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        [Ignore("Jira's missing status or type id is not refused with its own sentence yet")]
+        public void TriggerUpdate_JiraReportedAnIdItsListLacks_TheReasonNamesTheIdWithoutSayingWhatWasKept(bool statusId)
+        {
+            var project = CreateProject(Now.AddDays(-1));
+            SetupProjects(project);
+            workItemServiceMock
+                .Setup(x => x.UpdateFeaturesForPortfolio(project))
+                .ThrowsAsync(statusId
+                    ? JiraReadException.StatusIdNotInList(JiraReadException.ReadFor.PortfolioRefresh, "777")
+                    : JiraReadException.IssueTypeIdNotInList(JiraReadException.ReadFor.PortfolioRefresh, "99999"));
+
+            CreateSubject().TriggerUpdate(project.Id);
+
+            var expected = statusId
+                ? "Jira reported a status (id 777) that is not in its list of statuses on this Jira instance, so Lighthouse cannot tell which state each work item is in."
+                : "Jira reported a work item type (id 99999) that is not in its list of work item types on this Jira instance, so Lighthouse cannot tell which type each work item is.";
+
+            Assert.That(ReadReason(loggerMock), Is.EqualTo("The work tracking system could not be read for this refresh: " + expected));
         }
 
         private Portfolio SetupPortfolioWhoseReadFails()

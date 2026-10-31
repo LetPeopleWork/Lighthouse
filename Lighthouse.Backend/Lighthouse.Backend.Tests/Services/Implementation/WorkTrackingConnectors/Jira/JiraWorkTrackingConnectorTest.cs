@@ -932,6 +932,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                         return Task.FromResult(Ok("[]"));
                     }
 
+                    if (JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList)
+                    {
+                        return Task.FromResult(Ok(theNameList));
+                    }
+
                     if (path.Contains("search", StringComparison.Ordinal))
                     {
                         searches.Add(JiraConnectorTestSetup.JqlOf(request));

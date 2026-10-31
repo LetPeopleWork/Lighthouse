@@ -79,6 +79,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 $"GET {JiraRestRoutes.Field} answered {(int)status} {status}. {whatJiraSaid}",
                 AdditionalFieldsFieldName));
 
+        /// <summary>Whose refresh, or which screen, a list that could not be read stops.</summary>
+        public enum ReadFor { TeamRefresh, PortfolioRefresh, Validation }
+
+        public static JiraReadException StatusListRefused(ReadFor readFor, HttpStatusCode status, string whatJiraSaid)
+            => new(ConnectionValidationResult.Failure(
+                "status_list_unreadable",
+                string.Empty,
+                $"GET {JiraRestRoutes.Status} answered {(int)status} {status}. {whatJiraSaid}"));
+
+        public static JiraReadException IssueTypeListRefused(ReadFor readFor, HttpStatusCode status, string whatJiraSaid)
+            => new(ConnectionValidationResult.Failure(
+                "issue_type_list_unreadable",
+                string.Empty,
+                $"GET {JiraRestRoutes.IssueType} answered {(int)status} {status}. {whatJiraSaid}"));
+
+        public static JiraReadException StatusIdNotInList(ReadFor readFor, string statusId)
+            => new(ConnectionValidationResult.Failure(
+                "status_id_not_in_list",
+                string.Empty,
+                $"Status id {statusId} is not in the answer of GET {JiraRestRoutes.Status} (read twice)."));
+
+        public static JiraReadException IssueTypeIdNotInList(ReadFor readFor, string issueTypeId)
+            => new(ConnectionValidationResult.Failure(
+                "issue_type_id_not_in_list",
+                string.Empty,
+                $"Issue type id {issueTypeId} is not in the answer of GET {JiraRestRoutes.IssueType} (read twice)."));
+
         private static JiraReadException Unreadable(string filterId, HttpStatusCode status, string whatCameBack)
             => new(ConnectionValidationResult.Failure(
                 "board_filter_unreadable",
