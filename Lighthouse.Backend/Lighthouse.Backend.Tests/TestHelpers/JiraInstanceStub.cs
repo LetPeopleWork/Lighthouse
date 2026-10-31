@@ -72,7 +72,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     _ when path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal) => ServerInfoAnswer(),
                     _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => Answer(HttpStatusCode.OK, "[]"),
                     _ when path.EndsWith(JiraWireFormat.StatusListEndpoint, StringComparison.Ordinal) => AnswerOfTheList(JiraWireFormat.StatusListEndpoint, StatusList, StatusListOnReread),
-                    _ when path.EndsWith(JiraWireFormat.IssueTypeListEndpoint, StringComparison.Ordinal) => AnswerOfTheList(JiraWireFormat.IssueTypeListEndpoint, IssueTypeList, IssueTypeListOnReread),
+                    _ when path.EndsWith(JiraWireFormat.IssueTypeListEndpoint, StringComparison.Ordinal) => AnswerOfTheList(JiraWireFormat.IssueTypeListEndpoint, IssueTypeList, IssueTypeListOnReread, IssueTypeListOnRereadAfterTheSecondPage),
                     _ when BoardId is not null && path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal)
                         => Answer(HttpStatusCode.OK, "{\"columnConfig\":{\"columns\":[" + string.Join(",", BoardStatusIds.Select(id => "{\"statuses\":[{\"id\":\"" + id + "\"}]}")) + "]}}"),
                     _ when BoardId is not null && path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal)
@@ -89,15 +89,24 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// <summary>What the issue type list answers from its second read on.</summary>
         public (HttpStatusCode Status, string Body)? IssueTypeListOnReread { get; set; }
 
+        /// <summary>What the issue type list answers once a second page of the search has been served and the list is read again, for an instance that gained a type while the search was paging.</summary>
+        public (HttpStatusCode Status, string Body)? IssueTypeListOnRereadAfterTheSecondPage { get; set; }
+
         private HttpResponseMessage ServerInfoAnswer()
             => Deployment == "Unknown"
                 ? Answer(HttpStatusCode.InternalServerError, "{}")
                 : Answer(HttpStatusCode.OK, $"{{\"deploymentType\":\"{Deployment}\"}}");
 
         private HttpResponseMessage AnswerOfTheList(
-            string route, (HttpStatusCode Status, string Body) firstAnswer, (HttpStatusCode Status, string Body)? laterAnswer)
+            string route, (HttpStatusCode Status, string Body) firstAnswer, (HttpStatusCode Status, string Body)? laterAnswer,
+            (HttpStatusCode Status, string Body)? answerAfterTheSecondPage = null)
         {
             var answer = ReadsOf(route) >= 2 && laterAnswer is { } later ? later : firstAnswer;
+
+            if (ReadsOf(route) >= 2 && pagesServed >= 2 && answerAfterTheSecondPage is { } afterwards)
+            {
+                answer = afterwards;
+            }
 
             return Answer(answer.Status, answer.Body);
         }

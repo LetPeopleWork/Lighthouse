@@ -86,8 +86,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(stopped.Verdict.Code, Is.EqualTo(statusList ? "status_id_not_in_list" : "issue_type_id_not_in_list"));
                 Assert.That(stopped.Verdict.TechnicalDetails, Does.Contain("777").And.Contain("read twice"));
                 Assert.That(stopped.Verdict.FieldName, Is.Null);
-                Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(2));
-                Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(2));
+                Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(statusList ? 2 : 1));
+                Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(statusList ? 1 : 2));
             }
         }
 

@@ -2421,8 +2421,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
-        /// Looks the page's status and type ids up, and when some are missing reads both lists again - at most
-        /// once for the life of this connector - before answering which ids are still missing.
+        /// Looks the page's status and type ids up, and when some are missing reads the list they are missing from
+        /// again - each list at most once for the life of this connector - before answering which ids are still missing.
         /// </summary>
         private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingStatusIds, IReadOnlyList<string> MissingIssueTypeIds)> NamesAndTheIdsStillMissing(
             HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
@@ -2441,9 +2441,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
             var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);
 
-            var listsToReadAgain = ListsNotYetReadAgain(lists);
+            var listsMissingAnId = OriginalNameLists.None;
+            listsMissingAnId |= missingStatusIds.Count > 0 ? OriginalNameLists.Statuses : OriginalNameLists.None;
+            listsMissingAnId |= missingIssueTypeIds.Count > 0 ? OriginalNameLists.IssueTypes : OriginalNameLists.None;
 
-            if ((missingStatusIds.Count == 0 && missingIssueTypeIds.Count == 0) || listsToReadAgain == OriginalNameLists.None)
+            var listsToReadAgain = ListsNotYetReadAgain(lists) & listsMissingAnId;
+
+            if (listsToReadAgain == OriginalNameLists.None)
             {
                 return (names, missingStatusIds, missingIssueTypeIds);
             }

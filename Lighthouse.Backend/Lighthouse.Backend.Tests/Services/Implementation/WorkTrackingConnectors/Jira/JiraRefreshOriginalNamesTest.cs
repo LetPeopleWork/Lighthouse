@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task A_status_that_appears_after_the_lists_are_read_again_is_resolved_with_one_extra_read_of_each_list()
+        public async Task A_status_that_appears_after_the_list_is_read_again_is_resolved_with_one_extra_read_of_that_list_only()
         {
             var instance = new JiraInstanceStub()
                 .ReadBy(JiraWireFormat.AGermanReadersStatuses, JiraWireFormat.AGermanReadersIssueTypes)
@@ -131,7 +131,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(item.State, Is.EqualTo("In Prüfung"));
                 Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(2));
-                Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(2));
+                Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(1));
             }
         }
 
@@ -149,6 +149,32 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(stopped!.Verdict.TechnicalDetails, Does.Contain("10156"));
+                Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(2));
+                Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public async Task A_work_item_type_that_appears_on_a_later_page_still_gets_its_own_read_after_a_status_was_read_again()
+        {
+            var instance = new JiraInstanceStub().ReadBy(JiraWireFormat.AGermanReadersStatuses, JiraWireFormat.AGermanReadersIssueTypes);
+            instance.SearchPages.Add([JiraWireFormat.AnIssueSeenIn("PAY-5", "10001", "Geschichte", "10155", "In Prüfung")]);
+            instance.SearchPages.Add([JiraWireFormat.AnIssueSeenIn("PAY-6", "10009", "Aufgabe", "3", "In Arbeit")]);
+            instance.StatusListOnReread = (HttpStatusCode.OK, JiraWireFormat.TheStatusListOf(
+                JiraWireFormat.AGermanReadersStatuses.Append(JiraWireFormat.AStatus("10155", "In Prüfung", "In Prüfung", "indeterminate", "In Arbeit"))));
+            instance.IssueTypeListOnRereadAfterTheSecondPage = (HttpStatusCode.OK, JiraWireFormat.TheIssueTypeListOf(
+                JiraWireFormat.AGermanReadersIssueTypes.Append(JiraWireFormat.AnIssueType("10009", "Aufgabe", "Task"))));
+            var team = ATeam();
+            team.DoingStates.Add("In Prüfung");
+
+            var items = (await Refreshing(instance, team)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(items[0].State, Is.EqualTo("In Prüfung"));
+                Assert.That(items[0].Type, Is.EqualTo("Story"));
+                Assert.That(items[1].State, Is.EqualTo("In Progress"));
+                Assert.That(items[1].Type, Is.EqualTo("Task"));
                 Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(2));
                 Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(2));
             }
