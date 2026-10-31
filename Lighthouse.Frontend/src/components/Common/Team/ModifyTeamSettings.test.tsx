@@ -626,7 +626,7 @@ describe("ModifyTeamSettings", () => {
 			mockGetTeamSettings.mockResolvedValueOnce({
 				...createMockTeamSettings(),
 				toDoStates: ["In Arbeit"],
-				doingStates: ["Active"],
+				doingStates: ["Active", "In Progress"],
 				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
 			});
 

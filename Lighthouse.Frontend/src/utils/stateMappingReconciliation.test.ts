@@ -411,7 +411,7 @@ describe("reconcileDoingStates", () => {
 			);
 		});
 
-		it("keeps an applied mapping applied when a second mapping picks the same state, and leaves the second one out", () => {
+		it("given two mappings sharing a state, which the editor cannot produce, keeps the earlier chip, leaves the later mapping out and reports both mappings", () => {
 			const applied: IStateMapping = { name: "Coding", states: ["Review"] };
 			const second: IStateMapping = { name: "Testing", states: ["Review"] };
 
