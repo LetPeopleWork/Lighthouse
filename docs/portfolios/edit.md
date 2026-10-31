@@ -102,6 +102,7 @@ This gives you a two-step setup:
 ### Examples
 - Single-state rename: map `Active` to `Implementation`.
 - Multi-state grouping: map `In Progress`, `Code Review`, and `QA Review` to `Implementation`.
+- Grouping under the name of one of its own states: map `In Arbeit` and `In Progress` to `In Arbeit`, for a workflow that has the same state in two languages. The mapping may reuse the name because it groups that state.
 
 After mapping, Lighthouse exposes the mapped name as the state value in Lighthouse views and APIs.
 
@@ -110,6 +111,7 @@ After mapping, Lighthouse exposes the mapped name as the state value in Lighthou
 - A mapping must contain at least one source state.
 - A source state can only exist in one mapping.
 - Mapping names can be used in To Do / Doing / Done (this is the intended workflow).
+- A mapping name must not be the name of a state it does not group: not a state in To Do, Doing or Done, and not a source state of another mapping. Lighthouse would read that name as the mapping, so the state of the same name would stop being counted. The editor names the clash and pauses saving until you rename the mapping, or (for a Doing state) add that state to it.
 
 ### Notes
 - Existing configurations without mappings continue to work unchanged.
