@@ -62,9 +62,6 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   `pnpm exec biome lint --only=complexity/noExcessiveCognitiveComplexity <file>`, which reads close to
   Sonar but usually a little lower. Not automated because: Biome's rule counts nested callbacks
   differently. At `error` it flags 37 production functions that Sonar passes.
-- **S2004 (functions nested more than 4 deep)**: inline `.find()`/`.map()` callbacks inside branches
-  of an async handler or `useEffect` count as nesting. Fix: give each find-then-act step its own named
-  helper. Not automated because: Biome has no equivalent rule.
 - **S6767 (prop declared, never used)**: removing a control leaves its prop on the interface, then a
   caller local, then the value that fed it. Fix: delete the prop, and every call site and local that
   fed it, in the same change. Not automated because: neither Biome nor `tsc` reports unused props.

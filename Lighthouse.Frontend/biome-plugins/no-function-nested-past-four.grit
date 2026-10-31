@@ -1,0 +1,13 @@
+or {
+    JsArrowFunctionExpression(body = $b1),
+    JsFunctionExpression(body = $b1),
+    JsFunctionDeclaration(body = $b1),
+    JsMethodObjectMember(body = $b1),
+    JsMethodClassMember(body = $b1)
+} where {
+    $b1 <: contains or { JsArrowFunctionExpression(body = $b2), JsFunctionExpression(body = $b2), JsFunctionDeclaration(body = $b2), JsMethodObjectMember(body = $b2), JsMethodClassMember(body = $b2) },
+    $b2 <: contains or { JsArrowFunctionExpression(body = $b3), JsFunctionExpression(body = $b3), JsFunctionDeclaration(body = $b3), JsMethodObjectMember(body = $b3), JsMethodClassMember(body = $b3) },
+    $b3 <: contains or { JsArrowFunctionExpression(body = $b4), JsFunctionExpression(body = $b4), JsFunctionDeclaration(body = $b4), JsMethodObjectMember(body = $b4), JsMethodClassMember(body = $b4) },
+    $b4 <: contains or { JsArrowFunctionExpression(), JsFunctionExpression(), JsFunctionDeclaration(), JsMethodObjectMember(), JsMethodClassMember() } as $fifth,
+    register_diagnostic(span=$fifth, message="This function sits inside four others; Sonar (S2004) allows four levels at most. Compute what the inner callbacks need first, in a local or a named helper at module level.", severity="error")
+}

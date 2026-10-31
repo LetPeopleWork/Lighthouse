@@ -206,6 +206,17 @@
 			]
 		},
 		{
+			"includes": [
+				"src/**",
+				"!src/**/*.test.ts",
+				"!src/**/*.test.tsx",
+				"!src/tests/**",
+				"!src/**/__tests__/**",
+				"!src/main.tsx"
+			],
+			"plugins": ["./biome-plugins/no-function-nested-past-four.grit"]
+		},
+		{
 			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/tests/**"],
 			"linter": {
 				"rules": {
