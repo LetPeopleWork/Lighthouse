@@ -62,5 +62,5 @@ platform_coverage:
   Local_proof: "linux-x64, win-x64 and osx-arm64 are all published on Linux (cross-publish) and compared there; no macOS runner is needed for the proof"
 
 deployment_assumptions:
-  - "Ships with the next regular Lighthouse release; the release artifacts are byte-for-byte the same file set"
+  - "Ships with the next regular Lighthouse release; every file both paths produce is byte-identical; the release artifacts lose only nested copies of other platforms' JSON files"
   - "Rollback is reverting the path strings; nothing is persisted"

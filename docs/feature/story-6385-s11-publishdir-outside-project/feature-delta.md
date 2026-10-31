@@ -57,7 +57,7 @@ From the Epic's `feature-delta.md`, by heading. Linked, not copied:
 
 ## Wave: PICK-UP / Checklist
 
-- [ ] Behaviour-free: published file set identical per RID, size within noise; routes, DTOs, pixels, topologies unchanged.
+- [ ] Behaviour-free: published file set identical per RID (CI sequence: minus the nested JSON copies, see Demo Evidence), size within noise; routes, DTOs, pixels, topologies unchanged.
 - [ ] Existing API, E2E and response tests green unmodified.
 - [ ] Ratchet in the same change: whatever guard DESIGN chooses against the old path coming back (or "none, because …" stated).
 - [ ] Moves separate from edits (here: the path change is one edit commit per consumer group, no code moves).
@@ -137,7 +137,7 @@ Verified not to change: `ci_package-linux-standalone.yml` and `ci_package-win-st
 
 Decision: a guard, kept small. `PublishOutputOutsideProjectGuardTest` does a filesystem walk of the repository from its root (not the git-tracked set) and reads `.github/**/*.yml|yaml`, `Dockerfile*`, every `package.json` and every `*.sh` and `*.ps1` (so `Scripts/test-selection/`, `Lighthouse.Frontend` and `Lighthouse.Backend` are all covered), minus pruned folders (`node_modules`, `bin`, `obj`, `.git`, `artifacts`, `.claude`, `target`, and generated output: `StrykerOutput`, `.stryker-tmp`, `dist`, `coverage`, `playwright-report`, `test-results`); symlinked folders are not followed. It fails, naming file and line, if a line contains `Lighthouse.Backend/Lighthouse.Backend/publish`, matched case-insensitively with runs of `\` and `/` collapsed to one `/` (so Windows paths, lower-case paths and JSON-escaped double backslashes are caught). It also asserts the scan found the known consumer files, so it cannot pass by looking at nothing.
 
-Known gap, accepted and not tested: a relative `-o publish` run with the project folder as the working directory never spells out the project folder, so the guard cannot see it.
+The guard also reads `*.csproj`, `*.props` and `*.targets`, where a `PublishDir` default would bring the in-project path back. Known gaps, accepted and not tested: a relative `-o publish` run with the project folder as the working directory never spells out the project folder, so the guard cannot see it; and file types it does not read: other JSON (such as `src-tauri/tauri.conf.json`), `.js`/`.ts`/`.mjs`, and `.cmd`/`.bat`/`.psm1`.
 
 Offender list: **empty**. There is no offender left after the change, so under ADR-268 it is a plain rule with no list and no "only shrinks" bookkeeping. It guards only the one path that caused the nesting; a general "no `-o` inside a project folder" rule is rejected as heavier than the risk. Cost: about 30 lines, runs with the normal architecture tests, no new package.
 
@@ -207,7 +207,7 @@ and read; nothing is deployed, built or served differently.
 
 | Decision | Answer |
 |---|---|
-| Deployment target, orchestration, strategy | Unchanged. The release artifacts (win-x64, linux-x64, osx-arm64 single files, the Docker image, the Standalone bundles) carry the same file set; only the runner-local folder they are staged in moves to `artifacts/publish/<rid>`. |
+| Deployment target, orchestration, strategy | Unchanged. The release artifacts (win-x64, linux-x64, osx-arm64 single files, the Docker image, the Standalone bundles) change only by losing nested copies of other platforms' JSON files (see the CI publish sequence measurement under Demo Evidence); the runner-local folder they are staged in moves to `artifacts/publish/<rid>`. |
 | CI/CD platform | GitHub Actions, existing workflows. No new job or workflow. One edit to `ci_changes.yml` (below). |
 | Branching | Trunk-based on `main`. |
 | Observability | N/A, because no runtime behaviour changes. |
@@ -270,7 +270,7 @@ Classification stays here, not in the code (project rule: no nWave tags in tests
 | 4 | Consumers point at the new root (build-backend `-o` + `rm`, package-app, macOS `ARM64_DIR`, `update-sidecar`) | none | n/a | **No new test.** Scenario 1 proves the old path is gone; CI green on the push proves the new one is right (publish, package; the macOS job reads `ARM64_DIR` only on `main`, so the local osx-arm64 cross-publish proves the folder at the new path; `update-sidecar` by verification step 6). A test asserting the new strings would restate the YAML. | verification-only |
 | 5 | `.dockerignore` lists `artifacts` and the old in-project publish folder | none | n/a | **No test; DELIVER checklist.** Two lines, no behaviour; the Docker build in CI plus `grep -n '^artifacts$' .dockerignore` and `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$' .dockerignore` at commit 4. A test would restate the file. | verification-only |
 | 6 | A change only under `.github/actions/` sets `backend=true` but not `github_changes` | Committed shell test, written in DELIVER with the extraction | `backend` / `github_changes` for sample diffs | A case in `Scripts/test-selection/test-path-classifier.sh` against `classify_backend()` in `path-classifier.sh` (the `backend` rule moves there from inline YAML first, as a pure move; then the regex widens to `^\.github/actions/`). Proves an actions-only diff gives `backend=true` and the `ci*.yml`-only `github_changes` stays false. | pending, red today (`.github/actions/…` gives `backend=false`); written in DELIVER |
-| 7 | Behaviour-free proof: same file set per RID, two publishes do not nest | Real publish | file list and sizes | Verification step 1 and 3 | verification-only |
+| 7 | Behaviour-free proof: same file set per RID (CI sequence: see Demo Evidence), two publishes do not nest | Real publish | file list and sizes | Verification step 1 and 3 | verification-only |
 
 Counts: 13 NUnit cases in the new class, 1 pending (scenario 1) and 12 green (scenarios 2 and 3); 1 committed shell test to write in DELIVER (scenario 6); 3 verification-only items (scenarios 4, 5 and 7). Non-happy paths: scenario 2 and the 5 negative cases of scenario 3; the Story has one happy path.
 
@@ -433,7 +433,7 @@ other from **this** worktree, with the CI flags, and listed by name and byte siz
 | win-x64 | identical names and sizes | 224 | 160,980,439 |
 | osx-arm64 | identical names and sizes | 220 | 167,065,048 |
 
-**Behaviour-free: confirmed.** The published file set and every file's size are unchanged by the move.
+Per RID published on its own, the move changes nothing. The CI sequence publishes three RIDs into one base folder, though, and that does change the artifacts; see "CI publish sequence" below, which supersedes this table for CI.
 
 Second publish into the same folder (linux-x64):
 
@@ -447,3 +447,40 @@ The 13 files missing after a second publish into the same folder (`Factories/Dem
 the Story and is not caused by it. CI always publishes into a fresh folder, so releases are unaffected; a developer
 who runs `update-sidecar` twice gets a sidecar without demo data and certificate. Recorded as a finding for the
 maintainer, not fixed here (it would change what a repeat publish produces).
+
+### CI publish sequence (orchestrator, 2026-10-31)
+
+Reproduced build-backend's exact sequence (win-x64, then linux-x64, then osx-arm64 into one base folder, then `rm -f`
+of the top-level `appsettings.Development.json`) on the old in-project base and on the new artifacts base, from the
+same tree, listing name, size and sha256. A control ran the new sequence twice from clean.
+
+| Check | Result |
+|---|---|
+| Control (new sequence twice) | 0 files differ run to run: the publish is deterministic |
+| win-x64 | 224 vs 224 files, 0 differ (published first, nothing to pick up) |
+| linux-x64 | old 225, new 219. The 6 old-only files are a nested copy of the win-x64 output's JSON under `publish/win-x64/`: `Lighthouse.staticwebassets.endpoints.json`, `appsettings.Development.json`, `appsettings.json`, `wwwroot/manifest.json`, `wwwroot/sbom/backend.cdx.json`, `wwwroot/sbom/frontend.cdx.json` |
+| osx-arm64 | old 238, new 220. The 18 old-only files are the same six nested under `publish/win-x64/`, under `publish/linux-x64/`, and under `publish/linux-x64/publish/win-x64/` |
+| Files on both sides | sha256-identical, for all three RIDs |
+
+Consequence: the old CI path shipped nested copies of other platforms' JSON inside the linux-x64 and osx-arm64
+artifacts, including `appsettings.Development.json` (the step that strips it only removes the top-level copy; the file
+holds local development settings and the example client secret the pre-push scan already acknowledges). The new path
+ships none of them. So the move does change the release artifacts, by removing only that nested junk; nothing the app
+loads changes, because the nested files sit in folders the app never reads.
+
+The earlier cross-checkout executable size gap (about 3 %) is a property of that separate checkout, not of the path:
+from one tree, old and new are sha256-identical. Its exact cause in that checkout was not investigated further.
+
+## Wave: DELIVER / [REF] Review findings
+
+- **F1** (CI artifacts differ): confirmed and handled as above. Maintainer to confirm at the hold that removing the
+  nested junk is in scope for a behaviour-free item.
+- **F3, F4, F8**: fixed in the guard commit `6015a5e7d` (MSBuild files scanned, repository root pinned, known-gap list
+  corrected). **F2 label**: fixed in `163115971` (the connector classifier label no longer reads as `github_changes`),
+  together with the plain-words comment in `ci_changes.yml`.
+- **F2** (classifier tests run by no workflow): accepted, pre-existing gap; follow-up candidate.
+- **F5** (guard runs only when the backend suite runs): accepted, documented lag.
+- **F6** (`printf | grep -q` under pipefail with very large diffs): deferred; latent, a pattern shared by every
+  classifier function, and the step runs without pipefail today.
+- **F7** (unreadable directories error loudly; pruning is by folder name): accepted.
+- **F9**: resolved by the sha256 comparison above.
