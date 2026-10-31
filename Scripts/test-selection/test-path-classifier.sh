@@ -109,7 +109,19 @@ assert "backend: backend source=true"    "$(classify_backend "$diff_shared_enum"
 assert "backend: backend tests=true"     "$(classify_backend "$diff_linear_only")"  "true"
 assert "backend: test-timings=true"      "$(classify_backend $'Scripts/test-timings/merge.sh')" "true"
 assert "backend: docs+frontend=false"    "$(classify_backend "$diff_docs_only")"    "false"
-assert "backend: .github/actions=false"  "$(classify_backend $'.github/actions/publish/action.yml')" "false"
+assert "backend: .github/actions=true"   "$(classify_backend $'.github/actions/publish/action.yml')" "true"
+
+# Scenario 17: a change only under .github/actions/ runs the backend suite but no connector suite
+diff_actions_only=$'.github/actions/build-backend/action.yml'
+assert "actions-only: backend=true"        "$(classify_backend "$diff_actions_only")"    "true"
+assert "actions-only: jira=false"          "$(classify_jira "$diff_actions_only")"       "false"
+assert "actions-only: ado=false"           "$(classify_ado "$diff_actions_only")"        "false"
+assert "actions-only: linear=false"        "$(classify_linear "$diff_actions_only")"     "false"
+assert "actions-only: servicenow=false"    "$(classify_servicenow "$diff_actions_only")" "false"
+assert "actions-only: github=false"        "$(classify_github "$diff_actions_only")"     "false"
+assert "actions-only: shared=false"        "$(classify_shared "$diff_actions_only")"     "false"
+assert "frontend manifest: backend=false"  "$(classify_backend $'Lighthouse.Frontend/package.json')" "false"
+assert "docs readme: backend=false"        "$(classify_backend $'docs/readme.md')"       "false"
 
 echo
 echo "passed: $pass"
