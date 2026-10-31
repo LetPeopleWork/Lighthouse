@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             => ScopedTo(principal, teamIds, RbacGuardRequirement.TeamRead, cancellationToken);
 
         // The batch methods resolve the same grants the per-id checks do, so an integration test that
-        // hands out PortfolioRead on one Portfolio really is filtered to it (Epic 5375 AC-1.2).
+        // hands out PortfolioRead on one Portfolio really is filtered to it.
         public Task<IReadOnlyList<int>> GetReadablePortfolioIdsAsync(
             ClaimsPrincipal principal,
             IEnumerable<int> portfolioIds,

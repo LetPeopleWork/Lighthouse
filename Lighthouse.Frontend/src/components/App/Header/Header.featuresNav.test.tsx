@@ -23,8 +23,7 @@ vi.mock("../../../hooks/useUpdateAll", () => ({
 	}),
 }));
 
-// Epic 5375 slice 01 — US-01 AC-1.1 and D16. A third way in, between Overview and System Settings,
-// wearing whatever this instance calls its Features.
+// A third way in, between Overview and System Settings, wearing whatever this instance calls its Features.
 const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 	const terminology: ITerminology[] = [
 		{
