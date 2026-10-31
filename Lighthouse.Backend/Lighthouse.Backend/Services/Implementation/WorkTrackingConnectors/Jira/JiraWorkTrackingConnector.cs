@@ -108,6 +108,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private readonly ConcurrentDictionary<int, bool> connectionsWhoseCredentialWasAccepted = new();
 
+        private JiraOriginalNames? originalNamesReadThisRefresh;
+
         /// <summary>
         /// The Portfolios already told this refresh that their Dependency Field names a phrase several link
         /// types share. A refresh reads a Portfolio's Features in more than one download, and the same
@@ -2287,12 +2289,76 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             await SetStoredFieldKeys(client, workItemQueryOwner.WorkTrackingSystemConnectionId);
 
+            var originalNames = await OriginalNamesOf(client, deployment, ReadForOwnerOf(workItemQueryOwner, maxResultsOverride), cancellationToken);
+
             if (deployment == JiraDeployment.Cloud)
             {
-                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride, cancellationToken);
+                return await GetIssuesByQueryFromCloud(client, workItemQueryOwner, jqlQuery, maxResultsOverride, originalNames, cancellationToken);
             }
 
-            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride, cancellationToken);
+            return await GetIssuesByQueryFromDataCenter(client, workItemQueryOwner, jqlQuery, maxResultsOverride, originalNames, cancellationToken);
+        }
+
+        private static JiraReadException.ReadFor ReadForOwnerOf(IWorkItemQueryOwner owner, int? maxResultsOverride)
+        {
+            if (maxResultsOverride.HasValue)
+            {
+                return JiraReadException.ReadFor.Validation;
+            }
+
+            return owner is Portfolio ? JiraReadException.ReadFor.PortfolioRefresh : JiraReadException.ReadFor.TeamRefresh;
+        }
+
+        /// <summary>
+        /// Jira Cloud answers a search in the language of the account behind the token, while the status and
+        /// type lists also carry the untranslated name. Data Center does not translate, so it is read as
+        /// reported. An instance that could not be identified is read like Cloud, since it may be one. The
+        /// answer is kept for as long as this connector lives, which is one refresh; a list that could not be
+        /// read is not kept, so the next call asks again.
+        /// </summary>
+        private async Task<JiraOriginalNames> OriginalNamesOf(
+            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, CancellationToken cancellationToken)
+        {
+            if (deployment == JiraDeployment.DataCenter)
+            {
+                return JiraOriginalNames.AsReported;
+            }
+
+            if (originalNamesReadThisRefresh is { } known)
+            {
+                return known;
+            }
+
+            var statusList = await ReadList(client, JiraRestRoutes.Status, JiraReadException.StatusListRefused, readFor, cancellationToken);
+            var issueTypeList = await ReadList(client, JiraRestRoutes.IssueType, JiraReadException.IssueTypeListRefused, readFor, cancellationToken);
+
+            try
+            {
+                return originalNamesReadThisRefresh = JiraOriginalNames.FromLists(statusList.RootElement, issueTypeList.RootElement);
+            }
+            finally
+            {
+                statusList.Dispose();
+                issueTypeList.Dispose();
+            }
+        }
+
+        private static async Task<JsonDocument> ReadList(
+            HttpClient client,
+            string route,
+            Func<JiraReadException.ReadFor, HttpStatusCode, string, JiraReadException> refusal,
+            JiraReadException.ReadFor readFor,
+            CancellationToken cancellationToken)
+        {
+            var response = await client.GetAsync(route, cancellationToken);
+            var body = await response.Content.ReadAsStringAsync(cancellationToken);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                throw refusal(readFor, response.StatusCode, body);
+            }
+
+            return JsonDocument.Parse(body);
         }
 
         private bool ShouldFetchFullChangelog(JsonElement jsonIssue, string issueKey, out int totalChangelogs)
@@ -2316,7 +2382,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return false;
         }
 
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, CancellationToken cancellationToken)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromDataCenter(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, JiraOriginalNames originalNames, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var startAt = 0;
@@ -2360,7 +2426,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 foreach (var jsonIssue in jsonResponse.RootElement.GetProperty(JiraFieldNames.IssuesFieldName).EnumerateArray())
                 {
-                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName);
+                    var issue = issueFactory.CreateIssueFromJson(jsonIssue, owner, rankFieldName, originalNames: originalNames);
                     issues.Add(issue);
                 }
             }
@@ -2374,7 +2440,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// could only ever replace the sentence naming what was wrong with a notice about an endpoint the
         /// operator never chose to call.
         /// </summary>
-        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, CancellationToken cancellationToken)
+        private async Task<IEnumerable<Issue>> GetIssuesByQueryFromCloud(HttpClient client, IWorkItemQueryOwner owner, string jqlQuery, int? maxResultsOverride, JiraOriginalNames originalNames, CancellationToken cancellationToken)
         {
             var issues = new List<Issue>();
             var rankFieldName = FieldNames[owner.WorkTrackingSystemConnectionId][JiraFieldNames.RankName];
@@ -2387,7 +2453,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 SinglePage: maxResultsOverride.HasValue);
 
             var rejection = await WalkCloudSearchPages(client, request, async jsonIssue =>
-                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName, cancellationToken)), cancellationToken);
+                issues.Add(await CreateIssueWithCompleteChangelog(client, jsonIssue, owner, rankFieldName, originalNames, cancellationToken)), cancellationToken);
 
             if (rejection is not null)
             {
@@ -2526,7 +2592,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             => $"Jira answered {(int)refusal.StatusCode} {refusal.StatusCode}";
 
         private async Task<Issue> CreateIssueWithCompleteChangelog(
-            HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, CancellationToken cancellationToken)
+            HttpClient client, JsonElement jsonIssue, IWorkItemQueryOwner owner, string rankFieldName, JiraOriginalNames originalNames, CancellationToken cancellationToken)
         {
             var issueKey = jsonIssue.GetProperty(JiraFieldNames.KeyPropertyName).GetString() ?? string.Empty;
             var issueToProcess = jsonIssue;
@@ -2542,7 +2608,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogDebug("Found Issue {Key} with {ChangelogCount} changelog entries from initial query", issueKey, totalChangelogs);
             }
 
-            return issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName);
+            return issueFactory.CreateIssueFromJson(issueToProcess, owner, rankFieldName, originalNames: originalNames);
         }
 
         private sealed record CloudSearchRequest(string Jql, string Fields, bool ExpandChangelog, int PageLimit, bool SinglePage);

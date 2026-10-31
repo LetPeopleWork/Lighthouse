@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly DateTime ClosedAt = new(2026, 3, 9, 15, 30, 0, DateTimeKind.Utc);
 
         [Test]
-        [Ignore("The refresh does not read the original names yet")]
         public async Task A_German_account_refreshes_work_items_in_the_original_states_and_types()
         {
             var instance = new JiraInstanceStub()
@@ -54,7 +53,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the original names yet")]
         public async Task Started_and_closed_dates_come_out_the_same_for_the_German_and_the_English_account()
         {
             var german = new JiraInstanceStub()
@@ -96,7 +94,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the original names yet")]
         public async Task A_custom_status_an_administrator_named_in_German_is_the_state_for_a_German_account()
         {
             var instance = new JiraInstanceStub()
@@ -160,7 +157,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists on an unidentified deployment yet")]
         public async Task A_deployment_that_cannot_be_identified_reads_the_lists_and_gives_a_German_account_the_original_names()
         {
             var instance = new JiraInstanceStub("Unknown")
@@ -178,7 +174,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists on an unidentified deployment yet")]
         public async Task A_deployment_that_cannot_be_identified_uses_the_name_of_an_entry_that_has_no_original_name()
         {
             var statuses = new[] { JiraWireFormat.AStatus("3", "In Progress", null, null, "In Progress") };
@@ -215,7 +210,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_refresh_reads_each_list_once_however_many_pages_the_search_has()
         {
             var instance = new JiraInstanceStub();
@@ -234,7 +228,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("The refresh does not read the lists yet")]
         public async Task A_download_by_key_split_into_several_queries_reads_each_list_once()
         {
             var instance = new JiraInstanceStub().Serving(JiraWireFormat.AnIssueSeenIn("PAY-1", "10001", "Story", "1", "To Do"));
