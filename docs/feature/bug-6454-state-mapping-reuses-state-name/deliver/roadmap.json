@@ -1,0 +1,206 @@
+{
+  "roadmap": {
+    "project_id": "bug-6454-state-mapping-reuses-state-name",
+    "created_at": "2026-10-31",
+    "total_steps": 6,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6454. Mostly frontend (Lighthouse.Frontend state-mapping editor, reconciliation, validation, Team/Portfolio autosave blockers) plus a behaviour-free backend cleanup and pin. No model, DTO, connector or migration change.",
+    "goal": "A state mapping may reuse the name of a state it contains (e.g. `In Arbeit = [In Arbeit, In Progress]`) and the editor lets the user build it in any order; a mapping named after a Doing state it does not contain is rejected with a clear message and is never saved; typing a mapping name never deletes an unrelated Doing state.",
+    "paradigm_note": "No DISTILL wave for a bugfix: RED is a crafter-authored regression test failing on today's code (or an already-green pin where the RCA shows the backend already copes)."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6306 / bug-6424 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-10-31",
+    "notes": "RCA approved by the maintainer. Fix sites verified by the orchestrator: WorkTrackingSystemOptionsOwner.GetRawStatesForCategory (:208-228), StateMappingsEditor.getAvailableSourceOptions (:48-61), stateMappingReconciliation undo/apply loops (:41-64)."
+  },
+  "user_decisions": [
+    "Root cause confirmed (2026-10-31).",
+    "F1-F4 approved, including the optional F4.",
+    "Validation copy approved as sketched; reuse the existing mapping-error display.",
+    "Rigor profile standard (crafter sonnet, reviewer haiku)."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6454-state-mapping-reuses-state-name/rca.md",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Warning when items land in Unknown (P1).",
+    "Typed category entries in the model (P2).",
+    "Docs (finalize, after the maintainer confirms)."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "A mapping can reuse the name of a state it contains; the unworkable shape is rejected",
+      "description": "Backend pin and cleanup, then the editor/reconciliation fix, then validation and the autosave blocker.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Backend: pin that a self-named mapping keeps both raw states, and drop the unreachable collision branch",
+          "description": "Pin probe A from the RCA (Doing [In Arbeit], mapping In Arbeit = [In Arbeit, In Progress] -> AllStates and the Doing raw states contain both, raw In Arbeit categorises as Doing). Remove the unreachable collision branch in StateMappingValidator (F4) and rename the test that pins it.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerTest.cs",
+          "scenario_name": "a mapping named after one of its own states keeps both raw states in every category and in AllStates",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/StateMappingValidator.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorTest.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "The pin is an already-green test (the backend already handles the case); say so in the report. Cover Team and, if the base is shared, one Portfolio case is not needed.",
+            "F4 is behaviour-free: every existing StateMappingValidatorTest stays green; the test formerly named Validate_MappingNameMatchesRawStateInDirectList_IsValid is renamed so it states that the backend cannot tell this collision apart and accepts it (the editor enforces it).",
+            "Commit types: `test(state-mapping): ...` for the pin and `refactor(state-mapping): ...` for F4, separate commits.",
+            "dotnet build zero warnings; filtered dotnet test green (CLAUDE.md filter)."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (backend section). Check the validator's remaining checks still cover duplicates/empty names. No comment that cites bug numbers or RCA ids."
+        },
+        {
+          "id": "01-02",
+          "name": "Editor: a mapping offers its own name as a source, and the Doing list only changes for applied mappings",
+          "description": "F1 in StateMappingsEditor.getAvailableSourceOptions (exclude other mappings' names only). F2 in stateMappingReconciliation: isApplied(m, doing) gates the undo; the apply step skips mappings with no states or whose name is in Doing but not among their states (wouldShadow).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+          "scenario_name": "naming a mapping after a Doing state first and picking states afterwards ends with Doing [In Arbeit] holding both states",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.test.tsx"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "RED first: the name-first reconciliation test fails on today's code.",
+            "Reconciliation tests (exact arrays): name first then [In Progress] -> Doing stays [In Arbeit, In Progress]; then [In Progress, In Arbeit] -> Doing [In Arbeit]. Typing `Review DE/EN` keystroke by keystroke into an empty mapping with Doing [Review, Testing] -> Doing unchanged after every keystroke; then with states [Testing] the raw Review survives. Adding then deleting an empty mapping leaves Doing exactly as it was. Deleting a mapping whose member was re-added to Doing by hand leaves the name chip (accepted risk, pin it).",
+            "The pre-existing `Verification` test (stateMappingReconciliation.test.ts ~:54-69) is rewritten to expect the mapping to be skipped; say in the commit body why the old expectation encoded the bug.",
+            "Editor tests: a mapping named `In Arbeit` offers `In Arbeit` as its own source; the empty `Closed` mapping test (~:240-276) is updated so `Closed` is offered to itself while another mapping's name stays hidden.",
+            "Existing flows still work: states picked first then name typed gives the same result as today.",
+            "Commit: `fix(state-mapping): let a mapping group the state it is named after`.",
+            "pnpm test green; pnpm build zero errors/warnings (check git status after: prebuild runs biome --write)."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (frontend section). RTL name matchers are unanchored: use exact strings or anchored regexes. Keep the reconciliation pure. Comments only for a why not readable from code."
+        },
+        {
+          "id": "01-03",
+          "name": "Validation: a mapping named after a Doing state it does not contain is reported and blocks autosave",
+          "description": "F3: replace the dead collision check in stateMappingValidation with one built on the same predicate as wouldShadow, using the approved message; add mapping errors to the Team autosave blockers (ModifyTeamSettings) and the Portfolio equivalent (ModifyProjectSettings).",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+          "scenario_name": "a mapping named after a Doing state it does not contain reports the approved message",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "criteria": [
+            "RED first: the validation test fails on today's code.",
+            "Message exactly: `Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name.` (names substituted; the Doing state is shown as stored).",
+            "No error for a self-named applied mapping (In Arbeit = [In Arbeit, In Progress], Doing [In Arbeit]); no error for a mapping with no states yet. The old test pinning the dead check (~:70-77) is replaced.",
+            "Share the shadowing predicate with the reconciliation (one definition of the rule, exported from one module); do not duplicate it.",
+            "Autosave is blocked while a mapping error is present, for a Team and for a Portfolio, and resumes once it is fixed; the error shows through the existing mapping-error display.",
+            "Commit: `fix(state-mapping): reject a mapping named after a Doing state it does not group`.",
+            "pnpm test green; pnpm build zero errors/warnings."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md (frontend section). Look at how teamAutoSaveBlockers (ModifyTeamSettings.tsx ~:54-80) and the portfolio equivalent are built and tested; follow the existing pattern. If ModifyTeamSettings.test.tsx does not exist, use the test file that covers it today and report the path."
+        },
+        {
+          "id": "01-04",
+          "name": "Review revision: a mapping name may not equal a To Do or Done state or a state another mapping groups",
+          "description": "Haiku review NEEDS_REVISION. D2: reject a mapping name equal to a state grouped by another mapping. D3: extend the name clash check to To Do and Done. Both pause autosave. D4-D9 test and cleanup items. D1 accepted as a known limitation by the maintainer.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+          "scenario_name": "a mapping named after a state another mapping groups, or after a To Do or Done state, is reported and pauses autosave",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerTest.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "criteria": [
+            "RED first for D2 and D3, run and seen failing on the current code.",
+            "Approved copy, exactly: `Mapping \"In Arbeit\" has the same name as a state grouped by mapping \"Group\". Choose another name.` and `Mapping \"In Arbeit\" has the same name as the To Do state \"In Arbeit\". Choose another name.` (Done the same with \"Done state\").",
+            "Both pause autosave for Teams and Portfolios.",
+            "D4-D9 fixed; D1 left as is."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md."
+        },
+        {
+          "id": "01-05",
+          "name": "Second review revision: a mapping named after a state another mapping groups is never taken into Doing",
+          "description": "Re-review F1 BLOCKER: after a D2 clash, deleting the grouping mapping left a stale chip and silently dropped the raw state. The apply step also skips such a mapping. F2/F3 test fixes, F6-F9 cleanups.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+          "scenario_name": "deleting the mapping that groups a state after another mapping took that state's name puts the state back and reports the clash",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "criteria": [
+            "RED first, seen failing: the delete-the-grouping-mapping flow.",
+            "No new user-facing copy.",
+            "F2, F3, F6-F9 addressed; F4 and F5 left as they are."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md."
+        },
+        {
+          "id": "01-06",
+          "name": "Third review revision: a mapping that shares a source state with another mapping is neither applied nor treated as applied",
+          "description": "Review round 3 BLOCKER: an unapplied mapping (name clash) whose source state another mapping then took looked applied, so deleting it removed the raw state of the same name from Doing. Overlap guard in isApplied and the apply step, plus four LOW cleanups.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+          "scenario_name": "deleting a clashing mapping after another mapping took its source state keeps the raw state of the same name in Doing",
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/vast-gathering-avalanche/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "RED first, seen failing: Doing [In Progress, In Arbeit, Review]; add N 'In Arbeit'=[Review]; add M 'Coding'=[Review]; delete N; Doing is exactly [In Progress, In Arbeit, Coding].",
+            "A mapping whose states overlap another mapping's states is never applied by reconciliation and never counted as applied.",
+            "No new user-facing copy.",
+            "LOWs: rename namesAStateOfAnotherMapping to read the right way round; the inline lowercase/trim duplicates in the validator and editor use the shared normalise; the misleading reconciliation test title is corrected; the Team To Do clash test also asserts doingStates."
+          ],
+          "implementation_notes": "Pre-apply docs/ci-learnings.md."
+        }
+      ]
+    }
+  ]
+}
