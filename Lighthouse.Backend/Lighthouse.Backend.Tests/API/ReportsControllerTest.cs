@@ -111,6 +111,23 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task A_removal_of_exactly_the_ceiling_is_passed_on_whole()
+        {
+            var atTheCeiling = Enumerable.Range(1, ReportBulkRun.MostPerRun).ToList();
+            bulkRemover
+                .Setup(remover => remover.RemoveEach(It.IsAny<IReadOnlyList<int>>(), It.IsAny<IReportOwnerWriteAccess>()))
+                .ReturnsAsync((IReadOnlyList<int> ids, IReportOwnerWriteAccess _) => [.. ids.Select(id => ReportRemovalOutcome.Removed(id))]);
+
+            var answer = await Subject().RemoveEach(new ReportRemovalRequest { ReportIds = atTheCeiling });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.Result, Is.InstanceOf<OkObjectResult>());
+                bulkRemover.Verify(remover => remover.RemoveEach(It.Is<IReadOnlyList<int>>(ids => ids.SequenceEqual(atTheCeiling)), It.IsAny<IReportOwnerWriteAccess>()), Times.Once);
+            }
+        }
+
         private static string? DetailOf<T>(ActionResult<T> answer)
             => ((answer.Result as ObjectResult)?.Value as ProblemDetails)?.Detail;
 
