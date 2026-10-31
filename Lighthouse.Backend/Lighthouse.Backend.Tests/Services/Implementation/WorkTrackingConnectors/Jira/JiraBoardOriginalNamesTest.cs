@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static readonly string[] TheBoardsStatusIds = ["1", "3", "4", "5", "9"];
 
         [Test]
-        [Ignore("Board load still sorts by the translated category name")]
         public async Task A_German_account_gets_the_To_Do_Doing_and_Done_states_an_English_account_gets()
         {
             var board = await LoadingTheBoard(AnInstance(JiraWireFormat.AGermanReadersStatuses));
@@ -68,7 +67,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load still sorts by the translated category name")]
         public async Task A_custom_status_an_administrator_named_in_German_is_listed_as_it_is_next_to_the_English_names_for_a_German_account()
         {
             var statuses = new[]
@@ -155,7 +153,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load does not de-duplicate state names yet")]
         public async Task A_state_name_shared_by_two_statuses_is_listed_once_ignoring_case_with_the_first_spelling()
         {
             var statuses = new[]
@@ -176,7 +173,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load still sorts by the translated category name")]
         public async Task A_name_that_sits_in_two_categories_is_listed_in_each_of_them()
         {
             var statuses = new[]
@@ -335,7 +331,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load does not check the status ids against the list yet")]
         public async Task A_status_id_the_list_still_lacks_after_one_more_read_is_left_out_with_a_warning_naming_the_id()
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
@@ -357,7 +352,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Board load does not check the status ids against the list yet")]
         public async Task A_status_id_that_appears_after_one_more_read_is_listed_by_its_original_name()
         {
             var board = await LoadingTheBoard(AnInstance(

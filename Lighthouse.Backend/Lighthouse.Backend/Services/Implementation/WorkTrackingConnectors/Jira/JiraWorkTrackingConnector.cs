@@ -512,7 +512,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 logger.LogInformation("Getting Board Information for Board {BoardId}", boardId);
                 var client = await GetJiraRestClientAsync(workTrackingSystemConnection);
 
-                return await GetBoardInformationFromJira(client, boardId);
+                var deployment = await GetDeploymentType(client, workTrackingSystemConnection);
+
+                return await GetBoardInformationFromJira(client, deployment, boardId);
             }
             catch (WorkTrackingReadException)
             {
@@ -704,7 +706,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ? numericValue
                 : update.Value;
 
-        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, string boardId)
+        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, JiraDeployment deployment, string boardId)
         {
             var boardInformation = new BoardInformation();
 
@@ -724,7 +726,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var jqlTask = ExtractJqlFromBoardConfiguration(boardConfigJson, client);
             var workItemTypesTask = GetItemTypesForBoard(client, boardId);
-            var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client);
+            var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client, deployment);
 
             boardInformation.WorkItemTypes = await workItemTypesTask;
 
@@ -742,7 +744,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
-            GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client)
+            GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client, JiraDeployment deployment)
         {
             var root = boardsJson.RootElement;
             var distinctStatusIds = root
@@ -757,61 +759,93 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .Distinct()
                 .ToList();
 
-            return await MapStatusToCategory(client, distinctStatusIds);
+            return await MapStatusToCategory(client, deployment, distinctStatusIds);
         }
 
         private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
-            MapStatusToCategory(HttpClient client, List<string> statusList)
+            MapStatusToCategory(HttpClient client, JiraDeployment deployment, List<string> statusIds)
         {
-            var response = await client.GetAsync(JiraRestRoutes.Status);
+            JiraOriginalNames names;
+            IReadOnlyList<string> missingIds;
 
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                logger.LogWarning(
-                    "Could not read the status list from Jira: {StatusCode} ({ReasonPhrase}). The board is reported with no states mapped.",
-                    (int)response.StatusCode, response.ReasonPhrase);
+                (names, missingIds) = await StatusNamesAndTheIdsStillMissing(client, deployment, statusIds);
+            }
+            catch (JiraReadException refused)
+            {
+                logger.LogWarning(refused, "{Reason} The board is reported with no states mapped.", refused.Verdict.Message);
 
                 return ([], [], []);
             }
-            var json = await response.Content.ReadAsStringAsync();
-            var data = JsonDocument.Parse(json);
 
-            var root = data.RootElement;
+            foreach (var missingId in missingIds)
+            {
+                logger.LogWarning(
+                    "Jira's list of statuses does not hold the status with id {StatusId} of this board, even after reading it again, so that status is left out of the states.",
+                    missingId);
+            }
 
             var todoStatuses = new List<string>();
             var inProgressStatuses = new List<string>();
             var doneStatuses = new List<string>();
 
-            var statusListSet = new HashSet<string>(statusList);
-
-            foreach (var status in root.EnumerateArray())
+            foreach (var id in statusIds.Except(missingIds))
             {
-                var id = status.GetProperty("id").GetString() ?? string.Empty;
+                var name = names.StatusNameFor(id, string.Empty);
+                var (categoryKey, categoryName) = names.StatusCategoryOf(id);
 
-                if (!statusListSet.Contains(id))
+                if (name is null)
                 {
                     continue;
                 }
 
-                var name = status.GetProperty("name").GetString() ?? string.Empty;
-                var categoryName = status.GetProperty("statusCategory").GetProperty("name").GetString();
-
-                switch (categoryName)
+                switch (categoryKey ?? categoryName)
                 {
-                    case "To Do":
-                        todoStatuses.Add(name);
+                    case "new" or "To Do":
+                        AddOnceIgnoringCase(todoStatuses, name);
                         break;
-                    case "In Progress":
-                        inProgressStatuses.Add(name);
+                    case "indeterminate" or "In Progress":
+                        AddOnceIgnoringCase(inProgressStatuses, name);
                         break;
-                    case "Done":
-                        doneStatuses.Add(name);
+                    case "done" or "Done":
+                        AddOnceIgnoringCase(doneStatuses, name);
                         break;
                 }
             }
 
             return (todoStatuses, inProgressStatuses, doneStatuses);
+        }
+
+        /// <summary>
+        /// Data Center does not translate, so its list is read as it comes. Every other instance goes through
+        /// the lists this connector remembers, read again once when an id is missing from them.
+        /// </summary>
+        private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingIds)> StatusNamesAndTheIdsStillMissing(
+            HttpClient client, JiraDeployment deployment, List<string> statusIds)
+        {
+            const JiraReadException.ReadFor readFor = JiraReadException.ReadFor.Validation;
+
+            if (deployment == JiraDeployment.DataCenter)
+            {
+                using var list = await ReadList(client, JiraRestRoutes.Status, JiraReadException.StatusListRefused, readFor, CancellationToken.None);
+                var names = JiraOriginalNames.FromStatusList(list.RootElement);
+
+                return (names, names.StatusIdsItDoesNotKnow(statusIds));
+            }
+
+            var (known, missingStatusIds, _) = await NamesAndTheIdsStillMissing(client, deployment, readFor, statusIds, [], CancellationToken.None);
+
+            return (known, missingStatusIds);
+        }
+
+        private static void AddOnceIgnoringCase(List<string> names, string name)
+        {
+            if (!names.Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                names.Add(name);
+            }
         }
 
         private async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, string boardId)
@@ -2344,6 +2378,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var statusIds = page.Select(issue => IdOfField(issue, JiraFieldNames.StatusFieldName)).ToList();
             var issueTypeIds = page.Select(issue => IdOfField(issue, JiraFieldNames.IssueTypeFieldName)).ToList();
 
+            return await NamesAndTheIdsStillMissing(client, deployment, readFor, statusIds, issueTypeIds, cancellationToken);
+        }
+
+        private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingStatusIds, IReadOnlyList<string> MissingIssueTypeIds)> NamesAndTheIdsStillMissing(
+            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<string?> statusIds, IReadOnlyList<string?> issueTypeIds, CancellationToken cancellationToken)
+        {
             var names = await OriginalNamesOf(client, deployment, readFor, cancellationToken);
             var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
             var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);

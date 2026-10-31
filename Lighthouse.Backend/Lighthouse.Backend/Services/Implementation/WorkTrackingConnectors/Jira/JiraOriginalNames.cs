@@ -14,17 +14,52 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private readonly bool readsNamesAsReported;
 
-        public static JiraOriginalNames AsReported { get; } = new([], [], true);
+        private readonly Dictionary<string, (string? Key, string? Name)> statusCategories;
 
-        private JiraOriginalNames(Dictionary<string, string> statusNames, Dictionary<string, string> issueTypeNames, bool readsNamesAsReported)
+        public static JiraOriginalNames AsReported { get; } = new([], [], [], true);
+
+        private JiraOriginalNames(
+            Dictionary<string, string> statusNames,
+            Dictionary<string, (string? Key, string? Name)> statusCategories,
+            Dictionary<string, string> issueTypeNames,
+            bool readsNamesAsReported)
         {
             this.statusNames = statusNames;
+            this.statusCategories = statusCategories;
             this.issueTypeNames = issueTypeNames;
             this.readsNamesAsReported = readsNamesAsReported;
         }
 
         public static JiraOriginalNames FromLists(JsonElement statusList, JsonElement issueTypeList)
-            => new(NamesById(statusList), NamesById(issueTypeList), false);
+            => new(NamesById(statusList), CategoriesById(statusList), NamesById(issueTypeList), false);
+
+        /// <summary>The names and categories of a status list read on its own, as Data Center gives them.</summary>
+        public static JiraOriginalNames FromStatusList(JsonElement statusList)
+            => new(NamesById(statusList), CategoriesById(statusList), [], false);
+
+        /// <summary>The language-independent key and the display name of the status category the id belongs to.</summary>
+        public (string? Key, string? Name) StatusCategoryOf(string statusId)
+            => statusCategories.GetValueOrDefault(statusId);
+
+        private static Dictionary<string, (string? Key, string? Name)> CategoriesById(JsonElement list)
+        {
+            var categories = new Dictionary<string, (string? Key, string? Name)>();
+            if (list.ValueKind != JsonValueKind.Array)
+            {
+                return categories;
+            }
+
+            foreach (var entry in list.EnumerateArray())
+            {
+                var id = TextOf(entry, "id");
+                if (id is not null && entry.TryGetProperty("statusCategory", out var category))
+                {
+                    categories[id] = (TextOf(category, "key"), TextOf(category, "name"));
+                }
+            }
+
+            return categories;
+        }
 
         /// <summary>
         /// The original name for the id; the payload name when there is no id to look up; null for a non-null id the
