@@ -11,15 +11,10 @@ namespace Lighthouse.Backend.API.Helpers
                 .Select(dto => new StateMapping { Name = dto.Name, States = dto.States })
                 .ToList();
 
-            var allDirectStates = settings.ToDoStates
-                .Concat(settings.DoingStates)
-                .Concat(settings.DoneStates)
-                .ToList();
-
-            return Validate(mappings, allDirectStates);
+            return Validate(mappings);
         }
 
-        public static StateMappingValidationResult Validate(List<StateMapping> mappings, List<string> allDirectStates)
+        public static StateMappingValidationResult Validate(List<StateMapping> mappings)
         {
             var errors = new List<string>();
 

@@ -9,9 +9,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         public void Validate_EmptyMappings_IsValid()
         {
             var mappings = new List<StateMapping>();
-            var allStates = new List<string> { "Active", "Resolved", "Closed" };
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
@@ -27,9 +26,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "In Progress", States = ["Active", "Resolved"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -41,9 +39,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "", States = ["Active"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
@@ -59,9 +56,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "   ", States = ["Active"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.False);
         }
@@ -74,9 +70,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 new() { Name = "In Progress", States = ["Active"] },
                 new() { Name = "In Progress", States = ["Resolved"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
@@ -93,9 +88,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 new() { Name = "In Progress", States = ["Active"] },
                 new() { Name = "in progress", States = ["Resolved"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.False);
         }
@@ -108,9 +102,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 new() { Name = "Group A", States = ["Active", "Resolved"] },
                 new() { Name = "Group B", States = ["Resolved", "Closed"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
@@ -127,9 +120,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 new() { Name = "Group A", States = ["active"] },
                 new() { Name = "Group B", States = ["Active"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.False);
         }
@@ -141,9 +133,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "Implementation", States = ["Active", "Resolved"] }
             };
-            var allStates = new List<string> { "New", "Implementation", "Done" };
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -155,9 +146,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "Implementation", States = ["Active", "Resolved"] }
             };
-            var allStates = new List<string> { "New", "implementation", "Done" };
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -169,9 +159,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "Active", States = ["In Work", "Started"] }
             };
-            var allStates = new List<string> { "Active", "Closed" };
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             Assert.That(result.IsValid, Is.True);
         }
@@ -183,9 +172,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             {
                 new() { Name = "Empty", States = [] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
@@ -203,9 +191,8 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 new() { Name = "Group A", States = ["Resolved"] },
                 new() { Name = "Group A", States = ["Closed"] }
             };
-            var allStates = new List<string>();
 
-            var result = StateMappingValidator.Validate(mappings, allStates);
+            var result = StateMappingValidator.Validate(mappings);
 
             using (Assert.EnterMultipleScope())
             {
