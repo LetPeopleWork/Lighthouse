@@ -14,8 +14,7 @@ import {
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import GeneralSettingsComponent from "./GeneralSettingsComponent";
 
-// Story #5610 slice 02, DD-8 / ADR-126 decision 4. Opening a picker needs a system administrator,
-// and the button that leads to one has been rendered to everybody since the wizard shipped.
+// Opening a board picker needs a system administrator, so most tests render as one.
 const rbac = vi.hoisted(() => ({ isSystemAdmin: true }));
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -1000,10 +999,8 @@ describe("GeneralSettingsComponent", () => {
 		});
 	});
 
-	// Story #5610 slice 01, AC-A1 / AC-A2. The guidance rides on the schema, so one shared field
-	// renders it for whichever connector has something to say and nothing changes for the ones that
-	// do not. This covers the EDIT surface only — the create wizard renders its own field and is
-	// covered in CreateTeamWizard.test.tsx (AC-A5, dogfood 2026-08-01).
+	// The guidance rides on the schema, so one shared field renders it for whichever connector has
+	// something to say. This covers the edit pages only; the create wizard renders its own field.
 	describe("telling a flow coach what the query field wants", () => {
 		const WORKED_EXAMPLE = "active=true^priority=1";
 
@@ -1070,10 +1067,8 @@ describe("GeneralSettingsComponent", () => {
 		});
 	});
 
-	// Story #5610 slice 02, DD-8 / ADR-126 decision 4. Opening a picker is a system-administrator
-	// action, and it always has been — the button simply never said so, and a user who could create
-	// a team got a 403 rendered as "Failed to load boards. Please try again." Stated on Jira because
-	// the constraint has been lying to Jira, Azure DevOps and Linear users since the wizard shipped.
+	// Opening a picker is a system-administrator action. Offering it to anyone else ends in a 403
+	// shown as "Failed to load boards. Please try again."
 	describe("who is offered a board picker", () => {
 		beforeEach(() => {
 			rbac.isSystemAdmin = true;
@@ -1111,6 +1106,203 @@ describe("GeneralSettingsComponent", () => {
 			expect(
 				screen.queryByRole("button", { name: "Select Jira Board" }),
 			).not.toBeInTheDocument();
+		});
+	});
+
+	describe("the query is committed when the field is left", () => {
+		const aTeamWithAFreetextQuery = () => ({
+			...createMockTeamSettings(),
+			dataRetrievalValue: "project = LH",
+			dataRetrievalSchema: {
+				key: "jira.jql",
+				displayLabel: "JQL Query",
+				inputKind: "freetext",
+				isRequired: true,
+				isWorkItemTypesRequired: true,
+				wizardHint: null,
+			} as IDataRetrievalSchema,
+		});
+
+		const queryChanges = () =>
+			mockOnSettingsChange.mock.calls.filter(
+				([key]) => key === "dataRetrievalValue",
+			);
+
+		const renderQueryField = (settings = aTeamWithAFreetextQuery()) =>
+			render(
+				<GeneralSettingsComponent
+					settings={settings}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={mockWorkTrackingSystems}
+					selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+				/>,
+			);
+
+		it.skip("hands over no change while the query is being typed", async () => {
+			const user = userEvent.setup();
+			renderQueryField();
+
+			const query = screen.getByLabelText("JQL Query");
+			await user.click(query);
+			await user.type(query, " AND team = Red");
+			await new Promise((resolve) => setTimeout(resolve, 500));
+
+			expect(queryChanges()).toHaveLength(0);
+			expect(query).toHaveValue("project = LH AND team = Red");
+		});
+
+		it.skip("hands over the edited query once, when the field is left", async () => {
+			const user = userEvent.setup();
+			renderQueryField();
+
+			const query = screen.getByLabelText("JQL Query");
+			await user.click(query);
+			await user.type(query, " AND team = Red");
+			await user.tab();
+
+			expect(queryChanges()).toEqual([
+				["dataRetrievalValue", "project = LH AND team = Red"],
+			]);
+		});
+
+		it.skip("hands over nothing when the query is edited back to what it was", async () => {
+			const user = userEvent.setup();
+			renderQueryField();
+
+			const query = screen.getByLabelText("JQL Query");
+			await user.click(query);
+			await user.type(query, "x");
+			await user.keyboard("{Backspace}");
+			await user.tab();
+
+			expect(queryChanges()).toHaveLength(0);
+		});
+
+		it("hands over nothing when the query is focused and left without an edit", async () => {
+			const user = userEvent.setup();
+			renderQueryField();
+
+			await user.click(screen.getByLabelText("JQL Query"));
+			await user.tab();
+
+			expect(queryChanges()).toHaveLength(0);
+		});
+
+		it("hands over a changed name at once, without waiting for the field to be left", async () => {
+			const user = userEvent.setup();
+			renderQueryField();
+
+			await user.type(screen.getByLabelText("Name"), "Z");
+
+			expect(mockOnSettingsChange).toHaveBeenCalledWith("name", "Team AZ");
+		});
+
+		it.skip("hands over nothing from a read-only query that is focused and left", () => {
+			renderQueryField({
+				...aTeamWithAFreetextQuery(),
+				dataRetrievalValue: "team-uuid-123",
+				dataRetrievalSchema: {
+					key: "linear.team",
+					displayLabel: "JQL Query",
+					inputKind: "wizard-select" as const,
+					isRequired: true,
+					isWorkItemTypesRequired: false,
+					wizardHint: "linear-team-select",
+				},
+			});
+
+			// A user cannot type into a read-only field, so the change is forced past it.
+			const query = screen.getByLabelText("JQL Query");
+			fireEvent.focus(query);
+			fireEvent.change(query, { target: { value: "team-uuid-456" } });
+			fireEvent.blur(query);
+
+			expect(queryChanges()).toHaveLength(0);
+		});
+
+		it("shows a query that arrives from outside in place of what was being typed", async () => {
+			const user = userEvent.setup();
+			const view = renderQueryField();
+
+			const query = screen.getByLabelText("JQL Query");
+			await user.click(query);
+			await user.type(query, " AND team = Red");
+
+			view.rerender(
+				<GeneralSettingsComponent
+					settings={{
+						...aTeamWithAFreetextQuery(),
+						dataRetrievalValue: "project = OTHER",
+					}}
+					onSettingsChange={mockOnSettingsChange}
+					workTrackingSystems={mockWorkTrackingSystems}
+					selectedWorkTrackingSystem={mockWorkTrackingSystems[0]}
+				/>,
+			);
+
+			expect(screen.getByLabelText("JQL Query")).toHaveValue("project = OTHER");
+		});
+
+		it("hands over a query written by the board wizard at once, without the field being focused or left", async () => {
+			rbac.isSystemAdmin = true;
+			const mockTerminologyService = createMockTerminologyService();
+			mockTerminologyService.getAllTerminology = vi.fn().mockResolvedValue([
+				{ key: "WORK_TRACKING_SYSTEM", value: "System" },
+				{ key: "WORK_TRACKING_SYSTEMS", value: "Systems" },
+			]);
+			const csvSystem: IWorkTrackingSystemConnection = {
+				id: 3,
+				name: "CSV System",
+				workTrackingSystem: "Csv",
+				options: [],
+				writeBackMappingDefinitions: [],
+				authenticationMethodKey: "none",
+				workTrackingSystemGetDataRetrievalDisplayName: () => "CSV File Content",
+				additionalFieldDefinitions: [],
+			};
+			const queryClient = new QueryClient({
+				defaultOptions: { queries: { retry: false } },
+			});
+
+			render(
+				<QueryClientProvider client={queryClient}>
+					<ApiServiceContext.Provider
+						value={createMockApiServiceContext({
+							terminologyService: mockTerminologyService,
+						})}
+					>
+						<TerminologyProvider>
+							<GeneralSettingsComponent
+								settings={aTeamWithAFreetextQuery()}
+								onSettingsChange={mockOnSettingsChange}
+								workTrackingSystems={[csvSystem]}
+								selectedWorkTrackingSystem={csvSystem}
+							/>
+						</TerminologyProvider>
+					</ApiServiceContext.Provider>
+				</QueryClientProvider>,
+			);
+
+			await userEvent.click(
+				screen.getByRole("button", { name: /^Select CSV File/i }),
+			);
+			const csvContent = "ID,Type,Status\n1,Story,To Do";
+			await userEvent.upload(
+				screen.getByLabelText("Choose File", {
+					selector: "input[type='file']",
+				}),
+				new File([csvContent], "board.csv", { type: "text/csv" }),
+			);
+			await userEvent.click(
+				await screen.findByRole("button", { name: "Use File" }),
+			);
+
+			await waitFor(() =>
+				expect(mockOnSettingsChange).toHaveBeenCalledWith(
+					"dataRetrievalValue",
+					csvContent,
+				),
+			);
 		});
 	});
 });
