@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class JiraOriginalNamesTest
     {
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void A_status_the_list_knows_is_reported_by_its_original_name()
         {
             var names = AGermanReadersNames();
@@ -23,7 +22,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void A_work_item_type_the_list_knows_is_reported_by_its_original_name()
         {
             var names = AGermanReadersNames();
@@ -32,7 +30,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void An_entry_without_an_original_name_is_reported_by_the_name_of_the_entry()
         {
             var names = NamesFrom(
@@ -47,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void Status_ids_the_list_does_not_hold_are_reported_as_unknown_once_each()
         {
             var names = AGermanReadersNames();
@@ -56,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void Work_item_type_ids_the_list_does_not_hold_are_reported_as_unknown_once_each()
         {
             var names = AGermanReadersNames();
@@ -65,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void Only_the_ids_the_lists_lack_are_reported_as_unknown()
         {
             var names = AGermanReadersNames();
@@ -80,7 +74,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void A_non_null_id_the_lists_lack_is_never_answered_with_the_name_the_payload_carried()
         {
             var names = AGermanReadersNames();
@@ -105,7 +98,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Original names are not read from the lists yet")]
         public void A_status_id_is_never_looked_up_among_the_work_item_types()
         {
             var names = NamesFrom(

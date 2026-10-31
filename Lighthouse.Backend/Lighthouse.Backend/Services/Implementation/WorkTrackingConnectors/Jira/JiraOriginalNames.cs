@@ -8,35 +8,81 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     /// </summary>
     public sealed class JiraOriginalNames
     {
-        private readonly Dictionary<string, string> statusNames = [];
+        private readonly Dictionary<string, string> statusNames;
 
-        private readonly Dictionary<string, string> issueTypeNames = [];
+        private readonly Dictionary<string, string> issueTypeNames;
 
-        public static JiraOriginalNames AsReported { get; } = new();
+        private readonly bool readsNamesAsReported;
 
-        private JiraOriginalNames()
+        public static JiraOriginalNames AsReported { get; } = new([], [], true);
+
+        private JiraOriginalNames(Dictionary<string, string> statusNames, Dictionary<string, string> issueTypeNames, bool readsNamesAsReported)
         {
+            this.statusNames = statusNames;
+            this.issueTypeNames = issueTypeNames;
+            this.readsNamesAsReported = readsNamesAsReported;
         }
 
         public static JiraOriginalNames FromLists(JsonElement statusList, JsonElement issueTypeList)
-            => AsReported;
+            => new(NamesById(statusList), NamesById(issueTypeList), false);
 
         /// <summary>
         /// The original name for the id; the payload name when there is no id to look up; null for a non-null id the
         /// list does not hold, which is never answered with the payload name.
         /// </summary>
         public string? StatusNameFor(string? statusId, string nameInThePayload)
-            => statusId is not null && statusNames.TryGetValue(statusId, out var original) ? original : nameInThePayload;
+            => NameFor(statusNames, statusId, nameInThePayload);
 
         public string? IssueTypeNameFor(string? issueTypeId, string nameInThePayload)
-            => issueTypeId is not null && issueTypeNames.TryGetValue(issueTypeId, out var original) ? original : nameInThePayload;
+            => NameFor(issueTypeNames, issueTypeId, nameInThePayload);
 
-        /// <summary>The status ids among <paramref name="statusIds"/> that a list which was read fine does not hold.</summary>
+        /// <summary>The status ids among <paramref name="statusIds"/> that the list does not hold.</summary>
         public IReadOnlyList<string> StatusIdsItDoesNotKnow(IEnumerable<string?> statusIds)
-            => statusNames.Count == 0 ? [] : [.. statusIds.OfType<string>().Where(id => !statusNames.ContainsKey(id)).Distinct()];
+            => IdsMissingFrom(statusNames, statusIds);
 
-        /// <summary>The issue type ids among <paramref name="issueTypeIds"/> that a list which was read fine does not hold.</summary>
+        /// <summary>The issue type ids among <paramref name="issueTypeIds"/> that the list does not hold.</summary>
         public IReadOnlyList<string> IssueTypeIdsItDoesNotKnow(IEnumerable<string?> issueTypeIds)
-            => issueTypeNames.Count == 0 ? [] : [.. issueTypeIds.OfType<string>().Where(id => !issueTypeNames.ContainsKey(id)).Distinct()];
+            => IdsMissingFrom(issueTypeNames, issueTypeIds);
+
+        private string? NameFor(Dictionary<string, string> names, string? id, string nameInThePayload)
+        {
+            if (id is null || readsNamesAsReported)
+            {
+                return nameInThePayload;
+            }
+
+            return names.GetValueOrDefault(id);
+        }
+
+        private List<string> IdsMissingFrom(Dictionary<string, string> names, IEnumerable<string?> ids)
+            => readsNamesAsReported ? [] : [.. ids.OfType<string>().Where(id => !names.ContainsKey(id)).Distinct()];
+
+        private static Dictionary<string, string> NamesById(JsonElement list)
+        {
+            var names = new Dictionary<string, string>();
+            if (list.ValueKind != JsonValueKind.Array)
+            {
+                return names;
+            }
+
+            foreach (var entry in list.EnumerateArray())
+            {
+                var id = TextOf(entry, "id");
+                var name = TextOf(entry, "untranslatedName") ?? TextOf(entry, "name");
+                if (id is not null && name is not null)
+                {
+                    names[id] = name;
+                }
+            }
+
+            return names;
+        }
+
+        private static string? TextOf(JsonElement entry, string property)
+            => entry.ValueKind == JsonValueKind.Object
+                && entry.TryGetProperty(property, out var value)
+                && value.ValueKind == JsonValueKind.String
+                    ? value.GetString()
+                    : null;
     }
 }
