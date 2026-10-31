@@ -18,8 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-6350-bulk-reports")]
-    [Category("slice-02a")]
-    public class Slice02aCreateForSeveralTeamsScenarios : BulkReportsAcceptanceTest
+    public class CreateForSeveralTeamsScenarios : BulkReportsAcceptanceTest
     {
         private static readonly string[] BothCreated = [Created, Created];
 

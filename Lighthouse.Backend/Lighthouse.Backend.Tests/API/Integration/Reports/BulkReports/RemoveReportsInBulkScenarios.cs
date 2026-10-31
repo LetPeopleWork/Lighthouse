@@ -12,8 +12,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-6350-bulk-reports")]
-    [Category("slice-05")]
-    public class Slice05RemoveReportsInBulkScenarios : BulkReportsAcceptanceTest
+    public class RemoveReportsInBulkScenarios : BulkReportsAcceptanceTest
     {
         private const string TrialRun = "Then & Now — trial run";
 

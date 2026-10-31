@@ -13,8 +13,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-6350-bulk-reports")]
-    [Category("slice-03")]
-    public class Slice03PortfoliosJoinTheSelectionScenarios : BulkReportsAcceptanceTest
+    public class PortfoliosJoinTheSelectionScenarios : BulkReportsAcceptanceTest
     {
         private static readonly string[] OnlyTheQuarter = [TheQuarter];
 

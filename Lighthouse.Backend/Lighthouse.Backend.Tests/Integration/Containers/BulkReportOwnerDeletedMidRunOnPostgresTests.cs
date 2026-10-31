@@ -17,7 +17,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-6350-bulk-reports")]
-    [Category("slice-02a")]
     public class BulkReportOwnerDeletedMidRunOnPostgresTests : BulkReportsAcceptanceTest
     {
         private SharedPostgresContainer? postgres;

@@ -10,8 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-6350-bulk-reports")]
-    [Category("slice-01")]
-    public class Slice01EveryReportInOnePlaceScenarios : BulkReportsAcceptanceTest
+    public class EveryReportInOnePlaceScenarios : BulkReportsAcceptanceTest
     {
         private static readonly string[] OnlyTheLaterType = ["signals"];
 
