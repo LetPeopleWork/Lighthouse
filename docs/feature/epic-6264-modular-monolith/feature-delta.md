@@ -58,13 +58,14 @@ The developer's journey is in `docs/product/journeys/epic-6264-modular-monolith.
 
 ### Backbone (developer activities, left to right)
 
-| Decide the shape | Guard what exists | Package the contexts | Narrow the ports | Thin the adapters & services | Strengthen the domain | Close the kernel & contracts | Frontend mirror |
-|---|---|---|---|---|---|---|---|
-| S01, S02 | S04a, S05a, S11 | S03a–h | S05b–g, S06 | S07a–d, S12a–c | S08, S13, S10 | S04b, S09a, S09b | FE1–FE7 |
+| Decide the shape | Guard what exists | Package the contexts | Narrow the ports | Thin the adapters & services | Strengthen the domain | Close the kernel & contracts | Frontend mirror | Keep the tests fast and lean |
+|---|---|---|---|---|---|---|---|---|
+| S01, S02 | S04a, S05a, S11 | S03a–h | S05b–g, S06 | S07a–d, S12a–c | S08, S13, S10 | S04b, S09a, S09b | FE1–FE6 | T1–T4, FE7 |
 
 ### Pick-up groups (an order of preference, not a schedule)
 
 - **G0. Independent and cheap; can go first**: S04a, S05a, S11, FE1. Each one adds a ratchet or fixes housekeeping, depends on nothing, and is useful even if the Epic stops there.
+- **G0b. Next up (maintainer, 2026-10-31): the test-infrastructure track.** Slow test runs, and test runs that exhaust memory when sessions run in parallel, slow every other item down, so this track goes before the rest of the Epic. Suggested order: T3 (worker caps, immediate relief) → T1 (the test-host memory leak) → T2 (host per fixture + guard), with FE7 alongside → T4 last (budgets calibrated on the faster suite).
 - **G1. Decide**: S01 (bounded contexts, context map and layout ADR) → S02 (Metrics pilot). **S02 is a gate**: its lessons-learned amend the ADR and decide whether and how S03* continue (risk: churn without payoff).
 - **G2. Can run before or alongside packaging** (they narrow and thin, so packaging moves less): S12c (before any S03 moves that context's DTOs), S12a, S12b, S05b, S05c, S05d, S05e, S06, S07a–d, S08 (catalogue step), FE4, FE5, FE6, FE7.
 - **G3. Packaging, one context per Story, after S02's gate**: S03a–h, FE2 (per module), FE3.
@@ -98,6 +99,8 @@ G1  S01 ==> S02 (pilot gate) ======================+
     S01 (glossary) --> FE6, backend renames in S06/S03*
     FE1 --> FE3, FE4, FE5, FE7;   FE4 --> FE2 per module (soft)
     FE5 <-> FE7 (soft, either order: smaller units are easier to test directly)
+    T3 (independent)   T1 --> T2 (soft: name the leak before reducing hosts)
+    T2, FE7 --> T4 (soft: calibrate budgets on the faster suite);   FE7 <-> T4 share the frontend budget
 ```
 
 ### Priority Rationale
@@ -107,6 +110,7 @@ G1  S01 ==> S02 (pilot gate) ======================+
 3. **S02 as the explicit go/no-go**: the brief's own risk mitigation. Metrics has the most `GetAllByPredicate` calls and no namespace of its own, so it tests the layout hardest.
 4. **G2 before G3 where possible**: thinning and narrowing first means packaging moves smaller, cleaner code. S12c is a hard precondition for moving DTOs.
 5. **End states and S10/S09b last**: they need the whole codebase ready (all contexts packaged, contracts in place, no cycles), and S10 carries the EF-migration risk.
+6. **The test-infrastructure track (G0b) before the rest, added 2026-10-31**: every other item pays for a slow and memory-hungry suite on each run, and parallel sessions currently kill each other's test runs. See [REF] Stories → Test-infrastructure track.
 
 ## Wave: DISCUSS / [REF] How to pick up a Story
 
@@ -494,6 +498,49 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
   - [ ] DESIGN profiles the suite and records which cost dominates, before any fix.
   - [ ] Time-budget ratchet with a named allow-list (ADR-268 / ADR-269 style), failing on a newcomer and on a stale entry.
   - [ ] Coverage and the Stryker kill rate of the touched area do not drop; production behaviour and pixels unchanged. Tests themselves change by design (see the brief's note on "behaviour-free").
+- Update 2026-10-31: FE7 moved into the test-infrastructure track (G0b). The baseline has moved on: the CI frontend build-and-test step went from about 11 to 16–21 min in October, and the test files grew from 403 to 577. The analysis also records the peak memory of `pnpm test`, which T3 uses to choose the local worker cap. FE7 absorbs #6302's two frontend follow-ups (the DataGrid and dialog render cost in jsdom, and the real 600 ms sleep in `ModifyTeamSettings.refinement.test.tsx`). FE7's ratchet and T4 share the frontend budget.
+
+### Test-infrastructure track (added 2026-10-31, maintainer: next up)
+
+From the 2026-10-31 analysis of slow and memory-hungry test runs (`/nw-buddy`). Evidence: CI step durations on main since June, test counts from git, and a read-only memory sample of a running backend suite. Story #6302 (Closed) did the first round; its owed follow-ups are folded in here and in FE7.
+
+#### T1 — Backend test run keeps its memory flat: find and fix the test-host leak
+
+`@infrastructure` · job_id: infrastructure-only · **Size M** · Depends on: none · ADO #6459 · Brief: `slices/slice-41-t1-backend-test-memory-flat.md`
+
+- infrastructure_rationale: one standard-filter backend run grew its test host from 2.0 to 18.3 GB in 8 minutes without levelling off, with only 0–10 test databases open at a time. That is retention, not parallelism. The 31 GB machine fell to 1.8 GB available, so parallel sessions kill each other's runs.
+- Elevator Pitch. **Before**: two sessions running the backend suite at once exhaust the machine. **After**: a full run levels off under about 3 GB, and a check fails when the leak returns. **Decision enabled**: test runs can run side by side again.
+- AC:
+  - [ ] Retaining roots named from heap snapshots before any fix (suspects: EF's internal service-provider cache fed by per-test interceptor instances, undisposed factories, static captures).
+  - [ ] Peak memory before and after, same machine; a check fails when it regresses.
+
+#### T2 — Backend tests build one host per fixture, and a guard keeps it that way
+
+`@infrastructure` · job_id: infrastructure-only · **Size L** (split per harness group at DESIGN) · Depends on: T1 (soft) · ADO #6460 · Brief: `slices/slice-42-t2-backend-host-per-fixture.md`
+
+- infrastructure_rationale: 95 test files boot a whole app host, recreate the database and run every seeder for each test. #6302 fixed three harnesses, and the pattern came back in 20 new files in October. The backend CI test step went from about 7 to 9–14 min.
+- Elevator Pitch. **Before**: a new acceptance test with a host in `[SetUp]` passes review. **After**: `dotnet test --filter FullyQualifiedName~ArchitectureTests` fails, naming the file, unless it is on a shrinking allow-list. Per-test databases are copied from a seeded template. **Decision enabled**: test count can grow without CI time growing in step.
+- AC:
+  - [ ] Set-up share measured per harness first; set-up-bound harnesses move to `[OneTimeSetUp]`; template-database copy per test.
+  - [ ] Allow-list guard, failing on a newcomer and on a stale entry. Includes #6302 leftovers `ClusterSubstrateProbeRegistrationTest` and the 60 s deadline in `ReconstructOverTimeHistoryAcceptanceTest`.
+
+#### T3 — Test runs leave room for parallel sessions: local worker caps
+
+`@infrastructure` · job_id: infrastructure-only · **Size S** · Depends on: none · ADO #6461 · Brief: `slices/slice-43-t3-test-runs-leave-room.md`
+
+- infrastructure_rationale: Vitest (11 thread workers) and NUnit (one fixture worker per core) are uncapped, and every parallel session adds a full set. The compiler server stays resident at about 5.3 GB.
+- Elevator Pitch. **Before**: each `pnpm test` / `dotnet test` takes every core. **After**: a local run uses a measured default (one variable, for example `LIGHTHOUSE_TEST_WORKERS`) and CI uses the full runner. **Decision enabled**: immediate relief while T1 and T2 land.
+- AC:
+  - [ ] Default chosen from measured wall time and peak memory at both settings; CI unchanged; documented.
+
+#### T4 — Test-time budgets fail the build instead of warning
+
+`@infrastructure` · job_id: infrastructure-only · **Size S** (+ calibration runs) · Depends on: T2, FE7 (soft) · ADO #6462 · Brief: `slices/slice-44-t4-test-budgets-fail-the-build.md`
+
+- infrastructure_rationale: #6302's budgets still run `--warn-only` on both stacks, so the frontend step doubling after #6302 closed went unflagged.
+- Elevator Pitch. **Before**: a slow file only shows up as a trend weeks later. **After**: CI fails on the commit that adds it. **Decision enabled**: the gains from T2 and FE7 stay.
+- AC:
+  - [ ] Budgets re-derived on at least 5 main runs after the fixes; `--warn-only` removed on both stacks; a planted slow file fails.
 
 ## Wave: DISCUSS / [REF] Out of scope
 
@@ -556,6 +603,8 @@ Anyone opening the repo can see the nine bounded contexts, what each one owns an
 | 11 | Frontend production files > 1000 lines | ≥ 2 known (2034, 1201), exact count at FE5 DESIGN | **0** or each justified | `wc -l` sweep | FE5 |
 | 13 | Rows loaded and query time for a Feature load and a Portfolio load (restored production-like dev DB) | measured at S13's DESIGN (today every Feature load includes Forecasts→SimulationResults and StartForecasts→SimulationResults) | set at S13's DESIGN (pilot: no forecast rows loaded by a Feature load) | before/after measurement on `Restore-DbBackup.ps1` data (EF query logging + timing) | S13 |
 | 14 | Frontend test time | suite **438 s** on CI, 71 % in tests; slowest file 48 s for 22 tests (PR #1977, survey); exact per-test baseline at FE7 DESIGN | no test over the budget set at FE7 DESIGN, apart from a shrinking named allow-list | Vitest JSON reporter durations | FE7 |
+| 15 | Peak memory of one backend test run (standard filter) | **18.3 GB** and still rising when the run ended (2026-10-31, sampled read-only) | under **3 GB**, levelling off | test-host working set sampled every 15 s, or T1's check | T1 |
+| 16 | CI test step minutes on main (median of ≥ 5 runs) | frontend build+test **16–21** (late Oct, from ~11 early Oct); backend test **9–14** (from ~7 mid-Sep) | set at T2 / FE7 DESIGN; T4 keeps it there | GitHub Actions step timings | T2, T4, FE7 |
 | 12 | Mutation score on touched code | per area at pick-up | **not lower**; ≥ 80% on new code | Stryker.NET / Stryker | all |
 
 ### Guardrails (must NOT degrade)
@@ -704,7 +753,11 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6393 | FE5 Split wide units |
 | #6394 | FE6 "Project" → Portfolio naming in the frontend |
 | #6395 | S13 Aggregate boundaries in persistence |
-| #6457 | FE7 Frontend tests run in milliseconds: fix the slow ones, keep them fast (created 2026-10-31) |
+| #6457 | FE7 Frontend tests run in milliseconds: fix the slow ones, keep them fast (created 2026-10-31; description extended the same day) |
+| #6459 | T1 Backend test run keeps its memory flat: find and fix the test-host leak (created 2026-10-31) |
+| #6460 | T2 Backend tests build one host per fixture, and a guard keeps it that way (created 2026-10-31) |
+| #6461 | T3 Test runs leave room for parallel sessions: local worker caps (created 2026-10-31) |
+| #6462 | T4 Test-time budgets fail the build instead of warning (created 2026-10-31) |
 
 ## Wave: DISCUSS / [REF] Improvement log
 

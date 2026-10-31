@@ -17,6 +17,20 @@ licensing and terminology providers, the MUI data grid with up to 120 rows) in j
 and query by accessible role. Most of what they check is plain logic (pick limits, permission gating, how a
 result is counted) that would test in milliseconds as a pure function or hook.
 
+**Update 2026-10-31.** FE7 is now the frontend half of the test-infrastructure track (T1–T4, picked as next up).
+The baseline has moved on: the frontend build-and-test step on main went from about 11 min in early October to
+16–21 min in the last week of October, and the test files grew from 403 to 577 in October alone. Two additions to
+the scope:
+
+- **Memory.** The analysis also records the peak memory of a full `pnpm test` at today's settings (`pool:
+  "threads"`, `maxWorkers` unset, so 11 workers on the 12-core development machine, with MUI inlined through
+  `server.deps.inline`). T3 chooses the local worker cap from that data.
+- **Story #6302's frontend follow-ups, never filed:** the production render cost of the MUI DataGrid and dialogs
+  in jsdom, the cost left in every slow frontend file after #6302; and `ModifyTeamSettings.refinement.test.tsx`,
+  which still sleeps 600 ms of real time and should move to a fake clock like its siblings.
+
+FE7's ratchet and T4 share the frontend budget. Whichever lands first owns it, and the other drops that half.
+
 ## IN
 
 - **Analyse first.** Profile the suite (per-file and per-test durations from Vitest's JSON reporter, plus a
@@ -33,7 +47,8 @@ result is counted) that would test in milliseconds as a pure function or hook.
 
 - Any production behaviour or pixel change. Extracting logic out of a component so it can be tested as a
   function is in; changing what it does is not.
-- E2E (Playwright) and backend test speed (Story #6302 owns CI test time overall).
+- E2E (Playwright). Backend test speed and memory (T1 #6459, T2 #6460). Worker caps (T3 #6461). The backend
+  half of budget enforcement (T4 #6462).
 
 ## Hypothesis
 
