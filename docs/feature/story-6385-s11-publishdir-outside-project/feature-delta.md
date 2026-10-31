@@ -347,3 +347,73 @@ The baseline counts 13 references on 11 lines (the earlier 14 was a miscount); t
 
 - One slice, profile **standard**: crafter `sonnet`, reviewer `haiku`, refactor pass and review on, mutation N/A (no production code). Run in AFK mode: slice wrap-up refactor + review, nothing pushed.
 - Roadmap: 4 steps, one per approved commit; integrity check exit 0; review needs_revision (0 blockers), one revision pass, every finding applied and re-checked by the orchestrator (2026-10-31). E2E Playwright runs once at the final gates.
+
+## Wave: DELIVER / [REF] Demo Evidence
+
+Run 2026-10-31 on Linux, step 01-04. `.dockerignore` change is commit `f172f8c4b`. Version `2026.10.31.1` passed to both sides so the version metadata is equal. Full filtered backend suite not re-run in this step: no test reads `.dockerignore`, and the full run passed on the 01-03 commit (11774 passed, 0 failed).
+
+### Checks that passed
+
+| Check | Result |
+|---|---|
+| `grep -n '^artifacts$' .dockerignore` (empty before, one line after) | `31:artifacts` |
+| `grep -n '^Lighthouse.Backend/Lighthouse.Backend/publish$' .dockerignore` (empty before) | `32:Lighthouse.Backend/Lighthouse.Backend/publish` |
+| Guard class `PublishOutputOutsideProjectGuardTest` after the edit | `Passed! Failed: 0, Passed: 13, Total: 13` |
+| `bash Scripts/test-selection/test-path-classifier.sh` | `passed: 46`, `failed: 0` |
+| Guard red check: one old-path line appended to `.github/actions/package-app/action.yml` | `Failed! Failed: 1, Passed: 12`; offender `.github/actions/package-app/action.yml:51` |
+| Guard after `git checkout -- .github/actions/package-app/action.yml` | `Passed! Failed: 0, Passed: 13, Total: 13`; `git status` clean |
+| Nesting after a clean publish to `artifacts/publish/linux-x64` (twice) | `find artifacts/publish/linux-x64 -type d -name publish` prints 0 |
+| `find Lighthouse.Backend/Lighthouse.Backend -path '*/publish/*'` (excluding `obj/` and `bin/`) | prints nothing (0 lines) |
+| `artifacts/publish/osx-arm64` exists after the local cross-publish | yes (also `win-x64`, `linux-x64`) |
+| `pnpm run update-sidecar` before/after, `src-tauri/resources` and `src-tauri/binaries` file names | identical (219 and 1 files); sizes: see deltas below |
+
+The literal step-4 command also lists SDK-internal `Lighthouse.Backend/Lighthouse.Backend/obj/Release/net10.0/<rid>/compressed/publish/*.br` files; those are build intermediates, not a publish output, and `obj/` is gitignored.
+
+### Published file set per RID (before = 4ffc410e3, old `-o` path; after = this worktree, `-o ./artifacts/publish/<rid>`)
+
+`appsettings.Development.json` is absent on both sides for every RID. The file sets are identical (same names on both sides) for all three RIDs.
+
+| RID | Before files / bytes | After files / bytes | Pass-rule verdict |
+|---|---|---|---|
+| linux-x64 | 219 / 152029127 | 219 / 156423015 | exit 1 (two size deltas) |
+| win-x64 | 224 / 156641189 | 224 / 161040745 | exit 1 (two size deltas) |
+| osx-arm64 | 220 / 162691420 | 220 / 167125340 | exit 1 (two size deltas) |
+
+Size deltas, verbatim from the comparison (name, before, after, absolute):
+
+```
+linux-x64:  ./Lighthouse      144720266 149115238 4394972   ./Lighthouse.pdb 759852 758768 1084
+win-x64:    ./Lighthouse.exe  146303381 150704025 4400644   ./Lighthouse.pdb 759852 758764 1088
+osx-arm64:  ./Lighthouse      153685931 158120939 4435008   ./Lighthouse.pdb 759856 758768 1088
+```
+
+The `.pdb` deltas (about 0.14%) and the executable deltas (about 3%) exceed the 0.1% limit, so the pass rule reports FAIL. No file is missing on either side. The same ~4.4 MB executable delta appears in the `update-sidecar` outputs (`Lighthouse.Backend-x86_64-unknown-linux-gnu` 144720252 before, 149115224 after; `Lighthouse.pdb` 759848 vs 758760).
+
+Control: the post-change commit (727c8dcb8) published with the new `-o` path inside the scratch "before" checkout gives `Lighthouse` = 144720266 bytes and `Lighthouse.pdb` = 759852 bytes, equal to the old-path result there. So the output path does not change the executable; the delta tracks the checkout the publish ran in (this worktree versus a scratch worktree), not the change. The cause inside the executable was not identified; this stays an open finding for the maintainer.
+
+Setup notes: the scratch checkout lacks gitignored `wwwroot/` (built frontend); a first run without it showed 195 missing files plus a 53-byte versus 472246-byte `Lighthouse.staticwebassets.endpoints.json`, so `wwwroot/` was copied from this worktree and the "before" publish was repeated from a clean state. The step-1 `list()` helper passed `"-not -path './publish/*'"` unquoted, which keeps the literal quote characters and excludes nothing; the comparison used the pattern without inner quotes and with globbing off.
+
+### Second publish into an existing output folder
+
+From a clean `artifacts/publish/linux-x64`, publish #1 gives 219 files / 156423015 bytes; publish #2 into the same folder gives 206 files / 156359972 bytes. No `publish` directory appears inside. The 13 files missing after #2 (`Factories/DemoData/*.csv`, 12 files, and `certs/LighthouseCert.pfx`) are `None` items with `CopyToOutputDirectory=PreserveNewest` in `Lighthouse.Backend.csproj`; the csproj is unchanged by this feature (only the `-o` path moved), so this is a property of an incremental publish into a dirty folder, not of the path. CI publishes once into a clean runner. Recorded as a finding: the DISTILL step-3 expectation "the second listing equals the first" does not hold for the dirty-folder case.
+
+Stale-folder evidence for the change itself: in the "before" checkout, a leftover `publish/` folder was picked up as content and nested (`publish/win-x64/...`, 3 levels deep after three publishes), and `pnpm run update-sidecar` then failed with `MSB3030: Could not copy ... publish/linux-x64/publish/win-x64/appsettings.Development.json because it was not found` until the folder was deleted. The same run from the new path is clean.
+
+### Docker build-context probe
+
+Stale files placed at `Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/stale.json` and `artifacts/publish/probe/stale.txt`; throwaway image from the repo root copying `Lighthouse.Backend/` to `/src/` and `.` to `/all/`, then:
+
+```
+stale files:
+artifacts dirs:
+backend publish dirs:
+PROBE_END
+```
+
+Neither stale file nor an `artifacts` or in-project `publish` folder is in the context. The stale folders and the probe image (`s11-probe:tmp`) were removed afterwards; the real Dockerfile was not built. (The first probe form, `find ... -path '*publish*' | head -50`, was drowned by `docs/` file names containing "publish", so it was replaced by the name-specific form above. The legacy builder here rejects `--progress`, so it was dropped.)
+
+### Pending the push (not run locally)
+
+- CI green on the push (`ci_backend`, standalone packaging, codesign and verify workflows, Docker build).
+- The macOS job reads `ARM64_DIR` only on `main` runs; locally `artifacts/publish/osx-arm64` exists, which is the part checkable here.
+- The `changes` job log showing `backend=true` for an `.github/actions/`-only change.
