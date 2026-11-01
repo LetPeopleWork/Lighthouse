@@ -220,15 +220,38 @@ namespace Lighthouse.Backend.Models
         public StateCategories CategoryOfDisplayName(string displayName)
             => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {displayName})");
 
-        // SCAFFOLD: true
         /// <summary>A stored or sent list with every mapping name replaced by the mapping's raw states, in order; a list of raw states passes through unchanged.</summary>
         public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)
-            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {storedList.Count})");
+        {
+            var entries = storedList.Where(entry => !string.IsNullOrWhiteSpace(entry)).ToList();
+            var expanded = entries.SelectMany(entry => ExpandListEntry(entries, entry));
+
+            return [.. expanded.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
+        }
+
+        private IEnumerable<string> ExpandListEntry(List<string> list, string entry)
+        {
+            var kind = ClassifyListEntry(list, entry);
+
+            if (kind == ListEntryKind.NotAGroupName)
+            {
+                return [entry];
+            }
+
+            var group = GroupNamed(entry)!;
+
+            if (kind == ListEntryKind.StateOfItsOwnMapping)
+            {
+                return group.States.Where(state => !list.Exists(listed => IsSameState(listed, state))).Prepend(entry);
+            }
+
+            return group.States;
+        }
 
         /// <summary>The one place that decides what a list entry that equals a mapping's name is.</summary>
         public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
         {
-            var group = StateMappings.FirstOrDefault(mapping => mapping.States is { Count: > 0 } && IsSameState(mapping.Name, entry));
+            var group = GroupNamed(entry);
 
             if (group == null)
             {
@@ -244,6 +267,9 @@ namespace Lighthouse.Backend.Models
                 ? ListEntryKind.Shadowing
                 : ListEntryKind.CollapsedGroup;
         }
+
+        private StateMapping? GroupNamed(string entry)
+            => StateMappings.FirstOrDefault(mapping => mapping.States is { Count: > 0 } && IsSameState(mapping.Name, entry));
 
         // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
         private static bool IsSameState(string? left, string? right)

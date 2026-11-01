@@ -89,7 +89,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_NameOfAMappingWithNoStates_StaysInTheList(bool statesAreNull)
         {
             var team = new Team { DoingStates = ["Analysis", "Review", "Waiting"] };
@@ -113,7 +112,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_GroupNamedAfterItsOwnState_ListsTheOtherStatesRightAfterIt()
         {
             var team = ATeamWithActiveGroup("Analysis", "Active", "Blocked");
@@ -122,7 +120,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_CollapsedGroup_IsReplacedByItsStatesInPlace()
         {
             var team = ATeamWithReviewGroup("Analysis", "Review", "Waiting");
@@ -131,7 +128,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder()
         {
             var team = ATeamWithActiveGroup("Resolved", "Analysis", "Active", "Blocked");
@@ -140,7 +136,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_SameStateInDifferentCasing_KeepsTheFirstSpelling()
         {
             var team = ATeamWithActiveGroup("active", "Analysis", "ACTIVE");
@@ -149,7 +144,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_NoMappings_ReturnsTheListWithoutRepeats()
         {
             var team = new Team { DoingStates = ["Analysis", "Testing", "analysis"] };
@@ -158,7 +152,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_EmptyList_StaysEmpty()
         {
             var team = ATeamWithActiveGroup();
@@ -167,7 +160,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_EntriesThatAreNullEmptyOrOnlyWhitespace_AreLeftOut()
         {
             var team = new Team();
