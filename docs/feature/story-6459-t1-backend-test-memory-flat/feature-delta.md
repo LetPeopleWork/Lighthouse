@@ -599,3 +599,124 @@ Strategy stays `per-feature`, Stryker.NET, kill rate >= 80%, once at the end on 
 3. Full Integration suite on the Program.cs push: announce it.
 4. Case B must resolve the `IOAuthProvider`s and see no client taken; D1b (short handler lifetime in `TestWebApplicationFactory`) bounds hosts that really use a client.
 5. Mutation last, after the payoff measurement, on frozen code; any edit after it shifts the survivors.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+Reconciliation passed -- 0 contradictions. DISCUSS is covered at Epic level. DESIGN and DEVOPS agree on every point that matters
+here: guard shape (D3), the maintainer decision (option 1, the endpoint limiter is disposed through a container-owned owner, step 3b
+no longer gated on the spike), the fail-loud startup, and an unchanged `ci_backend.yml`. DESIGN's open questions are settled below
+(Q1 route, Q5 the one `new` in `OAuthServiceTest`); Q2 (handler lifetime seconds) and Q3 (polling limit on CI) stay with DELIVER.
+Maintainer AFK: the recommended option was taken for every choice. UI sketch review: N/A, because there is no UI.
+
+## Wave: DISTILL / [REF] Scenario list
+
+Classification lives here only; none of it is written into the code (project rule). Test names in the file are plain language.
+
+| # | Scenario | Class | Where | Status in file |
+|---|---|---|---|---|
+| 1 | A host that served a request is freed once disposed (guard case A) | guard, error-shaped (the leak) | `Architecture/TestHostIsReleasedAfterDisposeTest.AHostThatServedARequestIsFreedOnceDisposed` | `[Ignore]` until the fix lands |
+| 2 | A host that resolved every OAuth provider is freed once disposed (guard case B) | guard, error-shaped | `...AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed` | `[Ignore]` until the fix lands |
+| 3 | Startup fails loudly when the framework's rate-limiting internals are missing | error, boundary | DELIVER writes it with the owner (see below); no scaffold | not in file |
+| 4 | Behaviour preserved: rate limiting still on, same rules | preservation | existing `Slice11CastAVoteScenarios.A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down`, `UsageDataEventCeilingTests.OneAddressInventingANewBrowserEachTime_IsStillBounded`, `S6_RateLimitingTests`, `UsageDataConsentRateLimitTests` | existing, green, unchanged |
+| 5 | Behaviour preserved: OAuth token exchange, refresh, errors | preservation | existing `JiraOAuthProviderTest`, `AdoOAuthProviderTest`, `OAuthServiceTest` (incl. refresh through a real identity provider), OAuth controller and registry tests | existing, arrange-only edit |
+
+Counts: 2 new tests (both guard, both about a failure shape), 1 described, 2 preservation groups. Walking skeleton: N/A, because nothing a
+user does changes; the guard is the end-to-end proof through the real composition root (the production `Program` via the test host).
+Driven adapters: none new with real I/O. The guard uses the real host, the real timers and the real container; nothing is faked.
+
+Guard design notes (all from the spike): a warm-up host is built and dropped first (the first host of every process is pinned by shared
+one-shot timers); the host is created in a synchronous `[MethodImpl(NoInlining)]` method that returns only a `WeakReference` (an async
+method's hoisted local keeps the host alive); one request to `/api/latest/zz-nothing-here` (a 404 that still passes the rate-limit
+middleware, which answers DESIGN Q1) builds the limiters; then `GC.Collect`, `WaitForPendingFinalizers`, `GC.Collect` polled for up to 15 s.
+`GC.Collect` needs a narrow `S1215` pragma with its reason (the build promotes it to an error).
+
+## Wave: DISTILL / [REF] Acceptance criteria (Given / When / Then)
+
+Driving port for all of them: the production `Program` composition root, entered through `TestWebApplicationFactory<Program>` (the
+Architecture of Reference's driving adapter for this project: a real test host). Contract shape of the guard: unbounded-preservation
+in spirit (the whole host must be releasable), so the assertion is on the host object itself, not on a chosen field.
+
+1. **Case A.** Given a test host that has served one request (so the rate limiters exist) and never asked the client factory for a client;
+   when the host is disposed and every reference to it is dropped; then, within 15 seconds of full collections, the host can no longer be
+   reached (its weak reference is dead). Via the test host.
+2. **Case B.** Given a test host that has additionally resolved every `IOAuthProvider`; when it is disposed and dropped; then, within 15 s,
+   it is gone. A provider that holds a factory client makes this fail. Via the test host.
+3. **Fail loud.** Given a framework whose rate-limiting middleware lacks the expected type, constructor, `Invoke` method or `_endpointLimiter`
+   field; when the application starts; then startup fails with a message that names the missing member and says to re-read the framework
+   source after a .NET upgrade, and rate limiting is never silently skipped. Via the application start (every host test).
+4. **Rate limiting unchanged.** Given the voting and usage-data scenarios that exceed their limits; when a caller exceeds the limit; then
+   the caller is told to slow down exactly as before. Via HTTP, in the existing tests.
+5. **OAuth unchanged.** Given the same token endpoint answers; when a token is exchanged or refreshed; then the same request goes out and the
+   same result or error comes back. Via `IOAuthProvider` and `OAuthService`, in the existing tests.
+
+## Wave: DISTILL / [REF] Brief-AC traceability
+
+| Brief AC | Scenario(s) |
+|---|---|
+| AC1 the retention root(s) are named | Delivered by DESIGN (retention roots section); guard 1 and 2 pin the two roots (endpoint and global limiter timers; a singleton holding a factory client) so they cannot return silently |
+| AC2 peak memory falls and the shape is flat | **Owned by the lead's measurement** (DEVOPS payoff protocol, target under 3 GB flat, fallback under 4.5 GB). No test asserts a memory ceiling (rejected in DESIGN). Guards 1 and 2 are its structural cause-check |
+| AC3 behaviour-free; a guard stops it coming back | Scenarios 4 and 5 (behaviour unchanged), 1 and 2 (the guard), 3 (loud failure on drift) |
+
+## Wave: DISTILL / [REF] Test placement and scaffolds
+
+- Placement: `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostIsReleasedAfterDisposeTest.cs`. Precedent: the other
+  guard fixtures there (`PostgresContainerSharingGuardTest`, `PublishOutputOutsideProjectGuardTest`, `BackendTestParallelizationGuardTest`).
+- Allowlist: `BackendTestParallelizationGuardTest.AllowedSerialFixtures` gained `TestHostIsReleasedAfterDisposeTest` with a plain-language reason.
+  Both parallelization-guard tests stay green (run: 2 passed, 2 skipped with the new fixture).
+- Scaffold pattern: no production stub is needed (the guard compiles against code that exists). The tests carry
+  `[Ignore("Enabled when the test-host leak fix lands")]`, following NUnit's own mechanism (the project has `[Ignore(...)]` precedent in
+  `Story6055ActivityNamesTheWorkScenarios`). No `__SCAFFOLD__` marker applies; DELIVER removes the two `[Ignore]` lines.
+- DELIVER order (from DESIGN): the `[Ignore]`s come off in the same commit that turns each case green: case B with step 2 (D1, D1b), case A with
+  step 3b (the owner and the middleware seam). Remove `[Ignore]` on A and B only when the fix for it is in; the build stays green throughout.
+- Fail-loud startup scenario (3), not scaffolded because it needs the owner type, which does not exist yet and a stub that does not compile
+  is not allowed. DELIVER writes, with the owner class, one test per missing member, each as a plain unit test on the owner's lookup (give
+  the lookup the assembly or a type to inspect, so a test can hand it a type lacking the constructor, `Invoke` or `_endpointLimiter`, and
+  assert the exception message names that member and mentions the .NET upgrade). These tests also serve the mutation run on the owner.
+
+## Wave: DISTILL / [REF] Arrange-only edits when the provider constructors take `IHttpClientFactory`
+
+Assertions stay untouched; only where the client comes from changes. Each place builds its provider with `new XOAuthProvider(new HttpClient(handler), timeProvider, logger)`:
+
+| File | Line (today) | Edit |
+|---|---|---|
+| `Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs` | `CreateProvider`, 223-228 | Build a `Mock<IHttpClientFactory>`; `Setup(f => f.CreateClient(JiraOAuthProvider.HttpClientName)).Returns(() => new HttpClient(handler))`; pass `factory.Object`. A function returning a fresh client (not a shared instance) mirrors the per-request ask and avoids a client disposed by a previous `using`. |
+| `Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs` | `CreateProvider`, 291-296 | Same with `AdoOAuthProvider.HttpClientName`. |
+| `Services/Implementation/OAuth/OAuthServiceTest.cs` | `ArrangeRefreshThroughARealIdentityProvider`, 796-807 | Same, around `new HttpClient(identityProvider)`; this is the one `new JiraOAuthProvider` (DESIGN Q5: yes, one). The `RequestCountingHandler` assertions stay. |
+
+If the tests call the provider's `HttpClientName` constant, it is already public on each class. Do not add a shared helper (DESIGN reuse analysis).
+
+## Wave: DISTILL / [REF] RED classification (run 2026-11-01)
+
+Run: both `[Ignore]`s removed temporarily, `dotnet build` (0 warnings), `dotnet test --no-build --filter "FullyQualifiedName~TestHostIsReleasedAfterDisposeTest"`, then the `[Ignore]`s restored.
+
+| Scenario | Result | Classification |
+|---|---|---|
+| Case A | `Failed AHostThatServedARequestIsFreedOnceDisposed [15 s]` ... `Assert.That(WaitUntilFreed(host), Is.True)  Expected: True  But was: False` | MISSING_FUNCTIONALITY (correct RED): the assertion fires on a live weak reference after 15 s of collections; no import, setup or compile error |
+| Case B | `Failed AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed [15 s]` ... same assertion, `Expected: True  But was: False` | MISSING_FUNCTIONALITY (correct RED) |
+| Fail-loud startup | not in file | Not applicable until the owner exists |
+| Preservation (4, 5) | green today | Existing tests; they must stay green, the OAuth ones need the arrange edit above when the constructors change |
+
+Honest limit: a live reference at 15 s is the same signal for "still pinned by a timer" and for "pinned by something new", so the message names the two
+known causes and the fix section of DESIGN names how to walk the timers if a third appears.
+
+## Wave: DISTILL / [REF] Driving-port coverage
+
+| Driving port | Coverage |
+|---|---|
+| Application start via `TestWebApplicationFactory<Program>` | Guard cases A and B (disposal), and scenario 3 (startup failure) |
+| HTTP rate-limited routes | Existing rate-limit tests (scenario 4) |
+| `IOAuthProvider` / `OAuthService` | Existing OAuth tests (scenario 5) |
+
+## Wave: DISTILL / [REF] Definition of Ready (DISTILL)
+
+| Item | Status | Evidence |
+|---|---|---|
+| Reconciliation, 0 contradictions | PASS | above |
+| Every brief AC maps to a scenario or an owner | PASS | traceability; AC2 owned by the lead |
+| Error-path share | PASS | both new tests are leak (failure-shape) guards; fail-loud described |
+| Test placement with precedent | PASS | Architecture/ guard fixtures |
+| Scaffolds green at hand-off | PASS | build 0 warnings; fixture ignored; parallelization guard 2 passed |
+| RED classified as the right reason | PASS | both cases fail on the live reference, run printed above |
+| Arrange-only edits listed | PASS | table above |
+| No scenario tags, no internal refs in code | PASS | checked in the new file |
+| Open for DELIVER | NOTE | handler lifetime seconds (Q2); polling limit on CI (Q3); `-c Release` run of the guard once; fail-loud tests with the owner |
