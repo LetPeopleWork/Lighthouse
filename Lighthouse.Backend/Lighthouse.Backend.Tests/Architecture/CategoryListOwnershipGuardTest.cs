@@ -19,7 +19,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [
             "Models/WorkTrackingSystemOptionsOwner.cs",
             "Models/IWorkItemQueryOwner.cs",
-            "API/Helpers/CycleTimeDefinitionValidator.cs",
             "Services/Implementation/Refinement/RefinementList.cs",
             "Services/Implementation/BaseMetricsService.cs",
             "Services/Implementation/TeamMetricsService.cs",
@@ -36,9 +35,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // Builds the demo Teams and Portfolios with lists of plain states and no mappings, so there is nothing to normalise.
             "Factories/DemoDataFactory.cs",
-
-            // Builds a throwaway Team from a payload to ask the owner whether a cycle time boundary is valid; it is never stored.
-            "API/Helpers/CycleTimeDefinitionValidator.cs",
 
             // Fills a board description handed back to the settings page (not an owner) with the states it found.
             "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",

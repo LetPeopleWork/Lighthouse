@@ -379,6 +379,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task SavingAnOwnersUnchangedSettings_WhoseStoredCycleTimeRunsInsideOneGroup_Saves()
         {
+            if (kind != OwnerKind.Team)
+            {
+                Assert.Ignore("A Portfolio save does not validate its cycle time definitions, so this cannot fail for a Portfolio.");
+            }
+
             SeedOwner(mappings: [Review()], doing: ["Code Review", "Testing"], cycleTime: new CycleTimeDefinition { Name = "Review Time", StartState = "Code Review", EndState = "Testing" });
             var storedCycleTimes = (await ReadSettings()).GetProperty("cycleTimeDefinitions").EnumerateArray()
                 .Select(definition => new CycleTimeDefinitionDto

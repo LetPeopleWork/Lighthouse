@@ -165,7 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         {
             var settings = Settings(["Backlog"], ["Code Review", "Testing"], ["Done"], Mapping("Review", "Code Review"), Mapping("REVIEW", "Testing"));
 
-            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Duplicate state mapping name 'Review'."));
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Exactly(1).EqualTo("Duplicate state mapping name 'Review'."));
         }
 
         [Test]
