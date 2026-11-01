@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	LOCAL_WORKER_FRACTION,
 	resolveTestWorkers,
@@ -8,20 +8,20 @@ import {
 const localCores = 12;
 
 describe("resolveTestWorkers", () => {
-	it("is importable and pins the agreed fraction and variable name", () => {
+	it("gives a local run half of the cores and reads its override from LIGHTHOUSE_TEST_WORKERS", () => {
 		expect(LOCAL_WORKER_FRACTION).toBe(0.5);
 		expect(TEST_WORKERS_VARIABLE).toBe("LIGHTHOUSE_TEST_WORKERS");
 	});
 
 	describe("on a developer machine", () => {
-		it("uses the share of cores when nothing is set", () => {
-			expect(resolveTestWorkers({}, localCores)).toBe(6);
-		});
-
-		it("treats an empty count as not set", () => {
-			expect(
-				resolveTestWorkers({ LIGHTHOUSE_TEST_WORKERS: "" }, localCores),
-			).toBe(6);
+		it.each([
+			["nothing is set", {}],
+			["the count is empty", { LIGHTHOUSE_TEST_WORKERS: "" }],
+			["CI is false", { CI: "false" }],
+			["CI is empty", { CI: "" }],
+			["CI is some other value", { CI: "1" }],
+		])("uses the share of cores when %s", (_name, env) => {
+			expect(resolveTestWorkers(env, localCores)).toBe(6);
 		});
 
 		it.each([
@@ -32,14 +32,6 @@ describe("resolveTestWorkers", () => {
 			expect(
 				resolveTestWorkers({ LIGHTHOUSE_TEST_WORKERS: value }, localCores),
 			).toBe(expected);
-		});
-
-		it.each([
-			["CI is false", { CI: "false" }],
-			["CI is empty", { CI: "" }],
-			["CI is some other value", { CI: "1" }],
-		])("still caps the workers when %s", (_name, env) => {
-			expect(resolveTestWorkers(env, localCores)).toBe(6);
 		});
 
 		it.each([
@@ -64,36 +56,28 @@ describe("resolveTestWorkers", () => {
 	});
 
 	describe("on the build server", () => {
-		it("leaves the worker count to the test runner when nothing is set", () => {
-			expect(resolveTestWorkers({ CI: "true" }, 4)).toBeUndefined();
-		});
+		it.each([
+			["nothing is set", { CI: "true" }, 4],
+			["CI is written as TRUE", { CI: "TRUE" }, 4],
+			["CI is written as True", { CI: "True" }, 4],
+			["the count is empty", { CI: "true", LIGHTHOUSE_TEST_WORKERS: "" }, 4],
+			["there is one core", { CI: "true" }, 1],
+			["there are 64 cores", { CI: "true" }, 64],
+		])(
+			"leaves the worker count to the test runner when %s",
+			(_name, env, cores) => {
+				expect(resolveTestWorkers(env, cores)).toBeUndefined();
+			},
+		);
 
-		it.each([["TRUE"], ["True"]])("recognises CI written as %s", (ci) => {
-			expect(resolveTestWorkers({ CI: ci }, 4)).toBeUndefined();
-		});
-
-		it("treats an empty count as not set", () => {
-			expect(
-				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "" }, 4),
-			).toBeUndefined();
-		});
-
-		it("leaves the worker count to the test runner whatever the core count", () => {
-			expect(resolveTestWorkers({ CI: "true" }, 1)).toBeUndefined();
-			expect(resolveTestWorkers({ CI: "true" }, 64)).toBeUndefined();
-		});
-
-		it("lets an explicit count win", () => {
-			expect(
-				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "2" }, 4),
-			).toBe(2);
-		});
-
-		it("lets an explicit count win when CI is written as TRUE", () => {
-			expect(
-				resolveTestWorkers({ CI: "TRUE", LIGHTHOUSE_TEST_WORKERS: "2" }, 4),
-			).toBe(2);
-		});
+		it.each([["true"], ["TRUE"]])(
+			"lets an explicit count win when CI is written as %s",
+			(ci) => {
+				expect(
+					resolveTestWorkers({ CI: ci, LIGHTHOUSE_TEST_WORKERS: "2" }, 4),
+				).toBe(2);
+			},
+		);
 	});
 
 	describe("with an invalid count", () => {
@@ -111,12 +95,41 @@ describe("resolveTestWorkers", () => {
 			expect(() =>
 				resolveTestWorkers({ LIGHTHOUSE_TEST_WORKERS: value }, localCores),
 			).toThrow(/LIGHTHOUSE_TEST_WORKERS/);
-		});
-
-		it("rejects an invalid count on the build server too", () => {
 			expect(() =>
-				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "0" }, 4),
+				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: value }, 4),
 			).toThrow(/LIGHTHOUSE_TEST_WORKERS/);
 		});
+	});
+
+	describe("in the vitest configuration", () => {
+		afterEach(() => {
+			vi.unstubAllEnvs();
+			vi.resetModules();
+		});
+
+		it.each([
+			["an explicit count is set", { LIGHTHOUSE_TEST_WORKERS: "3", CI: "" }, 3],
+			[
+				"CI is set and nothing else",
+				{ LIGHTHOUSE_TEST_WORKERS: "", CI: "true" },
+				undefined,
+			],
+		])(
+			"applies the resolved worker count when %s",
+			async (_name, env, expected) => {
+				vi.resetModules();
+				for (const [key, value] of Object.entries(env)) {
+					vi.stubEnv(key, value);
+				}
+
+				// The config sits outside the app tsconfig, so it is imported by a computed path.
+				const configPath = "../../vitest.config.ts";
+				const config: { test?: { maxWorkers?: number } } = (
+					await import(/* @vite-ignore */ configPath)
+				).default;
+
+				expect(config.test?.maxWorkers).toBe(expected);
+			},
+		);
 	});
 });
