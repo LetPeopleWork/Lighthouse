@@ -194,7 +194,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         /// save either refreshes for nothing or leaves every owner on the connection serving stale fields.
         /// </summary>
         [TestCaseSource(nameof(EveryEditToTheConnectionsFields))]
-        [Category("contract-shape:pure-function")]
         public void ForConnection_AnEditToTheConnectionsFields_MovesExactlyWhenItShapesAFetch_AndTheWholeFingerprintMovesWithIt(
             string edit, bool shapesAFetch, Action<WorkTrackingSystemConnection> anOperatorEdit)
         {
@@ -220,7 +219,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         /// so two separately built but identical connections must answer the same.
         /// </summary>
         [Test]
-        [Category("contract-shape:pure-function")]
         public void ForConnection_TwoSeparatelyBuiltButIdenticalConnections_AnswerTheSame()
         {
             Assert.That(
@@ -229,7 +227,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        [Category("contract-shape:pure-function")]
         public void ForConnection_AConnectionThatWasNotLoaded_StillAnswers_AndDifferentlyFromALoadedOne()
         {
             var notLoaded = FetchFingerprint.ForConnection(null);
@@ -242,7 +239,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         [Test]
-        [Category("contract-shape:pure-function")]
         public void ForConnection_LeavesTheConnectionAsItFoundIt()
         {
             var connection = APortfolio(everyCollectionReversed: true).WorkTrackingSystemConnection;
