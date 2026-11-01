@@ -290,9 +290,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
 
         private static AdoOAuthProvider CreateProvider(HttpMessageHandler handler)
         {
-            var httpClient = new HttpClient(handler);
+            var httpClientFactory = new Mock<IHttpClientFactory>();
+            httpClientFactory
+                .Setup(f => f.CreateClient(AdoOAuthProvider.HttpClientName))
+                .Returns(() => new HttpClient(handler, disposeHandler: false));
             var timeProvider = new FakeTimeProvider(FixedNow);
-            return new AdoOAuthProvider(httpClient, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<AdoOAuthProvider>.Instance);
+            return new AdoOAuthProvider(httpClientFactory.Object, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<AdoOAuthProvider>.Instance);
         }
 
         private static HttpMessageHandler CreateHandler(

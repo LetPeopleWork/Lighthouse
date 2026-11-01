@@ -1525,21 +1525,8 @@ namespace Lighthouse.Backend
 
             if (!stubModeEnabled)
             {
-                builder.Services.AddSingleton<IOAuthProvider>(sp =>
-                {
-                    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                    var timeProvider = sp.GetRequiredService<TimeProvider>();
-                    var providerLogger = sp.GetRequiredService<ILogger<JiraOAuthProvider>>();
-                    return new JiraOAuthProvider(httpClientFactory.CreateClient(JiraOAuthProvider.HttpClientName), timeProvider, providerLogger);
-                });
-
-                builder.Services.AddSingleton<IOAuthProvider>(sp =>
-                {
-                    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
-                    var timeProvider = sp.GetRequiredService<TimeProvider>();
-                    var providerLogger = sp.GetRequiredService<ILogger<AdoOAuthProvider>>();
-                    return new AdoOAuthProvider(httpClientFactory.CreateClient(AdoOAuthProvider.HttpClientName), timeProvider, providerLogger);
-                });
+                builder.Services.AddSingleton<IOAuthProvider, JiraOAuthProvider>();
+                builder.Services.AddSingleton<IOAuthProvider, AdoOAuthProvider>();
             }
 
             RegisterStubOAuthProviderIfEnabled(builder);

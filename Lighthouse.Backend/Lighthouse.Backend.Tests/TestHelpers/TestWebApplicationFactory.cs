@@ -11,6 +11,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Time.Testing;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
@@ -126,6 +127,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             builder.ConfigureServices(services =>
             {
                 RemoveServices(services);
+
+                // A host that used an HTTP client stays reachable until the handler lifetime plus the
+                // factory's fixed 10 s cleanup tick. No test relies on connection reuse, so keep it short.
+                services.ConfigureAll<HttpClientFactoryOptions>(options => options.HandlerLifetime = TimeSpan.FromSeconds(1));
 
                 services.RemoveAll<TimeProvider>();
                 services.AddSingleton<TimeProvider>(new FakeTimeProvider(TestToday.FrozenNow));

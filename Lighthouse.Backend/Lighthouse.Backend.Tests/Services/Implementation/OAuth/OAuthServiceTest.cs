@@ -802,9 +802,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
                 AStoredValueTheInstanceCanRead(PlaintextClientSecret);
             connectionRepositoryMock.Setup(r => r.GetById(ConnectionId)).Returns(connection);
 
+            var httpClientFactory = new Mock<IHttpClientFactory>();
+            httpClientFactory
+                .Setup(f => f.CreateClient(JiraOAuthProvider.HttpClientName))
+                .Returns(() => new HttpClient(identityProvider, disposeHandler: false));
+
             providerRegistryMock
                 .Setup(r => r.GetByKey(ProviderKey))
-                .Returns(new JiraOAuthProvider(new HttpClient(identityProvider), timeProvider, NullLogger<JiraOAuthProvider>.Instance));
+                .Returns(new JiraOAuthProvider(httpClientFactory.Object, timeProvider, NullLogger<JiraOAuthProvider>.Instance));
 
             var credential = new OAuthCredential
             {

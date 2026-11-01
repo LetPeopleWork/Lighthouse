@@ -31,13 +31,13 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         };
 
-        private readonly HttpClient httpClient;
+        private readonly IHttpClientFactory httpClientFactory;
         private readonly TimeProvider timeProvider;
         private readonly ILogger<AdoOAuthProvider> logger;
 
-        public AdoOAuthProvider(HttpClient httpClient, TimeProvider timeProvider, ILogger<AdoOAuthProvider> logger)
+        public AdoOAuthProvider(IHttpClientFactory httpClientFactory, TimeProvider timeProvider, ILogger<AdoOAuthProvider> logger)
         {
-            this.httpClient = httpClient;
+            this.httpClientFactory = httpClientFactory;
             this.timeProvider = timeProvider;
             this.logger = logger;
         }
@@ -112,6 +112,7 @@ namespace Lighthouse.Backend.Services.Implementation.OAuth.Providers
             CancellationToken cancellationToken)
         {
             using var content = new FormUrlEncodedContent(formParameters);
+            var httpClient = httpClientFactory.CreateClient(HttpClientName);
             using var response = await httpClient.PostAsync(tokenEndpoint, content, cancellationToken);
 
             var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);

@@ -222,9 +222,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth.Providers
 
         private JiraOAuthProvider CreateProvider(HttpMessageHandler handler)
         {
-            var httpClient = new HttpClient(handler);
+            var httpClientFactory = new Mock<IHttpClientFactory>();
+            httpClientFactory
+                .Setup(f => f.CreateClient(JiraOAuthProvider.HttpClientName))
+                .Returns(() => new HttpClient(handler, disposeHandler: false));
             var timeProvider = new FakeTimeProvider(FixedNow);
-            return new JiraOAuthProvider(httpClient, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<JiraOAuthProvider>.Instance);
+            return new JiraOAuthProvider(httpClientFactory.Object, timeProvider, Microsoft.Extensions.Logging.Abstractions.NullLogger<JiraOAuthProvider>.Instance);
         }
 
         private static HttpMessageHandler CreateHandler(
