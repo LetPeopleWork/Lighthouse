@@ -2,10 +2,16 @@
 
 Epic #6264 · ADO #6461 · `@infrastructure` · job_id: infrastructure-only · **Size S**
 
+- infrastructure_rationale: Vitest (11 thread workers) and NUnit (one fixture worker per core) are uncapped, and every parallel session adds a full set. The compiler server stays resident at about 5.3 GB.
+
+> Revised 2026-11-01 at DESIGN of #6461: AC1 re-scoped. CI keeps each tool's own default (nothing is configured)
+> instead of an explicit "full count", and the evidence is the resolver's unit tests plus `dotnet msbuild -getProperty`
+> output, not a worker count in the logs (Vitest prints none).
+
 ## Goal
 
 A local test run leaves room for the parallel sessions on the same machine. Worker counts have a sensible local
-default and can be overridden, and CI keeps using the whole runner.
+default and can be overridden, and CI keeps each tool's own default.
 
 ## Why
 
@@ -19,13 +25,15 @@ default and can be overridden, and CI keeps using the whole runner.
 ## IN
 
 - One environment variable read by both stacks, for example `LIGHTHOUSE_TEST_WORKERS`, with a local default of
-  about half the cores. When `CI` is set, the full count is used.
+  about half the cores. When `CI` is set and no explicit value is given, nothing is configured, so CI keeps each tool's default.
   - Vitest: `maxWorkers` in `vitest.config.ts`.
-  - NUnit: runsettings `NumberOfTestWorkers`, or an assembly-level `LevelOfParallelism` read from the variable.
-- Measure wall time and peak memory per stack at the full count and at the default, on the same machine, and pick
-  the default from the data.
-- Document the variable and `dotnet build-server shutdown` (which releases the compiler server) in `/run-dev` or
-  CLAUDE.md's quality-gates section.
+  - NUnit: the `VSTestCLIRunSettings` MSBuild property in the test project, built from the variable and `CI`
+    (a runsettings file cannot read an environment variable and an assembly attribute cannot either; both were
+    rejected at DESIGN).
+- Measure wall time and peak memory per stack with each tool's own default (nothing set) and at the candidate
+  default, on the same machine, and pick the default from the data.
+- Document the variable and `dotnet build-server shutdown` (which releases the compiler server) in CLAUDE.md's
+  quality-gates section.
 - Remove the misleading "Reduce memory usage on CI" comment beside `bail: 1`.
 
 ## OUT
@@ -34,6 +42,6 @@ default and can be overridden, and CI keeps using the whole runner.
 
 ## Acceptance criteria
 
-- [ ] A local run uses the default and CI uses the full count, shown by the worker count in the logs.
+- [ ] A local run uses the local default and CI is unchanged (each tool's own default), shown by the resolver's unit tests and `dotnet msbuild -getProperty:VSTestCLIRunSettings` output; IDE NUnit runners are an accepted exception.
 - [ ] Wall time and peak memory recorded for both settings on both stacks.
 - [ ] The override is documented where a contributor looks first.

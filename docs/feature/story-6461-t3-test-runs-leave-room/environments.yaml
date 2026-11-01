@@ -6,9 +6,9 @@
 # Nothing deploys; the product is unchanged.
 
 target_environments:
-  - name: local-uncapped-default
+  - name: local-default
     description: >
-      A developer or agent session with no LIGHTHOUSE_TEST_WORKERS set and CI not 'true'. Frontend: testWorkers.ts
+      A developer or agent session with LIGHTHOUSE_TEST_WORKERS unset or empty and CI not 'true' (compared case-insensitively). Frontend: testWorkers.ts
       returns floor(cores * fraction), never below 1. Backend: the test csproj sets VSTestCLIRunSettings to
       NUnit.NumberOfTestWorkers=floor(cores * fraction). Fraction is a 0.5 placeholder until measured.
     platform: [linux, macos, windows]
@@ -16,8 +16,10 @@ target_environments:
       - "Linux reference machine: 12 cores, 31 GB; 6 workers at the 0.5 placeholder"
   - name: local-override
     description: >
-      LIGHTHOUSE_TEST_WORKERS=N set (any environment). N workers on both stacks; an explicit value wins, including
-      with CI=true. Invalid (not a positive integer) fails fast in the resolver; the NUnit side is checked in DELIVER.
+      LIGHTHOUSE_TEST_WORKERS=N set to a valid value, ^[1-9][0-9]*$ (any environment). N workers on both stacks, not clamped
+      to the core count; an explicit value wins, including with CI=true. Invalid fails fast: the frontend resolver throws and
+      the backend csproj fails with an MSBuild Error, both naming the variable. Empty means unset. On the frontend
+      VITEST_MAX_WORKERS and the CLI --maxWorkers override the cap.
     platform: [linux, macos, windows]
     preconditions:
       - "LIGHTHOUSE_TEST_WORKERS exported in the shell running pnpm test or dotnet test"
@@ -35,15 +37,18 @@ coexistence_matrix:
   - tool: ci_frontend.yml, ci_backend.yml
     must_not_break: true
     note: "Not edited. Worker counts and duration unchanged; evidence is the CI logs on the push versus preceding main runs"
-  - tool: Stryker.NET configs (own `concurrency` 2, 4 or 6)
+  - tool: Stryker.NET configs (own `concurrency`, values found 2, 4 and 6)
     must_not_break: true
     note: "Effect of VSTestCLIRunSettings on Stryker's VSTest runner is unverified; DELIVER dry-runs the smallest backend config before and after"
-  - tool: StrykerJS (46 vitest.stryker.* configs)
+  - tool: StrykerJS (98 vitest.stryker* configs under docs/feature/*/mutation/)
     must_not_break: true
-    note: "None imports vitest.config.ts, so they keep Vitest's default"
-  - tool: IDE test runners (Rider, Visual Studio, VS Code)
+    note: "None imports vitest.config.ts; each Stryker config selects its own via configFile, so they keep Vitest's default"
+  - tool: Backend IDE test runners (Rider, Visual Studio)
     must_not_break: true
-    note: "Stay uncapped; they do not evaluate VSTestCLIRunSettings. Documented in CLAUDE.md, not fixed"
+    note: "Stay uncapped; NUnit IDE runners do not evaluate VSTestCLIRunSettings. Documented in CLAUDE.md, not fixed"
+  - tool: Frontend IDE test runs (Vitest explorers)
+    must_not_break: true
+    note: "Load vitest.config.ts and are therefore capped by the resolver"
   - tool: TZ runsettings pin (lighthouse.runsettings)
     must_not_break: true
     note: "File untouched; TestHost_RunsUnderThePinnedInstanceTimeZone passed with the setting applied in DESIGN"
@@ -53,9 +58,15 @@ coexistence_matrix:
   - tool: Playwright (Lighthouse.EndToEndTests, workers 1)
     must_not_break: true
     note: "Out of scope and untouched"
-  - tool: Git hooks (lefthook)
+  - tool: Git hooks (.githooks/pre-commit, .githooks/pre-push; no lefthook config exists)
     must_not_break: true
     note: "Run no tests; the commits themselves verify Biome and the secret scan"
+  - tool: pnpm build
+    must_not_break: true
+    note: "tsc -b checks the new src/tests files; prebuild runs biome check --write ./src, which may rewrite them. DELIVER checks git status after the build"
+  - tool: dotnet build
+    must_not_break: true
+    note: "The csproj gains a property group and a validation target; must stay warning-free under TreatWarningsAsErrors"
   - tool: Git worktrees
     must_not_break: true
     note: "csproj and vitest.config.ts travel with the checkout; the variable is per shell"

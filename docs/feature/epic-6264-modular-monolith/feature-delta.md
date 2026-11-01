@@ -529,9 +529,11 @@ From the 2026-10-31 analysis of slow and memory-hungry test runs (`/nw-buddy`). 
 `@infrastructure` · job_id: infrastructure-only · **Size S** · Depends on: none · ADO #6461 · Brief: `slices/slice-43-t3-test-runs-leave-room.md`
 
 - infrastructure_rationale: Vitest (11 thread workers) and NUnit (one fixture worker per core) are uncapped, and every parallel session adds a full set. The compiler server stays resident at about 5.3 GB.
-- Elevator Pitch. **Before**: each `pnpm test` / `dotnet test` takes every core. **After**: a local run uses a measured default (one variable, for example `LIGHTHOUSE_TEST_WORKERS`) and CI uses the full runner. **Decision enabled**: immediate relief while T1 and T2 land.
+- Elevator Pitch. **Before**: each `pnpm test` / `dotnet test` takes every core. **After**: a local run uses a measured default (one variable, for example `LIGHTHOUSE_TEST_WORKERS`) and CI keeps each tool's own default. **Decision enabled**: immediate relief while T1 and T2 land.
 - AC:
+  - [ ] A local run uses the local default and CI is unchanged (each tool's own default), shown by the resolver's unit tests and `dotnet msbuild -getProperty:VSTestCLIRunSettings` output; IDE NUnit runners are an accepted exception.
   - [ ] Default chosen from measured wall time and peak memory at both settings; CI unchanged; documented.
+  - Revised 2026-11-01 at DESIGN of #6461: AC1 re-scoped from "CI uses the full count, shown by the worker count in the logs" (Vitest prints no worker count, and an explicit full count would change CI). When `CI` is set and no explicit value is given, nothing is configured, so CI keeps each tool's default.
 
 #### T4 — Test-time budgets fail the build instead of warning
 

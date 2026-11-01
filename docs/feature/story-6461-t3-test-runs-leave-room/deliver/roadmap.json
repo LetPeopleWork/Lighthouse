@@ -1,0 +1,117 @@
+{
+  "roadmap": {
+    "project_id": "story-6461-t3-test-runs-leave-room",
+    "created_at": "2026-11-01",
+    "total_steps": 3,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story 6461 (T3): a local test run no longer takes every core. One variable, LIGHTHOUSE_TEST_WORKERS, sets the worker count for both Vitest and NUnit; unset (or empty) on a developer machine caps both at a fraction of the cores (0.5 until measured), an explicit positive whole number wins everywhere, and under CI=true (any case) with nothing set neither tool is configured, so CI is byte-for-byte unchanged. An invalid value fails fast naming the variable. The payoff (wall time, peak memory, full versus half) is measured and recorded, and the docs say how to override the cap.",
+    "rigor": "standard (crafter sonnet, reviewer haiku), agreed with the maintainer at AFK entry 2026-11-01",
+    "preconditions": [
+      "P0 — owned by the lead session, not a crafter step: the 12-run measurement (full vs half workers, 3 alternating rounds, both stacks) completes before ANY step runs a build, test or Stryker dry run, and before run-all.sh is edited. Raw logs and results.csv are copied into docs/feature/story-6461-t3-test-runs-leave-room/measurement/results/ by the lead immediately when it ends. Validity rule (a): a non-zero exit is acceptable when it is caused by test failures whose count and names match between the settings of a round (the backend has 2 known local failures from a root-owned examples/postgres/data folder); a round is void if failure counts or test totals differ between its settings; round 1 frontend is flagged population-mismatched (testWorkers.test.ts appeared mid-run)."
+    ],
+    "review_resolutions": [
+      "N1: frontend round 1 is VOID under rule (a): its test totals differ between settings (full 8935 tests; half 8936 passed + 24 skipped, because testWorkers.test.ts appeared mid-run). Frontend medians use rounds 2 and 3; backend uses all rounds whose failure counts and totals match. Decided before rounds 2-3 results were read.",
+      "N2: the reproducible full arm is set per stack from the core count: frontend LIGHTHOUSE_TEST_WORKERS=$(( $(nproc) - 1 )) (Vitest default), backend LIGHTHOUSE_TEST_WORKERS=$(nproc) (NUnit default); separate invocations, derivation stated in the commit.",
+      "N3: owner of the run-all.sh edit is step 01-03 (crafter), after P0; the feature-delta protocol item (e) is read accordingly.",
+      "N4/N10: owner of the RED run is step 01-01 (crafter), after P0 and before editing testWorkers.ts: the live test \"is importable and pins the agreed fraction and variable name\" passes and every un-skipped test fails with Not yet implemented -- RED scaffold, none on an import or type error.",
+      "N5: the final mutation gate creates docs/feature/story-6461-t3-test-runs-leave-room/mutation/stryker-6461.frontend.json with mutate limited to src/tests/testWorkers.ts and a vitest config that runs only src/tests/testWorkers.test.ts (no full-suite runs per mutant).",
+      "N6: CI-unchanged evidence is a post-push check owned by the orchestrator (compare the CI test step worker behaviour and duration with preceding main runs); until a push, it rests on the 01-01 and 01-02 criteria (resolver returns undefined under CI; getProperty empty under CI).",
+      "N7: steps run serially: 01-01, then 01-02, then 01-03, in the main checkout.",
+      "N8/N9: feature-delta wording drift (call-site sentence, protocol command text, tolerance wording) is corrected by the lead in the DISTILL commit."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Local test worker cap on both stacks",
+      "description": "Single slice, three steps, profile standard. PRECONDITION P0 — owned by the lead session, not a crafter step: the 12-run measurement (full vs half workers, 3 alternating rounds, both stacks) completes before ANY step runs a build, test or Stryker dry run, and before run-all.sh is edited. Raw logs and results.csv are copied into docs/feature/story-6461-t3-test-runs-leave-room/measurement/results/ by the lead immediately when it ends. Validity rule (a): a non-zero exit is acceptable when it is caused by test failures whose count and names match between the settings of a round (the backend has 2 known local failures from a root-owned examples/postgres/data folder); a round is void if failure counts or test totals differ between its settings; round 1 frontend is flagged population-mismatched (testWorkers.test.ts appeared mid-run). Mutation is owned by the orchestrator's final quality gate (AFK mode: refactor -> review -> mutation, after all steps, on frozen code), not a TDD step: StrykerJS on Lighthouse.Frontend/src/tests/testWorkers.ts, kill rate >= 80%, survivors killed or justified, result recorded in feature-delta.md under '## Wave: DELIVER / [REF] Quality gates' and the run under docs/feature/story-6461-t3-test-runs-leave-room/mutation/; csproj N/A (declarative). Steps 01-01 and 01-02 are independent; 01-03 follows both and P0. No measurement or test run may overlap another timed run: the machine must be quiet. Commits are focused, each green on its own. Nothing is pushed. Comments rare, written for a stranger, no internal references (no story, decision, ADR or scenario ids). Git commands prefixed LEAN_CTX_DISABLED=1.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Frontend: resolve the Vitest worker count from LIGHTHOUSE_TEST_WORKERS",
+          "description": "Commit type: `chore(test-infra): cap local vitest workers, leave CI on the default`. Read docs/ci-learnings.md (frontend section) first and pre-apply its rules. Replace the RED scaffold in Lighthouse.Frontend/src/tests/testWorkers.ts with the real resolveTestWorkers(env, availableCores): an explicit value matching ^[1-9][0-9]*$ wins in every environment including CI and is not clamped to the core count; an empty variable counts as unset; CI means the CI variable equals 'true' case-insensitively; unset and CI returns undefined (the tool default); unset and local returns max(1, floor(cores * LOCAL_WORKER_FRACTION)); any other value throws an Error whose message names LIGHTHOUSE_TEST_WORKERS (with or without CI). No trimming, no leading plus, no percentage. Remove the __SCAFFOLD__ export. Un-skip every skipped test in testWorkers.test.ts (the first to un-skip is 'uses the share of cores when nothing is set'); do not change what the tests assert. Wire `maxWorkers: resolveTestWorkers(process.env, os.availableParallelism())` into Lighthouse.Frontend/vitest.config.ts (import availableParallelism from node:os) and delete the misleading 'Reduce memory usage on CI' comment beside `bail: 1`; keep `bail: 1` and the existing truthy `process.env.CI &&` block untouched. pool, isolate and fileParallelism stay as they are. Gates: `pnpm test` green (run the single file first, then the suite only when the machine is not being timed), `pnpm build` clean with zero warnings, then `git status` to catch Biome --write rewrites and keep them in the commit.",
+          "criteria": [
+            "Before the implementation, with the tests un-skipped against the scaffold, each fails with 'Not yet implemented -- RED scaffold' and none fails on an import or type error; the run is recorded in feature-delta.md under the DISTILL 'RED classification' section",
+            "With nothing set on a 12-core machine and no CI, the resolver returns 6; for 1, 2, 4, 7, 12 and 24 cores it returns 1, 1, 2, 3, 6 and 12, and for every core count from 1 to 128 the result is a whole number between 1 and the core count",
+            "An explicit LIGHTHOUSE_TEST_WORKERS of '1', '3' or '16' is returned as given locally (16 on 12 cores is not clamped); an explicit '2' wins under CI 'true' and 'TRUE'",
+            "An empty LIGHTHOUSE_TEST_WORKERS behaves exactly like an unset one, locally (capped) and on the build server (tool default)",
+            "With CI set to 'true', 'TRUE' or 'True' and nothing else set, the resolver returns undefined for any core count; with CI set to 'false', empty or '1' the local cap still applies",
+            "Each of '0', '-2', '1.5', 'abc', '50%', '4x', ' 4', '4 ' and '+4' makes the resolver throw an error whose message contains LIGHTHOUSE_TEST_WORKERS, locally and under CI",
+            "testWorkers.ts no longer exports __SCAFFOLD__, no test in testWorkers.test.ts is skipped, and the pin on LOCAL_WORKER_FRACTION (0.5) is still green",
+            "vitest.config.ts passes maxWorkers from the resolver, no longer contains the 'Reduce memory usage on CI' comment, and still contains `bail: 1`",
+            "`pnpm test` is green and `pnpm build` finishes with zero errors and zero warnings"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/testWorkers.test.ts",
+          "scenario_name": "DISTILL scenario list: developer machine uses the share of cores when nothing is set (first to un-skip), then explicit count, CI false/empty, cores table, invariant, build server (tool default), invalid count",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/testWorkers.ts",
+            "Lighthouse.Frontend/src/tests/testWorkers.test.ts",
+            "Lighthouse.Frontend/vitest.config.ts",
+            "docs/feature/story-6461-t3-test-runs-leave-room/feature-delta.md"
+          ],
+          "dependencies": [],
+          "implementation_notes": "files_to_modify is extended by any Biome --write rewrite, which the commit lists. Behaviour-free for CI: when CI is true and nothing is set the function must return undefined so Vitest keeps cores-1. The test expectations are literals, not a re-derivation of the formula; do not rewrite them. Vitest also reads VITEST_MAX_WORKERS and the CLI --maxWorkers, both of which beat the config; that is documented in 01-03, not coded. The StrykerJS run on testWorkers.ts happens in the orchestrator's final gate after all steps, not here. Never run the full suite while the timed measurement is running."
+        },
+        {
+          "id": "01-02",
+          "name": "Backend: cap NUnit workers through the test project and validate the variable",
+          "description": "Commit type: `chore(test-infra): cap local NUnit workers through the test project`. Read docs/ci-learnings.md (backend section) first. In Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj add a PropertyGroup, active when LIGHTHOUSE_TEST_WORKERS is non-empty or CI is not 'true', that sets VSTestCLIRunSettings to NUnit.NumberOfTestWorkers=<count>, where count is the variable or, when empty, max(1, floor(ProcessorCount * 0.5)); under CI=true with the variable unset the property stays unset. Add the ValidateTestWorkers check: a non-empty value not matching ^[1-9][0-9]*$ fails with an MSBuild Error whose text contains 'LIGHTHOUSE_TEST_WORKERS must be a positive whole number'. Prove the hook point fires on `dotnet test` both with and without --no-build; if BeforeTargets=VSTest does not fire in either case, use a check at property-evaluation time instead and say which hook was chosen in the evidence. A short plain-language comment says why (parallel sessions each taking every core; CI keeps the default; arguments after `dotnet test --` replace the property); no internal references. Evidence, pasted into feature-delta.md under a new `## Wave: DELIVER / [REF] Evidence step 01-02` section: all eight DISTILL backend acceptance cases run from Lighthouse.Backend/Lighthouse.Backend.Tests, plus extra cases: empty value under CI=true (empty output), CI=TRUE (case 6), and the invalid values abc, 0, -1, 1.5, ' 6', +6 and 50% each failing, plus one invalid value under CI=true failing too. Also in that section: a Stryker.NET dry run on the smallest existing backend stryker config (smallest by mutate scope, found under Lighthouse.Backend.Tests/stryker*.json) before and after the csproj change, showing that it is not altered (note that a `--` argument or Stryker's own concurrency setting may be what governs it); and the call-site check: grep `dotnet test` and `vitest` in .github and .githooks, plus every package.json script that runs vitest or dotnet test (including sonarreport, which CI runs with CI: true through .github/actions/build-frontend) and the .github workflows that call `pnpm (run )?(test|sonarreport)` (ci_verifysqlite.yml, ci_verifypostgres.yml, ci_verifyauth.yml), each call site recorded with its CI state. Gates: `dotnet build` zero warnings; run only `dotnet test --filter \"FullyQualifiedName~BackendTestParallelizationGuardTest|FullyQualifiedName~TestHost_RunsUnderThePinnedInstanceTimeZone\"` (never the unfiltered suite; the live-connector categories are excluded by the CLAUDE.md filter if a wider run is ever needed). Do not run builds or tests before P0 has finished or while any timed measurement is running.",
+          "criteria": [
+            "With neither CI nor LIGHTHOUSE_TEST_WORKERS set on a 12-core machine, `dotnet msbuild -getProperty:VSTestCLIRunSettings` prints NUnit.NumberOfTestWorkers=6; with LIGHTHOUSE_TEST_WORKERS= (empty) it prints the same",
+            "With CI=true or CI=TRUE and the variable unset or empty, the same command prints nothing (the property is not set)",
+            "With LIGHTHOUSE_TEST_WORKERS=4 it prints NUnit.NumberOfTestWorkers=4, and with CI=true and LIGHTHOUSE_TEST_WORKERS=2 it prints NUnit.NumberOfTestWorkers=2",
+            "`dotnet test` with LIGHTHOUSE_TEST_WORKERS set to abc, 0, -1, 1.5, ' 6', +6 or 50% exits non-zero, prints 'LIGHTHOUSE_TEST_WORKERS must be a positive whole number' and runs no test; the same holds with and without --no-build and with CI=true",
+            "The backend parallelization guard test and TestHost_RunsUnderThePinnedInstanceTimeZone pass with the cap applied, and `dotnet build` finishes with zero warnings",
+            "A Stryker.NET dry run on the smallest backend stryker config gives the same result before and after the change, or the difference is recorded with its cause",
+            "Every call site in .github, .githooks and package.json is listed with its CI state; each one that runs with CI unset is a local-only script",
+            "No file under .github, lighthouse.runsettings or GlobalUsings.cs is modified"
+          ],
+          "test_file": "n/a — command evidence (DESIGN D4/D-R6)",
+          "scenario_name": "DISTILL Backend acceptance check (step 01-02): cases 1-8 plus the extended invalid-value and CI cases",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj",
+            "docs/feature/story-6461-t3-test-runs-leave-room/feature-delta.md"
+          ],
+          "dependencies": [],
+          "implementation_notes": "A `--` argument becomes a global MSBuild property and replaces the csproj assignment, so both CI dotnet test steps (which pass -- RunConfiguration.MaxCpuCount=0) drop the cap on their own; the CI condition is a second guard. The proposed fragment is in the feature-delta DESIGN D3 and was verified in a scratch project; re-verify in the real project. MSBuild's string comparison is already case-insensitive. There is no backend unit test by design (a worker-id probe would be flaky and would test the framework). Mutation testing: N/A for declarative MSBuild. Because the CLI `--` argument replaces the property, the NUnit adapter setting can only be seen in a log with NUnit.Verbosity=5 set through the property itself; command output from getProperty is the accepted evidence."
+        },
+        {
+          "id": "01-03",
+          "name": "Measured fraction, docs and reproducible measurement script",
+          "description": "Depends on 01-01, 01-02 and P0 (the lead session's 12-run measurement, see roadmap preconditions); nothing below starts before P0 has ended and its raw logs and results.csv are in docs/feature/story-6461-t3-test-runs-leave-room/measurement/results/. Order and commits: (1) Results commit `docs(test-infra): record the local worker measurement`: check the results for secrets, then put a results table per stack in feature-delta.md under `## Wave: DELIVER / [REF] Measurement results` (setting, median wall time, median peak session RSS stated as an upper bound, minimum MemAvailable, failure count and test totals per round; frontend round 1 flagged as population-mismatched because the new test file appeared mid-run; backend's 2 known local failures noted), together with measurement/results/. Apply the pre-registered rule (keep 0.5 if half's median wall time is <= 1.25 x full's on each stack, otherwise 0.75 untested with a recorded follow-up) and state the decision. (2) Only if the decided fraction differs from 0.5: commit `chore(test-infra): set the measured local worker fraction`, which changes the LOCAL_WORKER_FRACTION constant in testWorkers.ts, the literals and the fraction pin in testWorkers.test.ts, AND the fraction in the csproj together, before the docs; then re-run the single test file and the getProperty cases. (3) Docs commit `docs(test-infra): document the local test worker cap and build-server shutdown`: CLAUDE.md, under Quality Gates, one short block that satisfies the feature-delta section '## Wave: DISTILL / [REF] Docs acceptance check (step 01-03)': names LIGHTHOUSE_TEST_WORKERS for both `pnpm test` and `dotnet test`; the rule (unset or empty and not CI gives the decided fraction of the cores, at least 1; unset under CI=true in any case gives the tool's own default so CI is unchanged; an explicit value wins everywhere); both override commands; VITEST_MAX_WORKERS and the CLI --maxWorkers override the cap on the frontend; arguments after `dotnet test --` replace it for that run; Vitest IDE runs are capped while NUnit IDE runners (Rider, Visual Studio) stay uncapped; the fraction lives in two places (the testWorkers.ts constant and the csproj) kept in step by hand; an invalid value fails fast on both stacks (frontend throws, backend prints 'LIGHTHOUSE_TEST_WORKERS must be a positive whole number'); `dotnet build-server shutdown` (releases the resident compiler server, the next build restarts it); the honest limit that the figure was measured in a single session on one machine; no story, decision or ADR ids. CLAUDE.md's fraction equals the code's in every commit state. (4) Run-all chore, done only after P0 and traced to the protocol follow-up (e) in DESIGN 'Protocol as run': commit `chore(test-infra): make the worker measurement reproducible after the leak fix` fixes docs/feature/story-6461-t3-test-runs-leave-room/measurement/run-all.sh so the full run is explicit (LIGHTHOUSE_TEST_WORKERS set to the tool default count: Vitest cores-1, NUnit cores) and OUT_DIR is made absolute, for the re-measurement after the testhost leak is fixed. It is not part of the docs commit. Do not run the full suites while any timed run is in progress.",
+          "criteria": [
+            "The feature-delta results section has one table per stack with setting, median wall time, median peak session RSS (marked as an upper bound), minimum MemAvailable, and per-round failure counts and test totals; frontend round 1 is flagged as population-mismatched",
+            "The feature-delta states which fraction the pre-registered rule selects and the evidence (half's median wall time against 1.25 x full's, per stack), and the measured limit (single session, one machine, load average not recorded) is stated in both the feature-delta and CLAUDE.md",
+            "docs/feature/story-6461-t3-test-runs-leave-room/measurement/results/ holds the raw logs and results.csv, committed in the results commit",
+            "If the selected fraction is not 0.5, testWorkers.ts, its test literals and pin, and the csproj carry the same new fraction in one separate chore commit made before the docs commit, and the single test file is green; otherwise no code file changes in this step",
+            "CLAUDE.md's Quality Gates section contains one block that ticks every item of '## Wave: DISTILL / [REF] Docs acceptance check (step 01-03)', uses the same fraction number as the code in every commit state, and contains no story, decision or ADR ids",
+            "run-all.sh sets the full run explicitly with LIGHTHOUSE_TEST_WORKERS at the tool default count and resolves OUT_DIR to an absolute path, still passes `bash -n`, and is changed in its own commit after P0, not in the docs commit",
+            "The four commits (results, fraction chore if any, docs, run-all chore) are separate and in that order"
+          ],
+          "test_file": "n/a (docs + measurement)",
+          "scenario_name": "DISTILL Docs acceptance check (step 01-03) and Acceptance criteria 6 (payoff recorded) and 7 (documented)",
+          "files_to_modify": [
+            "CLAUDE.md",
+            "docs/feature/story-6461-t3-test-runs-leave-room/feature-delta.md",
+            "docs/feature/story-6461-t3-test-runs-leave-room/measurement/run-all.sh",
+            "docs/feature/story-6461-t3-test-runs-leave-room/measurement/results/",
+            "Lighthouse.Frontend/src/tests/testWorkers.ts",
+            "Lighthouse.Frontend/src/tests/testWorkers.test.ts",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+          ],
+          "dependencies": [
+            "01-01",
+            "01-02"
+          ],
+          "implementation_notes": "Also depends on P0 (lead session, not a step). testWorkers.ts, testWorkers.test.ts and the csproj are touched only if the measured fraction is not 0.5. Peak RSS summed over a process tree double-counts shared pages (exact for Vitest, whose workers are threads), so call it an upper bound. Backend memory is dominated by the testhost leak (Epic T1); record the post-T1 re-measurement as a follow-up. Do not write release notes. Docs are written in plain language using the configurable terms where they apply (none are user-facing here)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "approved_by": "lead session after roadmap review revision 1 (conditionally_approved, 0 blockers) with resolutions above",
+    "date": "2026-11-01"
+  }
+}
