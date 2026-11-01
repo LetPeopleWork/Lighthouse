@@ -11051,8 +11051,9 @@ Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-270. Workspace:
 | Shape | Raw-only lists, mapping as derived view. Typed entries and a category flag rejected (ADR-270) |
 | Display columns | Read-only `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` on the settings DTO, computed in the owner |
 | Category lookup | Split in two: raw state (connectors) and display name (stored transitions, fixes the as-of `Unknown`) |
-| Write path | Mappings synced first; shadowing and chained mappings answer 400 naming the fix; legacy payloads normalised |
-| Data rewrite | Idempotent `ISeeder`, provider-neutral, members written at the old chip's index |
+| Entry classifier | One classifier on the owner (Models): (a) name is one of the mapping's own states, keep it and add missing members; (b) collapsed chip, no state of the mapping listed, replace by members in place, never a 400; (c) shadowing, name listed with a state of the mapping alongside, 400 on the write path, legacy expansion plus Warning in the seeder. Output holds a mapping name only under (a) |
+| Write path | Mappings synced first; `SyncStates` and the seeder are the only writers of the three lists and both call the classifier (architecture test); shadowing and chained mappings answer 400 naming the fix, with the copy the frontend already shows |
+| Data rewrite | Idempotent `ISeeder`, provider-neutral, members written at the old chip's index; saves per owner and detaches a failed owner; also runs after restore and clear |
 | Editor | Reconciliation deleted; removing a mapping chip from Doing is refused ("delete the mapping instead") |
 | Public API v1 | Same field types; `doingStates` now raw states; shadowing is a 400; documented break |
 

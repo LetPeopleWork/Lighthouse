@@ -41,20 +41,22 @@ Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping name
 | D1 | Shape | Raw-only lists; a mapping is a derived display grouping (ii-b) | One source of truth (`StateMapping.States`); deletes the reconciliation; no schema change |
 | D2 | Display columns in the DTO | Read-only `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates`, computed in the domain (`DisplayStatesFor`) | One implementation of the ordering rule for backend and UI |
 | D3 | Removing a mapping chip in Doing | Refused, with copy telling the user to delete the mapping instead | Removing members silently loses raw states and is hard to reverse |
-| D4 | Shadowing payload from an API client | 400 naming the fix | Today it silently loses a raw state; only API clients can send it |
+| D4 | Shadowing payload from an API client | 400 naming the fix. Shadowing means the entry equals a mapping's name, that name is not one of the mapping's own states, AND at least one of the mapping's states is listed alongside it in the same list. The message reuses the copy the frontend already shows (shipped with Bug 6454): `Mapping "{name}" has the same name as the {list label} state "{state}". Add "{name}" to this mapping to group it, or choose another name.` | Today it silently loses a raw state; only API clients can send it |
 | D5 | Data rewrite | Idempotent `ISeeder` (precedent `ApiKeyOwnerReconciliationSeeder`) | Provider-neutral; no marker needed; testable on both providers |
 | D6 | Group position | First member's index; the seeder writes members at the old chip's index | Existing aging-column order is preserved |
 | D7 | Stored chained mappings | Legacy one-level expansion plus a warning log; the next save reports the chain | Keeps today's meaning, no data loss on upgrade |
 | D8 | Frontend rules | Mirror of the backend rules against shared fixtures; names and states folded the same way on both sides | Closes the `ı`/`ſ`/U+0085 carry-over from part (b) |
 | D9 | As-of `Unknown` | Part of (a): failing probe first, fixed by splitting the category lookup into `CategoryOfRawState` and `CategoryOfDisplayName` | One method over two namespaces is the bug class this feature removes |
+| D10 | One entry classifier (DESIGN correction after review) | One classifier on the owner (Models), called by the write path, the validator and the seeder. For a list entry that equals a mapping's name: (a) the name is one of that mapping's own states: a raw state, kept, and the members not yet listed are added after it; (b) collapsed chip: no state of that mapping is listed anywhere in that list: replace the entry by the members, in place, never a 400; (c) shadowing: the name is listed and at least one of the mapping's states is listed alongside: 400 on the write path, legacy expansion plus a Warning in the seeder. The normaliser's output holds a mapping name only under (a) | The rca.md draft refused case (b), but (b) is the shape the current editor saves on every mapping edit; three documents gave three verdicts. One classifier removes the divergence and keeps services free of an API dependency |
+| D11 | Single write entry for the three lists | `SyncStates` in `TeamExtensions.cs` and `PortfolioExtensions.cs` (the create paths go through the same sync) and the seeder are the only code that assigns `ToDoStates`/`DoingStates`/`DoneStates`; both call the owner's normaliser. An architecture test pins it | A third writer would skip the classifier |
 
 ## Wave: DESIGN / [REF] Component decomposition
 
 | Component | Path (under `Lighthouse.Backend/Lighthouse.Backend/` unless noted) | Change |
 |---|---|---|
-| Owner model | `Models/WorkTrackingSystemOptionsOwner.cs` | Modified: `AllStates`/`OpenStates` read lists as-is; adds `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName`; `GetRawStatesForCategory` kept for mapped-name references only |
+| Owner model | `Models/WorkTrackingSystemOptionsOwner.cs` | Modified: `AllStates`/`OpenStates` read lists as-is; adds `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName` and the one entry classifier / normaliser (D10; the validator and the seeder call it, so no Services-to-API dependency); `GetRawStatesForCategory` kept for mapped-name references only |
 | Owner contract | `Models/IWorkItemQueryOwner.cs` | Modified: the category lookup split |
-| Settings sync | `API/Helpers/TeamExtensions.cs`, `PortfolioExtensions.cs` | Modified: mappings synced before lists; normalisation; refinement candidates from display states |
+| Settings sync | `API/Helpers/TeamExtensions.cs`, `PortfolioExtensions.cs` | Modified: `SyncStates` syncs mappings before lists and calls the owner's normaliser; refinement candidates from display states. `SyncStates` and the seeder are the only writers of the three lists (D11) |
 | Mapping validator | `API/Helpers/StateMappingValidator.cs` | Modified: sees the lists; shadowing and chain checks; category rules for changed mappings |
 | Cycle-time and refinement validators | `API/Helpers/CycleTimeDefinitionValidator.cs`, `RefinementSettingsValidator.cs` | Modified: draw boundaries from display states |
 | Settings DTO | `API/DTO/SettingsOwnerDtoBase.cs` | Modified: three read-only display lists |
@@ -75,8 +77,8 @@ Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping name
 ## Wave: DESIGN / [REF] Driving ports
 
 - Team and Portfolio settings read/write endpoints, `v1` and `latest` share one controller and DTO. Read
-  gains the three display lists and returns raw lists. Write returns 400 for shadowing and chained mappings,
-  and normalises legacy payloads. Read-only driving ports expose no write method.
+  gains the three display lists and returns raw lists. Write returns 400 for shadowing (D10 case c) and chained
+  mappings, and normalises everything else, collapsed chips included (D10 case b). Read-only driving ports expose no write method.
 - Suggestions endpoint: raw states only.
 - Metrics endpoints: unchanged in shape; ordering of Age-in-State and cumulative columns follows display states.
 
@@ -98,6 +100,7 @@ No new technology, library or tool. Existing stack only: C# .NET 10, EF Core, NU
 | Existing component | File | Overlap | Decision | Justification |
 |---|---|---|---|---|
 | `GetRawStatesForCategory` | `Models/WorkTrackingSystemOptionsOwner.cs` | Expands mapping names | EXTEND (narrow its callers) | Still correct for mapped-name references (wait, cycle-time, refinement) |
+| Owner's entry classifier / normaliser | same | The same name-to-members walk as `GetRawStatesForCategory` | EXTEND (shares that walk; adds the three-way classification of D10) | Lives in Models so the API validator and the Services seeder both call it with no Services-to-API dependency |
 | `MapRawStateToMappedName` | same | Raw to display name | EXTEND (reuse inside `DisplayStatesFor`) | The view is a single pass over it |
 | `MapStateToStateCategory` | same | Categorise a state | EXTEND (split) | Two namespaces need two names |
 | `StateMappingValidator` | `API/Helpers/` | Mapping rules | EXTEND | Add list-aware rules |
@@ -105,7 +108,7 @@ No new technology, library or tool. Existing stack only: C# .NET 10, EF Core, NU
 | `WidgetShell` status | frontend | Loading and failure look | REUSE | No new look |
 | `normalise` / `reconcileDoingStates` | `utils/stateMappingReconciliation.ts` | Fold and reconcile | DELETE reconcile; keep one shared fold | Reconciliation is the source of the bug |
 | `DisplayStatesFor` | owner | None existing computes the view | CREATE NEW | The one place the view is derived; no alternative |
-| List normaliser seeder | `Services/Implementation/Seeding/` | None | CREATE NEW | One-off data rewrite; no existing component rewrites list values |
+| List normaliser seeder | `Services/Implementation/Seeding/` | Follows the `ApiKeyOwnerReconciliationSeeder` precedent (same `ISeeder` pattern, per-owner skip-and-log) | CREATE NEW (class only) | The existing seeders reconcile other data; none rewrites list values, and extending one would mix concerns. It adds no logic of its own: it calls the owner's normaliser |
 
 Contract shapes: `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName` are pure functions of the owner.
 Settings sync is bounded-change (declared mutation set: the three lists and the mappings of the owner being saved).
@@ -129,7 +132,8 @@ The seeder is bounded-change (the three lists of each owner, nothing else). Driv
 
 - Regression probes P1 and P2 from `rca.md` section 1, committed as tests (P3, P4 are pinned by part (b)).
 - Failing probe for the as-of `Unknown` (Team :743, Portfolio :251) before the fix.
-- Property test: the expansion of the normalised list equals the expansion of the original; normalising twice changes nothing.
+- Property test: the expansion of the normalised list equals the expansion of the original; normalising twice changes nothing. The generator includes the collapsed chip (`[Analysis, Review]` with `Review = [Code Review, Testing]`, case b), the self-named mapping (case a), and the shadowing shape (case c, which the write path refuses and the seeder expands the legacy way).
+- Architecture test: only `SyncStates` (Team and Portfolio) and the list normaliser seeder assign `ToDoStates`, `DoingStates` or `DoneStates`.
 - Non-adjacent-member ordering test (group at the first member's index).
 - CSV demo-journey self-transition regression test.
 - Seeder tests on both providers: idempotence, shadowing rows, chained rows, V1-breaking rows left alone.
@@ -196,19 +200,28 @@ Doing and Done lists once, in C#, through the repositories.
 - **Idempotent.** A list that already holds raw states is returned unchanged and not saved, so a second start
   rewrites nothing and logs a zero summary. That zero is the idempotence signal.
 - **Logging.** Per owner rewritten: `Information`, owner type and id plus counts only. Per owner
-  legacy-expanded (shadowing row, D7) or chained: `Warning`, owner type and id plus the rule that fired. One
+  legacy-expanded (shadowing row, D10 case c) or chained (D7): `Warning`, owner type and id plus the rule that fired. One
   `Information` summary: owners scanned, rewritten, legacy-expanded, skipped. No owner names, no state names,
   no customer identifiers; matches `ApiKeyOwnerReconciliationSeeder`, which logs ids. Nothing is logged for
   an owner with no mapping.
 - **Failure mode: skip and log.** `SeedDatabase` has no try/catch, so an exception from any seeder aborts
-  startup; that is why the catch lives inside the seeder, per owner. A throwing owner is logged at `Warning`,
-  its tracked changes discarded, and the rest are still rewritten. A failed final `Save` is logged at
-  `Warning` and not rethrown. Why not abort: a row that breaks the new rules still works under the legacy
-  one-level expansion (D7), so booting is safe, while a refused startup is an outage for a self-hosted customer
-  with no operator able to fix a row. The next start retries. Cost: that owner keeps today's behaviour until
-  fixed, and its Warning is the only signal.
-- **Concurrency.** Two replicas starting together compute and write the same value; the chart ships
-  `replicaCount: 1`, so this is a note, not a risk.
+  startup; that is why the catch lives inside the seeder, per owner. A throwing owner is logged at `Warning`
+  and the rest are still rewritten. Why not abort: a refused startup is an outage for a self-hosted customer
+  with no operator able to fix a row. The next start retries.
+  **Correction after review:** the earlier text said a skipped row "still works under the legacy expansion". It
+  does not once reads are as-is (slice 4): an owner that keeps a collapsed list loses the grouped states from
+  its queries until it is repaired. The repair is an ordinary save of that owner's settings (the write path runs
+  the same normaliser; a collapsed chip is normalised, never refused, D10 case b) or the next start. The
+  Warning is the only signal; the maintainer declined a UI signal.
+- **Transactionality.** The seeder shares one scoped `DbContext`, so one owner's failure must not flush or lose
+  another's tracked changes. Save per owner (`SaveChanges` after each rewritten owner); when an owner's save
+  fails, detach that owner's entries before moving on. A failed save is logged at `Warning`, not rethrown.
+- **Other callers.** The seeder also runs in-process, not only at process start, after `RestoreBackup` and
+  `ClearDatabase` (`DatabaseManagementService.cs:116` and `:174`, `MigrateAndSeedDatabase`). A restored
+  pre-upgrade backup is therefore normalised on restore, and the same skip-and-log rules apply there.
+- **Concurrency.** Two replicas starting together compute and write the same value. The chart ships
+  `replicaCount: 1` by default, but allows more with Redis (`chart/templates/_helpers.tpl:236`) and the
+  Deployment has no `strategy` block, so a default rolling update overlaps old and new pods; see Q2.
 - **`HistoricalSchemaPatch`: N/A, because no column or table is added.** The `LighthouseAppContext` mapping
   and both migration projects are unchanged, so the `CreateMigration` rule is not triggered.
 
@@ -220,6 +233,14 @@ backend gives the same metrics. A row the seeder skipped was never touched. The 
 mapping edit, re-collapses members into the mapping name, which is today's behaviour and what the old backend
 expects. Nothing is persisted that the old version cannot read, so rollback is the artifact rollback (re-pin
 the image, `helm rollback`, previous standalone) and is atomic, because one artifact carries bundle and API.
+
+**Rolling-update overlap (correction after review).** The earlier text called the overlap harmless. The chart
+allows `replicaCount` above 1 with Redis (`chart/templates/_helpers.tpl:236`) and the Deployment has no
+`strategy` block, so a default rolling update runs old and new pods together. An old-version pod can save a
+settings page after the new pod has seeded and re-collapse a list. With the single classifier that list is
+repaired by the next save of that owner or the next start (a collapsed chip is normalised, never refused).
+It is not lost data, but it is a window in which grouped states drop out of the new pod's queries. Owed: a
+release-note line (listed under "Owed at finalize" in the slice notes).
 
 Owed: (1) a **release-note line**, written at `/release` (not at finalize): lists now hold raw states, a
 shadowing mapping payload is refused, and after a downgrade the old settings page may fold members into the
@@ -252,8 +273,8 @@ enum and `docs/settings/usagedata.md` is untouched.
   connector categories included. Expected, not a regression; a connector 429 there is not caused by this change.
 - **Workflows.** Code commits touch `Lighthouse.Backend/**` and `Lighthouse.Frontend/**`, so `ci.yml` fires:
   `ci_backend`, `ci_frontend`, `ci_e2e` (compile only), `ci_sonar_gates`, then `ci_verifysqlite` and
-  `ci_verifypostgres` (Playwright runs, twice). A docs-only commit starts no CI run, only `pages.yml` for
-  `docs/**`. No workflow file is edited.
+  `ci_verifypostgres` (Playwright runs, twice). A docs-only PUSH to main starts no CI run, only `pages.yml` for
+  `docs/**`; a docs-only `pull_request` does start `ci.yml` (`ci.yml:6`). No workflow file is edited.
 - **E2E touching the area.** Settings editor: `tests/models/common/BaseSettingsPage.ts` (`getDoingStates`
   reads the chips, which now show display states). API helpers `tests/helpers/api/teams.ts` and
   `portfolios.ts` send `doingStates: states.doing` (raw, still valid, no mapping sent). Aging widget:
@@ -276,7 +297,8 @@ DELIVER updates it when the DTO gains the three display lists (a deliberate appr
 
 No metric, dashboard or alert is added (telemetry is off by default, nothing is phoned home). The signal is
 the seeder's log, read by whoever runs the instance or by us on a support report:
-- the summary line on the first start after upgrade: owners scanned, rewritten, legacy-expanded, skipped;
+- the summary line on the first start after upgrade, and after every `RestoreBackup` or `ClearDatabase`
+  (`DatabaseManagementService.cs:116`, `:174`): owners scanned, rewritten, legacy-expanded, skipped;
 - a second start must report zero rewritten (idempotence);
 - any seeder `Warning` is a stored row that needs a look; the legacy-expanded and skipped counts are the
   numbers to ask a reporter for.
@@ -325,7 +347,7 @@ Trunk-based, push to `origin/main`. One focused commit per step; refactor commit
 
 | Tool or surface | Must not break | Note |
 |---|---|---|
-| Stored data from the previous release | yes | Seeder rewrites once; rows breaking the new rules keep working via D7 |
+| Stored data from the previous release | yes | Seeder rewrites once; shadowing and chained rows are legacy-expanded with a Warning (D10, D7); a skipped owner is repaired by a save or the next start |
 | Older settings page after a downgrade | yes | Re-collapses on next edit; release-note line |
 | `/api/v1` clients (CLI, MCP, scripts) | yes | Same field types; meaning change documented; shadowing is 400 |
 | Metrics, forecasts, snapshots | yes | Expansion-equality property test |
@@ -394,11 +416,18 @@ Points the review gate should look at (found while writing the tests; each took 
    database-level failure for that row, and the user's save then fails visibly instead of silently.
    Owed: a release-note line saying that an owner named in the seeder's Warning is repaired by saving its
    settings. DELIVER pins the repair: a save of a skipped owner's unchanged settings writes raw lists.
-2. **Collapsed chip and shadowing row are one shape by the V3 definition.** A stored `[Analysis, Review,
-   Waiting]` with `Review = [Code Review, Testing]` has an entry that names a mapping and is not one of its
-   states, which is exactly V3. The seeder tests split them by whether a state of the mapping is still listed
-   next to the name: no = an ordinary collapsed chip (rewritten, Information); yes = the 6454 shadowing row
-   (expanded the old way, one Warning per owner). The write path refuses both shapes (400), as the RCA says.
+   **Why the decision now holds (revision round 1):** the single entry classifier (D10) makes a collapsed chip
+   a normalised shape on the write path, never a 400. Before, the write path would have refused the very list
+   a skipped owner still holds, so "a save repairs it" was false. DEVOPS Q1's claim that a skipped row still
+   works under the legacy expansion is corrected there: it does not once reads are as-is; the repair is a save
+   or the next start. No UI signal, as the maintainer decided.
+2. **Collapsed chip and shadowing row: resolved by one classifier (D10, revision round 1).** The earlier
+   reading, "one shape by the V3 definition, both refused with a 400", is superseded. A stored `[Analysis,
+   Review, Waiting]` with `Review = [Code Review, Testing]` is a collapsed chip: no state of the mapping is
+   listed, so the normaliser replaces the entry by the members in place. The write path and the seeder both do
+   this and never refuse it (it is what the current editor saves on every mapping edit). Only the 6454
+   shadowing shape, where the name is listed and a state of the mapping is listed alongside, is a 400 on the
+   write path and a legacy expansion plus one Warning per owner in the seeder.
 3. **Stored chained mappings and idempotence.** D7 expands a chained row one level and warns. A second start
    would expand the entry that is left, so the tests pin: an entry whose name is itself a state of another
    mapping is treated as a state and left alone. First start `[B, Analysis]` (with `A=[Fix]`, `B=[A]`) becomes
@@ -658,5 +687,23 @@ green, and leaves the old behaviour correct for the data still in the database.
 | 4 | **Read switch.** `AllStates`/`OpenStates`/lookup as-is, ADO/Jira/ServiceNow sites, CSV demo journey, metrics columns from display states, architecture guard; run the live `AdoIntegration` category once | owner raw-read tests, connector tests, CSV, guard | only after 3; resolve review point 1 first |
 | 5 | **Frontend.** `stateMappingView`, validation mirror and shared fold, `StatesList` chips/tooltip/drag/suggestions, editor help text, aging status on both pages and the frame; delete the reconciliation module | all Vitest scenarios | needs 2 for the display lists; deleting the reconciliation is safe once the server owns the rules; Biome, `tsc`, then `pnpm build` last |
 
-Mutation testing runs last on frozen code (seeder, `DisplayStatesFor`, the lookups, the validator, the frontend
+**Slice 2 and the unchanged frontend.** Between slices 2 and 5 the editor still collapses members into the
+mapping name on every mapping edit. A slice-2 save from that editor is normalised (D10 case b), not refused.
+The GET then returns raw `doingStates`, which the old editor re-collapses on its next mapping edit until
+slice 5. That is harmless: the next save normalises it again. Only an API payload of the shadowing shape
+(case c) gets the 400.
+
+**Single write entry.** Slice 2 routes `SyncStates` (Team and Portfolio; the create paths use the same sync)
+through the owner's normaliser; slice 3's seeder calls the same normaliser. The architecture test (only those
+two assign the three lists) lands with slice 2 and covers the seeder when slice 3 adds it.
+
+**Owed at finalize** (none of it is a DELIVER step):
+- Release-note lines, written at `/release`: the v1 meaning change of `doingStates` and the shadowing 400;
+  the rollback re-collapse by the old settings page; an owner named in the seeder Warning is repaired by
+  saving its settings; the rolling-update overlap with more than one replica.
+- `docs/concepts/api-versioning.md` (or wherever the v1 API is documented), at feature finalization.
+- Lighthouse-Clients skill text (`coaching-patterns.md`): `doingStates` is raw states, `doingDisplayStates` is
+  what the charts show; rides on the next clients changeset.
+
+Mutation testing runs last on frozen code (seeder, `DisplayStatesFor`, the lookups, the classifier, the validator, the frontend
 mirror), as DEVOPS already says. DELIVER starts by agreeing the rigor profile.
