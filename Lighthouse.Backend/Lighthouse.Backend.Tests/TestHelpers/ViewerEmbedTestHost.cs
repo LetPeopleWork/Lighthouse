@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -479,10 +480,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                         "https://example.test/oidc/.well-known/openid-configuration");
                 }
 
-                foreach (var entry in extraSettings ?? [])
-                {
-                    builder.UseSetting(entry.Key, entry.Value);
-                }
+                // Added as app configuration, not host settings, so they win over the test factory's own defaults.
+                builder.ConfigureAppConfiguration((_, configuration) =>
+                    configuration.AddInMemoryCollection(extraSettings ?? []));
 
                 builder.ConfigureServices(services =>
                 {
