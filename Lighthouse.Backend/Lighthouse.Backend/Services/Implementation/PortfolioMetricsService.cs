@@ -248,7 +248,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     entry => entry.FeatureId,
                     entry => new StateAsOf(
                         entry.StateOnDay!.ToState,
-                        portfolio.MapStateToStateCategory(entry.StateOnDay.ToState),
+                        portfolio.CategoryOfDisplayName(entry.StateOnDay.ToState),
                         entry.StateOnDay.TransitionedAt));
         }
 

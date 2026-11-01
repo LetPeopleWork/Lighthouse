@@ -190,7 +190,6 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase("Analysis", StateCategories.Doing)]
         [TestCase("Backlog", StateCategories.ToDo)]
         [TestCase("Jellybean", StateCategories.Unknown)]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor(string name, StateCategories expected)
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
@@ -199,7 +198,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList()
         {
             var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
@@ -208,7 +206,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown()
         {
             var team = new Team { ToDoStates = ["Code Review"], DoingStates = ["Testing"] };
@@ -218,7 +215,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed()
         {
             var team = new Team { DoingStates = ["Code Review"] };
@@ -228,7 +224,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown()
         {
             var team = new Team { DoingStates = ["Analysis"] };
@@ -238,7 +233,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates()
         {
             var team = new Team { DoingStates = ["Active", "Resolved"] };

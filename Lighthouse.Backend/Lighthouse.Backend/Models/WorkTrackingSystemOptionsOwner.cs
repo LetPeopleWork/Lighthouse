@@ -234,10 +234,27 @@ namespace Lighthouse.Backend.Models
                 .DefaultIfEmpty(StateCategories.Unknown)
                 .First();
 
-        // SCAFFOLD: true
-        /// <summary>The category of a name an item or a stored transition carries: a raw state, or a mapping's name.</summary>
+        /// <summary>
+        /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
+        /// A mapping is judged by the states of it that are listed; when they disagree, or none is listed, it is Unknown.
+        /// </summary>
         public StateCategories CategoryOfDisplayName(string displayName)
-            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {displayName})");
+        {
+            var group = GroupNamed(displayName);
+
+            if (group == null)
+            {
+                return CategoryOfRawState(displayName);
+            }
+
+            var listedCategories = group.States
+                .Select(CategoryOfRawState)
+                .Where(category => category != StateCategories.Unknown)
+                .Distinct()
+                .ToList();
+
+            return listedCategories.Count == 1 ? listedCategories[0] : StateCategories.Unknown;
+        }
 
         /// <summary>A stored or sent list with every mapping name replaced by the mapping's raw states, in order; a list of raw states passes through unchanged.</summary>
         public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)

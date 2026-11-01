@@ -740,7 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 item.State = stateOnDay.ToState;
-                item.StateCategory = team.MapStateToStateCategory(stateOnDay.ToState);
+                item.StateCategory = team.CategoryOfDisplayName(stateOnDay.ToState);
                 item.CurrentStateEnteredAt = stateOnDay.TransitionedAt;
             }
 

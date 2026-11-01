@@ -30,9 +30,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             return serviceProvider.Object;
         }
 
-        // Pending as a pair: the probe fails today with Unknown, and the fix is the category lookup that is told what it is looking up.
         [Test]
-        [Ignore("pending: category lists hold raw states")]
         public void TeamLookingBack_ItemWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing()
         {
             var team = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30, DoingStates = ["Code Review", "Testing"], DoneStates = ["Done"] };
@@ -82,7 +80,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
         public void PortfolioLookingBack_FeatureWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing()
         {
             var portfolio = new Portfolio { Id = 3, Name = "Test Portfolio", DoingStates = ["Code Review", "Testing"], DoneStates = ["Done"] };
