@@ -35,6 +35,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(false, HttpStatusCode.OK, "[]", 200, "OK")]
         [TestCase(true, HttpStatusCode.OK, AGatewayPage, 200, "OK")]
         [TestCase(false, HttpStatusCode.OK, "{}", 200, "OK")]
+        [TestCase(false, HttpStatusCode.OK, AGatewayPage, 200, "OK")]
         public async Task A_list_that_cannot_be_read_stops_a_Team_refresh_with_the_sentence_the_administrator_reads(
             bool statusList, HttpStatusCode answer, string body, int code, string status)
         {
@@ -88,6 +89,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(stopped.Verdict.FieldName, Is.Null);
                 Assert.That(instance.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(statusList ? 2 : 1));
                 Assert.That(instance.ReadsOf(JiraWireFormat.IssueTypeListEndpoint), Is.EqualTo(statusList ? 1 : 2));
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public async Task A_list_answered_with_an_error_status_is_refused_even_when_its_body_is_a_valid_list(bool statusList)
+        {
+            var validList = statusList
+                ? JiraWireFormat.TheStatusListOf(JiraWireFormat.AnEnglishStatuses)
+                : JiraWireFormat.TheIssueTypeListOf(JiraWireFormat.AnEnglishIssueTypes);
+            var instance = AnInstanceRefusing(statusList, HttpStatusCode.ServiceUnavailable, validList);
+
+            var stopped = await Assert.ThrowsAsync<JiraReadException>(
+                () => JiraConnectorTestSetup.AConnectorOver(instance.Handler()).GetWorkItemsForTeam(ATeam(), CancellationToken.None));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stopped!.Verdict.Code, Is.EqualTo(statusList ? "status_list_unreadable" : "issue_type_list_unreadable"));
+                Assert.That(stopped.HowJiraAnswered, Does.StartWith("503"));
+            }
+        }
+
+        [Test]
+        public void An_exception_that_is_not_about_an_HTTP_answer_says_nothing_about_how_Jira_answered()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(JiraReadException.StatusIdNotInList(JiraReadException.ReadFor.TeamRefresh, "777").HowJiraAnswered, Is.Empty);
+                Assert.That(JiraReadException.IssueTypeIdNotInList(JiraReadException.ReadFor.TeamRefresh, "777").HowJiraAnswered, Is.Empty);
             }
         }
 

@@ -125,6 +125,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public void An_entry_with_an_id_but_no_name_at_all_is_not_listed_so_its_id_stays_unknown()
+        {
+            var names = NamesFrom(
+                "[{\"id\":\"3\"},{\"id\":\"1\",\"name\":\"To Do\"}]",
+                "[{\"id\":\"10001\"},{\"id\":\"10002\",\"name\":\"Story\"}]");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(names.StatusIdsItDoesNotKnow(["1", "3"]), Is.EqualTo(new List<string> { "3" }));
+                Assert.That(names.IssueTypeIdsItDoesNotKnow(["10001", "10002"]), Is.EqualTo(new List<string> { "10001" }));
+            }
+        }
+
+        [Test]
+        public void An_entry_with_a_name_but_no_id_does_not_break_the_lookup_of_the_others()
+        {
+            var names = NamesFrom(
+                "[{\"name\":\"Orphan\"},{\"id\":\"1\",\"name\":\"To Do\"}]",
+                "[{\"name\":\"Orphan\"},{\"id\":\"10002\",\"name\":\"Story\"}]");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(names.StatusNameFor("1", "Zu erledigen"), Is.EqualTo("To Do"));
+                Assert.That(names.IssueTypeNameFor("10002", "Geschichte"), Is.EqualTo("Story"));
+            }
+        }
+
         private static JiraOriginalNames AGermanReadersNames()
             => NamesFrom(
                 JiraWireFormat.TheStatusListOf(JiraWireFormat.AGermanReadersStatuses),
