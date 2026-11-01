@@ -477,3 +477,15 @@ Rigor: standard. One slice, 3 steps, guard in the same change as the fix.
 | 4 (lead) | Payoff measurement and the late-host check (D4); mutation on the two provider files, last. |
 
 Commit the guard together with the first change that turns it green, so no commit on the way is red.
+
+## Wave: DESIGN / [REF] Maintainer decision — endpoint rate limiter (2026-11-01, 18:2x, in chat)
+
+The rate-limiter spike showed the framework's endpoint limiter (inside `UseRateLimiter()`) is the last holder and that
+no public API releases it. Options put to the maintainer: (1) build the internal `RateLimitingMiddleware` ourselves in
+`Program.cs` and let a container-owned singleton dispose the global limiter and the middleware's private endpoint
+limiter at shutdown, by reflection; (2) accept the pin and leave the payoff to fewer hosts; (3) measure (2) first.
+
+**Decision: option 1.** Rate limiting stays on with the same rules. The reflection fails at startup if the internal
+type, constructor, `Invoke` method or field is not found, never by silently skipping the limiter; the in-suite leak
+guard catches a regression. This supersedes D2(b)'s conditional wording: step 3b is no longer gated on the spike, it
+is part of the fix. Re-check the reflection on every .NET major upgrade.
