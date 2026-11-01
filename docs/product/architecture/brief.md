@@ -11051,7 +11051,8 @@ Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-270. Workspace:
 | Shape | Raw-only lists, mapping as derived view. Typed entries and a category flag rejected (ADR-270) |
 | Display columns | Read-only `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` on the settings DTO, computed in the owner |
 | Category lookup | Split in two: raw state (connectors) and display name (stored transitions, fixes the as-of `Unknown`) |
-| Entry classifier | One classifier on the owner (Models): (a) name is one of the mapping's own states, keep it and add missing members; (b) collapsed chip, no state of the mapping listed, replace by members in place, never a 400; (c) shadowing, name listed with a state of the mapping alongside, 400 on the write path, legacy expansion plus Warning in the seeder. Output holds a mapping name only under (a) |
+| Entry classifier | One classifier on the owner (Models). First drops null, empty and whitespace-only entries (expansion set unchanged). Then: (a) name is one of the mapping's own states, keep it and add missing members (takes precedence even when other states of that mapping are listed beside it); (b) collapsed chip, no state of the mapping listed, replace by members in place, never a 400; (c) shadowing, name listed with a state of the mapping alongside, 400 on the write path, legacy expansion plus Warning in the seeder. Output holds a mapping name only under (a) |
+| Normalise on read | Every read of the stored lists (`AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, connector reads, suggestions) goes through the classifier; identity on a seeded list, so a skipped, pre-seeder or old-pod-written owner still loads every item (supersedes "read as they are") |
 | Write path | Mappings synced first; `SyncStates` and the seeder are the only writers of the three lists and both call the classifier (architecture test); shadowing and chained mappings answer 400 naming the fix, with the copy the frontend already shows |
 | Data rewrite | Idempotent `ISeeder`, provider-neutral, members written at the old chip's index; saves per owner and detaches a failed owner; also runs after restore and clear |
 | Editor | Reconciliation deleted; removing a mapping chip from Doing is refused ("delete the mapping instead") |
@@ -11085,13 +11086,17 @@ C4Component
   Rel(metricsview, ctrl, "Fetches display states from")
 ```
 
-Changes by layer: the owner gains `DisplayStatesFor`, `CategoryOfRawState` and `CategoryOfDisplayName`;
+Changes by layer: the owner gains `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName` and the one
+entry classifier / normaliser;
 `GetRawStatesForCategory` remains only for wait states, cycle-time boundaries and refinement. ADO
-`StartedAndClosedDateFrom`, `IssueFactory.GetStartedAndClosedDate` and the ServiceNow state-span mapper read the
-lists as they are. The six metrics readers of the raw Doing list, the CSV demo journey and the refinement and
-cycle-time validators move to display states. Enforcement: an architecture test that only the owner and the three
-mapped-name validators call the expansion method; a property test on normalisation; shared validation fixtures
-for the backend and the frontend mirror.
+`StartedAndClosedDateFrom`, `IssueFactory.GetStartedAndClosedDate` and the ServiceNow state-span mapper stop
+expanding the lists themselves and read the owner's normalised view; so do the suggestions endpoint, the six
+metrics readers of the raw Doing list, the CSV demo journey and the refinement and cycle-time validators (the
+last ones through display states). Enforcement: an architecture test that only the seven files on its allow-list
+(the owner, `IWorkItemQueryOwner`, `CycleTimeDefinitionValidator`, `RefinementList`, `BaseMetricsService`,
+`TeamMetricsService`, `PortfolioMetricsService`) expand a mapping name; a second that only `TeamExtensions`,
+`PortfolioExtensions` and the seeder assign the three lists (`DemoDataFactory` allow-listed as raw seed data); a
+property test on normalisation; shared validation fixtures for the backend and the frontend mirror.
 
 External integrations: none touched; no contract-test recommendation applies. Workspace:
 `docs/feature/bug-6458-typed-category-entries/feature-delta.md`.

@@ -34,10 +34,16 @@ A mapping whose name is not one of its own members therefore lands under `Unknow
   serves stored (already mapped) transitions and settles the as-of `Unknown`. A name whose members span
   categories is `Unknown`.
 - **Expansion stays only for mapped-name references**: wait states, cycle-time boundaries and refinement
-  states. `AllStates`, `OpenStates` and the three connector sites that expanded the lists read them as they are.
+  states. The three connector sites that expanded the lists themselves stop doing so.
+- **Normalise on read (supersedes "read the lists as they are").** The stored value holds raw states, but
+  `AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, the connector reads and the suggestions
+  endpoint all read the normalised view of the stored lists, produced by the owner's one classifier. On a list
+  the seeder has rewritten the normaliser is the identity. Case (c) below reads with the legacy expansion.
 - **One entry classifier on the owner.** Defined in Models, so the API validator and the Services seeder both
-  call it with no Services-to-API dependency. For a list entry that equals a mapping's name: (a) the name is
-  one of that mapping's own states: a raw state, kept, and the members not yet listed are added after it;
+  call it with no Services-to-API dependency. A first step drops null, empty and whitespace-only entries, which
+  leaves the expansion set unchanged. For a list entry that equals a mapping's name: (a) the name is
+  one of that mapping's own states: a raw state, kept, and the members not yet listed are added after it
+  (this takes precedence even when other states of that mapping are listed beside it);
   (b) collapsed chip: no state of that mapping is listed anywhere in that list: the entry is replaced by the
   members, in place, never a 400 (this is the shape the current editor saves on every mapping edit); (c)
   shadowing, the Bug 6454 configuration: the name is listed and at least one of the mapping's states is listed
@@ -58,9 +64,10 @@ A mapping whose name is not one of its own members therefore lands under `Unknow
   members at the old chip's index, expands stored shadowing rows with the legacy rule (today's meaning, logged
   per owner), and expands stored chained mappings one level with a warning log. It saves per owner and detaches
   a failed owner's entries, so one failure neither flushes nor loses another owner's changes. It also runs
-  after a backup restore and a database clear, not only at process start. A skipped owner keeps its list until
-  an ordinary save of its settings (the same classifier normalises a collapsed chip, never refuses it) or the
-  next start repairs it. No column is added, dropped or renamed.
+  after a backup restore and a database clear, not only at process start. The seeder skips an owner only when
+  reading or writing that row fails; it retries on every start, and because reads normalise (see Normalise on
+  read) a skipped owner keeps working. It makes stored data match and keeps the API GET's raw lists honest.
+  No column is added, dropped or renamed.
 - **Frontend.** Reconciliation and the doing-clash rules are deleted. The Doing list renders the display list
   with mapping chips marked as such. Removing a mapping chip is refused with copy telling the user to delete
   the mapping instead. The editor mirrors the backend rules against shared fixtures, and name and state
@@ -90,12 +97,22 @@ A mapping whose name is not one of its own members therefore lands under `Unknow
 - **Rollback.** An older backend is safe on normalised lists: its expansion yields the same set. An older
   **frontend** re-collapses members into the mapping name on the next mapping edit, so a rollback needs a
   test and a release-note line. With more than one replica and a default rolling update, an old pod can
-  re-collapse a list after the new pod has seeded; the next save of that owner or the next start repairs it,
-  and the release note says so.
+  re-collapse a list after the new pod has seeded; the new pod normalises on read, so the list still loads
+  every item, and the next start rewrites it.
+- **Normalise on read.** Every read of the stored lists goes through the owner's classifier, so the cost is
+  small and per read, and reads depend on the mappings again, but without ambiguity because of the
+  classifier. On a seeded list the normaliser is the identity. A skipped, pre-seeder or old-pod-written owner
+  still loads every item; the seeder retries on every start. The release note says: an owner named in the
+  seeder's Warning keeps working.
 - **Side effects:** the stored lists change on first start (one full fetch cycle, because the fetch
   fingerprint covers them); a stored shadowing row loses its raw state for good (as it already had) and the
   release note says to re-add it; a group's position follows its first member.
 - **Enforcement:** a property test (the expansion of the normalised list equals the expansion of the original,
-  and normalising twice changes nothing), shared backend/frontend validation fixtures, and an architecture
-  test that no code outside the owner and the three mapped-name validators calls the expansion method.
+  and normalising twice changes nothing), shared backend/frontend validation fixtures, and two architecture
+  tests. Only the seven files on the guard's allow-list may expand a mapping name:
+  `Models/WorkTrackingSystemOptionsOwner.cs`, `Models/IWorkItemQueryOwner.cs`,
+  `API/Helpers/CycleTimeDefinitionValidator.cs`, `Services/Implementation/Refinement/RefinementList.cs`,
+  `Services/Implementation/BaseMetricsService.cs`, `TeamMetricsService.cs` and `PortfolioMetricsService.cs`
+  (the files that read settings which name a group). And only `TeamExtensions.cs`, `PortfolioExtensions.cs` and
+  the seeder assign the three lists; `DemoDataFactory.cs` builds raw demo lists and is allow-listed as seed data.
 - External integrations: none touched; no contract-test recommendation applies.

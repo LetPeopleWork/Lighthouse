@@ -303,8 +303,11 @@ below.
   - **Normalisation** (single pass over the original list, comparer `OrdinalIgnoreCase` after trim, the same as
     `GetRawStatesForCategory:214-215`):
     ```
+    drop null, empty and whitespace-only entries      # leaves the expansion set unchanged
     for each entry e in list (in order):
-        if e names mapping M and no state of M is listed anywhere in the list:   # case (b)
+        # precedence: an e that is one of its own mapping's states is case (a), even when other
+        # states of that mapping are listed beside it
+        if e names mapping M and e is not a state of M and no state of M is listed anywhere in the list:   # case (b)
             emit each member of M, in M's order                                  # replaces e in place
         else:                                                                    # case (a); case (c) was refused
             emit e
