@@ -88,7 +88,6 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase(StateCategories.ToDo, new[] { "Intake", "Review" })]
         [TestCase(StateCategories.Doing, new[] { "Analysis" })]
         [TestCase(StateCategories.Done, new[] { "Released", "Review" })]
-        [Ignore(Pending)]
         public void DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(StateCategories category, string[] expected)
         {
             var team = new Team
@@ -103,7 +102,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored()
         {
             var team = new Team { DoingStates = ["Y", "X"] };
@@ -112,7 +110,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState()
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
@@ -159,7 +156,6 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase("Done", StateCategories.Done)]
         [TestCase("Testing", StateCategories.Doing)]
         [TestCase("Jellybean", StateCategories.Unknown)]
-        [Ignore(Pending)]
         public void CategoryOfRawState_ReadsTheListsAsTheyAre(string rawState, StateCategories expected)
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
@@ -168,7 +164,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown()
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
@@ -177,7 +172,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList()
         {
             var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");

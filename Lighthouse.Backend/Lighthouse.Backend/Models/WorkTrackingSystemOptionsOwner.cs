@@ -222,13 +222,17 @@ namespace Lighthouse.Backend.Models
             _ => [],
         };
 
+        private static readonly StateCategories[] ListedCategories = [StateCategories.ToDo, StateCategories.Doing, StateCategories.Done];
+
         private StateMapping? GroupContaining(string state)
             => StateMappings.FirstOrDefault(mapping => mapping.States.Exists(member => IsSameState(member, state)));
 
-        // SCAFFOLD: true
         /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
-            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {rawState})");
+            => ListedCategories
+                .Where(category => NormalisedStatesFor(StoredStatesOf(category)).Exists(state => IsSameState(state, rawState)))
+                .DefaultIfEmpty(StateCategories.Unknown)
+                .First();
 
         // SCAFFOLD: true
         /// <summary>The category of a name an item or a stored transition carries: a raw state, or a mapping's name.</summary>

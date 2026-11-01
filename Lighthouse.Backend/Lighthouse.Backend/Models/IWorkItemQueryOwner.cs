@@ -26,6 +26,10 @@
 
         StateCategories MapStateToStateCategory(string state);
 
+        StateCategories CategoryOfRawState(string rawState);
+
+        StateCategories CategoryOfDisplayName(string displayName);
+
         List<string> GetRawStatesForCategory(List<string> categoryStates);
 
         string MapRawStateToMappedName(string rawState);
