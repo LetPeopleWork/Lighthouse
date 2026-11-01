@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 {
     public class TeamListSyncRawStatesTest
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         private static string[] Listed(params string[] states) => states;
 
         private static TeamSettingDto Settings(string[] doing, params StateMappingDto[] mappings)
@@ -21,7 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             };
 
         [Test]
-        [Ignore(Pending)]
         public void SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt()
         {
             var team = new Team();
@@ -32,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace()
         {
             var team = new Team();
@@ -43,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void SyncTeamWithTeamSettings_GroupChangedInTheSameSave_ReadsTheListAgainstTheGroupJustSent()
         {
             var team = new Team();
@@ -76,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void SyncTeamWithTeamSettings_EntriesThatAreNullOrOnlyWhitespace_AreLeftOut()
         {
             var team = new Team();
@@ -87,7 +81,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup()
         {
             var team = new Team();

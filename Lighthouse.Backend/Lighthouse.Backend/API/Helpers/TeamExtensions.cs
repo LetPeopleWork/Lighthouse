@@ -54,7 +54,6 @@ namespace Lighthouse.Backend.API.Helpers
                 team.BlockedStalenessThresholdDays = teamSetting.BlockedStalenessThresholdDays;
 
                 SyncStates(team, teamSetting);
-                SyncStateMappings(team, teamSetting);
                 SyncServiceLevelExpectation(team, teamSetting);
                 SyncBlockedItems(team, teamSetting);
                 SyncWaitStates(team, teamSetting);
@@ -63,11 +62,20 @@ namespace Lighthouse.Backend.API.Helpers
             }
         }
 
+        // The mappings go first: a list is read against the groups sent in the same save, and is stored as the
+        // tracker's raw states, with any group's name replaced by its states.
         private static void SyncStates(Team team, TeamSettingDto teamSetting)
         {
-            team.ToDoStates = TrimListEntries(teamSetting.ToDoStates);
-            team.DoingStates = TrimListEntries(teamSetting.DoingStates);
-            team.DoneStates = TrimListEntries(teamSetting.DoneStates);
+            SyncStateMappings(team, teamSetting);
+
+            team.ToDoStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.ToDoStates));
+            team.DoingStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.DoingStates));
+            team.DoneStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.DoneStates));
+        }
+
+        private static List<string> TrimmedStates(List<string> list)
+        {
+            return list.Where(state => !string.IsNullOrWhiteSpace(state)).Select(state => state.Trim()).ToList();
         }
 
         private static void SyncBlockedItems(Team team, TeamSettingDto teamSetting)
@@ -124,7 +132,7 @@ namespace Lighthouse.Backend.API.Helpers
                 return;
             }
 
-            var candidates = team.ToDoStates.Concat(team.DoingStates)
+            var candidates = team.DisplayStatesFor(StateCategories.ToDo).Concat(team.DisplayStatesFor(StateCategories.Doing))
                 .GroupBy(state => state, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(group => group.Key, group => group.First(), StringComparer.OrdinalIgnoreCase);
 

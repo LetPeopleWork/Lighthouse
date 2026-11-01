@@ -19,7 +19,10 @@ namespace Lighthouse.Backend.API.Helpers
                     .ToList(),
             };
 
-            var orderedStates = resolver.AllStates.ToList();
+            var orderedStates = resolver.DisplayStatesFor(StateCategories.ToDo)
+                .Concat(resolver.DisplayStatesFor(StateCategories.Doing))
+                .Concat(resolver.DisplayStatesFor(StateCategories.Done))
+                .ToList();
             var errors = new List<string>();
 
             foreach (var definition in settings.CycleTimeDefinitions)
@@ -38,7 +41,7 @@ namespace Lighthouse.Backend.API.Helpers
         private static void ValidateDefinition(
             CycleTimeDefinitionDto definition,
             Team resolver,
-            IReadOnlyList<string> orderedStates,
+            List<string> orderedStates,
             List<string> errors)
         {
             if (string.IsNullOrWhiteSpace(definition.Name))
@@ -49,33 +52,24 @@ namespace Lighthouse.Backend.API.Helpers
             var startIndex = BoundaryIndex(resolver, orderedStates, definition.StartState);
             var endIndex = BoundaryIndex(resolver, orderedStates, definition.EndState);
 
-            // Boundary presence is a READ-TIME concern (D5): a definition whose boundary state was
-            // removed persists as invalid (IsValid:false on projection), it is not rejected at save.
-            // Only the end-after-start ordering (D4) is enforced here, and only when both resolve.
+            // A definition whose boundary state was removed is kept and shown as invalid rather than refused, so
+            // only the end-after-start ordering is enforced here, and only when both boundaries are found.
             if (startIndex >= 0 && endIndex >= 0 && endIndex <= startIndex)
             {
                 errors.Add(EndStateMustComeAfterStartStateError);
             }
         }
 
-        private static int BoundaryIndex(Team resolver, IReadOnlyList<string> orderedStates, string boundary)
+        private static int BoundaryIndex(Team resolver, List<string> orderedStates, string boundary)
         {
             if (string.IsNullOrWhiteSpace(boundary))
             {
                 return -1;
             }
 
-            var rawStates = resolver.GetRawStatesForCategory([boundary]);
+            var displayed = resolver.MapRawStateToMappedName(boundary.Trim());
 
-            for (var index = 0; index < orderedStates.Count; index++)
-            {
-                if (rawStates.Any(raw => string.Equals(raw, orderedStates[index], StringComparison.OrdinalIgnoreCase)))
-                {
-                    return index;
-                }
-            }
-
-            return -1;
+            return orderedStates.FindIndex(state => WorkTrackingSystemOptionsOwner.IsSameState(state, displayed));
         }
 
         private static IEnumerable<string> DuplicateNames(IEnumerable<CycleTimeDefinitionDto> definitions)
