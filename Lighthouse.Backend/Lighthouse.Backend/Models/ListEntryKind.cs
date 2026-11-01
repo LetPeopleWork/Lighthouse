@@ -3,7 +3,10 @@ namespace Lighthouse.Backend.Models
     /// <summary>What an entry of a To Do, Doing or Done list is, judged against the owner's mappings and the list it sits in.</summary>
     public enum ListEntryKind
     {
-        /// <summary>Not the name of any mapping, or the name of a mapping that has no states (null or empty): a state of the tracker.</summary>
+        /// <summary>
+        /// Not the name of any mapping, the name of a mapping that has no states (null, empty or only blank ones), or a
+        /// mapping's name that is also a state grouped by another mapping: a state of the tracker.
+        /// </summary>
         NotAGroupName,
 
         /// <summary>

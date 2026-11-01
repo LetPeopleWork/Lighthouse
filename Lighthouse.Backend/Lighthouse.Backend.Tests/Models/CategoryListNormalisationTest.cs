@@ -126,6 +126,53 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        public void NormalisedStatesFor_GroupNameListedBesideOneOfItsStates_ReadsTheLegacyExpansion()
+        {
+            var team = ATeamWithReviewGroup("Review", "Testing", "X");
+
+            Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("Code Review", "Testing", "X")));
+        }
+
+        [Test]
+        public void ClassifyListEntry_GroupNameThatIsAStateOfAnotherGroup_IsAStateOfTheTracker()
+        {
+            var team = ATeamWithReviewGroup("Testing");
+            team.StateMappings.Add(new StateMapping { Name = "Testing", States = ["QA"] });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.ClassifyListEntry(team.DoingStates, "Testing"), Is.EqualTo(ListEntryKind.NotAGroupName));
+                Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("Testing")));
+            }
+        }
+
+        [Test]
+        public void NormalisedStatesFor_ChainedGroups_ExpandOneLevelAndThenChangeNothing()
+        {
+            var team = new Team { DoingStates = ["B", "Analysis"] };
+            team.StateMappings.Add(new StateMapping { Name = "A", States = ["Fix"] });
+            team.StateMappings.Add(new StateMapping { Name = "B", States = ["A"] });
+
+            var once = team.NormalisedStatesFor(team.DoingStates);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(once, Is.EqualTo(Listed("A", "Analysis")));
+                Assert.That(team.NormalisedStatesFor(once), Is.EqualTo(once));
+            }
+        }
+
+        [Test]
+        [TestCase("\u212A", "k")]
+        [TestCase("\u00DF", "SS")]
+        public void NormalisedStatesFor_NamesOnlyAFullCaseFoldWouldJoin_AreDifferentStates(string first, string second)
+        {
+            var team = new Team();
+
+            Assert.That(team.NormalisedStatesFor([first, second]), Is.EqualTo(Listed(first, second)));
+        }
+
+        [Test]
         public void NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder()
         {
             var team = ATeamWithActiveGroup("Resolved", "Analysis", "Active", "Blocked");
@@ -168,7 +215,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt()
         {
-            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
+            foreach (var generated in StateListCases.Generate(300))
             {
                 var before = generated.Owner.GetRawStatesForCategory(generated.StoredDoing);
                 var after = generated.Owner.GetRawStatesForCategory(generated.Owner.NormalisedStatesFor(generated.StoredDoing));
@@ -180,7 +227,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime()
         {
-            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
+            foreach (var generated in StateListCases.Generate(300))
             {
                 var once = generated.Owner.NormalisedStatesFor(generated.StoredDoing);
                 var twice = generated.Owner.NormalisedStatesFor(once);
@@ -192,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates()
         {
-            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
+            foreach (var generated in StateListCases.Generate(300))
             {
                 var once = generated.Owner.NormalisedStatesFor(generated.StoredDoing);
                 var namesThatAreNoState = generated.Owner.StateMappings
@@ -206,7 +253,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade()
         {
-            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
+            foreach (var generated in StateListCases.Generate(300))
             {
                 var stored = generated.Owner.GetRawStatesForCategory(generated.StoredDoing);
                 var normalised = generated.Owner.NormalisedStatesFor(generated.StoredDoing);

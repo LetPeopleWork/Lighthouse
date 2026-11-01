@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.Models
     /// </summary>
     public sealed record StateListCase(int Index, Team Owner, List<string> StoredDoing, Dictionary<string, ListEntryKind> NamedEntries)
     {
-        public bool HasShadowing => NamedEntries.ContainsValue(ListEntryKind.Shadowing);
-
         public override string ToString()
             => $"case {Index}: doing [{string.Join(", ", StoredDoing.Select(entry => $"'{entry}'"))}] with {string.Join("; ", Owner.StateMappings.Select(m => $"{m.Name} = [{string.Join(", ", m.States)}]"))}";
     }

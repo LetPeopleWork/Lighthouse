@@ -5,6 +5,8 @@ namespace Lighthouse.Backend.Models
 {
     public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner, IConcurrencyTokenEntity
     {
+        private static readonly StateCategories[] ListedCategories = [StateCategories.ToDo, StateCategories.Doing, StateCategories.Done];
+
         public int Id { get; set; }
 
         public Guid ConcurrencyToken { get; set; }
@@ -209,7 +211,7 @@ namespace Lighthouse.Backend.Models
         public List<string> DisplayStatesFor(StateCategories category)
         {
             var displayed = NormalisedStatesFor(StoredStatesOf(category))
-                .Select(state => GroupContaining(state)?.Name ?? state);
+                .Select(MapRawStateToMappedName);
 
             return WithoutRepeats(displayed);
         }
@@ -222,17 +224,11 @@ namespace Lighthouse.Backend.Models
             _ => [],
         };
 
-        private static readonly StateCategories[] ListedCategories = [StateCategories.ToDo, StateCategories.Doing, StateCategories.Done];
-
-        private StateMapping? GroupContaining(string state)
-            => StateMappings.FirstOrDefault(mapping => mapping.States.Exists(member => IsSameState(member, state)));
-
         /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
-            => ListedCategories
-                .Where(category => NormalisedStatesFor(StoredStatesOf(category)).Exists(state => IsSameState(state, rawState)))
-                .DefaultIfEmpty(StateCategories.Unknown)
-                .First();
+            => ListedCategories.FirstOrDefault(
+                category => NormalisedStatesFor(StoredStatesOf(category)).Exists(state => IsSameState(state, rawState)),
+                StateCategories.Unknown);
 
         /// <summary>
         /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
@@ -247,7 +243,7 @@ namespace Lighthouse.Backend.Models
                 return CategoryOfRawState(displayName);
             }
 
-            var listedCategories = group.States
+            var listedCategories = MembersOf(group)
                 .Select(CategoryOfRawState)
                 .Where(category => category != StateCategories.Unknown)
                 .Distinct()
@@ -274,14 +270,14 @@ namespace Lighthouse.Backend.Models
                 return [entry];
             }
 
-            var group = GroupNamed(entry)!;
+            var members = MembersOf(GroupNamed(entry)!);
 
             if (kind == ListEntryKind.StateOfItsOwnMapping)
             {
-                return group.States.Where(state => !list.Exists(listed => IsSameState(listed, state))).Prepend(entry);
+                return members.Where(state => !list.Exists(listed => IsSameState(listed, state))).Prepend(entry);
             }
 
-            return group.States;
+            return members;
         }
 
         /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
@@ -294,18 +290,34 @@ namespace Lighthouse.Backend.Models
                 return ListEntryKind.NotAGroupName;
             }
 
-            if (group.States.Exists(state => IsSameState(state, entry)))
+            var members = MembersOf(group);
+
+            if (members.Exists(state => IsSameState(state, entry)))
             {
                 return ListEntryKind.StateOfItsOwnMapping;
             }
 
-            return group.States.Exists(state => list.Any(listed => IsSameState(listed, state)))
+            // A name that is also a state grouped by another mapping is read as that state, so a chained
+            // mapping expands one level once and then stays put.
+            if (GroupContaining(entry) != null)
+            {
+                return ListEntryKind.NotAGroupName;
+            }
+
+            return members.Exists(state => list.Any(listed => IsSameState(listed, state)))
                 ? ListEntryKind.Shadowing
                 : ListEntryKind.CollapsedGroup;
         }
 
         private StateMapping? GroupNamed(string entry)
-            => StateMappings.FirstOrDefault(mapping => mapping.States is { Count: > 0 } && IsSameState(mapping.Name, entry));
+            => StateMappings.FirstOrDefault(mapping => IsSameState(mapping.Name, entry) && MembersOf(mapping).Count > 0);
+
+        private StateMapping? GroupContaining(string rawState)
+            => StateMappings.FirstOrDefault(mapping => MembersOf(mapping).Exists(member => IsSameState(member, rawState)));
+
+        // A mapping can come back from storage with no states, or with null and blank ones; those name no state of the tracker.
+        private static List<string> MembersOf(StateMapping mapping)
+            => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
 
         // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
         private static bool IsSameState(string? left, string? right)
@@ -320,12 +332,11 @@ namespace Lighthouse.Backend.Models
 
             foreach (var entry in categoryStates)
             {
-                var mapping = StateMappings.FirstOrDefault(m =>
-                    string.Equals(m.Name, entry, StringComparison.OrdinalIgnoreCase));
+                var mapping = StateMappings.FirstOrDefault(m => IsSameState(m.Name, entry));
 
                 if (mapping != null)
                 {
-                    rawStates.AddRange(mapping.States);
+                    rawStates.AddRange(MembersOf(mapping));
                 }
                 else
                 {
@@ -347,12 +358,7 @@ namespace Lighthouse.Backend.Models
         }
 
         public string MapRawStateToMappedName(string rawState)
-        {
-            var mapping = StateMappings.FirstOrDefault(m =>
-                m.States.Any(s => string.Equals(s, rawState, StringComparison.OrdinalIgnoreCase)));
-
-            return mapping?.Name ?? rawState;
-        }
+            => GroupContaining(rawState)?.Name ?? rawState;
 
         public void ResetUpdateTime()
         {

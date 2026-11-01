@@ -112,11 +112,11 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         public void DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState()
         {
-            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
+            foreach (var generated in StateListCases.Generate(300))
             {
                 // What the stored list stands for, worked out from the input alone and in the order it is read.
                 var states = StatesTheStoredListStandsFor(generated);
-                var expectedNames = states.Select(state => Folded(generated.Owner.MapRawStateToMappedName(state.Trim()))).Distinct().ToList();
+                var expectedNames = states.Select(state => Folded(GroupNameOf(generated, state))).Distinct().ToList();
 
                 var shownKeys = generated.Owner.DisplayStatesFor(StateCategories.Doing).Select(Folded).ToList();
 
@@ -127,6 +127,10 @@ namespace Lighthouse.Backend.Tests.Models
                 }
             }
         }
+
+        private static string GroupNameOf(StateListCase generated, string state)
+            => generated.Owner.StateMappings
+                .FirstOrDefault(mapping => mapping.States.Exists(member => Folded(member) == Folded(state)))?.Name ?? state;
 
         private static List<string> StatesTheStoredListStandsFor(StateListCase generated)
         {
@@ -239,6 +243,70 @@ namespace Lighthouse.Backend.Tests.Models
             team.StateMappings.Add(new StateMapping { Name = "Active", States = ["Active", "Resolved"] });
 
             Assert.That(team.CategoryOfDisplayName("Active"), Is.EqualTo(StateCategories.Doing));
+        }
+
+        [Test]
+        public void DisplayStatesFor_GroupNameListedBesideOneOfItsStates_ShowsTheGroupOnceWhereItsNameIs()
+        {
+            var team = ATeamWithReviewMapping("Review", "Testing", "X");
+
+            Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Review", "X")));
+        }
+
+        [Test]
+        public void EveryRead_MappingWithNoStatesStored_ReadsTheListsWithoutThrowing()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["A"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "X", States = null! });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("A")));
+                Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("A")));
+                Assert.That(team.CategoryOfRawState("A"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.CategoryOfDisplayName("A"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapRawStateToMappedName("A"), Is.EqualTo("A"));
+                Assert.That(team.MapStateToStateCategory("A"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "A", "Done")));
+                Assert.That(team.GetRawStatesForCategory(["X"]), Is.Empty, "A listed name of a mapping with no states reads as before: it stands for nothing.");
+            }
+        }
+
+        [Test]
+        public void EveryRead_MappingWithNullOrBlankStatesAmongItsStates_IgnoresThem()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", null!, "   ", "Testing"] });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review")));
+                Assert.That(team.CategoryOfDisplayName("Review"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Code Review", "Testing", "Done")));
+                Assert.That(team.MapRawStateToMappedName("   "), Is.EqualTo("   "), "A blank state belongs to no group.");
+            }
+        }
+
+        [Test]
+        public void ClassifyListEntry_NameOfAMappingWhoseStatesAreAllBlank_IsAStateOfTheTracker()
+        {
+            var team = new Team { DoingStates = ["Analysis", "Review"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = [null!, " "] });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.ClassifyListEntry(team.DoingStates, "Review"), Is.EqualTo(ListEntryKind.NotAGroupName));
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review")));
+            }
+        }
+
+        [Test]
+        public void GetRawStatesForCategory_GroupNameWrittenInOtherCasingWithSpaces_StandsForTheGroupsStates()
+        {
+            var team = ATeamWithReviewMapping("Analysis");
+
+            Assert.That(team.GetRawStatesForCategory(["Analysis", " REVIEW "]), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
         }
 
         // A stored list that still holds a group's name (never rewritten, skipped by the start-up pass, or saved by
