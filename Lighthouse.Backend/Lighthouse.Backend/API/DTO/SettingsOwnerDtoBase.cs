@@ -18,6 +18,9 @@ namespace Lighthouse.Backend.API.DTO
             ToDoStates = workTrackingSystemOptionsOwner.ToDoStates;
             DoingStates = workTrackingSystemOptionsOwner.DoingStates;
             DoneStates = workTrackingSystemOptionsOwner.DoneStates;
+            ToDoDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.ToDo);
+            DoingDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Doing);
+            DoneDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Done);
             WorkTrackingSystemConnectionId = workTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId;
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
@@ -59,18 +62,12 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<string> DoneStates { get; set; } = [];
 
-        // SCAFFOLD: true
-        // Not yet on the wire: DELIVER fills these from the owner and drops the JsonIgnore, which also
-        // moves the approved settings payload.
-        [JsonIgnore]
+        // Read-only on purpose: these show each group where the settings page lists it, while the raw lists
+        // above stay what a client edits and sends back.
         public List<string> ToDoDisplayStates { get; } = [];
 
-        // SCAFFOLD: true
-        [JsonIgnore]
         public List<string> DoingDisplayStates { get; } = [];
 
-        // SCAFFOLD: true
-        [JsonIgnore]
         public List<string> DoneDisplayStates { get; } = [];
 
         public string? BlockedRuleSetJson { get; set; }

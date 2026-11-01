@@ -70,7 +70,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingRawStatesWithAGroup_ReadsBackTheSameStatesAndTheGroupOnDisplay()
         {
             SeedOwner();
@@ -89,7 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingGroupStatesThatAreApart_ShowsTheGroupWhereItsFirstStateIs()
         {
             SeedOwner();
@@ -106,7 +104,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupOverToDoStates_ShowsItInToDo()
         {
             SeedOwner();
@@ -122,7 +119,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupOverDoneStates_ShowsItInDone()
         {
             SeedOwner();
@@ -138,7 +134,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupNamedAfterOneOfItsStatesWithoutTheOthers_AddsTheOthersRightAfterIt()
         {
             SeedOwner();
@@ -154,7 +149,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace()
         {
             SeedOwner();
@@ -171,7 +165,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead()
         {
             SeedOwner();
