@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 {
     public class CategoryListNormalisationSeederTests
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         private static readonly string[] NamesTheLogMayCarry = ["OwnerType", "OwnerId", "Scanned", "Rewritten", "LegacyExpanded", "Skipped", "Rule"];
 
         private static readonly string[] WordsTheLogMayCarry = ["Team", "Portfolio", "Shadowing", "Chained", "EmptyGroup", "SaveFailed"];
@@ -30,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task Seed_SaveFails_LogsAWarningAndLetsTheStartContinue()
         {
             var teams = new Mock<IRepository<Team>>();
@@ -44,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task Seed_SaveFailsForTheFirstOwner_StillRewritesTheSecond()
         {
             var first = ACollapsedTeam(1);
@@ -68,7 +64,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore(Pending)]
         public async Task Seed_MappingWithNoStates_LogsOneWarningWithAFixedRuleAndLeavesTheOwnerAlone(bool statesAreNull)
         {
             var team = new Team { Id = 3, Name = "Broken Squad", ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review"], DoneStates = ["Done"] };
@@ -89,7 +84,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task Seed_NothingToRewrite_SavesNothing()
         {
             var raw = new Team { Id = 1, Name = "Team", DoingStates = ["Analysis", "Testing"] };
@@ -107,7 +101,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule()
         {
             var shadowing = new Team { Id = 2, Name = "Shadow Squad", ToDoStates = ["Backlog"], DoingStates = ["In Arbeit", "In Progress"], DoneStates = ["Done"] };
