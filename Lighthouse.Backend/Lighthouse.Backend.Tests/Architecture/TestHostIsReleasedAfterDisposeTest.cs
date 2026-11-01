@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Implementation.OAuth.Providers;
 using Lighthouse.Backend.Services.Interfaces.OAuth;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -39,10 +40,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [OneTimeSetUp]
         public void StartAndDropAWarmUpHost()
         {
-            // The first host of a test process run can stay reachable through one-shot timers that other
-            // components create once; it is not the leak. This fixture builds and drops one host before
-            // measuring, which discards the first host of the process run it is in. Whether that is enough
-            // when the whole suite runs in one process has not been proven.
+            // Builds one host first so the one-shot process-wide timers, which pin the first host a process creates, do not land on a measured host.
             _ = StartAndDisposeAHost(WhatTheHostDoes.ServesOneRequest);
         }
 
@@ -111,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             if (whatTheHostDoes == WhatTheHostDoes.CreatesOneFactoryClient)
             {
-                _ = factory.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
+                _ = factory.Services.GetRequiredService<IHttpClientFactory>().CreateClient(JiraOAuthProvider.HttpClientName);
             }
 
             var weakReference = new WeakReference(factory);
