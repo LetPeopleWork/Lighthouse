@@ -996,3 +996,39 @@ rows, so moving it buys nothing.
 | 05-06 | Copy: help text (UI3), editor could-not-load words | 2 |
 | 05-07 | Aging frame and Team page loading and failure looks (UI5) | 6 |
 | 05-08 | Portfolio page aging looks; zero scaffold markers; final gates | 3 |
+
+## Wave: DELIVER / [REF] Progress and resume (2026-11-01)
+
+**Slices 1-3 are done, reviewed and fixed** (steps 01-01..03-02, each slice refactored and double-reviewed). They are
+pushed to the branch `bug-6458-typed-category-entries`, **not to main**: on their own they would break charts for
+anyone with state mappings (see below), and the seeder rewrites stored lists for good, so a rollback would not undo it.
+Main gets the whole fix once slices 4 and 5 are in. **Resume at slice 4, step 04-01**, from that branch, with the
+same rigor (thorough), slice wrap-up (refactor + double review) and final gates (refactor, review, mutation once).
+
+Last gate: filtered backend suite 11981 passed / 0 failed / 19 skipped (before the rebase onto main; the
+maintainer chose to skip the checks after the rebase, so run them first when resuming).
+
+**What slice 4 and 5 must close before anything reaches main** (from the slice-3 correctness review, checked):
+
+- The Work Item Aging chart indexes its columns by `settings.doingStates` (`WorkItemAgingChart.tsx`, fed from
+  `TeamMetricsView.tsx` and `PortfolioMetricsView.tsx`) while items carry the mapping's name, so items in a mapped
+  state are skipped without a word once the lists hold raw states. It must read the display list.
+- Age in state, cumulative state time and flow efficiency take `team.DoingStates` / `portfolio.DoingStates`
+  (`TeamMetricsService`, `PortfolioMetricsService`) and match them against transitions mapped at sync time, so the
+  mapped states get no rows and the numbers are wrong. 04-03 switches them to the display states; add tests with a
+  mapped Doing state.
+- The settings page shows the raw states where it used to show the mapping chip, and its help text still says the
+  mapping replaces its states in the Doing list (slice 5).
+- A legacy chained mapping whose name is also a state of another mapping (A = [B, C], B = [X, Y], Doing = [B]):
+  today's reads expand B to X, Y, the normaliser keeps B. The validator forbids creating it, so only old rows can
+  hit it; 04-01 pins one behaviour with a test.
+
+**Follow-ups, not in this feature:** SyncStates is duplicated between Team and Portfolio; three different "stored
+value" mechanisms should become one; the validate-only endpoints skip StateMappingValidator and Portfolio has no
+cycle-time validation (both pre-existing); the seeder's detach loop repeats the private
+`LostRaceTolerantSave.DropFromTheStagingArea`.
+
+**Owed at finalize:** release-note lines (lists now hold raw states in v1, shadowing refused with 400, a rollback
+re-collapses nothing, owners the seeder skipped, the rolling-update overlap, one full resync per rewritten owner
+after the upgrade); `docs/concepts/api-versioning.md`; the Lighthouse-Clients skill text, and a check that the CLI/MCP
+do not echo the display lists back.
