@@ -1,5 +1,7 @@
+import { availableParallelism } from "node:os";
 import { defineConfig } from "vitest/config";
 import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
+import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
 
 export default defineConfig({
 	test: {
@@ -39,12 +41,11 @@ export default defineConfig({
 
 		pool: "threads",
 		isolate: true,
-		maxWorkers: undefined,
+		maxWorkers: resolveTestWorkers(process.env, availableParallelism()),
 		fileParallelism: true,
 
 		// CI-specific optimizations
 		...(process.env.CI && {
-			// Reduce memory usage on CI
 			bail: 1, // Optional: fail fast
 		}),
 	},

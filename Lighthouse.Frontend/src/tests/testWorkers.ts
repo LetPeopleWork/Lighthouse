@@ -1,5 +1,3 @@
-export const __SCAFFOLD__ = true;
-
 /**
  * Share of the machine's cores a local test run may use when nobody says otherwise, so that
  * parallel sessions on one machine do not each take every core.
@@ -12,12 +10,29 @@ export type TestWorkersEnvironment = Readonly<
 	Record<string, string | undefined>
 >;
 
+const explicitCount = /^[1-9][0-9]*$/;
+
 /**
  * The worker count for a test run, or `undefined` to leave it to the test runner's own default.
  */
 export function resolveTestWorkers(
-	_env: TestWorkersEnvironment,
-	_availableCores: number,
+	env: TestWorkersEnvironment,
+	availableCores: number,
 ): number | undefined {
-	throw new Error("Not yet implemented -- RED scaffold");
+	const requested = env[TEST_WORKERS_VARIABLE];
+
+	if (requested !== undefined && requested !== "") {
+		if (!explicitCount.test(requested)) {
+			throw new Error(
+				`${TEST_WORKERS_VARIABLE} must be a whole number of at least 1, but was "${requested}"`,
+			);
+		}
+		return Number(requested);
+	}
+
+	if (env.CI?.toLowerCase() === "true") {
+		return undefined;
+	}
+
+	return Math.max(1, Math.floor(availableCores * LOCAL_WORKER_FRACTION));
 }

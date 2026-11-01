@@ -14,17 +14,17 @@ describe("resolveTestWorkers", () => {
 	});
 
 	describe("on a developer machine", () => {
-		it.skip("uses the share of cores when nothing is set", () => {
+		it("uses the share of cores when nothing is set", () => {
 			expect(resolveTestWorkers({}, localCores)).toBe(6);
 		});
 
-		it.skip("treats an empty count as not set", () => {
+		it("treats an empty count as not set", () => {
 			expect(
 				resolveTestWorkers({ LIGHTHOUSE_TEST_WORKERS: "" }, localCores),
 			).toBe(6);
 		});
 
-		it.skip.each([
+		it.each([
 			["1", 1],
 			["3", 3],
 			["16", 16],
@@ -34,7 +34,7 @@ describe("resolveTestWorkers", () => {
 			).toBe(expected);
 		});
 
-		it.skip.each([
+		it.each([
 			["CI is false", { CI: "false" }],
 			["CI is empty", { CI: "" }],
 			["CI is some other value", { CI: "1" }],
@@ -42,7 +42,7 @@ describe("resolveTestWorkers", () => {
 			expect(resolveTestWorkers(env, localCores)).toBe(6);
 		});
 
-		it.skip.each([
+		it.each([
 			[1, 1],
 			[2, 1],
 			[4, 2],
@@ -53,7 +53,7 @@ describe("resolveTestWorkers", () => {
 			expect(resolveTestWorkers({}, cores)).toBe(expected);
 		});
 
-		it.skip("always returns a whole number of at least one, never above the cores", () => {
+		it("always returns a whole number of at least one, never above the cores", () => {
 			for (let cores = 1; cores <= 128; cores++) {
 				const workers = resolveTestWorkers({}, cores);
 				expect(Number.isInteger(workers)).toBe(true);
@@ -64,32 +64,32 @@ describe("resolveTestWorkers", () => {
 	});
 
 	describe("on the build server", () => {
-		it.skip("leaves the worker count to the test runner when nothing is set", () => {
+		it("leaves the worker count to the test runner when nothing is set", () => {
 			expect(resolveTestWorkers({ CI: "true" }, 4)).toBeUndefined();
 		});
 
-		it.skip.each([["TRUE"], ["True"]])("recognises CI written as %s", (ci) => {
+		it.each([["TRUE"], ["True"]])("recognises CI written as %s", (ci) => {
 			expect(resolveTestWorkers({ CI: ci }, 4)).toBeUndefined();
 		});
 
-		it.skip("treats an empty count as not set", () => {
+		it("treats an empty count as not set", () => {
 			expect(
 				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "" }, 4),
 			).toBeUndefined();
 		});
 
-		it.skip("leaves the worker count to the test runner whatever the core count", () => {
+		it("leaves the worker count to the test runner whatever the core count", () => {
 			expect(resolveTestWorkers({ CI: "true" }, 1)).toBeUndefined();
 			expect(resolveTestWorkers({ CI: "true" }, 64)).toBeUndefined();
 		});
 
-		it.skip("lets an explicit count win", () => {
+		it("lets an explicit count win", () => {
 			expect(
 				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "2" }, 4),
 			).toBe(2);
 		});
 
-		it.skip("lets an explicit count win when CI is written as TRUE", () => {
+		it("lets an explicit count win when CI is written as TRUE", () => {
 			expect(
 				resolveTestWorkers({ CI: "TRUE", LIGHTHOUSE_TEST_WORKERS: "2" }, 4),
 			).toBe(2);
@@ -97,7 +97,7 @@ describe("resolveTestWorkers", () => {
 	});
 
 	describe("with an invalid count", () => {
-		it.skip.each([
+		it.each([
 			["zero", "0"],
 			["negative", "-2"],
 			["fractional", "1.5"],
@@ -113,7 +113,7 @@ describe("resolveTestWorkers", () => {
 			).toThrow(/LIGHTHOUSE_TEST_WORKERS/);
 		});
 
-		it.skip("rejects an invalid count on the build server too", () => {
+		it("rejects an invalid count on the build server too", () => {
 			expect(() =>
 				resolveTestWorkers({ CI: "true", LIGHTHOUSE_TEST_WORKERS: "0" }, 4),
 			).toThrow(/LIGHTHOUSE_TEST_WORKERS/);

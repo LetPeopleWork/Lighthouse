@@ -652,9 +652,11 @@ because this is behaviour-free test tooling with no product contract and no KPI 
 
 ## Wave: DISTILL / [REF] RED classification
 
-Pending -- run in step 01-01 by the crafter, after the measurement and before `testWorkers.ts` is edited. Expected: `is importable and pins the agreed fraction and variable name` green; every
-other test skipped; once un-skipped, each fails with `Not yet implemented -- RED scaffold` (the right reason), none with an
-import or type error.
+Run in step 01-01 (2026-11-01), machine quiet, every `it.skip` removed from `testWorkers.test.ts`, scaffold still in place:
+`pnpm exec vitest run src/tests/testWorkers.test.ts` -> 33 collected, 32 failed, 1 passed. The one pass is
+`is importable and pins the agreed fraction and variable name`. All 32 failures are the scaffold's
+`Not yet implemented -- RED scaffold` (the "throws naming the variable" cases fail with it as the received message
+instead of matching `LIGHTHOUSE_TEST_WORKERS`). No import error, no type error, no collection error: right reason.
 
 ## Wave: DELIVER / [REF] Rigor profile
 
