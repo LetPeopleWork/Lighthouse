@@ -225,10 +225,29 @@ namespace Lighthouse.Backend.Models
         public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)
             => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {storedList.Count})");
 
-        // SCAFFOLD: true
         /// <summary>The one place that decides what a list entry that equals a mapping's name is.</summary>
         public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
-            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {list.Count}, {entry})");
+        {
+            var group = StateMappings.FirstOrDefault(mapping => mapping.States is { Count: > 0 } && IsSameState(mapping.Name, entry));
+
+            if (group == null)
+            {
+                return ListEntryKind.NotAGroupName;
+            }
+
+            if (group.States.Exists(state => IsSameState(state, entry)))
+            {
+                return ListEntryKind.StateOfItsOwnMapping;
+            }
+
+            return group.States.Exists(state => list.Any(listed => IsSameState(listed, state)))
+                ? ListEntryKind.Shadowing
+                : ListEntryKind.CollapsedGroup;
+        }
+
+        // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
+        private static bool IsSameState(string? left, string? right)
+            => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
 
         public List<string> GetRawStatesForCategory(List<string> categoryStates)
         {

@@ -27,7 +27,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker()
         {
             var team = ATeamWithActiveGroup("Analysis", "Active", "Blocked");
@@ -36,7 +35,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup()
         {
             var team = ATeamWithReviewGroup("Analysis", "Review", "Waiting");
@@ -45,7 +43,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameOfAGroupBesideOneOfItsStates_IsShadowing()
         {
             var team = ATeamWithReviewGroup("Review", "Analysis", "Testing");
@@ -54,7 +51,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_StateOfTheGroupIsListedOnlyInAnotherList_IsStillACollapsedGroup()
         {
             var team = ATeamWithReviewGroup("Analysis", "Review");
@@ -64,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameWrittenInOtherCasingWithSpaces_IsRecognisedAsTheGroup()
         {
             var team = ATeamWithReviewGroup("Analysis", "  REVIEW\t");
@@ -73,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameOfNoGroup_IsAStateOfTheTracker()
         {
             var team = ATeamWithReviewGroup("Analysis", "Review");
@@ -84,7 +78,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore(Pending)]
         public void ClassifyListEntry_NameOfAMappingWithNoStates_IsAStateOfTheTracker(bool statesAreNull)
         {
             var team = new Team { DoingStates = ["Analysis", "Review"] };
@@ -106,7 +99,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void ClassifyListEntry_AnyGeneratedList_NamesEveryGroupEntryTheWayItWasBuilt()
         {
             foreach (var generated in StateListCases.Generate(300))
