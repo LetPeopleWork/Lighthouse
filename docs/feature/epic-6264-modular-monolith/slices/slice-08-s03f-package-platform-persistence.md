@@ -39,3 +39,7 @@ Platform code can leave the layer folders without touching EF migrations. **Disp
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Retitled **Platform → composition-root infrastructure (no module)**. ADR-270 answers this Story's open question: Platform is not a context. Keys, backups, updates, usage-data consent and start-up housekeeping live with the composition root; persistence plumbing stays infrastructure, while each context owns its own tables logically.

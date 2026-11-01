@@ -680,6 +680,8 @@ Elevator-Pitch gate: all 39 Stories carry Before / After / Decision-enabled. "Af
 - **D-6264-14**: **New Story S13, "Aggregate boundaries in persistence"** (maintainer amendment 3). It depends on S08, is related to S10 but separate from it, and sits before or alongside S10. Pilot: Forecast becomes its own aggregate in the Forecasting context, referencing `FeatureId`, and Feature stops navigating to it. Each candidate is measured before and after on the restored production-like dev database. KPI 13 added; baseline and target are set at S13's DESIGN. FKs and cascades stay, and any schema change is expand-only.
 - **D-6264-15**: **Event Storming drives the DDD Stories, run together with the maintainer.** S01's DESIGN opens with a Big Picture session: a draft board is seeded from the code (domain events, state transitions, commands, policies, read models, external systems), walked section by section in chat, and published as a visual board. The context map and glossary come out of that session rather than being assumed from the nine modules. S08's DESIGN opens with a design-level session per context, building on that board, to find the aggregate boundaries that S13 then applies to persistence.
 
+- **D-6264-16**: **Eleven contexts, from the S01 Event Storming (maintainer, 2026-11-01).** ADR-270 supersedes the nine modules as the target: Organisation set-up (with the units), Tracker integration (ACL), Work Items, Flow metrics, Forecasting, Promises, Signals (target only), Refinement, Reports, Access, Licensing; Platform is composition-root infrastructure, not a context. Portfolio/Delivery splits into Organisation set-up and Promises. The packaging Stories follow it: S03a, S03b, S03d, S03e, S03f retitled, S03i added (#6468). D-6264-6 ("nine modules") is amended by this.
+
 ### Constraints (inherited / cross-cutting)
 
 - ADR-027 D4 (single store, single binary, no broker) and D7 (no Event Sourcing) stand. D5 is re-examined only by S09b.
@@ -716,12 +718,12 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 |---|---|
 | #6357 | S01 Bounded contexts, context map and layout (ADR) |
 | #6358 | S02 Metrics pilot (go/no-go gate) |
-| #6359 | S03a Package WorkTracking-Integration |
-| #6360 | S03b Package WorkItems / Sync |
+| #6359 | S03a Package Tracker integration (ACL) (retitled 2026-11-01, ADR-270) |
+| #6360 | S03b Package Work Items (retitled 2026-11-01, ADR-270) |
 | #6361 | S03c Package Forecasting |
-| #6362 | S03d Package Portfolio / Delivery |
-| #6363 | S03e Package RBAC / Identity |
-| #6364 | S03f Package Platform / Persistence |
+| #6362 | S03d Package Promises (Deliveries) (retitled 2026-11-01, ADR-270) |
+| #6363 | S03e Package Access and Licensing (retitled 2026-11-01, ADR-270) |
+| #6364 | S03f Platform → composition-root infrastructure, no module (retitled 2026-11-01, ADR-270) |
 | #6365 | S03g Package Refinement |
 | #6366 | S03h Package Reports |
 | #6367 | S04a Close the `Models ↛ Services` gap |
@@ -758,6 +760,7 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6460 | T2 Backend tests build one host per fixture, and a guard keeps it that way (created 2026-10-31) |
 | #6461 | T3 Test runs leave room for parallel sessions: local worker caps (created 2026-10-31) |
 | #6462 | T4 Test-time budgets fail the build instead of warning (created 2026-10-31) |
+| #6468 | S03i Package Organisation set-up (created 2026-11-01 from ADR-270; brief `slices/slice-45-s03i-package-organisation-set-up.md`) |
 
 ## Wave: DISCUSS / [REF] Improvement log
 
@@ -787,3 +790,14 @@ item changes the plan for the others.
 - Ratchet: `PublishOutputOutsideProjectGuardTest` fails on any workflow, action, Dockerfile, `package.json`, shell or MSBuild file naming the in-project publish path; list **empty**, proven to see its known consumers. The CI `backend` rule moved into `path-classifier.sh`, covers `.github/actions/`, and the classifier tests now run on every CI run.
 - KPIs re-measured: none touched (G0 housekeeping). Guardrail "published binary size within noise": every shared file sha256-identical; the old CI order also shipped 6 (linux-x64) and 18 (osx-arm64) nested JSON files, including `appsettings.Development.json`, which the new path no longer ships.
 - Changes the plan: none to other items. Lesson for every later "behaviour-free" claim about build output: reproduce CI's own publish sequence, in one tree, with checksums. Bug candidate outside the Epic: a second publish into the same folder drops the demo CSVs and the certificate.
+
+### 2026-11-01 — S01 #6357 Bounded contexts, context map and layout (ADR) — Done
+- Commits: `78e53285e..` (close-out commit) · workspace: `docs/feature/story-6357-s01-bounded-contexts-context-map/` (Event Storming boards, seed and visual board)
+- Ratchet: none added (docs only). ADR-270 lists seven ratchet candidates, now written into the S03a, S03b, S03e and S03i briefs.
+- KPIs re-measured: none touched (baseline re-count in the workspace: 14 event types, 20 handler classes, 254 `Models` files, 41/61 loose service files).
+- Changes the plan:
+  - ADR-270 accepted: eleven target contexts (D-6264-16), typed context map, domain events between contexts (pipelines may stay inside one), glossary, `Modules/<Context>/{Domain, Application, Adapters}` and `src/modules/`, shared kernel limited to IDs, shared value objects and the event base, logical data ownership per context with extension tables keyed by ID, one item model with a level.
+  - Catalogue: S03a/S03b/S03d/S03e/S03f retitled; S03i #6468 "Package Organisation set-up" added (hard: S02); S03c moves Feature WIP and the throughput window into Forecasting; S13 gets an explicit parallel-write goal; S02 settles folder spelling.
+  - CLAUDE.md: every feature is placed on the context map at DISCUSS, or at the latest at DESIGN, and updates ADR-270 and ARCHITECTURE.md §4 in the same feature.
+  - Epic 6455 input: levels per installation, paired with an owning unit; leaf vs non-leaf; Deliveries on non-leaf levels holding items of their own level; both reverse the DIVERGE recommendation (per-Portfolio levels, work-only stack).
+  - Order after S01: test-infrastructure track (G0b) as planned, then S02 (the gate).

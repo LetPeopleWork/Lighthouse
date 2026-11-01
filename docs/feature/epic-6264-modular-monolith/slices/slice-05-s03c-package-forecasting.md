@@ -40,3 +40,7 @@ Forecasting is a good second candidate after the pilot, being small and well-tes
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+ADR-270: Feature WIP and the throughput window move into Forecasting's own table keyed by unit id (schema change, expand-only, via `CreateMigration`); Organisation set-up keeps the unit itself. Forecasts leave `Feature` in S13.

@@ -405,3 +405,14 @@ calculated data (forecasts, flow metrics …) kept in separate "extension" table
   behaviour before and after. On SQLite, writes still queue; they become short and conflict-free.
 - Correction: Licensing comes from RBAC/Identity today (ARCHITECTURE.md §4, `Services.Implementation.Licensing`),
   not from Platform as written in the Phase 3 table.
+
+### Hold 1 — ADR-270 accepted (maintainer, 2026-11-01)
+
+- **One item model with a level**: accepted. "If we move forecasts and flow metrics out, we can probably work with
+  a single model (Work Item)." Today `Feature` differs from `WorkItem` mainly by data other contexts own. Open for
+  6455: "Work Item" then names an item on any level, so the leaf's item needs its own name.
+- **Context name "Work Items"**: accepted (owns the items; sync is the process).
+- **Feature WIP and throughput window** stored as Forecasting's extension keyed by unit id: accepted.
+- **Pipelines inside a context, events across contexts**, with event chains where order matters across contexts:
+  accepted after weighing the trade-off.
+- ADR-270 status: **Accepted**.

@@ -41,3 +41,7 @@ The ACL can live in one folder with no inward dependency. **Disproved if** the m
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (e.g. one connector folder per slice).
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Retitled **Package Tracker integration (ACL)**. ADR-270: the connectors translate; the mapping comes from Organisation set-up as data with each fetch. Ratchet candidate: Deliveries call the connectors directly (`DeliverySourceResolver.cs:9`, `DeliveryForecastPublishingService.cs:12` take `IWorkTrackingConnectorFactory`); route them through the ACL port.

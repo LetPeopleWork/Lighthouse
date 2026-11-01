@@ -1,6 +1,6 @@
 # ADR-270: Bounded contexts, context map and module layout
 
-**Status**: Proposed (2026-11-01, DESIGN of Story 6357, the first Story of Epic 6264 "path to a modular monolith"). It moves to Accepted only on the maintainer's yes. The brief's acceptance criterion of "nine bounded contexts" is superseded by the eleven the storming found.
+**Status**: Accepted (2026-11-01, maintainer; DESIGN of Story 6357, the first Story of Epic 6264 "path to a modular monolith"). The brief's acceptance criterion of "nine bounded contexts" is superseded by the eleven the storming found.
 **Date**: 2026-11-01
 **Feature**: `docs/feature/story-6357-s01-bounded-contexts-context-map/`
 **Refines**: [ADR-027](adr-027-target-architecture-modular-monolith-domain-events-cqrs-lite.md) (its decision on module boundaries). ADR-027's single store, single binary, in-process dispatcher, no broker and no Event Sourcing all stand.
@@ -54,9 +54,9 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 |---|---|---|---|---|---|
 | **Organisation set-up** | supporting; upstream of nearly all | How this organisation is structured and how it works by default. It holds the levels and their names (Terminology), the units on each level (the leaf unit that generates throughput, today's Team; the units above it, today's Portfolios), the mapping of tracker types, states and fields onto Lighthouse's concepts with its defaults, each unit's overrides, the calendar (blackout periods) and the cadence and priority rules (refresh cadence, Feature ordering policy). Structure and defaults only, no behaviour. | Terminology, blackout periods and recurring rules, refresh cadence, Feature ordering policy, the Team and Portfolio entities and their settings, connection defaults (until a decision on org default versus per-tracker default) | None. Spread over Platform/Persistence (seeding, settings), Portfolio/Delivery, the `Models` kernel and the connection settings | **Packaged** from today's settings, Teams and Portfolios. Levels above the Feature, org-wide defaults with local override for SLE, staleness and similar, and per-level granularity are **target only** |
 | **Tracker integration** | supporting | The anti-corruption layer in front of Jira (Cloud, Server, Data Center), Azure DevOps, Linear, CSV and ServiceNow. Connections, credentials and OAuth, connection health, and the **translation** of each tracker record into a Work Item or Feature during a fetch, applying the mapping it is given. Nobody outside it sees a tracker's model. | Connections and their credentials, connectors, connection health, the shared category-crossing rule that dates started and finished work | WorkTracking-Integration (minus the mapping, which moves to Organisation set-up) | **Packaged** |
-| **Sync** (name under review: Work Items; *proposed, confirm at review*) | supporting | Owns Lighthouse's copy of the work mirrored from the trackers and keeps it current. The items of every level, leaf and non-leaf alike, are **one item model with a level**, not separate contexts for leaf and non-leaf items (*proposed, confirm at review*). Refreshes (scheduled and forced), the sync mode (full or sweep), parent links (placing Work Items under Features), rolling work up onto Features including the default-size guess for a Feature with no children, dependencies, blocked and state-transition capture. Its outward facts are "this unit's data was refreshed" and "a refresh failed", not its internal steps. | The items (today's Work Items and Features), their state transitions, blocked periods, parent links, the roll-up and the default-size guess, the refresh log, the Team and Portfolio refresh pipelines | WorkItems/Sync, plus the refresh half of Portfolio/Delivery (the Team and Portfolio updaters) | **Packaged** |
+| **Work Items** | supporting | Owns Lighthouse's copy of the work mirrored from the trackers and keeps it current; the refresh process itself is still called sync. The items of every level, leaf and non-leaf alike, are **one item model with a level**, not separate contexts for leaf and non-leaf items. Refreshes (scheduled and forced), the sync mode (full or sweep), parent links (placing Work Items under Features), rolling work up onto Features including the default-size guess for a Feature with no children, dependencies, blocked and state-transition capture. Its outward facts are "this unit's data was refreshed" and "a refresh failed", not its internal steps. | The items (today's Work Items and Features), their state transitions, blocked periods, parent links, the roll-up and the default-size guess, the refresh log, the Team and Portfolio refresh pipelines | WorkItems/Sync, plus the refresh half of Portfolio/Delivery (the Team and Portfolio updaters) | **Packaged** |
 | **Flow metrics** | **core** | One flow calculation at every level: throughput, cycle time, Work Item Age, WIP, percentiles, cumulative state time, process behaviour, blocked history, the day-keyed history snapshots. Granularity differs by level (a Team per day, a strategic level per week or month), which is a property of the level. SLE risk stays here until the first Signals feature. | The metric calculations and caches, the over-time snapshot tables and the history filler | Metrics / Time-in-state | **Packaged** (the pilot for the layout); per-level granularity is target |
-| **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (*proposed, confirm at review*; today both live on `Team`). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged**; composing forecasts over more than one level above the leaf is target |
+| **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (today both live on `Team`; they move when Forecasting is packaged, an expand-only schema change). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged**; composing forecasts over more than one level above the leaf is target |
 | **Promises** | **core** | A promise is a target date someone committed to for a set of items on one level, compared against the forecast, with a history of how it ended (kept, missed, renegotiated by moving the target or cutting scope). It includes planning: deciding what fits before committing ("what can we promise by the end of the PI?"). In the user's language one promise is a **Delivery**. A Delivery holds items of the level it hangs off; today's Deliveries are this rule on the Feature level. | Deliveries, their rules, sources (Jira Releases), notes, closure pins and metric snapshots | The Delivery half of Portfolio/Delivery | **Packaged** (today's Deliveries). Promise lifecycle events and Deliveries on levels above the Feature are **target only** |
 | **Signals** | supporting | Turns state into attention: red, amber and green on two levels, the health of a unit or level (for example how many of its items are blocked or stale) and the promise (a Feature's or Delivery's likelihood of hitting its date). It owns thresholds, the current state and the history of when a signal changed, and it suggests when a promise should be renegotiated. One context so that the threshold-and-history mechanism is built once, not twice in Metrics and Promises. | Signal thresholds, current states, change history | None | **Target only.** Nothing to package; SLE risk stays in Flow metrics until the first Signals feature |
 | **Refinement** | supporting | At the leaf, a way of working: which Work Items are in refinement, how many more the Team needs, sizing votes and stages. On levels above the leaf a different form may come, sizing items approximately for reference-class forecasting, where it would feed Forecasting. | The Refinement settings, the sizing log, stage resolution, the need band | Refinement | **Packaged** (the leaf form). Refinement above the leaf is target |
@@ -85,12 +85,12 @@ context records its choice (see "Left open" at the end).
             │ customer/supplier                   └───────────┬─────────────┘   │ Licensing │ generic,
             ▼                                                 │ open host:      └───────────┘ events → all
   ┌───────────────────┐  domain events                         │ everyone conforms to its structure
-  │ Sync              │──────────────┬─────────────┬───────────┼──────────────┐
+  │ Work Items        │──────────────┬─────────────┬───────────┼──────────────┐
   └───────────────────┘              ▼             ▼           ▼              ▼
                             ┌──────────────┐ ┌─────────────┐ ┌────────────┐ ┌─────────┐
                             │ Flow metrics │ │ Forecasting │◄│ Refinement │ │ Signals │ (target)
                             └──────┬───────┘ └──────┬──────┘ └────────────┘ └────▲────┘
-                                   │ conformist     │ customer/supplier          │ events from Sync,
+                                   │ conformist     │ customer/supplier          │ events from Work Items,
                                    ▼                ▼                            │ Metrics, Forecasting,
                             ┌──────────────┐ ┌─────────────┐                     │ Promises
                             │ Reports      │ │ Promises    │─────────────────────┘
@@ -109,7 +109,7 @@ flowchart TB
   end
   ORG["Organisation set-up<br/>(supporting)"]
   TI["Tracker integration — ACL<br/>(supporting)"]
-  SYNC["Sync<br/>(supporting)"]
+  SYNC["Work Items<br/>(supporting)"]
   MET["Flow metrics<br/>(core)"]
   FC["Forecasting<br/>(core)"]
   PRO["Promises<br/>(core)"]
@@ -147,42 +147,42 @@ flowchart TB
   API --> CLI
 ```
 
-Dashed arrows are target only. Licensing → Sync is derived by this ADR, not drawn on the board; confirm at review.
+Dashed arrows are target only. Licensing → Work Items is derived by this ADR, not drawn on the board, and was accepted with it.
 
 **An acknowledged cycle: Organisation set-up and Tracker integration.** Today the two depend on each other. Set-up
 validates a Team's or Portfolio's query and suggests types and states by asking the tracker, while the ACL conforms
 to set-up's mapping when it translates. The cycle is broken like this: set-up uses the ACL's query port as a
 **customer** for validation and suggestions, and the mapping is **handed to the translation as data with each fetch**
-(Sync passes it in), so Tracker integration never references Organisation set-up. The conformist relationship stays
+(Work Items passes it in), so Tracker integration never references Organisation set-up. The conformist relationship stays
 one of meaning, not of code: there is no compile-time cycle.
 
 ### Every edge
 
 The first column reads upstream → downstream (the downstream depends on the upstream). The "Legal today" column
 uses §4's opposite, **depends-on** direction: it names the §4 edge "downstream module depends on upstream module" and
-checks it against the cross-module edges ARCHITECTURE.md §4 draws (Sync depends on WorkTracking-Integration;
-Portfolio/Delivery depends on Sync and Forecasting; Forecasting depends on Sync; Refinement depends on Sync,
+checks it against the cross-module edges ARCHITECTURE.md §4 draws (WorkItems/Sync depends on WorkTracking-Integration;
+Portfolio/Delivery depends on WorkItems/Sync and Forecasting; Forecasting depends on WorkItems/Sync; Refinement depends on WorkItems/Sync,
 Forecasting and Metrics; Reports depends on Metrics and RBAC; everything depends on the `Models` kernel), with each
 context read as the §4 module it comes from. Edges marked **Derived** were not drawn on the board; this ADR derived
-them from the code or the walk. Confirm them at review.
+them from the code or the walk, and the maintainer accepted them with the ADR.
 
-| Upstream → downstream | Relationship | How the downstream reaches it | Legal today? (depends-on, per §4) | Derived by the ADR — confirm at review |
+| Upstream → downstream | Relationship | How the downstream reaches it | Legal today? (depends-on, per §4) | Derived by the ADR (accepted with it) |
 |---|---|---|---|---|
 | Jira, ADO, Linear, CSV, ServiceNow (and the Jira and ADO OAuth providers) → Tracker integration | external upstream; anti-corruption layer | Connectors translate each record into Work Item or Feature | Yes (WorkTracking-Integration is a leaf input adapter) | |
 | Organisation set-up → Tracker integration | conformist: the ACL applies the organisation's mapping as given | Mapping handed in as data with each fetch (see the acknowledged cycle above) | Today the mapping sits on Team, Portfolio and connection in the kernel; no module edge exists. New edge, in meaning only | |
 | Tracker integration → Organisation set-up | customer/supplier: set-up is the customer of the ACL's query port | Validates queries and asks for suggested types and states | No module edge today (the API band calls the connectors). New edge | **Derived** (from the cycle above) |
-| Tracker integration → Sync | customer/supplier: Sync is the customer, the connector port is the negotiated contract | Query through the connector port | Yes (Sync depends on WorkTracking-Integration) | |
+| Tracker integration → Work Items | customer/supplier: Work Items is the customer, the connector port is the negotiated contract | Query through the connector port | Yes (WorkItems/Sync depends on WorkTracking-Integration) | |
 | Organisation set-up → every other context | open host: everyone conforms to its structure (units, levels, names, defaults, calendar) | Queries through its contract; reactions to its events | Today through the kernel. New edges | |
-| Sync → Flow metrics | upstream publishes, downstream reacts (domain events) | Reacts to the refresh events; reads stored history through read ports | Not drawn in §4. Works today only because the events sit in the kernel. Becomes a legal edge once event types move to Sync | |
-| Sync → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features and throughput through Sync's contract | Yes (Forecasting depends on Sync) | |
-| Sync → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on Sync) | **Derived** |
+| Work Items → Flow metrics | upstream publishes, downstream reacts (domain events) | Reacts to the refresh events; reads stored history through read ports | Not drawn in §4. Works today only because the events sit in the kernel. Becomes a legal edge once event types move to Work Items | |
+| Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features and throughput through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
+| Work Items → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on WorkItems/Sync) | **Derived** |
 | Forecasting → Refinement (today) | customer/supplier | Refinement reads the Team's manual How Many forecast | Yes (Refinement depends on Forecasting) | |
 | Refinement → Forecasting (target, above the leaf) | supplier of sizes | Refinement above the leaf sizes items that Forecasting consumes | Target only. It would make Forecasting depend on Refinement, the reverse of today; see "Left open" | |
 | Flow metrics → Refinement | customer/supplier | Reads the SLE yardstick and throughput | Yes (Refinement depends on Metrics) | **Derived** |
 | Forecasting → Promises | customer/supplier | Reacts to "forecasts updated"; reads Feature forecasts for the joint "all done by" answer | Yes (Portfolio/Delivery depends on Forecasting) | |
-| Sync → Promises | customer/supplier | Delivery rules match fetched Features | Yes (Portfolio/Delivery depends on Sync) | |
+| Work Items → Promises | customer/supplier | Delivery rules match fetched Features | Yes (Portfolio/Delivery depends on WorkItems/Sync) | |
 | Tracker integration → Promises | customer/supplier (Jira Releases as a Delivery's source, forecasts published back) | Through the connector | **Not legal** (Portfolio/Delivery depends on WorkTracking-Integration is not in §4), but present in code. Ratchet candidate | **Derived** (from code) |
-| Sync, Flow metrics, Forecasting, Promises → Signals | upstream publishes, downstream reacts | Domain events only | Target only | |
+| Work Items, Flow metrics, Forecasting, Promises → Signals | upstream publishes, downstream reacts | Domain events only | Target only | |
 | Flow metrics → Reports | conformist ("a report and the tab never disagree") | Reads through the same metrics contract the tab uses | Yes (Reports depends on Metrics) | |
 | Signals → Reports | conformist | Includes signals as they are | Target only | |
 | Reports → people outside Lighthouse | published language | PDF export today; scheduled delivery in future | n/a (outbound) | |
@@ -190,7 +190,7 @@ them from the code or the walk. Confirm them at review.
 | Organisation set-up → Access | conformist: memberships follow the units that exist | Unit identifiers | Through the kernel today. New edge | **Derived** |
 | OIDC identity provider → Access | external upstream; thin translation of claims (a small ACL) | Claims parsed into roles and groups | Yes | |
 | Licensing → every context except Organisation set-up | generic; published events (loaded, last 30 days, expired) | Reacts to licence events; asks "is Premium available" through its contract | Today checked on read; the refresh paths (Portfolio/Delivery) depend on RBAC/Identity, which §4 does not allow. Ratchet candidate | |
-| Licensing → Sync | generic; published events | Stops refreshing when the licence expires and more units exist than the free tier allows | Same ratchet candidate as above | **Derived** |
+| Licensing → Work Items | generic; published events | Stops refreshing when the licence expires and more units exist than the free tier allows | Same ratchet candidate as above | **Derived** |
 | Organisation set-up → Licensing | customer/supplier | Counts units against the free-tier limit | Through the kernel today | **Derived** |
 | Public HTTP API → SPA, Lighthouse-Clients (CLI and MCP) | open host service with a published language | HTTP, the clients' contract | Yes (the API is the driving adapter) | |
 | Platform lane → PostHog | external downstream | The usage-data pipe forwards events the clients hand in | n/a (composition root) | |
@@ -202,12 +202,12 @@ Each of these is an edge today's code takes that §4 does not allow, or one that
 ends are in their target contexts. The packaging Story of the context that holds the offender adds it to a ratchet
 guard (ADR-268) or removes it.
 
-1. **Sync calls Flow metrics directly.** `Services/Implementation/TeamData/TeamDataService.cs:23` calls
+1. **Work Items calls Flow metrics directly.** `Services/Implementation/TeamData/TeamDataService.cs:23` calls
    `ITeamMetricsService.UpdateTeamMetrics` inline after a Team refresh, while the Portfolio refresh does the same
-   reaction in a handler. Sync → Metrics is not a legal edge; it should be a handler on the Team refresh event.
+   reaction in a handler. Metrics is not among WorkItems/Sync's legal dependencies; it should be a handler on the Team refresh event.
 2. **The refresh paths read the licence from RBAC/Identity.** `TeamUpdater.cs:31-34`, `PortfolioUpdater.cs:65-68` and
    `ForecastUpdater.cs:292` (all under `Services/Implementation/BackgroundServices/Update/`) resolve `ILicenseService`.
-   Portfolio/Delivery → RBAC/Identity is not a legal edge. In the target these become Sync and Forecasting reacting to
+   Portfolio/Delivery → RBAC/Identity is not a legal edge. In the target these become Work Items and Forecasting reacting to
    Licensing's facts. The three different limits (2 at create, 3 Teams and 1 Portfolio in the updaters) belong to the
    same hot spot.
 3. **Deliveries talk to the tracker without the ACL's contract.** `Services/Implementation/DeliverySources/DeliverySourceResolver.cs:9`
@@ -216,7 +216,7 @@ guard (ADR-268) or removes it.
 4. **The Portfolio refresh pipeline reaches into Promises and Forecasting.** Inside the refresh, `PortfolioUpdater.cs:101`
    recomputes rule-based Deliveries and `PortfolioUpdater.cs:106` resyncs Deliveries from their source, and
    `PortfolioUpdater.cs:124` is a direct trigger of the forecast updater (it enqueues work), bypassing an event. Legal
-   while the updater sits in Portfolio/Delivery; once it moves to Sync, both point from upstream to downstream.
+   while the updater sits in Portfolio/Delivery; once it moves to Work Items, both point from upstream to downstream.
 5. **A domain event published by a controller.** `TeamDeleted` is published from `API/TeamController.cs:115`, not from
    the context that owns the Team; Portfolio deletion has no event and cleans the refresh log inline
    (`API/PortfolioController.cs:77-89`).
@@ -234,8 +234,19 @@ after commit by default, no event store, no Event Sourcing, no broker, no outbox
 
 Each event type moves to the context that **publishes** it. The shared kernel keeps only the base type.
 
-Within one context an ordered pipeline may stay imperative, as ARCHITECTURE.md §5 says of the Portfolio refresh. The
-rule applies where a step crosses into another context.
+**Events and pipelines.** An ordered pipeline may stay imperative inside one context, as ARCHITECTURE.md §5 says of
+the Portfolio refresh. A step that crosses into another context becomes a domain event. Where order matters across
+contexts, use a chain of events: for example, Promises recomputes rule-based Deliveries on "items refreshed" and
+records its snapshot on "forecasts updated". The trade-off, accepted:
+
+- **A pipeline** shows its order in one place and returns errors to its caller, but couples the caller to every
+  reaction and blocks extracting or rewriting a context.
+- **Events** let the publisher know nobody: dependencies point at contracts, which is what lets a context be extracted
+  or rewritten.
+- The cost of events: the flow is spread over handlers, and there is no order between handlers of one event.
+- After commit and without an outbox, a crash loses a reaction. That is harmless while the next refresh repairs it, and
+  not acceptable for target history (signals, the promise lifecycle), which needs its own decision when built.
+- Readers see eventual consistency between contexts.
 
 **The pivotal events are the backbone of the map.** A pivotal event is where the story hands over to a new phase and
 a word changes meaning.
@@ -244,7 +255,7 @@ a word changes meaning.
 |---|---|---|---|
 | Organisation set up / level introduced | Structure, names and mapping exist; everything downstream reads them | Organisation set-up | **Target.** Today's nearest: `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged`, `TeamDeleted` |
 | Items fetched (the connection works) | Tracker records become Lighthouse items (translation) | Tracker integration | **Target.** Today implicit; `ConnectionFetchShapeChanged` exists for one case |
-| Unit data refreshed | Items become flow history | Sync | **Exists** as `TeamDataRefreshed` and `PortfolioFeaturesRefreshed` |
+| Unit data refreshed | Items become flow history | Work Items | **Exists** as `TeamDataRefreshed` and `PortfolioFeaturesRefreshed` |
 | Forecasts updated | Throughput becomes dates | Forecasting | **Exists** as `PortfolioForecastsUpdated` |
 | Promise made, kept, missed, renegotiated (target moved, scope cut) | A date becomes a commitment | Promises | **Target.** Today only the archive's frozen closure pin exists |
 | Signal changed | State becomes attention | Signals | **Target** |
@@ -252,7 +263,7 @@ a word changes meaning.
 | Licence expired (and loaded, in its last 30 days) | An upstream gate on everything | Licensing | **Target.** Today derived on read |
 
 The other event types that exist today and where they move: `WorkItemTransitioned`, `WorkItemBlocked`,
-`WorkItemUnblocked`, `WorkItemBecameStale`, `FeatureBlocked`, `FeatureUnblocked` to Sync; `ConnectionFetchShapeChanged`
+`WorkItemUnblocked`, `WorkItemBecameStale`, `FeatureBlocked`, `FeatureUnblocked` to Work Items; `ConnectionFetchShapeChanged`
 to Tracker integration; `TeamDeleted`, `BlackoutConfigurationChanged`, `FeatureOrderingPolicyChanged` to Organisation
 set-up. `FeatureRankChanged` follows wherever Feature ranking lands (see "Left open").
 
@@ -329,16 +340,15 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 | Translation | Turning a tracker record into a Work Item or Feature during a fetch | `*WorkItemMapper`s, `WorkItemCategoryCrossing` | Code says "mapper" for translation; keep "mapping" for Organisation set-up's concept |
 | Connection stopped working | One fact about the connection, whatever the cause | health verdict per refresh, `UnreadableSecretException` | Target event |
 
-### Sync (name under review: Work Items)
+### Work Items
 
-A rename of this context to **Work Items** is *proposed, confirm at review*: it owns the mirrored data, not only the
-process of refreshing it. The proposal came from Claude in reply to the maintainer's data-ownership point, not from
-the maintainer. Until it is decided, the context is written "Sync (name under review: Work Items)".
+The context is called Work Items because it owns the mirrored data, not only the process of refreshing it (accepted by
+the maintainer). The refresh process itself is still called sync.
 
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
-| Item | One record mirrored from a tracker, on any level. One model with a level, whether leaf or not (*proposed, confirm at review*) | `WorkItem`, `Feature` (both on `WorkItemBase`), parent `Feature` rows | Target: one model with a level instead of separate types per level |
-| Work Item | An item the leaf unit works on | `WorkItem` (and `WorkItemBase`, also the base of `Feature`) | **Overloaded**: a Team's item, any tracker record, and the base type of a Feature |
+| Item | One record mirrored from a tracker, on any level. One model with a level, whether leaf or not | `WorkItem`, `Feature` (both on `WorkItemBase`), parent `Feature` rows | Target: one model with a level instead of separate types per level |
+| Work Item | An item the leaf unit works on | `WorkItem` (and `WorkItemBase`, also the base of `Feature`) | **Overloaded**: a Team's item, any tracker record, and the base type of a Feature. With one item model, "Work Item" in the model means an item on any level, so the leaf's item needs a name of its own: a naming decision for Epic 6455 |
 | Feature | Lighthouse's level-1 unit of work: the item Work Items roll up into and that is forecast. Not SAFe's Feature, which sits a level higher (what Lighthouse calls a Feature, a SAFe customer may call an Epic) | `Feature` | A parent above it is stored as a `Feature` row flagged `IsParentFeature`: one type, two meanings |
 | Refresh | Bringing a unit's copy of the work up to date | `TeamUpdater`, `PortfolioUpdater`, `WorkItemService` | Users care that data is fresh and a failure is visible, not about the steps |
 | Default-size guess | The remaining work assumed for a Feature with no children | `IsUsingDefaultFeatureSize` | |
@@ -355,7 +365,7 @@ the maintainer. Until it is decided, the context is written "Sync (name under re
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
 | Forecast | An answer to "when" or "how many" with a likelihood, recomputed and replaced | four meanings: the stored completion histogram per Feature (`WhenForecast`), the stored start histogram (`StartForecast`), the unstored manual Team answer, the replay of past forecasts (reality check, backtest) | **Overloaded.** Qualify every use: completion forecast, start forecast, manual forecast, reality check |
-| Feature WIP | How many Features the leaf unit works on at once; the simulation's parallelism | `FeatureWIP` on `Team` | Leaf only. Proposed to move to Forecasting's own extension keyed by the unit's id, with the throughput window (confirm at review) |
+| Feature WIP | How many Features the leaf unit works on at once; the simulation's parallelism | `FeatureWIP` on `Team` | Leaf only. Moves to Forecasting's own extension keyed by the unit's id, with the throughput window, when Forecasting is packaged |
 
 ### Promises
 
@@ -441,17 +451,20 @@ The rule of source data plus per-context extension tables keyed by item id was r
 session and is recorded on the board under "Data ownership". It applies the Epic's earlier decision that data
 ownership is logical only (no database per module).
 
-- **Sync (name under review: Work Items) owns the items mirrored from the trackers**, leaf and non-leaf alike: the
-  items, their state transitions, blocked periods, parent links, and the roll-up and default-size guess (the
-  maintainer placed both in Sync). Holding the items of every level as **one item model with a level** is
-  *proposed, confirm at review*.
+- **Work Items owns the items mirrored from the trackers**, leaf and non-leaf alike, as **one item model with a
+  level**: the items, their state transitions, blocked periods, parent links, and the roll-up and default-size guess.
+  The maintainer's reasoning: once forecasts and other calculated data move to their owners, a Work Item and a Feature
+  differ little. Of what `Feature` adds today, `Forecasts` and `StartForecasts` go to Forecasting; `FeatureWork`,
+  `IsUsingDefaultFeatureSize` and `EstimatedSize` are Work Items' roll-up; `Portfolios` and `OwningTeam` go to
+  Organisation set-up; `IsParentFeature` stays in Work Items; `ManualRank` is still open. Of what `WorkItem` adds,
+  `Team`/`TeamId` go to Organisation set-up and `WasStaleAtLastSync` stays in Work Items.
 - **Every downstream context owns the data it calculates**, in its own extension tables that reference items (or
   units) by ID only:
 
   | Context | Owns | Today |
   |---|---|---|
   | Forecasting | Forecasts (completion and start) | Still on the item: `Feature.Forecasts` and `Feature.StartForecasts`; the Story on aggregate boundaries in persistence (S13) moves them out, as its pilot |
-  | Forecasting | The leaf unit's capacity inputs (Feature WIP, throughput window), keyed by the unit's id | On `Team`. *Proposed, confirm at review* |
+  | Forecasting | The leaf unit's capacity inputs (Feature WIP, throughput window), keyed by the unit's id | On `Team`. Moves when Forecasting is packaged (expand-only schema change) |
   | Flow metrics | Its daily snapshots | Already separate tables |
   | Promises | Deliveries and their history (closure pins, metric snapshots, notes) | Already separate tables |
   | Signals | Signal history | Target only |
@@ -520,13 +533,16 @@ These were not decided on the board; the packaging Story of the named context de
 - Where **Feature ranking** (a person dragging a Feature, `FeatureRankChanged`) lives: Forecasting, Promises
   (planning) or Organisation set-up.
 - Where **write-back** lives: the translation into tracker fields is Tracker integration's; what is written comes from
-  its publisher (Forecasting's dates, Sync's fields).
+  its publisher (Forecasting's dates, Work Items' fields).
 - Where the **update queue** lives: its mechanics look like platform-lane infrastructure, while scheduling a refresh is
-  Sync's and a forecast round is Forecasting's.
+  Work Items' and a forecast round is Forecasting's.
 - **Mapping and the ACL.** The cycle is broken in Decision 2 (set-up is a customer of the ACL's query port; the
   mapping travels as data with each fetch). Left open: the exact shape of the mapping handed over.
 - **Refinement above the leaf feeding Forecasting** reverses today's edge (Refinement reads Forecasting's manual
   forecast). Above the leaf it will need to come as an event or a separate contract.
 - **Org default or per-tracker default** for bucket 2 settings.
 - **The leaf unit's name** and how to model it generically.
+- **The leaf item's name.** With one item model, "Work Item" means an item on any level, so the item at the leaf
+  needs a name of its own. A naming decision for Epic 6455.
+- Where `ManualRank` (a Feature's Lighthouse rank) lives, together with Feature ranking above.
 - **Signals as a report type or as its own concept a report can include.**

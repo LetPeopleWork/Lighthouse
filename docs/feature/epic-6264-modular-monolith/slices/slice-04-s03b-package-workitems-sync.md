@@ -40,3 +40,7 @@ This is the busiest context. Domain events published from here (`WorkItemTransit
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Retitled **Package Work Items**. ADR-270: this context owns the items mirrored from the trackers (one item model with a level, target), their transitions, blocked periods, parent links, roll-up and default-size guess; sync is its process. Ratchet candidates: Sync calls Flow metrics inline (`TeamDataService.cs:23` calls `UpdateTeamMetrics`); the Portfolio refresh triggers Promises and Forecasting directly (`PortfolioUpdater.cs:101,106,124`). Those crossings become reactions to an event; the steps inside Work Items may stay an ordered pipeline.

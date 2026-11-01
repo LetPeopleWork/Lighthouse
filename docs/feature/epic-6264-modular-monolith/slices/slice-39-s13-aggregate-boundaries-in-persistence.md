@@ -68,3 +68,7 @@ Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN, e.g.:
 4. Navigation removed.
 5. After measurement.
 6. Further candidates as their own slices.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Explicit goal (maintainer, 2026-11-01): a refresh and a forecast run in parallel without write conflicts, because Work Items and Forecasting write different rows in different aggregates. Measure it before and after on the restored production-like database. On SQLite writes still queue one after another, so the claim is short, conflict-free writes, not parallel ones.

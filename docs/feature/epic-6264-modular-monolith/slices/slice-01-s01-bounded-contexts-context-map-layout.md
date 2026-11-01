@@ -67,3 +67,7 @@ M. Several decisions plus a map and nine glossaries, but no code.
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (e.g. map + glossary first, layout second).
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Done. The Big Picture Event Storming found **eleven** target contexts, not the nine assumed here, so the acceptance criteria that say "nine" are superseded by ADR-270 (`docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md`). Workspace: `docs/feature/story-6357-s01-bounded-contexts-context-map/`.

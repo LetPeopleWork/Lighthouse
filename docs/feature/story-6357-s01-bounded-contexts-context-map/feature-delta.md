@@ -99,3 +99,16 @@ review" items), then close-out.
 - Close-out feeds back to the Epic: revise S03a–h (Portfolio/Delivery splits into Organisation set-up and
   Promises; Platform is no context; Licensing and Organisation set-up added), the brief's "nine" criteria, an
   explicit parallel-write goal on S13, and the Improvement log, with ADO edits only on the maintainer's yes.
+
+### Close-out (2026-11-01)
+
+- ADR-270 **Accepted** by the maintainer at Hold 1 (one item model with a level, context name Work Items, Feature
+  WIP and throughput window in Forecasting, pipelines inside a context and events across contexts).
+- DEVOPS: usage-data event N/A, because S01 changes no code and nothing a user can do. DISTILL: no executable
+  scenario, because nothing behaves differently; ratchet candidates are in the packaging briefs. DELIVER: the
+  deliverable is the accepted ADR; no crafter dispatch, so no rigor profile and no mutation run (no production code).
+- Checklist: behaviour-free ✔ (docs only) · ratchet ✔ (none due; candidates handed on) · moves/edits N/A (nothing
+  moved) · re-count ✔ · mutation N/A · ARCHITECTURE.md §4 banner and §16 ✔ · ADR number from `origin/main` ✔ (270)
+  · Terminology ✔ · no internal references as explanations ✔ (reviewed) · cross-cutting N/A stated ✔ · no release
+  notes ✔.
+- Catalogue and ADO revisions applied with the maintainer's yes: see the Epic's Improvement log entry.

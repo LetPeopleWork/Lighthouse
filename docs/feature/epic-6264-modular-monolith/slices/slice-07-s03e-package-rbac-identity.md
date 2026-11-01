@@ -41,3 +41,7 @@ RBAC can be packaged without touching a single authorization decision. **Disprov
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Retitled **Package Access and Licensing**: two small generic contexts in one Story, two folders. Licensing comes from RBAC/Identity today (`Services.Implementation.Licensing`). Ratchet candidate: the updaters resolve `ILicenseService` directly (`TeamUpdater.cs:31`, `PortfolioUpdater.cs:65-68`, `ForecastUpdater.cs:292`).

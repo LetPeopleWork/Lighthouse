@@ -39,3 +39,7 @@ The update substrate has in-process and cluster adapters (Redis, Postgres lock).
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN.
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Retitled **Package Promises (Deliveries)**. ADR-270 splits today's Portfolio/Delivery module: Deliveries go to **Promises**; Portfolios (units) and their settings go to **Organisation set-up** (new Story S03i). The Delivery snapshot and closure handlers that react to "forecasts updated" sit in Promises and write Promises' own tables.

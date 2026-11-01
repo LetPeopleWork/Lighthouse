@@ -41,3 +41,7 @@ The layout works for the most entangled context. **Disproved if** the move needs
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (e.g. move + rule first, read ports next, ADR amendment last).
+
+## Update after S01 (2026-11-01, ADR-270 accepted)
+
+Pilots the ADR-270 layout (`Modules/<Context>/{Domain, Application, Adapters}`) on the **Flow metrics** context, and settles the exact folder and namespace spelling for every context (for example Organisation vs Organization, since code uses American `License`). Use `IlDependencies` for the new dependency ratchets.
