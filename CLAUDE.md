@@ -230,6 +230,21 @@ A change is **not done** until every gate below passes locally. CI enforces them
     (`Limit: 60, Remaining: 0`) means repeated full runs exhausted the **unauthenticated** GitHub API
     quota. Another reason not to run the suite unfiltered in a loop.
 
+### Local test worker cap (both stacks)
+
+`LIGHTHOUSE_TEST_WORKERS` sets how many workers `pnpm test` and `dotnet test` use. Unset or empty and not CI, each
+runs with half the cores (at least one), so a second session or an IDE still has room. In CI (`CI=true`, any case)
+and unset, nothing is configured and each tool keeps its own default. An explicit value wins everywhere, and a value
+that is not a positive whole number fails fast (the frontend resolver throws; the backend prints "LIGHTHOUSE_TEST_WORKERS
+must be a positive whole number").
+
+- Frontend: `LIGHTHOUSE_TEST_WORKERS=N pnpm test`. `VITEST_MAX_WORKERS` and the CLI `--maxWorkers` beat the cap.
+- Backend: `LIGHTHOUSE_TEST_WORKERS=N dotnet test ...`. Arguments after `dotnet test --` replace the cap for that run.
+- Vitest IDE runs are capped (they load `vitest.config.ts`); NUnit IDE runners (Rider, Visual Studio) stay uncapped.
+- The fraction lives in two places, the `LOCAL_WORKER_FRACTION` constant in `src/tests/testWorkers.ts` and the csproj; change both together.
+- The cap is sized for one session at a time. Two parallel full-suite sessions can still exhaust memory.
+- `dotnet build-server shutdown` releases the resident compiler server between runs; the next build restarts it.
+
 ### SonarQube Cloud (both stacks)
 
 - CI runs SonarQube Cloud analysis on every PR. Do not introduce new issues of any severity (bugs, vulnerabilities, code smells, security hotspots) — the gate fails on new violations even if existing debt remains.
