@@ -71,6 +71,18 @@ Two standing principles worth keeping visible here because they're easy to skip 
 
 - **No silent N/A.** Every checklist item gets an explicit answer, including "N/A, because …" — never an implicit skip.
 - **Per-feature, not batched.** Docs/screenshots/client updates happen at feature finalization, not deferred to `/release`. If `/release`'s `update-docs` pass finds a lot of drift, that's a signal the per-feature discipline was skipped — fix it at the feature level.
+- **Every feature is placed on the context map, at DISCUSS or at the latest at DESIGN.**
+  `docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md` holds the bounded
+  contexts, the context map and the glossary per context. It describes the **target** the code moves towards,
+  not today's layout. DISCUSS (or DESIGN, if DISCUSS did not) answers explicitly:
+  - which contexts the feature touches;
+  - which new terms it introduces, named after the glossary, and which concepts are new;
+  - which domain events it publishes or reacts to. Domain events are the default way one context reacts to
+    another.
+
+  If the feature adds a concept, a context or an edge, or changes one, update ADR-270 (map, glossary, the
+  "target only" marks) and `ARCHITECTURE.md` §4 in the same feature, not later. `nw-finalize` checks that they
+  match what shipped.
 - **DEVOPS asks which usage-data event, if any, would show the feature is used.** We are building
   the opt-in usage-data catalog (PostHog, via the backend-forwarded pipe) up one feature at a time, so
   every DEVOPS wave answers this explicitly — an event design, or "N/A, because …". Prefer a name-only

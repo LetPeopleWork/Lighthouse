@@ -84,6 +84,13 @@ graph LR
 
 ## 4. The nine modules
 
+> **Being reshaped (target).** These nine modules describe the code as it stands today. The modular-monolith work
+> (Epic 6264) moves them, one behaviour-free Story at a time, towards the eleven bounded contexts and the context map
+> in [ADR-270](docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md): Portfolio/Delivery
+> splits into Organisation set-up and Promises, RBAC/Identity into Access and Licensing, and Platform/Persistence
+> becomes composition-root infrastructure rather than a module. Until a context has moved, the table below is what the
+> code does.
+
 The codebase is one assembly organised into **nine logical modules** (namespace folders), with boundaries **enforced at test time** by `TngTech.ArchUnitNET` (ADO #5101). No physical assembly split — that would complicate the single-binary publish for enforcement the test rules already give (ADR-027 D5).
 
 | # | Module | Responsibility | Anchor namespaces |
@@ -428,5 +435,6 @@ Rejected regardless of scale: microservices, full CQRS / a separate read store, 
 | 263 – 264 | The Delivery dialog never shows a guess: it reads its sources from the page's shared keyed query and its Release list, Feature list and rule fields from queries per Portfolio and per opening, reading an unknown licence as unknown; and every Jira Release sweep writes one Information line of counts and time that names no customer (§10, §12). *Accepted*; built with Story #6398, released in v26.10.25.1 |
 | 265 – 267 | Reports across owners: one owner-less endpoint lists every readable report, filtered on the server, each row naming its owner; a bulk create or removal is one request of at most 50, answered owner by owner through the single-report path; several reports print as one document from the same hidden frame, ready only when every report is (§3, §12). *Accepted*; built with Epic #6350, released in v26.11.1.2 |
 | 268 – 269 | A ratchet guard lists its offenders by name in both directions and only ever shrinks; the five frontend layer rules are checked by Fallow and ratcheted in an enforcement test (§12). *Accepted*; released in v26.11.1.2 |
+| **270** | **Bounded contexts, context map and module layout, from a Big Picture Event Storming with the maintainer: eleven contexts (Organisation set-up, Tracker integration as the ACL, Sync, Flow metrics, Forecasting, Promises, Signals, Refinement, Reports, Access, Licensing) with Platform as composition-root infrastructure; domain events as the default way contexts react to each other; Sync owns the mirrored items and every other context owns the data it calculates, referencing items by id (logical ownership, one database); a glossary per context; `Modules/<Context>/{Domain, Application, Adapters}` on the backend and `src/modules/<context>/` on the frontend; a shared kernel of shared ids, value objects and the event base type only. The target, not today's code (§4). *Proposed*** |
 
-The full set (001–269 — 173–177, 181–186, 195–197, 206, 219–222, 240 and 247 are *Proposed*, reverted or not yet built: designed, but not what the code does; 223, 224 and 226–232 decide the separate lighthouse-clients repository — the CLI, the MCP server and the skills — and are not indexed here), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).
+The full set (001–270 — 173–177, 181–186, 195–197, 206, 219–222, 240, 247 and 270 are *Proposed*, reverted or not yet built: designed, but not what the code does; 223, 224 and 226–232 decide the separate lighthouse-clients repository — the CLI, the MCP server and the skills — and are not indexed here), the per-feature DESIGN deltas ([`brief.md`](docs/product/architecture/brief.md)), and the diagrams ([`c4-diagrams.md`](docs/product/architecture/c4-diagrams.md)) all live under [`docs/product/architecture/`](docs/product/architecture/).

@@ -1,0 +1,346 @@
+<title>Lighthouse Event Storm</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Patrick+Hand&display=swap">
+<style>
+/* Layout: a wall you scroll sideways — one column per timeline section, stickies stacked by type,
+   a platform lane under the wall, findings and decisions above and below. */
+:root {
+  --wall: #eef0ec;          /* whiteboard, slightly green-grey */
+  --paper: #fbfcfa;
+  --ink: #1d2320;
+  --muted: #5d6762;
+  --rule: #cfd5d0;
+  --accent: #0f6e63;        /* lighthouse teal */
+  --event: #ffb35c; --command: #8cc4f5; --policy: #c9a7ef; --external: #f7a8c8;
+  --readmodel: #a9df9a; --actor: #fde98a; --hotspot: #f26b6b;
+  --sticky-ink: #1d1b16;
+  --ghost: #dfe3df;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+  --f-hand: "Patrick Hand", "Comic Neue", "Segoe Print", cursive;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --wall: #161b19; --paper: #1e2422; --ink: #e6ebe8; --muted: #9aa6a0; --rule: #34403b; --accent: #5cc8b8;
+  --event: #e99a45; --command: #6aa6d9; --policy: #a988d2; --external: #d985a8;
+  --readmodel: #86c077; --actor: #e3cf6a; --hotspot: #e05858; --sticky-ink: #16130e; --ghost: #2a322f;
+  color-scheme: dark } }
+:root[data-theme="dark"] {
+  --wall: #161b19; --paper: #1e2422; --ink: #e6ebe8; --muted: #9aa6a0; --rule: #34403b; --accent: #5cc8b8;
+  --event: #e99a45; --command: #6aa6d9; --policy: #a988d2; --external: #d985a8;
+  --readmodel: #86c077; --actor: #e3cf6a; --hotspot: #e05858; --sticky-ink: #16130e; --ghost: #2a322f;
+  color-scheme: dark }
+
+body { background: var(--wall); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 36px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(30px, 5vw, 46px); font-weight: 800; letter-spacing: -0.01em; }
+h2 { font-size: 22px; font-weight: 600; }
+h3 { font-size: 16px; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.meta { color: var(--muted); font-size: 14px; }
+header { display: flex; flex-direction: column; gap: 10px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.chip { width: 14px; height: 14px; border-radius: 2px; display: inline-block; }
+.prov { font-family: var(--f-mono); font-size: 10.5px; padding: 1px 5px; border-radius: 3px; border: 1px solid currentColor; opacity: .75; }
+
+/* findings */
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.finding { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.finding .tag { font-family: var(--f-mono); font-size: 11px; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; }
+.finding.f6455 { border-color: var(--hotspot); }
+
+/* the wall */
+.wall-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; }
+.wall { overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x proximity; }
+.lanes { display: grid; grid-auto-flow: column; grid-auto-columns: 250px; gap: 14px; align-items: start; }
+.col { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 10px; scroll-snap-align: start; min-width: 0; }
+.col.todo { background: transparent; border-style: dashed; }
+.col-h { display: flex; flex-direction: column; gap: 2px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; }
+.col-h .letter { font-family: var(--f-mono); font-size: 12px; color: var(--accent); }
+.status { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.status.walked { color: var(--accent); }
+.stickies { display: flex; flex-direction: column; gap: 7px; }
+.sticky { font-family: var(--f-hand); font-size: 16.5px; line-height: 1.2; color: var(--sticky-ink); padding: 8px 9px 7px; border-radius: 2px;
+  box-shadow: 0 1px 0 rgba(0,0,0,.08), 0 3px 6px -3px rgba(0,0,0,.25); display: flex; flex-direction: column; gap: 4px; }
+.sticky:nth-child(3n+1) { transform: rotate(-0.6deg); }
+.sticky:nth-child(3n+2) { transform: rotate(0.5deg); }
+@media (prefers-reduced-motion: no-preference) { .sticky { transition: transform .15s; } .sticky:hover { transform: rotate(0) scale(1.02); } }
+.sticky .row { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; font-family: var(--f-mono); font-size: 10px; letter-spacing: .04em; text-transform: uppercase; opacity: .7; }
+.sticky .note { font-family: var(--f-body); font-size: 12px; line-height: 1.35; opacity: .85; }
+.t-event { background: var(--event); } .t-command { background: var(--command); } .t-policy { background: var(--policy); }
+.t-external { background: var(--external); } .t-readmodel { background: var(--readmodel); } .t-actor { background: var(--actor); }
+.t-hotspot { background: var(--hotspot); transform: rotate(1.4deg) !important; }
+.todo-note { font-size: 13px; color: var(--muted); }
+
+.platform { background: var(--ghost); border-radius: 6px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+.platform .stickies { flex-direction: row; flex-wrap: wrap; }
+.platform .sticky { width: 210px; max-width: 100%; }
+
+/* buckets + levels */
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.panel { background: var(--paper); border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.bucket { display: grid; grid-template-columns: 110px 1fr; gap: 10px; border-top: 1px solid var(--rule); padding-top: 10px; }
+.bucket b { font-family: var(--f-display); font-weight: 600; }
+.bucket .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.pill { font-size: 13px; padding: 2px 8px; border-radius: 99px; background: var(--wall); border: 1px solid var(--rule); }
+pre.levels { font-family: var(--f-mono); font-size: 12.5px; line-height: 1.6; margin: 0; overflow-x: auto; background: var(--wall); padding: 12px; border-radius: 4px; }
+ul.plain { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 520px) { .bucket { grid-template-columns: 1fr; } }
+a { color: var(--accent); }
+a:focus-visible, .wall:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Big Picture Event Storming · Story 6357 (S01) · Epic 6264</div>
+    <h1>Lighthouse Event Storm</h1>
+    <p class="meta">Session with the maintainer, started 1 November 2026. The whole timeline, A to K, is walked, and the target context map is drafted. The decision record is ADR-270 (Proposed, in review). The text version of this board lives in the repository at <code>docs/feature/story-6357-s01-bounded-contexts-context-map/event-storming/board.md</code>.</p>
+    <div class="legend" aria-label="Legend">
+      <span><i class="chip t-event"></i>Domain event</span>
+      <span><i class="chip t-command"></i>Command</span>
+      <span><i class="chip t-policy"></i>Policy</span>
+      <span><i class="chip t-external"></i>External system</span>
+      <span><i class="chip t-readmodel"></i>Read model</span>
+      <span><i class="chip t-actor"></i>Actor</span>
+      <span><i class="chip t-hotspot"></i>Hot spot</span>
+      <span><span class="prov">M</span> maintainer only</span>
+      <span><span class="prov">M+C</span> maintainer and code</span>
+      <span><span class="prov">C</span> code only</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="f-h" style="display:flex;flex-direction:column;gap:14px">
+    <h2 id="f-h">What the storm has shown so far</h2>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section aria-labelledby="w-h" style="display:flex;flex-direction:column;gap:12px">
+    <div class="wall-head">
+      <h2 id="w-h">The wall, left to right in time</h2>
+      <span class="meta">Scroll sideways →</span>
+    </div>
+    <div class="wall" tabindex="0" aria-label="Timeline wall, scrolls horizontally"><div class="lanes" id="lanes"></div></div>
+    <div class="platform">
+      <h3>Platform lane: not part of anyone's story</h3>
+      <div class="stickies" id="platform"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="m-h">
+    <h2 id="m-h">The target context map</h2>
+    <p class="meta">This is the goal the code moves towards over the coming weeks, one behaviour-free Story at a time. Signals, the promise lifecycle and levels above the Feature are target language for future features, not refactoring. Core contexts: Flow metrics, Forecasting, Promises.</p>
+<pre class="levels">  Jira · ADO · Linear · CSV · ServiceNow
+          │
+          ▼
+  ┌────────────────────┐   mapping    ┌──────────────────────────┐    ┌────────┐  ┌───────────┐
+  │ Tracker integration │◄────────────│ Organisation set-up       │    │ Access │  │ Licensing │
+  │ (ACL)               │ conformist  │ levels·names·units·       │    └────────┘  └───────────┘
+  └─────────┬──────────┘             │ defaults·overrides        │     generic: guard / gate
+            │ customer/supplier       └────────────┬─────────────┘
+            ▼                                      │ open host
+  ┌───────────────────┐  domain events             │
+  │ Sync              │─────────┬──────────────┬───┴─────────────┬───────────────┐
+  └───────────────────┘         ▼              ▼                 ▼               ▼
+                       ┌──────────────┐ ┌─────────────┐  ┌────────────┐  ┌─────────┐
+                       │ Flow metrics │ │ Forecasting │◄─│ Refinement │  │ Signals │ (target)
+                       └──────┬───────┘ └──────┬──────┘  └────────────┘  └────▲────┘
+                              │ conformist     │ customer/supplier            │
+                              ▼                ▼                              │
+                       ┌──────────────┐ ┌─────────────┐                       │
+                       │ Reports      │ │ Promises    │───────────────────────┘
+                       └──────┬───────┘ └─────────────┘
+                              └─► PDF / scheduled → people outside Lighthouse
+  Public HTTP API = open host → SPA, CLI, MCP</pre>
+    <p class="meta">Pivotal events, left to right: organisation set up → items fetched → unit data refreshed → forecasts updated → promise made, kept, missed or renegotiated → signal changed → report created. Licence expired gates them all. Domain events are the default way one context reacts to another.</p>
+  </section>
+
+  <section class="panel" aria-labelledby="d-h">
+    <h2 id="d-h">Who owns which data</h2>
+    <p class="meta">Source data comes from the trackers and has one owner. Every other context stores what it calculates in its own tables and points at items by ID only. Nobody writes another context's tables. Ownership is logical: one database, foreign keys and cascades stay.</p>
+<pre class="levels">  ┌──────────── Sync  (name under review: Work Items) — mirror of the trackers ────────────┐
+  │  Items, leaf and non-leaf: one model with a level                                      │
+  │  states · transitions · blocked periods · parent links · roll-up · default-size guess  │
+  └──────────────▲─────────────────────▲─────────────────────▲─────────────────────────────┘
+                 │ ItemId              │ ItemId              │ ItemId      (reference by ID only)
+      ┌──────────┴────────┐  ┌─────────┴─────────┐  ┌────────┴───────────┐
+      │ Forecasting       │  │ Flow metrics      │  │ Promises           │   Signals: signal history (target)
+      │ forecasts         │  │ daily snapshots   │  │ Deliveries+history │   Reports: frozen windows
+      └───────────────────┘  └───────────────────┘  └────────────────────┘   Org set-up: levels, units, settings</pre>
+    <ul class="plain">
+      <li><b>Why:</b> each context can change, be tested or one day be rewritten (Forecasting in another language, for example) behind its own contract.</li>
+      <li><b>Parallel writes:</b> a refresh and a forecast run write different rows in different aggregates, so they stop trampling on each other. On SQLite writes still queue one after another, but they get short and conflict-free. The first test is moving forecasts off the Feature, measured before and after.</li>
+      <li><b>Domain events</b> are how one context tells another that something happened. Reads go through the owner's contract, never its tables.</li>
+    </ul>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <h2>Who decides which setting</h2>
+      <p class="meta">Teams and Portfolios keep their freedom, but most of how they work starts from an organisation default.</p>
+      <div id="buckets"></div>
+    </div>
+    <div class="panel">
+      <h2>Levels are pairs</h2>
+      <p class="meta">"Somewhat Flight Levels": each level pairs a unit that owns the work with the unit of work assigned to it.</p>
+<pre class="levels">level             owning unit                unit of work
+──────────────    ───────────────────────    ─────────────────────────────
+n  strategic      Program / portfolio board  Strategic Initiative / Project
+2  coordination   ART / value stream         Change / Capability
+1  operational    Team  (has throughput)     Story  → rolls up to Epic</pre>
+      <ul class="plain">
+        <li>Levels and their names are set <b>once per installation</b>, like Terminology.</li>
+        <li>Deliveries become a property of a level above the Team, not of a Portfolio.</li>
+        <li>"Portfolio" is used today for a product with releases, an ART and a value stream: one word, three meanings.</li>
+      </ul>
+    </div>
+  </section>
+</div>
+
+<script>
+const S = (t, text, src, note) => ({ t, text, src, note });
+const findings = [
+  ["Language shift", "You think in changes, the code thinks in recalculation", "A date moved, a signal turned red, a Delivery ran late: none of these exist in code. It publishes fresh snapshots and computes signals on read."],
+  ["Upstream", "Licensing is something others react to", "Expiry and the last 30 days trigger policies: Premium goes away, refreshing stops over the free limit, the icon turns orange then red."],
+  ["New context?", "Organisation set-up", "Terminology, hierarchy levels and the tracker mapping describe how the organisation works. Set once per installation. No home among today's nine modules."],
+  ["Split", "Mapping is not translation", "Mapping (which type is a Feature, which state is Done) needs people. Translation (connectors turning issues into Work Items) is the anti-corruption layer."],
+  ["Forecasting's Team", "The Team as a capacity", "The only settings that stay purely local are Feature WIP and the throughput window: exactly what the simulation needs from a Team."],
+  ["Language shift", "Forecast is not a promise", "A forecast is an answer that gets replaced; people plan with it. A promise has a target, a history and an ending: kept, missed or renegotiated."],
+  ["Data", "Source data and extensions", "One context mirrors the trackers' items; every other context owns what it calculates, pointing at items by ID only."],
+  ["6455", "Two corrections for Epic 6455", "Levels per installation, not per Portfolio. And each level pairs an owning unit with a unit of work, where DIVERGE stacked work only.", true],
+];
+const cols = [
+  { k: "A", name: "Install & licence", status: "walked", items: [
+    S("actor","Admin / instance operator","C"),
+    S("event","Lighthouse opened, nothing configured yet","MC"),
+    S("event","Licence loaded","MC","Premium features become available"),
+    S("event","Licence entered its last 30 days","M"),
+    S("policy","Whenever the licence nears expiry → icon orange, message, renew link","M"),
+    S("event","Licence expired","M"),
+    S("policy","Whenever it expired → Premium goes away; over the free limit ALL refreshing stops; icon red","M"),
+    S("hotspot","Limits are checked in three places with three numbers. Does 'all refreshing stops' hold everywhere?","C"),
+    S("event","An admin changed system settings","MC"),
+  ]},
+  { k: "B", name: "Access", status: "walked", items: [
+    S("external","OIDC identity provider","C"),
+    S("event","User signed in · profile created","C"),
+    S("event","Role granted · group mapped · member added","C","none of these is announced today"),
+    S("policy","Org roles plus unit members","M"),
+    S("hotspot","'C-level shouldn't see Team things': not allowed (Access) or not relevant (navigation)? Keep apart.","M"),
+    S("actor","Someone outside the org viewing a promise","M","asked for, not planned; reports are the channel"),
+  ]},
+  { k: "C", name: "Connect a tracker", status: "walked", items: [
+    S("external","Jira Cloud · Jira DC · Azure DevOps · Linear · CSV · ServiceNow","C"),
+    S("command","Create connection","MC"),
+    S("event","Connection created","MC"),
+    S("event","Connection could not be created","MC","validation failed"),
+    S("event","Additional field added","MC"),
+    S("event","Connection fetch shape changed","C","real event today"),
+    S("policy","Whenever the fetch shape changed → refresh every Team, then every Portfolio using it","C"),
+    S("event","Connection stopped working (with a reason)","MC","Jira DC maintenance, expired PAT, …"),
+    S("policy","Whenever a connection stopped working → tell its owner so it can be fixed","M"),
+    S("event","Connection started working again","M"),
+    S("hotspot","Who owns a connection? The code calls the Teams that use it 'owners'.","M"),
+  ]},
+  { k: "D", name: "Organisation set-up & ways of working", status: "walked", items: [
+    S("actor","Organisation (once per installation)","M"),
+    S("event","Terminology changed","MC"),
+    S("event","A hierarchy level was introduced","M","Epic 6455"),
+    S("event","Mapping changed (types, states, blocked rules)","M","org default"),
+    S("event","Team created · Portfolio created","MC"),
+    S("event","Team / Portfolio settings changed","MC","may override the org default"),
+    S("event","Settings could not be validated","MC"),
+    S("event","Team deleted","C","real event; Portfolio delete has none"),
+    S("event","Features re-ordered","MC","Feature Rank Changed"),
+    S("policy","Whenever the ordering policy changed → re-forecast every Portfolio","C"),
+    S("hotspot","One word, three meanings: Portfolio = product, ART or value stream","M"),
+    S("hotspot","Initiatives connected straight to Teams (a level jump)","M"),
+    S("hotspot","Levels per installation and paired with an owning unit: both differ from the 6455 recommendation","M"),
+  ]},
+  { k: "E", name: "Sync", status: "walked", items: [
+    S("actor","Timer · user","MC"),
+    S("event","Refresh triggered (scheduled or manual)","MC"),
+    S("event","Work Items fetched","C","the translation"),
+    S("event","Work Item blocked · became stale · transitioned","MC","stale and transitioned: nobody listens yet"),
+    S("policy","Whenever stale or blocked → feed the unit's health signal","M"),
+    S("event","Team data refreshed","MC","7 policies react"),
+    S("event","Feature sized by default","C","Sync's decision, rule from org set-up"),
+    S("event","Portfolio Features refreshed","MC"),
+    S("event","Refresh failed","MC"),
+    S("event","Data written back to the tracker","MC"),
+    S("hotspot","How a refresh is cut is plumbing: users care about fresh data and visible failures","M"),
+  ]},
+  { k: "F", name: "Flow metrics", status: "walked", items: [
+    S("actor","Coach · whole Team","M"),
+    S("readmodel","Flow metrics at every level, granularity per level (day, week, month)","M"),
+    S("event","Daily snapshot recorded","C"),
+    S("event","Signal changed state","M","unit/level health and promise signals, with history"),
+    S("hotspot","Leaf vs non-leaf level is the real distinction, not Team vs Portfolio","M"),
+  ]},
+  { k: "G", name: "Forecasting", status: "walked", items: [
+    S("policy","Whenever Team data refreshed → forecast","C"),
+    S("event","Team forecast run manually","MC","answer forgotten today"),
+    S("event","Forecasts updated","MC"),
+    S("readmodel","Feature list as a planning cut line: what fits in 3 weeks?","M"),
+    S("policy","Upper levels composed upward: all children done","M"),
+    S("hotspot","Forecast ≠ Promise. A forecast is replaced; a promise has a target and a history.","M"),
+  ]},
+  { k: "H", name: "Promises (Deliveries)", status: "walked", items: [
+    S("actor","PO planning a PI · project manager","M"),
+    S("event","Promise made (Delivery created with a target)","MC"),
+    S("event","Target moved · scope cut","MC","renegotiation is life happening, not failure"),
+    S("event","Renegotiation suggested","M","the promise signal's job"),
+    S("event","Promise kept · promise missed","M"),
+    S("policy","Whenever forecasts updated → record Delivery snapshot (the trend)","C"),
+    S("hotspot","A Delivery holds items of its own level; planning is core","M"),
+  ]},
+  { k: "I–K", name: "Refinement · Reports · Clients", status: "walked", items: [
+    S("event","Sizing vote cast · item became ready","C"),
+    S("policy","Above the leaf, refinement would feed Forecasting (reference-class sizing)","M"),
+    S("event","Report created · exported","MC","Then & Now is the first report type of many"),
+    S("readmodel","Reports: the channel to people outside Lighthouse","M"),
+    S("external","CLI · MCP over the public API","C"),
+  ]},
+];
+const platform = [
+  S("event","Encryption keys loaded / rotated","C"), S("event","Database backed up / restored / cleared","C"),
+  S("event","Demo data loaded","C"), S("event","New version available / update installed","C"),
+  S("event","Usage-data consent given / revoked","C"), S("event","Start-up housekeeping (forecast inputs forgotten, orphaned Features removed)","C"),
+];
+const buckets = [
+  ["Org-wide, fixed", ["Terminology","Hierarchy levels","Blackout periods","Feature ordering","Refresh cadence"]],
+  ["Org default, local override", ["Work Item types","Feature types","State mapping","Blocked rules","Staleness","SLE","Default Feature size","Parent Override Field"]],
+  ["Local only", ["Feature WIP","Throughput window"]],
+];
+const label = { event:"event", command:"command", policy:"policy", external:"external", readmodel:"read model", actor:"actor", hotspot:"hot spot" };
+const prov = { M:"M", MC:"M+C", C:"C" };
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const esc = s => s.replace(/[&<>]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;" }[c]));
+const sticky = s => { const d = el("div", "sticky t-" + s.t);
+  d.append(el("div","row", `<span>${label[s.t]}</span><span class="prov">${prov[s.src]}</span>`), el("div", null, esc(s.text)));
+  if (s.note) d.append(el("div","note", esc(s.note))); return d; };
+
+const fEl = document.getElementById("findings");
+findings.forEach(([tag, h, p, is6455]) => { const c = el("article", "finding" + (is6455 ? " f6455" : ""));
+  c.append(el("div","tag", esc(tag)), el("h3", null, esc(h)), el("p","meta", esc(p))); fEl.append(c); });
+
+const lanes = document.getElementById("lanes");
+cols.forEach(c => { const col = el("section", "col" + (c.todo ? " todo" : ""));
+  const h = el("div","col-h"); h.append(el("span","letter", c.k), el("h3", null, esc(c.name)),
+    el("span", "status" + (c.status === "walked" ? " walked" : ""), c.status === "walked" ? "walked with the maintainer" : "next session"));
+  col.append(h);
+  if (c.todo) col.append(el("p","todo-note", esc(c.todo)));
+  else { const st = el("div","stickies"); c.items.forEach(s => st.append(sticky(s))); col.append(st); }
+  lanes.append(col); });
+
+const pl = document.getElementById("platform"); platform.forEach(s => pl.append(sticky(s)));
+const bEl = document.getElementById("buckets");
+buckets.forEach(([n, items], i) => { const b = el("div","bucket"); b.append(el("b", null, `${i+1}. ${esc(n)}`));
+  const ch = el("div","chips"); items.forEach(x => ch.append(el("span","pill", esc(x)))); b.append(ch); bEl.append(b); });
+</script>

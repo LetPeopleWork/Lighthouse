@@ -72,3 +72,30 @@ the same day, once the machine is quiet enough for test runs.
 
 - Seed board (from the code, status quo): `event-storming/board-seed.md`.
 - Session board and decisions: `event-storming/board.md` (written as we walk it).
+- Visual board: `event-storming/board.html` (published as a private artifact for the maintainer).
+
+### DESIGN outcome (2026-11-01)
+
+- **ADR-270** `docs/product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md`, status
+  Proposed: eleven contexts (target), context map with typed edges, domain events as the default between contexts,
+  key distinctions, glossary per context, layout for both stacks, shared-kernel content, data ownership.
+- **ARCHITECTURE.md** §4 banner (today's nine modules are being reshaped towards ADR-270) and §16 index row.
+- **CLAUDE.md**: every feature is placed on the context map at DISCUSS, or at the latest at DESIGN; ADR-270 and
+  §4 are updated in the same feature.
+- Peer review (nw-ddd-architect-reviewer): APPROVED WITH CHANGES, all eight findings applied.
+- Ratchet candidates (for the packaging Stories, not S01): Sync → Metrics inline call; refresh paths → licence
+  check; Deliveries → connectors directly; Portfolio refresh triggers Promises and Forecasting; controller publishes
+  `TeamDeleted`; oversized kernel / `Feature` carries forecasts; service locator in the updaters.
+
+### Slicing and remaining waves (proposed)
+
+S01 is docs-only, so it is one slice: **ADR-270 Accepted** (with the maintainer's answers to the "confirm at
+review" items), then close-out.
+
+- DEVOPS: usage-data event N/A, because S01 changes no code and nothing a user can do.
+- DISTILL: no executable scenario, because nothing behaves differently; the ratchet candidates become ratchet tests
+  in the packaging Stories that make them pass.
+- DELIVER: no crafter dispatch; the deliverable is the accepted ADR. Rigor profile N/A (no agent writes code).
+- Close-out feeds back to the Epic: revise S03a–h (Portfolio/Delivery splits into Organisation set-up and
+  Promises; Platform is no context; Licensing and Organisation set-up added), the brief's "nine" criteria, an
+  explicit parallel-write goal on S13, and the Improvement log, with ADO edits only on the maintainer's yes.

@@ -202,3 +202,206 @@ a textbook sign that the word must be split in the glossary.
 
 **Note for the interlude:** this is the target language, not a behaviour change inside S01. Moving SLE, staleness etc. from
    per-unit to org-default-plus-override is a feature (likely part of Epic 6455 or its own), not refactoring.
+
+**Closing D — the Team stays special** (maintainer). The lowest layer is defined by what it does: it **generates
+the throughput**. Everything above it can be generic units on levels; the old Portfolio becomes one of those.
+The name "Team" is up for debate, the role is not. HOTSPOT: how to model "the unit that generates throughput"
+generically is open (maintainer: "unsure yet how to best solve this").
+
+### B. Access — walked 2026-11-01
+
+- **Org roles plus unit members** (maintainer): organisation-wide roles (admin, broad viewers) plus membership
+  per unit for working on it. Matches today's shape (System Admin + Team/Portfolio members) lifted to units.
+- HOTSPOT `?`: "a C-level person should not see all the Team-level things, as they don't care". Two different
+  needs hide in that sentence: *not allowed* (permission, Access) and *not relevant* (which level a person looks
+  at by default, a read-model / navigation concern). Keep them apart in the model.
+- **Someone outside the organisation looking at a promise** has been asked for; not planned. Hosted instances run
+  with auth, so it needs an account; a future dedicated *Delivery viewer* role is conceivable. For Standalone and
+  the rest, the outward channel is **screenshots today, Reports in future** (PDF export, scheduled delivery).
+  Candidate context-map edge: **Reports as the published language to people outside Lighthouse**.
+- The code announces no access change at all (every RBAC change goes through `IRbacAdministrationService`
+  silently). No maintainer event was raised here, so Access stays a supporting area: it follows the units that
+  exist and has no story of its own beyond that.
+
+### E. Sync — walked 2026-11-01
+
+- **Stale, blocked and transitioned items feed a signal** (maintainer). Today *Work Item Became Stale* and
+  *Work Item Transitioned* are published to nobody, and blocked only feeds a chart. In the target, they are inputs
+  to the red/amber/green **signals** from section F, with history. The events exist; their consumer does not.
+- **What "one refresh" is does not matter to users** (maintainer). They care that data is fresh and that a failure
+  is visible. The refresh shape (per unit, per level, per connection) is plumbing: Sync is a supporting area whose
+  outward facts are *X refreshed* and *refresh failed*, not its internal steps.
+- **The default-size guess belongs to Sync** (maintainer): rolling up work, including the guess for a Feature
+  with no children, is part of getting the data right. The rule it applies comes from Organisation set-up
+  (default Feature size = org default, local override). Forecasting only consumes the result.
+- Code hot spots kept: one 1,445-line `WorkItemService` runs both the Team and the Portfolio sync; a query change
+  discards items silently; Feature state changes are recorded with no event.
+
+### F. Metrics — walked 2026-11-01
+
+- **Signals live on two levels** (maintainer): **unit/level health** (a Team or level turns amber/red, e.g. by how
+  many of its items are blocked or stale; item-level facts roll into it) and **promise** (a Feature or Delivery's
+  likelihood of hitting its date). Each signal has a history of when it changed. None of this exists in code
+  today; the inputs (stale, blocked, transitioned events; forecasts) do.
+- **Flow metrics are one calculation at every level; granularity differs** (maintainer). Teams look per day
+  (perhaps per hour in future); strategic levels per week or month. Candidate: granularity is a property of the
+  level, set in Organisation set-up.
+- **The real distinction is leaf vs non-leaf level** (maintainer), not Team vs Portfolio:
+  - **Feature WIP** belongs to forecasting and only matters at the leaf, where throughput is generated.
+  - **Refinement** exists only at the leaf today; it may come to non-leaf levels in a different form, and must then
+    work for any number of upper levels.
+  - So "special" things are tied to *leaf* or *non-leaf*, never to a numbered level.
+
+### G. Forecasting — walked 2026-11-01
+
+- **A Feature's forecast is a planning aid, not a tracked promise** (maintainer). People use it to plan: "what can
+  I deliver in the next 3 weeks?", scrolling down to the cut line where a Feature won't make it. That its date
+  moves matters little on the Feature itself. Trends already exist in the Delivery metrics.
+- **Change matters where a target exists**: on non-leaf items that carry Deliveries, *signals* react, e.g.
+  approaching the target date, or N Features forecast to finish after the target. So the maintainer's
+  "date changed" events are promise signals, not forecast events.
+- **Language shift (candidate pivotal): Forecast → Promise.** A *forecast* is an answer ("when, with what
+  likelihood") that is recomputed and replaced. A *promise* is a target someone committed to, which a forecast is
+  compared against, with history and signals. Forecasting owns the first; Deliveries own the second.
+- **Upper levels are composed upward** (maintainer): Forecasting forecasts the items directly above the leaf from
+  throughput, then composes "all children done" level by level (the joint maths Deliveries already use). So
+  Forecasting owns "when" at every level.
+
+### H. Deliveries — walked 2026-11-01
+
+- **A promise ends kept, missed, or renegotiated, and all three are recorded with history** (maintainer).
+  Renegotiation takes two forms: **target moved** or **scope cut**. Both are normal ("just life happening") and
+  useful for retrospectives; nothing about them is a failure. **Signals indicate when a renegotiation should be
+  considered**: the promise signal's job is to prompt that conversation, not to blame.
+  - EVENTS: *Promise Made* (Delivery created with a target) · *Target Moved* · *Scope Cut* (or added) ·
+    *Renegotiation Suggested* (signal) · *Promise Kept* · *Promise Missed*. Today only the archive's frozen pin
+    exists; the rest is lost or derived.
+- **A Delivery is a release of items on its own level** (maintainer). A Delivery on the Change level holds Changes;
+  today's Deliveries are this rule on the Feature level. So Deliveries hang off any non-leaf level and hold that
+  level's items.
+- **Planning is core** (maintainer). Lighthouse helps decide what fits ("what can we promise by the end of the
+  PI?"), not just checks the result. The Feature forecast's cut-line view from G is the planning read model.
+
+### I–K. Refinement, Reports, Clients — walked 2026-11-01
+
+- **Refinement is mainly way of working** (maintainer), at the leaf. On non-leaf levels a different form would
+  **feed Forecasting**: reference-class forecasting, setting the approximate size of non-leaf items. So it is
+  supporting at the leaf, and an upstream of Forecasting above it.
+- **Reports are their own context** (maintainer). Then & Now is only the first report type; more follow (metrics
+  charts in a report, signals as a report type). They conform to Metrics for numbers and are the outbound channel
+  (PDF, scheduled delivery). HOTSPOT `?`: Signals as a report type, or Signals as their own concept that a report
+  can include; open.
+- **Clients**: the public API is the published language for the CLI and the MCP server. Kept hot spot: saving a
+  connection from the CLI always starts updates; the browser asks first.
+
+## Phase 3 — pivotal events, language shifts and candidate contexts (draft for the maintainer)
+
+### Pivotal events (where the story hands over)
+
+| # | Pivotal event | What changes meaning there |
+|---|---|---|
+| P1 | *Organisation Set Up* / *Level Introduced* | Structure, names and mapping exist; everything downstream reads them |
+| P2 | *Items Fetched* (connection works) | Tracker issues become Lighthouse items (translation) |
+| P3 | *Unit Data Refreshed* (today Team Data Refreshed, Portfolio Features Refreshed) | Items become flow history |
+| P4 | *Forecasts Updated* | Throughput becomes dates ("when") |
+| P5 | *Promise Made / Kept / Missed / Renegotiated* | A date becomes a commitment |
+| P6 | *Signal Changed* | State becomes attention |
+| P7 | *Report Created* | Live numbers become a frozen record for others |
+| — | *Licence Expired* | Upstream gate on everything |
+
+### Candidate contexts (draft, to be confirmed)
+
+Maintainer decisions, 2026-11-01:
+
+- **Units live in Organisation set-up**: one context holds the levels, their names (Terminology), the units on each
+  level (the leaf unit that generates throughput, today's Team; upper units, today's Portfolios), the mapping
+  defaults and each unit's overrides.
+- **Signals is its own context** (maintainer leaning, Claude agreeing): it listens to Sync (stale, blocked,
+  transitioned), Metrics, Forecasting and Promises, and owns thresholds, current state and the history of
+  changes. Splitting it between Metrics and Promises would build the same threshold-and-history mechanism twice.
+  **Target only**: nothing in code to package today; SLE risk stays in Metrics until the first Signals feature.
+  Reports include signals as conformist.
+- **The delivery side is called Promises** in the model; *Delivery* stays the user-facing, configurable term for
+  one promise.
+- **Licensing is its own small, generic context** publishing *Licence Loaded / Nearing Expiry / Expired*, which
+  others react to.
+- **Platform is not a context** (answers the brief's open question): keys, backups, updates, consent and start-up
+  housekeeping are the composition root's infrastructure lane.
+
+| Context | Type | Today's module | Packaged by Epic 6264 (behaviour-free) or target only |
+|---|---|---|---|
+| Organisation set-up (levels, names, mapping defaults, units + overrides, calendar, cadence, ordering) | supporting, upstream of nearly all | none; spread over instance settings, connection defaults, Team/Portfolio | packaged from today's settings + Team/Portfolio; levels are target (6455) |
+| Tracker integration (ACL) | supporting | WorkTracking-Integration | packaged |
+| Sync | supporting | WorkItems/Sync | packaged |
+| Flow metrics | **core** | Metrics | packaged (S02 pilot) |
+| Forecasting | **core** | Forecasting | packaged |
+| Promises | **core** | Delivery half of Portfolio/Delivery | packaged (today's Deliveries); lifecycle events are target |
+| Signals | supporting (target) | none | target only |
+| Refinement | supporting | Refinement | packaged |
+| Reports | supporting | Reports | packaged |
+| Access | generic | RBAC/Identity | packaged |
+| Licensing | generic | inside Platform | packaged (small) |
+| *(Platform lane)* | not a context | Platform/Persistence | composition root |
+
+### Context map (draft)
+
+```text
+  Jira · ADO · Linear · CSV · ServiceNow                    OIDC IdP           PostHog
+          │ (upstream, external)                               │                  ▲
+          ▼                                                    ▼                  │ platform lane
+  ┌────────────────────┐  mapping (conformist)   ┌─────────────────────────┐   ┌────────┐
+  │ Tracker integration │◄────────────────────────│ Organisation set-up      │   │ Access │ generic, guards all
+  │   (ACL)             │                         │ levels·names·units·      │   └────────┘
+  └─────────┬──────────┘                         │ defaults·overrides       │   ┌───────────┐
+            │ customer/supplier                   └───────────┬─────────────┘   │ Licensing │ generic,
+            ▼                                                 │ open host:      └───────────┘ events → all
+  ┌───────────────────┐  domain events                         │ everyone conforms to its structure
+  │ Sync              │──────────────┬─────────────┬───────────┼──────────────┐
+  └───────────────────┘              ▼             ▼           ▼              ▼
+                            ┌──────────────┐ ┌─────────────┐ ┌────────────┐ ┌─────────┐
+                            │ Flow metrics │ │ Forecasting │◄│ Refinement │ │ Signals │ (target)
+                            └──────┬───────┘ └──────┬──────┘ └────────────┘ └────▲────┘
+                                   │ conformist     │ customer/supplier          │ events from Sync,
+                                   ▼                ▼                            │ Metrics, Forecasting,
+                            ┌──────────────┐ ┌─────────────┐                     │ Promises
+                            │ Reports      │ │ Promises    │─────────────────────┘
+                            └──────┬───────┘ └─────────────┘
+                                   │ published language (PDF, scheduled) → people outside Lighthouse
+  Public HTTP API = open host / published language → SPA, Lighthouse-Clients (CLI, MCP)
+```
+
+### Layout decisions (maintainer, 2026-11-01)
+
+- **Backend**: `Modules/<Context>/{Domain, Application, Adapters}`; ports live in `Application` next to the use
+  cases that need them; `Adapters/{Api, Persistence, Connectors…}`. Chosen over flat role-named folders (layers not
+  visible) and vertical slices (conflict with ports-and-adapters rules). Lets ArchUnit enforce "Domain ↛ Adapters"
+  per context.
+- **Frontend**: `src/modules/<context>/` with one public `index.ts`. Not `features/` (collides with the domain word
+  Feature), not `contexts/` (collides with React Context and `src/context/`).
+- **Shared kernel** may hold only: identifiers used across contexts, truly shared value objects (e.g. date range,
+  likelihood), and the domain-event base type. Each event type lives with the context that publishes it.
+
+### Status of this board
+
+**This is the target, not today's code.** The context map, the glossary and the layout are the goal the
+modular-monolith work moves towards over the coming weeks, one behaviour-free Story at a time. Concepts that do not
+exist in code yet (Signals, the promise lifecycle, levels above the Feature) are target language for the features
+that will build them (Epic 6455 first), not refactoring work.
+
+### Data ownership (maintainer question, 2026-11-01)
+
+The maintainer asked whether there is one context for the data from the source (leaf and non-leaf), with
+calculated data (forecasts, flow metrics …) kept in separate "extension" tables. Recorded:
+
+- **Maintainer**: source data separate from what each context calculates; this also helps refreshes and forecast
+  runs write in parallel without the conflicts seen before (parallel writes on shared object graphs).
+- **Claude's proposals, confirm at the ADR review**: (a) the Sync context owns the mirrored items as **one item
+  model with a level**, not separate contexts for leaf and non-leaf items; (b) every other context owns what it
+  calculates in its own tables, referencing items by ID only, and reads others through their contracts; (c) rename
+  Sync to **Work Items**, since it owns the data, not only the process; (d) Feature WIP and the throughput window
+  (bucket 3) are stored as Forecasting's extension keyed by unit id.
+- Consistent with the Epic's logical-ownership decision (one database, FKs and cascades stay). The forecast pilot
+  (moving forecasts off the Feature) gets an explicit goal at close-out: measure parallel refresh + forecast
+  behaviour before and after. On SQLite, writes still queue; they become short and conflict-free.
+- Correction: Licensing comes from RBAC/Identity today (ARCHITECTURE.md §4, `Services.Implementation.Licensing`),
+  not from Platform as written in the Phase 3 table.
