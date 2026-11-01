@@ -246,7 +246,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows()
         {
             SeedOwner();
@@ -281,7 +280,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence()
         {
             SeedOwner();
@@ -300,7 +298,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupWithAStateListedNowhere_IsAcceptedWithoutAWarning()
         {
             SeedOwner();
@@ -318,7 +315,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates()
         {
             SeedOwner();
@@ -337,7 +333,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused()
         {
             SeedOwner();
