@@ -254,6 +254,17 @@ What you must understand is that you simply need to re-order your items in Jira 
 
 
 
+# Status and Work Item Type Names
+
+Jira can translate the names of statuses and work item types, and it shows each person the names in their own language. Lighthouse always works with the original names, the ones the statuses and types were created with, whatever language the account behind your token uses. An account set to German and one set to English therefore see the same states and Work Item Types in Lighthouse. The names you configure on a Team or Portfolio are matched against these original names.
+
+The [Board Wizard](#board-wizard) lists the original names too. If a Team or Portfolio was set up with translated names, for example *In Arbeit* where the status was created as *In Progress*, run the Board Wizard again or change the names to the original ones by hand.
+
+At each refresh, Lighthouse reads Jira's list of statuses and its list of work item types. The refresh fails if one of them cannot be read, or if Jira reports a status or type that is still missing from its list after Lighthouse reads that list once more. The Task Manager then shows what Jira answered, and a Team keeps the Work Items from its last refresh. Make sure the account behind the token can browse every project your queries cover.
+
+{: .note}
+Jira Data Center has no separate original name, so Lighthouse uses the names it reports, as before. This has not been tested on a Data Center instance whose administrators translate status names.
+
 # Board Wizard
 
 Use the Jira Board Wizard to automatically discover and import configuration from the Boards in your Jira Instance. The Wizard will:
