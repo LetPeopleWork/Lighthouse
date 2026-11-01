@@ -1,0 +1,23 @@
+disposed host after 150s: rootFactory alive=True, topFactory alive=True, testServer alive=True, serviceProvider alive=True
+disposed host after 200s: rootFactory alive=True, topFactory alive=True, testServer alive=True, serviceProvider alive=True
+after 230s: path to rootFactory:
+    static System.Threading.TimerQueue.<Instances>k__BackingField -> System.Threading.TimerQueue[]
+    [0] -> System.Threading.TimerQueue
+    ._longTimers (TimerQueue) -> System.Threading.TimerQueueTimer
+    ._state (TimerQueueTimer) -> Microsoft.Extensions.Http.DefaultHttpClientFactory
+    ._services (DefaultHttpClientFactory) -> Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope
+    .<RootProvider>k__BackingField (ServiceProviderEngineScope) -> Microsoft.Extensions.DependencyInjection.ServiceProvider
+    .<CallSiteFactory>k__BackingField (ServiceProvider) -> Microsoft.Extensions.DependencyInjection.ServiceLookup.CallSiteFactory
+    ._descriptors (CallSiteFactory) -> Microsoft.Extensions.DependencyInjection.ServiceDescriptor[]
+    [586] -> Microsoft.Extensions.DependencyInjection.ServiceDescriptor
+    ._implementationFactory (ServiceDescriptor) -> System.Func`2[System.IServiceProvider,Microsoft.AspNetCore.Hosting.Server.IServer]
+    ._target (Func`2) -> Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory`1+DelegatedWebApplicationFactory[Lighthouse.Backend.Program]
+    ._createServer (DelegatedWebApplicationFactory) -> System.Func`2[Microsoft.AspNetCore.Hosting.IWebHostBuilder,Microsoft.AspNetCore.TestHost.TestServer]
+    ._target (Func`2) -> Lighthouse.Backend.Tests.TestHelpers.TestWebApplicationFactory`1[Lighthouse.Backend.Program]
+after 230s: path to serviceProvider:
+    static System.Threading.TimerQueue.<Instances>k__BackingField -> System.Threading.TimerQueue[]
+    [5] -> System.Threading.TimerQueue
+    ._longTimers (TimerQueue) -> System.Threading.TimerQueueTimer
+    ._state (TimerQueueTimer) -> Microsoft.Extensions.Http.DefaultHttpClientFactory
+    ._services (DefaultHttpClientFactory) -> Microsoft.Extensions.DependencyInjection.ServiceLookup.ServiceProviderEngineScope
+    .<RootProvider>k__BackingField (ServiceProviderEngineScope) -> Microsoft.Extensions.DependencyInjection.ServiceProvider
