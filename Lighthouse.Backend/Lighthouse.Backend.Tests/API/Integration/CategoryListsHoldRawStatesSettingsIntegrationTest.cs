@@ -180,7 +180,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
@@ -198,7 +197,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingTheGroupAndTheListInOneSave_ReadsTheListAgainstTheGroupJustSent()
         {
             SeedOwner(mappings: [ActiveGroup()], doing: ["Analysis", "Active", "Resolved"]);
@@ -230,7 +228,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingTheSameSettingsTwice_ChangesNothingTheSecondTime()
         {
             SeedOwner();
@@ -268,7 +265,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName()
         {
             SeedOwner(mappings: [new StateMappingDto { Name = "A", States = ["X"] }], doing: ["Y", "X"]);
@@ -368,7 +364,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SavingListsWithNullAndBlankEntries_LeavesThemOut()
         {
             SeedOwner();
@@ -381,6 +376,33 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
                 Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Testing")));
                 Assert.That(Strings(settings, "toDoStates"), Is.EqualTo(Listed("Backlog")));
+            }
+        }
+
+        // The settings page sends the stored cycle time definitions back on every save. One stored before a group
+        // covered both its states would be refused if it were judged again, and then no setting could be changed.
+        [Test]
+        public async Task SavingAnOwnersUnchangedSettings_WhoseStoredCycleTimeRunsInsideOneGroup_Saves()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Code Review", "Testing"], cycleTime: new CycleTimeDefinition { Name = "Review Time", StartState = "Code Review", EndState = "Testing" });
+            var storedCycleTimes = (await ReadSettings()).GetProperty("cycleTimeDefinitions").EnumerateArray()
+                .Select(definition => new CycleTimeDefinitionDto
+                {
+                    Id = definition.GetProperty("id").GetInt32(),
+                    Name = definition.GetProperty("name").GetString()!,
+                    StartState = definition.GetProperty("startState").GetString()!,
+                    EndState = definition.GetProperty("endState").GetString()!,
+                })
+                .ToList();
+            var unchanged = Settings(doing: ["Code Review", "Testing"], mappings: [Review()]);
+            unchanged.CycleTimeDefinitions = storedCycleTimes;
+
+            var saved = await Save(unchanged);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(storedCycleTimes, Has.Count.EqualTo(1), "The cycle time definition was stored.");
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
             }
         }
 
@@ -624,7 +646,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return JsonSerializer.Deserialize<List<string>>(body) ?? [];
         }
 
-        private void SeedOwner(StateMappingDto[]? mappings = null, string[]? toDo = null, string[]? doing = null)
+        private void SeedOwner(StateMappingDto[]? mappings = null, string[]? toDo = null, string[]? doing = null, CycleTimeDefinition? cycleTime = null)
         {
             using var scope = factory.Services.CreateScope();
             var connection = new WorkTrackingSystemConnection { Name = $"Connection {Guid.NewGuid():N}", WorkTrackingSystem = WorkTrackingSystems.Jira };
@@ -633,7 +655,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             if (kind == OwnerKind.Team)
             {
                 var team = new Team { Name = $"Team {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection, StateMappings = stored };
-                ApplyLists(team, toDo, doing);
+                ApplyLists(team, toDo, doing, cycleTime);
                 var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
                 repository.Add(team);
                 repository.Save().GetAwaiter().GetResult();
@@ -642,7 +664,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             else
             {
                 var portfolio = new Portfolio { Name = $"Portfolio {Guid.NewGuid():N}", WorkTrackingSystemConnection = connection, StateMappings = stored };
-                ApplyLists(portfolio, toDo, doing);
+                ApplyLists(portfolio, toDo, doing, cycleTime);
                 var repository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
                 repository.Add(portfolio);
                 repository.Save().GetAwaiter().GetResult();
@@ -652,11 +674,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
             connectionId = connection.Id;
         }
 
-        private static void ApplyLists(WorkTrackingSystemOptionsOwner owner, string[]? toDo, string[]? doing)
+        private static void ApplyLists(WorkTrackingSystemOptionsOwner owner, string[]? toDo, string[]? doing, CycleTimeDefinition? cycleTime)
         {
             owner.ToDoStates = [.. toDo ?? ["Backlog"]];
             owner.DoingStates = [.. doing ?? ["Active"]];
             owner.DoneStates = ["Done"];
+            owner.CycleTimeDefinitions = cycleTime is null ? [] : [cycleTime];
         }
     }
 
