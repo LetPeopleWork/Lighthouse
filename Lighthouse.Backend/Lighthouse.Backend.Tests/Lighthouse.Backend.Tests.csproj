@@ -11,6 +11,20 @@
 		<RunSettingsFilePath>$(MSBuildProjectDirectory)/lighthouse.runsettings</RunSettingsFilePath>
 	</PropertyGroup>
 
+	<!-- Caps NUnit's workers on a local run so parallel sessions on one machine do not each take every core.
+	     CI leaves the property unset and keeps NUnit's default of one worker per core. An explicit
+	     LIGHTHOUSE_TEST_WORKERS wins everywhere. Runsettings arguments given after the `dotnet test` double dash replace this property. -->
+	<PropertyGroup Condition="'$(LIGHTHOUSE_TEST_WORKERS)' != '' Or '$(CI)' != 'true'">
+		<LighthouseTestWorkers>$(LIGHTHOUSE_TEST_WORKERS)</LighthouseTestWorkers>
+		<LighthouseTestWorkers Condition="'$(LighthouseTestWorkers)' == ''">$([System.Math]::Max(1, $([System.Math]::Floor($([MSBuild]::Multiply($([System.Environment]::ProcessorCount), 0.5))))))</LighthouseTestWorkers>
+		<VSTestCLIRunSettings>NUnit.NumberOfTestWorkers=$(LighthouseTestWorkers)</VSTestCLIRunSettings>
+	</PropertyGroup>
+
+	<!-- Rejects an unusable explicit value with a message that names the variable, instead of a cryptic adapter failure. -->
+	<Target Name="ValidateTestWorkers" BeforeTargets="VSTest" Condition="'$(LIGHTHOUSE_TEST_WORKERS)' != '' And !$([System.Text.RegularExpressions.Regex]::IsMatch('$(LIGHTHOUSE_TEST_WORKERS)', '^[1-9][0-9]*$'))">
+		<Error Text="LIGHTHOUSE_TEST_WORKERS must be a positive whole number, got '$(LIGHTHOUSE_TEST_WORKERS)'." />
+	</Target>
+
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.14" />

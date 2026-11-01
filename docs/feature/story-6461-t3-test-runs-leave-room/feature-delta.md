@@ -661,3 +661,78 @@ instead of matching `LIGHTHOUSE_TEST_WORKERS`). No import error, no type error, 
 ## Wave: DELIVER / [REF] Rigor profile
 
 standard for slice 01 (crafter sonnet, reviewer haiku), agreed with the maintainer at AFK entry 2026-11-01; mutation: StrykerJS on testWorkers.ts in the final gate (>=80%), csproj N/A.
+
+## Wave: DELIVER / [REF] Evidence step 01-02
+
+Run 2026-11-01 from `Lighthouse.Backend/Lighthouse.Backend.Tests`, 12 cores. Change: one `PropertyGroup` and the
+`ValidateTestWorkers` target in `Lighthouse.Backend.Tests.csproj`; nothing under `.github`, `lighthouse.runsettings` or
+`GlobalUsings.cs` is touched.
+
+**Hook point chosen: `BeforeTargets="VSTest"`, as proposed.** It fires on `dotnet test` both with `--no-build` and without
+it (tables below), so no property-evaluation-time check was needed. Learned on the way: an XML comment may not contain a
+double dash, so the csproj comment says "after the `dotnet test` double dash" instead of writing it.
+
+**RED** (unchanged csproj): `dotnet msbuild -getProperty:VSTestCLIRunSettings` printed nothing for local-unset (case 1) and
+for `LIGHTHOUSE_TEST_WORKERS=4` (case 3); `LIGHTHOUSE_TEST_WORKERS=abc dotnet test --no-build --filter
+FullyQualifiedName~BackendTestParallelizationGuardTest` exited 0 and ran 2 tests (`Passed: 2`). Right reason: the feature
+is absent.
+
+**Cases 1-6 (`dotnet msbuild -getProperty:VSTestCLIRunSettings`)**
+
+| Case | Command env | Output |
+|---|---|---|
+| 1 local, unset | `-u CI -u LIGHTHOUSE_TEST_WORKERS` | `NUnit.NumberOfTestWorkers=6` |
+| 2 `CI=true`, unset | `CI=true`, variable unset | empty |
+| 3 local, `=4` | `-u CI LIGHTHOUSE_TEST_WORKERS=4` | `NUnit.NumberOfTestWorkers=4` |
+| 4 `CI=true`, `=2` | `CI=true LIGHTHOUSE_TEST_WORKERS=2` | `NUnit.NumberOfTestWorkers=2` |
+| 5 local, empty | `-u CI LIGHTHOUSE_TEST_WORKERS=` | `NUnit.NumberOfTestWorkers=6` |
+| 6 `CI=TRUE`, unset | `CI=TRUE`, variable unset | empty |
+| extra: `CI=true`, empty | `CI=true LIGHTHOUSE_TEST_WORKERS=` | empty |
+
+**Cases 7-8 and the extended invalid set** (`dotnet test [--no-build] --filter "FullyQualifiedName~BackendTestParallelizationGuardTest"`;
+every run exit code 1, no `Passed!`/`Failed!` summary line, i.e. no test ran; message printed:
+`Lighthouse.Backend.Tests.csproj(25,3): error : LIGHTHOUSE_TEST_WORKERS must be a positive whole number, got '<value>'.`)
+
+| Value | CI | `--no-build` | Exit | Message names the variable | Tests run |
+|---|---|---|---|---|---|
+| `abc` (case 7) | unset | yes | 1 | yes | none |
+| `abc` | unset | no (full build first) | 1 | yes | none |
+| `abc` | `true` | yes | 1 | yes | none |
+| `0` (case 8) | unset | yes | 1 | yes | none |
+| `-1` | unset | yes | 1 | yes | none |
+| `1.5` | unset | yes | 1 | yes | none |
+| `' 6'` | unset | yes | 1 | yes | none |
+| `+6` | unset | yes | 1 | yes | none |
+| `50%` | unset | yes | 1 | yes | none |
+| `0` | `true` | no | 1 | yes | none |
+
+**Criterion 5.** With the cap applied (CI unset, variable unset):
+`dotnet test --filter "FullyQualifiedName~BackendTestParallelizationGuardTest|FullyQualifiedName~TestHost_RunsUnderThePinnedInstanceTimeZone"`
+-> `Passed! - Failed: 0, Passed: 4, Skipped: 0, Total: 4`. `dotnet build` in `Lighthouse.Backend`: `0 Warning(s)`, `0 Error(s)`.
+
+**Stryker.NET: not affected, by evidence; no real run (would exceed ~15 min).** `VSTestCLIRunSettings` is read only by the
+`VSTest` MSBuild target that `dotnet test` invokes. Stryker.NET 4.14.1 (installed global tool) starts tests through
+`Stryker.TestRunner.VsTest.dll` on top of `Microsoft.TestPlatform.VsTestConsole.TranslationLayer` (`VsTestConsoleWrapper`) and
+builds its own `<RunSettings>` document. A byte search of every `Stryker*.dll` finds no occurrence of `VSTestCLIRunSettings`
+or `RunSettingsFilePath`, so neither the new property nor the TZ-pinning runsettings file reaches it. Stryker worker count
+stays whatever each config's `concurrency` says (smallest config, `stryker.6094.backend.json`: 4). The smallest config by
+mutate scope still builds the whole solution, takes a full dry run of the filtered test set and then mutates, well past 15
+minutes on this machine, so it was not run.
+
+**Call-site check** (GitHub Actions sets `CI=true` for every step):
+
+| Call site | What | CI state |
+|---|---|---|
+| `.github/workflows/ci_backend.yml:151` | `dotnet test ... -- DataCollectionRunSettings... RunConfiguration.MaxCpuCount=0` | `CI=true`; property unset, and the `--` arguments would replace it anyway |
+| `.github/workflows/ci_backend.yml:156` | `dotnet test ... -- RunConfiguration.MaxCpuCount=0` | same |
+| `.github/actions/build-frontend/action.yml:63` | `pnpm run sonarreport` (`vitest run --coverage`), in `Lighthouse.Frontend` | `CI=true` (frontend resolver leaves CI uncapped) |
+| `.github/workflows/ci_frontend.yml:34` | `vitest_to_csv.py` (parses vitest output, does not run it) | `CI=true`; not a runner |
+| `.github/workflows/ci_verifysqlite.yml:141`, `ci_verifypostgres.yml:154` | `pnpm run test` in `Lighthouse.EndToEndTests` = Playwright, not vitest/dotnet test | `CI=true`; out of scope |
+| `.github/workflows/ci_verifyauth.yml:138,208,279` | `pnpm run test:auth/rbac/proxyauth` = Playwright | `CI=true`; out of scope |
+| `.githooks/pre-commit`, `.githooks/pre-push` | no `dotnet test`, no `vitest` | n/a |
+| `Lighthouse.Frontend/package.json` `test`, `sonarreport` | `vitest run` (with `--coverage` for sonarreport) | `CI` unset when typed locally: local-only scripts; `sonarreport` runs in CI only through the build-frontend action row above |
+| `Lighthouse.EndToEndTests/package.json` `test*` | Playwright | not vitest/dotnet test |
+| `.github/instructions/*.md` | `vitest` appears only in code samples | n/a |
+
+No other `package.json` script (outside `node_modules`, worktrees and the runner copy under `tools/codesign`) runs vitest
+or `dotnet test`. Every call site that runs with `CI` unset is a local script.
