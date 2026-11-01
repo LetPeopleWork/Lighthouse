@@ -10,8 +10,10 @@ part (a) only.
   part (a) is a design flaw (public API values, a data rewrite of stored lists, connector expansion sites,
   the settings editor), so it goes through **DESIGN** before any fix. No further frontend guard.
 - **DESIGN is done (2026-11-01).** Shape (ii-b) was chosen; see "Wave: DESIGN" below and ADR-270.
-  **Next: DEVOPS** (answer the usage-data event question), then DISTILL (walk the UI sketches with the
-  maintainer at its start, one decision at a time), then DELIVER (agree the rigor profile first).
+  **DEVOPS is done (2026-11-01, AFK):** usage-data event is N/A, the seeder is skip-and-log, no clients
+  version bump. **Next: DISTILL** (walk the UI sketches with the maintainer at its start, one decision at a
+  time; they are already recorded in the "Maintainer decisions: UI sketches" block), then DELIVER (agree the
+  rigor profile first).
 - **The as-of projections do land under `Unknown`** for a mapping whose name is not one of its own members
   (`TeamMetricsService.cs:743`, `PortfolioMetricsService.cs:251`): confirmed by reading the code, not yet by a
   failing test. The probe comes first in DISTILL.
@@ -141,3 +143,207 @@ The seeder is bounded-change (the three lists of each owner, nothing else). Driv
 - The RCA missed one frontend reader: `utils/isCycleTimeDefinitionValid.ts` (`resolveWorkflowStates`) flat-maps the lists through mappings.
 - The as-of `Unknown` was a hypothesis in the RCA; the code read confirms it (stored transitions carry mapped
   names, categorised against lists that hold members only). Still owed: a failing test.
+
+## Maintainer decisions: UI sketches (2026-11-01, collected before DISTILL, AFK entry)
+
+Reuses `ItemListManager` chips and `WidgetShell` status; no new control.
+
+| # | Decision | Chosen |
+|---|---|---|
+| UI1 | Mapping in the Doing list | One filled chip with a group icon, label = mapping name; tooltip: "State mapping: Code Review, Testing. Delete it under State Mappings to remove it." |
+| UI2 | Refusing removal of a mapping chip | No delete icon on mapping chips; the tooltip above is the only explanation |
+| UI3 | State Mappings help text | Replaced with: "Combine several Doing states into one named group. The group shows as one chip in your Doing list and in the charts; its states are still read from your tracker. Delete the group to see its states separately again." |
+| UI4 | Dragging a mapping chip | Moves all its states together, so the group lands where it is dropped |
+| UI5 | Aging chart while settings load / fail | `WidgetShell` status: lone spinner while loading, the existing could-not-load message on failure; never an empty chart |
+| UI6 | Mapping state listed in none of To Do/Doing/Done | **No message** (overrides the informational warning in the design's V1 note); the backend allows it silently too |
+
+```
+Doing
+ [Analysis ×] [⧉ In Progress] [Waiting for QA ×]
+                 └ tooltip: "State mapping: Code Review, Testing.
+                    Delete it under State Mappings to remove it."
+ [ Add Doing state...                    ]
+```
+
+## Wave: DEVOPS / [REF] Prior Wave Consultation
+
+AFK, 2026-11-01. Nothing was asked; every open point took the recommended option and is recorded below.
+
+| Artifact | Read |
+|---|---|
+| This `feature-delta.md` (DESIGN D1-D9, component decomposition, loading/failure looks, UI decisions UI1-UI6) | yes |
+| `docs/product/architecture/adr-270-category-lists-hold-raw-states-mappings-are-a-derived-view.md` | yes |
+| `Program.cs` seeder registration (:1487-1493), `Data/DatabaseConfigurator.cs` (`ApplyMigrations`, `SeedDatabase`), `ApiKeyOwnerReconciliationSeeder.cs` | yes |
+| `Models/UsageData/UsageDataEventName.cs` (values 0-24) | yes |
+| `Services/Implementation/DemoDataService.cs`; `Lighthouse.EndToEndTests/tests` (helpers, POMs, specs) | yes |
+| `/storage/repos/lighthouse-clients` (source, skills, changesets) | yes, grep only |
+| `docs/feature/epic-4127-sle-risk-corrections/` DEVOPS sections and `environments.yaml` (format template) | yes |
+| Dashboards, alert rules, runbooks | none exist in this repo, as in the template feature |
+
+## Wave: DEVOPS / [REF] Q1 - the startup seeder
+
+A new `ISeeder` (working name `CategoryListNormalisationSeeder`) rewrites each Team's and Portfolio's To Do,
+Doing and Done lists once, in C#, through the repositories.
+
+- **Rollout, both providers.** Startup runs `ApplyMigrations` (advisory lock on Postgres) and then
+  `SeedDatabase` in the same scope. The seeder reads and writes through the repositories, so there is no
+  provider-specific SQL and no migration. It runs on every start: SQLite, Postgres and the standalone builds.
+- **Order.** Registered last in `Program.cs`, after `ForecastInputsForgottenAtStartSeeder` (registration order
+  is run order). It needs only the migrated schema; none of the other seeders reads these lists.
+- **Idempotent.** A list that already holds raw states is returned unchanged and not saved, so a second start
+  rewrites nothing and logs a zero summary. That zero is the idempotence signal.
+- **Logging.** Per owner rewritten: `Information`, owner type and id plus counts only. Per owner
+  legacy-expanded (shadowing row, D7) or chained: `Warning`, owner type and id plus the rule that fired. One
+  `Information` summary: owners scanned, rewritten, legacy-expanded, skipped. No owner names, no state names,
+  no customer identifiers; matches `ApiKeyOwnerReconciliationSeeder`, which logs ids. Nothing is logged for
+  an owner with no mapping.
+- **Failure mode: skip and log.** `SeedDatabase` has no try/catch, so an exception from any seeder aborts
+  startup; that is why the catch lives inside the seeder, per owner. A throwing owner is logged at `Warning`,
+  its tracked changes discarded, and the rest are still rewritten. A failed final `Save` is logged at
+  `Warning` and not rethrown. Why not abort: a row that breaks the new rules still works under the legacy
+  one-level expansion (D7), so booting is safe, while a refused startup is an outage for a self-hosted customer
+  with no operator able to fix a row. The next start retries. Cost: that owner keeps today's behaviour until
+  fixed, and its Warning is the only signal.
+- **Concurrency.** Two replicas starting together compute and write the same value; the chart ships
+  `replicaCount: 1`, so this is a note, not a risk.
+- **`HistoricalSchemaPatch`: N/A, because no column or table is added.** The `LighthouseAppContext` mapping
+  and both migration projects are unchanged, so the `CreateMigration` rule is not triggered.
+
+## Wave: DEVOPS / [REF] Q2 - rollback
+
+The backend rolls back safely for every list that passed the new checks: raw lists are what the old
+`GetRawStatesForCategory` expansion already reads (a raw member in a list is a no-op there), so the old
+backend gives the same metrics. A row the seeder skipped was never touched. The old frontend, on its next
+mapping edit, re-collapses members into the mapping name, which is today's behaviour and what the old backend
+expects. Nothing is persisted that the old version cannot read, so rollback is the artifact rollback (re-pin
+the image, `helm rollback`, previous standalone) and is atomic, because one artifact carries bundle and API.
+
+Owed: (1) a **release-note line**, written at `/release` (not at finalize): lists now hold raw states, a
+shadowing mapping payload is refused, and after a downgrade the old settings page may fold members into the
+mapping name again on its next edit. (2) A **test**, already named in DESIGN: the expansion of the normalised
+list equals the expansion of the original (property test); it is the backend-rollback safety proof.
+
+## Wave: DEVOPS / [REF] Q3 - API v1 meaning change
+
+`doingStates` (and the To Do and Done lists) now hold raw states; a shadowing entry is a 400; read-only
+`toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` are new. `docs/concepts/api-versioning.md`
+names `/api/v1` the compatibility boundary for clients, so the break is stated there and in the release note.
+
+Lighthouse-Clients, checked in `/storage/repos/lighthouse-clients`: no source file, test or changeset names
+`doingStates`, `stateMapping` or the lists; settings pass through as opaque JSON. **Owed: docs and skill text
+only, no code, no version bump.** Where the skill references describe Doing states
+(`skills/lighthouse/references/coaching-patterns.md`), say that `doingStates` is raw tracker states and
+`doingDisplayStates` is what the charts show. That text rides on the next clients changeset and does not
+justify one on its own. This closes the DESIGN open question; it is now verified, not inferred.
+
+## Wave: DEVOPS / [REF] Q4 - usage-data event
+
+**N/A, because this is a correctness fix with no new user action.** Checked against `UsageDataEventName`
+(0-24): `TeamRefinementConfigured` (12), `WorkTrackingSystemFieldsChanged` (19) and the rest name other
+actions; none covers state mappings, and no outcome KPI of this bug needs a count. Nothing is appended to the
+enum and `docs/settings/usagedata.md` is untouched.
+
+## Wave: DEVOPS / [REF] Q5 - CI impact
+
+- **`Program.cs` is edited** (seeder registration), so CI runs the full backend Integration suite, live
+  connector categories included. Expected, not a regression; a connector 429 there is not caused by this change.
+- **Workflows.** Code commits touch `Lighthouse.Backend/**` and `Lighthouse.Frontend/**`, so `ci.yml` fires:
+  `ci_backend`, `ci_frontend`, `ci_e2e` (compile only), `ci_sonar_gates`, then `ci_verifysqlite` and
+  `ci_verifypostgres` (Playwright runs, twice). A docs-only commit starts no CI run, only `pages.yml` for
+  `docs/**`. No workflow file is edited.
+- **E2E touching the area.** Settings editor: `tests/models/common/BaseSettingsPage.ts` (`getDoingStates`
+  reads the chips, which now show display states). API helpers `tests/helpers/api/teams.ts` and
+  `portfolios.ts` send `doingStates: states.doing` (raw, still valid, no mapping sent). Aging widget:
+  `tests/models/metrics/WorkItemAgingChart.ts`, `MetricsPage.ts`, specs `flow/AgingPacePercentiles`,
+  `flow/TimeInStateAndStaleness`, `flow/SleRiskColumnReachable`, `screenshots/Screenshots.spec.ts`. No spec
+  sets a state mapping, so none needs a rewrite. `MetricsPage` already waits on `data-widget-status="ready"`
+  (:62-67, :429-434). DISTILL should check that any POM method reading the aging chart goes through that wait,
+  because the widget now shows `loading` while settings are fetched (UI5). No new E2E spec: E2E stays a thin
+  sanity check and this is covered at unit and API level.
+
+## Wave: DEVOPS / [REF] Q6 - demo data
+
+`DemoDataService` contains no state-mapping configuration, and demo scenarios are loaded at runtime by the
+user, after the seeder has run. So no demo team carries a mapping the seeder would rewrite, and no demo-data
+JSON or CSV in the repo needs rewriting. **Answer: no demo-data change.** The one fixture carrying mappings
+is `Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Approved/slice02-portfolio-northwind-platform-settings.approved.json`;
+DELIVER updates it when the DTO gains the three display lists (a deliberate approval update, not a regression).
+
+## Wave: DEVOPS / [REF] Q7 - monitoring after release
+
+No metric, dashboard or alert is added (telemetry is off by default, nothing is phoned home). The signal is
+the seeder's log, read by whoever runs the instance or by us on a support report:
+- the summary line on the first start after upgrade: owners scanned, rewritten, legacy-expanded, skipped;
+- a second start must report zero rewritten (idempotence);
+- any seeder `Warning` is a stored row that needs a look; the legacy-expanded and skipped counts are the
+  numbers to ask a reporter for.
+Not instrumented, deliberately: how often users hit the new 400. It shows in the ordinary request log.
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+Full inventory in `environments.yaml` (DISTILL parses it). Five existing environments: `local-dev`,
+`ci-build`, `ci-verify-sqlite`, `ci-verify-postgres`, `customer-self-hosted`. No new environment, credential,
+variable or key. The one named precondition is the **upgrade-from-previous-release state**: a database whose
+Teams and Portfolios hold collapsed lists (mapping names in Doing), including shadowing and chained rows.
+
+## Wave: DEVOPS / [REF] CI/CD pipeline outline
+
+Unchanged; no workflow edited (stage list in Q5). Local gates unchanged (`.githooks` gitleaks and secrets
+scan). Before push: `dotnet build`, `pnpm build`, and
+`dotnet format analyzers Lighthouse.sln --severity info --verify-no-changes --no-restore`.
+
+## Wave: DEVOPS / [REF] Monitoring contracts
+
+No outcome KPI was defined for this bug. The contract is the seeder log in Q7; the acceptance contracts are
+tests: idempotence, skip-and-log of a bad owner, expansion equality, on both providers.
+
+## Wave: DEVOPS / [REF] Deployment strategy
+
+Rolling/recreate, inherited and unchanged (`replicaCount: 1`, default `RollingUpdate`; Docker and standalone
+are stop-and-replace). The rewrite runs at start inside the new artifact, before the API serves. Rollback as
+in Q2: artifact rollback, no step to get in the wrong order.
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+`per-feature`, >=80% kill rate, Stryker.NET plus StrykerJS; already in `CLAUDE.md`, not touched. Runs last, on
+frozen code. Targets: the new seeder, `DisplayStatesFor`, `CategoryOfRawState`/`CategoryOfDisplayName`,
+`StateMappingValidator`, the frontend validation mirror. Traps: Stryker.NET must skip the acceptance suite;
+StrykerJS can leave `@ts-nocheck` behind, so check the tree afterwards.
+
+## Wave: DEVOPS / [REF] Observability stack
+
+OpenTelemetry/Prometheus (off by default) and Serilog; unchanged. The only addition is the seeder log lines.
+
+## Wave: DEVOPS / [REF] Branching strategy
+
+Trunk-based, push to `origin/main`. One focused commit per step; refactor commits apart from feature commits.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Tool or surface | Must not break | Note |
+|---|---|---|
+| Stored data from the previous release | yes | Seeder rewrites once; rows breaking the new rules keep working via D7 |
+| Older settings page after a downgrade | yes | Re-collapses on next edit; release-note line |
+| `/api/v1` clients (CLI, MCP, scripts) | yes | Same field types; meaning change documented; shadowing is 400 |
+| Metrics, forecasts, snapshots | yes | Expansion-equality property test |
+| Existing E2E and screenshot suites | yes | No mappings in use; `ready` wait already exists |
+| EF migrations, `HistoricalSchemaPatch` | yes | Untouched |
+| Jira, Linear connectors | yes | Unchanged |
+
+## Wave: DEVOPS / [REF] Pre-requisites
+
+- None external. The premium licence fixture is needed only for `@screenshot`, which this change does not run.
+- Seeder tests on Postgres use the shared Postgres container fixture (one instance, fresh database per test).
+
+## Wave: DEVOPS / [REF] Changed Assumptions
+
+None. DESIGN's open question about Lighthouse-Clients is now verified: no field names there.
+
+## Wave: DEVOPS / [REF] Handoff to DISTILL
+
+`environments.yaml` at the feature root. DISTILL must parametrise over: (1) provider, SQLite and Postgres,
+for the seeder; (2) stored-list shape: already raw (no-op), collapsed with adjacent members, collapsed with
+non-adjacent members (group at the first member's index), shadowing row, chained row, a row that throws;
+(3) run count: first and second start (idempotence); (4) the upgrade-from-previous-release precondition;
+(5) the aging widget's settings-fetch states: loading, ready, error. Seeder logging is pinned by level and
+owner id only. No nWave scenario tags in code. No peer review was invoked; the end-of-DISTILL review applies.
