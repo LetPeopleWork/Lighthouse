@@ -320,7 +320,7 @@ namespace Lighthouse.Backend.Models
             => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
 
         // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
-        private static bool IsSameState(string? left, string? right)
+        public static bool IsSameState(string? left, string? right)
             => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
 
         private static List<string> WithoutRepeats(IEnumerable<string> states)

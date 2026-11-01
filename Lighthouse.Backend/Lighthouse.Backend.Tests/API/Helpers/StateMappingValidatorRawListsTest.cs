@@ -5,8 +5,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 {
     public class StateMappingValidatorRawListsTest
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         // The copy the settings page already shows for a name that shadows a state.
         private const string InArbeitShadowsADoingState =
             "Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name.";
@@ -23,7 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         private static StateMappingDto Mapping(string name, params string[] states) => new() { Name = name, States = [.. states] };
 
         [Test]
-        [Ignore(Pending)]
         public void NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows()
         {
             var settings = Settings(["Backlog"], ["In Arbeit", "In Progress"], ["Done"], Mapping("In Arbeit", "In Progress"));
@@ -32,7 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList()
         {
             var settings = Settings(["In Arbeit", "In Progress"], ["Active"], ["Done"], Mapping("In Arbeit", "In Progress"));
@@ -43,7 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList()
         {
             var settings = Settings(["Backlog"], ["Active"], ["In Arbeit", "In Progress"], Mapping("In Arbeit", "In Progress"));
@@ -70,7 +65,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence()
         {
             var settings = Settings(["Backlog"], ["X"], ["Done"], Mapping("A", "X"), Mapping("B", "A"));
@@ -89,7 +83,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates()
         {
             var settings = Settings(["Code Review"], ["Testing"], ["Done"], Mapping("Review", "Code Review", "Testing"));
@@ -100,7 +93,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused()
         {
             var settings = Settings(["Testing"], ["Active"], ["Testing"], Mapping("Review", "Testing"));

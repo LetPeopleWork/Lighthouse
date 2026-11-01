@@ -205,13 +205,13 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting);
+            var storedTeam = teamRepository.GetById(teamId);
+
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting, storedTeam?.StateMappings);
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);
             }
-
-            var storedTeam = teamRepository.GetById(teamId);
 
             var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, storedTeam?.RefinementSettings);
             if (refinementErrors.Count > 0)

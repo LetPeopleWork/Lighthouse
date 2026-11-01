@@ -106,7 +106,9 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting);
+            var portfolioForValidation = portfolioRepository.GetById(portfolioId);
+
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting, portfolioForValidation?.StateMappings);
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);
@@ -122,7 +124,6 @@ namespace Lighthouse.Backend.API
                 return BadRequest($"Blocked staleness threshold must be between {TeamController.MinStalenessThresholdDays} and {TeamController.MaxStalenessThresholdDays} days.");
             }
 
-            var portfolioForValidation = portfolioRepository.GetById(portfolioId);
             if (portfolioForValidation != null)
             {
                 var blockedError = RuleSetValidation.ValidateBlockedRuleSet(

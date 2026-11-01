@@ -49,7 +49,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore("pending: names are compared trimmed")]
         public void TwoMappingNames_DifferingOnlyInWhitespaceAtTheEnds_AreTheSame()
         {
             foreach (var pair in Cases().GetProperty("sameOnceTrimmed").EnumerateArray())
