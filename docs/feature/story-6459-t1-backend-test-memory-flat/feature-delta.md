@@ -805,3 +805,16 @@ Added to the seam-step exit criteria:
 - The framework's `UseRateLimiter` source for the pinned version is read, and its registration check and pipeline
   position are preserved in our construction.
 - The DEVOPS claim that Release roots the same timers as Debug stays a claim until the five Release runs confirm it.
+
+## Wave: DELIVER / [REF] P0 — before measurement (2026-11-01, 18:36–18:47 local)
+
+Commit `a296de15a`, 12 cores, `dotnet` 10.0.114, `LIGHTHOUSE_TEST_WORKERS=6`, the standard filter, quiet machine,
+`valid_not_expired_license.json` present, sampler `story-6461 measurement/measure.sh` (1 s, summed session RSS).
+
+| Arm | Wall | Peak summed RSS | Lowest MemAvailable | Result |
+|---|---|---|---|---|
+| before | 434 s | **19,039 MB** | 3,798 MB | 11,893 passed, 2 failed (the known publish-output scans), 4 skipped |
+
+Raw line: `measurement/before.csv`. Reference for the 10 % repeat rule: 19.0 GB.
+Rigor profile (DELIVER, agreed at AFK entry for the whole test track): standard — crafter and designer on Sonnet,
+reviewers on Haiku; refactor and review at the end, mutation once on frozen code.
