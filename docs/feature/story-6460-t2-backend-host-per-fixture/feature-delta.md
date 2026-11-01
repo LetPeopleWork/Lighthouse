@@ -435,3 +435,160 @@ Strategy stays `per-feature` (CLAUDE.md, not edited): Stryker.NET for the backen
 5. IL guard noise: if the call closure over-reports at DELIVER, the DESIGN fallback (source scan in the Postgres guard's shape) applies and the reason is recorded.
 6. CI step time is bimodal; do not conclude from fewer than 5 runs.
 7. No scenario tags in code (project rule): any classification stays in the feature workspace.
+
+## Wave: DISTILL / [REF] Reconciliation
+
+Reconciliation passed -- 0 contradictions. DISCUSS is covered at Epic level. DESIGN and DEVOPS agree on the guard (D5/D6, type-name key,
+no csproj or workflow change, Mono.Cecil reached through ArchUnitNET), on the proof (D11) and on the ratchet landing in slice 1.
+Maintainer AFK: the recommended option was taken for every choice. UI sketch review: N/A, because nothing a user sees changes.
+Two points where DISTILL settled something DESIGN left open, recorded here:
+
+- The guard counts **types, not files** (DESIGN D5). The first run produced **126 types**, not "about 80" (see "Allow-list at the start").
+- The planted-fixture cases (DEVOPS: "one planted-offender case, if the walk can be pointed at a tiny fixture type") **are possible**:
+  eight tiny abstract types inside the guard file, skipped by the real scan. NUnit runs any class that has `[Test]` methods even when it is
+  `internal` and has no `[TestFixture]` (measured: the first version ran them), so they are `abstract`.
+
+## Wave: DISTILL / [REF] Scenario list
+
+Classification lives here only; none of it is written into the code (project rule). Test names in the file are plain language.
+Test layer: the guard reads the compiled test assembly, so it is a plain unit test (no host, no Docker); the preservation scenarios are the existing tests.
+
+### The guard (written now, live and green, lands in slice 1's commit)
+
+| # | Scenario | Where (`Architecture/TestHostPerFixtureGuardTest`) | Today |
+|---|---|---|---|
+| G1 | Fails on a newcomer: a type that starts a host in a per-test set-up or test body and is not on the list | `NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList` | green; RED shown below |
+| G2 | Fails on a stale entry: a listed type that no longer does | `EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest` | green; RED shown below |
+| G3 | Passes on today's tree (G1 and G2 together, 126 entries) | the two above | green |
+| G4 | Pure compare, newcomer only (made-up lists) | `ANewcomerOutsideTheListIsReportedAndNothingElse` | green |
+| G5 | Pure compare, stale only | `AStaleEntryOnTheListIsReportedAndNothingElse` | green |
+| G6 | Pure compare, lists agree in any order | `ListsThatAgreeReportNothingWhateverTheOrder` | green |
+| G7 | Pure compare, both at once | `ANewcomerAndAStaleEntryAreReportedTogether` | green |
+| G8 | The scan sees a host started per test however it is reached: per-test set-up, test body, helper called from set-up, lambda, after an `await`, derived host (`WithWebHostBuilder`); and does not flag a host started only in one-time set-up, or no host | `TheScanSeesAHostStartedForEveryTestHoweverItIsReached` (8 cases) | green (8 cases) |
+
+### Slice 1 (guard, measure, first move, cluster-substrate test)
+
+| # | Scenario | Class |
+|---|---|---|
+| S1.1 | Same test ids before and after for the `ConnectionDefaultsAcceptanceTest` family (8 classes) and `ConnectionFieldChangeAcceptanceTest` | preservation |
+| S1.2 | Each of those fixtures run alone 3 times in a row is green | preservation / state-leak check |
+| S1.3 | No `[Ignore]`, `[Explicit]`, `Assert.Ignore`, `NonParallelizable` added; no `Assert.` line removed (diff grep) | E-weaken |
+| S1.4 | The moved types are deleted from the list in the same commit; G1 and G2 stay green | ratchet |
+| S1.5 | `ClusterSubstrateProbeRegistrationTest` still asserts: the check is registered, carries the startup tag, does not carry the ready tag; it no longer starts the app (its entry leaves the list) | preservation + D8 |
+| S1.6 | Host-build time is reported per fixture for the untimed fixtures (D1) | measurement, read from the timing CSV, not a test |
+| S1.7 | `BackendTestParallelizationGuardTest` green and unchanged | guard |
+
+### Slices 2 to 5
+
+| Slice | Scenarios |
+|---|---|
+| 2 template database | Same ids; the one-fixture A/B (a group B and a group C fixture, set-up mean falls at least 30 %); a test that expects a database without tables at first use (migration and health fixtures) still passes; the copied file is unique per use; an `IOException` on copy is retried then fails naming the path. The copy and retry logic has no mutants (test code), so its proof is the A/B and the full runs. |
+| 3 four biggest | S1.1 to S1.4 for `TaskManager`, `ReconstructOverTimeHistory`, `FasterUpdates`, `UsageDataCollectorObservation`; the held pass runs on its own thread and the 60 s guard stays; checked with `DOTNET_PROCESSOR_COUNT=4` beside another class |
+| 4 mid-size | S1.1 to S1.4 for the ten bases; `TeamFeatureSize`'s SQL-command counter is fixture-owned and reset in `[SetUp]` |
+| 5 long tail | S1.1 to S1.4 per file by the 25 % rule; an entry that stays gets a written reason (body-bound or other); at the end the list is empty or every entry has a reason |
+| End of track | 3 consecutive green full standard-filter runs (the two known publish-output scans excepted) |
+
+Counts: 8 guard scenarios (14 test results), plus the preservation shape repeated per slice. Failure-direction share: G1, G2, G4, G5, G7 and the
+negative planted cases; the rest are preservation. Walking skeleton: N/A, because nothing a user does changes; the guard reading the real compiled
+assembly is the end-to-end proof. Driven adapters: none new with real I/O.
+
+## Wave: DISTILL / [REF] Acceptance criteria (Given / When / Then)
+
+Driving port: the compiled test assembly read by `IlDependencies.ReadModule` (guard); the existing `dotnet test` run (preservation).
+
+1. **Newcomer.** Given the list as committed; when a type starts a host in a `[SetUp]`, `[Test]`, `[TestCase]`, `[TestCaseSource]` or `[Theory]` method (or in anything those call in the test assembly) and it is not on the list; then the guard fails and names the type and the fix (host in `[OneTimeSetUp]`, per-test inputs reset in `[SetUp]`).
+2. **Stale entry.** Given a type on the list; when it no longer starts a host per test; then the guard fails and says to remove it.
+3. **Today's tree.** Given `main` as committed; when the guard runs; then both tests pass.
+4. **Compare, driven with made-up lists.** Given a listed set and a found set; when they are compared; then newcomers are exactly found minus listed, stale are exactly listed minus found, order does not matter, and equal sets report nothing.
+5. **Scan reaches the host however it is hidden.** Given a tiny type whose set-up starts a host directly / in a helper / in a lambda / after an await / by deriving one; when the scan reads the assembly; then the type is reported; a type that starts a host only in `[OneTimeSetUp]` is not.
+6. **Behaviour preserved per converted fixture.** Given a fixture converted to a host per fixture; when its tests run; then the sorted test ids equal the ids before, no ignore, skip, explicit or serial marker is added, no assertion line is removed, and three runs of the fixture alone in a row are green.
+7. **Parallel safety.** Given all converted fixtures; when the full standard-filter run is repeated; then three consecutive runs are green apart from the two known publish-output scans, and `BackendTestParallelizationGuardTest` is unchanged and green.
+
+## Wave: DISTILL / [REF] Brief-AC traceability
+
+| Brief AC | Scenario(s) / owner |
+|---|---|
+| Set-up share per harness measured before any change | **Lead-owned** (DESIGN measurement done for 109 timed fixtures; the untimed ones become measurable through D1 in slice 1, S1.6) |
+| Hosts built per fixture, per-test inputs reset in `[SetUp]` | S1.1 to S1.4 per slice; ratchet G1, G2, G3 |
+| Every backend test stays green, none deleted, skipped or weakened | S1.1, S1.3 per slice (E-names, E-weaken); AC 6 |
+| Parallel safety: 3 consecutive green full runs, no new `[NonParallelizable]` | AC 7, **lead-owned run** at the end; S1.7 per slice |
+| A guard stops it coming back (fails on a newcomer, fails on a stale entry, passes today) | G1 to G8 (written and live now) |
+| Payoff: CI after-medians (summed seconds of moved classes, step median of at least 5 runs) | **Lead-owned** (DEVOPS measurement protocol, after each push). No test asserts a time. |
+| Mutation score of touched test helpers held | N/A, because Stryker.NET mutates the product assembly only (DEVOPS); the guard's equivalent is G4 to G8 |
+
+## Wave: DISTILL / [REF] Test placement and scaffolds
+
+- Placement: `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs`. Precedent: `PostgresContainerSharingGuardTest`, `BackendTestParallelizationGuardTest`, `RepositoryLeakRatchetArchUnitTest` (both-direction tests with a list, a pure compare), `IlDependencies` for the module reader (reused; the call walk is new and lives inside the guard file as a nested class).
+- **Scaffold = the finished guard.** Nothing needs a stub: the guard compiles against code that exists, is live and green on today's tree, so no `[Ignore]` is used.
+- Entries are keyed by the **simple name of the top-level type** that holds the `[SetUp]` or test method (DESIGN: type name; two classes with the same simple name in different namespaces would share an entry, none do today). Three reasons are in use: `NotMovedYet` (the backlog), `OnAPostgresServer` (3 types), `ChecksTheTestHostItself` (3 types).
+- How the scan works (so DELIVER can trust or fix it): roots are methods with the five NUnit attributes; calls, constructors, `ldftn` delegates and the `MoveNext` of async and iterator methods are followed inside the test assembly; a virtual call on a type written in the assembly also reaches its overrides; the factory types themselves are not walked into (they are the sink); a method whose whole closure is clean is remembered.
+- Known limits (not fixed): interface calls are not resolved to their implementations; methods overloaded with the same name and argument count are treated as all of their overloads (can only over-report); a host started through reflection, or through a factory type that is not a `TestWebApplicationFactory`/`WebApplicationFactory` subclass, is not seen. The Debug assembly was scanned; DEVOPS asked for one comparison against a `-c Release` assembly before the list is final; **not done here** (only the Debug build was allowed), left for slice 1.
+- Edits DELIVER makes per slice: delete the moved types' lines from `TypesAllowedToBuildAHostPerTest`; nothing else in the guard changes. When the dictionary is empty, replace it with a plain "no type" assertion and drop the stale test.
+
+## Wave: DISTILL / [REF] Allow-list at the start (the ratchet's starting point)
+
+**126 types.** Of those, 3 are `OnAPostgresServer`, 3 are `ChecksTheTestHostItself`, and 120 are `NotMovedYet`.
+
+PICK-UP counted **80 files** with a classifier (indentation and attribute heuristic; direct construction in `[SetUp]` or a test body; helpers not followed).
+Comparison of the two sets, file by file (each of the 126 types lives in its own file, so types and files are both 126):
+
+| Set | Files |
+|---|---|
+| Classifier's 80 that the scan also reports | 79 (the 80th, a TaskManager specifications file, belongs to a type the scan lists under its other file) |
+| Reported by the scan, classified earlier as helper, constructor, class-level or unknown | 13 |
+| Reported by the scan, not seen at all by the classifier | 34 (of them 5 under `Integration/Containers/`, which the classifier excluded) |
+| **Total** | **126** |
+
+So the difference of **46** is what the PICK-UP re-count said it could not settle: hosts reached through a helper, a base class, a `*TestHost` object or a
+constructor called from a per-test method. The scan follows those; the classifier did not. About 29 of the 34 unseen files were not examined one by one: they
+are listed because a per-test method reaches a host start. If slice 1 finds one that cannot be shown to start a host per test (for example a helper called
+from `[OneTimeSetUp]` that a test also reaches), it comes off the list, with the reason written in the commit. Nothing more is claimed.
+Against the brief's 95 (files building a `TestWebApplicationFactory` host per test): 126 is higher because the brief counted construction sites and this counts
+types that can reach one. The ratchet starts at 126 and may only shrink.
+
+## Wave: DISTILL / [REF] RED classification (run 2026-11-01)
+
+Both runs: `dotnet build -v q` (0 warnings), `LIGHTHOUSE_TEST_WORKERS=6 dotnet test --no-build --filter "FullyQualifiedName~TestHostPerFixtureGuardTest"`; the file was restored after each and rebuilt.
+
+| Case | Change made temporarily | Result | Classification |
+|---|---|---|---|
+| Newcomer | deleted the `TaskManagerAcceptanceTest` line from the list | G1 failed, 13 passed | MISSING_FUNCTIONALITY of the list (correct RED): the assertion fires on the real offender; no setup or compile error |
+| Stale | added `["ABogusTypeThatWasFixedLongAgo"] = NotMovedYet` | G2 failed, 13 passed | correct RED |
+| First version | planted fixtures were `internal sealed` | NUnit ran their `[Test]` methods, one failed with a null reference | fixed: `abstract` |
+
+Newcomer, as printed:
+
+```
+Failed NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList [34 ms]
+  Error Message:
+     These types start an application host in a per-test set-up or in a test body: TaskManagerAcceptanceTest. Build the host in [OneTimeSetUp] and dispose it in [OneTimeTearDown]; reset what differs per test in [SetUp] through objects the fixture owns. If a type genuinely needs a host of its own per test, add it to the list with the reason.
+Assert.That(comparison.Newcomers, Is.Empty)
+  Expected: <empty>
+Failed!  - Failed:     1, Passed:    13, Skipped:     0, Total:    14, Duration: 163 ms
+```
+
+Stale, as printed:
+
+```
+Failed EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest [24 ms]
+  Error Message:
+     These types are on the list but no longer start a host per test: ABogusTypeThatWasFixedLongAgo. Remove them from the list so it cannot grow back unseen.
+Assert.That(comparison.Stale, Is.Empty)
+Failed!  - Failed:     1, Passed:    13, Skipped:     0, Total:    14, Duration: 99 ms
+```
+
+Final state: `Passed! - Failed: 0, Passed: 16, Skipped: 0, Total: 16` (14 in the new fixture, 2 in `BackendTestParallelizationGuardTest`).
+
+## Wave: DISTILL / [REF] Definition of Ready (DISTILL)
+
+| Item | Status | Evidence |
+|---|---|---|
+| Reconciliation, 0 contradictions | PASS | above |
+| 4 UAT G/W/T | PASS | the seven above |
+| Every brief AC maps to a scenario or an owner | PASS | traceability; payoff, the 3 full runs and the set-up share are lead-owned |
+| Failure-direction share | PASS | the guard is all failure-direction scenarios (G1, G2, G4, G5, G7, the negative planted cases) |
+| Test placement with precedent | PASS | `Architecture/` guard fixtures |
+| Scaffolds green at hand-off | PASS | build 0 warnings; 16 passed, 0 skipped; no `[Ignore]` |
+| RED classified as the right reason | PASS | both directions printed above |
+| No scenario tags, no internal refs in code | PASS | checked in the new file |
+| Open for DELIVER | NOTE | Release-assembly comparison of the list (DEVOPS) not yet done; the Windows copy risk and D8's Program.cs push cost stay as written |
