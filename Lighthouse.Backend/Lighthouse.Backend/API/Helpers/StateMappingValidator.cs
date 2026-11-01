@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.API.Helpers
 
             if (inSeveral != null)
             {
-                return [$"Mapping \"{name}\" groups \"{inSeveral.State}\", which is in both {string.Join(" and ", inSeveral.Categories.Select(LabelOf))}. {OneCategoryAdvice}"];
+                return [$"Mapping \"{name}\" groups \"{inSeveral.State}\", which is in {ListedCategories(inSeveral.Categories)}. {OneCategoryAdvice}"];
             }
 
             var first = placed.FirstOrDefault();
@@ -137,6 +137,15 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             return [$"Mapping \"{name}\" groups states from different categories: \"{first.State}\" is in {LabelOf(first.Categories[0])} and \"{other.State}\" is in {LabelOf(other.Categories[0])}. {OneCategoryAdvice}"];
+        }
+
+        private static string ListedCategories(List<StateCategories> categories)
+        {
+            var labels = categories.Select(LabelOf).ToList();
+
+            return labels.Count == 2
+                ? $"both {labels[0]} and {labels[1]}"
+                : $"{string.Join(", ", labels[..^1])} and {labels[^1]}";
         }
 
         private static List<string> StatesOf(StateMapping mapping)

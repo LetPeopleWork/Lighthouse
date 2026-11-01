@@ -103,6 +103,16 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
+        public void GroupWhoseOnlyStateIsListedInAllThreeCategories_IsRefusedNamingThemWithoutBoth()
+        {
+            var settings = Settings(["Testing"], ["Testing"], ["Testing"], Mapping("Review", "Testing"));
+
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"Review\" groups \"Testing\", which is in To Do, Doing and Done. Keep a mapping's states in one category."));
+        }
+
+        [Test]
         public void TwoGroupsOverTheSameState_AreRefusedWithoutBlamingAListEntry()
         {
             var settings = Settings(["Backlog"], ["Y", "X"], ["Done"], Mapping("A", "X"), Mapping("B", "X"));
