@@ -374,7 +374,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [Ignore("Suggestions still compare names with their letter case")]
         public async Task GetWorkItemTypesForTeams_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling()
         {
             var first = CreateTeam();
@@ -391,7 +390,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [Ignore("Suggestions still compare names with their letter case")]
         public async Task GetWorkItemTypesForProjects_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling()
         {
             var first = CreateProject();
@@ -408,7 +406,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [Ignore("Suggestions still compare names with their letter case")]
         public async Task GetStatesForTeams_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling()
         {
             var first = CreateTeam();
@@ -429,7 +426,6 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        [Ignore("Suggestions still compare names with their letter case")]
         public async Task GetStatesForProjects_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling()
         {
             var first = CreateProject();

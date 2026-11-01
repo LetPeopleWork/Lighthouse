@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.API
 
             var workItemTypes = teams
                 .SelectMany(x => x.WorkItemTypes)
-                .Distinct();
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
             return Ok(workItemTypes.ToList());
         }
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.API
 
             var workItemTypes = projects
                 .SelectMany(x => x.WorkItemTypes)
-                .Distinct();
+                .Distinct(StringComparer.OrdinalIgnoreCase);
 
             return Ok(workItemTypes.ToList());
         }
@@ -67,9 +67,9 @@ namespace Lighthouse.Backend.API
 
             var statesCollection = new StatesCollectionDto
             {
-                ToDoStates = teams.SelectMany(x => x.ToDoStates).Distinct().ToList(),
-                DoingStates = teams.SelectMany(x => x.DoingStates).Distinct().ToList(),
-                DoneStates = teams.SelectMany(x => x.DoneStates).Distinct().ToList()
+                ToDoStates = teams.SelectMany(x => x.ToDoStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoingStates = teams.SelectMany(x => x.DoingStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoneStates = teams.SelectMany(x => x.DoneStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
             };
 
             return Ok(statesCollection);
@@ -84,9 +84,9 @@ namespace Lighthouse.Backend.API
 
             var statesCollection = new StatesCollectionDto
             {
-                ToDoStates = projects.SelectMany(x => x.ToDoStates).Distinct().ToList(),
-                DoingStates = projects.SelectMany(x => x.DoingStates).Distinct().ToList(),
-                DoneStates = projects.SelectMany(x => x.DoneStates).Distinct().ToList()
+                ToDoStates = projects.SelectMany(x => x.ToDoStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoingStates = projects.SelectMany(x => x.DoingStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoneStates = projects.SelectMany(x => x.DoneStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
             };
 
             return Ok(statesCollection);
