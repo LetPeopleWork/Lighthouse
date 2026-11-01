@@ -20,7 +20,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     {
         /// <summary>
         /// The registered properties that live on the connection rather than on a Team or Portfolio, and so
-        /// change for every owner on the connection at once. <see cref="ForConnection"/> renders these, plus the Jira reading version for a Jira connection.
+        /// change for every owner on the connection at once. <see cref="ForConnection"/> renders these, plus the
+        /// Jira reading version for a Jira connection.
         /// Declared first because static initialisers run top to bottom and the full list below includes it.
         /// </summary>
         public static IReadOnlyCollection<string> ConnectionScopedProperties { get; } =

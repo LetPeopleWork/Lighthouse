@@ -10,11 +10,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
     {
         private readonly Dictionary<string, string> statusNames;
 
+        private readonly Dictionary<string, (string? Key, string? Name)> statusCategories;
+
         private readonly Dictionary<string, string> issueTypeNames;
 
         private readonly bool readsNamesAsReported;
-
-        private readonly Dictionary<string, (string? Key, string? Name)> statusCategories;
 
         public static JiraOriginalNames AsReported { get; } = new([], [], [], true);
 

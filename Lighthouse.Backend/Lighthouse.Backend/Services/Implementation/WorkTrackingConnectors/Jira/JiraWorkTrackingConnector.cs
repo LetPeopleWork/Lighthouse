@@ -2444,9 +2444,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
             var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);
 
-            var listsMissingAnId = OriginalNameLists.None;
-            listsMissingAnId |= missingStatusIds.Count > 0 ? OriginalNameLists.Statuses : OriginalNameLists.None;
-            listsMissingAnId |= missingIssueTypeIds.Count > 0 ? OriginalNameLists.IssueTypes : OriginalNameLists.None;
+            var listsMissingAnId = (missingStatusIds.Count > 0 ? OriginalNameLists.Statuses : OriginalNameLists.None)
+                | (missingIssueTypeIds.Count > 0 ? OriginalNameLists.IssueTypes : OriginalNameLists.None);
 
             var listsToReadAgain = ListsNotYetReadAgain(lists) & listsMissingAnId;
 
