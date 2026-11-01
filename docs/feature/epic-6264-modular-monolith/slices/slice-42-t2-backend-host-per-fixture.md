@@ -2,6 +2,8 @@
 
 Epic #6264 · ADO #6460 · `@infrastructure` · job_id: infrastructure-only · **Size L** (split per harness group at DESIGN)
 
+- infrastructure_rationale: waived at Epic level (Epic #6264 `feature-delta.md`, D-6264-2 and D-6264-5): a behaviour-free test-infrastructure change has no user-visible slice. The backend CI test step grew from about 7 to 9-14 minutes because every test builds its own app host; this Story builds one per fixture and guards it.
+
 ## Goal
 
 Backend integration tests build one app host per fixture, not one per test, and each test's database is cheap. A
@@ -46,4 +48,5 @@ guard stops a new per-test host from landing.
 - [ ] Allow-list guard in place, failing on a newcomer and on a stale entry; the list only shrinks.
 - [ ] Summed CI time of the moved classes measured before and after (median of at least 5 runs on main).
 - [ ] Parallel safety: 3 consecutive green full-assembly runs; `BackendTestParallelizationGuardTest` green.
-- [ ] No test deleted, skipped or weakened; mutation score of touched test helpers held.
+- [ ] No test deleted, skipped or weakened.
+- [ ] No Stryker run owed: test-only code (Stryker.NET mutates the product assembly). The guard's compare step is tested with planted lists, and every branch of its scan is shown by a planted case that fails when the branch is broken.

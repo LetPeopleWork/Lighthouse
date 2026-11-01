@@ -41,7 +41,7 @@ From the Epic's `feature-delta.md`, by heading. Linked, not copied:
 
 | DoR item | Status | Evidence |
 |---|---|---|
-| 1 Problem statement | PASS | 71 test files build a whole host in `[SetUp]` or a test body (re-count below); measured set-up is 74.5 s of 170.5 s in 14 timed fixtures that do it. CI backend test step median 746 s. |
+| 1 Problem statement | PASS | **126 types** start a host for every test (the guard's reconciled count; the PICK-UP classifier saw 80 files, 63 `[SetUp]` + 18 test body - 1 in both; the other 46 reach it through a helper, base class, `*TestHost` or constructor; see "Gate revision 1"); measured set-up is 74.5 s of 170.5 s in 14 timed fixtures that do it. CI backend test step median 746 s. |
 | 2 Persona | PASS | `lighthouse-maintainer` waiting on CI; parallel local sessions. |
 | 3 Domain examples | PASS | `BlockedItemsAcceptanceTest`, `ConnectionDefaultsAcceptanceTest` (4 of the 5 most set-up-bound timed fixtures), `ClusterSubstrateProbeRegistrationTest`, `ReconstructOverTimeHistoryAcceptanceTest`. |
 | 4 UAT G/W/T | DEFERRED | Epic catalogue rule: written at each Story's DISTILL. |
@@ -208,10 +208,10 @@ Shape of the work: test infrastructure only (one shared test factory, one new gu
 | # | Decision | Chosen | Why / trade-off |
 |---|---|---|---|
 | D1 | Make the untimed fixtures measurable | `TestWebApplicationFactory` gets a `CreateHost` override that reports host-build time to `FixtureSetupTimer` (new `MeasurementKind.HostBuild`, attributed to the running fixture via `TestContext.CurrentContext.Test.ClassName`), in slice 1. | The timer covers 1,047 of 11,901 tests; the AC "set-up share per harness before any change" is otherwise unmet for 71 files. One override in the one factory beats touching 71 files. Rejected: instrumenting each file (71 edits for a number we then delete). |
-| D2 | Which fixtures move first | Ranked by measured saving: (1) the `ConnectionDefaultsAcceptanceTest` family (47.6 s local set-up, 4 of the top 5 timed) + `ConnectionFieldChangeAcceptanceTest` (10.5 s), with the guard; (2) the template database (central, benefits every database-per-test fixture, no per-fixture edit); (3) `TaskManager`, `ReconstructOverTimeHistory`, `FasterUpdates`, `UsageDataCollectorObservation` (largest untimed proxies, 305 s); (4) the mid-size acceptance bases; (5) the long tail. Rule for the tail: a file whose measured host-build share is under 25 % of its class time stays on the allow-list with a reason ("body-bound: ..."). | Ordered by measured then proxy seconds, biggest first, the ordering the Story asks for. The tail is cheap per file but each move is an edit with a regression risk; below a quarter of the time it is not worth it. |
-| D3 | Per-fixture host pattern | Exactly #6302 DS-Q2: host built in `[OneTimeSetUp]`, disposed in `[OneTimeTearDown]`; per-test inputs (licence answer, clock position, counters, captured calls) live in objects the fixture owns and are reset in `[SetUp]`; the DI registration closes over the **fixture-owned object**, never a per-test field. No new `[NonParallelizable]`. A fixture that keeps a per-test derived host (it flips a configuration) uses one derived host per distinct configuration, created in `[OneTimeSetUp]`, or stays on the list with the reason. | It is the locked, measured pattern with 3 precedents (Refinement, Reports, TeamFeatureSize left alone). Risk it carries, to be tested per slice: state that used to be thrown away with the host (singletons, caches, `FakeLighthouseClock`) now lives across tests; each converted fixture is run alone three times in a row before commit. |
-| D4 | Cheap per-test database | **Process-wide schema template, copied per fresh database, inside `TestWebApplicationFactory`.** A `Lazy` static builds one SQLite file with `Database.EnsureCreated()` (same `UseSqlite(..., DatabaseConfigurator.ConfigureSqlite)` options, `Pooling=False`, WAL checkpointed away and no `-wal`/`-shm` left); the options lambda that today reads `databaseFileName` copies the template to that path the first time the path is used (`File.Copy`, guarded by a lock and `File.Exists`), so `UseFreshDatabase()` and the 111 files that call `EnsureCreated` themselves keep working (EnsureCreated on a file that already has tables is a no-op). Slice 2 first proves it on one group-B and one group-C fixture (set-up mean must fall by at least 30 %); only then is it the default. Seeded variant (D4b): a per-host template with the `ISeeder`s already applied, **only if** the A/B shows seeding is what remains; decided by that measurement, not now. | Feasibility checked against today's code: the factory builds a unique file name per factory (`NewDatabaseFileName`), the options lambda reads the field on every options build, `UseFreshDatabase` already swaps the name, only `TestWebApplicationFactory` creates SQLite files (Postgres tests use `SharedPostgresContainer`, **out of scope**), the model is identical for every host, so one process-wide template is valid. Central, one file, benefits ~2,500 tests with no per-fixture edit. Risks: a test that expects a database with no tables at first use (the migration/health fixtures use their own set-up and are checked in slice 2); Windows file locking (template opened read-only for the copy; the existing delete-retry loop stays). Rejected: a per-host template (N builds instead of 1, no gain over process-wide for schema); an in-memory SQLite connection (FK/WAL/file semantics differ from the tests' file databases); EF InMemory (does not enforce FKs, per ci-learnings). |
-| D5 | Guard design | `Architecture/TestHostPerFixtureGuardTest`: a ratcheting allow-list, **IL-scan with Mono.Cecil** (the same dependency and style as `IlDependencies`). Roots: methods carrying `[SetUp]`, `[Test]`, `[TestCase]`, `[TestCaseSource]`, `[Theory]` in the test assembly (inherited ones included). Reachable set: the call closure through methods and constructors **declared in the test assembly** (so a helper, a `*TestHost` constructor and a base-class `[SetUp]` are followed). Sinks: `newobj TestWebApplicationFactory<>` / `WebApplicationFactory<>`, and calls to `WithWebHostBuilder` or `WithTestAuthentication`. An offender is reported as the **top-level declaring type of the root method** (a base class `[SetUp]` is one entry for all its subclasses). Two tests, both directions, as in `PostgresContainerSharingGuardTest` and `RepositoryLeakRatchetArchUnitTest`: (a) no offender outside the list: the message names the type and says "build the host in `[OneTimeSetUp]`, reset per-test inputs in `[SetUp]`"; (b) every list entry still offends, else "remove it from the list". The comparison is a small pure step driven with made-up lists, so both failure directions are proven without breaking real code. The list starts as today's exact offenders (about 80 types) and may only shrink. | Precedents: `PostgresContainerSharingGuardTest` (source scan, file-name list with reasons, stale-entry test), `BackendTestParallelizationGuardTest` (type-name list), `RepositoryLeakRatchetArchUnitTest` (pure compare step + planted lists). IL beats a source scan here because the pattern is usually in a helper that `[SetUp]` calls, and the scan must follow calls; a regex over files cannot. Key is a type name, not a file name as the brief words it: the IL has no file, and the type is what a reviewer reads. Rejected: source scan with attribute-by-indentation (the classifier above needed three kinds of guess and still left 27 "helper" files unresolved); an NUnit `[SetUp]`-time runtime hook counting factories (catches only what runs, slows every run, cannot fail at build review time). Fallback if the closure is too noisy at DELIVER (a fixture that builds a host in a lambda it hands to a base): fall back to source scan + the Postgres guard's shape, and record why. |
+| D2 | Which fixtures move first | Order rule applied (Gate revision 1): the guard first, then measured before proxy, the template's A/B gating its size; "biggest first" is dropped. The ranking below is the starting order, re-sized after slice 1's D1 measurement: (1) the `ConnectionDefaultsAcceptanceTest` family (47.6 s local set-up, 4 of the top 5 timed) + `ConnectionFieldChangeAcceptanceTest` (10.5 s), with the guard; (2) the template database (central, benefits every database-per-test fixture, no per-fixture edit); (3) `TaskManager`, `ReconstructOverTimeHistory`, `FasterUpdates`, `UsageDataCollectorObservation` (largest untimed proxies, 305 s); (4) the mid-size acceptance bases; (5) the long tail. Rule for the tail: a file whose measured host-build share is under 25 % of its class time stays on the allow-list with a reason ("body-bound: ..."). | Ordered by measured seconds before proxy seconds (not "biggest first"; see Gate revision 1). The tail is cheap per file but each move is an edit with a regression risk; below a quarter of the time it is not worth it. |
+| D3 | Per-fixture host pattern | Exactly #6302 DS-Q2: host built in `[OneTimeSetUp]`, disposed in `[OneTimeTearDown]`; per-test inputs (licence answer, clock position, counters, captured calls) live in objects the fixture owns and are reset in `[SetUp]`; the DI registration closes over the **fixture-owned object**, never a per-test field. No new `[NonParallelizable]`. A fixture that keeps a per-test derived host (it flips a configuration) uses one derived host per distinct configuration, created in `[OneTimeSetUp]`, or stays on the list with the reason. | It is the locked, measured pattern with 3 precedents (Refinement, Reports, TeamFeatureSize left alone). Risk it carries, to be tested per slice: state that used to be thrown away with the host (singletons, caches, `FakeLighthouseClock`) now lives across tests; each converted fixture is run alone three times in a row before commit. **Made concrete in Gate revision 1 (B1, B2, B3, B5):** the factory owns one `FakeTimeProvider` field that a converted fixture resets to `TestToday.FrozenNow` in `[SetUp]`; the database file name is read per scope, so `UseFreshDatabase()` is seen only by scopes created after it and a converted fixture never resolves `LighthouseAppContext` or its options from the root provider (recorded grep); rate-limiter partitions are reset by keeping a derived host per configuration or the fixture stays listed; `[OneTimeTearDown]` disposes the host before database files are deleted. |
+| D4 | Cheap per-test database | **Process-wide schema template, copied per fresh database, inside `TestWebApplicationFactory`.** A `Lazy` static builds one SQLite file with `Database.EnsureCreated()` (same `UseSqlite(..., DatabaseConfigurator.ConfigureSqlite)` options, `Pooling=False`, WAL checkpointed away and no `-wal`/`-shm` left); the options callback, which `AddDbContext` runs once per scope and which reads `databaseFileName` each time, copies the template to that path the first time a scope sees a path that does not exist yet (built under a temporary unique name and moved atomically to a per-content or per-run name; copied only from a finished file; a unique destination per copy; Gate revision 1, B4), so `UseFreshDatabase()` and the 111 files that call `EnsureCreated` themselves keep working (EnsureCreated on a file that already has tables is a no-op). Slice 2 first proves it on one group-B and one group-C fixture (median of at least 5 runs per fixture at the same worker count; set-up mean must fall by at least 30 % in each group, and the template ships only for the group that passed; Gate revision 1, B6); only then is it the default. Entry condition: scenario DB-4 (two processes build at once) is green. Seeded variant (D4b): a per-host template with the `ISeeder`s already applied, **only if** the A/B shows seeding is what remains; decided by that measurement, not now. | Feasibility checked against today's code: the factory builds a unique file name per factory (`NewDatabaseFileName`), the options lambda reads the field on every options build, `UseFreshDatabase` already swaps the name, only `TestWebApplicationFactory` creates SQLite files (Postgres tests use `SharedPostgresContainer`, **out of scope**), the model is identical for every host, so one process-wide template is valid. Central, one file, benefits ~2,500 tests with no per-fixture edit. Risks: a test that expects a database with no tables at first use (the migration/health fixtures use their own set-up and are checked in slice 2); Windows file locking (template opened read-only for the copy; the existing delete-retry loop stays). Rejected: a per-host template (N builds instead of 1, no gain over process-wide for schema); an in-memory SQLite connection (FK/WAL/file semantics differ from the tests' file databases); EF InMemory (does not enforce FKs, per ci-learnings). |
+| D5 | Guard design | `Architecture/TestHostPerFixtureGuardTest`: a ratcheting allow-list, **IL-scan with Mono.Cecil** (the same dependency and style as `IlDependencies`). Roots: methods carrying `[SetUp]`, `[Test]`, `[TestCase]`, `[TestCaseSource]`, `[Theory]` in the test assembly (inherited ones included). Reachable set: the call closure through methods and constructors **declared in the test assembly** (so a helper, a `*TestHost` constructor and a base-class `[SetUp]` are followed). Sinks: `newobj TestWebApplicationFactory<>` / `WebApplicationFactory<>`, and calls to `WithWebHostBuilder` or `WithTestAuthentication`. An offender is reported as the **top-level declaring type of the root method** (a base class `[SetUp]` is one entry for all its subclasses). Two tests, both directions, as in `PostgresContainerSharingGuardTest` and `RepositoryLeakRatchetArchUnitTest`: (a) no offender outside the list: the message names the type and says "build the host in `[OneTimeSetUp]`, reset per-test inputs in `[SetUp]`"; (b) every list entry still offends, else "remove it from the list". The comparison is a small pure step driven with made-up lists, so both failure directions are proven without breaking real code. The list starts as today's exact offenders (126 types, keyed by full type name, with a ceiling test) and may only shrink. | Precedents: `PostgresContainerSharingGuardTest` (source scan, file-name list with reasons, stale-entry test), `BackendTestParallelizationGuardTest` (type-name list), `RepositoryLeakRatchetArchUnitTest` (pure compare step + planted lists). IL beats a source scan here because the pattern is usually in a helper that `[SetUp]` calls, and the scan must follow calls; a regex over files cannot. Key is a type name, not a file name as the brief words it: the IL has no file, and the type is what a reviewer reads. Rejected: source scan with attribute-by-indentation (the classifier above needed three kinds of guess and still left 27 "helper" files unresolved); an NUnit `[SetUp]`-time runtime hook counting factories (catches only what runs, slows every run, cannot fail at build review time). Fallback if the closure is too noisy at DELIVER (a fixture that builds a host in a lambda it hands to a base): fall back to source scan + the Postgres guard's shape, and record why. |
 | D6 | Guard sits where | In the standard `dotnet test` run, `Architecture/` folder, reads the already-built test assembly (`typeof(...).Assembly.Location`, as `IlDependencies.ReadModule` does); no CI workflow change. | Same place as the other allow-list guards; CI already runs it. |
 | D7 | Existing instrumentation | The `FixtureSetupTimer` env switch stays; D1 only adds one kind. The `check_budget.py` backend step (`--warn-only` today) is untouched; its per-class budgets will start showing the moved classes' gains. | Reuse. |
 | D8 | #6302 leftover: `ClusterSubstrateProbeRegistrationTest` | Build only the part it inspects. `Program.ConfigureHealthChecks(WebApplicationBuilder)` (Program.cs line 1042, `private static`) is what registers `cluster-substrate` with `StartupOnlyTags`; widen it to `internal static` (a one-word, behaviour-free change, the same step `ConfigureDataProtection` already took), then the test builds `WebApplication.CreateEmptyBuilder`, sets `ConnectionStrings:Redis` to `localhost:6399`, calls it, and reads `HealthCheckServiceOptions.Registrations` (checks are only registered, never resolved, so nothing connects). Same two assertions (startup tag yes, ready tag no) plus the registration-exists one. Slice 1. | Removes a 0.8-16.4 s CI test that boots the whole app against an address where nothing listens. **Cost: a `Program.cs` edit**, which per the project's memory forces the full backend Integration suite (live connector tests) before push. Accepted because the edit is a visibility change; if the maintainer prefers not to pay that run, the fallback is to leave the test as is and keep it on the guard's list with the reason "boots the app to inspect a registration". |
@@ -295,7 +295,7 @@ leaking across tests would show as a flake here, not only at the end), (d) the f
 Each slice ships alone, is independently valuable, and is ordered by measured saving (biggest first). Slice 1 carries the guard so
 the pattern stops growing from the first push. Sizes are rough; the lead confirms them at DISTILL.
 
-| Slice | Content | Why it stands alone | Measured / estimated saving (CI-summed) |
+| Slice | Content | Why it stands alone | Ceiling, unmeasured (CI-summed; corrected in Gate revision 1, superseding the figures below) |
 |---|---|---|---|
 | 1. Guard + measure + first move | D5 guard with today's offenders listed; D1 host-build timing; the `ConnectionDefaultsAcceptanceTest` family (8 classes) and `ConnectionFieldChangeAcceptanceTest` moved to a host per fixture; D8 `ClusterSubstrateProbeRegistrationTest`; ci-learnings entry | The pattern cannot grow; the top timed offenders are fixed; the untimed ones become measurable | about -105 s (58 s local x 1.8) + the Cluster test (0.8-16 s) |
 | 2. Template database | D4 process-wide schema template in `TestWebApplicationFactory`; A/B on one group-B and one group-C fixture first; optional D4b seeded variant gated on that A/B | One-file change that helps every database-per-test fixture, moved or not | about -150 s (up to -380 s with seeding), measured by the A/B |
@@ -382,7 +382,7 @@ Also written as `environments.yaml` in this workspace.
 
 Nothing here can be done before a push; the lead runs it after each slice lands on `main`.
 
-1. **Wait for at least 5 successful `main` runs** that contain the slice's commit (list them under `ci.yml`, because `ci_backend.yml` is a reusable workflow and `gh run list --workflow ci_backend.yml` is empty). Include the `main` runs of later slices only if the slice-by-slice attribution is not needed; otherwise stop the count at the next slice's push. The GitHub run-list API serves stale pages about 1 time in 7, so re-list before trusting a count.
+1. **Wait for 7 successful `main` runs** (Gate revision 1, C3; the slice-1 push run is excluded) that contain the slice's commit (list them under `ci.yml`, because `ci_backend.yml` is a reusable workflow and `gh run list --workflow ci_backend.yml` is empty). Include the `main` runs of later slices only if the slice-by-slice attribution is not needed; otherwise stop the count at the next slice's push. The GitHub run-list API serves stale pages about 1 time in 7, so re-list before trusting a count.
 2. **Download the artifact `test-timings-backend`** (`test-timings-backend.csv`, one row per test) from each of those runs: `gh run download <run-id> -n test-timings-backend -D <dir>/ci<run-id>`.
 3. **Compute the per-class median of summed seconds** with `measurement/scripts/cistats.py <dir>` (it globs `<dir>/ci*/test-timings-backend.csv` and writes `<dir>/ci_class_median.tsv`, one line per class: median seconds, test count).
 4. **Compare with the before baseline** in `measurement/`: `ci-class-median-7-runs.tsv.gz` (943 classes, 7 runs, summed test time median 2,806 s) for the moved classes' summed time, and `ci-backend-test-step-seconds.tsv` (23 runs, step median 746 s) for the `Test Backend (with Coverage)` step (read from `gh run view <id> --json jobs`, as the baseline was). Report per slice: summed median seconds of the moved classes before and after, the total summed test time before and after, and the step median before and after. KPI row 16 (CI test step minutes on main, median of at least 5 runs) is the one that moves.
@@ -407,7 +407,7 @@ CI is Linux, so CI cannot see this. The Standalone build and Windows developers 
 - **Risk:** `File.Copy` of the template while another process or thread has it open for write, or a later delete of a copied database that SQLite still holds open (the existing code already has a delete-retry loop for this).
 - **Mitigation 1, unique file names:** every copy gets its own unique name (the existing `NewDatabaseFileName` scheme; the template has a fixed, separate name that no test ever opens as its database). Two tests never share a destination, so there is no destination contention.
 - **Mitigation 2, copy instead of open:** the template is built once, behind a `Lazy` static and a lock, with `Pooling=False` and the WAL checkpointed away (no `-wal` or `-shm` file left), then **closed completely before any copy**. Tests only ever `File.Copy` it (read share), never open it with SQLite, so nothing holds a write handle on the source. A copy that fails with an `IOException` is retried through the same bounded retry the delete uses, then fails with a message naming the path (never skipped).
-- **Check:** the maintainer or a Windows developer runs the full backend suite once on Windows after slice 2; this is the only available verification and is listed as a hold item at the end of the track, not claimed as done.
+- **Check:** the maintainer or a Windows developer runs the full backend suite once on Windows after slice 1 and again after slice 2 (hold items); this is the only available verification and is listed as a hold item at the end of the track, not claimed as done.
 
 ## Wave: DEVOPS / [REF] Mutation strategy
 
@@ -445,7 +445,7 @@ Two points where DISTILL settled something DESIGN left open, recorded here:
 
 - The guard counts **types, not files** (DESIGN D5). The first run produced **126 types**, not "about 80" (see "Allow-list at the start").
 - The planted-fixture cases (DEVOPS: "one planted-offender case, if the walk can be pointed at a tiny fixture type") **are possible**:
-  eight tiny abstract types inside the guard file, skipped by the real scan. NUnit runs any class that has `[Test]` methods even when it is
+  tiny abstract types inside the guard file (ten cases after Gate revision 1), skipped by the real scan. NUnit runs any class that has `[Test]` methods even when it is
   `internal` and has no `[TestFixture]` (measured: the first version ran them), so they are `abstract`.
 
 ## Wave: DISTILL / [REF] Scenario list
@@ -464,7 +464,8 @@ Test layer: the guard reads the compiled test assembly, so it is a plain unit te
 | G5 | Pure compare, stale only | `AStaleEntryOnTheListIsReportedAndNothingElse` | green |
 | G6 | Pure compare, lists agree in any order | `ListsThatAgreeReportNothingWhateverTheOrder` | green |
 | G7 | Pure compare, both at once | `ANewcomerAndAStaleEntryAreReportedTogether` | green |
-| G8 | The scan sees a host started per test however it is reached: per-test set-up, test body, helper called from set-up, lambda, after an `await`, derived host (`WithWebHostBuilder`); and does not flag a host started only in one-time set-up, or no host | `TheScanSeesAHostStartedForEveryTestHoweverItIsReached` (8 cases) | green (8 cases) |
+| G8 | The scan sees a host started per test however it is reached: per-test set-up, test body, helper called from set-up, lambda, after an `await`, derived host (`WithWebHostBuilder`); and does not flag a host started only in one-time set-up, or no host | `TheScanSeesAHostStartedForEveryTestHoweverItIsReached` (10 cases after Gate revision 1: adds a factory three steps below the named one, and an unrelated method with a sink's name) | green (10 cases) |
+| G9 | The list only shrinks: it holds at most N entries, N = today's count (126); each slice lowers N in the same commit | `TheListOnlyShrinks` | green; RED shown in Gate revision 1 |
 
 ### Slice 1 (guard, measure, first move, cluster-substrate test)
 
@@ -488,7 +489,7 @@ Test layer: the guard reads the compiled test assembly, so it is a plain unit te
 | 5 long tail | S1.1 to S1.4 per file by the 25 % rule; an entry that stays gets a written reason (body-bound or other); at the end the list is empty or every entry has a reason |
 | End of track | 3 consecutive green full standard-filter runs (the two known publish-output scans excepted) |
 
-Counts: 8 guard scenarios (14 test results), plus the preservation shape repeated per slice. Failure-direction share: G1, G2, G4, G5, G7 and the
+Counts: 9 guard scenarios (17 test results), plus the preservation shape repeated per slice. Failure-direction share: G1, G2, G4, G5, G7 and the
 negative planted cases; the rest are preservation. Walking skeleton: N/A, because nothing a user does changes; the guard reading the real compiled
 assembly is the end-to-end proof. Driven adapters: none new with real I/O.
 
@@ -508,21 +509,21 @@ Driving port: the compiled test assembly read by `IlDependencies.ReadModule` (gu
 
 | Brief AC | Scenario(s) / owner |
 |---|---|
-| Set-up share per harness measured before any change | **Lead-owned** (DESIGN measurement done for 109 timed fixtures; the untimed ones become measurable through D1 in slice 1, S1.6) |
+| Set-up share per harness measured before any change | **Lead-owned.** 109 timed fixtures done at DESIGN. For the 71 untimed files: D1 lands as the first, measurement-only commit of slice 1 (S1.6); the lead runs it once on a quiet machine and records the shares before any conversion (Gate revision 1, C2) |
 | Hosts built per fixture, per-test inputs reset in `[SetUp]` | S1.1 to S1.4 per slice; ratchet G1, G2, G3 |
 | Every backend test stays green, none deleted, skipped or weakened | S1.1, S1.3 per slice (E-names, E-weaken); AC 6 |
 | Parallel safety: 3 consecutive green full runs, no new `[NonParallelizable]` | AC 7, **lead-owned run** at the end; S1.7 per slice |
-| A guard stops it coming back (fails on a newcomer, fails on a stale entry, passes today) | G1 to G8 (written and live now) |
-| Payoff: CI after-medians (summed seconds of moved classes, step median of at least 5 runs) | **Lead-owned** (DEVOPS measurement protocol, after each push). No test asserts a time. |
+| A guard stops it coming back (fails on a newcomer, fails on a stale entry, passes today) | G1 to G9 (written and live now) |
+| Payoff: CI after-medians (summed seconds of moved classes plus their one-time set-up, step median of 7 runs) | **Lead-owned** (DEVOPS measurement protocol, after each push, rule set in advance in Gate revision 1, C3). No test asserts a time. |
 | Mutation score of touched test helpers held | N/A, because Stryker.NET mutates the product assembly only (DEVOPS); the guard's equivalent is G4 to G8 |
 
 ## Wave: DISTILL / [REF] Test placement and scaffolds
 
 - Placement: `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs`. Precedent: `PostgresContainerSharingGuardTest`, `BackendTestParallelizationGuardTest`, `RepositoryLeakRatchetArchUnitTest` (both-direction tests with a list, a pure compare), `IlDependencies` for the module reader (reused; the call walk is new and lives inside the guard file as a nested class).
 - **Scaffold = the finished guard.** Nothing needs a stub: the guard compiles against code that exists, is live and green on today's tree, so no `[Ignore]` is used.
-- Entries are keyed by the **simple name of the top-level type** that holds the `[SetUp]` or test method (DESIGN: type name; two classes with the same simple name in different namespaces would share an entry, none do today). Three reasons are in use: `NotMovedYet` (the backlog), `OnAPostgresServer` (3 types), `ChecksTheTestHostItself` (3 types).
+- Entries are keyed by the **full name of the top-level type** that holds the `[SetUp]` or test method (Gate revision 1, A3). Four reasons are in use: `NotMovedYet` (117), `OnAPostgresServer` (5), `ChecksTheTestHostItself` (3), `HasOneTestOnly` (1).
 - How the scan works (so DELIVER can trust or fix it): roots are methods with the five NUnit attributes; calls, constructors, `ldftn` delegates and the `MoveNext` of async and iterator methods are followed inside the test assembly; a virtual call on a type written in the assembly also reaches its overrides; the factory types themselves are not walked into (they are the sink); a method whose whole closure is clean is remembered.
-- Known limits (not fixed): interface calls are not resolved to their implementations; methods overloaded with the same name and argument count are treated as all of their overloads (can only over-report); a host started through reflection, or through a factory type that is not a `TestWebApplicationFactory`/`WebApplicationFactory` subclass, is not seen. The Debug assembly was scanned; DEVOPS asked for one comparison against a `-c Release` assembly before the list is final; **not done here** (only the Debug build was allowed), left for slice 1.
+- Known limits (not fixed): interface calls are not resolved to their implementations; methods overloaded with the same name and argument count are treated as all of their overloads (can only over-report); a host started through reflection, or through a factory type that is not a `TestWebApplicationFactory`/`WebApplicationFactory` subclass, is not seen. A call to `WithWebHostBuilder` or `WithTestAuthentication` counts only when it is made on a factory type (Gate revision 1, A4). The Release assembly was compared with Debug (Gate revision 1, A6): identical list, now a per-slice pre-push gate.
 - Edits DELIVER makes per slice: delete the moved types' lines from `TypesAllowedToBuildAHostPerTest`; nothing else in the guard changes. When the dictionary is empty, replace it with a plain "no type" assertion and drop the stale test.
 
 ## Wave: DISTILL / [REF] Allow-list at the start (the ratchet's starting point)
@@ -540,9 +541,8 @@ Comparison of the two sets, file by file (each of the 126 types lives in its own
 | **Total** | **126** |
 
 So the difference of **46** is what the PICK-UP re-count said it could not settle: hosts reached through a helper, a base class, a `*TestHost` object or a
-constructor called from a per-test method. The scan follows those; the classifier did not. About 29 of the 34 unseen files were not examined one by one: they
-are listed because a per-test method reaches a host start. If slice 1 finds one that cannot be shown to start a host per test (for example a helper called
-from `[OneTimeSetUp]` that a test also reaches), it comes off the list, with the reason written in the commit. Nothing more is claimed.
+constructor called from a per-test method. The scan follows those; the classifier did not. All 34 unseen files were then read one by one (Gate revision 1, A7): 34 confirmed, 0 wrongly listed, N stays 126.
+The 13 the classifier saw as helper, constructor or unresolved were not read one by one; one that proves not to start a host per test comes off the list in the slice that finds it.
 Against the brief's 95 (files building a `TestWebApplicationFactory` host per test): 126 is higher because the brief counted construction sites and this counts
 types that can reach one. The ratchet starts at 126 and may only shrink.
 
@@ -579,6 +579,85 @@ Failed!  - Failed:     1, Passed:    13, Skipped:     0, Total:    14, Duration:
 
 Final state: `Passed! - Failed: 0, Passed: 16, Skipped: 0, Total: 16` (14 in the new fixture, 2 in `BackendTestParallelizationGuardTest`).
 
+The 8-case table, the 16-test count and the simple-name messages above are the first run. Gate revision 1 re-ran them with full-name keys and the ceiling (17 tests in the fixture, 19 with the parallelization guard), and broke every branch of the scan:
+
+#### Branch-breakage table (Gate revision 1, A1)
+
+For each branch of the scan I broke one line, rebuilt (Debug, 0 warnings except the planned failure), ran
+`LIGHTHOUSE_TEST_WORKERS=4 dotnet test --no-build --filter "FullyQualifiedName~TestHostPerFixtureGuardTest"` and restored the line.
+Names are as printed. A line is a failure of the planted-case test unless noted; the guard fixture has 17 tests.
+
+| Branch | Line broken | Failed (as printed) | Passed / total |
+|---|---|---|---|
+| ldftn / ldvirtftn (lambda) | dropped `Code.Ldftn` and `Code.Ldvirtftn` from the opcodes that are followed | `TheScanSeesAHostStartedForEveryTestHoweverItIsReached("StartsAHostInALambda",True)` | 16 / 17 |
+| compiler-made bodies (after-await) | looked for `<Never...>` instead of `<Method>` nested types | `EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest`; `TheScanSeesAHostStartedForEveryTestHoweverItIsReached("StartsAHostAfterAnAwait",True)` | 15 / 17 |
+| helper following | dropped `Code.Call` and `Code.Callvirt` from the opcodes that are followed | `EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest`; `...("StartsAHostInAHelperTheSetUpCalls",True)`; `...("DerivesAHostInATestBody",True)` | 14 / 17 |
+| factory-subclass growth | the loop stopped repeating (`grew \|= ...` became a plain add) | `TheScanSeesAHostStartedForEveryTestHoweverItIsReached("StartsAHostFromAFactoryThreeStepsBelowTheNamedOne",True)` | 16 / 17 |
+| derived-host sink (`WithWebHostBuilder`) | the sink names became `"NeverASink"` | `EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest`; `...("DerivesAHostInATestBody",True)` | 15 / 17 |
+| A4 narrowing (sink only on a factory type) | removed the `IsAFactoryType(called.DeclaringType)` condition | `NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList`; `...("CallsAnUnrelatedMethodWithTheSameNameAsAHostSink",False)` | 15 / 17 |
+| Compare (swap newcomers and stale) | `foundNames.Except(listedNames)` became `listedNames.Except(foundNames)` | G4 `ANewcomerOutsideTheListIsReportedAndNothingElse`, G5 `AStaleEntryOnTheListIsReportedAndNothingElse`, G7 `ANewcomerAndAStaleEntryAreReportedTogether` (G6 and the real-tree tests stay green: equal sets give empty either way) | 14 / 17 |
+| Ratchet ceiling | `MostTypesTheListMayHold = 125` | `TheListOnlyShrinks` | 16 / 17 |
+
+Two lessons the table taught, both fixed before it was recorded: (1) the first "factory-subclass growth" case had a grandchild
+whose parent was already a factory by name, so a single pass found it and breaking the loop changed nothing; the planted chain is now
+three steps deep and declared bottom-up, so only a repeating loop finds the third step. (2) One of my break expressions did not
+compile and the run used the previous binary; every row above was rebuilt and checked for `0 Error(s)` before it counts.
+
+#### Newcomer and stale RED, verbatim (re-run with full-name keys and the ceiling)
+
+Newcomer (line for `TaskManagerAcceptanceTest` removed from the list):
+
+```
+  Failed NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList [24 ms]
+  Error Message:
+     These types start an application host in a per-test set-up or in a test body: Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest. Build the host in [OneTimeSetUp] and dispose it in [OneTimeTearDown]; reset what differs per test in [SetUp] through objects the fixture owns. If a type genuinely needs a host of its own per test, add it to the list with the reason.
+Assert.That(comparison.Newcomers, Is.Empty)
+  Expected: <empty>
+  But was:  < "Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest" >
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 180
+
+1)    at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 180
+
+
+
+Failed!  - Failed:     1, Passed:    16, Skipped:     0, Total:    17, Duration: 90 ms - Lighthouse.Backend.Tests.dll (net10.0)
+```
+
+Stale (an entry `Lighthouse.Backend.Tests.ABogusTypeThatWasFixedLongAgo` added; it also takes the list to 127, so the ceiling fails too, as it should):
+
+```
+  Failed EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest [24 ms]
+  Error Message:
+     These types are on the list but no longer start a host per test: Lighthouse.Backend.Tests.ABogusTypeThatWasFixedLongAgo. Remove them from the list so it cannot grow back unseen.
+Assert.That(comparison.Stale, Is.Empty)
+  Expected: <empty>
+  But was:  < "Lighthouse.Backend.Tests.ABogusTypeThatWasFixedLongAgo" >
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 195
+
+1)    at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.EveryTypeOnTheListStillStartsAnApplicationHostForEveryTest() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 195
+
+
+  Failed TheListOnlyShrinks [4 ms]
+  Error Message:
+     The list of types allowed to start a host for every test can only get shorter. Fix the type instead of adding it, and when a type leaves the list, lower the number above by the same amount.
+Assert.That(TypesAllowedToBuildAHostPerTest, Has.Count.LessThanOrEqualTo(MostTypesTheListMayHold))
+  Expected: property Count less than or equal to 126
+  But was:  127
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.TheListOnlyShrinks() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 205
+
+1)    at Lighthouse.Backend.Tests.Architecture.TestHostPerFixtureGuardTest.TheListOnlyShrinks() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs:line 205
+
+
+
+Failed!  - Failed:     2, Passed:    15, Skipped:     0, Total:    17, Duration: 88 ms - Lighthouse.Backend.Tests.dll (net10.0)
+```
+
 ## Wave: DISTILL / [REF] Definition of Ready (DISTILL)
 
 | Item | Status | Evidence |
@@ -591,4 +670,270 @@ Final state: `Passed! - Failed: 0, Passed: 16, Skipped: 0, Total: 16` (14 in the
 | Scaffolds green at hand-off | PASS | build 0 warnings; 16 passed, 0 skipped; no `[Ignore]` |
 | RED classified as the right reason | PASS | both directions printed above |
 | No scenario tags, no internal refs in code | PASS | checked in the new file |
-| Open for DELIVER | NOTE | Release-assembly comparison of the list (DEVOPS) not yet done; the Windows copy risk and D8's Program.cs push cost stay as written |
+| Open for DELIVER | NOTE | Release-assembly comparison done (Gate revision 1, A6: identical); the Windows copy risk and D8's Program.cs push cost stay as written |
+
+## Wave: DISTILL / [REF] Gate revision 1 (2026-11-01)
+
+Applies the lead's decisions after the four-reviewer gate. The reviewers' own finding ids were not passed to the designer, so the
+"Findings resolved" column states the gap each decision closes in plain words. Code lives in one commit, docs in another;
+the guard's own file and the measurement scripts are the only code touched. Nothing was pushed.
+
+| Decision | Findings resolved | Where changed |
+|---|---|---|
+| A1 proof per branch | The scan's branches were each shown only by one planted case; nobody had broken a branch and watched a case fail | "Branch-breakage table" below; two planted cases added in the guard (a factory three steps below the named one; an unrelated method with a sink's name) |
+| A2 ratchet | "The list only shrinks" was a promise, not a test | Guard: `MostTypesTheListMayHold = 126` and `TheListOnlyShrinks`; message says the list only shrinks |
+| A3 full names | Two types with the same simple name would share an entry | Guard list keyed by full type name (126 entries rewritten); this file's "Test placement" and "Allow-list" sections |
+| A4 sink limit | `WithWebHostBuilder` and `WithTestAuthentication` matched by name on any type | Narrowed in the guard: a sink counts only when called on a factory type (the family `IsAFactoryType` already knew). Cheap, so narrowed rather than listed as a limit; list unchanged at 126 |
+| A5 comments | Planted-types comment gave the wrong reason; a loop comment narrated | Guard: comment says abstract so NUnit does not run them; the loop is rewritten as a `do ... while (grew)` with no comment; no ids or tags in comments |
+| A6 Release parity | DEVOPS asked for it; not done | "Release against Debug" below; becomes a per-slice pre-push gate |
+| A7 reconcile and examine | 63 + 18 = 81 versus 80; 95 versus 126; 34 types never examined; two Containers types still "not moved yet" | "Reconciliation of counts" and "The 34 types, one by one" below; Containers reasons set |
+| A8 scaffold | Commit 827ab7eb8 is a scaffold that could be mistaken for a pushable unit | See "Commit rule" below |
+| B1 clock | `FakeTimeProvider` is created inline in the factory; a converted fixture would share one clock across tests | D3 rewritten (below); scenario DB-1 |
+| B2 database name | D3 named a dependency that is not the real one | D3 and D4 rewritten; scenario DB-2; recorded check |
+| B3 rate limiting | Rate-limiter partitions are state a shared host keeps | D3 reset list; scenario DB-3 |
+| B4 template safety | Template build and copy could race across test processes | D4 rewritten; scenario DB-4 (entry condition for slice 2) |
+| B5 teardown order | Order of host disposal and file deletion unspecified; disk high-water mark unknown | D3; scenario DB-5; Windows check moved |
+| B6 A/B gate | The 30 % threshold was not pre-registered per group | D4; "A/B gate" below |
+| C1 savings are ceilings | Savings read like promises; slice 1 dropped the database share; "biggest first" was not the rule applied | "Savings, as ceilings" below; D2 order rule restated |
+| C2 set-up before change | Untimed set-up shares were to be measured "before any change" with no commit that does it | Slice 1 order; AC traceability reworded |
+| C3 CI KPI | The metric the "after" is compared with was never checked against how the artifact is made | "CI KPI and decision rule" below, with the measured trx finding |
+| C4 memory | Memory was a "watch", with no number | "Memory stop threshold" below |
+| C5 forced-full push | The slice-1 push runs a bigger suite than announced | "Forced-full push" below |
+| C6 CI parity | Local runs at 6 workers; CI differs; green was loosely defined | "Parity and order" below |
+| C7 scripts | Scripts had hard-coded paths and a median that counted absences as zero | `cistats.py` and `classify.py` rewritten to take arguments |
+| C8 behaviour-preservation commands | Described in prose only | "Behaviour-preservation commands" below; script `measurement/scripts/behaviour-preserved.sh`, before-list `measurement/test-ids-before.2026-11-01.txt.gz` |
+| D1 sizing | Slices were "rough sizes" | "Slice sizes" below |
+| D2 counts | DoR item 1 quoted a count the guard does not use | DoR re-run row 1 patched; reconciliation below |
+| D3 slice 5 | Optional status and fall-back not stated | "Slice sizes" below |
+| D4 re-sizing | Slices 3 to 5 sized on the proxy | "Slice sizes" below |
+| D5 brief edits | Brief lacked the infrastructure rationale and had a mutation AC the track cannot meet | Brief patched (`slice-42-t2-backend-host-per-fixture.md`) |
+| D6 owner | "The lead" was unspecific | DEVOPS protocol header and the line below |
+| D7 titles | Guard test names are method-style | Noted below |
+| D8 fallback | Needed restating | Stays taken; see below |
+
+### Commit rule (A8)
+
+The scaffold commit `827ab7eb8` is the first local commit of slice 1 and is **never pushed on its own**. Slice 1 is pushed as one unit:
+that scaffold, this revision's code commit, the measurement-only D1 commit, and the conversions. Nothing in the scaffold is
+valid alone, because its list was counted by the first run and has since been re-keyed and ratcheted.
+
+### Branch-breakage table and verbatim REDs (A1)
+
+Moved into the RED classification section above (subsections "Branch-breakage table" and "Newcomer and stale RED, verbatim"), where the earlier REDs are.
+
+### Release against Debug (A6)
+
+`dotnet build -c Release -v q`: 0 warnings, 0 errors. `LIGHTHOUSE_TEST_WORKERS=4 dotnet test -c Release --no-build --filter "FullyQualifiedName~TestHostPerFixtureGuardTest|FullyQualifiedName~BackendTestParallelizationGuardTest"`:
+`Passed! - Failed: 0, Passed: 19, Skipped: 0, Total: 19`. The Debug run of the same filter gives the same 19 of 19. Both guard directions pass in both
+configurations against the same 126 entries, so the offender list is identical: no type is found only in Debug and none only in Release.
+**Per-slice pre-push gate:** the guard filter green under Debug and under `-c Release` (CI tests Release), both after a fresh build.
+
+### Reconciliation of counts (A7)
+
+| Number | What it counts | Reconciled |
+|---|---|---|
+| 80 (PICK-UP) | files where the classifier saw the host built in `[SetUp]` or a test body | `SetUp` 63 files + `test-body` 18 files = 81, minus 1 file that is in both (`RbacGroupMappingConcurrencyTokenIntegrationTest`) = **80** |
+| 95 (brief) | files, by a different pattern, counted in October | a file count; not comparable with types |
+| 111 / 112 | files containing `new TestWebApplicationFactory` | 111 at `b2b516258`; **112** now, because the guard's own planted fixtures add the guard file |
+| 132 (133 now) | files matching `new TestWebApplicationFactory`, `WithWebHostBuilder(` or `WithTestAuthentication(` | the classifier's universe: its output has 140 lines, 7 summary lines, one blank and 132 files at `b2b516258` (133 now, the guard file) |
+| **126** | **types** whose per-test methods reach a host start (the guard) | 80 classifier files; of the guard's 126, 79 of those 80 files are listed (the 80th is a TaskManager specifications file whose type is listed under its other file); + 13 the classifier saw as helper, constructor, class-level or unresolved; + 34 it did not see; = **126** |
+
+DoR item 1 now cites **126 types** (80 by the classifier; the other 46 are hosts reached through a helper, a base class, a `*TestHost` or a constructor).
+
+### The 34 types the classifier did not see, one by one (A7)
+
+For each I read the set-up, tear-down and test bodies (the file, its base class and the `*TestHost` it builds). Verdict for all 34: **confirmed**
+a host is started for every test (or lazily in the test body for every test); **0 wrongly listed**. N stays **126** after the examination.
+
+| Group | Types | What starts the host, per test | Verdict |
+|---|---|---|---|
+| `*TestHost` built in each test body (7) | `ForwardedHeadersIntegrationTest` (10 tests), `HealthCheckIntegrationTest` (7), `ShutdownIntegrationTest` (4), `JwtBearerAuthIntegrationTest` (5), `McpInboundAuthIntegrationTest` (8), `MetricsEndpointIntegrationTest` (4), `ServiceProviderValidationTest` (1) | `using var host = new <X>TestHost(options)` in each test: `ForwardedHeadersTestHost`, `JwtBearerTestHost`, `McpInboundAuthTestHost` build a `TestWebApplicationFactory` plus `WithWebHostBuilder`; `HealthCheckTestHost` and `TelemetryTestHost` build a plain `WebApplicationFactory<Program>().WithWebHostBuilder`; `ServiceProviderValidationTest` builds its own `ValidatingFactory` in its one test | confirmed. `ServiceProviderValidationTest` has one test, so a host per fixture saves no host: it stays with the reason `HasOneTestOnly` |
+| Blackout forecast bases (8) | `BlackoutForecastShiftItemPredictionIntegrationTest`, `BlackoutForecastShiftTeamForecastIntegrationTest`, `RecurringBlackoutRulesByDateForecastIntegrationTest`, `...DeliveryIntegrationTest`, `...DownstreamParityIntegrationTest`, `...IntervalRuleIntegrationTest`, `...LifecycleIntegrationTest`, `...WeekendsForeverIntegrationTest` | each `[SetUp]` calls `StartApplicationWithDeterministicForecast()` of its base, which builds `new TestWebApplicationFactory<Program>()`, `WithTestAuthentication` and `WithWebHostBuilder`; `[TearDown]` stops it | confirmed |
+| Viewer embed (5) | `S9_EmbedCookiePolicyTests`, `S9b_EmbedCookieConcurrencyTests`, `S13_ViewerEmbedHandshakeTests`, `S14_ViewerEmbedSubjectValidatorTests`, `S15_EmbedSurfaceOptInTests` | `[SetUp]`: `host = new ViewerEmbedTestHost()`, which builds a root factory and several derived hosts (auth enabled, auth disabled, licence blocked, misconfigured, embed disabled) | confirmed; the heaviest of the group (one root and up to five derived hosts per test) |
+| Named dependency link (4) | `Slice01JiraDependenciesFromANamedLinkScenarios`, `Slice02NamedLinkThatMatchedNothingScenarios`, `Slice03AzureDevOpsRelationTypeAcceptedScenarios`, `Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios` | the base `[SetUp]` only forgets the last scenario's fakes; `TheRunningLighthouse()` builds `new TestWebApplicationFactory<Program>()` plus `WithWebHostBuilder` on first use inside each test, and the base `[TearDown]` stops it | confirmed (lazy, in the test body) |
+| Parent placement (3) | `Slice01NarrowToFeaturesTest`, `Slice02OldestLinkWinsTest`, `Slice03PortfolioOldestLinkTest` | same lazy pattern in `ParentPlacementAcceptanceTest.TheRunningLighthouse()` | confirmed |
+| Parent from issue links (1) | `Slice03AmbiguityRefusalTest` (partial) | the specifications half has `[SetUp]` and builds `new TestWebApplicationFactory<Program>()` in a helper each test uses | confirmed |
+| Task manager (5, partials) | `Slice02SeeWhatIsRunningTest`, `Slice04StopARefreshTest`, `Slice05AnyBrokenCredentialSaysSoTest`, `Slice06TheWarningsWithoutTheLogTest`, `Slice08HealthThatChecksItselfTest` | the base `TaskManagerAcceptanceTest.Init()` (`[SetUp]`) does `RootFactory = new TestWebApplicationFactory<Program>()`; test helpers derive hosts with `RootFactory.WithWebHostBuilder` | confirmed |
+| Containers (1) | `EmbedSessionSingleUseConcurrencyTests` | each of its two tests builds `new PostgresEmbedFactory(postgres.GetConnectionString())` over a Postgres container the test starts | confirmed; reason `OnAPostgresServer` |
+
+Containers folder: all five listed types now carry the Postgres-server reason (the three `...OnPostgres` fixtures, `EmbedSessionSingleUseConcurrencyTests`,
+and `ScalabilityTests`, most of whose tests start a Postgres container or a Redis store of their own around a host). The reason text names "a Postgres server
+(or a Redis store)". Zero entries in `Integration/Containers/` say "not moved yet". Reasons in use now: `NotMovedYet` 117, `OnAPostgresServer` 5,
+`ChecksTheTestHostItself` 3, `HasOneTestOnly` 1.
+
+Not examined, and said so: the 13 types the classifier saw as helper, constructor, class-level or unresolved were not read one by one; the 92 types the
+classifier saw (79 + 13) are accepted on the scan. They come off the list the first time a slice shows one does not start a host per test.
+
+### D3 and D4, made concrete (B1 to B6)
+
+**D3, the per-fixture pattern, with the state a shared host keeps.** `[OneTimeSetUp]` builds the host and `[OneTimeTearDown]` disposes it, as before. What is
+reset per test, in `[SetUp]`, through objects the fixture owns:
+
+- **Clock (B1).** `TestWebApplicationFactory` owns one `FakeTimeProvider` field, registers that instance in `ConfigureWebHost` (it creates one inline today) and
+  exposes it. A converted fixture resets it in `[SetUp]` to `TestToday.FrozenNow`. The fixtures that move the host's clock are found with
+  `git grep -nE "\.Advance\(" -- '*.cs'` (20 files) and then `git grep -nE "GetRequiredService<TimeProvider>|\(FakeTimeProvider\)"`: only **two move the host's own clock**, and each
+  goes in the slice that converts it:
+  - `NamedDependencyLinkAcceptanceTest` (line 790, through `TheRunningLighthouse()`): the family of 4 listed types above; converted in the slice that converts them
+    (re-sized after D1, see "Slice sizes"); until then they stay listed (`NotMovedYet`).
+  - `Slice02ConfirmedNowScenarios` (line 154, through `Factory`): reached through `SkipUnchangedForecastsAcceptanceTest` and `TaskManagerAcceptanceTest`, so it is part of
+    slice 3's TaskManager family.
+  The other 18 files advance a clock they built themselves (`S8_EmbedEntryPointTests`, `LighthouseClockTest` pass their own to a host; the rest are unit tests): no shared-host risk.
+- **Database name (B2).** The database file name is read **per scope**, not once: `AddDbContext`'s options callback is scoped, so it reads `databaseFileName` each time a scope builds
+  its options. `UseFreshDatabase()` therefore changes the file only for scopes created **after** it. A converted fixture must not resolve `LighthouseAppContext` or
+  `DbContextOptions<LighthouseAppContext>` from the root provider, because a root-resolved context is built once and keeps the old file. Recorded check, run in every slice that converts
+  a fixture, today **0 hits across the whole test project**:
+  `git grep -nE '\.Services\.(GetRequiredService|GetService)<(LighthouseAppContext|DbContextOptions<LighthouseAppContext>)>' -- '*.cs'` must print nothing. (A guard case was weighed
+  and left out: the pattern is a plain text search with no false positives today, and a guard over service resolution would need its own planted types.)
+- **Rate limiting (B3).** The rate-limiter partitions (counters per client address) live in the host and survive across tests of a shared host. Hosts default to `RateLimits:Enabled=false`
+  (T1). A fixture that tests rate limiting keeps one host per configuration and builds a derived host **per test** where its counters matter, or stays listed with a reason. The fixtures
+  that switch it on and are listed: `S6_RateLimitingTests`, `UsageDataConsentRateLimitTests`, `UsageDataEventCeilingTests`, `S9b_EmbedCookieConcurrencyTests` (through `ViewerEmbedTestHost`).
+  Each decides in its own slice; the default is "stays listed, reason `counters are per host`".
+- **Teardown order (B5).** `[OneTimeTearDown]` disposes the host **before** deleting database files (the factory's `Dispose` already deletes them after `base.Dispose`; the
+  fixture must not delete first). Database files are removed at **fixture end**, not per test, so a fixture's files pile up while it runs. Slice 1 measures the disk
+  high-water mark once (peak total size of `IntegrationTests_*.db*` in the working folder during a full run) and records it.
+
+**D4, the template database, made safe across processes (B4).** The template is a pure optimisation of set-up; its rules:
+
+- built under a **temporary unique name** (`template_<guid>.tmp`), completed (`Database.EnsureCreated()`, WAL checkpointed away, no `-wal`/`-shm`, connection closed), then `File.Move`d
+  atomically to a **per-content or per-run name** (a hash of the model's snapshot, or the process id plus start time);
+- a copy is made **only from a finished file** (the final name exists only after the move);
+- every copy has a **unique destination** (`NewDatabaseFileName`), so two tests never share one;
+- the copy happens inside the options callback, the first time a scope reads a file name that does not exist yet; `UseFreshDatabase()` keeps working because it only swaps the name.
+- **Entry condition for slice 2:** scenario DB-4 below is written and green before the template becomes the default.
+
+**A/B gate, pre-registered (B6).** Before the template is the default, per group: the **median of at least 5 runs per fixture at the same worker count**, one group-B fixture and
+one group-C fixture. Threshold: **B at least 30 %, C at least 30 %** fall in set-up mean. If the groups disagree, the template ships **only for the group that passed**
+(it switches per base class). The seeded variant (D4b) is decided only if the schema-only template passes in **both** groups. The numbers are recorded in DELIVER.
+
+### Scenarios added (B1 to B5)
+
+Preservation scenarios for the slices; none is a new test in this commit (the converted fixtures do not exist yet). They become tests or run commands in the slice that needs them.
+
+| # | Scenario | Slice | Proof |
+|---|---|---|---|
+| DB-1 | An `Advance` of the host clock in one test is not visible in the next test of the same fixture | the first slice that converts `NamedDependencyLinkAcceptanceTest` or the TaskManager family | a test in the converted fixture that advances the clock, followed by one that asserts `TestToday.FrozenNow` (alphabetical order is fixed, so name them to run in that order) |
+| DB-2 | A scope created after `UseFreshDatabase()` sees the new database file, and a scope created before it still sees the old one | slice 2 (the template) and every slice with `UseFreshDatabase` | a test in `TestWebApplicationFactoryTest` using two scopes; plus the recorded grep above |
+| DB-3 | A fixture that tests rate limiting gets a fresh counter per test | the slice that converts one of the four fixtures | the converted fixture's own tests: the second test must not hit the first test's limit |
+| DB-4 | Two processes build the template at the same time and both get a complete, identical copy | slice 2, entry condition | a test that starts the build from two tasks (and one subprocess) at once and compares the copies' schemas; the final name never exists half-written |
+| DB-5 | `[OneTimeTearDown]` disposes the host before database files are deleted, and no file is left after the fixture | slice 1 onwards | after a converted fixture, no `IntegrationTests_*.db*` remains in the working folder (`ls` check in the slice's local checks) |
+
+### Savings, as ceilings (C1)
+
+Every figure below is an **unmeasured ceiling**. The step projection too. None is a promise; the measured before and after (C3) decide.
+
+| Slice | Ceiling (CI-summed seconds) | How computed | Assumed shares |
+|---|---|---|---|
+| 1. Guard + measure + first move | about **65 s**, plus the Cluster test (0.8 to 16.4 s) | 58 s local set-up of the moved family x (1 - 153/409) x 1.8 CI factor = 36.3 x 1.8; the database share is kept (group B's 153 ms stays) | CI factor 1.8 (calibrated on 12 fixtures) |
+| 2. Template | about 150 s (schema-only); up to about 380 s with seeding | 50 ms x about 2,500 database-per-test tests (x 1.2) | 50 ms from group C's 56 ms; the 2,500 count |
+| 3. Four biggest untimed | about 180 s | 60 % of 305 s proxy | the 60 % remaining share and the proxy itself |
+| 4. Mid-size bases | about 150 s | 60 % of about 250 s proxy | same two |
+| 5. Long tail | about 50 s | 60 % of the about 120 s proxy, less what the 25 % rule leaves listed | same two |
+
+The old "-400 s" figure for the untimed 71 files is retracted as a number to promise: it is a ceiling built on two assumed shares (the proxy and the 60 %) and
+slices 3 to 5 above are its parts. **Corrected total ceiling: about 595 to 610 CI-summed seconds with the schema-only template (about 21 % of 2,806 s), up to about 830 with seeding.**
+CI runs about 3.8 tests in parallel (2,806 s / 746 s), so the step ceiling is about **-160 s (746 to about 590), up to about -220 s with seeding**; per slice about
+-17 to -22 s, -40 s (-100 s), -48 s, -40 s, -13 s. The step median ranges 559 to 893 s and is bimodal, so no single slice is likely to show a 60 s step drop; the moved-class
+criterion of C3 is the one most slices can meet. The earlier "620-850 s, 2.5-3.5 min" is superseded.
+
+**Order rule actually applied:** the guard goes first (slice 1 carries it, so the list stops growing at once); after that, **measured before proxy** (slice 1's family has timed set-up;
+slices 3 to 5 have only the proxy until D1 measures them); the template's A/B (B6) gates its size and whether it ships per group. "Biggest first" is dropped: the proxy over-states
+where a class has no cheap test, so it is a ranking aid, not an order.
+
+### Set-up before change (C2)
+
+D1 (host-build time into `FixtureSetupTimer`, kind `HostBuild`, attributed to the running fixture) lands as the **first, measurement-only commit of slice 1**, after the scaffold and before
+any conversion. The lead then runs it **once, when the machine is quiet** (`LIGHTHOUSE_FIXTURE_TIMING=1`, standard filter, 6 workers) and records the untimed set-up shares in
+`measurement/` and here before the first conversion. The brief's AC "set-up share recorded per harness before any change" is owned by that run for the 71 untimed files
+(the 109 timed fixtures are already recorded); see the reworded traceability row.
+
+### CI KPI and decision rule (C3)
+
+**How the artifact is made.** `.github/workflows/ci_backend.yml` runs `dotnet test ... --logger trx`; step "Extract backend per-test timings" runs
+`Scripts/test-timings/trx_to_csv.py`, which writes one row per `UnitTestResult` (`fully_qualified_name, category, duration_ms, outcome`) into `test-timings-backend.csv`
+(artifact `test-timings-backend`). It has no start times and no fixture rows.
+
+**Does the artifact include `[OneTimeSetUp]` time? No.** Measured on this machine with `--logger trx` on `Slice13ReadinessTest` (44 tests, a group-B fixture; with
+`LIGHTHOUSE_FIXTURE_TIMING=1`): the timer reports one-time set-up 2,166 ms and per-test set-up 6,979 ms (mean 159 ms x 44); the trx's per-test durations add up to 10.75 s and the span from
+the first test's start to the last test's end is 10.77 s, so the two are within 0.01 s of each other: there is **no gap inside the span for the one-time set-up**. The 2.17 s sits in the 3.74 s
+between run start and the first test, belonging to no test. Per-test `[SetUp]` time **is** inside each test's duration; `[OneTimeSetUp]` and `[OneTimeTearDown]` time is in none.
+Consequence: when a slice moves a host from `[SetUp]` to `[OneTimeSetUp]`, the per-class sums drop by the whole host cost and never show the one build that remains.
+The overstatement is one host build (about 0.2 to 2 s) per moved fixture.
+
+**KPIs.**
+- **Primary:** the backend test step median (`Test Backend (with Coverage)`, as the baseline in `measurement/ci-backend-test-step-seconds.tsv`, median 746 s over 23 runs).
+- **Secondary:** suite-level time per moved class = the class's summed per-test seconds from the artifact (the baseline's definition, so no recompute of "before") **plus** the fixture's one-time
+  set-up and tear-down from the D1 timing run (local, the lead's, multiplied by the 1.8 CI factor), added to the "after" side only. Per-test sums alone would credit the slice with a saving
+  the suite does not get.
+
+**Decision rule, set in advance.** n = **7** `main` runs per slice (as the baseline); report every value and both modes of the step time (about 560 to 720 s and 830 to 890 s).
+A slice counts as a **measured win** if the step median drops by **at least 60 s**, or the moved classes' suite-level median drops by **at least 50 % of the slice's ceiling** (slice 1: 33 s; slice 2: 75 s;
+slice 3: 90 s; slice 4: 75 s; slice 5: 25 s). Otherwise it is reported as a **failed prediction**, with the numbers. The **slice-1 run is excluded from the after set**, because the
+`Program.cs` change forces the full Integration suite on that push (see below), so its step time is not comparable.
+
+### Memory stop threshold (C4)
+
+Baseline: T1's after measurement on this machine, **4.3 GB peak at 6 workers, standard filter, commit `b573b1924`**. Stop threshold: a full run above **4.73 GB (+10 %)** stops the track.
+It is **step 4a of the after protocol** (the lead's run on a quiet machine, same worker count and filter). CI memory is **not measured**; no number from CI is claimed. T1 named and fixed both retention roots
+(the per-request `IHttpClientFactory` handler lifetime and the rate-limiter timers), so a host that lives for a whole fixture is expected to be released at fixture end; the
+`TestHostIsReleasedAfterDisposeTest` guard proves that release for one host.
+
+### Forced-full push (C5)
+
+`ci_backend.yml` (line 134), for a change under a shared path such as `Program.cs`: the test filter becomes `(Category=Integration&Category!=UsageDataCanary)`.
+`dotnet test --no-build --list-tests --filter "Category=Integration&Category!=UsageDataCanary"` (listing only, nothing run) on this tree lists **268 tests** (239 distinct names). With no filter the
+assembly lists 12,198. So the forced-full push runs 268 tests of the live-connector kind in addition to the usual set, and the **slice-1 push note carries that number**, with the Linear-key warning.
+
+### Parity and order (C6)
+
+- **End-of-track run at CI parity:** 4 workers (`LIGHTHOUSE_TEST_WORKERS=4`), standard filter, **the lead's, on a quiet machine**, in addition to the three 6-worker runs.
+- **Shuffled order:** NUnit 4 has no option to shuffle the run order. Checked in the packaged assemblies: `nunit.framework` and the NUnit3 adapter expose `RandomSeed` (for generated test arguments)
+  and `[Order]`, nothing that reorders fixtures or tests. So no shuffled run is possible without editing tests. The substitute: each converted fixture is run whole, and its first-named and its
+  last-named test are each run alone (`--filter "FullyQualifiedName=<Fixture>.<Test>"`); a test that depends on a predecessor's leftovers fails alone. This is recorded as a weaker check, not equivalent.
+- **Green for the parallel-safety AC** means: green **except the two publish-output scans** (`NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder`,
+  `TheScanSeesTheFilesThatConsumeThePublishOutput`), which fail on unmodified `main` for an environmental reason (a root-owned `examples/postgres/data` folder). `CLAUDE.md` is not edited.
+
+### Behaviour-preservation commands (C8)
+
+Run after a fresh Debug build, from the repository root. The before-list is `measurement/test-ids-before.2026-11-01.txt.gz` (12,198 names, sorted, duplicates kept, 11,971 distinct; names only,
+because `--list-tests` prints names without classes). Everything below is also in `measurement/scripts/behaviour-preserved.sh <base-ref>` (exit 1 if any check finds something).
+
+```
+# 1. test ids
+(cd Lighthouse.Backend && dotnet test --no-build --list-tests) | tail -n +5 | sed 's/^    //' | sort > /tmp/test-ids-after.txt
+zcat docs/feature/story-6460-t2-backend-host-per-fixture/measurement/test-ids-before.2026-11-01.txt.gz | diff - /tmp/test-ids-after.txt
+
+# 2. added Ignore, Explicit, NonParallelizable (must print nothing)
+git diff -U0 <base-ref> -- Lighthouse.Backend/Lighthouse.Backend.Tests | grep -nE '^\+[^+].*(\[Ignore|\[Explicit|Assert\.Ignore|NonParallelizable)'
+
+# 3. assertion lines per file may not drop
+for f in $(git diff --name-only --diff-filter=M <base-ref> -- Lighthouse.Backend/Lighthouse.Backend.Tests | grep '\.cs$'); do
+  b=$(git show <base-ref>:$f | grep -c 'Assert\.'); a=$(grep -c 'Assert\.' $f); [ "$a" -lt "$b" ] && echo "DROP $f $b -> $a"
+done
+```
+
+Check 3 counts lines containing `Assert.`; a removed and re-added assertion, or one moved into a helper, shows no drop, so **a reviewer reads the diff of any converted fixture's assertions**. Per fixture,
+the class-qualified id check is `dotnet test --no-build --list-tests --filter "FullyQualifiedName~<Fixture>"` before and after. Run on the unchanged tree against `b2b516258` the script prints
+"same 12198 names" and "nothing to look at".
+
+### Slice sizes (D1 to D4)
+
+| Slice | Days | Split if it grows past 3 |
+|---|---|---|
+| 1. Guard, D1 measurement, first move | 3 | first move to its own slice 1b (the 9 classes) |
+| 2. Template | 2 (A/B, DB-4, DB-2, per-group switch) | none |
+| 3. Four biggest | 3 | 3a `TaskManager` (24 classes, owns `Slice02ConfirmedNowScenarios`), 3b the other three |
+| 4. Mid-size bases | 3 | by base class |
+| 5. Long tail | 1 to 3, **optional** | stop at any file |
+
+**Slice 5 is optional.** Its deliverable is value-based: either a CI-seconds target (the long tail's ceiling, about 50 s, met per the C3 rule), or the list reduced to entries that each carry a written reason
+(`body-bound`, `OnAPostgresServer`, `ChecksTheTestHostItself`, `HasOneTestOnly`, `counters are per host`). If the 25 % rule moves nothing, what ships is the second: the list reduced to reasoned entries, the
+guard unchanged, and the track closes without the CI claim for that slice.
+
+**Slices 3 to 5 are re-sized on the guard's list after slice 1's D1 measurement.** Today's figures for them (proxy seconds, class counts, days) are **superseded** at that moment.
+
+### Remaining decisions
+
+- **Owner (D6):** the post-push measurement is owned by **the lead (the AFK session) after each slice push; reported in the slice's DELIVER block**.
+- **Titles (D7):** the guard's test names are method-style by design (an infrastructure exception to the outcome-title rule; they describe a mechanical check, not a user outcome).
+- **D8:** stays taken: `ClusterSubstrateProbeRegistrationTest` builds only what it inspects (widening `ConfigureHealthChecks` to `internal`); the fallback (leave the test and list it with the reason "boots the app to inspect a registration") stays recorded.
+- **Windows check (B5):** the full-suite run on Windows moves to after **slice 1** as a hold item for the maintainer, and stays a hold item after slice 2.

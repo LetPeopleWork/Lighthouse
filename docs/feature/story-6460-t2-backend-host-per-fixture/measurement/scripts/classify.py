@@ -1,5 +1,14 @@
+"""Classify each file that starts a host by where it starts it (rough heuristic, used before the guard existed).
+
+usage: classify.py <tests-root>
+
+<tests-root> is the folder of the backend test project (Lighthouse.Backend/Lighthouse.Backend.Tests).
+The guard (TestHostPerFixtureGuardTest) now owns the list; this stays for the record.
+"""
 import re, subprocess, sys, collections
-root = "/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests"
+if len(sys.argv) < 2:
+    sys.exit(__doc__)
+root = sys.argv[1]
 files = subprocess.check_output(["git", "-C", root, "grep", "-lE", r"new TestWebApplicationFactory|WithWebHostBuilder\(|WithTestAuthentication\(", "--", "*.cs"], text=True).split()
 host_re = re.compile(r"new TestWebApplicationFactory|WithWebHostBuilder\(|WithTestAuthentication\(")
 ATTR = re.compile(r"^\s*\[(\w+)")
