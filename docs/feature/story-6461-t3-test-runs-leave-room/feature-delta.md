@@ -801,8 +801,20 @@ Changes after the adversarial review of the worker cap.
 - F-03 (wiring): one new table-driven test stubs the environment, resets modules and imports `vitest.config.ts`, then checks `test.maxWorkers`: `LIGHTHOUSE_TEST_WORKERS=3` gives 3, `CI=true` with nothing else gives undefined. The import is cheap (the config only names its setup files), so no justification for skipping was needed. A mutant `maxWorkers: 2` now fails.
 - The test that pins the fraction is retitled "gives a local run half of the cores and reads its override from LIGHTHOUSE_TEST_WORKERS", stating the behaviour rather than the constant.
 - F-04 / F-08 (NUnit variable validation): the `ValidateTestWorkers` regex is now `^[1-9][0-9]*\z`, because .NET `$` also matches before a trailing newline. Verified: explicit `4` gives Passed 2/2; `abc` and `4` followed by a newline are rejected with "must be a positive whole number", exit 1; `4'` is rejected with the validation error, exit 1.
-- F-07, F-11: no further code change in this pass; the lead's verdicts stand.
+- F-07: fixed — the MSBuild check now anchors with `\z`, so a trailing newline is rejected (verified by hand). F-11: fixed — the fraction test is retitled to state the behaviour.
 - F-12: `git diff 31737ce37 HEAD -- testWorkers.test.ts` only un-skipped the 9 scaffolded tests; titles unchanged, no expectation changed.
 - F-13: `measurement/run-all.sh` now floors half the cores and floors the frontend full arm at 1 (edited by the lead); committed with this revision, together with `mutation/`.
 - F-05 note: times in this feature-delta are local CET (+01:00), step-log times are UTC, and every step run started after the measurement finished (16:11 local).
 - F-09 / F-10 (huge values; `ProcessorCount` vs `availableParallelism`): accepted as is. There is no clamp by design, and both report logical cores on Linux.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|---|---|
+| Refactor (L1–L6) | No change needed |
+| Adversarial review (Haiku) | needs_revision, 0 blockers, 3 high; one revision pass (`beb499ec5`, `fa986ede8`, `8d2e939a8`), all findings fixed or recorded above |
+| Mutation (StrykerJS, `src/tests/testWorkers.ts`, 2026-11-01 16:51) | **100 %** — 30 killed, 0 survived, 0 no coverage; break 80; report `mutation/stryker-6461-frontend.json` |
+| Mutation (backend) | N/A, because the backend change is MSBuild properties in the csproj, which Stryker.NET does not mutate; covered by the by-hand checks (valid, `abc`, `4'`, trailing newline, CI=true) |
+| Frontend | `pnpm test` 578 files / 8970 tests passed; `pnpm build` clean |
+| Backend | `dotnet build` 0 warnings; worker guard tests 2/2 with an explicit count |
+| DES integrity | OK |
