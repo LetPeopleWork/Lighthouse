@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -80,6 +81,41 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                     Definition("lead time", "Backlog", "Done")));
 
             Assert.That(result.Errors, Has.Some.Contains("Duplicate cycle time name"));
+        }
+
+        private static TeamSettingDto SettingsWithReviewGroup(CycleTimeDefinitionDto definition)
+        {
+            return new TeamSettingDto
+            {
+                Name = "Team",
+                ToDoStates = ["Backlog"],
+                DoingStates = ["Code Review", "Testing"],
+                DoneStates = ["Done"],
+                StateMappings = [new StateMappingDto { Name = "Review", States = ["Code Review", "Testing"] }],
+                CycleTimeDefinitions = [definition],
+            };
+        }
+
+        [Test]
+        public void Validate_StoredDefinitionInsideOneGroup_SentBackUnchanged_IsAccepted()
+        {
+            var stored = new CycleTimeDefinition { Id = 7, Name = "Review Time", StartState = "Code Review", EndState = "Testing" };
+            var sent = new CycleTimeDefinitionDto { Id = 7, Name = "Review Time", StartState = " code review ", EndState = "TESTING" };
+
+            var result = CycleTimeDefinitionValidator.ValidateSettings(SettingsWithReviewGroup(sent), [stored]);
+
+            Assert.That(result.IsValid, Is.True, string.Join("; ", result.Errors));
+        }
+
+        [Test]
+        public void Validate_NewDefinitionInsideOneGroup_IsRejected()
+        {
+            var stored = new CycleTimeDefinition { Id = 7, Name = "Review Time", StartState = "Code Review", EndState = "Done" };
+            var sent = new CycleTimeDefinitionDto { Id = 0, Name = "Review Time", StartState = "Code Review", EndState = "Testing" };
+
+            var result = CycleTimeDefinitionValidator.ValidateSettings(SettingsWithReviewGroup(sent), [stored]);
+
+            Assert.That(result.Errors, Does.Contain(CycleTimeDefinitionValidator.EndStateMustComeAfterStartStateError));
         }
     }
 }

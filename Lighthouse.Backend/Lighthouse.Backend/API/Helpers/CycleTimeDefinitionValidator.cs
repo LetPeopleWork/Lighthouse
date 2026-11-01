@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.API.Helpers
     {
         public const string EndStateMustComeAfterStartStateError = "End state must come after the start state in the workflow";
 
-        public static CycleTimeDefinitionValidationResult ValidateSettings(SettingsOwnerDtoBase settings)
+        public static CycleTimeDefinitionValidationResult ValidateSettings(SettingsOwnerDtoBase settings, IReadOnlyCollection<CycleTimeDefinition>? storedDefinitions = null)
         {
             var resolver = new Team
             {
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
             var errors = new List<string>();
 
-            foreach (var definition in settings.CycleTimeDefinitions)
+            foreach (var definition in settings.CycleTimeDefinitions.Where(sent => IsChanged(sent, storedDefinitions ?? [])))
             {
                 ValidateDefinition(definition, resolver, orderedStates, errors);
             }
@@ -59,6 +59,14 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add(EndStateMustComeAfterStartStateError);
             }
         }
+
+        // A definition stored before a state group covered both its boundaries can now order them as one position.
+        // The settings page sends stored definitions back on every save, so refusing one unchanged would block all saves.
+        private static bool IsChanged(CycleTimeDefinitionDto sent, IReadOnlyCollection<CycleTimeDefinition> storedDefinitions)
+            => !storedDefinitions.Any(stored =>
+                stored.Id == sent.Id
+                && WorkTrackingSystemOptionsOwner.IsSameState(stored.StartState, sent.StartState)
+                && WorkTrackingSystemOptionsOwner.IsSameState(stored.EndState, sent.EndState));
 
         private static int BoundaryIndex(Team resolver, List<string> orderedStates, string boundary)
         {

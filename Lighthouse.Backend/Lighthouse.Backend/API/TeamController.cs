@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.API
 
             if (canUsePremiumFeatures)
             {
-                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting);
+                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting, storedTeam?.CycleTimeDefinitions);
                 if (!cycleTimeValidation.IsValid)
                 {
                     return BadRequest(cycleTimeValidation.Errors);
