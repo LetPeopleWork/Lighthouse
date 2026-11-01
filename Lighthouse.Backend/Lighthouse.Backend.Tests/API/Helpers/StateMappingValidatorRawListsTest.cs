@@ -137,6 +137,22 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
+        public void GroupWithANullName_IsRefusedAsNameless()
+        {
+            var settings = Settings(["Backlog"], ["Code Review"], ["Done"], Mapping(null!, "Code Review"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("A state mapping name is required."));
+        }
+
+        [Test]
+        public void GroupWithNullStates_IsRefusedAsHavingNoStates()
+        {
+            var settings = Settings(["Backlog"], ["Code Review"], ["Done"], new StateMappingDto { Name = "Review", States = null! });
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("State mapping 'Review' must contain at least one state."));
+        }
+
+        [Test]
         public void TwoGroupsWithTheSameName_AreRefusedOnce()
         {
             var settings = Settings(["Backlog"], ["Code Review", "Testing"], ["Done"], Mapping("Review", "Code Review"), Mapping("REVIEW", "Testing"));

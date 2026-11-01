@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.API.Helpers
             errors.AddRange(ShadowingErrors(lists));
             errors.AddRange(ChainErrors(mappings));
             errors.AddRange(mappings
-                .Where(mapping => IsChanged(mapping, storedMappings ?? []))
+                .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Name) && IsChanged(mapping, storedMappings ?? []))
                 .SelectMany(mapping => CategoryErrors(lists, mapping)));
 
             return new StateMappingValidationResult(errors);
@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.API.Helpers
                     errors.Add("A state mapping name is required.");
                 }
 
-                if (mapping.States.Count == 0)
+                if (mapping.States is null || mapping.States.Count == 0)
                 {
                     errors.Add($"State mapping '{mapping.Name}' must contain at least one state.");
                 }
@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.API.Helpers
             }
 
             var allSourceStates = mappings
-                .SelectMany(m => m.States.Select(s => new { MappingName = m.Name, State = s }))
+                .SelectMany(m => (m.States ?? []).Select(s => new { MappingName = m.Name, State = s }))
                 .ToList();
 
             var duplicateSourceStates = allSourceStates

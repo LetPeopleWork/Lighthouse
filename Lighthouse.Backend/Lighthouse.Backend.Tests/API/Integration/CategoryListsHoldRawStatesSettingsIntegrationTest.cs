@@ -434,6 +434,30 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task SavingAGroupWithANullName_IsRefusedAndStoresNothing()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(doing: ["Code Review"], mappings: [new StateMappingDto { Name = null!, States = ["Code Review"] }]));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+
+            await AssertNothingWasStored();
+        }
+
+        [Test]
+        public async Task SavingAGroupWithNullStates_IsRefusedAndStoresNothing()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(doing: ["Code Review"], mappings: [new StateMappingDto { Name = "Review", States = null! }]));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+
+            await AssertNothingWasStored();
+        }
+
+        [Test]
         public async Task SavingTwoGroupsWithTheSameName_IsRefused()
         {
             SeedOwner();
