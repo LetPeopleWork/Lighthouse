@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.API.Helpers
         }
 
         private static IEnumerable<string> ShadowingErrors(StateCategoryLists lists, StateCategoryLists? storedLists, Func<StateMapping, bool> isChanged)
-            => ListsOf(lists).SelectMany(list => list.States
+            => lists.StoredLists().SelectMany(list => list.States
                 .Where(entry => !string.IsNullOrWhiteSpace(entry))
                 .Where(entry => lists.ClassifyListEntry(list.States, entry) == ListEntryKind.Shadowing)
                 .Where(entry => isChanged(lists.GroupNamed(entry)!) || !WasListed(storedLists, list.Category, entry))
@@ -98,14 +98,14 @@ namespace Lighthouse.Backend.API.Helpers
             => from named in mappings
                where !string.IsNullOrWhiteSpace(named.Name)
                from grouping in mappings
-               where !ReferenceEquals(named, grouping) && StatesOf(grouping).Exists(state => StateCategoryLists.IsSameState(state, named.Name))
+               where !ReferenceEquals(named, grouping) && StateCategoryLists.MembersOf(grouping).Exists(state => StateCategoryLists.IsSameState(state, named.Name))
                where isChanged(named) || isChanged(grouping)
                select $"Mapping \"{named.Name.Trim()}\" has the same name as a state grouped by mapping \"{grouping.Name.Trim()}\". Choose another name.";
 
         private static bool IsChanged(StateMapping mapping, IReadOnlyCollection<StateMapping> storedMappings)
             => !storedMappings.Any(stored =>
                 StateCategoryLists.IsSameState(stored.Name, mapping.Name)
-                && HoldTheSameStates(StatesOf(stored), StatesOf(mapping)));
+                && HoldTheSameStates(StateCategoryLists.MembersOf(stored), StateCategoryLists.MembersOf(mapping)));
 
         private static bool HoldTheSameStates(List<string> left, List<string> right)
             => left.TrueForAll(state => right.Exists(other => StateCategoryLists.IsSameState(state, other)))
@@ -113,11 +113,11 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static IEnumerable<string> CategoryErrors(StateCategoryLists lists, StateMapping mapping)
         {
-            var normalisedLists = ListsOf(lists)
+            var normalisedLists = lists.StoredLists()
                 .Select(list => (list.Category, States: lists.NormalisedStatesFor(list.States)))
                 .ToList();
 
-            var placed = StatesOf(mapping)
+            var placed = StateCategoryLists.MembersOf(mapping)
                 .Select(state => new PlacedState(state.Trim(), normalisedLists
                     .Where(list => list.States.Exists(listed => StateCategoryLists.IsSameState(listed, state)))
                     .Select(list => list.Category)
@@ -152,13 +152,6 @@ namespace Lighthouse.Backend.API.Helpers
                 ? $"both {labels[0]} and {labels[1]}"
                 : $"{string.Join(", ", labels[..^1])} and {labels[^1]}";
         }
-
-        private static List<string> StatesOf(StateMapping mapping)
-            => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
-
-        private static IEnumerable<(StateCategories Category, IReadOnlyList<string> States)> ListsOf(StateCategoryLists lists)
-            => new[] { StateCategories.ToDo, StateCategories.Doing, StateCategories.Done }
-                .Select(category => (category, lists.StoredStatesOf(category)));
 
         private static string LabelOf(StateCategories category) => category switch
         {

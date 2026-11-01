@@ -21,6 +21,10 @@ namespace Lighthouse.Backend.Models
             _ => [],
         };
 
+        /// <summary>The To Do, Doing and Done lists in that order, each as it was given.</summary>
+        public IEnumerable<(StateCategories Category, IReadOnlyList<string> States)> StoredLists()
+            => ListedCategories.Select(category => (category, StoredStatesOf(category)));
+
         /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
         public List<string> DisplayStatesFor(StateCategories category)
             => WithoutRepeats(NormalisedStatesFor(StoredStatesOf(category)).Select(MapRawStateToMappedName));
@@ -127,8 +131,8 @@ namespace Lighthouse.Backend.Models
         private StateMapping? GroupContaining(string rawState)
             => stateMappings.FirstOrDefault(mapping => MembersOf(mapping).Exists(member => IsSameState(member, rawState)));
 
-        // A mapping can come back from storage with no states, or with null and blank ones; those name no state of the tracker.
-        private static List<string> MembersOf(StateMapping mapping)
+        /// <summary>The states a mapping groups. A mapping can come back from storage with no states, or with null and blank ones; those name no state of the tracker.</summary>
+        public static List<string> MembersOf(StateMapping mapping)
             => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
 
         // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
