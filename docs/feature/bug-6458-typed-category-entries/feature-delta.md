@@ -955,3 +955,44 @@ until DELIVER implements it, and each was run un-skipped and fails on the missin
 "Both stacks pin", the UI7 label, "meaning change") were fixed.
 
 Carried into DELIVER: confirm UI7's wording with the maintainer at the first slice review window.
+
+## Wave: DELIVER / [REF] Roadmap
+
+Roadmap: `deliver/roadmap.json` (5 phases, 24 steps; every one of the 125 pending inventory methods sits in
+exactly one step). Roadmap review: conditionally approved; conditions F1-F5 applied (RED-first tests named for
+the metrics columns in 04-03 and the three pickers in 05-05; 05-05 split into a refactor and a copy step; editor
+mapping-edit tests named as the guard in 05-03/05-04 while `reconcileDoingStates` is still called; 02-03 may make a
+separate fixture-approval commit; 04-02 runs only `--filter TestCategory=AdoIntegration`, once, and reports it). **Rigor profile: thorough**, agreed with the maintainer at AFK entry: crafter `opus`, reviewer
+`sonnet`, double review; `model` passed explicitly on every dispatch. **Mutation testing runs once, at the final
+gate**, on frozen code after 05-08 (Stryker.NET skipping the acceptance suite, StrykerJS; >=80%).
+
+DISTILL's slice order is kept. Under D12 the read switch could move ahead of the write path, but its HTTP read
+scenarios need phase 02's display lists and the seeder phase shows the normaliser is the identity on rewritten
+rows, so moving it buys nothing.
+
+| Step | Name | Scenarios |
+|---|---|---|
+| 01-01 | Owner classifies a list entry (`ClassifyListEntry`); `ListEntryKind` doc comment fixed | 8 |
+| 01-02 | Owner normalises a stored list (`NormalisedStatesFor`) | 8 |
+| 01-03 | Normalisation properties: same states, idempotent, rollback-safe | 4 |
+| 01-04 | Display list, part 1 (`DisplayStatesFor`) | 8 |
+| 01-05 | Display list per category; `CategoryOfRawState` | 6 |
+| 01-06 | `CategoryOfDisplayName` and the as-of `Unknown` fix | 8 |
+| 02-01 | Validator over raw lists: shadowing, chain, categories (UI7/UI8 copy) | 7 |
+| 02-02 | Settings sync normalises; refinement and cycle time from display states | 5 |
+| 02-03 | DTO display lists; approved `slice02-portfolio-northwind-platform-settings` payload updated | 7 |
+| 02-04 | Write path over HTTP: collapsed stored lists, same-save groups, idempotence, blanks | 5 |
+| 02-05 | Refusals over HTTP leave nothing behind; a state listed nowhere is silent | 5 |
+| 03-01 | Seeder rewrite, skip and log, logging contract | 5 |
+| 03-02 | `Program.cs` registration (forces the full Integration suite in CI); both providers, isolation, upgrade read | 4 |
+| 04-01 | Owner reads and the HTTP read model go through the normaliser | 5 |
+| 04-02 | ADO, Jira, ServiceNow and suggestions stop expanding; ownership guard; live `AdoIntegration` once | 3 |
+| 04-03 | CSV demo journey and metrics columns from display states (+2 RED-first metrics tests) | 2 |
+| 05-01 | Frontend display view | 8 |
+| 05-02 | Shared fold and blank rule; validation mirror (To Do/Done, UI7) | 8 |
+| 05-03 | Mapping chip with tooltip and no delete (UI1, UI2); no mapping name suggested | 5 |
+| 05-04 | Dragging a mapping chip moves its states (UI4) | 3 |
+| 05-05 | Refactor: `stateMappingReconciliation.ts`, its call sites and doing-clash rules deleted; pickers from display states | 0 (+3 RED-first picker tests) |
+| 05-06 | Copy: help text (UI3), editor could-not-load words | 2 |
+| 05-07 | Aging frame and Team page loading and failure looks (UI5) | 6 |
+| 05-08 | Portfolio page aging looks; zero scaffold markers; final gates | 3 |
