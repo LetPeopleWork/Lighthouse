@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_MembersNextToEachOther_ShowsOneGroupInTheirPlace()
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing", "Waiting");
@@ -29,7 +28,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_MembersApart_ShowsTheGroupWhereItsFirstMemberIs()
         {
             var team = ATeamWithReviewMapping("Code Review", "Analysis", "Testing", "Waiting");
@@ -38,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_LaterMemberBeforeEarlierOne_ShowsTheGroupAtTheFirstListedMember()
         {
             var team = ATeamWithReviewMapping("Waiting", "Testing", "Analysis", "Code Review");
@@ -47,7 +44,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce()
         {
             var team = ATeamWithReviewMapping("Analysis", "analysis ", "  CODE REVIEW", "testing ");
@@ -56,7 +52,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup()
         {
             var team = ATeamWithReviewMapping("Analysis", "\tCode Review", string.Concat(NonBreakingSpace, "Testing", NonBreakingSpace), " Testing");
@@ -65,7 +60,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_GroupNamedAfterOneOfItsOwnStates_ShowsTheGroupOnce()
         {
             var team = new Team { DoingStates = ["Active", "Resolved", "Blocked"] };
@@ -75,7 +69,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_GroupWhoseStatesAreListedNowhere_LeavesTheListAlone()
         {
             var team = ATeamWithReviewMapping("Analysis", "Waiting");
@@ -84,7 +77,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void DisplayStatesFor_NoMappings_ReturnsTheListAsItIs()
         {
             var team = new Team { DoingStates = ["Analysis", "Testing"] };

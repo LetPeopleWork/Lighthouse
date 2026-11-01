@@ -205,10 +205,25 @@ namespace Lighthouse.Backend.Models
             return StateCategories.Unknown;
         }
 
-        // SCAFFOLD: true
         /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
         public List<string> DisplayStatesFor(StateCategories category)
-            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {category})");
+        {
+            var displayed = NormalisedStatesFor(StoredStatesOf(category))
+                .Select(state => GroupContaining(state)?.Name ?? state);
+
+            return [.. displayed.DistinctBy(name => name.Trim(), StringComparer.OrdinalIgnoreCase)];
+        }
+
+        private List<string> StoredStatesOf(StateCategories category) => category switch
+        {
+            StateCategories.ToDo => ToDoStates,
+            StateCategories.Doing => DoingStates,
+            StateCategories.Done => DoneStates,
+            _ => [],
+        };
+
+        private StateMapping? GroupContaining(string state)
+            => StateMappings.FirstOrDefault(mapping => mapping.States.Exists(member => IsSameState(member, state)));
 
         // SCAFFOLD: true
         /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
