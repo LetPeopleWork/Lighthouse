@@ -21,7 +21,7 @@
 	</PropertyGroup>
 
 	<!-- Rejects an unusable explicit value with a message that names the variable, instead of a cryptic adapter failure. -->
-	<Target Name="ValidateTestWorkers" BeforeTargets="VSTest" Condition="'$(LIGHTHOUSE_TEST_WORKERS)' != '' And !$([System.Text.RegularExpressions.Regex]::IsMatch('$(LIGHTHOUSE_TEST_WORKERS)', '^[1-9][0-9]*$'))">
+	<Target Name="ValidateTestWorkers" BeforeTargets="VSTest" Condition="'$(LIGHTHOUSE_TEST_WORKERS)' != '' And !$([System.Text.RegularExpressions.Regex]::IsMatch('$(LIGHTHOUSE_TEST_WORKERS)', '^[1-9][0-9]*\z'))">
 		<Error Text="LIGHTHOUSE_TEST_WORKERS must be a positive whole number, got '$(LIGHTHOUSE_TEST_WORKERS)'." />
 	</Target>
 
