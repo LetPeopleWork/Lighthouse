@@ -937,3 +937,18 @@ guard unchanged, and the track closes without the CI claim for that slice.
 - **Titles (D7):** the guard's test names are method-style by design (an infrastructure exception to the outcome-title rule; they describe a mechanical check, not a user outcome).
 - **D8:** stays taken: `ClusterSubstrateProbeRegistrationTest` builds only what it inspects (widening `ConfigureHealthChecks` to `internal`); the fallback (leave the test and list it with the reason "boots the app to inspect a registration") stays recorded.
 - **Windows check (B5):** the full-suite run on Windows moves to after **slice 1** as a hold item for the maintainer, and stays a hold item after slice 2.
+
+## Wave: DISTILL / [REF] Gate round 2 (2026-11-01, ~21:10)
+
+Forge **approved**; Architect, Eclipse and Sentinel **conditionally approved**; **0 blockers**. DISTILL is closed.
+Owed at the start of DELIVER (before slice 1's first conversion commit), none of them a design change:
+
+- Sentinel: add a planted case reached only through a virtual call whose override starts a host, and breakage rows
+  for `OverridesOf` (return empty) and the no-host memo (never cache); reword the table heading to list exactly what
+  was broken. Delete the never-read step constants in the planted chain; correct the newcomer stack line.
+- Eclipse: DoR row 6 cites the slice-sizes table; traceability says G4 to G9; the brief's "95 files" points at the
+  reconciliation.
+- Architect: strike D3's original "closes over the fixture-owned object" sentence, now contradicted by the per-scope rule.
+- Forge: a per-test memory trace across one converted fixture in slice 1's checks; re-measure main's peak if the base
+  moved since `b573b1924`; each slice lowers `MostTypesTheListMayHold`; `behaviour-preserved.sh` writes to a per-run
+  temp path; DoR "16 passed" becomes 17 (19 with the parallelization guard).
