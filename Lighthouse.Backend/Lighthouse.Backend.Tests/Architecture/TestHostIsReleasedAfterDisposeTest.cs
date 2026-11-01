@@ -13,8 +13,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// limiters' refill timers) are what point at a host; this fixture starts a host, serves one request,
     /// disposes it, and checks that it can really be collected.
     ///
-    /// It runs alone: another fixture's allocations would slow the collection polling, and a neighbour's
-    /// host cannot be mistaken for the one under test.
+    /// It runs alone: another fixture's allocations would slow the collection polling and add noise to the
+    /// measurement.
     /// </summary>
     [TestFixture]
     [NonParallelizable]
