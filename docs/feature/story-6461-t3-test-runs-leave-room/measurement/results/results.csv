@@ -1,0 +1,14 @@
+label,exit,wall_s,peak_tree_rss_mb,min_mem_available_mb,max_threads
+fe-full-r1,0,236,7164,12760,143
+fe-half-r1,0,260,4763,15328,124
+be-full-r1,1,480,19730,2424,177
+be-half-r1,1,436,19040,3526,163
+fe-half-r2,0,249,4834,17103,124
+fe-full-r2,0,220,7357,14410,143
+be-half-r2,1,433,18754,3563,159
+be-full-r2,1,478,19847,2899,183
+fe-full-r3,0,218,6918,14168,129
+fe-half-r3,0,244,4819,17683,121
+be-full-r3,1,461,20063,3488,190
+be-half-r3,1,428,18829,4001,169
+done
