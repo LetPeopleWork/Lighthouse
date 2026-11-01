@@ -7,8 +7,7 @@
     ],
     "mutate": [
       "**/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
-      "**/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs",
-      "**/*RateLimiterOwner*.cs"
+      "**/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs"
     ],
     "thresholds": {
       "high": 90,
@@ -16,7 +15,7 @@
       "break": 80
     },
     "coverage-analysis": "perTestInIsolation",
-    "test-case-filter": "(FullyQualifiedName~JiraOAuthProvider|FullyQualifiedName~AdoOAuthProvider|FullyQualifiedName~RateLimiterOwner)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Acceptance",
+    "test-case-filter": "(FullyQualifiedName~JiraOAuthProvider|FullyQualifiedName~AdoOAuthProvider)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Acceptance",
     "reporters": ["progress", "json", "cleartext"],
     "concurrency": 4,
     "additional-timeout": 30000,

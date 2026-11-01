@@ -1,4 +1,7 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -20,6 +23,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     [Category("slice-11")]
     public partial class Slice11CastAVoteTest : SizingVotesAcceptanceTest
     {
+        // One scenario is about being told to slow down, so this fixture's host keeps the rate limiters on.
+        protected override WebApplicationFactory<Program> WithAuthentication(TestWebApplicationFactory<Program> root)
+            => base.WithAuthentication(root).WithWebHostBuilder(builder =>
+                builder.ConfigureAppConfiguration((_, configuration) =>
+                    configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["RateLimits:Enabled"] = "true" })));
+
         [Test]
         public async Task A_reader_votes_in_seconds_without_an_account()
         {

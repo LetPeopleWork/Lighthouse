@@ -10,8 +10,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// The backend suite starts about two thousand application hosts in one process. A host that something
     /// outside it still points at after it is disposed is never freed, and the memory of the whole run climbs
     /// with every such host. Timers kept alive by the runtime (the HTTP client cleanup timer and the rate
-    /// limiters' refill timers) are what point at a host; this fixture starts a host, serves one request,
-    /// disposes it, and checks that it can really be collected.
+    /// limiters' refill timers) are what point at a host. Test hosts therefore run without rate limiting
+    /// unless a fixture tests it, and a host with it on is expected to stay reachable. This fixture starts a
+    /// default host, serves one request, disposes it, and checks that it can really be collected.
     ///
     /// It runs alone: another fixture's allocations would slow the collection polling and add noise to the
     /// measurement.
@@ -46,7 +47,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore("Enabled when the test-host leak fix lands")]
         public void AHostThatServedARequestIsFreedOnceDisposed()
         {
             var host = StartAndDisposeAHost(WhatTheHostDoes.ServesOneRequest);
@@ -58,11 +58,10 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Is.True,
                 "A disposed test host is still reachable after " + Describe(outcome) +
                 " Something outside the host (a timer, a static) still points at it. " +
-                "The rate limiters' refill timers are the usual cause.");
+                "Default test hosts run without rate limiting; check that the default is still off.");
         }
 
         [Test]
-        [Ignore("Enabled when the test-host leak fix lands")]
         public void AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed()
         {
             var host = StartAndDisposeAHost(WhatTheHostDoes.ResolvesEveryOAuthProvider);
@@ -77,7 +76,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore("Enabled when the test-host leak fix lands")]
         public void AHostThatCreatedOneHttpClientIsFreedOnceDisposed()
         {
             var host = StartAndDisposeAHost(WhatTheHostDoes.CreatesOneFactoryClient);

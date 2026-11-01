@@ -122,6 +122,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             builder.ConfigureAppConfiguration((_, configurationBuilder) =>
             {
                 configurationBuilder.AddInMemoryCollection(IntegrationTestEncryptionKey.AsConfiguration());
+
+                // A host with the rate limiters on stays reachable after it is disposed, because their refill
+                // timers capture it. Most tests do not need throttling, so hosts run without it; a fixture that
+                // tests rate limiting switches it back on in its own configuration, which is added later and wins.
+                configurationBuilder.AddInMemoryCollection(new Dictionary<string, string?> { ["RateLimits:Enabled"] = "false" });
             });
 
             builder.ConfigureServices(services =>

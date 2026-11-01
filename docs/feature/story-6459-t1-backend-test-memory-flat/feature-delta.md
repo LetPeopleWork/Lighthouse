@@ -835,3 +835,29 @@ configuration switch and chose the switch ("config approach sounds nicer"). It s
 - The OAuth per-request client (step 01-01) is still required; D1b (one-second test handler lifetime) stays.
 - Disclosed behaviour changes now: only the OAuth token clients' 2-minute handler rotation.
 - Roadmap step 01-02 rewritten (review resolution R7); DISTILL scenario 3 dropped; mutation scope: the two provider files.
+
+## Wave: DELIVER / [REF] Evidence step 01-02
+
+**Default.** `TestWebApplicationFactory` adds `RateLimits:Enabled=false` to its in-memory configuration. Program.cs is untouched.
+Configuration added later (a fixture's `WithWebHostBuilder`, or a subclass after `base.ConfigureWebHost`) wins, so an explicit `true` opts in.
+
+**Search.** `grep -rlE "429|TooManyRequests|RateLimit|slow down|Retry-After"` over the test project found 13 files. Result per file:
+- Already set `RateLimits:Enabled=true` themselves, so the default is overridden and nothing changed: `S6_RateLimitingTests` (also sets `false` for its off cases), `UsageDataConsentRateLimitTests`, `UsageDataEventCeilingTests`, `ViewerEmbedTestHost.WithEmbedRateLimit` (used by `S9b_EmbedCookieConcurrencyTests`).
+- Relied on the shipped appsettings (`Enabled: true`) without saying so: `Slice11CastAVoteTest` (the thirty-first vote answers 429). It now opts in by overriding `WithAuthentication` to add `RateLimits:Enabled=true`. Assertions unchanged.
+- No dependence: `UsageDataConsentEndpointsTests`, `UsageDataAskEndpointsTests` (only raises a permit limit, harmless when off), `EmbedSessionSingleUseConcurrencyTests` (comment), `S12_EmbedSecurityReviewFindingsTests` (reads appsettings JSON), `Slice02ParentFromLinkScenarios` ("slow down" in prose), `JiraDeliveryForecastPublisherTest` (Jira HTTP 429), `BackendTestParallelizationGuardTest` (allowlist text).
+
+**Default-off test.** `TestHostsRunWithoutRateLimitingByDefaultTest.ADefaultTestHostLeavesRateLimitingOff` resolves `IConfiguration` from a default host and binds `RateLimitingConfiguration` exactly as Program.cs does before `UseRateLimiter()`. Simplest honest check: it asserts the value the application branches on, and needs no timing or 100+ requests. Not NonParallelizable.
+
+**RED.** With the three `[Ignore]`s removed and the default still on: 0 passed, 3 failed (`still reachable after 15.0 / 15.2 / 30.1 seconds`, 49 / 51 / 103 collection rounds).
+
+**GREEN counts (Debug, `LIGHTHOUSE_TEST_WORKERS=6`, build 0 warnings 0 errors):**
+- rate-limit fixtures (S6, ConsentRateLimit, EventCeiling, Slice11, S9b, ConsentEndpoints, AskEndpoints, S12, default-off test, ParallelizationGuard): 70 passed, 0 failed.
+- `BackendTestParallelizationGuardTest`: 2 passed. `Slice11CastAVoteTest` alone: 29 passed.
+- OAuth classes (`JiraOAuthProviderTest`, `AdoOAuthProviderTest`, `OAuthProviderAbstractionIntegrationTest`): 21 passed.
+- No `[Ignore` left in `TestHostIsReleasedAfterDisposeTest.cs`.
+
+**Release, guard fixture alone, 5 consecutive runs** (build -c Release 0 warnings): each 3 passed / 0 failed, 11 s duration for runs 2-5; run 1 (detailed) 14.9 s total, `AHostThatCreatedOneHttpClientIsFreedOnceDisposed` 11 s, `AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed` 255 ms, `AHostThatServedARequestIsFreedOnceDisposed` 159 ms.
+
+**Exclusivity.** The fixture stays `[NonParallelizable]` and is on the allowlist. In the detailed log the three tests run strictly one after another (the 11 s test finishes at 19:05:38 before the other two start; "Starting up Lighthouse!" lines do not interleave with any other fixture). The filter selects only this fixture, so alone-ness in a mixed run rests on the NonParallelizable attribute and the guard test that checks the allowlist.
+
+**Stryker.** The RateLimiterOwner glob and filter term are removed; only the two provider files are mutated; acceptance exclusions kept.
