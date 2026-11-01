@@ -23,7 +23,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private static string[] Listed(params string[] states) => states;
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
         public async Task AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten()
         {
             var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-lists-isolation-{Guid.NewGuid():N}.db");

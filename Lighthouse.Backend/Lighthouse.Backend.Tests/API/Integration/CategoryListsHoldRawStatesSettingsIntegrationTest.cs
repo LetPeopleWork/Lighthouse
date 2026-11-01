@@ -536,7 +536,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);

@@ -20,8 +20,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     public class CategoryListNormalisationSeederOnBothProvidersTests
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         public enum Provider
         {
             Sqlite,
@@ -83,7 +81,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(
             [Values(Provider.Sqlite, Provider.Postgres)] Provider provider,
             [Values] StoredShape storedShape)
@@ -125,7 +122,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(
             [Values(Provider.Sqlite, Provider.Postgres)] Provider provider,
             [Values(true, false)] bool statesAreNull)

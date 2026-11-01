@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lighthouse.Backend.Services.Implementation.Seeding
 {
@@ -75,7 +76,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
             if (!await TrySave(repository))
             {
-                // Every owner shares one context, so a refused change must not ride along with the next owner's save.
                 stored.WriteTo(owner);
                 tally.Skipped++;
                 logger.LogWarning("{OwnerType} {OwnerId} could not be saved and is retried on the next start; Rule {Rule}", ownerType, owner.Id, SaveFailed);
@@ -114,6 +114,17 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             {
                 await repository.Save();
                 return true;
+            }
+            catch (DbUpdateException refused)
+            {
+                // Every owner shares one context, so a refused row left tracked would be retried, and refused again,
+                // with the next owner's save.
+                foreach (var entry in refused.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
+
+                return false;
             }
             catch (Exception)
             {
