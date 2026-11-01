@@ -736,3 +736,59 @@ minutes on this machine, so it was not run.
 
 No other `package.json` script (outside `node_modules`, worktrees and the runner copy under `tools/codesign`) runs vitest
 or `dotnet test`. Every call site that runs with `CI` unset is a local script.
+
+## Wave: DELIVER / [REF] Measurement results
+
+Run 2026-11-01, 15:01-16:10, on one 12-core, 31 GB Linux machine, quiet slot guaranteed by the maintainer. Three
+alternating rounds per stack. "Full" is the tool default (Vitest 11 workers, NUnit 12); "half" is 6 workers
+(`--maxWorkers=6`, `NUnit.NumberOfTestWorkers=6`). Raw logs and `results.csv` are in `measurement/results/`.
+Peak session RSS is the sum over the process tree, so it double-counts shared pages and is an **upper bound**.
+
+### Frontend (`pnpm test`)
+
+| Round | Setting | Wall (s) | Peak session RSS (MB, upper bound) | Min MemAvailable (MB) | Failures | Test totals |
+|---|---|---|---|---|---|---|
+| r1 (VOID) | full | 236 | 7164 | 12760 | 0 | 8935 passed (8935) |
+| r1 (VOID) | half | 260 | 4763 | 15328 | 0 | 8936 passed, 24 skipped (8960) |
+| r2 | half | 249 | 4834 | 17103 | 0 | 8936 passed, 32 skipped (8968) |
+| r2 | full | 220 | 7357 | 14410 | 0 | 8936 passed, 32 skipped (8968) |
+| r3 | full | 218 | 6918 | 14168 | 0 | 8936 passed, 32 skipped (8968) |
+| r3 | half | 244 | 4819 | 17683 | 0 | 8936 passed, 32 skipped (8968) |
+| **median r2-r3** | full | 219 | 7138 | 14168 | 0 | |
+| **median r2-r3** | half | 246.5 | 4827 | 17103 | 0 | |
+
+Round 1 is void: the test population differed between its two runs (`testWorkers.test.ts` appeared mid-run), and it was
+voided before rounds 2-3 were read. Ratio half/full wall time: 246.5 / 219 = 1.13.
+
+### Backend (`dotnet test`, live-connector categories excluded)
+
+| Round | Setting | Wall (s) | Peak session RSS (MB, upper bound) | Min MemAvailable (MB) | Failures | Test totals |
+|---|---|---|---|---|---|---|
+| r1 | full | 480 | 19730 | 2424 | 2 | Failed 2, Passed 11893, Skipped 1, Total 11896 |
+| r1 | half | 436 | 19040 | 3526 | 2 | same |
+| r2 | half | 433 | 18754 | 3563 | 2 | same |
+| r2 | full | 478 | 19847 | 2899 | 2 | same |
+| r3 | full | 461 | 20063 | 3488 | 2 | same |
+| r3 | half | 428 | 18829 | 4001 | 2 | same |
+| **median r1-r3** | full | 478 | 19847 | 2899 (lowest 2424) | 2 | |
+| **median r1-r3** | half | 433 | 18829 | 3563 | 2 | |
+
+The same 2 tests fail in every run, so all backend rounds are valid:
+`NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder` and
+`TheScanSeesTheFilesThatConsumeThePublishOutput` (local-only failures from a root-owned `examples/postgres/data` folder).
+Ratio half/full wall time: 433 / 478 = 0.91. Backend memory is dominated by the test host's memory growth, not by the
+worker count; re-measure after that leak is fixed (`measurement/run-all.sh` reruns it).
+
+### Decision
+
+Rule: keep 0.5 if half takes at most 1.25 times the full wall time on each stack. Frontend 1.13, backend 0.91, so
+**the fraction stays 0.5**; no code changes in this step. Half the workers uses about a third less memory on the
+frontend (4827 vs 7138 MB) and is not slower on the backend.
+
+### Limits
+
+- A single session on one machine; a concurrent second session was not measured.
+- Load average was not recorded.
+- Summed RSS double-counts shared pages (upper bound).
+- Sampling at 1 Hz; the sampler is Linux-only.
+- `max_threads` is a session thread total, informational only.
