@@ -861,3 +861,23 @@ Configuration added later (a fixture's `WithWebHostBuilder`, or a subclass after
 **Exclusivity.** The fixture stays `[NonParallelizable]` and is on the allowlist. In the detailed log the three tests run strictly one after another (the 11 s test finishes at 19:05:38 before the other two start; "Starting up Lighthouse!" lines do not interleave with any other fixture). The filter selects only this fixture, so alone-ness in a mixed run rests on the NonParallelizable attribute and the guard test that checks the allowlist.
 
 **Stryker.** The RateLimiterOwner glob and filter term are removed; only the two provider files are mutated; acceptance exclusions kept.
+
+## Wave: DELIVER / [REF] P-run and P-final — after measurement (2026-11-01, 19:08–19:15 local)
+
+Commit `b573b1924`, same machine, protocol and sampler as P0 (12 cores, `dotnet` 10.0.114, `LIGHTHOUSE_TEST_WORKERS=6`,
+standard filter, quiet machine, licence fixture present).
+
+| Arm | Commit | Wall | Peak summed RSS | Lowest MemAvailable | Result |
+|---|---|---|---|---|---|
+| before | `a296de15a` | 434 s | 19,039 MB | 3,798 MB | 11,893 passed, 2 failed (publish-output scans), 4 skipped |
+| after | `b573b1924` | 407 s | **4,300 MB** | 18,177 MB | 11,897 passed, 2 failed (the same two), 1 skipped |
+
+- Peak down **77 %** (19.0 → 4.3 GB, 4.4×); the machine keeps 18 GB free instead of 3.8 GB; wall 6 % shorter.
+- The guard ran inside the full run: three fewer skipped and four more passed (cases A, B, C and the default-off test).
+- **Target missed: peak under 3 GB.** 4.3 GB is recorded as is; the target is not changed. It sits where the fix
+  experiment predicted (4.2 GB). Left to the maintainer at the hold. Likely contributors, not yet measured: the hosts
+  of the fixtures that test rate limiting (which stay reachable by decision), the per-host payload while six workers
+  hold hosts at once, and the GC keeping freed segments in the process rather than returning them (RSS is not live heap).
+- Tail monitor: not built. The guard's case C now proves in-suite that a host that used a client is released within
+  about 11 s, which is what the tail check was meant to show; recorded as a deviation from the DEVOPS protocol.
+- Raw lines: `measurement/before.csv`, `measurement/after.csv`.
