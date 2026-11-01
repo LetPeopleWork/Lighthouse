@@ -286,6 +286,74 @@ is needed.
   served a request, and ask T2 (fewer hosts) to carry the rest. Trade-off: the suite still holds one host per rate-limited
   request-serving host, so the peak falls to roughly the live-host count, not to the flat shape.
 
+### Rate-limiter spike (temporary, reverted)
+
+Run after the design commit `ea982758e`, at the coordinator's request. Temporary and uncommitted, reverted afterwards (`git status`: only the
+three epic-6033 files). Focused probe runs only, no full suite, 6 workers, rate limiting ON. Each probe: a warm-up host first (discarded), then
+a host that served one request (`GET /api/latest/zz-nothing-here`, a 404 that still passes the rate-limit middleware), never created a factory
+client, was disposed, and then polled with full GCs for up to 15 s. The probe's `Build` must not be `async` (an async state machine keeps the
+factory in a hoisted local and gave a false "alive" in a first pass; the numbers below are from the synchronous rewrite).
+Raw output: `snapshots/limiter-spike-*.txt`.
+
+Applied in every variant: D1 (providers take a per-call `Func<HttpClient>`) and D2(a) (the one-address limiter built by a DI singleton the
+container disposes, fed in through `IConfigureOptions<RateLimiterOptions>`).
+
+| Variant | Host after 15 s of polling GCs |
+|---|---|
+| 1. D1 + D2(a) only | **alive** |
+| 2. + (3a) the `UseRateLimiter()` pipeline built under `ExecutionContext.SuppressFlow()` | **alive** |
+| 3. + (3b) the middleware's endpoint limiter disposed (reflection, field `_endpointLimiter`) | **dead** |
+| 4. (3a) + (3b) | **dead** |
+| 5. Variant for tests, below: our own construction of the middleware, endpoint limiter disposed by the container | **dead** |
+
+The first host of each probe process stayed alive in every variant; that is the one-host-per-process pin by shared one-shot timers noted
+earlier, not the leak.
+
+**Question 2, the holder after D1 + D2(a).** The framework's endpoint limiter, nothing else. Root walk from the static timer queue:
+`TimerQueueTimer._state` -> `System.Threading.RateLimiting.TimerAwaitable` -> `_callback` -> `AsyncStateMachineBox<...DefaultPartitionedRateLimiter<HttpContext,
+DefaultKeyType>.<RunTimer>d__14>` -> `ExecutionContext` (the `HostingListener` async-local) -> `Host` -> `ServiceProvider` -> `TestWebApplicationFactory`.
+The key type `DefaultKeyType` is the framework's own; the product's global limiter (`string` keys) is gone from the walk after D2(a).
+
+**3a, SuppressFlow: fails.** With the flow suppressed the `ExecutionContext` path disappears, but a second path remains, as the design predicted:
+the timer's state machine `<>4__this` -> the limiter's `_partitioner` closure -> `RateLimitingMiddleware` -> `_next` -> `AuthenticationMiddleware` ->
+`AuthorizationMiddlewareInternal` -> `AuthorizationPolicyCache` -> `CompositeEndpointDataSource` -> `RouteEndpointDataSource._applicationServices` ->
+`ServiceProvider`. The closure over the middleware reaches the whole pipeline and the container, so cutting the execution context alone is not enough.
+
+**3b, disposing the endpoint limiter: works.** Disposing `RateLimitingMiddleware._endpointLimiter` (type
+`System.Threading.RateLimiting.PartitionedRateLimiter<Microsoft.AspNetCore.Http.HttpContext>`, a private instance field in .NET 10) stops its timer
+loop and the host dies, with or without SuppressFlow. The middleware's fields in .NET 10: `_next`, `_defaultOnRejected`, `_logger`, `_metrics`,
+`_globalLimiter` (same type), `_endpointLimiter` (same type), `_rejectionStatusCode`, `_policyMap`, `_defaultPolicyKey`.
+
+**3c, public API: none.** From reflection on the .NET 10 assemblies: `RateLimitingMiddleware` is **not public** (internal, sealed, implements no
+interface, so not `IDisposable`). `RateLimiterOptions` has only `GlobalLimiter`, `OnRejected`, `RejectionStatusCode` and `AddPolicy` and is not `IDisposable`.
+The middleware's one public constructor takes `(RequestDelegate, ILogger<RateLimitingMiddleware>, IOptions<RateLimiterOptions>, IServiceProvider,
+RateLimitingMetrics)` and it exposes `Invoke`. So no callback, option or registration hands the endpoint limiter to the container, and the type cannot be
+named in our code. The policies registered with `AddPolicy` are the endpoint limiter's partitioner input; they do not change who owns the timer.
+
+**What worked in a form that could be shipped (variant 5).** Replace `app.UseRateLimiter()` (inside the same `RateLimits:Enabled` check, same pipeline
+position) with a call that builds the middleware ourselves and gives it to the same container-owned singleton that owns the global limiter:
+`ActivatorUtilities.CreateInstance(app.Services, <the internal type looked up by name in the RateLimiting assembly>, next)`, hands it to the singleton, and returns
+a `RequestDelegate` bound to its `Invoke`. The singleton's `Dispose()` disposes the global limiter and the middleware's `_endpointLimiter` through reflection.
+The host died, and the dispose happens at container disposal, so this is the "at host shutdown" form (variant 3b disposed it earlier, while the host was
+still up; liveness is the same).
+
+**Question 4, the two rate-limit tests.** `A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down` and
+`OneAddressInventingANewBrowserEachTime_IsStillBounded`, run by filter: **both pass** with variant 5 (2 passed) and also with D1 + D2(a) alone
+(2 passed), so moving the global limiter into a singleton changes neither limit.
+
+**Recommendation.** Take variant 5 for step 3b, with these edges stated rather than hidden:
+- It is the only variant measured to release the host with rate limiting on, and it keeps both rate-limit tests green.
+- It reflects on one private field of an internal framework type (`_endpointLimiter`) and activates the internal type by name. A framework update that
+  renames the field or the type fails safe in the guard test (the host stays alive, the test goes red), and the production behaviour is unchanged as
+  long as the middleware's constructor and `Invoke` keep their shape; both are checked at startup in the spike only by the call succeeding, so the real change
+  should fail loudly at startup if the type or method is not found rather than skip the limiter.
+- Fallback if that coupling is judged too risky: keep D2(a) and let the endpoint limiter pin one host per host that served a request (variants 1 and 2),
+  and rely on T2 (fewer hosts). It was not measured how far that lowers the peak.
+
+**Not covered by this spike.** Whether `Invoke` as a method-group delegate on the internal type behaves identically for every request shape
+(only the two rate-limit tests and a 404 were exercised); the effect on the full-run peak (the earlier full run turned rate limiting off); and a host
+that also created a factory client (D1b).
+
 ## Wave: DESIGN / [REF] Hexagonal sketch
 
 ```

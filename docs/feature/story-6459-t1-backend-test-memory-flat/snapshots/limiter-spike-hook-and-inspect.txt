@@ -1,0 +1,22 @@
+=== Inspect
+RateLimitingMiddleware visibility: public=False sealed=True interfaces=[]
+  public ctor(RequestDelegate next, ILogger`1 logger, IOptions`1 options, IServiceProvider serviceProvider, RateLimitingMetrics metrics)
+  public method Invoke
+  RateLimiterOptions member get_GlobalLimiter
+  RateLimiterOptions member set_GlobalLimiter
+  RateLimiterOptions member get_OnRejected
+  RateLimiterOptions member set_OnRejected
+  RateLimiterOptions member get_RejectionStatusCode
+  RateLimiterOptions member set_RejectionStatusCode
+  RateLimiterOptions member AddPolicy
+  RateLimiterOptions member GlobalLimiter
+  RateLimiterOptions member OnRejected
+  RateLimiterOptions member RejectionStatusCode
+  RateLimiterOptions implements IDisposable: False
+=== HOOK (D1 + D2a + middleware built by us, endpoint limiter disposed with the container)
+ENV PROBE_SUPPRESS= PROBE_DISPOSE_ENDPOINT= PROBE_DUMP=1
+  request status 404
+warm-up host alive after poll (ignored): True
+  request status 404
+served one request, no client created, disposed: alive=False
+done
