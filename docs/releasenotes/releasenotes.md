@@ -4,6 +4,51 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.11.1.2
+
+## Every Report in One Place, Created and Removed in Bulk
+
+A coach looking after ten Teams had to open each one to find its reports. Rolling out the same Then & Now comparison everywhere meant running the same wizard ten times, and tidying up afterwards meant deleting ten reports one by one.
+
+**Reports** in the top navigation now lists every report you can read, across all Teams and Portfolios, with its owner. Pick several and remove them in one go, or export them as one PDF, each report on its own pages. With Premium, **Create reports** asks for a report's settings once and creates it on every Team and Portfolio you pick.
+
+![Reports page](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/reports_page.png)
+
+Full detail: [The Reports Page](https://docs.lighthouse.letpeople.work/reports/reports.html#the-reports-page).
+
+## Lighthouse Stays Fast With Many Features
+
+A Portfolio with several hundred Features made Lighthouse feel slow: its Features tab took long to open, and its forecasts held up everything else.
+
+The Features tabs of Teams and Portfolios now load in one request, and forecasts run on threads of their own, so the rest of Lighthouse keeps answering while they work. When a Portfolio grows past 100 Features, its settings say so, and suggest narrowing its query to keep it fast.
+
+Full detail: [Large Portfolios](https://docs.lighthouse.letpeople.work/portfolios/edit.html#large-portfolios).
+
+## Jira Works With the Original Status and Work Item Type Names
+
+Jira shows each person the names of statuses and work item types in their own language. A token from an account set to German made Lighthouse see *In Arbeit* where a colleague's English token saw *In Progress*, so a Team configured by one of them lost its Work Items when the token changed.
+
+Lighthouse now always works with the original names, whatever language the token's account uses, and the Board Wizard lists those names too. After the upgrade, every Jira Team and Portfolio takes one full refresh. A Team set up with translated names needs the Board Wizard run again, or its names changed to the original ones.
+
+Full detail: [Status and Work Item Type Names](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#status-and-work-item-type-names).
+
+## Bugfixes and Improvements
+
+- **Every Delivery metrics chart explains itself.** An ⓘ next to each chart's title says what it is for, what you see on it and how to read it. Full detail: [Delivery Metrics over Time](https://docs.lighthouse.letpeople.work/portfolios/detail.html#delivery-metrics-over-time).
+- **Delivery forecasts respect blackout days.** A Delivery's dates, and the forecasts written back to your Work Tracking System, now skip blackout days however far out the forecast reaches.
+- **A Team's or Portfolio's query saves when you leave the field**, not while you are still typing it.
+- **Export PDF on the macOS desktop app** is now disabled with a note, instead of doing nothing; use the browser there for now.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [Chris Graves](https://www.linkedin.com/in/chris-graves-23455ab8/)
+- Tim Brencher
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.10.25.1...v26.11.1.2)
+
 # Lighthouse v26.10.25.1
 
 ## Export Any Report as a PDF
