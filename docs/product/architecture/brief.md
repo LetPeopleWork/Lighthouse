@@ -11036,3 +11036,61 @@ keys. "Teams only" is enforced on the server. Free-tier messages name the level'
 `["levels"]`, a Levels section in Organization → Terminology, a subset picker in unit forms. Enforcement: ArchUnitNET
 layer rules for the module, single publishers, read-only readers, an OUT-4 ratchet; a module-entry rule and a source
 scan for `/levels` on the frontend.
+
+## Application Architecture — bug-6458-typed-category-entries (DESIGN delta)
+
+Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-270. Workspace:
+`docs/feature/bug-6458-typed-category-entries/`.
+
+**Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping names never appear in them.** A
+`StateMapping { Name, States }` is a display grouping computed on read (`DisplayStatesFor`), and
+`StateMapping.States` is the only statement of what a mapping stands for. No column is added, dropped or renamed.
+
+| Decision | Verdict |
+|---|---|
+| Shape | Raw-only lists, mapping as derived view. Typed entries and a category flag rejected (ADR-270) |
+| Display columns | Read-only `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` on the settings DTO, computed in the owner |
+| Category lookup | Split in two: raw state (connectors) and display name (stored transitions, fixes the as-of `Unknown`) |
+| Write path | Mappings synced first; shadowing and chained mappings answer 400 naming the fix; legacy payloads normalised |
+| Data rewrite | Idempotent `ISeeder`, provider-neutral, members written at the old chip's index |
+| Editor | Reconciliation deleted; removing a mapping chip from Doing is refused ("delete the mapping instead") |
+| Public API v1 | Same field types; `doingStates` now raw states; shadowing is a 400; documented break |
+
+```mermaid
+C4Component
+  title Component diagram — category lists and the mapping view (Bug 6458 a)
+  Container_Boundary(fe, "Frontend (React)") {
+    Component(editor, "Settings editor", "TSX", "Edits raw lists and mappings; refuses to remove a mapping chip")
+    Component(rules, "Mapping rule mirror", "TS util", "Mirrors backend rules against shared fixtures")
+    Component(metricsview, "Metrics views", "TSX", "Read display states for the aging columns")
+  }
+  Container_Boundary(be, "Backend (ASP.NET Core)") {
+    Component(ctrl, "Team/Portfolio controllers", "API", "Reject invalid settings with 400")
+    Component(sync, "Settings sync + validators", "API helpers", "Sync mappings first, normalise lists, check rules")
+    Component(owner, "WorkTrackingSystemOptionsOwner", "Model", "Holds raw lists; derives display states and categories")
+    Component(seeder, "List normaliser seeder", "ISeeder", "Rewrites stored lists once, idempotently")
+    Component(conn, "Connectors", "Adapters", "Read raw lists; map item states to display names")
+    Component(metrics, "Metrics services", "Services", "Order columns by display states; categorise stored transitions by display name")
+  }
+  ContainerDb(db, "Database", "SQLite / PostgreSQL", "Teams and Portfolios rows")
+  Rel(editor, ctrl, "Saves settings through")
+  Rel(editor, rules, "Shows inline errors from")
+  Rel(ctrl, sync, "Hands settings to")
+  Rel(sync, owner, "Writes raw lists and mappings to")
+  Rel(owner, db, "Persists through repositories into")
+  Rel(seeder, owner, "Normalises stored lists of")
+  Rel(conn, owner, "Reads raw states and categories from")
+  Rel(metrics, owner, "Reads display states and categories from")
+  Rel(metricsview, ctrl, "Fetches display states from")
+```
+
+Changes by layer: the owner gains `DisplayStatesFor`, `CategoryOfRawState` and `CategoryOfDisplayName`;
+`GetRawStatesForCategory` remains only for wait states, cycle-time boundaries and refinement. ADO
+`StartedAndClosedDateFrom`, `IssueFactory.GetStartedAndClosedDate` and the ServiceNow state-span mapper read the
+lists as they are. The six metrics readers of the raw Doing list, the CSV demo journey and the refinement and
+cycle-time validators move to display states. Enforcement: an architecture test that only the owner and the three
+mapped-name validators call the expansion method; a property test on normalisation; shared validation fixtures
+for the backend and the frontend mirror.
+
+External integrations: none touched; no contract-test recommendation applies. Workspace:
+`docs/feature/bug-6458-typed-category-entries/feature-delta.md`.
