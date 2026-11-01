@@ -1,3 +1,4 @@
+using System.Data.Common;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -30,11 +31,12 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             await NormaliseAll(portfolioRepository, nameof(Portfolio), tally);
 
             logger.LogInformation(
-                "Category lists normalised: {Scanned} scanned, {Rewritten} rewritten, {LegacyExpanded} legacy-expanded, {Skipped} skipped",
+                "Category lists normalised: {Scanned} scanned, {Rewritten} rewritten, {LegacyExpanded} legacy-expanded, {Skipped} skipped, {UnreadOwnerTypes} owner types not read",
                 tally.Scanned,
                 tally.Rewritten,
                 tally.LegacyExpanded,
-                tally.Skipped);
+                tally.Skipped,
+                tally.UnreadOwnerTypes);
         }
 
         private async Task NormaliseAll<TOwner>(IRepository<TOwner> repository, string ownerType, Tally tally)
@@ -43,6 +45,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             var owners = TryRead(repository);
             if (owners == null)
             {
+                tally.UnreadOwnerTypes++;
                 logger.LogWarning("Could not read the {OwnerType} owners; Rule {Rule}", ownerType, Unreadable);
                 return;
             }
@@ -126,7 +129,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
 
                 return false;
             }
-            catch (Exception)
+            catch (Exception failure) when (failure is InvalidOperationException or DbException)
             {
                 return false;
             }
@@ -183,6 +186,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             public int LegacyExpanded { get; set; }
 
             public int Skipped { get; set; }
+
+            public int UnreadOwnerTypes { get; set; }
         }
     }
 }
