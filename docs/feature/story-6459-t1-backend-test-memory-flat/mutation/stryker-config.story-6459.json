@@ -1,0 +1,25 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/OAuth/Providers/JiraOAuthProvider.cs",
+      "**/Services/Implementation/OAuth/Providers/AdoOAuthProvider.cs",
+      "**/*RateLimiterOwner*.cs"
+    ],
+    "thresholds": {
+      "high": 90,
+      "low": 80,
+      "break": 80
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~JiraOAuthProvider|FullyQualifiedName~AdoOAuthProvider|FullyQualifiedName~RateLimiterOwner)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Acceptance",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

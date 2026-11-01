@@ -1,0 +1,62 @@
+# Environment inventory - story-6459-t1-backend-test-memory-flat
+# Consumed by DISTILL for environmental realism.
+#
+# Behaviour-free test infrastructure plus one product composition-root change (Program.cs: the OAuth providers ask
+# IHttpClientFactory per request; the rate limiters are owned and disposed by the container). Nothing deploys;
+# no route, DTO, response or rate-limit rule changes.
+
+target_environments:
+  - name: local-quiet
+    description: >
+      The 12-core, 31 GB Linux reference machine with no other session running, LIGHTHOUSE_TEST_WORKERS=6, Debug
+      configuration (dotnet test default), standard filter excluding the live-connector categories. The only
+      environment where the payoff (peak RSS) is measured.
+    platform: [linux]
+    preconditions:
+      - "LIGHTHOUSE_TEST_WORKERS=6 exported"
+      - "No other dotnet test or pnpm test running; dotnet build-server shutdown beforehand"
+  - name: local-default
+    description: >
+      Any developer or agent session, worker cap per story 6461 (half the cores when unset and CI is not 'true').
+      The leak guard runs here as part of the normal backend run.
+    platform: [linux, macos, windows]
+    preconditions:
+      - "dotnet 10 SDK"
+  - name: ci
+    description: >
+      GitHub Actions ubuntu-latest (4 cores, CI=true), ci_backend.yml UNCHANGED. Release configuration
+      (dotnet test -c Release --no-build). Two test steps, one runs per job: with coverage (run_sonar) and without.
+      Both end with `-- RunConfiguration.MaxCpuCount=0`. NUnit keeps its default worker count (4); the guard
+      fixture is [NonParallelizable] and runs alone.
+    platform: [linux]
+    preconditions:
+      - "CI=true"
+      - "LIGHTHOUSE_TEST_WORKERS unset"
+
+coexistence_matrix:
+  - tool: ci_backend.yml
+    must_not_break: true
+    note: "Not edited. The guard is an NUnit test inside the existing steps"
+  - tool: Story 6461 worker cap (committed locally, not pushed)
+    must_not_break: true
+    note: "Orthogonal: the cap changes how many hosts are alive at once, this story changes how long each lives. Measurements state the worker count (6)"
+  - tool: BackendTestParallelizationGuardTest
+    must_not_break: true
+    note: "Gains one AllowedSerialFixtures entry with reason, for the leak guard fixture"
+  - tool: Program.cs edit and CI path filter
+    must_not_break: true
+    note: "A Program.cs edit makes CI run the full backend Integration suite (live Jira, Linear, ADO, ServiceNow connectors) at push time; Linear key is shared with CI, so expect that run to be longer and rate-limit sensitive. Not a code risk, a push-time consequence"
+  - tool: Rate-limit tests (Slice11CastAVoteScenarios, UsageDataEventCeilingTests, S6_RateLimitingTests, UsageDataConsentRateLimitTests)
+    must_not_break: true
+    note: "Rate limiting stays on with the same rules; these are the behaviour-free proof"
+  - tool: Stryker.NET
+    must_not_break: true
+    note: "Config under mutation/, acceptance suite excluded"
+  - tool: WebApplicationFactory tests and app start
+    must_not_break: true
+    note: "The reflection over the internal RateLimitingMiddleware throws at startup if the framework shape changes; every host start is the canary"
+
+deployment_assumptions:
+  - "Nothing deploys separately; ships with the next regular push to main. Production runs one host per process, so the handler and limiter ownership change is invisible there"
+  - "Rollback is reverting the commits; nothing is persisted"
+  - "Usage-data event: N/A, behaviour-free test infrastructure with no user-facing feature"

@@ -489,3 +489,113 @@ limiter at shutdown, by reflection; (2) accept the pin and leave the payoff to f
 type, constructor, `Invoke` method or field is not found, never by silently skipping the limiter; the in-suite leak
 guard catches a regression. This supersedes D2(b)'s conditional wording: step 3b is no longer gated on the spike, it
 is part of the fix. Re-check the reflection on every .NET major upgrade.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-11-01)
+
+AFK mode: the lead took the recommended option on each row; the maintainer reviews before anything is pushed. Nothing deploys.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | N/A, because nothing deploys separately: no artifact, image or runtime behaviour changes. Production runs one host per process, so the changed ownership of the HTTP clients and rate limiters is invisible there. |
+| CI/CD platform | GitHub Actions, `ci_backend.yml` read and **UNCHANGED**; see the CI/CD section. |
+| Branching | Trunk-based on `main`, local commits, the maintainer reviews before push. Nothing is pushed by the waves. |
+| Observability, alerting, SLOs | N/A, because nothing runtime-visible changes: the existing rate-limit logging and metrics are unchanged (the middleware is the framework's own, only constructed by us). |
+| Usage-data event | **N/A, because it is behaviour-free test infrastructure with no user-facing feature**; nothing a user does changes, so there is no use to count. No `UsageDataEventName` entry, no line in `docs/settings/usagedata.md`. |
+| Security | No secret, permission or scope changes. The reflection touches only a private field of a framework type in our own process. |
+| Cross-cutting (RBAC, Lighthouse-Clients, Website, UI sketch, Terminology, ADR-270) | All N/A as answered in PICK-UP and DESIGN: no route, DTO, screen, word, context or event changes. |
+| Rollback | Revert the commits; nothing is persisted. |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+Also written as `environments.yaml` in this workspace.
+
+| Environment | Workers | Configuration | Role |
+|---|---|---|---|
+| Local, quiet machine (12 cores, 31 GB, one suite at a time) | `LIGHTHOUSE_TEST_WORKERS=6` | Debug (`dotnet test` default), standard filter | The only place the payoff (peak RSS) is measured. |
+| Local, any session | Story 6461 cap (half the cores when unset and not CI) | Debug | The guard runs as part of the normal backend run. |
+| CI (`ubuntu-latest`, 4 cores, `CI=true`) | Each tool's own default: NUnit 4 workers; the 6461 cap is off in CI | **Release**, `dotnet test -c Release --no-build`; both steps (with coverage when `run_sonar`, without otherwise; one runs per job) | Runs the guard and the rate-limit and OAuth tests. |
+
+## Wave: DEVOPS / [REF] CI/CD
+
+**`ci_backend.yml` is unchanged (read-only check).** Its two test steps already run the whole test project, so the guard (an NUnit test in
+`Lighthouse.Backend.Tests/Architecture/`) runs inside them. No reporting step, no memory ceiling (rejected in DESIGN: noisy proxy).
+
+- **Release build.** The guard creates the factory in a `[MethodImpl(MethodImplOptions.NoInlining)]` method and returns only a `WeakReference`, so
+  the JIT cannot keep the factory in a local of the test method; Release enregistration and inlining cannot extend its lifetime. The polling loop
+  runs `GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect()` and checks the weak reference for up to 15 s. Release does not change what the timers
+  root, so the guard measures the same thing as Debug. DELIVER runs the guard once under `-c Release` locally (cheap, one filtered run) and states the result.
+- **4-core runner.** The fixture is `[NonParallelizable]` and sits in `AllowedSerialFixtures` of `BackendTestParallelizationGuardTest` with its reason; NUnit
+  runs it alone, so no neighbour's allocations slow the polling and no other fixture's host can be mistaken for ours. The cost is one short serial
+  window (sub-second when it passes; at most 15 s per case when it fails). The 15 s limit is the open question 3 from DESIGN: if the first CI run
+  flakes, raise the limit, never drop the assertion.
+- **`-- RunConfiguration.MaxCpuCount=0` (both steps).** This is a VSTest argument that sets how many test hosts VSTest may start (0 = all cores). It
+  does not change NUnit's worker count inside a host, does not alter the guard's GC polling, and does not remove `[NonParallelizable]`. Not affected.
+  (It does replace the story 6461 csproj property in CI; that is already the 6461 design.)
+- **Coverage step.** Under `--collect:"XPlat Code Coverage"` the profiler adds allocation and slows the run, which only makes polling slower, not the
+  result different; the 15 s limit has headroom. Checked on the first CI run.
+
+## Wave: DEVOPS / [REF] Startup failure mode
+
+The container-owned disposal finds the framework's internals by reflection: the internal `RateLimitingMiddleware` type (by name in the RateLimiting
+assembly), its public constructor, its `Invoke` method and the private `_endpointLimiter` field. **If any is missing, the code throws at
+startup with a message naming the missing member; it never skips the limiter.** (Maintainer decision, option 1.)
+
+- Where it surfaces: the middleware is built when the pipeline is built, so **every `WebApplicationFactory` test and every app start** fails at once. In CI the
+  first backend test step goes red immediately, not as a slow leak. A production start with a mismatching runtime also fails at boot rather than serving
+  without rate limiting.
+- Where it does not surface: a field that still exists but changes meaning (renamed semantics, different owner). The leak guard (cases A and B) is the
+  backstop: the host would stay alive and the test goes red.
+- **.NET-upgrade check.** On every .NET major upgrade (and a minor that touches `Microsoft.AspNetCore.RateLimiting`), run the backend tests before anything
+  else; a startup failure naming the type, constructor, `Invoke` or `_endpointLimiter` means re-reading the new `RateLimitingMiddleware` source and
+  updating the owner class. Renovate PRs bumping the SDK or the shared framework are the trigger; CI is the detector. Also noted in the owner class's
+  failure message so the failing run explains itself.
+
+## Wave: DEVOPS / [REF] Mutation strategy
+
+Strategy stays `per-feature`, Stryker.NET, kill rate >= 80%, once at the end on frozen code (CLAUDE.md, not edited).
+
+- **Scope:** `JiraOAuthProvider.cs`, `AdoOAuthProvider.cs` and the new rate-limiter owner class (final file name set in DELIVER; the config glob
+  `**/*RateLimiterOwner*.cs` is adjusted to match).
+- **Not `Program.cs`**, because it is a composition root: mutants there are wiring (registrations, middleware order, config keys) with no unit to
+  assert against, the host tests that exercise it boot a `WebApplicationFactory` per test (18 min for coverage capture alone, see the repo memory), and the
+  behaviour it wires is already proved by the rate-limit tests and the leak guard. Mutating it would cost hours for survivors that only an
+  integration run could kill.
+- **Acceptance suite excluded** (repo memory "Stryker must skip the acceptance suite"): `test-case-filter` selects the provider and owner test
+  classes and subtracts `API.Integration`, `Integration.Containers` and `Acceptance`. The leak guard itself is not run by Stryker (it boots hosts and polls);
+  the owner class is covered by its unit tests plus the reflection-failure tests, if DELIVER writes them.
+- **Config:** `mutation/stryker-config.story-6459.json` (copied from the bug-5586 backend precedent; `break: 80`). Read the per-file table, not the total.
+
+## Wave: DEVOPS / [REF] Payoff measurement protocol (owned by the lead, quiet machine)
+
+- **Instrument:** `docs/feature/story-6461-t3-test-runs-leave-room/measurement/measure.sh`, called with `bash`:
+  `bash measure.sh <label> <workdir> <command...>` prints `label,exit,wall_s,peak_tree_rss_mb,min_mem_available_mb,max_threads` (`OUT_DIR` sets the log folder).
+- **Command (both arms):** `LIGHTHOUSE_TEST_WORKERS=6 dotnet test` in `Lighthouse.Backend` with the standard filter
+  (`TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration`),
+  after `dotnet build-server shutdown`, nothing else running.
+- **Before** = `main` at the commit just before the first product change (checked out as a separate worktree so the arms do not share build output;
+  the gitignored premium licence fixture is copied in). **After** = the final commit.
+- **Two arms, n=1 each**, same machine, same day, run one at a time; repeat an arm only if the result is ambiguous (for example the peak lands between 3 and 4.5 GB, or
+  Before differs by more than 10% from the 2026-11-01 reference of 18.8-19.0 GB at 6 workers).
+- **Report:** peak summed RSS, lowest `MemAvailable`, wall time, and the shape (RSS plateaus rather than climbs). Target from DESIGN D4: under 3 GB and flat; fall-back
+  target under 4.5 GB, with the remainder handed to T2.
+- **Late-host tail:** after the last test finishes, keep a temporary weak-reference monitor alive for **3 minutes** and expect the count of live factories
+  to fall to single digits by about 140 s (handler lifetime plus the fixed 10 s cleanup tick). A host still alive after that gets the root walk from the retention-roots
+  section. The monitor is a temporary probe and is removed.
+
+## Wave: DEVOPS / [REF] Coexistence and push-time consequences
+
+- **Story 6461 worker cap** (committed locally, not pushed): orthogonal. It changes how many hosts are alive at once; this story changes how long each lives.
+  Every measurement states the worker count.
+- **Program.cs edit forces the full backend Integration suite in CI** (repo note `program_cs_forces_full_integration_suite`): the path filter widens the run to the live
+  Jira, Linear, Azure DevOps and ServiceNow connector tests. State this at push time as a CI consequence, not a defect of the change: the run is longer, and the Linear key is
+  shared with CI, so avoid exploring the Linear API by hand and avoid other full runs shortly before the push.
+- **ci_backend.yml, Stryker, IDE runners, `BackendTestParallelizationGuardTest`:** see `environments.yaml`; the only edit to an existing guard is one
+  allowlist entry.
+
+## Wave: DEVOPS / [REF] Risks and carry-forward for DISTILL and DELIVER
+
+1. Guard flake on a loaded runner: raise the 15 s limit, never drop the assertion.
+2. Reflection drift on a .NET upgrade: loud at startup by design; see the upgrade check.
+3. Full Integration suite on the Program.cs push: announce it.
+4. Case B must resolve the `IOAuthProvider`s and see no client taken; D1b (short handler lifetime in `TestWebApplicationFactory`) bounds hosts that really use a client.
+5. Mutation last, after the payoff measurement, on frozen code; any edit after it shifts the survivors.
