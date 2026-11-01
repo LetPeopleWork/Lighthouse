@@ -5,79 +5,103 @@ Every pending scenario was run once with its skip marker removed (backend: SQLit
 ## Backend (NUnit)
 
 - `AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_AnyGeneratedList_NamesEveryGroupEntryTheWayItWasBuilt`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupBesideOneOfItsStates_IsShadowing`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfNoGroup_IsAStateOfTheTracker`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameWrittenInOtherCasingWithSpaces_IsRecognisedAsTheGroup`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `ClassifyListEntry_StateOfTheGroupIsListedOnlyInAnotherList_IsStillACollapsedGroup`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `NormalisedStatesFor_AnyGeneratedList_NeverNamesAGroupThatIsNotOneOfItsOwnStates`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NormalisedStatesFor_CollapsedGroup_IsReplacedByItsStatesInPlace`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_EmptyList_StaysEmpty`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NormalisedStatesFor_EntriesThatAreNullEmptyOrOnlyWhitespace_AreLeftOut`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_GroupNamedAfterItsOwnState_ListsTheOtherStatesRightAfterIt`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_NoMappings_ReturnsTheListWithoutRepeats`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `NormalisedStatesFor_SameStateInDifferentCasing_KeepsTheFirstSpelling`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `AllStates_ListHoldsAStateNamedLikeAMapping_KeepsThatStateAndDoesNotAddTheMappingsStates`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "In Arbeit", "Done"))) | Expected: equivalent to
-- `NoCodeExpandsACategoryList`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: These files still expand the To Do, Doing or Done list through a mapping. | Assert.That(offenders, Is.Empty) |
-- `SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `TwoMappingNames_DifferingOnlyInWhitespaceAtTheEnds_AreTheSame`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: ' Review' and 'Review' | Assert.That(DuplicateNameErrorsFor(a, b), Is.Not.Empty) | Expected: not <empty>
-- `EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedNamingTheFix`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(result.Errors, Has.Some.Contains("In Arbeit").And.Contains("Rename the mapping")) | Expected: some
+- `NoCodeExpandsACategoryList`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: These files still expand the To Do, Doing or Done list through a mapping. | Assert.That(offenders, Is.Empty) |
+- `GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Mapping \"A\" has the s
+- `SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
+- `AllStates_ListHoldsAStateNamedLikeAMapping_KeepsThatStateAndDoesNotAddTheMappingsStates`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "In Arbeit", "Done"))) | Expected: equivalent to
 - `CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Mapping \"Review\" grou
+- `CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_EntriesThatAreNullOrOnlyWhitespace_AreLeftOut`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: System.NullReferenceException : Object reference not set to an instance of an object.
 - `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Review",Doing)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Mapping \"Review\" grou
 - `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Analysis",Doing)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Backlog",ToDo)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Jellybean",Unknown)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_GroupChangedInTheSameSave_ReadsTheListAgainstTheGroupJustSent`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedWhicheverListHoldsIt`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Multiple failures or warnings in test: | 1)   Assert.That(StateMappingValidator.ValidateSettings(inToDo).IsVal
 - `CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `GroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(result.Errors, Has.Some.Contains("A").And.Contains("B").And.Contains("another mapping")) | Expecte
+- `SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
-- `GroupWhoseListedStatesSitInDifferentCategories_IsRefused`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).IsValid, Is.False) | Expected: False | But was:  
 - `CategoryOfRawState_RawStateThatSharesAMappingsName_KeepsItsOwnCategory`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("Analysis",Doing)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo(InArbeitShadowsADoingSta
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("analysis`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("Backlog",ToDo)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Mapping \"In Arbeit\" h
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("Done",Done)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("Testing",Doing)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CategoryOfRawState_ReadsTheListsAsTheyAre("Jellybean",Unknown)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `DisplayStatesFor_AfterTheMappingThatGroupedAStateIsDeleted_LeavesNoGhostName`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Mapping \"In Arbeit\" h
 - `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(ToDo,["Intake",`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(Doing,["Analysis"])`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(Done,["Released",`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `WhenWorkFinished_DoneStateNamedLikeAGroup_IsTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
-- `DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceAtItsFirstMemberAndLosesNoState`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
+- `DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_GroupNamedAfterOneOfItsOwnStates_ShowsTheGroupOnce`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `WhenWorkStarted_StateNamedLikeAGroup_IsTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
 - `DisplayStatesFor_GroupWhoseStatesAreListedNowhere_LeavesTheListAlone`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_LaterMemberBeforeEarlierOne_ShowsTheGroupAtTheFirstListedMember`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
-- `WhenWorkWasQueued_ToDoStateNamedLikeAGroup_IsTheLastReturnIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
 - `DisplayStatesFor_MembersApart_ShowsTheGroupWhereItsFirstMemberIs`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_MembersNextToEachOther_ShowsOneGroupInTheirPlace`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_NoMappings_ReturnsTheListAsItIs`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `OpenStates_ListHoldsAStateNamedLikeAMapping_ReadsToDoAndDoingAsTheyAre`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "In Arbeit"))) | Expected: equivalent to < "Bac
+- `WhenWorkFinished_DoneStateNamedLikeAGroup_IsTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
+- `WhenWorkStarted_StateNamedLikeAGroup_IsTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
+- `WhenWorkWasQueued_ToDoStateNamedLikeAGroup_IsTheLastReturnIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
 - `OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(callers.Except(FilesThatReadSettingsNamingAGroup), Is.Empty) | Expected: <empty> | But was:  < "Fa
+- `Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `Seed_NothingToRewrite_SavesNothing`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `Seed_SaveFails_LogsAWarningAndLetsTheStartContinue`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CreateIssueFromJson_DoingStateNamedLikeAGroup_DatesTheStartByTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
+- `Seed_SaveFailsForTheFirstOwner_StillRewritesTheSecond`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `CreateIssueFromJson_DoneStateNamedLikeAGroup_DatesTheCloseByTheArrivalIntoThatState`: MISSING_FUNCTIONALITY: the date is still lost because the category list is expanded through the mapping
-- `Seed_SaveFails_LogsAWarningAndLetsTheStartContinue`: MISSING_FUNCTIONALITY: the seeder scaffold throws instead of logging
 - `PortfolioLookingBack_FeatureWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing`: MISSING_FUNCTIONALITY: the group name still lands under Unknown
 - `TeamLookingBack_ItemWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing`: MISSING_FUNCTIONALITY: the group name still lands under Unknown
 - `DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup`: MISSING_FUNCTIONALITY: the demo journey still makes a self-transition inside the group
 - `DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself`: MISSING_FUNCTIONALITY: the demo journey still makes a self-transition inside the group
-- `ReadingAnOwnerSavedBeforeTheUpgrade_ShowsRawStatesAndTheGroupOnDisplay`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
-- `SavingAGroupInToDoAndDone_ShowsItThereToo`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
+- `ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `SavingAGroupNamedAfterOneOfItsStatesWithoutTheOthers_AddsTheOthersRightAfterIt`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
-- `SavingAGroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups`: MISSING_FUNCTIONALITY: the save is still accepted (200) where a refusal is expected
+- `SavingAGroupOverDoneStates_ShowsItInDone`: MISSING_FUNCTIONALITY: the save is still accepted (200) where a refusal is expected
+- `SavingAGroupOverToDoStates_ShowsItInToDo`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
+- `SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Multiple failures or warnings in test: | 1)   Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRe
+- `SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Multiple failures or warnings in test: | 1)   Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRe
+- `AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
+- `AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten(Sqlite)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `SavingAGroupWithAStateListedNowhere_IsAcceptedWithoutAWarning`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
-- `SavingAListWhoseEntryIsAGroupNameAndStillListsTheGroupsState_IsRefusedWithTheFix`: MISSING_FUNCTIONALITY: the save is still accepted (200) where a refusal is expected
-- `SavingAListWhoseOnlyEntryIsTheGroupName_IsRefusedInsteadOfLosingTheTrackersState`: MISSING_FUNCTIONALITY: the save is still accepted (200) where a refusal is expected
-- `SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefused`: MISSING_FUNCTIONALITY: the save is still accepted (200) where a refusal is expected
+- `SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Multiple failures or warnings in test: | 1)   Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRe
+- `SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Multiple failures or warnings in test: | 1)   Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRe
+- `SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
 - `SavingGroupStatesThatAreApart_ShowsTheGroupWhereItsFirstStateIs`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
+- `SavingListsWithNullAndBlankEntries_LeavesThemOut`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: System.NullReferenceException : Object reference not set to an instance of an object.
 - `SavingRawStatesWithAGroup_ReadsBackTheSameStatesAndTheGroupOnDisplay`: MISSING_FUNCTIONALITY: the settings payload carries no display lists yet
 - `SavingTheGroupAndTheListInOneSave_ReadsTheListAgainstTheGroupJustSent`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
+- `SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
+- `SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead`: MISSING_FUNCTIONALITY: assertion on the behaviour fires: Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("In Progress"))) | Expected and actual are bot
 - `SavingTheSameSettingsTwice_ChangesNothingTheSecondTime`: MISSING_FUNCTIONALITY: the list is stored as sent instead of normalised
-- `AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten(Sqlite)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten(Postgres)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,AlreadyRawWithNoGroup)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
 - `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,AlreadyRawGroupStatesNextToEachOther)`: MISSING_FUNCTIONALITY: the new member is still a scaffold that throws
@@ -96,17 +120,19 @@ Every pending scenario was run once with its skip marker removed (backend: SQLit
 
 ## Frontend (Vitest)
 
-- `stateMappingValidation.rawLists.test.ts` > refuses a list that still has the mapping's state next to the mapping's name, and says to rename the mapping: MISSING_FUNCTIONALITY: validation still has the old doing-clash copy and rules (no 'Rename the mapping', no chain or category rule)
-- `stateMappingValidation.rawLists.test.ts` > still refuses the name once the mapping's state has been taken out of the list by hand: MISSING_FUNCTIONALITY: validation still has the old doing-clash copy and rules (no 'Rename the mapping', no chain or category rule)
-- `stateMappingValidation.rawLists.test.ts` > holds back the autosave for a name that shadows a state: MISSING_FUNCTIONALITY: validation still has the old doing-clash copy and rules (no 'Rename the mapping', no chain or category rule)
-- `stateMappingValidation.rawLists.test.ts` > refuses a mapping that groups another mapping's name, naming both: MISSING_FUNCTIONALITY: validation still has the old doing-clash copy and rules (no 'Rename the mapping', no chain or category rule)
-- `stateMappingValidation.rawLists.test.ts` > refuses a mapping whose listed states sit in different categories: MISSING_FUNCTIONALITY: validation still has the old doing-clash copy and rules (no 'Rename the mapping', no chain or category rule)
+- `stateMappingValidation.rawLists.test.ts` > names the To Do list when the shadowing sits there: MISSING_FUNCTIONALITY: validation has no category rule, and its To Do and Done wording and rule still refuse a collapsed name
+- `stateMappingValidation.rawLists.test.ts` > names the Done list when the shadowing sits there: MISSING_FUNCTIONALITY: validation has no category rule, and its To Do and Done wording and rule still refuse a collapsed name
+- `stateMappingValidation.rawLists.test.ts` > does not refuse a name that stands alone in To Do or Done in place of its mapping's states: MISSING_FUNCTIONALITY: validation has no category rule, and its To Do and Done wording and rule still refuse a collapsed name
+- `stateMappingValidation.rawLists.test.ts` > refuses a mapping whose listed states sit in different categories, naming the two states: MISSING_FUNCTIONALITY: validation has no category rule, and its To Do and Done wording and rule still refuse a collapsed name
+- `stateMappingValidation.rawLists.test.ts` > refuses a mapping whose only state is listed in two categories: MISSING_FUNCTIONALITY: validation has no category rule, and its To Do and Done wording and rule still refuse a collapsed name
 - `stateMappingView.test.ts` > shows one group in the place of states that sit next to each other: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > puts a group where its first listed state is when its states are apart: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > treats the same state in another casing or with spaces around it as one: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > shows a group named after one of its own states once: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > leaves a list alone when none of a group's states are in it: MISSING_FUNCTIONALITY: the scaffold throws the RED message
-- `stateMappingView.test.ts` > leaves no name behind for a group that was deleted: MISSING_FUNCTIONALITY: the scaffold throws the RED message
+- `stateMappingView.test.ts` > leaves a state exactly as stored once the group that held it is deleted: MISSING_FUNCTIONALITY: the scaffold throws the RED message
+- `stateMappingView.test.ts` > leaves out entries that are empty or only whitespace: MISSING_FUNCTIONALITY: the scaffold throws the RED message
+- `stateMappingView.test.ts` > recognises states padded with tabs and non-breaking spaces as their group: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > shows the list as it is when there are no groups: MISSING_FUNCTIONALITY: the scaffold throws the RED message
 - `stateMappingView.test.ts` > tells the same names apart in every case of the shared list: MISSING_FUNCTIONALITY: the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085) disagree, or the scaffold throws
 - `stateMappingView.test.ts` > folds the names of the shared list to the same key exactly when the server does: MISSING_FUNCTIONALITY: the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085) disagree, or the scaffold throws
@@ -123,10 +149,10 @@ Every pending scenario was run once with its skip marker removed (backend: SQLit
 - `StatesList.stateMappings.test.tsx` > does not offer a state named like one of the mappings as a suggestion: MISSING_FUNCTIONALITY: StatesList ignores `stateMappings` and renders the raw states as plain chips
 - `BaseMetricsView.loading.test.tsx` > shows a lone spinner and no chart while the columns load: MISSING_FUNCTIONALITY: BaseMetricsView ignores `doingStatesStatus`; the frame reads ready
 - `BaseMetricsView.loading.test.tsx` > says it couldn't be loaded when the columns could not be fetched, and draws no empty chart: MISSING_FUNCTIONALITY: BaseMetricsView ignores `doingStatesStatus`; the frame reads ready
-- `PortfolioMetricsView.agingColumns.test.tsx` > says the columns are loading, and shows none, while the settings are on their way: MISSING_FUNCTIONALITY: the view passes no status and keeps `settings.doingStates`
+- `PortfolioMetricsView.agingColumns.test.tsx` > shows a loading frame, and no columns, while the settings are on their way: MISSING_FUNCTIONALITY: the view passes no status and keeps `settings.doingStates`
 - `PortfolioMetricsView.agingColumns.test.tsx` > says the columns could not be loaded when the settings fetch fails: MISSING_FUNCTIONALITY: the view passes no status and keeps `settings.doingStates`
 - `PortfolioMetricsView.agingColumns.test.tsx` > shows the columns as the settings display them, groups in place of their states: MISSING_FUNCTIONALITY: the view passes no status and keeps `settings.doingStates`
-- `TeamMetricsView.agingColumns.test.tsx` > says the columns are loading, and shows none, while the settings are on their way: MISSING_FUNCTIONALITY: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old team land
+- `TeamMetricsView.agingColumns.test.tsx` > shows a loading frame, and no columns, while the settings are on their way: MISSING_FUNCTIONALITY: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old team land
 - `TeamMetricsView.agingColumns.test.tsx` > says the columns could not be loaded when the settings fetch fails: MISSING_FUNCTIONALITY: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old team land
 - `TeamMetricsView.agingColumns.test.tsx` > shows the columns as the settings display them, groups in place of their states: MISSING_FUNCTIONALITY: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old team land
 - `TeamMetricsView.agingColumns.test.tsx` > does not let a late answer for the team it left replace the columns of the team it shows: MISSING_FUNCTIONALITY: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old team land

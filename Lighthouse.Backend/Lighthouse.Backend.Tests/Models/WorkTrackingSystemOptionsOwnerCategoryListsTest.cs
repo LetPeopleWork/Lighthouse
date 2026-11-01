@@ -4,9 +4,11 @@ namespace Lighthouse.Backend.Tests.Models
 {
     public class WorkTrackingSystemOptionsOwnerCategoryListsTest
     {
+        private const string Pending = "pending: category lists hold raw states";
+
         private static string[] Listed(params string[] states) => states;
 
-        private const string Pending = "pending: category lists hold raw states";
+        private static string Folded(string state) => state.Trim().ToUpperInvariant();
 
         private static Team ATeamWithReviewMapping(params string[] doing)
         {
@@ -47,6 +49,15 @@ namespace Lighthouse.Backend.Tests.Models
         public void DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce()
         {
             var team = ATeamWithReviewMapping("Analysis", "analysis ", "  CODE REVIEW", "testing ");
+
+            Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review")));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public void DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup()
+        {
+            var team = ATeamWithReviewMapping("Analysis", "\tCode Review", " Testing ");
 
             Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review")));
         }
@@ -99,29 +110,34 @@ namespace Lighthouse.Backend.Tests.Models
 
         [Test]
         [Ignore(Pending)]
-        public void DisplayStatesFor_AfterTheMappingThatGroupedAStateIsDeleted_LeavesNoGhostName()
+        public void DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored()
         {
             var team = new Team { DoingStates = ["Y", "X"] };
-            team.StateMappings.Add(new StateMapping { Name = "B", States = ["X"] });
 
-            Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Y", "B")));
+            Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Y", "X")));
         }
 
         [Test]
         [Ignore(Pending)]
-        public void DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceAtItsFirstMemberAndLosesNoState()
+        public void DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState()
         {
-            foreach (var generated in StateListCases.Generate(300))
+            foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
             {
-                var normalised = generated.Owner.NormalisedStatesFor(generated.StoredDoing);
-                generated.Owner.DoingStates = normalised;
+                generated.Owner.DoingStates = generated.Owner.NormalisedStatesFor(generated.StoredDoing);
+                var raw = generated.Owner.DoingStates;
+                string DisplayNameOf(string state) => Folded(generated.Owner.MapRawStateToMappedName(state.Trim()));
 
-                var expected = normalised
-                    .Select(generated.Owner.MapRawStateToMappedName)
-                    .DistinctBy(name => name.Trim(), StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                var shown = generated.Owner.DisplayStatesFor(StateCategories.Doing);
+                var shownKeys = shown.Select(Folded).ToList();
+                var firstPlaceInRaw = shownKeys.Select(key => raw.FindIndex(state => DisplayNameOf(state) == key)).ToList();
 
-                Assert.That(generated.Owner.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(expected), generated.ToString());
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(shownKeys, Is.Unique, $"a name shown twice. {generated}");
+                    Assert.That(shownKeys, Is.EquivalentTo(raw.Select(DisplayNameOf).Distinct()), $"a state lost or invented. {generated}");
+                    Assert.That(firstPlaceInRaw, Has.All.GreaterThanOrEqualTo(0), generated.ToString());
+                    Assert.That(firstPlaceInRaw, Is.Ordered.Ascending, $"a name not at its first state's place. {generated}");
+                }
             }
         }
 
@@ -171,6 +187,15 @@ namespace Lighthouse.Backend.Tests.Models
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
 
             Assert.That(team.CategoryOfDisplayName(name), Is.EqualTo(expected));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public void CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList()
+        {
+            var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
+
+            Assert.That(team.CategoryOfDisplayName("Review"), Is.EqualTo(StateCategories.Doing));
         }
 
         [Test]

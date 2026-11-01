@@ -448,10 +448,17 @@ Points the review gate should look at (found while writing the tests; each took 
 
 No tags appear in the code (project rule); the classification lives in this table only. State: `pending` is
 skipped with a reason that says what it waits for (`[Ignore("pending: ...")]`, `it.skip`); `green` runs today.
-Counts per case (a parameterised method counts once per case): **backend 114 cases in these classes, 10 green,
-104 pending; frontend 45 cases in these files, 10 green, 35 pending.** Error, edge, probe and property
-scenarios are 66 of the 119 methods below (55%, above the 40% target). The classification column is a
-reading of the test name, not a tag.
+Counts per case (a parameterised method counts once per case): **backend 157 cases in these classes, 26 green,
+131 pending; frontend 53 cases in these files, 17 green, 36 pending.** The table lists methods: 161 rows, 125
+pending, 36 green.
+
+**Error-path share.** Strict error paths (a refusal, an unreadable or refused write, a failed fetch, null or blank
+input, a late answer) are 33 of 161 methods: **20%**, below the 40% target. Adding the edge, regression-probe
+and property rows brings the share of non-happy-path rows to 88 of 161 (55%). The strict share is not
+reachable honestly beyond this: the feature is a data-model correction, so most of its observable behaviour is
+a successful reading of a different shape (raw lists, a group on display, a rewritten row) and the refusals it
+adds are few (shadowing, chain, categories). The error scenarios that exist were all added; none is padding.
+The classification column is a reading of the test name, not a tag.
 
 | Test file | Test | Pins | State | Classification |
 |---|---|---|---|---|
@@ -459,57 +466,87 @@ reading of the test name, not a tag.
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_MembersApart_ShowsTheGroupWhereItsFirstMemberIs | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_LaterMemberBeforeEarlierOne_ShowsTheGroupAtTheFirstListedMember | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce | owner view, split category lookup, raw reads | pending | edge |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_GroupNamedAfterOneOfItsOwnStates_ShowsTheGroupOnce | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_GroupWhoseStatesAreListedNowhere_LeavesTheListAlone | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_NoMappings_ReturnsTheListAsItIs | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly | owner view, split category lookup, raw reads | pending | happy path |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AfterTheMappingThatGroupedAStateIsDeleted_LeavesNoGhostName | owner view, split category lookup, raw reads | pending | regression probe |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceAtItsFirstMemberAndLosesNoState | owner view, split category lookup, raw reads | pending | property |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored | owner view, split category lookup, raw reads | pending | regression probe |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState | owner view, split category lookup, raw reads | pending | property |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_ReadsTheListsAsTheyAre | owner view, split category lookup, raw reads | pending | happy path |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown | owner view, split category lookup, raw reads | pending | error path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_RawStateThatSharesAMappingsName_KeepsItsOwnCategory | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor | owner view, split category lookup, raw reads | pending | happy path |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown | owner view, split category lookup, raw reads | pending | error path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList | owner view, split category lookup, raw reads | pending | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed | owner view, split category lookup, raw reads | pending | edge |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown | owner view, split category lookup, raw reads | pending | error path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_ListHoldsAStateNamedLikeAMapping_KeepsThatStateAndDoesNotAddTheMappingsStates | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | OpenStates_ListHoldsAStateNamedLikeAMapping_ReadsToDoAndDoingAsTheyAre | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_RawListWithAMappingOverIt_HoldsEveryRawStateOnce | owner view, split category lookup, raw reads | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfAGroupBesideOneOfItsStates_IsShadowing | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_StateOfTheGroupIsListedOnlyInAnotherList_IsStillACollapsedGroup | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameWrittenInOtherCasingWithSpaces_IsRecognisedAsTheGroup | normalisation: set-equivalence, idempotence, rollback | pending | edge |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfNoGroup_IsAStateOfTheTracker | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_AnyGeneratedList_NamesEveryGroupEntryTheWayItWasBuilt | normalisation: set-equivalence, idempotence, rollback | pending | property |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_GroupNamedAfterItsOwnState_ListsTheOtherStatesRightAfterIt | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
+| `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_CollapsedGroup_IsReplacedByItsStatesInPlace | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_SameStateInDifferentCasing_KeepsTheFirstSpelling | normalisation: set-equivalence, idempotence, rollback | pending | edge |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_NoMappings_ReturnsTheListWithoutRepeats | normalisation: set-equivalence, idempotence, rollback | pending | edge |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_EmptyList_StaysEmpty | normalisation: set-equivalence, idempotence, rollback | pending | edge |
+| `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_EntriesThatAreNullEmptyOrOnlyWhitespace_AreLeftOut | normalisation: set-equivalence, idempotence, rollback | pending | edge |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt | normalisation: set-equivalence, idempotence, rollback | pending | property |
 | `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime | normalisation: set-equivalence, idempotence, rollback | pending | property |
-| `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_AnyGeneratedList_NeverNamesAGroupThatIsNotOneOfItsOwnStates | normalisation: set-equivalence, idempotence, rollback | pending | property |
+| `Tests/Models/CategoryListNormalisationTest.cs` | NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates | normalisation: set-equivalence, idempotence, rollback | pending | property |
 | `Tests/Models/CategoryListNormalisationTest.cs` | AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade | normalisation: set-equivalence, idempotence, rollback | pending | edge |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingRawStatesWithAGroup_ReadsBackTheSameStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingGroupStatesThatAreApart_ShowsTheGroupWhereItsFirstStateIs | settings HTTP: write path and read model (Team and Portfolio) | pending | edge |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupInToDoAndDone_ShowsItThereToo | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupOverToDoStates_ShowsItInToDo | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupOverDoneStates_ShowsItInDone | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupNamedAfterOneOfItsStatesWithoutTheOthers_AddsTheOthersRightAfterIt | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTheGroupAndTheListInOneSave_ReadsTheListAgainstTheGroupJustSent | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTheListWithoutTheGroupThatStoodBehindAState_DoesNotBringTheGroupsOtherStatesBack | settings HTTP: write path and read model (Team and Portfolio) | green | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTheSameSettingsTwice_ChangesNothingTheSecondTime | settings HTTP: write path and read model (Team and Portfolio) | pending | edge |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAListWhoseEntryIsAGroupNameAndStillListsTheGroupsState_IsRefusedWithTheFix | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAListWhoseOnlyEntryIsTheGroupName_IsRefusedInsteadOfLosingTheTrackersState | settings HTTP: write path and read model (Team and Portfolio) | pending | regression probe |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName | settings HTTP: write path and read model (Team and Portfolio) | pending | regression probe |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupWithAStateListedNowhere_IsAcceptedWithoutAWarning | settings HTTP: write path and read model (Team and Portfolio) | pending | edge |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAnUnrelatedChange_WhileAnOlderGroupSpansCategories_StillSaves | settings HTTP: write path and read model (Team and Portfolio) | green | edge |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerSavedBeforeTheUpgrade_ShowsRawStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
-| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedNamingTheFix | validator rules over raw lists | pending | regression probe |
-| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedWhicheverListHoldsIt | validator rules over raw lists | pending | regression probe |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingListsWithNullAndBlankEntries_LeavesThemOut | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupWithABlankNameAlongsideLists_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupWithNoStatesAlongsideLists_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTwoGroupsWithTheSameName_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName | settings HTTP: write path and read model (Team and Portfolio) | green | happy path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameStandingAloneInPlaceOfItsGroupsStates_IsNotRefused | validator rules over raw lists | green | edge |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | EntryNamedLikeAGroupAndAlsoOneOfItsStates_IsNotShadowing | validator rules over raw lists | green | regression probe |
-| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence | validator rules over raw lists | pending | error path |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWithAStateListedNowhere_IsValid | validator rules over raw lists | green | edge |
-| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWhoseListedStatesSitInDifferentCategories_IsRefused | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates | validator rules over raw lists | pending | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused | validator rules over raw lists | pending | error path |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | TwoGroupsOverTheSameState_AreRefusedWithoutBlamingAListEntry | validator rules over raw lists | green | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWithABlankName_IsRefusedWhateverTheListsHold | validator rules over raw lists | green | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | GroupWithNoStates_IsRefusedWhateverTheListsHold | validator rules over raw lists | green | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | TwoGroupsWithTheSameName_AreRefusedOnce | validator rules over raw lists | green | error path |
+| `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | ListsWithNullAndBlankEntries_DoNotMakeTheValidatorThrow | validator rules over raw lists | green | error path |
 | `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt | sync order, normalisation, refinement on a group | pending | happy path |
-| `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_GroupDeletedInTheSameSave_ReadsTheListWithoutIt | sync order, normalisation, refinement on a group | pending | regression probe |
+| `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace | sync order, normalisation, refinement on a group | pending | happy path |
+| `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_GroupChangedInTheSameSave_ReadsTheListAgainstTheGroupJustSent | sync order, normalisation, refinement on a group | pending | happy path |
+| `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_GroupDeletedInTheSameSave_ReadsTheListWithoutIt | sync order, normalisation, refinement on a group | green | regression probe |
 | `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_RawStatesWithAGroup_KeepsTheListAsSent | sync order, normalisation, refinement on a group | green | happy path |
+| `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_EntriesThatAreNullOrOnlyWhitespace_AreLeftOut | sync order, normalisation, refinement on a group | pending | error path |
 | `Tests/API/Helpers/TeamListSyncRawStatesTest.cs` | SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup | sync order, normalisation, refinement on a group | pending | happy path |
 | `Tests/API/Helpers/StateMappingRuleCasesTest.cs` | TwoMappingNames_AreTheSameExactlyWhenTheSharedCasesSayTheyAre | shared fold/blank cases, backend half | green | happy path |
 | `Tests/API/Helpers/StateMappingRuleCasesTest.cs` | TwoMappingNames_DifferingOnlyInWhitespaceAtTheEnds_AreTheSame | shared fold/blank cases, backend half | pending | edge |
@@ -521,20 +558,26 @@ reading of the test name, not a tag.
 | `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkWasQueued_ToDoStateNamedLikeAGroup_IsTheLastReturnIntoThatState | connector reads lists as they are (ServiceNow) | pending | happy path |
 | `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_DoingStateNamedLikeAGroup_DatesTheStartByTheArrivalIntoThatState | connector reads lists as they are (Jira) | pending | happy path |
 | `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_DoneStateNamedLikeAGroup_DatesTheCloseByTheArrivalIntoThatState | connector reads lists as they are (Jira) | pending | happy path |
-| `Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs` | DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself | CSV demo journey over display states | pending | error path |
+| `Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs` | DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself | CSV demo journey over display states | pending | edge |
 | `Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs` | DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup | CSV demo journey over display states | pending | happy path |
 | `Tests/Architecture/CategoryListsAreReadAsTheyAreGuardTest.cs` | NoCodeExpandsACategoryList | no list expansion outside mapped-name readers (covers ADO) | pending | happy path |
+| `Tests/Architecture/CategoryListsAreReadAsTheyAreGuardTest.cs` | OnlyTheSettingsSyncAndTheSeederPutAListOnAnOwner | no list expansion outside mapped-name readers (covers ADO) | green | happy path |
 | `Tests/Architecture/CategoryListsAreReadAsTheyAreGuardTest.cs` | OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion | no list expansion outside mapped-name readers (covers ADO) | pending | happy path |
 | `Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs` | Seed_SaveFails_LogsAWarningAndLetsTheStartContinue | seeder: save failure, nothing to rewrite | pending | error path |
-| `Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs` | Seed_NothingToRewrite_SavesNothing | seeder: save failure, nothing to rewrite | pending | error path |
+| `Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs` | Seed_SaveFailsForTheFirstOwner_StillRewritesTheSecond | seeder: save failure, nothing to rewrite | pending | error path |
+| `Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs` | Seed_NothingToRewrite_SavesNothing | seeder: save failure, nothing to rewrite | pending | edge |
+| `Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs` | Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule | seeder: save failure, nothing to rewrite | pending | happy path |
 | `Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs` | EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime | seeder on SQLite and Postgres: shapes, idempotence, unreadable owner | pending | happy path |
 | `Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs` | AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten | seeder on SQLite and Postgres: shapes, idempotence, unreadable owner | pending | error path |
+| `Tests/Integration/Containers/CategoryListNormalisationSeederIsolationTests.cs` | AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten | seeder: one owner's refused write does not hold back the others (SQLite) | pending | error path |
 | `src/utils/stateMappingView.test.ts` | shows one group in the place of states that sit next to each other | frontend display view and shared rule cases | pending | happy path |
 | `src/utils/stateMappingView.test.ts` | puts a group where its first listed state is when its states are apart | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | treats the same state in another casing or with spaces around it as one | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | shows a group named after one of its own states once | frontend display view and shared rule cases | pending | happy path |
 | `src/utils/stateMappingView.test.ts` | leaves a list alone when none of a group's states are in it | frontend display view and shared rule cases | pending | happy path |
-| `src/utils/stateMappingView.test.ts` | leaves no name behind for a group that was deleted | frontend display view and shared rule cases | pending | happy path |
+| `src/utils/stateMappingView.test.ts` | leaves a state exactly as stored once the group that held it is deleted | frontend display view and shared rule cases | pending | regression probe |
+| `src/utils/stateMappingView.test.ts` | leaves out entries that are empty or only whitespace | frontend display view and shared rule cases | pending | edge |
+| `src/utils/stateMappingView.test.ts` | recognises states padded with tabs and non-breaking spaces as their group | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | shows the list as it is when there are no groups | frontend display view and shared rule cases | pending | happy path |
 | `src/utils/stateMappingView.test.ts` | tells the same names apart in plain letters | frontend display view and shared rule cases | green | edge |
 | `src/utils/stateMappingView.test.ts` | tells the same names apart in every case of the shared list | frontend display view and shared rule cases | pending | edge |
@@ -542,15 +585,21 @@ reading of the test name, not a tag.
 | `src/utils/stateMappingView.test.ts` | ignores whitespace at the ends the way the server does | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | calls a name of nothing but whitespace blank, whichever whitespace it is | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | calls an empty name and a name of ordinary spaces blank | frontend display view and shared rule cases | green | edge |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a list that still has the mapping's state next to the mapping's name, and says to rename the mapping | frontend validation mirror | pending | error path |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | still refuses the name once the mapping's state has been taken out of the list by hand | frontend validation mirror | pending | error path |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | holds back the autosave for a name that shadows a state | frontend validation mirror | pending | regression probe |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a name that shadows a state in To Do or Done as well | frontend validation mirror | pending | regression probe |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a mapping that groups another mapping's name, naming both | frontend validation mirror | pending | error path |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a mapping whose listed states sit in different categories | frontend validation mirror | pending | error path |
-| `src/utils/stateMappingValidation.rawLists.test.ts` | says nothing about a mapping state that is in none of the lists | frontend validation mirror | green | error path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a name that sits beside one of its mapping's states, with the sentence the server sends | frontend validation mirror | green | error path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | holds back the autosave for that name with the same sentence | frontend validation mirror | green | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | does not refuse a name that stands alone in place of its mapping's states | frontend validation mirror | green | edge |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | names the To Do list when the shadowing sits there | frontend validation mirror | pending | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | names the Done list when the shadowing sits there | frontend validation mirror | pending | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | does not refuse a name that stands alone in To Do or Done in place of its mapping's states | frontend validation mirror | pending | edge |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a mapping that groups another mapping's name, with the sentence the server sends | frontend validation mirror | green | error path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a mapping whose listed states sit in different categories, naming the two states | frontend validation mirror | pending | error path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | refuses a mapping whose only state is listed in two categories | frontend validation mirror | pending | error path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | says nothing about a mapping state that is in none of the lists | frontend validation mirror | green | edge |
 | `src/utils/stateMappingValidation.rawLists.test.ts` | accepts a mapping named after one of its own states | frontend validation mirror | green | happy path |
 | `src/utils/stateMappingValidation.rawLists.test.ts` | reports two mappings over the same state, whatever the Doing list holds | frontend validation mirror | green | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | reports two mappings with the same name once | frontend validation mirror | green | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | reports a mapping with no states, with the lists in view | frontend validation mirror | green | happy path |
+| `src/utils/stateMappingValidation.rawLists.test.ts` | does not stumble on blank entries in the lists | frontend validation mirror | green | error path |
 | `src/components/Common/StatesList/StatesList.stateMappings.test.tsx` | shows a mapping as one chip with a group icon where its first state is | UI1, UI2, UI4, suggestions | pending | edge |
 | `src/components/Common/StatesList/StatesList.stateMappings.test.tsx` | shows a mapping whose states are apart at the position of its first state | UI1, UI2, UI4, suggestions | pending | edge |
 | `src/components/Common/StatesList/StatesList.stateMappings.test.tsx` | names the mapping's states in a tooltip that says how to remove it | UI1, UI2, UI4, suggestions | pending | happy path |
@@ -562,12 +611,12 @@ reading of the test name, not a tag.
 | `src/components/Common/StatesList/StatesList.stateMappings.test.tsx` | shows an empty mapping list as plain states | UI1, UI2, UI4, suggestions | green | edge |
 | `src/components/Common/StatesList/StatesList.stateMappings.test.tsx` | does not offer a state named like one of the mappings as a suggestion | UI1, UI2, UI4, suggestions | pending | regression probe |
 | `src/components/Common/StateMappings/StateMappingsEditor.rawLists.test.tsx` | explains that a group is one chip in Doing and the charts, and that its states stay read from the tracker | UI3, UI6 | pending | happy path |
-| `src/components/Common/StateMappings/StateMappingsEditor.rawLists.test.tsx` | says nothing about a mapping state that is in none of the lists | UI3, UI6 | green | error path |
-| `src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx` | says the columns are loading, and shows none, while the settings are on their way | UI5 on the Team page | pending | happy path |
+| `src/components/Common/StateMappings/StateMappingsEditor.rawLists.test.tsx` | says nothing about a mapping state that is in none of the lists | UI3, UI6 | green | edge |
+| `src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx` | shows a loading frame, and no columns, while the settings are on their way | UI5 on the Team page | pending | happy path |
 | `src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx` | says the columns could not be loaded when the settings fetch fails | UI5 on the Team page | pending | error path |
 | `src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx` | shows the columns as the settings display them, groups in place of their states | UI5 on the Team page | pending | happy path |
 | `src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx` | does not let a late answer for the team it left replace the columns of the team it shows | UI5 on the Team page | pending | error path |
-| `src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx` | says the columns are loading, and shows none, while the settings are on their way | UI5 on the Portfolio page | pending | happy path |
+| `src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx` | shows a loading frame, and no columns, while the settings are on their way | UI5 on the Portfolio page | pending | happy path |
 | `src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx` | says the columns could not be loaded when the settings fetch fails | UI5 on the Portfolio page | pending | error path |
 | `src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx` | shows the columns as the settings display them, groups in place of their states | UI5 on the Portfolio page | pending | happy path |
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | shows a lone spinner and no chart while the columns load | UI5 on the aging widget frame | pending | happy path |
@@ -575,12 +624,54 @@ reading of the test name, not a tag.
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | shows the chart once the columns have arrived | UI5 on the aging widget frame | green | happy path |
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | leaves every other chart to load on its own while the columns are missing | UI5 on the aging widget frame | green | happy path |
 
-Green at hand-off (they pin what must keep holding): the sync keeps a raw list as sent; saving without the
-group that stood behind a state does not bring the group's other states back; an unrelated save succeeds while
-an older group spans categories; two groups over one state are refused; a group named after its own state is
-valid; a group with a state listed nowhere is valid and silent; the page and the server agree on plain-letter
-duplicate names and on ordinary blank names; plain-state removal and an empty mapping list in `StatesList`; the
-aging frame reads ready when the columns have arrived and leaves other charts alone.
+Green at hand-off (they pin what must keep holding): the sync keeps a raw list as sent and a group deleted in the
+same save does not bring its other states back; an unrelated save succeeds while an older group spans categories;
+two groups over one state, a blank group name, a group with no states and two groups of one name are refused
+with the existing sentences; a name standing alone in place of its group's states is not refused by the validator;
+a group named after its own state is valid; a group with a state listed nowhere is valid and silent; the
+suggestions endpoint offers the states and not the group's name; the page and the server agree on plain-letter
+duplicate names and ordinary blank names; the settings page already refuses a name beside one of its group's
+states and a chain with the server's sentences; plain-state removal, an empty mapping list, and the aging frame
+reading ready and leaving other charts alone; the source-scan guard that only the settings sync and the seeder
+put a list on an owner.
+
+**Cross-references (pinned elsewhere, not repeated).**
+
+| Symptom (RCA section 2) | Pinned by |
+|---|---|
+| S3: P3 add-mapping autosave with an empty mapping, P3b/c a name with no states or states with no name, P4 two mappings over one state | Part (b), `docs/feature/bug-6458-empty-mapping-autosave/`: `useModifySettings.autosave.test.ts` ("autosaves without the empty mapping and keeps the row in the editor"), `stateMappingValidation.test.ts`, `StateMappingValidatorTest.cs`, and the controller `*_InvalidStateMappings_ReturnsBadRequest` cases. This feature adds, on the backend with lists in view, the blank-name, no-states, duplicate-name and shared-state refusals (rows marked error path above) |
+| UI1 tooltip copy | `StatesList.stateMappings.test.tsx` > "names the mapping's states in a tooltip that says how to remove it", which asserts the tooltip text equals `State mapping: Code Review, Testing. Delete it under State Mappings to remove it.` |
+| Settings editor loading look (DESIGN "Loading and failure looks") | Existing: `ModifyTeamSettings.test.tsx` (shows `Loading...` until the settings arrive, line 298) and `useModifySettings.test.ts` > "sets loading=true then false after fetch". Not duplicated |
+| Settings editor could-not-load look | Existing: `useModifySettings.test.ts` > "handles fetch error gracefully (loading becomes false, settings stays null)". Not duplicated |
+| Failed save keeps the unsaved edit and shows the saved-failed indicator | Existing: `useModifySettings.autosave.test.ts` > "keeps the edit and offers a retry when the save fails". Not duplicated |
+| Aging widget loading / could-not-load / ready | New: the three `*.agingColumns.test.tsx` and `BaseMetricsView.loading.test.tsx` rows, with the real frame and `COULD_NOT_LOAD_MESSAGE` |
+
+**Inner loop.** Unit tests on the validator, the sync and the pure helpers (`StateListCases` properties, display
+and lookup) sit beside the code they cover, by the project's convention. The driving-port coverage is the HTTP
+fixture (Team and Portfolio through `WebApplicationFactory`), the registered seeders run through the container,
+and the Vitest component scenarios; the unit rows are the fast inner loop for the same behaviour, not a
+substitute for them.
+
+**Restore-backup and the seeder.** `DatabaseManagementService.RestoreBackup` and `ClearDatabase` both call the
+private `MigrateAndSeedDatabase`, which runs every registered `ISeeder`. The existing
+`DatabaseManagementServiceTest` (`ClearDatabase_Success_SeedsTheFreshDatabase`) pins that the generic seeding
+runs, and a restore-side verify needs the same long mock setup for no new information. The scenario that adds
+the information is `ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay`:
+it runs every registered seeder (`GetServices<ISeeder>()`, as the restore path does) over a collapsed owner, so
+it also fails until the new seeder is registered in `Program.cs`. No separate restore test was written.
+
+**Suggestions endpoint.** The RCA cited `SuggestionsController.cs:70-72` and `:87-89`; they return the stored lists
+unchanged, so the controller needs no change once the lists are raw. The design's component row ("stops
+returning mapping names") is therefore moot; DELIVER should drop it. The scenario
+`SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName` pins the outcome (green).
+
+**Source-scan guard.** The call-shape regex stays narrow on purpose: it catches an inline
+`GetRawStatesForCategory(x.DoingStates)`. A call through a variable or a parameter (the ServiceNow mapper passes
+the list down) is caught by the second guard test, which allows only the files that read settings naming a
+group, whatever the call shape. A third test pins D11 (only `TeamExtensions`, `PortfolioExtensions` and the
+seeder assign or mutate an owner's three lists); it is green today and constrains the seeder when it lands.
+Initialisers (`DemoDataFactory`, board mappers) are out of its reach by design: they create lists with no
+mappings.
 
 ## Wave: DISTILL / [REF] Walking skeleton
 
@@ -614,7 +705,7 @@ the widget status. A mapping spec would only repeat what the Vitest and NUnit sc
 |---|---|
 | Team settings PUT and GET (`v1` and `latest` share the controller) | HTTP fixture, owner kind Team |
 | Portfolio settings PUT and GET | the same fixture, owner kind Portfolio |
-| Suggestions endpoint | no new scenario: it returns the stored lists, which are raw once the write path and the seeder have run; the frontend scenario "does not offer a state named like a mapping" covers what the editor offers |
+| Suggestions endpoint | `SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName` (Team and Portfolio route); the controller itself is unchanged, see "Suggestions endpoint" under the inventory |
 | Metrics endpoints | no HTTP scenario: the shape is unchanged; the as-of lookup and the column order are pinned at the service, the page and the widget frame |
 | Settings editor, States list, metrics pages | Vitest scenarios (UI1-UI6) |
 
@@ -624,7 +715,7 @@ Every stub compiles into the solution with zero warnings; production behaviour i
 
 | Where | Scaffold | Marker |
 |---|---|---|
-| `Models/WorkTrackingSystemOptionsOwner.cs` | `DisplayStatesFor(StateCategories)`, `CategoryOfRawState(string)`, `CategoryOfDisplayName(string)`, `NormalisedStatesFor(IReadOnlyList<string>)`: throw `InvalidOperationException("Not yet implemented -- RED scaffold ...")` | `// SCAFFOLD: true` |
+| `Models/WorkTrackingSystemOptionsOwner.cs` | `DisplayStatesFor(StateCategories)`, `CategoryOfRawState(string)`, `CategoryOfDisplayName(string)`, `NormalisedStatesFor(IReadOnlyList<string>)`, `ClassifyListEntry(IReadOnlyList<string>, string)` (returns the new `ListEntryKind`: `NotAGroupName`, `StateOfItsOwnMapping`, `CollapsedGroup`, `Shadowing`): throw `InvalidOperationException("Not yet implemented -- RED scaffold ...")` | `// SCAFFOLD: true` |
 | `Services/Implementation/Seeding/CategoryListNormalisationSeeder.cs` | class implementing `ISeeder`, constructor `(IRepository<Team>, IRepository<Portfolio>, ILogger<...>)`, `Seed()` throws. **Not registered in `Program.cs`** (DELIVER slice 3) | `// SCAFFOLD: true` |
 | `API/DTO/SettingsOwnerDtoBase.cs` | `ToDoDisplayStates`, `DoingDisplayStates`, `DoneDisplayStates`: get-only, `[JsonIgnore]`, empty. They do **not** throw: a throwing getter would break every existing settings serialisation, and a public setter fails the existing round-trip guard (`SettingsOwnerDtoRoundTripTest`) | `// SCAFFOLD: true` |
 | `Lighthouse.Frontend/src/utils/stateMappingView.ts` | new module: `foldKey`, `isBlankName`, `displayStatesFor` throw `Error("Not yet implemented -- RED scaffold ...")` | `export const __SCAFFOLD__ = true` |
@@ -633,11 +724,18 @@ Every stub compiles into the solution with zero warnings; production behaviour i
 | `pages/Common/MetricsView/BaseMetricsView.tsx` | optional prop `doingStatesStatus` (not read yet) | doc comment `SCAFFOLD: true` |
 
 `grep -rn "SCAFFOLD: true\|__SCAFFOLD__" Lighthouse.Backend Lighthouse.Frontend/src` finds all of them. After DELIVER
-none should remain. The pinned copy fragments DELIVER must produce: `Rename the mapping` (shadowing, in the 400 body and
-the page error), `another mapping` (chain), the exact UI1 tooltip, the exact UI3 help text. Pinned test hooks:
-`data-testid="state-mapping-chip"` on a mapping chip and `data-testid="state-mapping-chip-icon"` on its group icon;
-the seeder's summary line carries the named values `Scanned`, `Rewritten`, `LegacyExpanded`, `Skipped`, and its
-Warning for a skipped owner carries the owner id.
+none should remain. The pinned copy is the sentences the settings page already shows (shipped with Bug 6454),
+which the server now sends too, with the list label varying (`To Do`, `Doing`, `Done`):
+`Mapping "{name}" has the same name as the {list label} state "{state}". Add "{name}" to this mapping to group it, or choose another name.`
+for a name beside one of its group's states, and
+`Mapping "{name}" has the same name as a state grouped by mapping "{other}". Choose another name.` for a chain.
+The earlier "Rename the mapping" and "another mapping" fragments were never approved and are gone. **Proposed copy,
+awaiting approval:** the category sentence, `Mapping "Review" groups states from different categories: "Code Review" is
+in To Do and "Testing" is in Doing. Keep a mapping's states in one category.`, pinned exactly on both stacks; the
+design gave no wording for it. Also pinned: the exact UI1 tooltip and UI3 help text, `data-testid="state-mapping-chip"` on
+a mapping chip and `data-testid="state-mapping-chip-icon"` on its group icon; the seeder's summary line carries the
+named values `Scanned`, `Rewritten`, `LegacyExpanded`, `Skipped`; every seeder line carries only `OwnerType`,
+`OwnerId`, the counts and a fixed `Rule` (`Shadowing`, `Chained`, `Unreadable`, `SaveFailed`) and no exception text.
 
 Shared data: `Lighthouse.Frontend/src/utils/stateMappingRuleCases.json` is read by the backend test
 (`StateMappingRuleCasesTest`, through the repository root) and by the frontend test, like the other source-text
@@ -681,7 +779,7 @@ green, and leaves the old behaviour correct for the data still in the database.
 
 | # | Slice | Turns on | Why it is safe alone |
 |---|---|---|---|
-| 1 | **Domain view and the as-of fix.** `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName`, `NormalisedStatesFor`; the two as-of sites use `CategoryOfDisplayName` | owner view/lookup tests, normalisation and rollback property tests, `MetricsAsOfGroupNameTest` | adds members and changes only the as-of lookup (a bug fix: `Unknown` becomes the right category); no list is read differently |
+| 1 | **Domain view and the as-of fix.** `DisplayStatesFor`, `CategoryOfRawState`, `CategoryOfDisplayName`, `NormalisedStatesFor`, `ClassifyListEntry` (D10); the two as-of sites use `CategoryOfDisplayName` | owner view/lookup tests, normalisation and rollback property tests, `MetricsAsOfGroupNameTest` | adds members and changes only the as-of lookup (a bug fix: `Unknown` becomes the right category); no list is read differently |
 | 2 | **Write path, validation, DTO, refinement.** mappings synced before lists, normalised lists, shadowing/chain/category rules, three display lists on the DTO (drop the `JsonIgnore`, update the approved payload), `SyncRefinement` candidates from display states | HTTP fixture, validator, sync, shared-case backend half | new saves store raw states; reads still expand, which the equivalence property proves gives the same set |
 | 3 | **Seeder.** the rewrite, `Program.cs` registration (this makes CI run the full Integration suite), logging contract | seeder cases on both providers, seeder unit cases | idempotent, skip-and-log; stored data becomes raw |
 | 4 | **Read switch.** `AllStates`/`OpenStates`/lookup as-is, ADO/Jira/ServiceNow sites, CSV demo journey, metrics columns from display states, architecture guard; run the live `AdoIntegration` category once | owner raw-read tests, connector tests, CSV, guard | only after 3; resolve review point 1 first |
@@ -707,3 +805,27 @@ two assign the three lists) lands with slice 2 and covers the seeder when slice 
 
 Mutation testing runs last on frozen code (seeder, `DisplayStatesFor`, the lookups, the classifier, the validator, the frontend
 mirror), as DEVOPS already says. DELIVER starts by agreeing the rigor profile.
+
+## Wave: DISTILL / [REF] Revision round 1
+
+Review-gate findings, answered. D10 and D11 are reflected in the tests: a list entry that equals a mapping's name
+is classified once on the owner (`ClassifyListEntry`), a collapsed chip is normalised and never refused (HTTP, sync,
+seeder), and only shadowing is a 400. The generator now covers padded, tabbed and non-breaking-space states,
+other casing on names and states, collapsed chips and shadowing; the equivalence, idempotence and rollback
+properties skip shadowing (the legacy expansion loses a state there by design), and the classifier has its own
+property over every generated entry. The display property asserts invariants (each name once, in the order of its
+first state, every state covered) instead of recomputing the grouping.
+
+Decisions taken in the tests that the design did not state (for the next review):
+
+1. Null, empty and whitespace-only list entries are dropped by the normaliser and the sync, never an error or a
+   crash. Today a null entry crashes the save (`NullReferenceException`), which is the failure the tests show.
+2. The category sentence is proposed copy (see "Scaffolds").
+3. A group whose only state is listed in two categories is refused with the same category sentence naming the
+   state twice.
+4. The seeder's per-owner isolation is pinned two ways: mocked repositories (one `Save` per rewritten owner, the
+   second owner still rewritten) and a real SQLite database where a trigger refuses one owner's update (the
+   others are written, one skipped). Postgres is not repeated: what is tested is how the shared context is used.
+5. The frontend still has no scenario for the could-not-load text of the settings editor itself; the existing
+   hook test pins the state, not the words, and the design reuses the existing screen.
+

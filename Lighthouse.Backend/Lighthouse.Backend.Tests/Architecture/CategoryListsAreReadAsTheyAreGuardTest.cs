@@ -25,8 +25,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Services/Implementation/PortfolioMetricsService.cs",
         ];
 
+        // Only the sync of a settings save and the start-up seeder put a list on an owner: both run the owner's
+        // classifier first, and a third writer would skip it.
+        private static readonly string[] FilesThatWriteTheCategoryLists =
+        [
+            "API/Helpers/TeamExtensions.cs",
+            "API/Helpers/PortfolioExtensions.cs",
+            "Services/Implementation/Seeding/CategoryListNormalisationSeeder.cs",
+        ];
+
+        // Catches a call with the list inline. A call through a variable or a parameter (the ServiceNow mapper
+        // passes one down) is caught by the second test, which allows only the files that read settings naming a group.
         [GeneratedRegex(@"GetRawStatesForCategory\(\s*[\w.]*\b(ToDoStates|DoingStates|DoneStates)\b", RegexOptions.CultureInvariant)]
         private static partial Regex ExpandsACategoryList();
+
+        [GeneratedRegex(@"\b(?:team|project|portfolio|owner|workItemQueryOwner|workTrackingSystemOptionsOwner)\.(?:ToDoStates|DoingStates|DoneStates)\s*(?:=(?!=)|\.(?:Add|AddRange|Clear|Remove|RemoveAll|Insert)\()", RegexOptions.CultureInvariant)]
+        private static partial Regex PutsAListOnAnOwner();
 
         private static string FindRepositoryRoot()
         {
@@ -57,6 +71,18 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
 
             Assert.That(offenders, Is.Empty, "These files still expand the To Do, Doing or Done list through a mapping.");
+        }
+
+        [Test]
+        public void OnlyTheSettingsSyncAndTheSeederPutAListOnAnOwner()
+        {
+            var root = Path.Combine(FindRepositoryRoot(), ProductionProject.Replace('/', Path.DirectorySeparatorChar));
+            var writers = ProductionSources()
+                .Where(file => PutsAListOnAnOwner().IsMatch(File.ReadAllText(file)))
+                .Select(file => Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/'))
+                .ToList();
+
+            Assert.That(writers.Except(FilesThatWriteTheCategoryLists), Is.Empty, "These files put a To Do, Doing or Done list on an owner without the classifier.");
         }
 
         [Test]

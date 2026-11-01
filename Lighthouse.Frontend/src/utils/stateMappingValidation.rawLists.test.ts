@@ -12,61 +12,94 @@ const lists = (doing: string[], toDo = ["Backlog"], done = ["Done"]) => ({
 	doneStates: done,
 });
 
+const SHADOWS_A_DOING_STATE =
+	'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.';
+
 describe("validateStateMappings over lists of raw states", () => {
-	it.skip("refuses a list that still has the mapping's state next to the mapping's name, and says to rename the mapping", () => {
-		const errors = validateStateMappings(
-			[inArbeit],
-			lists(["In Arbeit", "In Progress"]),
-		);
-
-		expect(errors).toEqual([expect.stringContaining("Rename the mapping")]);
-		expect(errors[0]).toContain("In Arbeit");
-	});
-
-	it.skip("still refuses the name once the mapping's state has been taken out of the list by hand", () => {
-		const errors = validateStateMappings([inArbeit], lists(["In Arbeit"]));
-
-		expect(errors).toEqual([expect.stringContaining("Rename the mapping")]);
-	});
-
-	it.skip("holds back the autosave for a name that shadows a state", () => {
+	it("refuses a name that sits beside one of its mapping's states, with the sentence the server sends", () => {
 		expect(
-			mappingAutoSaveBlockers([inArbeit], lists(["In Arbeit"])),
-		).not.toEqual([]);
+			validateStateMappings([inArbeit], lists(["In Arbeit", "In Progress"])),
+		).toEqual([SHADOWS_A_DOING_STATE]);
 	});
 
-	it.skip("refuses a name that shadows a state in To Do or Done as well", () => {
+	it("holds back the autosave for that name with the same sentence", () => {
+		expect(
+			mappingAutoSaveBlockers([inArbeit], lists(["In Arbeit", "In Progress"])),
+		).toEqual([SHADOWS_A_DOING_STATE]);
+	});
+
+	it("does not refuse a name that stands alone in place of its mapping's states", () => {
+		expect(validateStateMappings([inArbeit], lists(["In Arbeit"]))).toEqual([]);
+	});
+
+	it.skip("names the To Do list when the shadowing sits there", () => {
+		expect(
+			validateStateMappings(
+				[inArbeit],
+				lists(["Active"], ["In Arbeit", "In Progress"]),
+			),
+		).toEqual([
+			'Mapping "In Arbeit" has the same name as the To Do state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+		]);
+	});
+
+	it.skip("names the Done list when the shadowing sits there", () => {
+		expect(
+			validateStateMappings(
+				[inArbeit],
+				lists(["Active"], ["Backlog"], ["In Arbeit", "In Progress"]),
+			),
+		).toEqual([
+			'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+		]);
+	});
+
+	it.skip("does not refuse a name that stands alone in To Do or Done in place of its mapping's states", () => {
 		expect(
 			validateStateMappings([inArbeit], lists(["Active"], ["In Arbeit"])),
-		).not.toEqual([]);
+		).toEqual([]);
 		expect(
 			validateStateMappings(
 				[inArbeit],
 				lists(["Active"], ["Backlog"], ["In Arbeit"]),
 			),
-		).not.toEqual([]);
+		).toEqual([]);
 	});
 
-	it.skip("refuses a mapping that groups another mapping's name, naming both", () => {
-		const errors = validateStateMappings(
-			[
-				{ name: "A", states: ["X"] },
-				{ name: "B", states: ["A"] },
-			],
-			lists(["X"]),
-		);
-
-		expect(errors).toEqual([expect.stringMatching(/"A".*"B"|"B".*"A"/)]);
-		expect(errors[0]).toContain("another mapping");
+	it("refuses a mapping that groups another mapping's name, with the sentence the server sends", () => {
+		expect(
+			validateStateMappings(
+				[
+					{ name: "A", states: ["X"] },
+					{ name: "B", states: ["A"] },
+				],
+				lists(["X"]),
+			),
+		).toEqual([
+			'Mapping "A" has the same name as a state grouped by mapping "B". Choose another name.',
+		]);
 	});
 
-	it.skip("refuses a mapping whose listed states sit in different categories", () => {
+	it.skip("refuses a mapping whose listed states sit in different categories, naming the two states", () => {
 		expect(
 			validateStateMappings(
 				[{ name: "Review", states: ["Code Review", "Testing"] }],
 				lists(["Testing"], ["Backlog", "Code Review"]),
 			),
-		).not.toEqual([]);
+		).toEqual([
+			'Mapping "Review" groups states from different categories: "Code Review" is in To Do and "Testing" is in Doing. Keep a mapping\'s states in one category.',
+		]);
+	});
+
+	it.skip("refuses a mapping whose only state is listed in two categories", () => {
+		expect(
+			validateStateMappings(
+				[{ name: "Review", states: ["Testing"] }],
+				lists(["Active"], ["Testing"], ["Testing"]),
+			),
+		).toEqual([
+			'Mapping "Review" groups states from different categories: "Testing" is in To Do and "Testing" is in Done. Keep a mapping\'s states in one category.',
+		]);
 	});
 
 	it("says nothing about a mapping state that is in none of the lists", () => {
@@ -88,14 +121,44 @@ describe("validateStateMappings over lists of raw states", () => {
 	});
 
 	it("reports two mappings over the same state, whatever the Doing list holds", () => {
-		const errors = validateStateMappings(
-			[
-				{ name: "A", states: ["X"] },
-				{ name: "B", states: ["X"] },
-			],
-			lists(["Y", "X"]),
-		);
+		expect(
+			validateStateMappings(
+				[
+					{ name: "A", states: ["X"] },
+					{ name: "B", states: ["X"] },
+				],
+				lists(["Y", "X"]),
+			),
+		).toEqual(['Source state "X" is used in multiple mappings.']);
+	});
 
-		expect(errors).toEqual([expect.stringContaining("multiple mappings")]);
+	it("reports two mappings with the same name once", () => {
+		expect(
+			validateStateMappings(
+				[
+					{ name: "Review", states: ["Code Review"] },
+					{ name: "review", states: ["Testing"] },
+				],
+				lists(["Code Review", "Testing"]),
+			),
+		).toEqual(['Duplicate mapping name: "review".']);
+	});
+
+	it("reports a mapping with no states, with the lists in view", () => {
+		expect(
+			validateStateMappings(
+				[{ name: "Review", states: [] }],
+				lists(["Code Review"]),
+			),
+		).toEqual(['Mapping "Review" has no source states.']);
+	});
+
+	it("does not stumble on blank entries in the lists", () => {
+		expect(() =>
+			validateStateMappings(
+				[{ name: "Review", states: ["Code Review"] }],
+				lists(["", "  ", "Code Review"], ["Backlog", ""], ["Done", "\t"]),
+			),
+		).not.toThrow();
 	});
 });

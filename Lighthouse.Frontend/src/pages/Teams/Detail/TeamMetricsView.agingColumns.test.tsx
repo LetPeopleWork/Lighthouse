@@ -8,24 +8,30 @@ import {
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
+import { COULD_NOT_LOAD_MESSAGE } from "../../Common/MetricsView/WidgetShell";
 import TeamMetricsView from "./TeamMetricsView";
 
 interface BaseMetricsViewProps {
 	doingStates: string[];
-	doingStatesStatus?: string;
+	doingStatesStatus?: "loading" | "error" | "ready";
 }
 
-vi.mock("../../Common/MetricsView/BaseMetricsView", () => ({
-	BaseMetricsView: ({
-		doingStates,
-		doingStatesStatus,
-	}: BaseMetricsViewProps) => (
-		<div>
-			<div data-testid="doing-columns">{doingStates.join("|")}</div>
-			<div data-testid="doing-columns-status">{doingStatesStatus}</div>
-		</div>
-	),
-}));
+// The aging widget's frame is the real one, so the words on screen are the words a reader sees.
+vi.mock("../../Common/MetricsView/BaseMetricsView", async () => {
+	const { default: WidgetShell } = await import(
+		"../../Common/MetricsView/WidgetShell"
+	);
+	return {
+		BaseMetricsView: ({
+			doingStates,
+			doingStatesStatus,
+		}: BaseMetricsViewProps) => (
+			<WidgetShell widgetKey="aging" status={doingStatesStatus}>
+				<div data-testid="doing-columns">{doingStates.join("|")}</div>
+			</WidgetShell>
+		),
+	};
+});
 
 const teamNamed = (id: number) => {
 	const team = new Team();
@@ -39,6 +45,9 @@ const settingsWith = (doing: string[], display: string[]) => ({
 	doingStates: doing,
 	doingDisplayStates: display,
 });
+
+const statusOfTheFrame = () =>
+	screen.getByTestId("widget-shell-aging").dataset.widgetStatus;
 
 describe("TeamMetricsView aging columns", () => {
 	const teamMetricsService = createMockTeamMetricsService();
@@ -61,14 +70,12 @@ describe("TeamMetricsView aging columns", () => {
 		);
 	};
 
-	it.skip("says the columns are loading, and shows none, while the settings are on their way", () => {
+	it.skip("shows a loading frame, and no columns, while the settings are on their way", () => {
 		getTeamSettings.mockReturnValue(new Promise(() => {}));
 
 		render(view(teamNamed(1)));
 
-		expect(screen.getByTestId("doing-columns-status")).toHaveTextContent(
-			"loading",
-		);
+		expect(statusOfTheFrame()).toBe("loading");
 		expect(screen.getByTestId("doing-columns")).toBeEmptyDOMElement();
 	});
 
@@ -77,12 +84,8 @@ describe("TeamMetricsView aging columns", () => {
 
 		render(view(teamNamed(1)));
 
-		await waitFor(() =>
-			expect(screen.getByTestId("doing-columns-status")).toHaveTextContent(
-				"error",
-			),
-		);
-		expect(screen.getByTestId("doing-columns")).toBeEmptyDOMElement();
+		await waitFor(() => expect(statusOfTheFrame()).toBe("error"));
+		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeVisible();
 	});
 
 	it.skip("shows the columns as the settings display them, groups in place of their states", async () => {
@@ -95,11 +98,7 @@ describe("TeamMetricsView aging columns", () => {
 
 		render(view(teamNamed(1)));
 
-		await waitFor(() =>
-			expect(screen.getByTestId("doing-columns-status")).toHaveTextContent(
-				"ready",
-			),
-		);
+		await waitFor(() => expect(statusOfTheFrame()).toBe("ready"));
 		expect(screen.getByTestId("doing-columns")).toHaveTextContent(
 			"Analysis|Review",
 		);

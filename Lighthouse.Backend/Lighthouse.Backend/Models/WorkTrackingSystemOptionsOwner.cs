@@ -225,6 +225,11 @@ namespace Lighthouse.Backend.Models
         public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)
             => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {storedList.Count})");
 
+        // SCAFFOLD: true
+        /// <summary>The one place that decides what a list entry that equals a mapping's name is.</summary>
+        public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
+            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {list.Count}, {entry})");
+
         public List<string> GetRawStatesForCategory(List<string> categoryStates)
         {
             var rawStates = new List<string>();

@@ -5,6 +5,7 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,8 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture(OwnerKind.Portfolio)]
     public class CategoryListsHoldRawStatesSettingsIntegrationTest(OwnerKind kind)
     {
-        private static string[] Listed(params string[] states) => states;
-
         private const string Pending = "pending: category lists hold raw states";
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
@@ -31,6 +30,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private HttpClient client = null!;
         private int ownerId;
         private int connectionId;
+
+        private static string[] Listed(params string[] states) => states;
 
         [SetUp]
         public void Init()
@@ -93,11 +94,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             SeedOwner();
 
-            await Save(Settings(doing: ["Code Review", "Analysis", "Testing", "Waiting"], mappings: [Review()]));
+            var saved = await Save(Settings(doing: ["Code Review", "Analysis", "Testing", "Waiting"], mappings: [Review()]));
             var settings = await ReadSettings();
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
                 Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Code Review", "Analysis", "Testing", "Waiting")));
                 Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Review", "Analysis", "Waiting")));
             }
@@ -105,21 +107,33 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         [Test]
         [Ignore(Pending)]
-        public async Task SavingAGroupInToDoAndDone_ShowsItThereToo()
+        public async Task SavingAGroupOverToDoStates_ShowsItInToDo()
         {
             SeedOwner();
 
-            await Save(Settings(
-                toDo: ["Intake", "Spec", "Estimate"],
-                doing: ["Analysis"],
-                done: ["Estimate", "Released"],
-                mappings: [new StateMappingDto { Name = "Prep", States = ["Spec", "Estimate"] }]));
+            var saved = await Save(Settings(toDo: ["Intake", "Spec", "Estimate"], doing: ["Analysis"], mappings: [new StateMappingDto { Name = "Prep", States = ["Spec", "Estimate"] }]));
             var settings = await ReadSettings();
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
                 Assert.That(Strings(settings, "toDoDisplayStates"), Is.EqualTo(Listed("Intake", "Prep")));
-                Assert.That(Strings(settings, "doneDisplayStates"), Is.EqualTo(Listed("Prep", "Released")));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SavingAGroupOverDoneStates_ShowsItInDone()
+        {
+            SeedOwner();
+
+            var saved = await Save(Settings(done: ["Released", "Shipped", "Archived"], mappings: [new StateMappingDto { Name = "Finished", States = ["Shipped", "Archived"] }]));
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(Strings(settings, "doneDisplayStates"), Is.EqualTo(Listed("Released", "Finished")));
             }
         }
 
@@ -136,6 +150,57 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Active", "Resolved", "Blocked")));
                 Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Active", "Blocked")));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace()
+        {
+            SeedOwner();
+
+            var saved = await Save(Settings(doing: ["Analysis", "Review", "Waiting"], mappings: [Review()]));
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
+                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead()
+        {
+            SeedOwner();
+
+            var saved = await Save(Settings(doing: ["In Arbeit"], mappings: [new StateMappingDto { Name = "In Arbeit", States = ["In Progress"] }]));
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("In Progress")));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
+            var asStored = await ReadSettings();
+
+            var saved = await Save(Settings(doing: Strings(asStored, "doingStates"), mappings: [Review()]));
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Strings(asStored, "doingStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")), "The stored list is the collapsed one.");
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
             }
         }
 
@@ -192,34 +257,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         [Test]
         [Ignore(Pending)]
-        public async Task SavingAListWhoseEntryIsAGroupNameAndStillListsTheGroupsState_IsRefusedWithTheFix()
+        public async Task SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows()
         {
             SeedOwner();
 
             var response = await Save(Settings(doing: ["In Arbeit", "In Progress"], mappings: [new StateMappingDto { Name = "In Arbeit", States = ["In Progress"] }]));
 
-            var body = await response.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
-                Assert.That(body, Does.Contain("In Arbeit"));
-                Assert.That(body, Does.Contain("Rename the mapping"));
-            }
-        }
-
-        [Test]
-        [Ignore(Pending)]
-        public async Task SavingAListWhoseOnlyEntryIsTheGroupName_IsRefusedInsteadOfLosingTheTrackersState()
-        {
-            SeedOwner();
-
-            var response = await Save(Settings(doing: ["In Arbeit"], mappings: [new StateMappingDto { Name = "In Arbeit", States = ["In Progress"] }]));
-
-            var body = await response.Content.ReadAsStringAsync();
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
-                Assert.That(body, Does.Contain("Rename the mapping"));
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(
+                    await Errors(response),
+                    Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
             }
         }
 
@@ -227,22 +276,22 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Ignore(Pending)]
         public async Task SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName()
         {
-            SeedOwner();
+            SeedOwner(mappings: [new StateMappingDto { Name = "A", States = ["X"] }], doing: ["Y", "X"]);
 
-            var response = await Save(Settings(doing: ["Y", "X"], mappings: [new StateMappingDto { Name = "B", States = ["X"] }]));
+            var saved = await Save(Settings(doing: ["Y", "X"], mappings: []));
             var settings = await ReadSettings();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+                Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
                 Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Y", "X")));
-                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Y", "B")));
+                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Y", "X")));
             }
         }
 
         [Test]
         [Ignore(Pending)]
-        public async Task SavingAGroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups()
+        public async Task SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence()
         {
             SeedOwner();
 
@@ -250,13 +299,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 doing: ["X", "Analysis"],
                 mappings: [new StateMappingDto { Name = "A", States = ["X"] }, new StateMappingDto { Name = "B", States = ["A"] }]));
 
-            var body = await response.Content.ReadAsStringAsync();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), body);
-                Assert.That(body, Does.Contain("\"A\"").Or.Contain("'A'"));
-                Assert.That(body, Does.Contain("\"B\"").Or.Contain("'B'"));
-                Assert.That(body, Does.Contain("another mapping"));
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(await Errors(response), Has.Some.EqualTo("Mapping \"A\" has the same name as a state grouped by mapping \"B\". Choose another name."));
             }
         }
 
@@ -280,13 +326,34 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         [Test]
         [Ignore(Pending)]
-        public async Task SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefused()
+        public async Task SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates()
         {
             SeedOwner();
 
             var response = await Save(Settings(toDo: ["Code Review"], doing: ["Testing"], mappings: [Review()]));
 
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(
+                    await Errors(response),
+                    Has.Some.EqualTo("Mapping \"Review\" groups states from different categories: \"Code Review\" is in To Do and \"Testing\" is in Doing. Keep a mapping's states in one category."));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(toDo: ["Testing"], done: ["Testing"], mappings: [new StateMappingDto { Name = "Review", States = ["Testing"] }]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(await Errors(response), Has.Some.Contains("groups states from different categories"));
+            }
         }
 
         [Test]
@@ -301,16 +368,104 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         [Test]
         [Ignore(Pending)]
-        public async Task ReadingAnOwnerSavedBeforeTheUpgrade_ShowsRawStatesAndTheGroupOnDisplay()
+        public async Task SavingListsWithNullAndBlankEntries_LeavesThemOut()
         {
-            SeedOwner(mappings: [Review()], doing: ["Analysis", "Code Review", "Testing"]);
+            SeedOwner();
 
+            var response = await Save(Settings(toDo: ["Backlog", " "], doing: ["Analysis", null!, "\t", "Testing"]));
             var settings = await ReadSettings();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
-                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review")));
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Testing")));
+                Assert.That(Strings(settings, "toDoStates"), Is.EqualTo(Listed("Backlog")));
+            }
+        }
+
+        [Test]
+        public async Task SavingAGroupWithABlankNameAlongsideLists_IsRefused()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(doing: ["Code Review"], mappings: [new StateMappingDto { Name = " ", States = ["Code Review"] }]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(await Errors(response), Has.Some.EqualTo("A state mapping name is required."));
+            }
+        }
+
+        [Test]
+        public async Task SavingAGroupWithNoStatesAlongsideLists_IsRefused()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(doing: ["Code Review"], mappings: [new StateMappingDto { Name = "Review", States = [] }]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(await Errors(response), Has.Some.EqualTo("State mapping 'Review' must contain at least one state."));
+            }
+        }
+
+        [Test]
+        public async Task SavingTwoGroupsWithTheSameName_IsRefused()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(
+                doing: ["Code Review", "Testing"],
+                mappings: [new StateMappingDto { Name = "Review", States = ["Code Review"] }, new StateMappingDto { Name = "review", States = ["Testing"] }]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(await Errors(response), Has.Some.EqualTo("Duplicate state mapping name 'Review'."));
+            }
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
+
+            await RunEveryRegisteredSeeder();
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
+                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
+        }
+
+        [Test]
+        public async Task SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Analysis", "Code Review", "Testing"]);
+
+            client.AsSystemAdmin();
+            var response = await client.GetAsync($"/api/latest/suggestions/states/{(kind == OwnerKind.Team ? "teams" : "projects")}");
+            var body = await response.Content.ReadAsStringAsync();
+            var doing = Strings(JsonDocument.Parse(body).RootElement, "doingStates");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(doing, Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
+            }
+        }
+
+        private async Task RunEveryRegisteredSeeder()
+        {
+            using var scope = factory.Services.CreateScope();
+            foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
+            {
+                await seeder.Seed();
             }
         }
 
@@ -370,6 +525,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             Assert.That(settings.TryGetProperty(property, out var list), Is.True, $"The settings carry no {property}: {settings}");
             return [.. list.EnumerateArray().Select(item => item.GetString()!)];
+        }
+
+        // A refusal comes back as a JSON array of sentences.
+        private static async Task<List<string>> Errors(HttpResponseMessage response)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<List<string>>(body) ?? [];
         }
 
         private void SeedOwner(StateMappingDto[]? mappings = null, string[]? toDo = null, string[]? doing = null)

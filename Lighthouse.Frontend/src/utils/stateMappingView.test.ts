@@ -85,10 +85,20 @@ describe("displayStatesFor", () => {
 		]);
 	});
 
-	it.skip("leaves no name behind for a group that was deleted", () => {
+	it.skip("leaves a state exactly as stored once the group that held it is deleted", () => {
+		expect(displayStatesFor(["Y", "X"], [])).toEqual(["Y", "X"]);
+	});
+
+	it.skip("leaves out entries that are empty or only whitespace", () => {
 		expect(
-			displayStatesFor(["Y", "X"], [{ name: "B", states: ["X"] }]),
-		).toEqual(["Y", "B"]);
+			displayStatesFor(["Analysis", "", "  ", "\t", "Code Review"], [review]),
+		).toEqual(["Analysis", "Review"]);
+	});
+
+	it.skip("recognises states padded with tabs and non-breaking spaces as their group", () => {
+		expect(
+			displayStatesFor(["Analysis", "\tCode Review", " Testing "], [review]),
+		).toEqual(["Analysis", "Review"]);
 	});
 
 	it.skip("shows the list as it is when there are no groups", () => {

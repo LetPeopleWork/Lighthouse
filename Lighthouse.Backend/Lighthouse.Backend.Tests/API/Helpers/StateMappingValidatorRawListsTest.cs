@@ -7,6 +7,10 @@ namespace Lighthouse.Backend.Tests.API.Helpers
     {
         private const string Pending = "pending: category lists hold raw states";
 
+        // The copy the settings page already shows for a name that shadows a state.
+        private const string InArbeitShadowsADoingState =
+            "Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name.";
+
         private static TeamSettingDto Settings(string[] toDo, string[] doing, string[] done, params StateMappingDto[] mappings)
             => new()
             {
@@ -20,27 +24,41 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         [Test]
         [Ignore(Pending)]
-        public void EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedNamingTheFix()
+        public void NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows()
         {
             var settings = Settings(["Backlog"], ["In Arbeit", "In Progress"], ["Done"], Mapping("In Arbeit", "In Progress"));
 
-            var result = StateMappingValidator.ValidateSettings(settings);
-
-            Assert.That(result.Errors, Has.Some.Contains("In Arbeit").And.Contains("Rename the mapping"));
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo(InArbeitShadowsADoingState));
         }
 
         [Test]
         [Ignore(Pending)]
-        public void EntryNamedLikeAGroupThatIsNotOneOfItsStates_IsRefusedWhicheverListHoldsIt()
+        public void NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList()
         {
-            var inToDo = Settings(["In Arbeit"], ["Active"], ["Done"], Mapping("In Arbeit", "In Progress"));
-            var inDone = Settings(["Backlog"], ["Active"], ["In Arbeit"], Mapping("In Arbeit", "In Progress"));
+            var settings = Settings(["In Arbeit", "In Progress"], ["Active"], ["Done"], Mapping("In Arbeit", "In Progress"));
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(StateMappingValidator.ValidateSettings(inToDo).IsValid, Is.False);
-                Assert.That(StateMappingValidator.ValidateSettings(inDone).IsValid, Is.False);
-            }
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the To Do state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public void NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList()
+        {
+            var settings = Settings(["Backlog"], ["Active"], ["In Arbeit", "In Progress"], Mapping("In Arbeit", "In Progress"));
+
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Done state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
+        }
+
+        [Test]
+        public void NameStandingAloneInPlaceOfItsGroupsStates_IsNotRefused()
+        {
+            var settings = Settings(["Backlog"], ["Analysis", "In Arbeit"], ["Done"], Mapping("In Arbeit", "In Progress"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).IsValid, Is.True);
         }
 
         [Test]
@@ -53,13 +71,13 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         [Test]
         [Ignore(Pending)]
-        public void GroupThatListsAnotherGroupsName_IsRefusedNamingBothGroups()
+        public void GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence()
         {
             var settings = Settings(["Backlog"], ["X"], ["Done"], Mapping("A", "X"), Mapping("B", "A"));
 
-            var result = StateMappingValidator.ValidateSettings(settings);
-
-            Assert.That(result.Errors, Has.Some.Contains("A").And.Contains("B").And.Contains("another mapping"));
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"A\" has the same name as a state grouped by mapping \"B\". Choose another name."));
         }
 
         [Test]
@@ -72,11 +90,24 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         [Test]
         [Ignore(Pending)]
-        public void GroupWhoseListedStatesSitInDifferentCategories_IsRefused()
+        public void GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates()
         {
             var settings = Settings(["Code Review"], ["Testing"], ["Done"], Mapping("Review", "Code Review", "Testing"));
 
-            Assert.That(StateMappingValidator.ValidateSettings(settings).IsValid, Is.False);
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"Review\" groups states from different categories: \"Code Review\" is in To Do and \"Testing\" is in Doing. Keep a mapping's states in one category."));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public void GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused()
+        {
+            var settings = Settings(["Testing"], ["Active"], ["Testing"], Mapping("Review", "Testing"));
+
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings).Errors,
+                Has.Some.EqualTo("Mapping \"Review\" groups states from different categories: \"Testing\" is in To Do and \"Testing\" is in Done. Keep a mapping's states in one category."));
         }
 
         [Test]
@@ -84,9 +115,40 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         {
             var settings = Settings(["Backlog"], ["Y", "X"], ["Done"], Mapping("A", "X"), Mapping("B", "X"));
 
-            var result = StateMappingValidator.ValidateSettings(settings);
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.Contains("appears in multiple mappings"));
+        }
 
-            Assert.That(result.Errors, Has.Some.Contains("appears in multiple mappings"));
+        [Test]
+        public void GroupWithABlankName_IsRefusedWhateverTheListsHold()
+        {
+            var settings = Settings(["Backlog"], ["Code Review"], ["Done"], Mapping("  ", "Code Review"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("A state mapping name is required."));
+        }
+
+        [Test]
+        public void GroupWithNoStates_IsRefusedWhateverTheListsHold()
+        {
+            var settings = Settings(["Backlog"], ["Code Review"], ["Done"], Mapping("Review"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("State mapping 'Review' must contain at least one state."));
+        }
+
+        [Test]
+        public void TwoGroupsWithTheSameName_AreRefusedOnce()
+        {
+            var settings = Settings(["Backlog"], ["Code Review", "Testing"], ["Done"], Mapping("Review", "Code Review"), Mapping("REVIEW", "Testing"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Duplicate state mapping name 'Review'."));
+        }
+
+        [Test]
+        public void ListsWithNullAndBlankEntries_DoNotMakeTheValidatorThrow()
+        {
+            var settings = Settings(["Backlog", ""], ["  ", "Code Review"], ["Done", "\t"], Mapping("Review", "Code Review"));
+            settings.DoingStates.Add(null!);
+
+            Assert.That(() => StateMappingValidator.ValidateSettings(settings), Throws.Nothing);
         }
     }
 }

@@ -1931,7 +1931,7 @@ describe("a team's aging chart while its Doing columns are on their way", () => 
 		).toBeInTheDocument();
 		expect(
 			within(frameOf("aging")).queryByTestId("aging-chart"),
-		).not.toBeVisible();
+		).not.toBeInTheDocument();
 	});
 
 	it.skip("says it couldn't be loaded when the columns could not be fetched, and draws no empty chart", async () => {
@@ -1942,6 +1942,9 @@ describe("a team's aging chart while its Doing columns are on their way", () => 
 		expect(
 			within(frameOf("aging")).getByText(COULD_NOT_LOAD_MESSAGE),
 		).toBeVisible();
+		expect(
+			within(frameOf("aging")).queryByTestId("aging-chart"),
+		).not.toBeInTheDocument();
 		expect(
 			within(frameOf("aging")).queryByRole("progressbar"),
 		).not.toBeInTheDocument();
