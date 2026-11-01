@@ -13,20 +13,14 @@ namespace Lighthouse.Backend.API.Helpers
                 .Select(dto => new StateMapping { Name = dto.Name, States = dto.States })
                 .ToList();
 
-            var owner = new Team
-            {
-                ToDoStates = settings.ToDoStates,
-                DoingStates = settings.DoingStates,
-                DoneStates = settings.DoneStates,
-                StateMappings = mappings,
-            };
+            var lists = new StateCategoryLists(settings.ToDoStates, settings.DoingStates, settings.DoneStates, mappings);
 
             var errors = Validate(mappings).Errors;
-            errors.AddRange(ShadowingErrors(owner));
+            errors.AddRange(ShadowingErrors(lists));
             errors.AddRange(ChainErrors(mappings));
             errors.AddRange(mappings
                 .Where(mapping => IsChanged(mapping, storedMappings ?? []))
-                .SelectMany(mapping => CategoryErrors(owner, mapping)));
+                .SelectMany(mapping => CategoryErrors(lists, mapping)));
 
             return new StateMappingValidationResult(errors);
         }
@@ -78,15 +72,15 @@ namespace Lighthouse.Backend.API.Helpers
             return new StateMappingValidationResult(errors);
         }
 
-        private static IEnumerable<string> ShadowingErrors(WorkTrackingSystemOptionsOwner owner)
-            => ListsOf(owner).SelectMany(list => list.States
+        private static IEnumerable<string> ShadowingErrors(StateCategoryLists lists)
+            => ListsOf(lists).SelectMany(list => list.States
                 .Where(entry => !string.IsNullOrWhiteSpace(entry))
-                .Where(entry => owner.ClassifyListEntry(list.States, entry) == ListEntryKind.Shadowing)
-                .Select(entry => ShadowingSentence(owner, list.Category, entry)));
+                .Where(entry => lists.ClassifyListEntry(list.States, entry) == ListEntryKind.Shadowing)
+                .Select(entry => ShadowingSentence(lists, list.Category, entry)));
 
-        private static string ShadowingSentence(WorkTrackingSystemOptionsOwner owner, StateCategories category, string entry)
+        private static string ShadowingSentence(StateCategoryLists lists, StateCategories category, string entry)
         {
-            var name = owner.StateMappings.First(mapping => WorkTrackingSystemOptionsOwner.IsSameState(mapping.Name, entry)).Name.Trim();
+            var name = lists.GroupNamed(entry)!.Name.Trim();
             var state = entry.Trim();
 
             // In Doing the user may have meant to group the state too, so the settings page offers that fix there.
@@ -112,10 +106,10 @@ namespace Lighthouse.Backend.API.Helpers
             => left.TrueForAll(state => right.Exists(other => WorkTrackingSystemOptionsOwner.IsSameState(state, other)))
                && right.TrueForAll(state => left.Exists(other => WorkTrackingSystemOptionsOwner.IsSameState(state, other)));
 
-        private static IEnumerable<string> CategoryErrors(WorkTrackingSystemOptionsOwner owner, StateMapping mapping)
+        private static IEnumerable<string> CategoryErrors(StateCategoryLists lists, StateMapping mapping)
         {
-            var normalisedLists = ListsOf(owner)
-                .Select(list => (list.Category, States: owner.NormalisedStatesFor(list.States)))
+            var normalisedLists = ListsOf(lists)
+                .Select(list => (list.Category, States: lists.NormalisedStatesFor(list.States)))
                 .ToList();
 
             var placed = StatesOf(mapping)
@@ -148,12 +142,9 @@ namespace Lighthouse.Backend.API.Helpers
         private static List<string> StatesOf(StateMapping mapping)
             => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
 
-        private static IEnumerable<(StateCategories Category, List<string> States)> ListsOf(WorkTrackingSystemOptionsOwner owner)
-        {
-            yield return (StateCategories.ToDo, owner.ToDoStates);
-            yield return (StateCategories.Doing, owner.DoingStates);
-            yield return (StateCategories.Done, owner.DoneStates);
-        }
+        private static IEnumerable<(StateCategories Category, IReadOnlyList<string> States)> ListsOf(StateCategoryLists lists)
+            => new[] { StateCategories.ToDo, StateCategories.Doing, StateCategories.Done }
+                .Select(category => (category, lists.StoredStatesOf(category)));
 
         private static string LabelOf(StateCategories category) => category switch
         {

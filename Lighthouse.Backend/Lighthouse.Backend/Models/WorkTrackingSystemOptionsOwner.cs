@@ -5,8 +5,6 @@ namespace Lighthouse.Backend.Models
 {
     public abstract class WorkTrackingSystemOptionsOwner : IWorkItemQueryOwner, IConcurrencyTokenEntity
     {
-        private static readonly StateCategories[] ListedCategories = [StateCategories.ToDo, StateCategories.Doing, StateCategories.Done];
-
         public int Id { get; set; }
 
         public Guid ConcurrencyToken { get; set; }
@@ -207,145 +205,30 @@ namespace Lighthouse.Backend.Models
             return StateCategories.Unknown;
         }
 
+        /// <summary>This owner's To Do, Doing and Done lists, read against its mappings.</summary>
+        public StateCategoryLists CategoryLists() => new(ToDoStates, DoingStates, DoneStates, StateMappings);
+
         /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
-        public List<string> DisplayStatesFor(StateCategories category)
-        {
-            var displayed = NormalisedStatesFor(StoredStatesOf(category))
-                .Select(MapRawStateToMappedName);
-
-            return WithoutRepeats(displayed);
-        }
-
-        private List<string> StoredStatesOf(StateCategories category) => category switch
-        {
-            StateCategories.ToDo => ToDoStates,
-            StateCategories.Doing => DoingStates,
-            StateCategories.Done => DoneStates,
-            _ => [],
-        };
+        public List<string> DisplayStatesFor(StateCategories category) => CategoryLists().DisplayStatesFor(category);
 
         /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
-        public StateCategories CategoryOfRawState(string rawState)
-            => ListedCategories.FirstOrDefault(
-                category => NormalisedStatesFor(StoredStatesOf(category)).Exists(state => IsSameState(state, rawState)),
-                StateCategories.Unknown);
+        public StateCategories CategoryOfRawState(string rawState) => CategoryLists().CategoryOfRawState(rawState);
 
         /// <summary>
         /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
         /// A mapping is judged by the states of it that are listed; when they disagree, or none is listed, it is Unknown.
         /// </summary>
-        public StateCategories CategoryOfDisplayName(string displayName)
-        {
-            var group = GroupNamed(displayName);
-
-            if (group == null)
-            {
-                return CategoryOfRawState(displayName);
-            }
-
-            var listedCategories = MembersOf(group)
-                .Select(CategoryOfRawState)
-                .Where(category => category != StateCategories.Unknown)
-                .Distinct()
-                .ToList();
-
-            return listedCategories.Count == 1 ? listedCategories[0] : StateCategories.Unknown;
-        }
+        public StateCategories CategoryOfDisplayName(string displayName) => CategoryLists().CategoryOfDisplayName(displayName);
 
         /// <summary>A stored or sent list with every mapping name replaced by the mapping's raw states, in order; a list of raw states passes through unchanged.</summary>
-        public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)
-        {
-            var entries = storedList.Where(entry => !string.IsNullOrWhiteSpace(entry)).ToList();
-            var expanded = entries.SelectMany(entry => ExpandListEntry(entries, entry));
-
-            return WithoutRepeats(expanded);
-        }
-
-        private IEnumerable<string> ExpandListEntry(List<string> list, string entry)
-        {
-            var kind = ClassifyListEntry(list, entry);
-
-            if (kind == ListEntryKind.NotAGroupName)
-            {
-                return [entry];
-            }
-
-            var members = MembersOf(GroupNamed(entry)!);
-
-            if (kind == ListEntryKind.StateOfItsOwnMapping)
-            {
-                return members.Where(state => !list.Exists(listed => IsSameState(listed, state))).Prepend(entry);
-            }
-
-            return members;
-        }
+        public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList) => CategoryLists().NormalisedStatesFor(storedList);
 
         /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
-        public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
-        {
-            var group = GroupNamed(entry);
+        public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry) => CategoryLists().ClassifyListEntry(list, entry);
 
-            if (group == null)
-            {
-                return ListEntryKind.NotAGroupName;
-            }
+        public static bool IsSameState(string? left, string? right) => StateCategoryLists.IsSameState(left, right);
 
-            var members = MembersOf(group);
-
-            if (members.Exists(state => IsSameState(state, entry)))
-            {
-                return ListEntryKind.StateOfItsOwnMapping;
-            }
-
-            // A name that is also a state grouped by another mapping is read as that state, so a chained
-            // mapping expands one level once and then stays put.
-            if (GroupContaining(entry) != null)
-            {
-                return ListEntryKind.NotAGroupName;
-            }
-
-            return members.Exists(state => list.Any(listed => IsSameState(listed, state)))
-                ? ListEntryKind.Shadowing
-                : ListEntryKind.CollapsedGroup;
-        }
-
-        private StateMapping? GroupNamed(string entry)
-            => StateMappings.FirstOrDefault(mapping => IsSameState(mapping.Name, entry) && MembersOf(mapping).Count > 0);
-
-        private StateMapping? GroupContaining(string rawState)
-            => StateMappings.FirstOrDefault(mapping => MembersOf(mapping).Exists(member => IsSameState(member, rawState)));
-
-        // A mapping can come back from storage with no states, or with null and blank ones; those name no state of the tracker.
-        private static List<string> MembersOf(StateMapping mapping)
-            => mapping.States?.Where(state => !string.IsNullOrWhiteSpace(state)).ToList() ?? [];
-
-        // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
-        public static bool IsSameState(string? left, string? right)
-            => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
-
-        private static List<string> WithoutRepeats(IEnumerable<string> states)
-            => [.. states.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
-
-        public List<string> GetRawStatesForCategory(List<string> categoryStates)
-        {
-            var rawStates = new List<string>();
-
-            foreach (var entry in categoryStates)
-            {
-                var mapping = StateMappings.FirstOrDefault(m => IsSameState(m.Name, entry));
-
-                if (mapping != null)
-                {
-                    rawStates.AddRange(MembersOf(mapping));
-                }
-                else
-                {
-                    rawStates.Add(entry);
-                }
-            }
-
-            return rawStates;
-        }
+        public List<string> GetRawStatesForCategory(List<string> categoryStates) => CategoryLists().RawStatesOf(categoryStates);
 
         public bool IsCycleTimeDefinitionValid(CycleTimeDefinition definition)
         {
@@ -357,8 +240,7 @@ namespace Lighthouse.Backend.Models
                 && startRaw.All(states.Contains) && endRaw.All(states.Contains);
         }
 
-        public string MapRawStateToMappedName(string rawState)
-            => GroupContaining(rawState)?.Name ?? rawState;
+        public string MapRawStateToMappedName(string rawState) => CategoryLists().MapRawStateToMappedName(rawState);
 
         public void ResetUpdateTime()
         {
