@@ -890,3 +890,24 @@ standard filter, quiet machine, licence fixture present).
 - **F1, after the fix.** `ViewerEmbedTestHost.BuildHost` passes its extra settings through `ConfigureAppConfiguration` (`AddInMemoryCollection`), which is added after the factory's default and wins. The same test passes (`Passed: 2, Total: 2`), and the embed fixtures stay green in the focused run (97 passed, 0 failed).
 - **F2 accepted.** The default-off test repeats the configuration read that `Program` makes; the duplication stays, and its summary says the test must change together with that branch.
 - **F6 noted.** Watch the timing of the guard's case C (a host that created one HTTP client) on the first CI run after the push.
+
+## Wave: DELIVER / [REF] Quality gates
+
+| Gate | Result |
+|---|---|
+| Refactor (L1–L6) | No change needed; build 0 warnings; 85 focused tests green |
+| Adversarial review (Haiku) | needs_revision, 0 blockers, 1 high. The high was real: the embed test host's rate-limit opt-in lost to the new test default (proved by a failing test, then fixed, `82a73927a`); lows fixed or recorded (`55cb6ebe4`, `50a23c76c`); 97 focused tests green |
+| Mutation (Stryker.NET 4.14.1, 2026-11-01 19:25, `JiraOAuthProvider.cs` + `AdoOAuthProvider.cs`) | **88.76 %** overall, break 80 — Jira 38 killed / 3 survived / 2 no coverage (88 %), Ado 41 / 3 / 2 (89 %); 85 mutants tested; report `mutation/mutation-report-6459.json.gz` |
+| Full standard-filter run | 11,897 passed, 2 failed (the known publish-output scans), guard inside it green |
+| Guard under Release | 5 / 5 runs green, about 11 s each |
+| DES integrity | All 2 steps have complete DES traces |
+
+Every line this story changed in the providers (the factory field, constructor, and the per-request `CreateClient`)
+is covered and its mutants killed. Survivors, all on lines the story did not touch, recorded rather than chased:
+
+- Both providers: the `logger.LogInformation` call reporting the granted scope, and its message text (statement and
+  string mutants). Logging only; no caller-visible outcome. Equivalent for behaviour.
+- Jira: the `"unknown_error"` default error code when the error body carries none. A real gap in existing tests (no
+  test sends an error body without a code). Follow-up candidate, not part of this behaviour-free story.
+- No coverage: the empty-response branch in both providers (`"empty_response"` and its message). Existing gap, same
+  follow-up.
