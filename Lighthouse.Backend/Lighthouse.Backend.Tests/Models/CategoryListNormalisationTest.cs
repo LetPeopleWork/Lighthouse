@@ -6,8 +6,6 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private const char NonBreakingSpace = (char)160;
 
-        private const string Pending = "pending: category lists hold raw states";
-
         private static string[] Listed(params string[] states) => states;
 
         private static HashSet<string> Folded(IEnumerable<string> states) => states.Select(state => state.Trim().ToUpperInvariant()).ToHashSet();
@@ -168,7 +166,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt()
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
@@ -181,7 +178,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime()
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
@@ -194,7 +190,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates()
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
@@ -209,7 +204,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade()
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
