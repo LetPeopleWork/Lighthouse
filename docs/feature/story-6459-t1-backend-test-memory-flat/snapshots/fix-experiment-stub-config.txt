@@ -1,0 +1,3 @@
+ZClientCall config[UseStubProvider]= providers=JiraOAuthProvider,AdoOAuthProvider
+ZNoClientCall config[UseStubProvider]= providers=JiraOAuthProvider,AdoOAuthProvider
+ZStub config[UseStubProvider]=true providers=StubOAuthProvider,StubOAuthProvider,StubOAuthProvider

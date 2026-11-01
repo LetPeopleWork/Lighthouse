@@ -1,0 +1,24 @@
+ZMatrix env: PROBE_ORIG_CLIENT= PROBE_NO_GLOBAL=1 RateLimits__Enabled=false (warm-up host alive=True)
+A host, no client created +0s: rootFactory alive=False, serviceProvider alive=False
+A host, no client created +5s: rootFactory alive=False, serviceProvider alive=False
+B host, factory client created once +0s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +30s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +60s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +130s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +160s: rootFactory alive=False, serviceProvider alive=False
+B host, factory client created once +200s: rootFactory alive=False, serviceProvider alive=False
+ZMatrix env: PROBE_ORIG_CLIENT=1 PROBE_NO_GLOBAL=1 RateLimits__Enabled=false (warm-up host alive=True)
+A host, no client created +0s: rootFactory alive=True, serviceProvider alive=True
+A host, no client created +5s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +0s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +30s: rootFactory alive=True, serviceProvider alive=True
+ZMatrix env: PROBE_ORIG_CLIENT= PROBE_NO_GLOBAL= RateLimits__Enabled= (warm-up host alive=True)
+A host, no client created +0s: rootFactory alive=True, serviceProvider alive=True
+A host, no client created +5s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +0s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +30s: rootFactory alive=True, serviceProvider alive=True
+ZMatrix env: PROBE_ORIG_CLIENT=1 PROBE_NO_GLOBAL= RateLimits__Enabled= (warm-up host alive=True)
+A host, no client created +0s: rootFactory alive=True, serviceProvider alive=True
+A host, no client created +5s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +0s: rootFactory alive=True, serviceProvider alive=True
+B host, factory client created once +30s: rootFactory alive=True, serviceProvider alive=True

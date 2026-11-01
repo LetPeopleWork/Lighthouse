@@ -1,0 +1,5 @@
+ZNoClientCall config[UseStubProvider]= providers=JiraOAuthProvider,AdoOAuthProvider
+no-client-call +0s: rootFactory alive=True, serviceProvider alive=True
+no-client-call +5s: rootFactory alive=True, serviceProvider alive=True
+ZTimers stub=False config[UseStubProvider]= providers=JiraOAuthProvider,AdoOAuthProvider alive=False
+ZTimers stub=True config[UseStubProvider]=true providers=StubOAuthProvider,StubOAuthProvider,StubOAuthProvider alive=False

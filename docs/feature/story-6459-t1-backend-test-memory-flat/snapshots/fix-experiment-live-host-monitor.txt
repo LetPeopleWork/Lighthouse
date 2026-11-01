@@ -1,0 +1,12 @@
+30s created=209 alive=9 aliveDisposed=3 aliveUndisposed=6 liveManagedMB=185 rssMB=733
+61s created=400 alive=9 aliveDisposed=3 aliveUndisposed=6 liveManagedMB=173 rssMB=792
+91s created=601 alive=11 aliveDisposed=5 aliveUndisposed=6 liveManagedMB=206 rssMB=851
+121s created=842 alive=6 aliveDisposed=2 aliveUndisposed=4 liveManagedMB=309 rssMB=936
+152s created=1017 alive=8 aliveDisposed=2 aliveUndisposed=6 liveManagedMB=243 rssMB=1009
+182s created=1094 alive=7 aliveDisposed=1 aliveUndisposed=6 liveManagedMB=260 rssMB=902
+212s created=1202 alive=7 aliveDisposed=2 aliveUndisposed=5 liveManagedMB=251 rssMB=950
+243s created=1489 alive=9 aliveDisposed=3 aliveUndisposed=6 liveManagedMB=277 rssMB=1004
+274s created=1592 alive=9 aliveDisposed=8 aliveUndisposed=1 liveManagedMB=899 rssMB=2099
+305s created=1596 alive=13 aliveDisposed=12 aliveUndisposed=1 liveManagedMB=939 rssMB=2213
+338s created=1895 alive=155 aliveDisposed=149 aliveUndisposed=6 liveManagedMB=1636 rssMB=2876
+370s created=1962 alive=155 aliveDisposed=148 aliveUndisposed=7 liveManagedMB=1617 rssMB=3734

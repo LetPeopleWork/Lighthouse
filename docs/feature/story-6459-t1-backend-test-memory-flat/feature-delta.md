@@ -186,3 +186,70 @@ count is too small to matter next to root 1.
 - Whether removing root 1 returns the heap to a plateau. Nothing was fixed or tried; the stub run above is the nearest evidence and
   was inconclusive.
 - gen2 counters came from the last 15 s of run 1 only; I started `dotnet-counters` late.
+
+### Fix experiment (temporary, reverted)
+
+Ordered by the coordinator to confirm root 1 before DESIGN commits to a fix. Temporary and uncommitted: `JiraOAuthProvider` and
+`AdoOAuthProvider` took a `Func<HttpClient>` (the old constructors kept, delegating), and `Program.cs` passed
+`() => httpClientFactory.CreateClient(name)`, so no factory client is held. Same probe as before, 6 workers, one run at a time.
+Everything was reverted afterwards (`git status` shows only the three epic-6033 files). Raw output: `snapshots/fix-experiment-*.txt`.
+
+**Result: root 1 is necessary but not sufficient. The earlier ranking above was wrong to call it the only dominant root.**
+With the per-call client alone, a disposed host was still alive at 200 s. A second, equally strong root exists, found below.
+
+**Stub-mode puzzle (question 2): answered.** `UseSetting("Lighthouse:OAuth:UseStubProvider","true")` does reach Program: the host's
+configuration read `true` and the providers resolved were three `StubOAuthProvider`, no Jira/Ado. The stub host was still retained, so a
+third holder exists. Root walk from the static timer queue: `TimerQueueTimer._state` -> `System.Threading.RateLimiting.TimerAwaitable`
+-> its callback's `AsyncStateMachineBox<DefaultPartitionedRateLimiter<HttpContext, ...>.<RunTimer>d__14>` -> `ExecutionContext` (the
+`HostingListener` async-local) -> `Host` -> `ServiceProvider` -> `TestWebApplicationFactory`.
+
+**Root 1b: rate limiter replenishment timers, never stopped when the host is disposed.** Walking every timer in the static queue and
+asking which of them reaches a disposed host: with rate limiting at its default, two to three `TimerAwaitable` loops of
+`DefaultPartitionedRateLimiter<HttpContext, string>` / `<HttpContext, DefaultKeyType>` (`snapshots/fix-experiment-timers-limiter-on.txt`).
+They come from `options.GlobalLimiter = WhatOneAddressMayHandIn()` (`Program.cs`, end of the `AddRateLimiter` block, a
+`PartitionedRateLimiter.Create` nobody disposes) and from the framework's own endpoint limiter that `app.UseRateLimiter()`
+(`Program.cs:216`, only when `RateLimits:Enabled`) builds. Removing the global limiter left one loop (`DefaultKeyType`, the framework's);
+`RateLimits__Enabled=false` removed the last (`snapshots/fix-experiment-timers-after-limiter-off.txt`: no timer reaches the host, host dead).
+Note the first host of any test process is held by shared one-shot timers (Sqlite pool prune, the NUnit adapter's cache timer) that captured
+its execution context; that is one host per process, not the leak, so the matrix below discards a warm-up host first.
+
+**Matrix (questions 1a, 1b).** A = host never created a factory client. B = a factory client for the Jira name created once, then dropped
+(what a per-call request does). Weak reference to the root factory and its `ServiceProvider` after forced full GCs, seconds after `Dispose()`:
+
+| Setting | A at 0 s / 5 s | B at 0 / 30 / 60 / 130 s | B at 160 / 200 s |
+|---|---|---|---|
+| per-call client + rate limiting off (both fixes) | **dead / dead** | alive / alive / alive / alive | **dead / dead** |
+| captured client (as shipped) + rate limiting off | alive / alive | alive / alive (stopped at 30 s) | not sampled |
+| per-call client + rate limiting on | alive / alive | alive / alive (stopped at 30 s) | not sampled |
+| as shipped | alive / alive | alive / alive (stopped at 30 s) | not sampled |
+
+- **1b:** with both fixes, a host that never asked the factory for a client is collected immediately after `Dispose()` (dead at 0 s).
+- **1a:** with both fixes, a host that created one client stays until the 2-minute handler lifetime plus the 10 s cleanup tick:
+  alive at 130 s, dead at 160 s. Matches the prediction. Neither fix alone frees any host in either case.
+- Rate limiting off here was `RateLimits__Enabled=false` plus `GlobalLimiter` left unset, both through temporary environment switches. It is a
+  measurement device, not a proposed behaviour: two rate-limiting acceptance tests fail in the run below because of it.
+
+**Before / after, full standard-filter run, 6 workers, weak-reference monitor with a forced full GC every 30 s**
+(both fixes, rate limiting off; 6 m 20 s; 11,891 passed, 4 failed: the 2 known publish-output scans plus the 2 rate-limit tests
+`A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down` and `OneAddressInventingANewBrowserEachTime_IsStillBounded`):
+
+| | Before (run 2, as shipped) | After (both fixes) |
+|---|---|---|
+| Peak RSS | 15.3 GB (monitor sample); 17.7 GB in the gcdump run | **4.2 GB** (3 s sampler, at 360 s) |
+| Run duration | 8 m 11 s | 6 m 20 s |
+| Live factories after GC at ~30 / 120 / 240 / 340 / 370 s | 208 / ~830 / 1148 / ~1600 / 1961 | 9 / 6 / 9 / 155 / 155 |
+| Live managed MB at the same marks | 1169 / ~4700 / 6237 / ~9300 / 10968 | 185 / 309 / 277 / 1636 / 1617 |
+| Factories created at the end | 1962 | 1962 |
+
+Plateau: flat for the first 4 minutes (6-11 live factories, 173-309 MB live managed, RSS 0.7-1.0 GB). Late in the run it steps up:
+from 274 s the live count is 13, then 155 from 338 s, live managed 0.9 -> 1.6 GB, RSS 2.1 -> 4.2 GB at the end. So the curve is no longer
+a ramp tied to the number of hosts created (1962 created, about 150 alive), but it is not perfectly flat either.
+
+**Not established by the experiment**
+- What holds the 155 hosts at the end. They are disposed ones, and the run ended before a 2-minute lifetime could have expired for them, so
+  the likeliest reading is hosts that did create a factory client and are still inside the 2 minutes plus 10 s window. This was not checked
+  (no walk at that point; I did not extend the run).
+- Whether a third class of holder exists in the part of the suite that runs last. The first 4 minutes show none.
+- Whether the rate limiter can be kept on in test hosts with a different fix (disposing the limiters with the host, or building them from a
+  registered, disposable service). Only "rate limiting off" was measured. The same goes for production-safe shapes of the OAuth change.
+- The EF cache result above stands; neither fix touched it.
