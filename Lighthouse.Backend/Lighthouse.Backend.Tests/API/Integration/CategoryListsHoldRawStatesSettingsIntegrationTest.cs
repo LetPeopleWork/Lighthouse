@@ -476,6 +476,43 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task SavingAnUnrelatedChange_WhileAStoredNameShadowsAState_StillSaves()
+        {
+            SeedOwner(mappings: [InArbeit()], doing: ["In Arbeit", "In Progress"]);
+
+            var response = await Save(Settings(doing: ["In Arbeit", "In Progress"], mappings: [InArbeit()], name: "Renamed"));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+        }
+
+        [Test]
+        public async Task SavingAnUnrelatedChange_WhileAStoredGroupListsAnotherGroupsName_StillSaves()
+        {
+            StateMappingDto[] chained = [new() { Name = "A", States = ["X"] }, new() { Name = "B", States = ["A"] }];
+            SeedOwner(mappings: chained, doing: ["X", "Analysis"]);
+
+            var response = await Save(Settings(doing: ["X", "Analysis"], mappings: chained, name: "Renamed"));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+        }
+
+        [Test]
+        public async Task SavingANameBesideItsGroupsState_IntoAStoredGroupsList_IsRefused()
+        {
+            SeedOwner(mappings: [InArbeit()], doing: ["In Progress"]);
+
+            var response = await Save(Settings(doing: ["In Arbeit", "In Progress"], mappings: [InArbeit()]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+                Assert.That(
+                    await Errors(response),
+                    Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
+            }
+        }
+
+        [Test]
         public async Task SavingTwoGroupsWithTheSameName_IsRefused()
         {
             SeedOwner();
@@ -619,6 +656,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         private static StateMappingDto Review() => new() { Name = "Review", States = ["Code Review", "Testing"] };
+
+        private static StateMappingDto InArbeit() => new() { Name = "In Arbeit", States = ["In Progress"] };
 
         private static StateMappingDto ActiveGroup() => new() { Name = "Active", States = ["Active", "Resolved"] };
 

@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.API
 
             var portfolioForValidation = portfolioRepository.GetById(portfolioId);
 
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting, portfolioForValidation?.StateMappings);
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(portfolioSetting, portfolioForValidation);
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);

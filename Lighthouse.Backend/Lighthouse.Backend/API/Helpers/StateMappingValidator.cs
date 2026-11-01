@@ -7,16 +7,20 @@ namespace Lighthouse.Backend.API.Helpers
     {
         private const string OneCategoryAdvice = "Keep a mapping's states in one category.";
 
-        public static StateMappingValidationResult ValidateSettings(SettingsOwnerDtoBase settings, IReadOnlyCollection<StateMapping>? storedMappings = null)
+        // An owner stored before these rules existed may already break them. Refusing what it sends back unchanged
+        // would block every unrelated save, so only a mapping or a list entry this save adds or changes is judged.
+        public static StateMappingValidationResult ValidateSettings(SettingsOwnerDtoBase settings, WorkTrackingSystemOptionsOwner? storedOwner = null)
         {
             var mappings = settings.StateMappingsAsSent();
             var lists = new StateCategoryLists(settings.ToDoStates, settings.DoingStates, settings.DoneStates, mappings);
+            var storedMappings = storedOwner?.StateMappings ?? [];
+            bool HasChanged(StateMapping mapping) => IsChanged(mapping, storedMappings);
 
             var errors = Validate(mappings).Errors;
-            errors.AddRange(ShadowingErrors(lists));
-            errors.AddRange(ChainErrors(mappings));
+            errors.AddRange(ShadowingErrors(lists, storedOwner?.CategoryLists(), HasChanged));
+            errors.AddRange(ChainErrors(mappings, HasChanged));
             errors.AddRange(mappings
-                .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Name) && IsChanged(mapping, storedMappings ?? []))
+                .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Name) && HasChanged(mapping))
                 .SelectMany(mapping => CategoryErrors(lists, mapping)));
 
             return new StateMappingValidationResult(errors);
@@ -69,11 +73,15 @@ namespace Lighthouse.Backend.API.Helpers
             return new StateMappingValidationResult(errors);
         }
 
-        private static IEnumerable<string> ShadowingErrors(StateCategoryLists lists)
+        private static IEnumerable<string> ShadowingErrors(StateCategoryLists lists, StateCategoryLists? storedLists, Func<StateMapping, bool> isChanged)
             => ListsOf(lists).SelectMany(list => list.States
                 .Where(entry => !string.IsNullOrWhiteSpace(entry))
                 .Where(entry => lists.ClassifyListEntry(list.States, entry) == ListEntryKind.Shadowing)
+                .Where(entry => isChanged(lists.GroupNamed(entry)!) || !WasListed(storedLists, list.Category, entry))
                 .Select(entry => ShadowingSentence(lists, list.Category, entry)));
+
+        private static bool WasListed(StateCategoryLists? storedLists, StateCategories category, string entry)
+            => storedLists?.StoredStatesOf(category).Any(listed => StateCategoryLists.IsSameState(listed, entry)) ?? false;
 
         private static string ShadowingSentence(StateCategoryLists lists, StateCategories category, string entry)
         {
@@ -86,14 +94,14 @@ namespace Lighthouse.Backend.API.Helpers
                 : $"Mapping \"{name}\" has the same name as the {LabelOf(category)} state \"{state}\". Choose another name.";
         }
 
-        private static IEnumerable<string> ChainErrors(List<StateMapping> mappings)
+        private static IEnumerable<string> ChainErrors(List<StateMapping> mappings, Func<StateMapping, bool> isChanged)
             => from named in mappings
                where !string.IsNullOrWhiteSpace(named.Name)
                from grouping in mappings
                where !ReferenceEquals(named, grouping) && StatesOf(grouping).Exists(state => StateCategoryLists.IsSameState(state, named.Name))
+               where isChanged(named) || isChanged(grouping)
                select $"Mapping \"{named.Name.Trim()}\" has the same name as a state grouped by mapping \"{grouping.Name.Trim()}\". Choose another name.";
 
-        // A group stored before this rule existed may span categories; refusing it unchanged would block every unrelated save.
         private static bool IsChanged(StateMapping mapping, IReadOnlyCollection<StateMapping> storedMappings)
             => !storedMappings.Any(stored =>
                 StateCategoryLists.IsSameState(stored.Name, mapping.Name)

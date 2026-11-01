@@ -207,7 +207,7 @@ namespace Lighthouse.Backend.API
 
             var storedTeam = teamRepository.GetById(teamId);
 
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting, storedTeam?.StateMappings);
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting, storedTeam);
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);
