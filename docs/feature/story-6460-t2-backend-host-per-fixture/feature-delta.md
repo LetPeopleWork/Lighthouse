@@ -339,3 +339,99 @@ should still verify that the only non-test diff under `Lighthouse.Backend/` is t
 Documents only; nothing built. Measurement run itself was clean apart from the two known environmental failures
 (`NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder`, `TheScanSeesTheFilesThatConsumeThePublishOutput`).
 Peer review of DESIGN: not run here (propose mode); to be dispatched by the lead at the wave gate with `reviewer_model` per the profile.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-11-01)
+
+AFK mode: the lead took the recommended option on each row; the maintainer reviews before anything is pushed to a shared place. Nothing deploys.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | N/A, because nothing deploys: no artifact, image or runtime behaviour changes. The one product-side edit (D8, `ConfigureHealthChecks` from `private` to `internal`) has no runtime effect. |
+| CI/CD platform | GitHub Actions. `ci.yml` and `ci_backend.yml` were read and are **UNCHANGED**; see the CI/CD section. |
+| Branching | Trunk-based on `main`. **One push per slice** (the maintainer allowed pushes for this track), each slice green before it goes (full standard-filter run plus the slice's per-fixture checks), no branches or PRs. Commits stay local until the slice's local checks pass. |
+| Rigor | **D13 taken: `standard` for every slice, slice 2 included** (agent model Sonnet, reviewer model Haiku, passed explicitly on every dispatch). The `thorough` option for slice 2 is declined; slice 2 compensates with the one-fixture A/B before the template becomes the default. |
+| D8 | **Taken.** `Program.ConfigureHealthChecks` becomes `internal static`; `ClusterSubstrateProbeRegistrationTest` stops booting the whole app. Lands in slice 1. Push-time consequence below. |
+| Guard key | **Type name** (the top-level declaring type of the root method), not file name as the brief words it. Why: a type name survives a file move or rename (the guard does not go stale when a class is relocated), and it is what the IL scan sees: IL carries no file name, so a file key would need a second lookup from type to file that can disagree with the compiler. |
+| Observability, alerting, SLOs | **N/A, because the Story changes only test code and one visibility keyword; no running service, request path, metric or alert is touched.** The observability this Story needs already exists: `FixtureSetupTimer` (plus D1's `HostBuild` kind) for local timing and the `test-timings-backend` CI artifact for the payoff. The CI "SLO" is the backend test step wall time (median 746 s before); it is measured, not alerted (see the measurement protocol). |
+| Usage-data event | **N/A, because it is behaviour-free test infrastructure: nothing a user does changes, so there is no use to count.** No `UsageDataEventName` entry, no line in `docs/settings/usagedata.md`. |
+| Security | No secret, permission or scope change. The template database is a temp SQLite file with no data beyond the schema (and, if D4b is taken, the seeders' data, which is demo data). |
+| Cross-cutting (RBAC, Lighthouse-Clients, Website, UI sketch with loading/failure look, Terminology, ADR-270) | All N/A as answered in PICK-UP and DESIGN: no route, DTO, screen, word, context or event changes. |
+| Rollback | `git revert` of the slice commit. Nothing is persisted; the guard's allow-list is re-extended in the same revert. Each slice is independent (DESIGN, Behaviour-free proof). |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+Also written as `environments.yaml` in this workspace.
+
+| Environment | Workers | Configuration | Role |
+|---|---|---|---|
+| Local, quiet machine (12 cores, 31 GB, one suite at a time) | `LIGHTHOUSE_TEST_WORKERS=6` | Debug, standard filter | The per-slice local checks (below) and the local timing (`LIGHTHOUSE_FIXTURE_TIMING=1`). Same setup as the DESIGN measurement, so before and after compare. |
+| Local, any session | The Story 6461 cap (half the cores when unset and not CI) | Debug | The guard and the converted fixtures run in the normal backend run. |
+| Local, Windows (Standalone and Windows developers) | Cap as above | Debug | Not run by CI. The only place the template copy's file-lock risk can show (see the Windows section). |
+| CI (`ubuntu-latest`, 4 cores, `CI=true`) | Each tool's own default (NUnit 4 workers; the 6461 cap is off in CI) | **Release**, `dotnet test -c Release --no-build --no-restore ... -- RunConfiguration.MaxCpuCount=0`; with coverage when `run_sonar`, without otherwise (one step runs per job) | Runs the guard and every converted fixture; the only source of the "after" numbers that count (coverage makes it about 1.7-2x the local time). |
+
+## Wave: DEVOPS / [REF] CI/CD
+
+- **The ci workflows are unchanged** (`.github/workflows/ci.yml`, `ci_backend.yml` read-only checked). Nothing is added, widened or reordered.
+- **The guard runs in the normal test step.** `TestHostPerFixtureGuardTest` is an NUnit test in `Lighthouse.Backend.Tests/Architecture/`; both `Test Backend (with Coverage)` and `Test Backend (without Coverage)` run the whole test project, so the guard runs there with no workflow edit (D6). It reads the already-built test assembly from disk, so it needs no extra build output; under `-c Release --no-build` the assembly is the Release one, which is the one the IL scan should see (Release inlining can fold a tiny helper into its caller, and the closure walk follows calls either way, so the offender set can only differ if a helper is inlined into a *different* root type; slice 1 runs the guard once under `-c Release` locally and compares the offender list with the Debug one before the list is committed).
+- **Mono.Cecil: already available to the tests, not as a direct reference.** `Lighthouse.Backend.Tests.csproj` has no `PackageReference` to `Mono.Cecil`; it arrives transitively (restore lists `Mono.Cecil 0.11.6` in `obj/project.assets.json`, a dependency of the already-referenced `TngTech.ArchUnitNET`), and `Architecture/IlDependencies.cs` already does `using Mono.Cecil;`. So the guard adds **no package and no csproj edit** and needs no CI change. Consequence worth knowing: Renovate does **not** track Mono.Cecil on its own (it only sees direct references), it moves when `TngTech.ArchUnitNET` moves, which Renovate does cover (`config:recommended` includes the NuGet manager; no `ignoreDeps` for it in `renovate.json`). If DELIVER ever needs to pin Mono.Cecil explicitly, that would be a test-only package change in `Lighthouse.Backend.Tests.csproj`, Renovate would then cover it by default, and it would be recorded in that slice's commit body. Not needed now.
+- **Push-time consequence of D8.** Slice 1 edits `Lighthouse.Backend/Program.cs`. Per the repo note (Program.cs edits force the full backend Integration suite) CI then also runs the live Jira, Linear, Azure DevOps and ServiceNow connector tests. State it at push time as a CI consequence, not a defect: that run is longer, and the **Linear key is shared with CI**, so no hand-exploring of the Linear API and no other full local run shortly before the push (rate-limit 429s show up as several unrelated failures, only one naming the 429). Locally, run the connector categories only if a connector changed, which this Story does not. Because the edit is one keyword, slice 1 is otherwise no riskier than the other slices; slices 2-5 touch only the test project and do not widen the CI run. Fallback if the maintainer will not pay that run: leave `ClusterSubstrateProbeRegistrationTest` as is and keep it on the guard's list with the reason "boots the app to inspect a registration" (DESIGN D8).
+- **Quality gates per slice before its push:** `dotnet build` (zero warnings; the test project is built with `TreatWarningsAsErrors`), the standard-filter `dotnet test`, the guard green in both directions, `docs/ci-learnings.md` edited in slice 1 and kept true afterwards. No frontend, E2E or Biome gate applies (no frontend or E2E file changes).
+- **No CI memory or time gate is added.** `check_budget.py` stays `--warn-only` (D7); tightening it belongs to T4.
+
+## Wave: DEVOPS / [REF] CI "after" measurement protocol (owned by the lead, after each slice's push)
+
+Nothing here can be done before a push; the lead runs it after each slice lands on `main`.
+
+1. **Wait for at least 5 successful `main` runs** that contain the slice's commit (list them under `ci.yml`, because `ci_backend.yml` is a reusable workflow and `gh run list --workflow ci_backend.yml` is empty). Include the `main` runs of later slices only if the slice-by-slice attribution is not needed; otherwise stop the count at the next slice's push. The GitHub run-list API serves stale pages about 1 time in 7, so re-list before trusting a count.
+2. **Download the artifact `test-timings-backend`** (`test-timings-backend.csv`, one row per test) from each of those runs: `gh run download <run-id> -n test-timings-backend -D <dir>/ci<run-id>`.
+3. **Compute the per-class median of summed seconds** with `measurement/scripts/cistats.py <dir>` (it globs `<dir>/ci*/test-timings-backend.csv` and writes `<dir>/ci_class_median.tsv`, one line per class: median seconds, test count).
+4. **Compare with the before baseline** in `measurement/`: `ci-class-median-7-runs.tsv.gz` (943 classes, 7 runs, summed test time median 2,806 s) for the moved classes' summed time, and `ci-backend-test-step-seconds.tsv` (23 runs, step median 746 s) for the `Test Backend (with Coverage)` step (read from `gh run view <id> --json jobs`, as the baseline was). Report per slice: summed median seconds of the moved classes before and after, the total summed test time before and after, and the step median before and after. KPI row 16 (CI test step minutes on main, median of at least 5 runs) is the one that moves.
+5. **Read it honestly.** The step time is bimodal (about 560-720 s and 830-890 s, runner variance), so compare medians of at least 5 and say so when the ranges overlap. The baseline predates T1's push (T1 changed memory, not time) and includes coverage instrumentation. A slice that does not move its classes is reported as such; nobody edits the baseline.
+6. **Where it is recorded:** a short `Wave: DELIVER / [REF] CI after-measurement, slice N` block in this `feature-delta.md` with the run ids, the table and the verdict, plus the new class-median file next to the baseline in `measurement/`.
+
+## Wave: DEVOPS / [REF] Local per-slice checks
+
+Run on the quiet machine at `LIGHTHOUSE_TEST_WORKERS=6`, standard filter (never the live-connector categories).
+
+- **Every converted fixture, run alone 3 times in a row** (`dotnet test --filter "FullyQualifiedName~<Fixture>"`), all green, before the slice is committed. State that leaking from a shared host (singletons, caches, `FakeLighthouseClock`, counters) shows here as a flake, not only at the end.
+- **E-names:** the sorted `dotnet test --list-tests` ids before and after are equal (D11).
+- **E-weaken on the slice diff:** no `[Ignore]`, `[Explicit]`, `Assert.Ignore` or `NonParallelizable` added, no `Assert.` line removed.
+- **Guard:** green in both directions after every slice; the allow-list only shrinks; `BackendTestParallelizationGuardTest` green and unchanged (T1's `TestHostIsReleasedAfterDisposeTest` is the only `[NonParallelizable]` this track relies on and nothing is added).
+- **At the end of the track: 3 consecutive green full standard-filter runs** (the Story's AC; not per slice). Two known environmental failures are expected and are not regressions: the two publish-output scans (`NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder`, `TheScanSeesTheFilesThatConsumeThePublishOutput`); a run with exactly those two and nothing else counts as green for this AC, and the run is repeated, not excused, if anything else fails. In a worktree, copy the gitignored `valid_not_expired_license.json` first.
+- **Slice 2 adds** the one-fixture A/B (one group-B and one group-C fixture, set-up mean must fall by at least 30 %) before the template becomes the default.
+
+## Wave: DEVOPS / [REF] Windows file-lock risk of the template copy (slice 2)
+
+CI is Linux, so CI cannot see this. The Standalone build and Windows developers run the suite on Windows, where an open handle blocks a copy or a delete.
+
+- **Risk:** `File.Copy` of the template while another process or thread has it open for write, or a later delete of a copied database that SQLite still holds open (the existing code already has a delete-retry loop for this).
+- **Mitigation 1, unique file names:** every copy gets its own unique name (the existing `NewDatabaseFileName` scheme; the template has a fixed, separate name that no test ever opens as its database). Two tests never share a destination, so there is no destination contention.
+- **Mitigation 2, copy instead of open:** the template is built once, behind a `Lazy` static and a lock, with `Pooling=False` and the WAL checkpointed away (no `-wal` or `-shm` file left), then **closed completely before any copy**. Tests only ever `File.Copy` it (read share), never open it with SQLite, so nothing holds a write handle on the source. A copy that fails with an `IOException` is retried through the same bounded retry the delete uses, then fails with a message naming the path (never skipped).
+- **Check:** the maintainer or a Windows developer runs the full backend suite once on Windows after slice 2; this is the only available verification and is listed as a hold item at the end of the track, not claimed as done.
+
+## Wave: DEVOPS / [REF] Mutation strategy
+
+Strategy stays `per-feature` (CLAUDE.md, not edited): Stryker.NET for the backend, kill rate at least 80 %, once at the end on frozen code.
+
+- **D12 confirmed.** `Lighthouse.Backend/stryker-config.json` has `"project": "Lighthouse.Backend.csproj"` (the product assembly) and `"test-projects": ["Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"]`. Stryker.NET mutates the product project only; the test project is the thing that kills the mutants. Every file this Story edits except one lives in the test project, so **it has no mutants**.
+- **D8 is a visibility change with no logic** (`private` to `internal` on a method whose body does not change). Stryker has no mutator for access modifiers, so there is no mutant to kill. The method's body is outside the Story's diff.
+- **Test helpers are not mutated by the per-feature config.** If slice 2 adds non-trivial helper logic to `TestWebApplicationFactory` (the template copy, its lock and retry), that code is in the test project, so the per-feature Stryker run never sees it. Its proof is the one-fixture A/B, the three consecutive green full runs and a unit-style test of the helper only if the logic has a branch worth asserting. Recorded here so nobody reads the missing mutation score as an oversight.
+- **The guard's pure compare step has its own made-up-list tests instead.** Both failure directions (a newcomer outside the list; a stale entry still listed) are driven with planted lists, in the style of `RepositoryLeakRatchetArchUnitTest`. That is the guard's equivalent of a mutation check: a mutation of the compare would turn one of those tests red. The IL walk is proved on the real assembly (the first run produces the exact offender list) and by one planted-offender case, if the walk can be pointed at a tiny fixture type; otherwise by the real list being exact in both directions.
+- **At the end:** no Stryker run is owed. If DELIVER finds the config unexpectedly includes test helpers, run it once at the end on `TestWebApplicationFactory.cs` and the guard, on frozen code, and record the per-file table. Frontend Stryker: N/A, no frontend file changes.
+
+## Wave: DEVOPS / [REF] Coexistence
+
+- **Story 6459 (T1), delivered and pushed (`b2b516258`):** its freed hosts are the reason a host-per-test fixture now costs time only, not memory. T2 does the opposite move (fewer hosts built) and does not undo anything T1 did: OAuth providers still ask `IHttpClientFactory` per request, hosts still default to `RateLimits:Enabled=false`, and a fixture that tests rate limiting still opts back in. A host that now lives for a whole fixture is released at `[OneTimeTearDown]` through the same disposal T1 fixed; the leak guard (`TestHostIsReleasedAfterDisposeTest`, on the serial allow-list) must stay green and the allow-list in `BackendTestParallelizationGuardTest` must not gain an entry from T2. Expected side effect to watch in the "after" runs: peak memory can rise slightly because a fixture's host now lives longer than one test; T1's 4.3 GB peak at 6 workers is the reference, and a clear regression there is a stop signal, not a note.
+- **Story 6461 (T3) worker cap:** orthogonal. It sets how many fixtures (so how many hosts) are alive at once; this Story sets how long each lives. Local timings and the three full runs state the worker count (6). CI ignores the cap and keeps its own default.
+- **`ci_backend.yml`, `check_budget.py` (`--warn-only`), IDE runners (Rider, Visual Studio), Stryker config:** unchanged; see `environments.yaml`.
+- **Shared Postgres container tests** (`Integration/Containers`): out of scope (D10); the template database applies to SQLite files only.
+
+## Wave: DEVOPS / [REF] Risks and carry-forward for DISTILL and DELIVER
+
+1. Shared-host state leaking across tests (singletons, caches, clock): caught by the three-alone runs per fixture and the three full runs; a fixture that cannot be made safe stays on the list with a written reason.
+2. Template database: a test that expects an empty database at first use (migration and health fixtures); checked in slice 2's A/B and full runs.
+3. Windows file locks on the template copy: unverifiable in CI; a hold item for the maintainer.
+4. The Program.cs push in slice 1 runs the live connector suite in CI; announce it, and keep the Linear key quiet beforehand.
+5. IL guard noise: if the call closure over-reports at DELIVER, the DESIGN fallback (source scan in the Postgres guard's shape) applies and the reason is recorded.
+6. CI step time is bimodal; do not conclude from fewer than 5 runs.
+7. No scenario tags in code (project rule): any classification stays in the feature workspace.

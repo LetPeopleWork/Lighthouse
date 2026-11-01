@@ -1,0 +1,82 @@
+# Environment inventory - story-6460-t2-backend-host-per-fixture
+# Consumed by DISTILL for environmental realism.
+#
+# Behaviour-free test infrastructure (one host per fixture, a ratcheting IL guard, a process-wide schema template
+# database) plus one product-side visibility change (Program.ConfigureHealthChecks: private -> internal).
+# Nothing deploys; no route, DTO or response changes.
+
+target_environments:
+  - name: local-quiet
+    description: >
+      The 12-core, 31 GB Linux reference machine with no other session running, LIGHTHOUSE_TEST_WORKERS=6,
+      Debug configuration (dotnet test default), standard filter excluding the live-connector categories,
+      LIGHTHOUSE_FIXTURE_TIMING=1 for the set-up timings. Where each converted fixture is run alone 3 times
+      and where the 3 consecutive green full runs happen.
+    platform: [linux]
+    preconditions:
+      - "LIGHTHOUSE_TEST_WORKERS=6 exported"
+      - "No other dotnet test or pnpm test running; dotnet build-server shutdown beforehand"
+      - "In a git worktree: valid_not_expired_license.json copied from the main checkout"
+  - name: local-default
+    description: >
+      Any developer or agent session, worker cap per story 6461 (half the cores when unset and CI is not 'true').
+      The guard and the converted fixtures run as part of the normal backend run.
+    platform: [linux, macos]
+    preconditions:
+      - "dotnet 10 SDK"
+  - name: local-windows
+    description: >
+      Standalone and Windows developers. Not run by CI. The only place the template database copy's file-lock
+      risk (slice 2) can show. Mitigation: unique destination file names, template closed before any copy,
+      copy (read share) instead of open, bounded retry on IOException.
+    platform: [windows]
+    preconditions:
+      - "dotnet 10 SDK"
+      - "Checked once by the maintainer after slice 2; a hold item, not claimed as verified"
+  - name: ci
+    description: >
+      GitHub Actions ubuntu-latest (4 cores, CI=true), ci.yml and ci_backend.yml UNCHANGED. Release configuration
+      (dotnet test -c Release --no-build --no-restore ... -- RunConfiguration.MaxCpuCount=0). Two test steps, one runs per
+      job: with coverage (run_sonar) and without. NUnit keeps its default worker count; the 6461 cap is off.
+      Publishes the test-timings-backend artifact on every run (the source of the "after" measurement).
+    platform: [linux]
+    preconditions:
+      - "CI=true"
+      - "LIGHTHOUSE_TEST_WORKERS unset"
+
+coexistence_matrix:
+  - tool: ci.yml / ci_backend.yml
+    must_not_break: true
+    note: "Not edited. The guard is an NUnit test inside the existing steps (Architecture/, reads the built test assembly)"
+  - tool: Mono.Cecil (test dependency)
+    must_not_break: true
+    note: "Already used by Architecture/IlDependencies.cs; arrives transitively (0.11.6) through TngTech.ArchUnitNET, no direct PackageReference. The guard adds no package and no csproj edit; Renovate tracks it via ArchUnitNET (NuGet manager of config:recommended). Pinning it directly would be a test-only package change"
+  - tool: Story 6459 (T1) freed hosts and TestHostIsReleasedAfterDisposeTest
+    must_not_break: true
+    note: "T2 builds fewer hosts, each living a whole fixture; T1's disposal stays. BackendTestParallelizationGuardTest allow-list must not gain an entry from T2. Watch peak memory against T1's 4.3 GB at 6 workers"
+  - tool: Story 6461 (T3) worker cap
+    must_not_break: true
+    note: "Orthogonal: the cap changes how many hosts are alive at once, T2 changes how long each lives. Measurements state the worker count (6)"
+  - tool: BackendTestParallelizationGuardTest
+    must_not_break: true
+    note: "Green and unchanged; T2 adds no [NonParallelizable]"
+  - tool: Program.cs edit (D8) and the CI path filter
+    must_not_break: true
+    note: "Slice 1 edits Program.cs, so CI runs the full backend Integration suite (live Jira, Linear, ADO, ServiceNow connectors) at that push. Linear key is shared with CI: expect a longer, rate-limit-sensitive run; keep the Linear API quiet beforehand. A push-time consequence, not a code risk. Slices 2-5 touch only the test project"
+  - tool: check_budget.py (backend step, --warn-only)
+    must_not_break: true
+    note: "Untouched; tightening per-class budgets belongs to T4"
+  - tool: Stryker.NET
+    must_not_break: true
+    note: "Mutates the product assembly (Lighthouse.Backend.csproj) only; the test-project edits have no mutants; the D8 visibility change has no mutator. Acceptance suite stays excluded"
+  - tool: Postgres container tests (Integration/Containers)
+    must_not_break: true
+    note: "Out of scope (D10); the template database is for SQLite files only"
+
+deployment_assumptions:
+  - "Nothing deploys; ships with the next regular push to main. Trunk-based: one push per slice, each green first, no branches or PRs"
+  - "Rollback is git revert of the slice commit; nothing is persisted. The guard's allow-list is re-extended in the same revert"
+  - "Rigor standard for every slice (D13): agent model Sonnet, reviewer model Haiku, passed explicitly on every dispatch"
+  - "CI after-measurement owned by the lead: artifact test-timings-backend, at least 5 main runs per slice, per-class medians vs measurement/ci-class-median-7-runs.tsv.gz via measurement/scripts/cistats.py"
+  - "Observability: N/A, no running service touched; existing FixtureSetupTimer and the test-timings-backend artifact are the instrument"
+  - "Usage-data event: N/A, behaviour-free test infrastructure with no user-facing feature"
