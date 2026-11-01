@@ -329,6 +329,47 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task One_connector_serving_two_Jira_connections_keeps_each_connections_names_apart()
+        {
+            var siteA = new JiraInstanceStub()
+                .ReadBy([JiraWireFormat.AStatus("10001", "Fertig", "Fertig", "done", "Fertig")], JiraWireFormat.AnEnglishIssueTypes)
+                .Serving(JiraWireFormat.AnIssueSeenIn("A-1", "10001", "Story", "10001", "Fertig"));
+            var siteB = new JiraInstanceStub()
+                .ReadBy([JiraWireFormat.AStatus("10001", "Done B", "Done B", "done", "Done")], JiraWireFormat.AnEnglishIssueTypes)
+                .Serving(JiraWireFormat.AnIssueSeenIn("B-1", "10001", "Story", "10001", "Done B"));
+            var teamOnA = ATeam();
+            var teamOnB = ATeam();
+            var connector = JiraConnectorTestSetup.AConnectorOver(
+                new RoutedByHost(new Dictionary<string, JiraInstanceStub>
+                {
+                    [HostOf(teamOnA)] = siteA,
+                    [HostOf(teamOnB)] = siteB,
+                }));
+
+            await connector.GetWorkItemsForTeam(teamOnA, CancellationToken.None);
+            var itemOnB = (await connector.GetWorkItemsForTeam(teamOnB, CancellationToken.None)).Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(itemOnB.State, Is.EqualTo("Done B"));
+                Assert.That(siteA.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(1));
+                Assert.That(siteB.ReadsOf(JiraWireFormat.StatusListEndpoint), Is.EqualTo(1));
+            }
+        }
+
+        private static string HostOf(Team team)
+            => new Uri(team.WorkTrackingSystemConnection.Options.Single(option => option.Key == JiraWorkTrackingOptionNames.Url).Value).Host;
+
+        private sealed class RoutedByHost(Dictionary<string, JiraInstanceStub> sites) : HttpMessageHandler
+        {
+            private readonly Dictionary<string, HttpMessageInvoker> invokers = sites.ToDictionary(
+                site => site.Key, site => new HttpMessageInvoker(site.Value.Handler()));
+
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+                => invokers[request.RequestUri!.Host].SendAsync(request, cancellationToken);
+        }
+
         private const string TheExpectedQuery =
             "(project = PROJ) AND (issuetype = \"Story\")  AND (status = \"To Do\" OR status = \"In Progress\" OR status = \"Done\")  ";
 

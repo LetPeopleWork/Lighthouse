@@ -108,13 +108,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private readonly ConcurrentDictionary<int, bool> connectionsWhoseCredentialWasAccepted = new();
 
-        private JiraOriginalNames? statusNamesReadThisRefresh;
+        /// <summary>
+        /// The status and issue type lists each connection has answered this refresh, and which connections
+        /// have already had a list read a second time. They are kept per connection because one connector
+        /// can serve several Jira instances, and the same id (10001, say) names different things on each.
+        /// </summary>
+        private readonly ConcurrentDictionary<int, JiraOriginalNames> statusNamesReadThisRefresh = new();
 
-        private JiraOriginalNames? issueTypeNamesReadThisRefresh;
+        private readonly ConcurrentDictionary<int, JiraOriginalNames> issueTypeNamesReadThisRefresh = new();
 
-        private bool statusListReadAgainThisRefresh;
+        private readonly ConcurrentDictionary<int, bool> connectionsWhoseStatusListWasReadAgain = new();
 
-        private bool issueTypeListReadAgainThisRefresh;
+        private readonly ConcurrentDictionary<int, bool> connectionsWhoseIssueTypeListWasReadAgain = new();
 
         /// <summary>
         /// The Portfolios already told this refresh that their Dependency Field names a phrase several link
@@ -518,7 +523,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 var deployment = await GetDeploymentType(client, workTrackingSystemConnection);
 
-                return await GetBoardInformationFromJira(client, deployment, boardId);
+                return await GetBoardInformationFromJira(client, deployment, workTrackingSystemConnection.Id, boardId);
             }
             catch (WorkTrackingReadException)
             {
@@ -710,7 +715,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 ? numericValue
                 : update.Value;
 
-        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, JiraDeployment deployment, string boardId)
+        private async Task<BoardInformation> GetBoardInformationFromJira(HttpClient client, JiraDeployment deployment, int connectionId, string boardId)
         {
             var boardInformation = new BoardInformation();
 
@@ -729,8 +734,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var boardConfigJson = JsonDocument.Parse(boardConfigResponseBody);
 
             var jqlTask = ExtractJqlFromBoardConfiguration(boardConfigJson, client);
-            var workItemTypesTask = GetItemTypesForBoard(client, deployment, boardId);
-            var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client, deployment);
+            var workItemTypesTask = GetItemTypesForBoard(client, deployment, connectionId, boardId);
+            var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client, deployment, connectionId);
 
             boardInformation.WorkItemTypes = await workItemTypesTask;
 
@@ -748,7 +753,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
-            GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client, JiraDeployment deployment)
+            GetStateMappingForBoard(JsonDocument boardsJson, HttpClient client, JiraDeployment deployment, int connectionId)
         {
             var root = boardsJson.RootElement;
             var distinctStatusIds = root
@@ -763,19 +768,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 .Distinct()
                 .ToList();
 
-            return await MapStatusToCategory(client, deployment, distinctStatusIds);
+            return await MapStatusToCategory(client, deployment, connectionId, distinctStatusIds);
         }
 
         private async
             Task<(IEnumerable<string> toDoStates, IEnumerable<string> doingStates, IEnumerable<string> doneStates)>
-            MapStatusToCategory(HttpClient client, JiraDeployment deployment, List<string> statusIds)
+            MapStatusToCategory(HttpClient client, JiraDeployment deployment, int connectionId, List<string> statusIds)
         {
             JiraOriginalNames names;
             IReadOnlyList<string> missingIds;
 
             try
             {
-                (names, missingIds) = await StatusNamesAndTheIdsStillMissing(client, deployment, statusIds);
+                (names, missingIds) = await StatusNamesAndTheIdsStillMissing(client, deployment, connectionId, statusIds);
             }
             catch (JiraReadException refused)
             {
@@ -828,7 +833,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// the lists this connector remembers, read again once when an id is missing from them.
         /// </summary>
         private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingIds)> StatusNamesAndTheIdsStillMissing(
-            HttpClient client, JiraDeployment deployment, List<string> statusIds)
+            HttpClient client, JiraDeployment deployment, int connectionId, List<string> statusIds)
         {
             const JiraReadException.ReadFor readFor = JiraReadException.ReadFor.Validation;
 
@@ -840,7 +845,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return (names, names.StatusIdsItDoesNotKnow(statusIds));
             }
 
-            var (known, missingStatusIds, _) = await NamesAndTheIdsStillMissing(client, deployment, readFor, statusIds, [], CancellationToken.None, OriginalNameLists.Statuses);
+            var (known, missingStatusIds, _) = await NamesAndTheIdsStillMissing(client, deployment, connectionId, readFor, new IdsToLookUp(statusIds, []), CancellationToken.None, OriginalNameLists.Statuses);
 
             return (known, missingStatusIds);
         }
@@ -853,7 +858,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
         }
 
-        private async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, JiraDeployment deployment, string boardId)
+        private async Task<IEnumerable<string>> GetItemTypesForBoard(HttpClient client, JiraDeployment deployment, int connectionId, string boardId)
         {
             var response = await client.GetAsync($"{BoardsEndpoint}/{boardId}/issue?maxResults=1000");
 
@@ -877,7 +882,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             try
             {
                 (names, _, missingIds) = await NamesAndTheIdsStillMissing(
-                    client, deployment, JiraReadException.ReadFor.Validation, [], boardIssues.Select(issue => issue.Id).ToList(),
+                    client, deployment, connectionId, JiraReadException.ReadFor.Validation, new IdsToLookUp([], boardIssues.Select(issue => issue.Id).ToList()),
                     CancellationToken.None, OriginalNameLists.IssueTypes);
             }
             catch (JiraReadException refused)
@@ -2379,12 +2384,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             await SetStoredFieldKeys(client, workItemQueryOwner.WorkTrackingSystemConnectionId);
 
             var readFor = ReadForOwnerOf(workItemQueryOwner, maxResultsOverride);
+            var connectionId = workItemQueryOwner.WorkTrackingSystemConnection.Id;
 
             // A list Jira refuses has to stop the refresh before the first page of issues is asked for.
-            await OriginalNamesOf(client, deployment, readFor, cancellationToken);
+            await OriginalNamesOf(client, deployment, connectionId, readFor, cancellationToken);
 
             Task<JiraOriginalNames> NamesCovering(IReadOnlyList<JsonElement> page)
-                => OriginalNamesCoveringOrThrow(client, deployment, readFor, page, cancellationToken);
+                => OriginalNamesCoveringOrThrow(client, deployment, connectionId, readFor, page, cancellationToken);
 
             if (deployment == JiraDeployment.Cloud)
             {
@@ -2400,9 +2406,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// that stops the refresh, because the only name left to give it is a translated one.
         /// </summary>
         private async Task<JiraOriginalNames> OriginalNamesCoveringOrThrow(
-            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
+            HttpClient client, JiraDeployment deployment, int connectionId, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
         {
-            var (names, missingStatusIds, missingIssueTypeIds) = await NamesAndTheIdsStillMissing(client, deployment, readFor, page, cancellationToken);
+            var (names, missingStatusIds, missingIssueTypeIds) = await NamesAndTheIdsStillMissing(client, deployment, connectionId, readFor, page, cancellationToken);
 
             if (missingStatusIds.Count > 0)
             {
@@ -2425,52 +2431,52 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         /// <summary>
         /// Looks the page's status and type ids up, and when some are missing reads the list they are missing from
-        /// again - each list at most once for the life of this connector - before answering which ids are still missing.
+        /// again - each list at most once per connection for the life of this connector - before answering which ids are still missing.
         /// </summary>
         private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingStatusIds, IReadOnlyList<string> MissingIssueTypeIds)> NamesAndTheIdsStillMissing(
-            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
+            HttpClient client, JiraDeployment deployment, int connectionId, JiraReadException.ReadFor readFor, IReadOnlyList<JsonElement> page, CancellationToken cancellationToken)
         {
             var statusIds = page.Select(issue => IdOfField(issue, JiraFieldNames.StatusFieldName)).ToList();
             var issueTypeIds = page.Select(issue => IdOfField(issue, JiraFieldNames.IssueTypeFieldName)).ToList();
 
-            return await NamesAndTheIdsStillMissing(client, deployment, readFor, statusIds, issueTypeIds, cancellationToken);
+            return await NamesAndTheIdsStillMissing(client, deployment, connectionId, readFor, new IdsToLookUp(statusIds, issueTypeIds), cancellationToken);
         }
 
         private async Task<(JiraOriginalNames Names, IReadOnlyList<string> MissingStatusIds, IReadOnlyList<string> MissingIssueTypeIds)> NamesAndTheIdsStillMissing(
-            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, IReadOnlyList<string?> statusIds, IReadOnlyList<string?> issueTypeIds, CancellationToken cancellationToken,
+            HttpClient client, JiraDeployment deployment, int connectionId, JiraReadException.ReadFor readFor, IdsToLookUp ids, CancellationToken cancellationToken,
             OriginalNameLists lists = OriginalNameLists.Both)
         {
-            var names = await OriginalNamesOf(client, deployment, readFor, cancellationToken, lists);
-            var missingStatusIds = names.StatusIdsItDoesNotKnow(statusIds);
-            var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(issueTypeIds);
+            var names = await OriginalNamesOf(client, deployment, connectionId, readFor, cancellationToken, lists);
+            var missingStatusIds = names.StatusIdsItDoesNotKnow(ids.StatusIds);
+            var missingIssueTypeIds = names.IssueTypeIdsItDoesNotKnow(ids.IssueTypeIds);
 
             var listsMissingAnId = (missingStatusIds.Count > 0 ? OriginalNameLists.Statuses : OriginalNameLists.None)
                 | (missingIssueTypeIds.Count > 0 ? OriginalNameLists.IssueTypes : OriginalNameLists.None);
 
-            var listsToReadAgain = ListsNotYetReadAgain(lists) & listsMissingAnId;
+            var listsToReadAgain = ListsNotYetReadAgain(connectionId, lists) & listsMissingAnId;
 
             if (listsToReadAgain == OriginalNameLists.None)
             {
                 return (names, missingStatusIds, missingIssueTypeIds);
             }
 
-            ForgetForReadingAgain(listsToReadAgain);
+            ForgetForReadingAgain(connectionId, listsToReadAgain);
 
-            names = await OriginalNamesOf(client, deployment, readFor, cancellationToken, lists);
+            names = await OriginalNamesOf(client, deployment, connectionId, readFor, cancellationToken, lists);
 
-            return (names, names.StatusIdsItDoesNotKnow(statusIds), names.IssueTypeIdsItDoesNotKnow(issueTypeIds));
+            return (names, names.StatusIdsItDoesNotKnow(ids.StatusIds), names.IssueTypeIdsItDoesNotKnow(ids.IssueTypeIds));
         }
 
-        private OriginalNameLists ListsNotYetReadAgain(OriginalNameLists lists)
+        private OriginalNameLists ListsNotYetReadAgain(int connectionId, OriginalNameLists lists)
         {
             var notYetReadAgain = OriginalNameLists.None;
 
-            if (lists.HasFlag(OriginalNameLists.Statuses) && !statusListReadAgainThisRefresh)
+            if (lists.HasFlag(OriginalNameLists.Statuses) && !connectionsWhoseStatusListWasReadAgain.ContainsKey(connectionId))
             {
                 notYetReadAgain |= OriginalNameLists.Statuses;
             }
 
-            if (lists.HasFlag(OriginalNameLists.IssueTypes) && !issueTypeListReadAgainThisRefresh)
+            if (lists.HasFlag(OriginalNameLists.IssueTypes) && !connectionsWhoseIssueTypeListWasReadAgain.ContainsKey(connectionId))
             {
                 notYetReadAgain |= OriginalNameLists.IssueTypes;
             }
@@ -2478,18 +2484,18 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return notYetReadAgain;
         }
 
-        private void ForgetForReadingAgain(OriginalNameLists lists)
+        private void ForgetForReadingAgain(int connectionId, OriginalNameLists lists)
         {
             if (lists.HasFlag(OriginalNameLists.Statuses))
             {
-                statusListReadAgainThisRefresh = true;
-                statusNamesReadThisRefresh = null;
+                connectionsWhoseStatusListWasReadAgain[connectionId] = true;
+                statusNamesReadThisRefresh.TryRemove(connectionId, out _);
             }
 
             if (lists.HasFlag(OriginalNameLists.IssueTypes))
             {
-                issueTypeListReadAgainThisRefresh = true;
-                issueTypeNamesReadThisRefresh = null;
+                connectionsWhoseIssueTypeListWasReadAgain[connectionId] = true;
+                issueTypeNamesReadThisRefresh.TryRemove(connectionId, out _);
             }
         }
 
@@ -2521,7 +2527,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// read is not kept, so the next call asks again.
         /// </summary>
         private async Task<JiraOriginalNames> OriginalNamesOf(
-            HttpClient client, JiraDeployment deployment, JiraReadException.ReadFor readFor, CancellationToken cancellationToken,
+            HttpClient client, JiraDeployment deployment, int connectionId, JiraReadException.ReadFor readFor, CancellationToken cancellationToken,
             OriginalNameLists lists = OriginalNameLists.Both)
         {
             if (deployment == JiraDeployment.DataCenter)
@@ -2532,42 +2538,44 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             switch (lists)
             {
                 case OriginalNameLists.Statuses:
-                    return await StatusNamesOf(client, readFor, cancellationToken);
+                    return await StatusNamesOf(client, connectionId, readFor, cancellationToken);
                 case OriginalNameLists.IssueTypes:
-                    return await IssueTypeNamesOf(client, readFor, cancellationToken);
+                    return await IssueTypeNamesOf(client, connectionId, readFor, cancellationToken);
                 default:
-                    var statuses = await StatusNamesOf(client, readFor, cancellationToken);
-                    var issueTypes = await IssueTypeNamesOf(client, readFor, cancellationToken);
+                    var statuses = await StatusNamesOf(client, connectionId, readFor, cancellationToken);
+                    var issueTypes = await IssueTypeNamesOf(client, connectionId, readFor, cancellationToken);
 
                     return JiraOriginalNames.Combining(statuses, issueTypes);
             }
         }
 
         private async Task<JiraOriginalNames> StatusNamesOf(
-            HttpClient client, JiraReadException.ReadFor readFor, CancellationToken cancellationToken)
+            HttpClient client, int connectionId, JiraReadException.ReadFor readFor, CancellationToken cancellationToken)
         {
-            if (statusNamesReadThisRefresh is { } known)
+            if (statusNamesReadThisRefresh.TryGetValue(connectionId, out var known))
             {
                 return known;
             }
 
             using var list = await ReadList(client, JiraRestRoutes.Status, JiraReadException.StatusListRefused, readFor, cancellationToken);
 
-            return statusNamesReadThisRefresh = JiraOriginalNames.FromStatusList(list.RootElement);
+            return statusNamesReadThisRefresh[connectionId] = JiraOriginalNames.FromStatusList(list.RootElement);
         }
 
         private async Task<JiraOriginalNames> IssueTypeNamesOf(
-            HttpClient client, JiraReadException.ReadFor readFor, CancellationToken cancellationToken)
+            HttpClient client, int connectionId, JiraReadException.ReadFor readFor, CancellationToken cancellationToken)
         {
-            if (issueTypeNamesReadThisRefresh is { } known)
+            if (issueTypeNamesReadThisRefresh.TryGetValue(connectionId, out var known))
             {
                 return known;
             }
 
             using var list = await ReadList(client, JiraRestRoutes.IssueType, JiraReadException.IssueTypeListRefused, readFor, cancellationToken);
 
-            return issueTypeNamesReadThisRefresh = JiraOriginalNames.FromIssueTypeList(list.RootElement);
+            return issueTypeNamesReadThisRefresh[connectionId] = JiraOriginalNames.FromIssueTypeList(list.RootElement);
         }
+
+        private readonly record struct IdsToLookUp(IReadOnlyList<string?> StatusIds, IReadOnlyList<string?> IssueTypeIds);
 
         [Flags]
         private enum OriginalNameLists { None = 0, Statuses = 1, IssueTypes = 2, Both = Statuses | IssueTypes }
