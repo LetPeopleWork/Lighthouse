@@ -147,8 +147,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Assert.That(Counted(run, "Rewritten"), Is.EqualTo(2));
                     Assert.That(Counted(run, "Skipped"), Is.EqualTo(1));
                     Assert.That(run.Warnings, Has.Count.EqualTo(1));
-                    Assert.That(run.Warnings[0], Does.Contain(unreadableTeamId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
-                    Assert.That(run.Everything.Single(entry => entry.Level == LogLevel.Warning).Properties["Rule"], Is.EqualTo("EmptyGroup"));
+                    var warning = run.Everything.Single(entry => entry.Level == LogLevel.Warning);
+                    Assert.That(warning.Properties["OwnerId"], Is.EqualTo(unreadableTeamId));
+                    Assert.That(warning.Properties["Rule"], Is.EqualTo("EmptyGroup"));
                 }
             });
         }
@@ -161,7 +162,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         {
             if (provider == Provider.Sqlite)
             {
-                var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-lists-6458-{Guid.NewGuid():N}.db");
+                var databaseFile = Path.Combine(Path.GetTempPath(), $"lighthouse-lists-{Guid.NewGuid():N}.db");
                 try
                 {
                     await using var services = BuildProvider(options => options.UseSqlite($"Data Source={databaseFile};Pooling=False", sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));

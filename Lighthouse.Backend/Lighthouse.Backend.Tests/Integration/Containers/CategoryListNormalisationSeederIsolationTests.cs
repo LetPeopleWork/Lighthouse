@@ -95,7 +95,9 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Assert.That(Convert.ToInt32(summary.Properties["Skipped"], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(1));
                     Assert.That(Convert.ToInt32(summary.Properties["Rewritten"], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(2));
                     Assert.That(log.Warnings, Has.Count.EqualTo(1));
-                    Assert.That(log.Warnings[0], Does.Contain(refusedTeamId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                    var warning = log.Everything.Single(entry => entry.Level == LogLevel.Warning);
+                    Assert.That(warning.Properties["OwnerId"], Is.EqualTo(refusedTeamId));
+                    Assert.That(warning.Properties["Rule"], Is.EqualTo("SaveFailed"));
                 }
             }
             finally

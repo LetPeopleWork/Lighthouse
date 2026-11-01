@@ -60,7 +60,9 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
         private async Task Normalise<TOwner>(IRepository<TOwner> repository, TOwner owner, string ownerType, Tally tally)
             where TOwner : WorkTrackingSystemOptionsOwner
         {
-            if (owner.StateMappings.Exists(mapping => StateCategoryLists.MembersOf(mapping).Count == 0))
+            var lists = owner.CategoryLists();
+            var legacyShape = lists.LegacyShape();
+            if (legacyShape == LegacyListShape.EmptyGroup)
             {
                 tally.Skipped++;
                 logger.LogWarning("{OwnerType} {OwnerId} left as it is; Rule {Rule}", ownerType, owner.Id, EmptyGroup);
@@ -68,13 +70,12 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             }
 
             var stored = ListsSnapshot.Of(owner);
-            var normalised = stored.NormalisedBy(owner.CategoryLists());
+            var normalised = stored.NormalisedBy(lists);
             if (normalised.SameAs(stored))
             {
                 return;
             }
 
-            var legacyRule = LegacyRuleOf(owner);
             normalised.WriteTo(owner);
 
             if (!await TrySave(repository))
@@ -88,10 +89,14 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             tally.Rewritten++;
             logger.LogInformation("{OwnerType} {OwnerId} category lists rewritten as raw states", ownerType, owner.Id);
 
-            if (legacyRule != null)
+            if (legacyShape != null)
             {
                 tally.LegacyExpanded++;
-                logger.LogWarning("{OwnerType} {OwnerId} rewritten the old way; Rule {Rule}", ownerType, owner.Id, legacyRule);
+                logger.LogWarning(
+                    "{OwnerType} {OwnerId} had a group's name listed beside one of its own states, or a group holding another group's name, and was rewritten as older versions read it; Rule {Rule}",
+                    ownerType,
+                    owner.Id,
+                    legacyShape == LegacyListShape.Shadowing ? Shadowing : Chained);
             }
         }
 
@@ -134,27 +139,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 return false;
             }
         }
-
-        private static string? LegacyRuleOf(WorkTrackingSystemOptionsOwner owner)
-        {
-            var lists = owner.CategoryLists();
-            var entries = lists.StoredLists()
-                .SelectMany(stored => stored.States.Select(entry => (Entry: entry, Kind: lists.ClassifyListEntry(stored.States, entry))))
-                .ToList();
-
-            if (entries.Exists(classified => classified.Kind == ListEntryKind.Shadowing))
-            {
-                return Shadowing;
-            }
-
-            return entries.Exists(classified => classified.Kind != ListEntryKind.NotAGroupName && GroupsAnotherGroup(lists, classified.Entry))
-                ? Chained
-                : null;
-        }
-
-        private static bool GroupsAnotherGroup(StateCategoryLists lists, string groupName)
-            => StateCategoryLists.MembersOf(lists.GroupNamed(groupName)!)
-                .Exists(member => !StateCategoryLists.IsSameState(member, groupName) && lists.GroupNamed(member) != null);
 
         private sealed record ListsSnapshot(List<string> ToDo, List<string> Doing, List<string> Done)
         {

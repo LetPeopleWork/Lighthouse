@@ -25,6 +25,45 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        public void LegacyShape_AMappingWithNoStates_IsAnEmptyGroup(bool statesAreNull)
+        {
+            var team = ATeamWithReviewGroup("Analysis", "Review");
+            team.StateMappings.Add(new StateMapping { Name = "Waiting", States = statesAreNull ? null! : [] });
+
+            Assert.That(team.CategoryLists().LegacyShape(), Is.EqualTo(LegacyListShape.EmptyGroup));
+        }
+
+        [Test]
+        public void LegacyShape_AGroupNameBesideOneOfItsStates_IsShadowing()
+        {
+            var team = ATeamWithReviewGroup("Review", "Analysis", "Testing");
+
+            Assert.That(team.CategoryLists().LegacyShape(), Is.EqualTo(LegacyListShape.Shadowing));
+        }
+
+        [Test]
+        public void LegacyShape_AListedGroupHoldingAnotherGroupsName_IsChained()
+        {
+            var team = new Team { DoingStates = ["B", "Analysis"] };
+            team.StateMappings.Add(new StateMapping { Name = "A", States = ["Fix"] });
+            team.StateMappings.Add(new StateMapping { Name = "B", States = ["A"] });
+
+            Assert.That(team.CategoryLists().LegacyShape(), Is.EqualTo(LegacyListShape.Chained));
+        }
+
+        [Test]
+        [TestCase("Analysis", "Review", "Waiting")]
+        [TestCase("Analysis", "Code Review", "Testing")]
+        public void LegacyShape_ACollapsedGroupOrRawStates_IsNone(params string[] doing)
+        {
+            var team = ATeamWithReviewGroup(doing);
+
+            Assert.That(team.CategoryLists().LegacyShape(), Is.Null);
+        }
+
+        [Test]
         public void ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker()
         {
             var team = ATeamWithActiveGroup("Analysis", "Active", "Blocked");

@@ -114,6 +114,34 @@ namespace Lighthouse.Backend.Models
                 : ListEntryKind.CollapsedGroup;
         }
 
+        /// <summary>
+        /// A shape of these lists that older versions read in their own way, or null when there is none. A mapping
+        /// with no states is reported first, because no reading of it can be rewritten as raw states.
+        /// </summary>
+        public LegacyListShape? LegacyShape()
+        {
+            if (stateMappings.Any(mapping => MembersOf(mapping).Count == 0))
+            {
+                return LegacyListShape.EmptyGroup;
+            }
+
+            var entries = StoredLists()
+                .SelectMany(stored => stored.States.Select(entry => (Entry: entry, Kind: ClassifyListEntry(stored.States, entry))))
+                .ToList();
+
+            if (entries.Exists(classified => classified.Kind == ListEntryKind.Shadowing))
+            {
+                return LegacyListShape.Shadowing;
+            }
+
+            return entries.Exists(classified => classified.Kind != ListEntryKind.NotAGroupName && GroupsAnotherGroup(classified.Entry))
+                ? LegacyListShape.Chained
+                : null;
+        }
+
+        private bool GroupsAnotherGroup(string groupName)
+            => MembersOf(GroupNamed(groupName)!).Exists(member => !IsSameState(member, groupName) && GroupNamed(member) != null);
+
         /// <summary>The name of the mapping that groups a raw state, or the state itself when no mapping groups it.</summary>
         public string MapRawStateToMappedName(string rawState)
             => GroupContaining(rawState)?.Name ?? rawState;
