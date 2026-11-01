@@ -3,6 +3,11 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceN
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
+    /// <summary>
+    /// A stored list that still holds a group's name is read through the owner's classifier, so a record in one of
+    /// the group's states is still dated. These stay green through the change: they fail if reads ever take the
+    /// stored list as it stands.
+    /// </summary>
     [TestFixture]
     public class ServiceNowStateSpanMapperRawListsTest
     {
@@ -12,47 +17,39 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static ServiceNowStateSpan ASpan(string label, string time) => new(Record, label, At(time));
 
-        // A desk whose tracker really has a state called "In Arbeit", next to a group of the same name over another state.
-        private static Team ADeskWithAStateNamedLikeAGroup()
+        private static Team ADeskWhoseListsHoldTheGroupName(string[] toDo, string[] doing, string[] done)
         {
-            var team = new Team { ToDoStates = ["New"], DoingStates = ["In Arbeit"], DoneStates = ["Closed"] };
-            team.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
+            var team = new Team { ToDoStates = [.. toDo], DoingStates = [.. doing], DoneStates = [.. done] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
             return team;
         }
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
-        public void WhenWorkStarted_StateNamedLikeAGroup_IsTheArrivalIntoThatState()
+        public void WhenWorkStarted_StoredDoingListHoldsTheGroupName_IsTheArrivalIntoOneOfItsStates()
         {
-            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("New", "06:00:00"), ASpan("In Arbeit", "09:00:00"), ASpan("Closed", "17:00:00")];
+            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("New", "06:00:00"), ASpan("Code Review", "09:00:00"), ASpan("Closed", "17:00:00")];
 
-            var started = ServiceNowStateSpanMapper.WhenWorkStarted(spans, ADeskWithAStateNamedLikeAGroup());
+            var started = ServiceNowStateSpanMapper.WhenWorkStarted(spans, ADeskWhoseListsHoldTheGroupName(["New"], ["Review"], ["Closed"]));
 
             Assert.That(started, Is.EqualTo(At("09:00:00")));
         }
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
-        public void WhenWorkFinished_DoneStateNamedLikeAGroup_IsTheArrivalIntoThatState()
+        public void WhenWorkFinished_StoredDoneListHoldsTheGroupName_IsTheArrivalIntoOneOfItsStates()
         {
-            var desk = new Team { ToDoStates = ["New"], DoingStates = ["Active"], DoneStates = ["Erledigt"] };
-            desk.StateMappings.Add(new StateMapping { Name = "Erledigt", States = ["Resolved"] });
-            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("New", "06:00:00"), ASpan("Active", "09:00:00"), ASpan("Erledigt", "17:00:00")];
+            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("New", "06:00:00"), ASpan("Active", "09:00:00"), ASpan("Testing", "17:00:00")];
 
-            var finished = ServiceNowStateSpanMapper.WhenWorkFinished(spans, desk);
+            var finished = ServiceNowStateSpanMapper.WhenWorkFinished(spans, ADeskWhoseListsHoldTheGroupName(["New"], ["Active"], ["Review"]));
 
             Assert.That(finished, Is.EqualTo(At("17:00:00")));
         }
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
-        public void WhenWorkWasQueued_ToDoStateNamedLikeAGroup_IsTheLastReturnIntoThatState()
+        public void WhenWorkWasQueued_StoredToDoListHoldsTheGroupName_IsTheLastReturnIntoOneOfItsStates()
         {
-            var desk = new Team { ToDoStates = ["Eingang"], DoingStates = ["Active"], DoneStates = ["Closed"] };
-            desk.StateMappings.Add(new StateMapping { Name = "Eingang", States = ["New"] });
-            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("Eingang", "06:00:00"), ASpan("Active", "09:00:00"), ASpan("Eingang", "11:00:00")];
+            IReadOnlyList<ServiceNowStateSpan> spans = [ASpan("Code Review", "06:00:00"), ASpan("Active", "09:00:00"), ASpan("Testing", "11:00:00")];
 
-            var queued = ServiceNowStateSpanMapper.WhenWorkWasQueued(spans, desk);
+            var queued = ServiceNowStateSpanMapper.WhenWorkWasQueued(spans, ADeskWhoseListsHoldTheGroupName(["Review"], ["Active"], ["Closed"]));
 
             Assert.That(queued, Is.EqualTo(At("11:00:00")));
         }

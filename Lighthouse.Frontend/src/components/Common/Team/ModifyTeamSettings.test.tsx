@@ -106,11 +106,17 @@ vi.mock("../LoadingAnimation/LoadingAnimation", () => ({
 	__esModule: true,
 	default: ({
 		isLoading,
+		hasError,
 		children,
 	}: {
 		isLoading: boolean;
+		hasError?: boolean;
 		children: React.ReactNode;
-	}) => <div>{isLoading ? "Loading..." : children}</div>,
+	}) => {
+		if (isLoading) return <div>Loading...</div>;
+		if (hasError) return <div>Error loading data. Please try again later.</div>;
+		return <div>{children}</div>;
+	},
 }));
 
 vi.mock("../WorkItemTypes/WorkItemTypesComponent", () => ({
@@ -314,6 +320,25 @@ describe("ModifyTeamSettings", () => {
 		);
 
 		expect(screen.getByText("Loading...")).toBeInTheDocument();
+	});
+
+	// Pending: the editor passes hasError={false} to the loading frame, so a failed fetch shows no words today.
+	it.skip("shows the could-not-load words when the settings cannot be fetched", async () => {
+		mockGetTeamSettings.mockRejectedValue(new Error("offline"));
+
+		render(
+			<ModifyTeamSettings
+				title="Modify Team Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getTeamSettings={mockGetTeamSettings}
+				saveTeamSettings={mockSaveTeamSettings}
+				validateTeamSettings={mockValidateTeamSettings}
+			/>,
+		);
+
+		expect(
+			await screen.findByText("Error loading data. Please try again later."),
+		).toBeInTheDocument();
 	});
 
 	it("renders components correctly after loading", async () => {

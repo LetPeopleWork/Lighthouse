@@ -6,6 +6,7 @@ const HELP_TEXT =
 	"Combine several Doing states into one named group. The group shows as one chip in your Doing list and in the charts; its states are still read from your tracker. Delete the group to see its states separately again.";
 
 describe("StateMappingsEditor over raw Doing states", () => {
+	// Pending: the editor still shows the old help text until the frontend slice replaces it.
 	it.skip("explains that a group is one chip in Doing and the charts, and that its states stay read from the tracker", () => {
 		render(
 			<StateMappingsEditor

@@ -107,7 +107,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             Assert.That(
                 StateMappingValidator.ValidateSettings(settings).Errors,
-                Has.Some.EqualTo("Mapping \"Review\" groups states from different categories: \"Testing\" is in To Do and \"Testing\" is in Done. Keep a mapping's states in one category."));
+                Has.Some.EqualTo("Mapping \"Review\" groups \"Testing\", which is in both To Do and Done. Keep a mapping's states in one category."));
         }
 
         [Test]

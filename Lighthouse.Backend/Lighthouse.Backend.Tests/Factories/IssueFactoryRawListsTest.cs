@@ -6,6 +6,11 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Factories
 {
+    /// <summary>
+    /// A stored list that still holds a group's name (not yet rewritten, skipped by the start-up pass, or saved by an
+    /// older instance) is read through the owner's classifier, so an item in one of the group's states is still
+    /// dated. These stay green through the change: they fail if reads ever take the stored list as it stands.
+    /// </summary>
     [TestFixture]
     public class IssueFactoryRawListsTest
     {
@@ -30,13 +35,18 @@ namespace Lighthouse.Backend.Tests.Factories
                 }
                 """);
 
-        [Test]
-        [Ignore("pending: category lists hold raw states")]
-        public void CreateIssueFromJson_DoingStateNamedLikeAGroup_DatesTheStartByTheArrivalIntoThatState()
+        private static Team ATeamWhoseListsHoldTheGroupName(string[] doing, string[] done)
         {
-            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["In Arbeit"], DoneStates = ["Closed"] };
-            team.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
-            using var json = AnIssueNowIn("In Arbeit", "Backlog", "2024-09-27T00:00:00.000+0000");
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = [.. doing], DoneStates = [.. done] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
+            return team;
+        }
+
+        [Test]
+        public void CreateIssueFromJson_StoredDoingListHoldsTheGroupName_DatesTheStartByTheArrivalIntoOneOfItsStates()
+        {
+            var team = ATeamWhoseListsHoldTheGroupName(["Analysis", "Review"], ["Closed"]);
+            using var json = AnIssueNowIn("Code Review", "Backlog", "2024-09-27T00:00:00.000+0000");
 
             var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team);
 
@@ -48,12 +58,10 @@ namespace Lighthouse.Backend.Tests.Factories
         }
 
         [Test]
-        [Ignore("pending: category lists hold raw states")]
-        public void CreateIssueFromJson_DoneStateNamedLikeAGroup_DatesTheCloseByTheArrivalIntoThatState()
+        public void CreateIssueFromJson_StoredDoneListHoldsTheGroupName_DatesTheCloseByTheArrivalIntoOneOfItsStates()
         {
-            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Active"], DoneStates = ["Erledigt"] };
-            team.StateMappings.Add(new StateMapping { Name = "Erledigt", States = ["Resolved"] });
-            using var json = AnIssueNowIn("Erledigt", "Active", "2024-09-28T00:00:00.000+0000");
+            var team = ATeamWhoseListsHoldTheGroupName(["Analysis"], ["Review"]);
+            using var json = AnIssueNowIn("Testing", "Analysis", "2024-09-28T00:00:00.000+0000");
 
             var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team);
 

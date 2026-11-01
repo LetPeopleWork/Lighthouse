@@ -4,8 +4,8 @@ namespace Lighthouse.Backend.Tests.Models
 {
     /// <summary>
     /// Stored Doing lists of the kind the previous release wrote, with the mappings that go with them: states of
-    /// the tracker, a group named after one of its own states, a group's name standing in for its states, and the
-    /// 6454 shape where a group's name sits beside one of its states. States come with other casing and with
+    /// the tracker, a group named after one of its own states, a group's name standing in for its states, and a
+    /// group's name listed beside one of its own states. States come with other casing and with
     /// spaces, tabs or non-breaking spaces around them. The same seed gives the same cases on every run.
     /// </summary>
     public sealed record StateListCase(int Index, Team Owner, List<string> StoredDoing, Dictionary<string, ListEntryKind> NamedEntries)

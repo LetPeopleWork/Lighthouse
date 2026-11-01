@@ -98,7 +98,7 @@ describe("validateStateMappings over lists of raw states", () => {
 				lists(["Active"], ["Testing"], ["Testing"]),
 			),
 		).toEqual([
-			'Mapping "Review" groups states from different categories: "Testing" is in To Do and "Testing" is in Done. Keep a mapping\'s states in one category.',
+			'Mapping "Review" groups "Testing", which is in both To Do and Done. Keep a mapping\'s states in one category.',
 		]);
 	});
 

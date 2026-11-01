@@ -15,7 +15,9 @@
 		{ "a": " Review", "b": "Review" },
 		{ "a": "Review ", "b": "review" },
 		{ "a": "\u0085Review", "b": "Review" },
-		{ "a": "Review\u0085", "b": "REVIEW" }
+		{ "a": "Review\u0085", "b": "REVIEW" },
+		{ "a": " Review ", "b": "Review" },
+		{ "a": "\tReview", "b": "review" }
 	],
 	"blank": ["", " ", "\t", "\u0085", " ", " "]
 }

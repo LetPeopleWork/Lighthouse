@@ -447,13 +447,13 @@ Points the review gate should look at (found while writing the tests; each took 
 
 No tags appear in the code (project rule); the classification lives in this table only. State: `pending` is
 skipped with a reason that says what it waits for (`[Ignore("pending: ...")]`, `it.skip`); `green` runs today.
-Counts per case (a parameterised method counts once per case): **backend 157 cases in these classes, 26 green,
-131 pending; frontend 53 cases in these files, 17 green, 36 pending.** The table lists methods: 161 rows, 125
-pending, 36 green.
+Counts per case (a parameterised method counts once per case): **backend 168 cases in these classes, 37 green,
+131 pending; frontend 54 cases in these files, 17 green, 37 pending.** The table lists methods: 170 rows, 123
+pending, 47 green.
 
 **Error-path share.** Strict error paths (a refusal, an unreadable or refused write, a failed fetch, null or blank
-input, a late answer) are 33 of 161 methods: **20%**, below the 40% target. Adding the edge, regression-probe
-and property rows brings the share of non-happy-path rows to 88 of 161 (55%). The strict share is not
+input, a late answer) are 35 of 170 methods: **21%**, below the 40% target. Adding the edge, regression-probe
+and property rows brings the share of non-happy-path rows to 92 of 170 (54%). The strict share is not
 reachable honestly beyond this: the feature is a data-model correction, so most of its observable behaviour is
 a successful reading of a different shape (raw lists, a group on display, a rewritten row) and the refusals it
 adds are few (shadowing, chain, categories). The error scenarios that exist were all added; none is padding.
@@ -474,15 +474,18 @@ The classification column is a reading of the test name, not a tag.
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState | owner view, split category lookup, raw reads | pending | property |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_ReadsTheListsAsTheyAre | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_RawStateThatSharesAMappingsName_KeepsItsOwnCategory | owner view, split category lookup, raw reads | pending | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown | owner view, split category lookup, raw reads | pending | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates | owner view, split category lookup, raw reads | pending | happy path |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_ListHoldsAStateNamedLikeAMapping_KeepsThatStateAndDoesNotAddTheMappingsStates | owner view, split category lookup, raw reads | pending | happy path |
-| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | OpenStates_ListHoldsAStateNamedLikeAMapping_ReadsToDoAndDoingAsTheyAre | owner view, split category lookup, raw reads | pending | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_StoredListHoldsTheGroupNameInPlaceOfItsStates_ReadsTheStatesThrough | owner view, split category lookup, raw reads | green | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | OpenStates_StoredListHoldsTheGroupNameInPlaceOfItsStates_ReadsTheStatesThrough | owner view, split category lookup, raw reads | green | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_StoredListHoldsAGroupNameBesideOneOfItsStates_ReadsTheLegacyExpansion | owner view, split category lookup, raw reads | green | happy path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_OwnerTheStartUpPassCouldNotRead_StillHoldsTheStatesOfTheOtherEntries | owner view, split category lookup, raw reads | pending | error path |
+| `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_ReadTwiceOverAListTheStartUpPassAlreadyRewrote_IsUnchanged | owner view, split category lookup, raw reads | green | edge |
 | `Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs` | AllStates_RawListWithAMappingOverIt_HoldsEveryRawStateOnce | owner view, split category lookup, raw reads | pending | happy path |
 | `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
 | `Tests/Models/CategoryListNormalisationTest.cs` | ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup | normalisation: set-equivalence, idempotence, rollback | pending | happy path |
@@ -526,6 +529,9 @@ The classification column is a reading of the test name, not a tag.
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTwoGroupsWithTheSameName_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName | settings HTTP: write path and read model (Team and Portfolio) | green | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows | validator rules over raw lists | pending | error path |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList | validator rules over raw lists | pending | error path |
 | `Tests/API/Helpers/StateMappingValidatorRawListsTest.cs` | NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList | validator rules over raw lists | pending | error path |
@@ -552,11 +558,11 @@ The classification column is a reading of the test name, not a tag.
 | `Tests/API/Helpers/StateMappingRuleCasesTest.cs` | ANameOfNothingButWhitespace_IsBlank | shared fold/blank cases, backend half | green | edge |
 | `Tests/Services/Implementation/MetricsAsOfGroupNameTest.cs` | TeamLookingBack_ItemWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing | as-of category of a group name | pending | regression probe |
 | `Tests/Services/Implementation/MetricsAsOfGroupNameTest.cs` | PortfolioLookingBack_FeatureWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing | as-of category of a group name | pending | regression probe |
-| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkStarted_StateNamedLikeAGroup_IsTheArrivalIntoThatState | connector reads lists as they are (ServiceNow) | pending | happy path |
-| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkFinished_DoneStateNamedLikeAGroup_IsTheArrivalIntoThatState | connector reads lists as they are (ServiceNow) | pending | happy path |
-| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkWasQueued_ToDoStateNamedLikeAGroup_IsTheLastReturnIntoThatState | connector reads lists as they are (ServiceNow) | pending | happy path |
-| `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_DoingStateNamedLikeAGroup_DatesTheStartByTheArrivalIntoThatState | connector reads lists as they are (Jira) | pending | happy path |
-| `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_DoneStateNamedLikeAGroup_DatesTheCloseByTheArrivalIntoThatState | connector reads lists as they are (Jira) | pending | happy path |
+| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkStarted_StoredDoingListHoldsTheGroupName_IsTheArrivalIntoOneOfItsStates | connector reads lists as they are (ServiceNow) | green | happy path |
+| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkFinished_StoredDoneListHoldsTheGroupName_IsTheArrivalIntoOneOfItsStates | connector reads lists as they are (ServiceNow) | green | happy path |
+| `Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapperRawListsTest.cs` | WhenWorkWasQueued_StoredToDoListHoldsTheGroupName_IsTheLastReturnIntoOneOfItsStates | connector reads lists as they are (ServiceNow) | green | happy path |
+| `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_StoredDoingListHoldsTheGroupName_DatesTheStartByTheArrivalIntoOneOfItsStates | connector reads lists as they are (Jira) | green | happy path |
+| `Tests/Factories/IssueFactoryRawListsTest.cs` | CreateIssueFromJson_StoredDoneListHoldsTheGroupName_DatesTheCloseByTheArrivalIntoOneOfItsStates | connector reads lists as they are (Jira) | green | happy path |
 | `Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs` | DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself | CSV demo journey over display states | pending | edge |
 | `Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs` | DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup | CSV demo journey over display states | pending | happy path |
 | `Tests/Architecture/CategoryListsAreReadAsTheyAreGuardTest.cs` | NoCodeExpandsACategoryList | no list expansion outside mapped-name readers (covers ADO) | pending | happy path |
@@ -569,6 +575,8 @@ The classification column is a reading of the test name, not a tag.
 | `Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs` | EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime | seeder on SQLite and Postgres: shapes, idempotence, unreadable owner | pending | happy path |
 | `Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs` | AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten | seeder on SQLite and Postgres: shapes, idempotence, unreadable owner | pending | error path |
 | `Tests/Integration/Containers/CategoryListNormalisationSeederIsolationTests.cs` | AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten | seeder: one owner's refused write does not hold back the others (SQLite) | pending | error path |
+| `Tests/Models/StateListCasesTest.cs` | Generate_ThreeHundredCases_HoldEveryKindOfEntryAndEveryKindOfPadding | the generator really produces the shapes the properties claim | green | happy path |
+| `Tests/Models/StateListCasesTest.cs` | Generate_Twice_GivesTheSameCases | the generator really produces the shapes the properties claim | green | edge |
 | `src/utils/stateMappingView.test.ts` | shows one group in the place of states that sit next to each other | frontend display view and shared rule cases | pending | happy path |
 | `src/utils/stateMappingView.test.ts` | puts a group where its first listed state is when its states are apart | frontend display view and shared rule cases | pending | edge |
 | `src/utils/stateMappingView.test.ts` | treats the same state in another casing or with spaces around it as one | frontend display view and shared rule cases | pending | edge |
@@ -622,6 +630,7 @@ The classification column is a reading of the test name, not a tag.
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | says it couldn't be loaded when the columns could not be fetched, and draws no empty chart | UI5 on the aging widget frame | pending | error path |
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | shows the chart once the columns have arrived | UI5 on the aging widget frame | green | happy path |
 | `src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx` | leaves every other chart to load on its own while the columns are missing | UI5 on the aging widget frame | green | happy path |
+| `src/components/Common/Team/ModifyTeamSettings.test.tsx` | shows the could-not-load words when the settings cannot be fetched | settings editor could-not-load words | pending | error path |
 
 Green at hand-off (they pin what must keep holding): the sync keeps a raw list as sent and a group deleted in the
 same save does not bring its other states back; an unrelated save succeeds while an older group spans categories;
@@ -659,19 +668,44 @@ the information is `ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_Shows
 it runs every registered seeder (`GetServices<ISeeder>()`, as the restore path does) over a collapsed owner, so
 it also fails until the new seeder is registered in `Program.cs`. No separate restore test was written.
 
-**Suggestions endpoint (revised in DESIGN round 2).** The RCA cited `SuggestionsController.cs:70-72` and
-`:87-89`; they read the stored lists directly. Under normalise-on-read (D12) the controller is Modified: it must
-read the owners' normalised lists, so an owner the seeder has not yet rewritten never offers a group name as a
-state. The earlier note that it needs no change is withdrawn. The scenario
+**Suggestions endpoint.** The RCA cited `SuggestionsController.cs:70-72` and `:87-89`; they return the stored lists
+unchanged, so the controller needs no change once the lists are raw. The design's component row ("stops
+returning mapping names") is therefore moot; DELIVER should drop it. The scenario
 `SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName` pins the outcome (green).
 
-**Source-scan guard.** The call-shape regex stays narrow on purpose: it catches an inline
+**Normalise on read (D12).** The tests that read a collapsed stored list are green today, because the old
+expansion already reads the members through, and they stay green through every slice: `AllStates`, `OpenStates`,
+the legacy expansion for a shadowing list, the Jira factory (start and close dates) and the three ServiceNow dates
+(`WhenWorkStarted`, `WhenWorkFinished`, `WhenWorkWasQueued`). They are guards against a read that takes the stored
+list as it stands, not pending scenarios. The pending ones are the reads that need new code: the category lookup on
+a collapsed list, `DisplayStatesFor`, the HTTP display lists for a collapsed and a shadowing stored owner, the
+suggestions for a collapsed stored owner, and `AllStates` for an owner the start-up pass could not read (the
+unreadable shape: a group with no states; today it throws). The earlier "raw state named like a group" connector
+scenarios are gone: an entry equal to a group's name with none of the group's states beside it is a collapsed
+group (D10), so that premise no longer exists. No scenario claims that a save repairs a skipped owner; the one
+that is true is kept: `SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates`
+(Team and Portfolio). The normalised save from today's editor is
+`SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace`, with its sync-level twin
+`SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace`.
+
+**Settings editor, could-not-load words.** `ModifyTeamSettings` passes `hasError={false}` to its loading frame, so
+a failed settings fetch shows no words today; the frame's own text ("Error loading data. Please try again
+later.") is pinned only in `LoadingAnimation.test.tsx`, and the editor's test mock ignored `hasError`. The design
+assumes an existing could-not-load state; it exists in the frame but is not wired in the editor. New pending
+scenario in `ModifyTeamSettings.test.tsx`; its mock now renders the frame's words from `hasError`.
+
+**Source-scan guard.** The guard for the D11 writers catches both shapes: a member assignment or mutation on an
+owner variable, and a list set inside the initialiser of a `new Team` or `new Portfolio`. Allow-listed with their
+reasons: the settings sync (both owners), the seeder, `DemoDataFactory` (demo lists of plain states, no mappings)
+and `CycleTimeDefinitionValidator` (a throwaway Team built from a payload to ask one question, never stored).
+Proof that it bites: a deliberately planted production class with `new Team { DoingStates = ... }` turned the test
+red naming the file; the plant was removed afterwards and the test is green again.
+
+The call-shape regex of the expansion guard stays narrow on purpose: it catches an inline
 `GetRawStatesForCategory(x.DoingStates)`. A call through a variable or a parameter (the ServiceNow mapper passes
 the list down) is caught by the second guard test, which allows only the files that read settings naming a
-group, whatever the call shape. A third test pins D11 (only `TeamExtensions`, `PortfolioExtensions` and the
-seeder assign or mutate an owner's three lists); it is green today and constrains the seeder when it lands.
-Initialisers (`DemoDataFactory.cs:49-55`, board mappers) are out of its reach by design and allow-listed as
-seed-data writers in D11: they create raw demo lists with no mappings.
+group, whatever the call shape. Under D12 the connectors read the owner's normalised view, so they still call
+no expansion on a list.
 
 ## Wave: DISTILL / [REF] Walking skeleton
 
@@ -729,10 +763,10 @@ which the server now sends too, with the list label varying (`To Do`, `Doing`, `
 `Mapping "{name}" has the same name as the {list label} state "{state}". Add "{name}" to this mapping to group it, or choose another name.`
 for a name beside one of its group's states, and
 `Mapping "{name}" has the same name as a state grouped by mapping "{other}". Choose another name.` for a chain.
-The earlier "Rename the mapping" and "another mapping" fragments were never approved and are gone. **Proposed copy,
-awaiting approval:** the category sentence, `Mapping "Review" groups states from different categories: "Code Review" is
-in To Do and "Testing" is in Doing. Keep a mapping's states in one category.`, pinned exactly on both stacks; the
-design gave no wording for it. Also pinned: the exact UI1 tooltip and UI3 help text, `data-testid="state-mapping-chip"` on
+The earlier "Rename the mapping" and "another mapping" fragments were never approved and are gone. **The category sentences are UI7** (proposed, default-accepted): `Mapping "Review" groups states from different categories: "Code Review" is
+in To Do and "Testing" is in Doing. Keep a mapping's states in one category.` and, for one state in two categories,
+`Mapping "Review" groups "Testing", which is in both To Do and Done. Keep a mapping's states in one category.`, both pinned
+exactly on both stacks. Also pinned: the exact UI1 tooltip and UI3 help text, `data-testid="state-mapping-chip"` on
 a mapping chip and `data-testid="state-mapping-chip-icon"` on its group icon; the seeder's summary line carries the
 named values `Scanned`, `Rewritten`, `LegacyExpanded`, `Skipped`; every seeder line carries only `OwnerType`,
 `OwnerId`, the counts and a fixed `Rule` (`Shadowing`, `Chained`, `Unreadable`, `SaveFailed`) and no exception text.
@@ -829,4 +863,32 @@ Decisions taken in the tests that the design did not state (for the next review)
    others are written, one skipped). Postgres is not repeated: what is tested is how the shared context is used.
 5. The frontend still has no scenario for the could-not-load text of the settings editor itself; the existing
    hook test pins the state, not the words, and the design reuses the existing screen.
+
+## Wave: DISTILL / [REF] Revision round 2
+
+D12 (normalise on read), D10's drop step and precedence, the D11 allow-list and UI7 are reflected.
+
+- **Reads.** The scenarios that said "read as they are" on a collapsed stored list are rewritten: a collapsed or
+  shadowing stored list reads the members through `AllStates`, `OpenStates`, both category lookups, the Jira
+  factory and the ServiceNow dates (green today, kept green as guards), and the pending ones need new code (the
+  category lookup, the HTTP display lists, the suggestions, an unreadable owner's `AllStates`). The "raw state
+  named like a group" connector scenarios are removed: under D10 that shape is a collapsed group. No text claims
+  that a save repairs a skipped owner.
+- **Guard (B1).** Widened to initialisers; `DemoDataFactory` and `CycleTimeDefinitionValidator` are allow-listed
+  with reasons; shown red once with a planted writer, then removed.
+- **Vacuous pass (B2).** The display property now builds the expected states from the stored input and the
+  generator's own knowledge of what it built, and reads the owner as stored; it no longer overwrites the lists
+  with the production normaliser's output.
+- **Refusals leave nothing behind (N2).** After each of the seven refusals the lists and mappings are read back
+  and must be as seeded. **Save status (N5)** is asserted wherever a save's result was dropped.
+- **Generator (N4).** The comment describes the shape in words; a self-check test proves the leading-space, tab,
+  non-breaking-space and upper-case variants are generated. `Trim()` in .NET and `trim()` in JavaScript both strip
+  U+00A0 and U+2003, so the two agree; the shared cases now also pin a non-breaking-space pair and a tab pair.
+- **Copy (UI7).** Both category sentences are pinned on both stacks.
+- **Small items.** Pending reasons are comments above the `it.skip` rows; the editor's could-not-load words get a
+  pending scenario (the editor never wires the frame's error state); the normalised save from today's editor is
+  named in the inventory.
+- **Red check.** Every pending test was run un-skipped again: 131 backend and 37 frontend fail on missing behaviour;
+  `distill/red-classification.md` is regenerated, one short line per test (the Done-group row now says "no display
+  lists").
 

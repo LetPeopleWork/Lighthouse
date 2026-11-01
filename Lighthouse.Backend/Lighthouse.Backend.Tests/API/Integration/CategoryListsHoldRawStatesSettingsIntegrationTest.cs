@@ -143,7 +143,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             SeedOwner();
 
-            await Save(Settings(doing: ["Analysis", "Active", "Blocked"], mappings: [ActiveGroup()]));
+            await SaveExpectingOk(Settings(doing: ["Analysis", "Active", "Blocked"], mappings: [ActiveGroup()]));
             var settings = await ReadSettings();
 
             using (Assert.EnterMultipleScope())
@@ -243,9 +243,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             SeedOwner();
             var legacy = Settings(doing: ["Analysis", "Active", "Blocked"], mappings: [ActiveGroup()]);
 
-            await Save(legacy);
+            await SaveExpectingOk(legacy);
             var afterFirst = Strings(await ReadSettings(), "doingStates");
-            await Save(Settings(doing: afterFirst, mappings: [ActiveGroup()]));
+            await SaveExpectingOk(Settings(doing: afterFirst, mappings: [ActiveGroup()]));
             var afterResendingWhatWasRead = Strings(await ReadSettings(), "doingStates");
 
             using (Assert.EnterMultipleScope())
@@ -270,6 +270,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     await Errors(response),
                     Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Doing state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -304,6 +306,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(await Errors(response), Has.Some.EqualTo("Mapping \"A\" has the same name as a state grouped by mapping \"B\". Choose another name."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -339,6 +343,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     await Errors(response),
                     Has.Some.EqualTo("Mapping \"Review\" groups states from different categories: \"Code Review\" is in To Do and \"Testing\" is in Doing. Keep a mapping's states in one category."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -352,8 +358,10 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(await Errors(response), Has.Some.Contains("groups states from different categories"));
+                Assert.That(await Errors(response), Has.Some.EqualTo("Mapping \"Review\" groups \"Testing\", which is in both To Do and Done. Keep a mapping's states in one category."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -395,6 +403,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(await Errors(response), Has.Some.EqualTo("A state mapping name is required."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -409,6 +419,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(await Errors(response), Has.Some.EqualTo("State mapping 'Review' must contain at least one state."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -425,6 +437,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
                 Assert.That(await Errors(response), Has.Some.EqualTo("Duplicate state mapping name 'Review'."));
             }
+
+            await AssertNothingWasStored();
         }
 
         [Test]
@@ -457,6 +471,66 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(doing, Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
+            }
+        }
+
+        // An owner the start-up pass has not rewritten (skipped, not yet reached, or saved by an older instance)
+        // reads through the classifier, so its pages and suggestions already show the states.
+        [Test]
+        [Ignore(Pending)]
+        public async Task ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupOnDisplay()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
+
+            var settings = await ReadSettings();
+
+            Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid()
+        {
+            SeedOwner(mappings: [new StateMappingDto { Name = "In Arbeit", States = ["In Progress"] }], doing: ["In Arbeit", "In Progress"]);
+
+            var settings = await ReadSettings();
+
+            Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("In Arbeit")));
+        }
+
+        [Test]
+        [Ignore(Pending)]
+        public async Task SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName()
+        {
+            SeedOwner(mappings: [Review()], doing: ["Analysis", "Review"]);
+
+            client.AsSystemAdmin();
+            var response = await client.GetAsync($"/api/latest/suggestions/states/{(kind == OwnerKind.Team ? "teams" : "projects")}");
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+                Assert.That(Strings(JsonDocument.Parse(body).RootElement, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing")));
+            }
+        }
+
+        private async Task SaveExpectingOk(SettingsOwnerDtoBase dto)
+        {
+            var response = await Save(dto);
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), await response.Content.ReadAsStringAsync());
+        }
+
+        // A refused save stores nothing: the lists and the mappings read back as they were seeded.
+        private async Task AssertNothingWasStored()
+        {
+            var settings = await ReadSettings();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Strings(settings, "toDoStates"), Is.EqualTo(Listed("Backlog")));
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Active")));
+                Assert.That(Strings(settings, "doneStates"), Is.EqualTo(Listed("Done")));
+                Assert.That(settings.GetProperty("stateMappings").GetArrayLength(), Is.Zero);
             }
         }
 

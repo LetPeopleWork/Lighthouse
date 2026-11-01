@@ -32,6 +32,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "API/Helpers/TeamExtensions.cs",
             "API/Helpers/PortfolioExtensions.cs",
             "Services/Implementation/Seeding/CategoryListNormalisationSeeder.cs",
+
+            // Builds the demo Teams and Portfolios with lists of plain states and no mappings, so there is nothing to normalise.
+            "Factories/DemoDataFactory.cs",
+
+            // Builds a throwaway Team from a payload to ask the owner whether a cycle time boundary is valid; it is never stored.
+            "API/Helpers/CycleTimeDefinitionValidator.cs",
         ];
 
         // Catches a call with the list inline. A call through a variable or a parameter (the ServiceNow mapper
@@ -39,7 +45,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [GeneratedRegex(@"GetRawStatesForCategory\(\s*[\w.]*\b(ToDoStates|DoingStates|DoneStates)\b", RegexOptions.CultureInvariant)]
         private static partial Regex ExpandsACategoryList();
 
-        [GeneratedRegex(@"\b(?:team|project|portfolio|owner|workItemQueryOwner|workTrackingSystemOptionsOwner)\.(?:ToDoStates|DoingStates|DoneStates)\s*(?:=(?!=)|\.(?:Add|AddRange|Clear|Remove|RemoveAll|Insert)\()", RegexOptions.CultureInvariant)]
+        // Two shapes: a member assignment or mutation on an owner variable, and a list set inside the initialiser of a
+        // new Team or Portfolio.
+        [GeneratedRegex(@"\b(?:team|project|portfolio|owner|workItemQueryOwner|workTrackingSystemOptionsOwner)\.(?:ToDoStates|DoingStates|DoneStates)\s*(?:=(?!=)|\.(?:Add|AddRange|Clear|Remove|RemoveAll|Insert)\()|\bnew\s+(?:Team|Portfolio)\b[^;]*?\b(?:ToDoStates|DoingStates|DoneStates)\s*=(?!=)", RegexOptions.CultureInvariant | RegexOptions.Singleline)]
         private static partial Regex PutsAListOnAnOwner();
 
         private static string FindRepositoryRoot()

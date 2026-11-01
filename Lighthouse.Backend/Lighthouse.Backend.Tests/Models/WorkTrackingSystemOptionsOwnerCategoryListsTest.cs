@@ -123,22 +123,39 @@ namespace Lighthouse.Backend.Tests.Models
         {
             foreach (var generated in StateListCases.Generate(300).Where(c => !c.HasShadowing))
             {
-                generated.Owner.DoingStates = generated.Owner.NormalisedStatesFor(generated.StoredDoing);
-                var raw = generated.Owner.DoingStates;
-                string DisplayNameOf(string state) => Folded(generated.Owner.MapRawStateToMappedName(state.Trim()));
+                // What the stored list stands for, worked out from the input alone and in the order it is read.
+                var states = StatesTheStoredListStandsFor(generated);
+                var expectedNames = states.Select(state => Folded(generated.Owner.MapRawStateToMappedName(state.Trim()))).Distinct().ToList();
 
-                var shown = generated.Owner.DisplayStatesFor(StateCategories.Doing);
-                var shownKeys = shown.Select(Folded).ToList();
-                var firstPlaceInRaw = shownKeys.Select(key => raw.FindIndex(state => DisplayNameOf(state) == key)).ToList();
+                var shownKeys = generated.Owner.DisplayStatesFor(StateCategories.Doing).Select(Folded).ToList();
 
                 using (Assert.EnterMultipleScope())
                 {
                     Assert.That(shownKeys, Is.Unique, $"a name shown twice. {generated}");
-                    Assert.That(shownKeys, Is.EquivalentTo(raw.Select(DisplayNameOf).Distinct()), $"a state lost or invented. {generated}");
-                    Assert.That(firstPlaceInRaw, Has.All.GreaterThanOrEqualTo(0), generated.ToString());
-                    Assert.That(firstPlaceInRaw, Is.Ordered.Ascending, $"a name not at its first state's place. {generated}");
+                    Assert.That(shownKeys, Is.EqualTo(expectedNames), $"a state lost, invented or out of place. {generated}");
                 }
             }
+        }
+
+        private static List<string> StatesTheStoredListStandsFor(StateListCase generated)
+        {
+            var states = new List<string>();
+            foreach (var entry in generated.StoredDoing.Where(listed => !string.IsNullOrWhiteSpace(listed)))
+            {
+                var name = entry.Trim();
+                var group = generated.Owner.StateMappings.FirstOrDefault(mapping => mapping.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (group is null || generated.NamedEntries[group.Name] == ListEntryKind.StateOfItsOwnMapping)
+                {
+                    states.Add(name);
+                }
+
+                if (group is not null)
+                {
+                    states.AddRange(group.States);
+                }
+            }
+
+            return states;
         }
 
         [Test]
@@ -167,12 +184,16 @@ namespace Lighthouse.Backend.Tests.Models
 
         [Test]
         [Ignore(Pending)]
-        public void CategoryOfRawState_RawStateThatSharesAMappingsName_KeepsItsOwnCategory()
+        public void CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList()
         {
-            var team = new Team { DoingStates = ["In Arbeit"], ToDoStates = ["Backlog"] };
-            team.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
+            var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
 
-            Assert.That(team.CategoryOfRawState("In Arbeit"), Is.EqualTo(StateCategories.Doing));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.CategoryOfRawState("Code Review"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.CategoryOfRawState("Testing"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.CategoryOfRawState("Review"), Is.EqualTo(StateCategories.Unknown), "The group's name is no state of the tracker.");
+            }
         }
 
         [Test]
@@ -238,24 +259,53 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(team.CategoryOfDisplayName("Active"), Is.EqualTo(StateCategories.Doing));
         }
 
+        // A stored list that still holds a group's name (never rewritten, skipped by the start-up pass, or saved by
+        // an older instance) is read through the classifier, so every item of the grouped states still loads.
         [Test]
-        [Ignore(Pending)]
-        public void AllStates_ListHoldsAStateNamedLikeAMapping_KeepsThatStateAndDoesNotAddTheMappingsStates()
+        public void AllStates_StoredListHoldsTheGroupNameInPlaceOfItsStates_ReadsTheStatesThrough()
         {
-            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["In Arbeit"], DoneStates = ["Done"] };
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review", "Waiting"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
+
+            Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Code Review", "Testing", "Waiting", "Done")));
+        }
+
+        [Test]
+        public void OpenStates_StoredListHoldsTheGroupNameInPlaceOfItsStates_ReadsTheStatesThrough()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
+
+            Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Code Review", "Testing")));
+        }
+
+        [Test]
+        public void AllStates_StoredListHoldsAGroupNameBesideOneOfItsStates_ReadsTheLegacyExpansion()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["In Arbeit", "In Progress"], DoneStates = ["Done"] };
             team.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
 
-            Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "In Arbeit", "Done")));
+            Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "In Progress", "Done")));
         }
 
         [Test]
         [Ignore(Pending)]
-        public void OpenStates_ListHoldsAStateNamedLikeAMapping_ReadsToDoAndDoingAsTheyAre()
+        public void AllStates_OwnerTheStartUpPassCouldNotRead_StillHoldsTheStatesOfTheOtherEntries()
         {
-            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["In Arbeit"], DoneStates = ["Done"] };
-            team.StateMappings.Add(new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review", "Waiting"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = null! });
 
-            Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "In Arbeit")));
+            Assert.That(() => team.AllStates.ToList(), Throws.Nothing);
+            Assert.That(team.AllStates, Is.SupersetOf(Listed("Backlog", "Analysis", "Waiting", "Done")));
+        }
+
+        [Test]
+        public void AllStates_ReadTwiceOverAListTheStartUpPassAlreadyRewrote_IsUnchanged()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Code Review", "Testing", "Waiting"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
+
+            Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Code Review", "Testing", "Waiting", "Done")));
         }
 
         [Test]
