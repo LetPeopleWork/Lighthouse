@@ -445,6 +445,40 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task GetWorkItemTypesForTeams_NamesDifferingOnlyInCase_KeepTheSpellingOfTheTeamWithTheLowestIdWhateverOrderTheRepositoryReturns()
+        {
+            var newer = CreateTeam();
+            newer.Id = 2;
+            newer.WorkItemTypes.Clear();
+            newer.WorkItemTypes.Add("story");
+            var oldest = CreateTeam();
+            oldest.Id = 1;
+            oldest.WorkItemTypes.Clear();
+            oldest.WorkItemTypes.Add("Story");
+
+            var response = await CreateSubject().GetWorkItemTypesForTeams();
+
+            Assert.That(((OkObjectResult)response.Result!).Value, Is.EqualTo(new List<string> { "Story" }));
+        }
+
+        [Test]
+        public async Task GetWorkItemTypesForProjects_NamesDifferingOnlyInCase_KeepTheSpellingOfThePortfolioWithTheLowestIdWhateverOrderTheRepositoryReturns()
+        {
+            var newer = CreateProject();
+            newer.Id = 2;
+            newer.WorkItemTypes.Clear();
+            newer.WorkItemTypes.Add("epic");
+            var oldest = CreateProject();
+            oldest.Id = 1;
+            oldest.WorkItemTypes.Clear();
+            oldest.WorkItemTypes.Add("Epic");
+
+            var response = await CreateSubject().GetWorkItemTypesForProjects();
+
+            Assert.That(((OkObjectResult)response.Result!).Value, Is.EqualTo(new List<string> { "Epic" }));
+        }
+
         private static void SetStates(WorkTrackingSystemOptionsOwner owner, string[] toDo, string[] doing, string[] done)
         {
             owner.ToDoStates.Clear();

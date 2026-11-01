@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.API
             var readableTeamIdSet = (readableTeamIds ?? teamIds)
                 .ToHashSet();
 
-            return teams.Where(t => readableTeamIdSet.Contains(t.Id));
+            return teams.Where(t => readableTeamIdSet.Contains(t.Id)).OrderBy(t => t.Id);
         }
 
         private async Task<IEnumerable<Portfolio>> GetReadablePortfolios()
@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.API
             var readablePortfolioIdSet = (readablePortfolioIds ?? portfolioIds)
                 .ToHashSet();
 
-            return portfolios.Where(p => readablePortfolioIdSet.Contains(p.Id));
+            return portfolios.Where(p => readablePortfolioIdSet.Contains(p.Id)).OrderBy(p => p.Id);
         }
     }
 }
