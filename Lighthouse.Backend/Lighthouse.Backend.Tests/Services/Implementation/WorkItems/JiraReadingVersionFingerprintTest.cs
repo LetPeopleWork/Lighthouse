@@ -31,21 +31,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
         private const string AJiraPortfoliosFingerprintBeforeTheUpgrade = "091b24376c85e4ad5afed8a066ab11dd";
 
+        private const string AJiraTeamsFingerprintWithTheReadingVersion = "550c254f514ed280b0950bf6930cfc58";
+
+        private const string AJiraPortfoliosFingerprintWithTheReadingVersion = "63438e52e318e6c8a26f9946f1d2975e";
+
         public static IEnumerable<WorkTrackingSystems> EveryTrackerButJira
             => Enum.GetValues<WorkTrackingSystems>().Where(tracker => tracker != WorkTrackingSystems.Jira);
 
         [Test]
-        [Ignore("The fingerprint carries no Jira reading version yet")]
         public void A_Jira_Team_stored_before_the_upgrade_no_longer_matches_so_it_is_refreshed_in_full_once()
         {
             Assert.That(FetchFingerprint.For(ATeamOn(WorkTrackingSystems.Jira)), Is.Not.EqualTo(AJiraTeamsFingerprintBeforeTheUpgrade));
         }
 
         [Test]
-        [Ignore("The fingerprint carries no Jira reading version yet")]
         public void A_Jira_Portfolio_stored_before_the_upgrade_no_longer_matches_so_it_is_refreshed_in_full_once()
         {
             Assert.That(FetchFingerprint.For(APortfolioOn(WorkTrackingSystems.Jira)), Is.Not.EqualTo(AJiraPortfoliosFingerprintBeforeTheUpgrade));
+        }
+
+        [Test]
+        public void A_Jira_Team_carries_exactly_the_fingerprint_the_reading_version_gives_it()
+        {
+            Assert.That(FetchFingerprint.For(ATeamOn(WorkTrackingSystems.Jira)), Is.EqualTo(AJiraTeamsFingerprintWithTheReadingVersion));
+        }
+
+        [Test]
+        public void A_Jira_Portfolio_carries_exactly_the_fingerprint_the_reading_version_gives_it()
+        {
+            Assert.That(FetchFingerprint.For(APortfolioOn(WorkTrackingSystems.Jira)), Is.EqualTo(AJiraPortfoliosFingerprintWithTheReadingVersion));
         }
 
         [Test]

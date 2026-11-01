@@ -12,15 +12,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// worked out moved these digests, every Team and Portfolio on every instance would download
     /// everything on the first update after the upgrade. Taking the connection's part of the fingerprint
     /// out into a function of its own must leave all three unchanged.
+    ///
+    /// The Jira digests were re-pinned on purpose when the Jira reading-version marker was added to the
+    /// connection's part of the fingerprint: every Jira Team and Portfolio takes one full refresh after that
+    /// upgrade. The Team and the Portfolio here sit on a Jira connection, so their digests moved; the digest of
+    /// a Portfolio read without its connection did not.
     /// </summary>
     [TestFixture]
     [Category("story-6307-refresh-on-additional-fields-change")]
     [Category("contract-shape:pure-function")]
     public class FetchFingerprintPinnedDigestTest
     {
-        private const string TheTeamsStoredFingerprint = "31fea2f9b446425c48714adde896e11d";
+        private const string TheTeamsStoredFingerprint = "178f7c190469f76ef4423c1e680ea2d6";
 
-        private const string ThePortfoliosStoredFingerprint = "427b6dece3da51911144616de4cc404f";
+        private const string ThePortfoliosStoredFingerprint = "6d06bf5c2f9c46b0e80f5a077e4e1898";
 
         private const string ThePortfolioWithoutItsConnectionsStoredFingerprint = "9a5ae7627477a3dbe4f80c4204789044";
 

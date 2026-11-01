@@ -109,10 +109,22 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// fingerprint already stored keeps matching after an upgrade.
         /// </remarks>
         public static string ForConnection(WorkTrackingSystemConnection? connection)
+            => connection?.WorkTrackingSystem == WorkTrackingSystems.Jira
+                ? string.Join(BetweenProperties, RenderedWithoutReadingVersion(connection), JiraReadingVersion)
+                : RenderedWithoutReadingVersion(connection);
+
+        private static string RenderedWithoutReadingVersion(WorkTrackingSystemConnection? connection)
             => string.Join(
                 BetweenProperties,
                 Render(connection?.AdditionalFieldDefinitions),
                 connection?.WorkTrackingSystem.ToString() ?? Absent);
+
+        /// <summary>
+        /// Jira owners stored their statuses and work item types under the account's display language. Moving
+        /// to the original names must re-read every item once, and an unchanged item is otherwise skipped, so
+        /// the marker changes every Jira fingerprint one time. Raise it only to force such a re-read again.
+        /// </summary>
+        private const string JiraReadingVersion = "original-names-1";
 
         private const string Absent = "-";
 

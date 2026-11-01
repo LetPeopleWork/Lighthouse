@@ -12,6 +12,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// no connection has a default yet, so an owner that names nothing still reads nothing, and every one of
     /// these digests must come out the same; if one moved, every such owner on every instance would download
     /// everything on its first update after the upgrade.
+    ///
+    /// The digests were re-pinned on purpose when the Jira reading-version marker was added to the
+    /// connection's part of the fingerprint: these owners sit on a Jira connection, so each one takes one full
+    /// refresh after that upgrade and keeps its new digest from then on.
     /// </summary>
     [TestFixture]
     [Category("epic-6303-configure-once-per-connection")]
@@ -22,13 +26,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     [Category("contract-shape:pure-function")]
     public class FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest
     {
-        private const string TheOwningTeamsStoredFingerprint = "23f7d6888b4dac84ff45d4742760cef4";
+        private const string TheOwningTeamsStoredFingerprint = "154b09f400b4278eb953f8f7eb0d272c";
 
-        private const string TheTeamNamingNothingsStoredFingerprint = "6a24ccb89d0884fb806e48d6554e6b12";
+        private const string TheTeamNamingNothingsStoredFingerprint = "274b9fd5da57e1dd4b78eb37fe38c4ae";
 
-        private const string TheOwningPortfoliosStoredFingerprint = "71bb307dee02d10c33214b4f1d7b7b82";
+        private const string TheOwningPortfoliosStoredFingerprint = "5675e74a9054426808923484dd1acd35";
 
-        private const string ThePortfolioNamingNothingsStoredFingerprint = "aaf2516f22a47f6c7c8889483bfb2e23";
+        private const string ThePortfolioNamingNothingsStoredFingerprint = "e9416bc3bf27ec045dd03282526f553c";
 
         [Test]
         public void A_Team_that_names_its_own_Parent_Override_Field_keeps_its_fingerprint()
