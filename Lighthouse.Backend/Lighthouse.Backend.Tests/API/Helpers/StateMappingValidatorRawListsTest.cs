@@ -153,6 +153,14 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
+        public void TwoGroupsOverTheSameStatePaddedDifferently_AreRefused()
+        {
+            var settings = Settings(["Backlog"], ["A"], ["Done"], Mapping("G1", "A"), Mapping("G2", "A "));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo("Source state 'A' appears in multiple mappings: 'G1', 'G2'."));
+        }
+
+        [Test]
         public void TwoGroupsWithTheSameName_AreRefusedOnce()
         {
             var settings = Settings(["Backlog"], ["Code Review", "Testing"], ["Done"], Mapping("Review", "Code Review"), Mapping("REVIEW", "Testing"));

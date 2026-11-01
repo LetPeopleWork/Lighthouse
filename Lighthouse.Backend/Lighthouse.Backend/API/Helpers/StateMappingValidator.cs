@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.API.Helpers
                 .ToList();
 
             var duplicateSourceStates = allSourceStates
-                .GroupBy(x => x.State, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(x => x.State?.Trim(), StringComparer.OrdinalIgnoreCase)
                 .Where(g => g.Count() > 1)
                 .ToList();
 

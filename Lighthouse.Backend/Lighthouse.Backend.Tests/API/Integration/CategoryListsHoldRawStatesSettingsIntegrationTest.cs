@@ -458,6 +458,24 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        public async Task SavingTwoGroupsOverTheSameStatePaddedDifferently_IsRefused()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(
+                doing: ["A"],
+                mappings: [new StateMappingDto { Name = "G1", States = ["A"] }, new StateMappingDto { Name = "G2", States = ["A "] }]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest), await response.Content.ReadAsStringAsync());
+                Assert.That(await Errors(response), Has.Some.EqualTo("Source state 'A' appears in multiple mappings: 'G1', 'G2'."));
+            }
+
+            await AssertNothingWasStored();
+        }
+
+        [Test]
         public async Task SavingTwoGroupsWithTheSameName_IsRefused()
         {
             SeedOwner();
