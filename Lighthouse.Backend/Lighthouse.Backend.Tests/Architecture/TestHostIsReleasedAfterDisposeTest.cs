@@ -20,49 +20,84 @@ namespace Lighthouse.Backend.Tests.Architecture
     [NonParallelizable]
     public class TestHostIsReleasedAfterDisposeTest
     {
-        private static readonly TimeSpan HowLongToWaitForTheHostToBeFreed = TimeSpan.FromSeconds(15);
+        private static readonly TimeSpan HowLongToWaitForAHostThatMadeNoClient = TimeSpan.FromSeconds(15);
+
+        // A host that created one factory client is held until the test host's one-second handler lifetime
+        // has passed and the factory's own cleanup tick (every 10 seconds) has run, so it needs a longer wait.
+        private static readonly TimeSpan HowLongToWaitForAHostThatMadeOneClient = TimeSpan.FromSeconds(30);
 
         private const string ARouteThatDoesNotExist = "/api/latest/zz-nothing-here";
+
+        private enum WhatTheHostDoes
+        {
+            ServesOneRequest,
+            ResolvesEveryOAuthProvider,
+            CreatesOneFactoryClient,
+        }
 
         [OneTimeSetUp]
         public void StartAndDropAWarmUpHost()
         {
-            // The first host of every process stays reachable through one-shot timers that other
-            // components create once; it is not the leak, so it is built and dropped before measuring.
-            _ = StartServeAndDisposeAHost(resolveEveryOAuthProvider: false);
+            // The first host of a test process run can stay reachable through one-shot timers that other
+            // components create once; it is not the leak. This fixture builds and drops one host before
+            // measuring, which discards the first host of the process run it is in. Whether that is enough
+            // when the whole suite runs in one process has not been proven.
+            _ = StartAndDisposeAHost(WhatTheHostDoes.ServesOneRequest);
         }
 
         [Test]
         [Ignore("Enabled when the test-host leak fix lands")]
         public void AHostThatServedARequestIsFreedOnceDisposed()
         {
-            var host = StartServeAndDisposeAHost(resolveEveryOAuthProvider: false);
+            var host = StartAndDisposeAHost(WhatTheHostDoes.ServesOneRequest);
+
+            var outcome = WaitUntilFreed(host, HowLongToWaitForAHostThatMadeNoClient);
 
             Assert.That(
-                WaitUntilFreed(host),
+                outcome.Freed,
                 Is.True,
-                "A disposed test host is still reachable after " + HowLongToWaitForTheHostToBeFreed.TotalSeconds +
-                " seconds of collections. Something outside the host (a timer, a static) still points at it.");
+                "A disposed test host is still reachable after " + Describe(outcome) +
+                " Something outside the host (a timer, a static) still points at it. " +
+                "The rate limiters' refill timers are the usual cause.");
         }
 
         [Test]
         [Ignore("Enabled when the test-host leak fix lands")]
         public void AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed()
         {
-            var host = StartServeAndDisposeAHost(resolveEveryOAuthProvider: true);
+            var host = StartAndDisposeAHost(WhatTheHostDoes.ResolvesEveryOAuthProvider);
+
+            var outcome = WaitUntilFreed(host, HowLongToWaitForAHostThatMadeNoClient);
 
             Assert.That(
-                WaitUntilFreed(host),
+                outcome.Freed,
                 Is.True,
-                "A disposed test host that resolved the OAuth providers is still reachable after " +
-                HowLongToWaitForTheHostToBeFreed.TotalSeconds + " seconds of collections. A provider is probably " +
-                "holding an HTTP client instead of asking the client factory for one per request.");
+                "A disposed test host that resolved the OAuth providers is still reachable after " + Describe(outcome) +
+                " A provider is probably holding an HTTP client instead of asking the client factory for one per request.");
         }
+
+        [Test]
+        [Ignore("Enabled when the test-host leak fix lands")]
+        public void AHostThatCreatedOneHttpClientIsFreedOnceDisposed()
+        {
+            var host = StartAndDisposeAHost(WhatTheHostDoes.CreatesOneFactoryClient);
+
+            var outcome = WaitUntilFreed(host, HowLongToWaitForAHostThatMadeOneClient);
+
+            Assert.That(
+                outcome.Freed,
+                Is.True,
+                "A disposed test host that created one HTTP client is still reachable after " + Describe(outcome) +
+                " The test host should give HTTP client handlers a lifetime of one second; check that it does.");
+        }
+
+        private static string Describe((bool Freed, TimeSpan Elapsed, int Collections) outcome) =>
+            outcome.Elapsed.TotalSeconds.ToString("F1") + " seconds (" + outcome.Collections + " rounds of collections).";
 
         // Synchronous and never inlined, so no local of the calling test (or of an async state machine)
         // can keep the host alive; only the weak reference leaves this method.
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static WeakReference StartServeAndDisposeAHost(bool resolveEveryOAuthProvider)
+        private static WeakReference StartAndDisposeAHost(WhatTheHostDoes whatTheHostDoes)
         {
             var factory = new TestWebApplicationFactory<Program>();
 
@@ -71,9 +106,14 @@ namespace Lighthouse.Backend.Tests.Architecture
                 using var response = client.GetAsync(ARouteThatDoesNotExist).GetAwaiter().GetResult();
             }
 
-            if (resolveEveryOAuthProvider)
+            if (whatTheHostDoes == WhatTheHostDoes.ResolvesEveryOAuthProvider)
             {
                 _ = factory.Services.GetServices<IOAuthProvider>().ToList();
+            }
+
+            if (whatTheHostDoes == WhatTheHostDoes.CreatesOneFactoryClient)
+            {
+                _ = factory.Services.GetRequiredService<IHttpClientFactory>().CreateClient();
             }
 
             var weakReference = new WeakReference(factory);
@@ -81,27 +121,29 @@ namespace Lighthouse.Backend.Tests.Architecture
             return weakReference;
         }
 
-        private static bool WaitUntilFreed(WeakReference host)
+        private static (bool Freed, TimeSpan Elapsed, int Collections) WaitUntilFreed(WeakReference host, TimeSpan limit)
         {
             var stopwatch = Stopwatch.StartNew();
+            var collections = 0;
 
-            while (stopwatch.Elapsed < HowLongToWaitForTheHostToBeFreed)
+            while (stopwatch.Elapsed < limit)
             {
 #pragma warning disable S1215 // The test asks "can this object be collected?", which only a forced full collection can answer.
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
 #pragma warning restore S1215
+                collections++;
 
                 if (!host.IsAlive)
                 {
-                    return true;
+                    return (true, stopwatch.Elapsed, collections);
                 }
 
                 Thread.Sleep(250);
             }
 
-            return !host.IsAlive;
+            return (false, stopwatch.Elapsed, collections);
         }
     }
 }

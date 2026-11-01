@@ -85,9 +85,12 @@ The `.gcdump` binaries stay out of git. A temporary probe (a test file, a reflec
 
 ### Verdict on the hypothesis
 
-"One or two dominant roots, most likely the EF cache": **one dominant root holds, but it is not the EF cache.** The retained
-object is the whole test host, and a static timer keeps it alive even after the factory is disposed. The EF cache is ruled out
-below.
+"One or two dominant roots, most likely the EF cache": **two roots hold, and neither is the EF cache.** The retained object is
+the whole test host, and a static timer keeps it alive even after the factory is disposed. Two roots each pin every host on their
+own: (1) the HTTP client a singleton captured, which keeps the client factory's cleanup timer looping; (2) the rate limiters'
+timer loops, which nobody stops when the host is disposed. On top of both sits the per-host payload (3.8-5.6 MB), which is what
+makes each pinned host expensive. The first pass below found only root 1; the fix experiment further down corrected that. The
+EF cache is ruled out below.
 
 ### RSS over time (run 1: gcdumps at 60/240/420 s, 6 workers, 7 m 40 s)
 
@@ -138,7 +141,7 @@ The shift from active to expired handler entries between 60 s and 240 s is the H
 
 ### Named roots, ranked
 
-**1. `IHttpClientFactory` cleanup timer pins every host that has a singleton holding a factory client (dominant, about all of it).**
+**1. `IHttpClientFactory` cleanup timer pins every host that has a singleton holding a factory client (root 1 of 2; the fix experiment below shows it is not alone).**
 - Chain, found by walking from static fields by reflection 230 s after a *disposed* factory
   (`snapshots/probe-disposed-host-root-path.txt`): `static TimerQueue.Instances` -> `TimerQueueTimer._state` ->
   `DefaultHttpClientFactory._services` -> `ServiceProviderEngineScope.RootProvider` -> `ServiceProvider` -> the factory delegates
@@ -151,7 +154,7 @@ The shift from active to expired handler entries between 60 s and 240 s is the H
   `JiraOAuthProvider` / `AdoOAuthProvider`). The host holds the client, the client keeps the handler alive, the expired entry
   cannot be purged, and the 10 s cleanup timer re-arms itself forever; the timer is rooted by the static timer queue. A loop,
   rooted outside the host.
-- Handler lifetime is set at `Program.cs:341-344` (2 minutes); it only decides when the loop starts.
+- Handler lifetime is set at `Program.cs:340-343` (2 minutes); it only decides when the loop starts.
 - Production runs one host per process, so this costs nothing there; the suite creates about 2000 hosts in one process.
 - Test code that creates the hosts: `TestHelpers/TestWebApplicationFactory.cs` (and every fixture that news one up).
 
@@ -235,7 +238,7 @@ its execution context; that is one host per process, not the leak, so the matrix
 
 | | Before (run 2, as shipped) | After (both fixes) |
 |---|---|---|
-| Peak RSS | 15.3 GB (monitor sample); 17.7 GB in the gcdump run | **4.2 GB** (3 s sampler, at 360 s) |
+| Peak RSS | 15.3 GB (monitor sample); 17.7 GB in the gcdump run | **4.2 GB** (3 s sampler, at 360 s); predates the final design (rate limiting was off and there was no seam) |
 | Run duration | 8 m 11 s | 6 m 20 s |
 | Live factories after GC at ~30 / 120 / 240 / 340 / 370 s | 208 / ~830 / 1148 / ~1600 / 1961 | 9 / 6 / 9 / 155 / 155 |
 | Live managed MB at the same marks | 1169 / ~4700 / 6237 / ~9300 / 10968 | 185 / 309 / 277 / 1636 / 1617 |
@@ -259,28 +262,29 @@ a ramp tied to the number of hosts created (1962 created, about 150 alive), but 
 Shape of the work: a composition-root lifetime fix (who owns an object that has a timer) plus a guard test. Nothing a user sees
 changes, so no sketch, no loading or failure look, no usage-data event. The recommended option was taken for every choice.
 
-**Spike result: not run.** The design session had no shell tool, so nothing was built or run and no number exists. D2 part (b) is
-reasoned from the measured root chains, not validated; the spike is the guard test of step 1 and is run in DELIVER, and the
-section "D2 spike and what it decides" states what each outcome means. D2(a), D1 and D1b rest on the earlier fix experiment.
+**Spike result: decisions were written before the spike; the spike ran after `ea982758e`, see the Rate-limiter spike section.** The
+design session had no shell tool, so nothing in this table was built or run when it was written. D2 part (b) was reasoned from the
+measured root chains and the Rate-limiter spike then measured it. D1, D1b and D2(a) were written from the earlier fix experiment,
+before the spike ran; the spike confirmed D1 + D2(a) as the base the seam sits on.
 
 | # | Decision | Chosen | Why / trade-off |
 |---|---|---|---|
-| D1 | OAuth providers stop holding a factory client | The two providers take `IHttpClientFactory` (the client name is already a public constant on each class) and ask for a client inside each token request. Clients are not disposed by the provider; the factory owns the handler. The `AddHttpClient(name, timeout 30 s)` registrations at `Program.cs` 356-364 stay untouched and are honoured on every `CreateClient`. The two singleton registrations become plain type registrations. | The documented factory usage. A typed client would be registered transient or scoped, so a singleton provider would capture a stale one (the same trap in other clothes); a hand-built `SocketsHttpHandler` with `PooledConnectionLifetime` would leave the factory's handler management and the 30 s timeout registration, a behaviour surface with no memory gain. Behaviour is identical: same endpoint, same handler pipeline, same timeout. Cost: one cheap `CreateClient` per token request (token requests are rare). |
-| D1b | Test hosts shorten the handler lifetime | `TestWebApplicationFactory` re-registers `ConfigureAll<HttpClientFactoryOptions>` with a handler lifetime of a few seconds, after the product's two minutes. Test-only. | Any host that did make one factory request stays pinned until lifetime plus the factory's fixed 10 s cleanup tick. With 2 minutes that is the 155 late hosts; with seconds it is a window of about 15 s. The product's value is unchanged. Handler lifetime only decides connection-pool reuse, which no test relies on (no test references it). |
+| D1 | OAuth providers stop holding a factory client | The two providers take `IHttpClientFactory` (the client name is already a public constant on each class) and ask for a client inside each token request. Clients are not disposed by the provider; the factory owns the handler. The `AddHttpClient(name, timeout 30 s)` registrations at `Program.cs` 356-364 stay untouched and are honoured on every `CreateClient`. The two singleton registrations become plain type registrations. | The documented factory usage. A typed client would be registered transient or scoped, so a singleton provider would capture a stale one (the same trap in other clothes); a hand-built `SocketsHttpHandler` with `PooledConnectionLifetime` would leave the factory's handler management and the 30 s timeout registration, a behaviour surface with no memory gain. Same endpoint, same handler pipeline, same timeout, same API behaviour. One change in connection lifetime: before, the captured handler was never rotated; after, it rotates on the documented 2-minute handler lifetime (DNS is re-read). Accepted as alignment with the framework's documented use of `IHttpClientFactory`. Cost: one cheap `CreateClient` per token request (token requests are rare). |
+| D1b | Test hosts shorten the handler lifetime | `TestWebApplicationFactory` re-registers `ConfigureAll<HttpClientFactoryOptions>` with a handler lifetime of 1 second (settled in DISTILL, guard case C), after the product's two minutes. Test-only. | Any host that did make one factory request stays pinned until lifetime plus the factory's fixed 10 s cleanup tick. With 2 minutes that is the 155 late hosts; with seconds it is a window of about 15 s. The product's value is unchanged. Handler lifetime only decides connection-pool reuse, which no test relies on (no test references it). |
 | D2 | Rate limiting stays ON; its two timer loops stop pinning hosts | (a) The one-address global limiter becomes a DI singleton owned by the container (so it is disposed with the host) and the options pick it up through `IConfigureOptions<RateLimiterOptions>`. The limiter body, partitions and numbers are moved, not edited. (b) The framework-built endpoint limiter: see below. | (a) is certain and public-API only. Candidates rejected for the global limiter: dispose on `ApplicationStopping` (works, but a second lifetime story next to DI for the same object) and `ExecutionContext.SuppressFlow` (cuts only the context path, which is sufficient for this limiter because its partitioner is static, but leaves the object undisposed). |
-| D2(b) | The endpoint limiter | **No public API disposes it or cuts its graph.** It is created inside `RateLimitingMiddleware` and never exposed. `SuppressFlow` is not enough: its timer loop is an instance method whose partitioner is a closure over the middleware, and the middleware holds the rest of the pipeline and the service provider, so the static timer reaches the host by a second path even with the context cut. Recommended: the spike decides between (i) and (ii). (i) If the framework limiter is released when the host is disposed after (a) (unlikely, given the measured loop), nothing more. (ii) Build the middleware at a seam the product owns (`app.Use` with a factory that creates the framework middleware exactly as `UseMiddleware` does), register the instance with a small disposable owner in DI, and on dispose dispose the middleware's endpoint limiter by reading its private field. Unconditional, not test-gated: one code path, and disposing limiters at graceful shutdown is correct in production too. | The reflection in (ii) is the price of the framework not exposing ownership. It fails loudly: if the field moves, a disposed host stays alive and the guard test goes red. Rejected here: re-implementing endpoint policies inside our own limiter (rule-change risk and a second enforcement path), a test-only switch that builds limiters differently (tests would stop proving production), and turning limiting off in tests (the two rate-limit tests assert it). |
-| D3 | The guard | A fast NUnit test in `Lighthouse.Backend.Tests/Architecture/`. After a warm-up host, create a `TestWebApplicationFactory`, start it (a plain test request, so the pipeline and both limiters are built; rate limiting is on by default in test hosts), dispose it, drop every reference, then poll with a full GC until its weak reference is dead, up to 15 s. Two cases: (A) a host that served a request and never asked the factory for a client; (B) a host that additionally resolved every `IOAuthProvider`. The factory is created in a separate non-inlined method so a Release build keeps no hidden local alive. The fixture is `[NonParallelizable]` and goes on the allowlist in `BackendTestParallelizationGuardTest` with the reason. | Case B needs no 2-minute wait: after D1, resolving the providers must not create a client, so the host dies at once; the regression it catches is a provider (or any singleton) taking a client again. A host that actually used a factory client is bounded by the handler lifetime by design (D1b); a test waiting for it would cost 12 s or more, so it is left out, and the late-host check lives in D4. The test is its own probe in the Earned Trust sense: it exercises the real environment lie (timers rooted outside the host). Serial so a loaded neighbour cannot slow the polling or add allocation noise; other fixtures' hosts cannot keep ours alive. No CI reporting step is needed, so `ci_backend.yml` is untouched. |
+| D2(b) | The endpoint limiter | **No public API disposes it or cuts its graph.** It is created inside `RateLimitingMiddleware` and never exposed. `SuppressFlow` is not enough: its timer loop is an instance method whose partitioner is a closure over the middleware, and the middleware holds the rest of the pipeline and the service provider, so the static timer reaches the host by a second path even with the context cut. Maintainer decision (option 1, no condition; see "Maintainer decision - endpoint rate limiter"): the spike showed that (i), a release after (a) alone, does not happen. Build the middleware at a seam the product owns (`app.Use` with a factory that creates the framework middleware exactly as `UseMiddleware` does), register the instance with a small disposable owner in DI, and on dispose dispose the middleware's endpoint limiter by reading its private field. Unconditional, not test-gated: one code path, and disposing limiters at graceful shutdown is correct in production too. | The reflection in (ii) is the price of the framework not exposing ownership. It fails loudly: if the field moves, a disposed host stays alive and the guard test goes red. Rejected here: re-implementing endpoint policies inside our own limiter (rule-change risk and a second enforcement path), a test-only switch that builds limiters differently (tests would stop proving production), and turning limiting off in tests (the two rate-limit tests assert it). |
+| D3 | The guard | A fast NUnit test in `Lighthouse.Backend.Tests/Architecture/`. After a warm-up host, create a `TestWebApplicationFactory`, start it (a plain test request, so the pipeline and both limiters are built; rate limiting is on by default in test hosts), dispose it, drop every reference, then poll with a full GC until its weak reference is dead, up to 15 s. Three cases: (A) a host that served a request and never asked the factory for a client; (B) a host that additionally resolved every `IOAuthProvider`; (C) a host that created one factory client. The factory is created in a separate non-inlined method so a Release build keeps no hidden local alive. The fixture is `[NonParallelizable]` and goes on the allowlist in `BackendTestParallelizationGuardTest` with the reason. | Case B needs no 2-minute wait: once the seam step has landed (neither the provider change nor the limiter change frees a host alone, measured), resolving the providers must not create a client, so the host dies at once; the regression it catches is a provider (or any singleton) taking a client again. A host that actually used a factory client is bounded by the handler lifetime by design (D1b); with the test host's one-second handler lifetime (D1b) such a host is gone within about 12 s, so case C covers it (about 12 s on a serial fixture); the late-host check also lives in D4. The test is its own probe in the Earned Trust sense: it exercises the real environment lie (timers rooted outside the host). Serial so a loaded neighbour cannot slow the polling or add allocation noise; other fixtures' hosts cannot keep ours alive. No CI reporting step is needed, so `ci_backend.yml` is untouched. |
 | D4 | Payoff measurement | Lead-owned precondition and closing step; protocol below. | Peak, shape and duration, not only peak. |
-| D5 | Behaviour-free proof | Existing tests, listed below; nothing deleted, skipped or weakened. | |
+| D5 | Behaviour-free proof, with disclosed changes | Existing tests, listed below; nothing deleted, skipped or weakened. Three changes are disclosed rather than called invisible: (1) the OAuth token clients' connection lifetime (before, the captured handler was never rotated; after, it rotates on the documented 2-minute handler lifetime and DNS is re-read; API behaviour unchanged; accepted as alignment with the framework's documented use); (2) option 1 adds a production boot-time failure mode: if the framework's rate-limiting internals are missing, the application refuses to start instead of serving without limits (accepted by the maintainer); (3) parity with the framework's `UseRateLimiter`, see below. | Routes, DTOs, responses and rate-limit rules are unchanged. The first two changes are real, small and accepted, so "behaviour-free" holds for what a caller of the API sees. |
 
-### D2 spike and what it decides (to be run before step 3b)
+### D2 spike and what it decides (written before the spike; the outcome is recorded below)
 
 One short, uncommitted probe, run through `dotnet test --no-build --filter "FullyQualifiedName~<probe>"` only, never the full
 suite: a warm-up host, then a host that served one request and never asked the factory for a client, disposed, full GC, weak
 reference alive or dead. This is the guard's case A, so the guard test written first in step 1 is the probe; no throwaway code
 is needed.
-- After D1 + D2(a) the probe dies: D2(b)(i) holds, step 3b is dropped.
-- It stays alive (the expected result): apply D2(b)(ii), re-run, and the probe must die.
+- After D1 + D2(a) the probe dies: D2(b)(i) holds and the seam step is not needed. This did not happen: the probe stayed alive (Rate-limiter spike, variant 1).
+- It stays alive (the expected result, and what happened): apply D2(b)(ii), re-run, and the probe must die. It did (variant 5); the combination "seam + provider resolution" is confirmed when case B is un-ignored in the seam step.
 - It still stays alive with (ii): a third holder exists. Walk the timers with the reflection root-walker recorded under
   `snapshots/`, name it, and fall back to the weaker option: keep limiting on, accept the endpoint limiter's pin per host that
   served a request, and ask T2 (fewer hosts) to carry the rest. Trade-off: the suite still holds one host per rate-limited
@@ -341,7 +345,7 @@ still up; liveness is the same).
 `OneAddressInventingANewBrowserEachTime_IsStillBounded`, run by filter: **both pass** with variant 5 (2 passed) and also with D1 + D2(a) alone
 (2 passed), so moving the global limiter into a singleton changes neither limit.
 
-**Recommendation.** Take variant 5 for step 3b, with these edges stated rather than hidden:
+**Recommendation (taken by the maintainer as option 1).** Take variant 5 for the seam step, with these edges stated rather than hidden:
 - It is the only variant measured to release the host with rate limiting on, and it keeps both rate-limit tests green.
 - It reflects on one private field of an internal framework type (`_endpointLimiter`) and activates the internal type by name. A framework update that
   renames the field or the type fails safe in the guard test (the host stays alive, the test goes red), and the production behaviour is unchanged as
@@ -367,11 +371,15 @@ that also created a factory client (D1b).
    - AddHttpClient(name, 30 s) (unchanged)    +--> IOAuthProvider port (unchanged)   named client, pooled handler (unchanged)
    - AddRateLimiter: global limiter                                                  
        from a DI singleton [NEW owner]      RateLimitingMiddleware (framework)
-   - UseRateLimiter seam (D2b ii) [NEW?]      endpoint limiter: disposed with the host [via the seam]
+   - app.UseRateLimiter() REPLACED by our       endpoint limiter: disposed with the container [via the seam]
+     construction of the middleware [NEW,                ^
+     unconditional]                                      | reflection edge (driven side):
+       |                                                 | owner -> internal RateLimitingMiddleware / _endpointLimiter
+       +--> rate-limiter owner [NEW] ---------------------+  fails loud at startup if the member is missing
                                           
  test host
    TestWebApplicationFactory [MODIFIED: short handler lifetime]
-   TestHostLeakGuard [NEW]: build, serve, dispose, GC, assert dead (cases A, B)
+   TestHostLeakGuard [NEW]: build, serve, dispose, GC, assert dead (cases A, B, C)
 ```
 
 Unchanged: every route, DTO, response, rate-limit rule and number, the 30 s timeout, `IOAuthProvider` and the registry, and
@@ -384,9 +392,9 @@ Unchanged: every route, DTO, response, rate-limit rule and number, the 30 s time
 | `JiraOAuthProvider`, `AdoOAuthProvider` | MODIFY | Constructor takes the factory instead of a client. Contract shape: bounded-change (no state kept besides the factory, time provider and logger). |
 | `Program.cs` OAuth registration | MODIFY | Two singletons become type registrations. |
 | `Program.cs` rate-limiting registration | MODIFY | The global limiter body moves into an owned class; the registration reads it via `IConfigureOptions<RateLimiterOptions>`. Contract shape: unchanged limits, universe = this host's limiter. |
-| Rate-limiter owner (class + disposal of the endpoint limiter) | CREATE NEW | No existing alternative: nothing in the product owns a limiter's lifetime. Disposes on container disposal. |
-| `app.UseRateLimiter()` call site | MODIFY (only if D2(b)(ii)) | Same gate (`RateLimits:Enabled`), same position in the pipeline. |
-| `TestWebApplicationFactory` | MODIFY | Handler lifetime of a few seconds. |
+| Rate-limiter owner (class + disposal of the endpoint limiter) | CREATE NEW | No existing alternative: nothing in the product owns a limiter's lifetime. Disposes on container disposal: the global limiter, and the middleware's endpoint limiter by reflection. |
+| `app.UseRateLimiter()` (Program.cs:216) | REPLACE | With our construction of the internal middleware; unconditional; same `RateLimits:Enabled` gate and pipeline position. |
+| `TestWebApplicationFactory` | MODIFY | Handler lifetime of 1 second. |
 | Leak guard fixture | CREATE NEW | No existing test measures host lifetime. |
 | `BackendTestParallelizationGuardTest` allowlist | MODIFY | One entry, with reason. |
 | The three OAuth provider test classes | MODIFY | Arrange only: a mock factory returns the same stub-handler client; assertions untouched. |
@@ -401,7 +409,9 @@ Unchanged: every route, DTO, response, rate-limit rule and number, the 30 s time
 | `BackendTestParallelizationGuardTest` allowlist | EXTEND | The mandated route for a serial fixture. |
 | `WhatOneAddressMayHandIn` | EXTEND | Same code, moved into the owned class; rules untouched. |
 | Per-test Moq style used by the OAuth tests | EXTEND | `Mock<IHttpClientFactory>` returning the existing stub-handler client; no new shared helper. |
-| Rate-limiter owner, leak guard fixture | CREATE NEW | No existing alternative. |
+| `app.UseRateLimiter()` (Program.cs:216) | REPLACE | No public API exists to release the endpoint limiter: `RateLimitingMiddleware` is internal, not `IDisposable`, and `RateLimiterOptions` exposes no hook (Rate-limiter spike, finding 3c). Maintainer option 1. |
+| Rate-limiter owner | CREATE NEW | No existing alternative: nothing in the product owns a limiter's lifetime. |
+| Leak guard fixture | CREATE NEW | `ctx_search` over `Lighthouse.Backend.Tests` (the `Architecture/` folder included) for `WeakReference`, `GC.Collect` and `IsAlive` found only this fixture: no host-lifetime test exists to extend. |
 
 ## Wave: DESIGN / [REF] Rejected alternatives
 
@@ -424,6 +434,14 @@ Unchanged: every route, DTO, response, rate-limit rule and number, the 30 s time
   `OneAddressInventingANewBrowserEachTime_IsStillBounded` (`UsageDataEventCeilingTests`) must be green in the filtered run; both failed
   in the measuring run precisely because limiting was off, so they now prove it is on. Also `S6_RateLimitingTests` and
   `UsageDataConsentRateLimitTests`.
+- Parity with the framework's `UseRateLimiter` (the lead's reading: it checks that `AddRateLimiter`'s services are registered, throwing
+  otherwise, and it adds the middleware). DELIVER confirms this against the framework source for the pinned version and keeps both in the
+  replacement: the registration check and the pipeline position.
+- Seam-step exit criteria: the four rate-limit classes `S6_RateLimitingTests`, `UsageDataConsentRateLimitTests`,
+  `Slice11CastAVoteScenarios` (holds `A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down`) and `UsageDataEventCeilingTests`
+  (holds `OneAddressInventingANewBrowserEachTime_IsStillBounded`) plus the three OAuth classes `JiraOAuthProviderTest`, `AdoOAuthProviderTest`
+  and `OAuthServiceTest` are green with the counts recorded; and a full standard-filter run with rate limits on is green apart from the known
+  2 publish-output failures.
 - OAuth: `JiraOAuthProviderTest`, `AdoOAuthProviderTest`, `OAuthServiceTest` (including the real-identity-provider refresh arrange),
   and the OAuth controller and registry tests. Assertions are untouched; only the arranged client source changes.
 - `dotnet build` with zero warnings; the standard-filter `dotnet test`.
@@ -434,17 +452,18 @@ Unchanged: every route, DTO, response, rate-limit rule and number, the 30 s time
 - Protocol: same machine, quiet, one suite at a time, `LIGHTHOUSE_TEST_WORKERS=6`, standard filter, the existing sampler and
   weak-reference monitor. Before = main immediately before step 2 (the 2026-11-01 numbers, 15.3-17.7 GB peak and 8 m 11 s, are the reference
   if the machine and day match; otherwise re-measure once). After = the branch with all steps. Report peak RSS, duration, and live
-  factories after GC at the same marks.
+  factories after GC at the same marks. Both arms use the same sampler (story 6461's `measure.sh`) plus the weak-reference tail monitor.
 - Target: peak under 3 GB, flat shape (live factories bounded by the hosts created inside one cleanup window, not by the total
-  created). Honest revision: the experiment with per-call clients alone left 155 late hosts and 4.2 GB; D1b is expected to remove
-  them. If D1b falls short, the target becomes under 4.5 GB with a flat shape, and the remainder is T2's.
+  created). It is the ONLY target. The 4.2 GB figure of the fix experiment predates the final design (rate limiting was off and there
+  was no seam); D1b is expected to remove the 155 late hosts it left. If DELIVER's measurement misses 3 GB, the miss is recorded
+  honestly and left to the maintainer at the hold; nobody changes the target.
 - Late hosts: keep the monitor alive for three minutes after the last test (temporary probe, removed) and expect the live count to
   fall to single digits by about 140 s; or re-run with D1b only and see them disappear. A host still alive after that gets the root
   walk from the retention-roots section.
 
 ## Wave: DESIGN / [REF] ADR-270 and ARCHITECTURE.md
 
-No change to either. The feature touches no bounded context, adds no concept, term, edge or domain event: it changes only how long
+ADR-270: no change. ADR-005 (`docs/product/architecture/adr-005-rate-limiting-middleware.md`): a short addendum in DELIVER's seam step (own construction, container-owned disposal, reflection with fail-loud startup, the .NET-upgrade check); a DELIVER task. ARCHITECTURE.md: check the rate-limiting section (today it names rate limiting only as an API-edge concern, §4 line 297) and update it in the same step if it describes construction. The feature touches no bounded context, adds no concept, term, edge or domain event: it changes only how long
 the composition root and the test host keep objects alive. The OAuth providers stay in the work-tracking context behind the same
 port; rate limiting stays an API-edge concern (ARCHITECTURE.md already names it only as such). `docs/ci-learnings.md` gets no rule,
 because the guard test enforces the lesson.
@@ -470,13 +489,12 @@ Rigor: standard. One slice, 3 steps, guard in the same change as the fix.
 | Step | What it delivers |
 |---|---|
 | 0 (lead) | Quiet slot; baseline numbers re-confirmed. |
-| 1 | The guard fixture written first, red for both cases, plus the allowlist entry (kept local until step 3 turns it green). |
-| 2 | OAuth providers ask the factory per request (D1) and the test factory shortens the handler lifetime (D1b); case B green; three OAuth test classes re-arranged. |
-| 3a | Global limiter owned by the container (D2a). |
-| 3b | If the spike says so, the endpoint limiter's owner seam (D2b ii); case A green. |
+| 1 | The guard fixture written first (done in DISTILL: all three cases `[Ignore]`d, RED recorded for each), plus the allowlist entry. |
+| 2 | OAuth providers ask the factory per request (D1) and the test factory shortens the handler lifetime (D1b); case B green; three OAuth test classes re-arranged. Measured: neither fix alone frees any host, so this step turns no guard green. |
+| 3 | The rate-limiter seam, one step (merges the old 3a and 3b): the global limiter owned by the container (D2a) and our construction of the middleware with the endpoint limiter disposed by the owner (D2b). All `[Ignore]`s on the guard come off here, together; this is the first step that frees any host. |
 | 4 (lead) | Payoff measurement and the late-host check (D4); mutation on the two provider files, last. |
 
-Commit the guard together with the first change that turns it green, so no commit on the way is red.
+The guard is already committed, `[Ignore]`d (DISTILL). It is un-ignored in the seam step, the first change that turns it green, so no commit on the way is red.
 
 ## Wave: DESIGN / [REF] Maintainer decision — endpoint rate limiter (2026-11-01, 18:2x, in chat)
 
@@ -487,8 +505,8 @@ limiter at shutdown, by reflection; (2) accept the pin and leave the payoff to f
 
 **Decision: option 1.** Rate limiting stays on with the same rules. The reflection fails at startup if the internal
 type, constructor, `Invoke` method or field is not found, never by silently skipping the limiter; the in-suite leak
-guard catches a regression. This supersedes D2(b)'s conditional wording: step 3b is no longer gated on the spike, it
-is part of the fix. Re-check the reflection on every .NET major upgrade.
+guard catches a regression. This supersedes D2(b)'s conditional wording: the seam is no longer gated on the spike, it
+is part of the fix (one step, with the global limiter). Re-check the reflection on every .NET major upgrade.
 
 ## Wave: DEVOPS / [REF] Platform decisions (2026-11-01)
 
@@ -496,10 +514,10 @@ AFK mode: the lead took the recommended option on each row; the maintainer revie
 
 | Decision | Answer |
 |---|---|
-| Deployment target, orchestration, strategy | N/A, because nothing deploys separately: no artifact, image or runtime behaviour changes. Production runs one host per process, so the changed ownership of the HTTP clients and rate limiters is invisible there. |
+| Deployment target, orchestration, strategy | N/A, because nothing deploys separately: no artifact, image or runtime behaviour changes. Production runs one host per process, so the ownership changes cost nothing there; two changes are visible and accepted (OAuth handler rotation; a boot-time failure mode), see D5. |
 | CI/CD platform | GitHub Actions, `ci_backend.yml` read and **UNCHANGED**; see the CI/CD section. |
 | Branching | Trunk-based on `main`, local commits, the maintainer reviews before push. Nothing is pushed by the waves. |
-| Observability, alerting, SLOs | N/A, because nothing runtime-visible changes: the existing rate-limit logging and metrics are unchanged (the middleware is the framework's own, only constructed by us). |
+| Observability, alerting, SLOs | The existing rate-limit logging and metrics are unchanged (the middleware is the framework's own, only constructed by us). The one runtime-visible change: the OAuth token clients' connection lifetime. The handler now rotates on the documented 2-minute lifetime (DNS is re-read); before, it was never rotated. API behaviour is unchanged. No new metric or alert. |
 | Usage-data event | **N/A, because it is behaviour-free test infrastructure with no user-facing feature**; nothing a user does changes, so there is no use to count. No `UsageDataEventName` entry, no line in `docs/settings/usagedata.md`. |
 | Security | No secret, permission or scope changes. The reflection touches only a private field of a framework type in our own process. |
 | Cross-cutting (RBAC, Lighthouse-Clients, Website, UI sketch, Terminology, ADR-270) | All N/A as answered in PICK-UP and DESIGN: no route, DTO, screen, word, context or event changes. |
@@ -556,6 +574,7 @@ Strategy stays `per-feature`, Stryker.NET, kill rate >= 80%, once at the end on 
 
 - **Scope:** `JiraOAuthProvider.cs`, `AdoOAuthProvider.cs` and the new rate-limiter owner class (final file name set in DELIVER; the config glob
   `**/*RateLimiterOwner*.cs` is adjusted to match).
+- **Glob and filter are edited in the owner's commit** to the real owner file and test class names (today they hold placeholders), verified by a Stryker run whose report lists mutants per file.
 - **Not `Program.cs`**, because it is a composition root: mutants there are wiring (registrations, middleware order, config keys) with no unit to
   assert against, the host tests that exercise it boot a `WebApplicationFactory` per test (18 min for coverage capture alone, see the repo memory), and the
   behaviour it wires is already proved by the rate-limit tests and the leak guard. Mutating it would cost hours for survivors that only an
@@ -569,18 +588,20 @@ Strategy stays `per-feature`, Stryker.NET, kill rate >= 80%, once at the end on 
 
 - **Instrument:** `docs/feature/story-6461-t3-test-runs-leave-room/measurement/measure.sh`, called with `bash`:
   `bash measure.sh <label> <workdir> <command...>` prints `label,exit,wall_s,peak_tree_rss_mb,min_mem_available_mb,max_threads` (`OUT_DIR` sets the log folder).
+- **Same sampler, both arms:** `measure.sh` plus the weak-reference tail monitor.
 - **Command (both arms):** `LIGHTHOUSE_TEST_WORKERS=6 dotnet test` in `Lighthouse.Backend` with the standard filter
   (`TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration`),
   after `dotnet build-server shutdown`, nothing else running.
 - **Before** = `main` at the commit just before the first product change (checked out as a separate worktree so the arms do not share build output;
   the gitignored premium licence fixture is copied in). **After** = the final commit.
-- **Two arms, n=1 each**, same machine, same day, run one at a time; repeat an arm only if the result is ambiguous (for example the peak lands between 3 and 4.5 GB, or
-  Before differs by more than 10% from the 2026-11-01 reference of 18.8-19.0 GB at 6 workers).
-- **Report:** peak summed RSS, lowest `MemAvailable`, wall time, and the shape (RSS plateaus rather than climbs). Target from DESIGN D4: under 3 GB and flat; fall-back
-  target under 4.5 GB, with the remainder handed to T2.
+- **Two arms, n=1 each**, same machine, same day, run one at a time. Repeat rule, fixed in advance: repeat an arm if its peak differs from the reference by more than 10 %
+  (reference for Before: 18.8-19.0 GB at 6 workers, 2026-11-01).
+- **Record:** the SHAs of both arms, `nproc`, `dotnet --version`, the exact filter, and that `valid_not_expired_license.json` is present.
+- **Report:** peak summed RSS, lowest `MemAvailable`, wall time, and the shape (RSS plateaus rather than climbs). Target from DESIGN D4: under 3 GB and flat, the only target. If the
+  measurement misses 3 GB, record the miss honestly and leave it to the maintainer at the hold; nobody changes the target.
 - **Late-host tail:** after the last test finishes, keep a temporary weak-reference monitor alive for **3 minutes** and expect the count of live factories
   to fall to single digits by about 140 s (handler lifetime plus the fixed 10 s cleanup tick). A host still alive after that gets the root walk from the retention-roots
-  section. The monitor is a temporary probe and is removed.
+  section. The monitor is committed as a script/patch under `measurement/` in this workspace (DELIVER writes it), so the protocol can be re-run.
 
 ## Wave: DEVOPS / [REF] Coexistence and push-time consequences
 
@@ -603,9 +624,9 @@ Strategy stays `per-feature`, Stryker.NET, kill rate >= 80%, once at the end on 
 ## Wave: DISTILL / [REF] Reconciliation
 
 Reconciliation passed -- 0 contradictions. DISCUSS is covered at Epic level. DESIGN and DEVOPS agree on every point that matters
-here: guard shape (D3), the maintainer decision (option 1, the endpoint limiter is disposed through a container-owned owner, step 3b
-no longer gated on the spike), the fail-loud startup, and an unchanged `ci_backend.yml`. DESIGN's open questions are settled below
-(Q1 route, Q5 the one `new` in `OAuthServiceTest`); Q2 (handler lifetime seconds) and Q3 (polling limit on CI) stay with DELIVER.
+here: guard shape (D3), the maintainer decision (option 1, the endpoint limiter is disposed through a container-owned owner, the seam step
+not gated on the spike), the fail-loud startup, and an unchanged `ci_backend.yml`. DESIGN's open questions are settled below
+(Q1 route, Q5 the one `new` in `OAuthServiceTest`); Q4 (spike outcome of D2(b)): settled by maintainer option 1. Q2 (handler lifetime) is settled at 1 second for the test host (guard case C); Q3 (polling limit on CI) stays with DELIVER.
 Maintainer AFK: the recommended option was taken for every choice. UI sketch review: N/A, because there is no UI.
 
 ## Wave: DISTILL / [REF] Scenario list
@@ -616,11 +637,12 @@ Classification lives here only; none of it is written into the code (project rul
 |---|---|---|---|---|
 | 1 | A host that served a request is freed once disposed (guard case A) | guard, error-shaped (the leak) | `Architecture/TestHostIsReleasedAfterDisposeTest.AHostThatServedARequestIsFreedOnceDisposed` | `[Ignore]` until the fix lands |
 | 2 | A host that resolved every OAuth provider is freed once disposed (guard case B) | guard, error-shaped | `...AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed` | `[Ignore]` until the fix lands |
-| 3 | Startup fails loudly when the framework's rate-limiting internals are missing | error, boundary | DELIVER writes it with the owner (see below); no scaffold | not in file |
+| 3 | Startup fails loudly when the framework's rate-limiting internals are missing | error, boundary | DELIVER writes it with the owner (see below); no scaffold | **not covered until DELIVER**; lands in the same commit as the owner class; exit criterion of the seam step |
 | 4 | Behaviour preserved: rate limiting still on, same rules | preservation | existing `Slice11CastAVoteScenarios.A_voter_sending_more_than_thirty_entries_a_minute_is_told_to_slow_down`, `UsageDataEventCeilingTests.OneAddressInventingANewBrowserEachTime_IsStillBounded`, `S6_RateLimitingTests`, `UsageDataConsentRateLimitTests` | existing, green, unchanged |
+| 6 | A host that created one factory client is freed once disposed (guard case C, the late-host pattern) | guard, error-shaped | `...AHostThatCreatedOneHttpClientIsFreedOnceDisposed` | `[Ignore]` until the seam step; poll limit 30 s, about 12 s on a serial fixture |
 | 5 | Behaviour preserved: OAuth token exchange, refresh, errors | preservation | existing `JiraOAuthProviderTest`, `AdoOAuthProviderTest`, `OAuthServiceTest` (incl. refresh through a real identity provider), OAuth controller and registry tests | existing, arrange-only edit |
 
-Counts: 2 new tests (both guard, both about a failure shape), 1 described, 2 preservation groups. Walking skeleton: N/A, because nothing a
+Counts: 3 new tests (all guard, all about a failure shape), 1 described (not covered until DELIVER), 2 preservation groups. Walking skeleton: N/A, because nothing a
 user does changes; the guard is the end-to-end proof through the real composition root (the production `Program` via the test host).
 Driven adapters: none new with real I/O. The guard uses the real host, the real timers and the real container; nothing is faked.
 
@@ -628,12 +650,12 @@ Guard design notes (all from the spike): a warm-up host is built and dropped fir
 one-shot timers); the host is created in a synchronous `[MethodImpl(NoInlining)]` method that returns only a `WeakReference` (an async
 method's hoisted local keeps the host alive); one request to `/api/latest/zz-nothing-here` (a 404 that still passes the rate-limit
 middleware, which answers DESIGN Q1) builds the limiters; then `GC.Collect`, `WaitForPendingFinalizers`, `GC.Collect` polled for up to 15 s.
-`GC.Collect` needs a narrow `S1215` pragma with its reason (the build promotes it to an error).
+`GC.Collect` needs a narrow `S1215` pragma with its reason (the build promotes it to an error). The failure message shows the elapsed seconds and the number of collection rounds. The warm-up discards the first host of the fixture's process run; that it is enough in full-suite order is not proven. Case C sets the expectation on the test host's 1-second handler lifetime (D1b) and the factory's 10 s cleanup tick: dead within about 12 s, poll limit 30 s.
 
 ## Wave: DISTILL / [REF] Acceptance criteria (Given / When / Then)
 
-Driving port for all of them: the production `Program` composition root, entered through `TestWebApplicationFactory<Program>` (the
-Architecture of Reference's driving adapter for this project: a real test host). Contract shape of the guard: unbounded-preservation
+Driving port for all of them: the production `Program` composition root, entered through `TestWebApplicationFactory<Program>`, a real test host
+(the driving adapter of the Architecture of Reference for this project). Contract shape of the guard: unbounded-preservation
 in spirit (the whole host must be releasable), so the assertion is on the host object itself, not on a chosen field.
 
 1. **Case A.** Given a test host that has served one request (so the rate limiters exist) and never asked the client factory for a client;
@@ -641,37 +663,41 @@ in spirit (the whole host must be releasable), so the assertion is on the host o
    reached (its weak reference is dead). Via the test host.
 2. **Case B.** Given a test host that has additionally resolved every `IOAuthProvider`; when it is disposed and dropped; then, within 15 s,
    it is gone. A provider that holds a factory client makes this fail. Via the test host.
-3. **Fail loud.** Given a framework whose rate-limiting middleware lacks the expected type, constructor, `Invoke` method or `_endpointLimiter`
+3. **Fail loud (not covered until DELIVER; lands in the same commit as the owner class, and the owner's message names the missing member and the .NET-upgrade step).** Given a framework whose rate-limiting middleware lacks the expected type, constructor, `Invoke` method or `_endpointLimiter`
    field; when the application starts; then startup fails with a message that names the missing member and says to re-read the framework
    source after a .NET upgrade, and rate limiting is never silently skipped. Via the application start (every host test).
 4. **Rate limiting unchanged.** Given the voting and usage-data scenarios that exceed their limits; when a caller exceeds the limit; then
    the caller is told to slow down exactly as before. Via HTTP, in the existing tests.
 5. **OAuth unchanged.** Given the same token endpoint answers; when a token is exchanged or refreshed; then the same request goes out and the
    same result or error comes back. Via `IOAuthProvider` and `OAuthService`, in the existing tests.
+6. **Case C.** Given a test host that has served one request and created one client from the client factory; when it is disposed and
+   dropped; then, within 30 seconds of full collections (the test host gives client handlers a 1-second lifetime and the factory
+   cleans up every 10 s), it is gone. Via the test host.
 
 ## Wave: DISTILL / [REF] Brief-AC traceability
 
 | Brief AC | Scenario(s) |
 |---|---|
-| AC1 the retention root(s) are named | Delivered by DESIGN (retention roots section); guard 1 and 2 pin the two roots (endpoint and global limiter timers; a singleton holding a factory client) so they cannot return silently |
-| AC2 peak memory falls and the shape is flat | **Owned by the lead's measurement** (DEVOPS payoff protocol, target under 3 GB flat, fallback under 4.5 GB). No test asserts a memory ceiling (rejected in DESIGN). Guards 1 and 2 are its structural cause-check |
-| AC3 behaviour-free; a guard stops it coming back | Scenarios 4 and 5 (behaviour unchanged), 1 and 2 (the guard), 3 (loud failure on drift) |
+| AC1 the retention root(s) are named | Delivered by DESIGN (retention roots section); guards 1, 2 and 6 pin the roots (the rate limiters' timer loops; a singleton holding a factory client; a host that really used a client, bounded by the handler lifetime) so they cannot return silently |
+| AC2 peak memory falls and the shape is flat | **Owned by the lead's measurement** (DEVOPS payoff protocol, the only target is under 3 GB flat). No test asserts a memory ceiling (rejected in DESIGN). Guards 1, 2 and 6 are its structural cause-check |
+| AC3 behaviour-free; a guard stops it coming back | Scenarios 4 and 5 (behaviour unchanged), 1, 2 and 6 (the guard). Scenario 3 (loud failure on drift) is not covered until DELIVER and is not counted here |
 
 ## Wave: DISTILL / [REF] Test placement and scaffolds
 
 - Placement: `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostIsReleasedAfterDisposeTest.cs`. Precedent: the other
   guard fixtures there (`PostgresContainerSharingGuardTest`, `PublishOutputOutsideProjectGuardTest`, `BackendTestParallelizationGuardTest`).
 - Allowlist: `BackendTestParallelizationGuardTest.AllowedSerialFixtures` gained `TestHostIsReleasedAfterDisposeTest` with a plain-language reason.
-  Both parallelization-guard tests stay green (run: 2 passed, 2 skipped with the new fixture).
+  Both parallelization-guard tests stay green (run: 2 passed, 3 skipped with the new fixture).
 - Scaffold pattern: no production stub is needed (the guard compiles against code that exists). The tests carry
   `[Ignore("Enabled when the test-host leak fix lands")]`, following NUnit's own mechanism (the project has `[Ignore(...)]` precedent in
   `Story6055ActivityNamesTheWorkScenarios`). No `__SCAFFOLD__` marker applies; DELIVER removes the two `[Ignore]` lines.
-- DELIVER order (from DESIGN): the `[Ignore]`s come off in the same commit that turns each case green: case B with step 2 (D1, D1b), case A with
-  step 3b (the owner and the middleware seam). Remove `[Ignore]` on A and B only when the fix for it is in; the build stays green throughout.
+- DELIVER order: measured, neither fix alone frees any host, so the `[Ignore]`s on cases A, B and C come off together, in ONE step: the
+  rate-limiter seam step (the old 3a and 3b merged). The OAuth step (D1, D1b) turns no guard green. The build stays green throughout. The
+  combination "seam + provider resolution" is confirmed when case B is un-ignored.
 - Fail-loud startup scenario (3), not scaffolded because it needs the owner type, which does not exist yet and a stub that does not compile
   is not allowed. DELIVER writes, with the owner class, one test per missing member, each as a plain unit test on the owner's lookup (give
   the lookup the assembly or a type to inspect, so a test can hand it a type lacking the constructor, `Invoke` or `_endpointLimiter`, and
-  assert the exception message names that member and mentions the .NET upgrade). These tests also serve the mutation run on the owner.
+  assert the exception message names that member and mentions the .NET upgrade). These tests also serve the mutation run on the owner. They are not covered until DELIVER: they land in the same commit as the owner class and are an exit criterion of the seam step.
 
 ## Wave: DISTILL / [REF] Arrange-only edits when the provider constructors take `IHttpClientFactory`
 
@@ -679,9 +705,9 @@ Assertions stay untouched; only where the client comes from changes. Each place 
 
 | File | Line (today) | Edit |
 |---|---|---|
-| `Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs` | `CreateProvider`, 223-228 | Build a `Mock<IHttpClientFactory>`; `Setup(f => f.CreateClient(JiraOAuthProvider.HttpClientName)).Returns(() => new HttpClient(handler))`; pass `factory.Object`. A function returning a fresh client (not a shared instance) mirrors the per-request ask and avoids a client disposed by a previous `using`. |
+| `Services/Implementation/OAuth/Providers/JiraOAuthProviderTest.cs` | `CreateProvider`, 223-228 | Build a `Mock<IHttpClientFactory>`; `Setup(f => f.CreateClient(JiraOAuthProvider.HttpClientName)).Returns(() => new HttpClient(handler, disposeHandler: false))`; pass `factory.Object`. A function returning a fresh client (not a shared instance) mirrors the per-request ask; `disposeHandler: false` stops a client disposed by one request's `using` from disposing the shared stub handler the next request still needs. |
 | `Services/Implementation/OAuth/Providers/AdoOAuthProviderTest.cs` | `CreateProvider`, 291-296 | Same with `AdoOAuthProvider.HttpClientName`. |
-| `Services/Implementation/OAuth/OAuthServiceTest.cs` | `ArrangeRefreshThroughARealIdentityProvider`, 796-807 | Same, around `new HttpClient(identityProvider)`; this is the one `new JiraOAuthProvider` (DESIGN Q5: yes, one). The `RequestCountingHandler` assertions stay. |
+| `Services/Implementation/OAuth/OAuthServiceTest.cs` | `ArrangeRefreshThroughARealIdentityProvider`, 796-807 | Same, around `new HttpClient(identityProvider, disposeHandler: false)`; this is the one `new JiraOAuthProvider` (DESIGN Q5: yes, one). The `RequestCountingHandler` assertions stay. |
 
 If the tests call the provider's `HttpClientName` constant, it is already public on each class. Do not add a shared helper (DESIGN reuse analysis).
 
@@ -693,8 +719,21 @@ Run: both `[Ignore]`s removed temporarily, `dotnet build` (0 warnings), `dotnet 
 |---|---|---|
 | Case A | `Failed AHostThatServedARequestIsFreedOnceDisposed [15 s]` ... `Assert.That(WaitUntilFreed(host), Is.True)  Expected: True  But was: False` | MISSING_FUNCTIONALITY (correct RED): the assertion fires on a live weak reference after 15 s of collections; no import, setup or compile error |
 | Case B | `Failed AHostThatResolvedEveryOAuthProviderIsFreedOnceDisposed [15 s]` ... same assertion, `Expected: True  But was: False` | MISSING_FUNCTIONALITY (correct RED) |
+| Case C | `Failed AHostThatCreatedOneHttpClientIsFreedOnceDisposed [30 s]` (message and assertion printed below) | MISSING_FUNCTIONALITY (correct RED): the test host still has the 2-minute handler lifetime, so the host is alive at 30 s |
 | Fail-loud startup | not in file | Not applicable until the owner exists |
 | Preservation (4, 5) | green today | Existing tests; they must stay green, the OAuth ones need the arrange edit above when the constructors change |
+
+Case C, run on its own after revision 1 (`[Ignore]` removed temporarily, only this test run, then restored):
+
+```
+Failed AHostThatCreatedOneHttpClientIsFreedOnceDisposed [30 s]
+  Error Message:
+     A disposed test host that created one HTTP client is still reachable after 30.3 seconds (104 rounds of collections). The test host should give HTTP client handlers a lifetime of one second; check that it does.
+Assert.That(outcome.Freed, Is.True)
+  Expected: True
+  But was:  False
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 30 s
+```
 
 Honest limit: a live reference at 15 s is the same signal for "still pinned by a timer" and for "pinned by something new", so the message names the two
 known causes and the fix section of DESIGN names how to walk the timers if a third appears.
@@ -712,6 +751,10 @@ known causes and the fix section of DESIGN names how to walk the timers if a thi
 | Item | Status | Evidence |
 |---|---|---|
 | Reconciliation, 0 contradictions | PASS | above |
+| 2 Persona | PASS | the maintainer running the suite (infrastructure exception) |
+| 4 UAT G/W/T | PASS | the five G/W/T in "Acceptance criteria" (cases A and B, fail loud, rate limiting unchanged, OAuth unchanged), plus the sixth for case C |
+| 8 Dependencies | PASS | Story 6461 (worker cap, measurement script) is a tracked soft dependency: committed locally, not pushed |
+| 9 Outcome measurable | PASS (additional lead check) | peak memory of a full standard run, before and after, owned by the lead; target under 3 GB flat, the only target |
 | Every brief AC maps to a scenario or an owner | PASS | traceability; AC2 owned by the lead |
 | Error-path share | PASS | both new tests are leak (failure-shape) guards; fail-loud described |
 | Test placement with precedent | PASS | Architecture/ guard fixtures |
@@ -719,4 +762,34 @@ known causes and the fix section of DESIGN names how to walk the timers if a thi
 | RED classified as the right reason | PASS | both cases fail on the live reference, run printed above |
 | Arrange-only edits listed | PASS | table above |
 | No scenario tags, no internal refs in code | PASS | checked in the new file |
-| Open for DELIVER | NOTE | handler lifetime seconds (Q2); polling limit on CI (Q3); `-c Release` run of the guard once; fail-loud tests with the owner |
+| Open for DELIVER | NOTE | polling limit on CI (Q3); the exit criteria listed under "Gate revision 1"; fail-loud tests with the owner |
+
+## Wave: DISTILL / [REF] Gate revision 1 (2026-11-01)
+
+Applied after the four-reviewer gate, on the lead's decisions. Code: the leak guard gained case C, a result tuple for the wait, and the
+message wording; `BackendTestParallelizationGuardTest` has the new reason text. Nothing else in code changed.
+
+| Decision | Finding it resolves | Where it changed |
+|---|---|---|
+| L1. Neither fix alone frees any host (measured), so both `[Ignore]`s come off together in ONE step, the rate-limiter seam step (old 3a and 3b merged). The OAuth step turns no guard green. "Seam + provider resolution" is confirmed when case B is un-ignored. | The slicing implied a guard turning green at the OAuth step and a spike-gated step 3b | Slicing table; D3 "dies at once" sentence; D2 spike bullets (the "step 3b is dropped" text); Maintainer decision section; DISTILL reconciliation; DELIVER-order bullet in Test placement |
+| L2. Every pre-decision part of the design says option 1, unconditionally | Design text still read as conditional on the spike | Hexagonal sketch (unconditional seam, reflection edge on the driven side); Component table row; Reuse Analysis (REPLACE row citing "no public API", guard row citing the `ctx_search` result: no other `WeakReference` or `GC.Collect` host-lifetime test in the test project); Spike header and D1/D2(a) wording; DISTILL reconciliation Q4; Retention roots verdict rewritten as two roots that both pin every host, plus the per-host payload |
+| L3. Payoff target is under 3 GB and flat, the only target; the 4.5 GB fallback is deleted. A miss is recorded and left to the maintainer at the hold | A movable target; the 4.2 GB figure came from a design without rate limiting or a seam | D4 (design), DEVOPS payoff protocol, AC2 row; the 4.2 GB cell says it predates the final design. Same sampler in both arms, monitor committed under `measurement/` (DELIVER writes it), repeat rule fixed in advance (more than 10 % off the reference), SHAs, `nproc`, `dotnet --version`, exact filter and licence-file presence recorded |
+| L4. Behaviour-free, disclosed honestly: OAuth token clients' connection lifetime changes (rotation every 2 minutes, DNS re-read; API unchanged; accepted); option 1 adds a production boot-time failure mode (accepted); parity with `UseRateLimiter` | "identical" and "invisible" overstated | D1, D5, the D5 proof bullets (parity, four rate-limit classes plus three OAuth classes with counts, full standard run green apart from the known 2 publish-output failures), DEVOPS platform rows |
+| L5. Fail-loud tests (scenario 3) are not coverage yet | AC3 counted tests that do not exist | Scenario list, AC3, traceability AC3 row (removed from coverage), Test placement, Driving-port coverage; Stryker glob and filter edited in the owner's commit (DEVOPS mutation) |
+| L6. Guard case C for the late-host pattern | AC3 not fully met without it | Code: `AHostThatCreatedOneHttpClientIsFreedOnceDisposed`, `[Ignore]`d, 30 s poll limit; D1b row (1 second); D3; scenario 6; AC 6; RED classification with the printed output |
+| L7. Smaller fixes | Review nits | Arrange table (`disposeHandler: false`); allowlist reason; case A message; `WaitUntilFreed` returns false after the loop and the message shows seconds and rounds; warm-up comment; DoR rows; the garbled driving-port phrase; `Program.cs:340-343`; ADR section |
+
+### DELIVER exit criteria and tasks added by this revision
+
+- Seam step: all `[Ignore]`s off together; the fail-loud tests (one per missing member: type, constructor, `Invoke`, `_endpointLimiter`) land in the
+  same commit as the owner class, and the owner's message names the missing member and the .NET-upgrade step.
+- Stryker `mutate` glob and `test-case-filter` edited to the real owner file and test class names in that commit, verified by a run that reports
+  mutants per file.
+- Guard passes 5 consecutive runs under `-c Release` alone, and once inside a full standard run. Confirm the `[NonParallelizable]` exclusivity from
+  that run's log. At the final commit a grep shows no `[Ignore]` left in the fixture. An abandoned fix removes the scaffold rather than leaving it skipped.
+- ADR-005 addendum in the seam step (own construction, container-owned disposal, reflection with fail-loud startup, the .NET-upgrade check); check
+  ARCHITECTURE.md's rate-limiting section and update it in the same step if it describes construction. ADR-270: no change.
+- Renovate risk: framework bumps arrive as Renovate PRs that CI verifies before merge. DELIVER confirms, read-only, with
+  `gh api repos/{owner}/{repo}/branches/main/protection` or the ruleset API, whether the backend tests are required checks. If they are not,
+  record that as a risk for the maintainer; change nothing.
+- Case C costs about 12 s on a serial fixture (1 s handler lifetime plus the factory's 10 s cleanup tick).
