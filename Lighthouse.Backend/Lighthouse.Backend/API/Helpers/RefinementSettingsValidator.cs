@@ -67,7 +67,8 @@ namespace Lighthouse.Backend.API.Helpers
         // is applied instead.
         private static List<string> ValidateStates(TeamSettingDto teamSetting, RefinementSettingsDto refinement, IEnumerable<string> storedStates)
         {
-            var candidates = NormalisedSet(DisplayStatesSent(teamSetting, teamSetting.ToDoStates).Concat(DisplayStatesSent(teamSetting, teamSetting.DoingStates)));
+            var lists = teamSetting.CategoryListsAsSent();
+            var candidates = NormalisedSet(lists.DisplayStatesFor(StateCategories.ToDo).Concat(lists.DisplayStatesFor(StateCategories.Doing)));
             var alreadyChosen = NormalisedSet(storedStates);
 
             return refinement.States
@@ -142,18 +143,6 @@ namespace Lighthouse.Backend.API.Helpers
         private static bool IsBandPercentile(int percentile)
         {
             return percentile is >= LowestBandPercentile and <= HighestBandPercentile;
-        }
-
-        private static IEnumerable<string> DisplayStatesSent(TeamSettingDto teamSetting, List<string> sentList)
-        {
-            var resolver = new Team
-            {
-                StateMappings = teamSetting.StateMappings
-                    .Select(mapping => new StateMapping { Name = mapping.Name, States = mapping.States })
-                    .ToList(),
-            };
-
-            return resolver.NormalisedStatesFor(sentList).Select(resolver.MapRawStateToMappedName);
         }
 
         private static HashSet<string> NormalisedSet(IEnumerable<string> states)

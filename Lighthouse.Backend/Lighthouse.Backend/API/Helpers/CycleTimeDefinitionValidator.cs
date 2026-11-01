@@ -9,25 +9,17 @@ namespace Lighthouse.Backend.API.Helpers
 
         public static CycleTimeDefinitionValidationResult ValidateSettings(SettingsOwnerDtoBase settings, IReadOnlyCollection<CycleTimeDefinition>? storedDefinitions = null)
         {
-            var resolver = new Team
-            {
-                ToDoStates = settings.ToDoStates,
-                DoingStates = settings.DoingStates,
-                DoneStates = settings.DoneStates,
-                StateMappings = settings.StateMappings
-                    .Select(mapping => new StateMapping { Name = mapping.Name, States = mapping.States })
-                    .ToList(),
-            };
+            var lists = settings.CategoryListsAsSent();
 
-            var orderedStates = resolver.DisplayStatesFor(StateCategories.ToDo)
-                .Concat(resolver.DisplayStatesFor(StateCategories.Doing))
-                .Concat(resolver.DisplayStatesFor(StateCategories.Done))
+            var orderedStates = lists.DisplayStatesFor(StateCategories.ToDo)
+                .Concat(lists.DisplayStatesFor(StateCategories.Doing))
+                .Concat(lists.DisplayStatesFor(StateCategories.Done))
                 .ToList();
             var errors = new List<string>();
 
             foreach (var definition in settings.CycleTimeDefinitions.Where(sent => IsChanged(sent, storedDefinitions ?? [])))
             {
-                ValidateDefinition(definition, resolver, orderedStates, errors);
+                ValidateDefinition(definition, lists, orderedStates, errors);
             }
 
             foreach (var duplicate in DuplicateNames(settings.CycleTimeDefinitions))
@@ -40,7 +32,7 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static void ValidateDefinition(
             CycleTimeDefinitionDto definition,
-            Team resolver,
+            StateCategoryLists lists,
             List<string> orderedStates,
             List<string> errors)
         {
@@ -49,8 +41,8 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add("A cycle time name is required.");
             }
 
-            var startIndex = BoundaryIndex(resolver, orderedStates, definition.StartState);
-            var endIndex = BoundaryIndex(resolver, orderedStates, definition.EndState);
+            var startIndex = BoundaryIndex(lists, orderedStates, definition.StartState);
+            var endIndex = BoundaryIndex(lists, orderedStates, definition.EndState);
 
             // A definition whose boundary state was removed is kept and shown as invalid rather than refused, so
             // only the end-after-start ordering is enforced here, and only when both boundaries are found.
@@ -65,19 +57,19 @@ namespace Lighthouse.Backend.API.Helpers
         private static bool IsChanged(CycleTimeDefinitionDto sent, IReadOnlyCollection<CycleTimeDefinition> storedDefinitions)
             => !storedDefinitions.Any(stored =>
                 stored.Id == sent.Id
-                && WorkTrackingSystemOptionsOwner.IsSameState(stored.StartState, sent.StartState)
-                && WorkTrackingSystemOptionsOwner.IsSameState(stored.EndState, sent.EndState));
+                && StateCategoryLists.IsSameState(stored.StartState, sent.StartState)
+                && StateCategoryLists.IsSameState(stored.EndState, sent.EndState));
 
-        private static int BoundaryIndex(Team resolver, List<string> orderedStates, string boundary)
+        private static int BoundaryIndex(StateCategoryLists lists, List<string> orderedStates, string boundary)
         {
             if (string.IsNullOrWhiteSpace(boundary))
             {
                 return -1;
             }
 
-            var displayed = resolver.MapRawStateToMappedName(boundary.Trim());
+            var displayed = lists.MapRawStateToMappedName(boundary.Trim());
 
-            return orderedStates.FindIndex(state => WorkTrackingSystemOptionsOwner.IsSameState(state, displayed));
+            return orderedStates.FindIndex(state => StateCategoryLists.IsSameState(state, displayed));
         }
 
         private static IEnumerable<string> DuplicateNames(IEnumerable<CycleTimeDefinitionDto> definitions)

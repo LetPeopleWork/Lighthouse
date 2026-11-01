@@ -226,8 +226,6 @@ namespace Lighthouse.Backend.Models
         /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
         public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry) => CategoryLists().ClassifyListEntry(list, entry);
 
-        public static bool IsSameState(string? left, string? right) => StateCategoryLists.IsSameState(left, right);
-
         public List<string> GetRawStatesForCategory(List<string> categoryStates) => CategoryLists().RawStatesOf(categoryStates);
 
         public bool IsCycleTimeDefinitionValid(CycleTimeDefinition definition)

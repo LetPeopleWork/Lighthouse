@@ -119,6 +119,13 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
 
+        /// <summary>The mappings this save sends, untrimmed, so a refusal can quote them as the user typed them.</summary>
+        public List<StateMapping> StateMappingsAsSent()
+            => [.. StateMappings.Select(mapping => new StateMapping { Name = mapping.Name, States = mapping.States })];
+
+        /// <summary>The To Do, Doing and Done lists this save sends, read against the mappings it sends with them.</summary>
+        public StateCategoryLists CategoryListsAsSent() => new(ToDoStates, DoingStates, DoneStates, StateMappingsAsSent());
+
         public List<CycleTimeDefinitionDto> CycleTimeDefinitions { get; set; } = [];
 
         public Guid? ConcurrencyToken { get; set; }

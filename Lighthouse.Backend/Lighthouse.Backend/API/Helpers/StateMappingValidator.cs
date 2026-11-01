@@ -9,10 +9,7 @@ namespace Lighthouse.Backend.API.Helpers
 
         public static StateMappingValidationResult ValidateSettings(SettingsOwnerDtoBase settings, IReadOnlyCollection<StateMapping>? storedMappings = null)
         {
-            var mappings = settings.StateMappings
-                .Select(dto => new StateMapping { Name = dto.Name, States = dto.States })
-                .ToList();
-
+            var mappings = settings.StateMappingsAsSent();
             var lists = new StateCategoryLists(settings.ToDoStates, settings.DoingStates, settings.DoneStates, mappings);
 
             var errors = Validate(mappings).Errors;
@@ -93,18 +90,18 @@ namespace Lighthouse.Backend.API.Helpers
             => from named in mappings
                where !string.IsNullOrWhiteSpace(named.Name)
                from grouping in mappings
-               where !ReferenceEquals(named, grouping) && StatesOf(grouping).Exists(state => WorkTrackingSystemOptionsOwner.IsSameState(state, named.Name))
+               where !ReferenceEquals(named, grouping) && StatesOf(grouping).Exists(state => StateCategoryLists.IsSameState(state, named.Name))
                select $"Mapping \"{named.Name.Trim()}\" has the same name as a state grouped by mapping \"{grouping.Name.Trim()}\". Choose another name.";
 
         // A group stored before this rule existed may span categories; refusing it unchanged would block every unrelated save.
         private static bool IsChanged(StateMapping mapping, IReadOnlyCollection<StateMapping> storedMappings)
             => !storedMappings.Any(stored =>
-                WorkTrackingSystemOptionsOwner.IsSameState(stored.Name, mapping.Name)
+                StateCategoryLists.IsSameState(stored.Name, mapping.Name)
                 && HoldTheSameStates(StatesOf(stored), StatesOf(mapping)));
 
         private static bool HoldTheSameStates(List<string> left, List<string> right)
-            => left.TrueForAll(state => right.Exists(other => WorkTrackingSystemOptionsOwner.IsSameState(state, other)))
-               && right.TrueForAll(state => left.Exists(other => WorkTrackingSystemOptionsOwner.IsSameState(state, other)));
+            => left.TrueForAll(state => right.Exists(other => StateCategoryLists.IsSameState(state, other)))
+               && right.TrueForAll(state => left.Exists(other => StateCategoryLists.IsSameState(state, other)));
 
         private static IEnumerable<string> CategoryErrors(StateCategoryLists lists, StateMapping mapping)
         {
@@ -114,7 +111,7 @@ namespace Lighthouse.Backend.API.Helpers
 
             var placed = StatesOf(mapping)
                 .Select(state => new PlacedState(state.Trim(), normalisedLists
-                    .Where(list => list.States.Exists(listed => WorkTrackingSystemOptionsOwner.IsSameState(listed, state)))
+                    .Where(list => list.States.Exists(listed => StateCategoryLists.IsSameState(listed, state)))
                     .Select(list => list.Category)
                     .ToList()))
                 .Where(entry => entry.Categories.Count > 0)
