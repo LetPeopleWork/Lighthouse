@@ -1,0 +1,140 @@
+OneTimeSetUp 18
+SetUp 63
+class-level 2
+ctor 10
+helper 34
+test-body 18
+unknown 2
+
+API/ForecastControllerCalendarDayAnchorTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 2}
+API/Integration/AgeInStatePercentilesNonLinearFlowReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/AgeInStatePercentilesPortfolioReadApiIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/AgeInStatePercentilesReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/ArchivedDeliveryReadStabilityIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ArchivedDeliveryStaleAggregateRaceIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ArchivedDeliveryWriteRefusalIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/BehaviourSettings/BehaviourSettingsAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/BlackoutForecastShiftTestBase.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 2}
+API/Integration/BlockedItems/BlockedItemsAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/BlockedItems/BlockedStalenessThresholdValidationTests.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/BlockedItems/PortfolioBlockedHistoryAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ConnectionSecretStatePayloadTests.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ConnectionValidationUnreadableSecretTests.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/CumulativeStateTimePortfolioReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/CumulativeStateTimeReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/CycleTimeDefinitionSettingsIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/CycleTimeDefinitionValidityIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/DeliveryArchiveClosurePinIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/DeliveryMetricsHistoryReadApiIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/DeliverySources/DeliverySourcesAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/Dependencies/DependenciesAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/DependencyAwareForecasting/Slice00OneForecastPerBatchScenarios.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/EncryptionControllerTests.cs {('OneTimeSetUp', 'new-factory'): 4, ('OneTimeSetUp', 'derived'): 1, ('helper', 'derived'): 3}
+API/Integration/FastWithManyFeatures/FastWithManyFeaturesAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/FastWithManyFeatures/Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios.cs {('class-level', 'derived'): 1}
+API/Integration/FasterUpdates/FasterUpdatesAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/FlowEfficiencyPortfolioReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/FlowEfficiencyReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/ForecastFilterTeamSettingsIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/ForecastFilterThroughputChartIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/InstanceDayForecastWindowIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 2}
+API/Integration/ManualSorting/ManualSortingAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/NamedCycleTimeCumulativeScopeIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/NamedCycleTimePortfolioIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/NamedCycleTimeReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/NamedCycleTimeTrendInfoApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/OAuthCallbackCsrfIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/OAuthControllerIntegrationTest.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 2}
+API/Integration/OAuthProviderAbstractionIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/OnlyFeaturesAsParentCandidates/ParentPlacementAcceptanceTest.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Integration/ParentFromIssueLinks/Slice03AmbiguityRefusalSpecifications.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Integration/PercentilesOverTime/PercentilesOverTimeAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/PortfolioConcurrencyTokenIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/PortfolioDeleteSerialisationTests.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/PortfolioStalenessThresholdSettingsIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/PortfolioTimeInStateReadApiIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/QuietWriteBack/QuietWriteBackAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/RbacGroupMappingConcurrencyTokenIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('test-body', 'new-factory'): 1, ('test-body', 'derived'): 1}
+API/Integration/RecurringBlackoutRulesChartOverlayIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/RecurringBlackoutRulesTestBase.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 2}
+API/Integration/RecurringBlackoutRulesWriteBackIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/Refinement/RefinementAcceptanceTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1, ('helper', 'derived'): 1}
+API/Integration/Refinement/SizingVotesAcceptanceTest.cs {('helper', 'derived'): 2}
+API/Integration/Refinement/Slice11CastAVoteScenarios.cs {('helper', 'derived'): 1}
+API/Integration/Reports/BulkReports/BulkReportsAcceptanceTest.cs {('helper', 'derived'): 1}
+API/Integration/Reports/BulkReports/BulkReportsWhereEveryoneIsAdminScenarios.cs {('helper', 'derived'): 1}
+API/Integration/Reports/ReportCreationTimingProbe.cs {('SetUp', 'derived'): 1}
+API/Integration/Reports/ReportsAcceptanceTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1, ('helper', 'derived'): 1}
+API/Integration/ResponsiveDuringUpdates/Slice05CancelAllScenarios.cs {('test-body', 'derived'): 1}
+API/Integration/RunChartPayloadContractIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ServiceNowConnectionAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/SleRisk/SleRiskAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/Staleness/StaleWorkItemsAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/SystemInfoAuthVisibilityCrossLayerTest.cs {('test-body', 'new-factory'): 2, ('helper', 'derived'): 1}
+API/Integration/SystemInfoWireFormatRegressionTests.cs {('test-body', 'new-factory'): 3, ('helper', 'derived'): 1}
+API/Integration/TaskManager/Slice02SeeWhatIsRunningSpecifications.cs {('helper', 'derived'): 1}
+API/Integration/TaskManager/Slice04StopARefreshSpecifications.cs {('helper', 'derived'): 1}
+API/Integration/TaskManager/Slice05AnyBrokenCredentialSaysSoSpecifications.cs {('helper', 'derived'): 1}
+API/Integration/TaskManager/Slice06TheWarningsWithoutTheLogSpecifications.cs {('SetUp', 'derived'): 1, ('helper', 'derived'): 1}
+API/Integration/TaskManager/Slice08HealthThatChecksItselfSpecifications.cs {('helper', 'derived'): 1}
+API/Integration/TaskManager/TaskManagerAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/TeamConcurrencyTokenIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/TeamDeleteSerialisationTests.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/TeamFeatureSize/TeamFeatureSizeAcceptanceTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/TeamStalenessThresholdSettingsIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/TeamThroughputHistoryValidationIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/TimeInStateReadApiIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/ViewerEmbedSessionJourneyTests.cs {('test-body', 'derived'): 1}
+API/Integration/WorkItemAgePercentilesPortfolioReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/WorkItemAgePercentilesReadApiIntegrationTest.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+API/Integration/WorkItemEstimateApiIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+API/Integration/WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Integration/WriteBackMappingForNewAdditionalFieldIntegrationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 2}
+API/Security/F_BE_1_GroupSnapshotInheritanceTests.cs {('SetUp', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Security/S1_AllowedOriginsEnvVarBindingTests.cs {('test-body', 'new-factory'): 8}
+API/Security/S1_CorsFailClosedTests.cs {('test-body', 'new-factory'): 4}
+API/Security/S2_ConnectionListPayloadShapeTests.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 1}
+API/Security/S3_UpdateNotificationHubAuthorizeTests.cs {('unknown', 'new-factory'): 1, ('test-body', 'new-factory'): 3, ('test-body', 'derived'): 2, ('helper', 'derived'): 1}
+API/Security/S4_DeliveriesDeleteGuardInversionTests.cs {('unknown', 'new-factory'): 1, ('helper', 'new-factory'): 1}
+API/Security/S5_ApiKeyScopesTests.cs {('SetUp', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Security/S6_RateLimitingTests.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+API/Security/S8_EmbedEntryPointTests.cs {('test-body', 'derived'): 1}
+API/Security/W1_VersionEndpointAuthorizationTests.cs {('helper', 'new-factory'): 2, ('helper', 'derived'): 3}
+Architecture/OptionalFeatureApplierSeamArchUnitTest.cs {('SetUp', 'new-factory'): 1}
+Architecture/TestHostIsReleasedAfterDisposeTest.cs {('helper', 'new-factory'): 1}
+Architecture/TestHostsRunWithoutRateLimitingByDefaultTest.cs {('test-body', 'new-factory'): 1}
+Health/ClusterSubstrateProbeRegistrationTest.cs {('test-body', 'derived'): 1}
+Health/DataProtectionKeyRingTest.cs {('test-body', 'new-factory'): 1, ('test-body', 'derived'): 1}
+Integration/Containers/BulkReportOwnerDeletedMidRunOnPostgresTests.cs {('SetUp', 'derived'): 1}
+Integration/Containers/CatalogueBodiesOnPostgresTests.cs {('SetUp', 'derived'): 1}
+Integration/Containers/LighterRoundsOnPostgresTests.cs {('SetUp', 'derived'): 1}
+Integration/Containers/ScalabilityTests.cs {('test-body', 'new-factory'): 1, ('helper', 'new-factory'): 1, ('helper', 'derived'): 2}
+Integration/UsageData/UsageDataCollectorAddressTests.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+Integration/UsageData/UsageDataCollectorObservationTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+Integration/UsageData/UsageDataConsentRateLimitTests.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+Integration/UsageData/UsageDataEventCeilingTests.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+LighthouseAppContextConcurrencyTest.cs {('SetUp', 'new-factory'): 1}
+Services/Implementation/DomainEvents/DeliveryMetricSnapshotRecordingHandlerTest.cs {('SetUp', 'new-factory'): 1, ('SetUp', 'derived'): 1}
+Services/Implementation/DomainEvents/SnapshotRecordedDayInstanceZoneTest.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+Services/Implementation/LighthouseClockTest.cs {('test-body', 'new-factory'): 2, ('test-body', 'derived'): 2}
+Services/Implementation/OAuth/OAuthProviderRegistryTest.cs {('test-body', 'new-factory'): 2}
+Services/Implementation/OAuth/OAuthStateSecretPersistenceTest.cs {('helper', 'new-factory'): 1, ('helper', 'derived'): 1}
+Services/Implementation/Repositories/FeatureListReaderRegistrationTest.cs {('SetUp', 'new-factory'): 1}
+Startup/EncryptionBootstrapOrderTests.cs {('OneTimeSetUp', 'new-factory'): 1, ('OneTimeSetUp', 'derived'): 1}
+Startup/RecentProblemsCapacityConfigurationTest.cs {('test-body', 'new-factory'): 1, ('test-body', 'derived'): 1}
+TestClockBoundaryTest.cs {('test-body', 'new-factory'): 1}
+TestHelpers/ForwardedHeaders/ForwardedHeadersOidcTestHost.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 1}
+TestHelpers/ForwardedHeaders/ForwardedHeadersTestHost.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 1}
+TestHelpers/Health/HealthCheckTestHost.cs {('ctor', 'derived'): 1}
+TestHelpers/IntegrationTestBase.cs {('ctor', 'new-factory'): 1}
+TestHelpers/JwtBearerAuth/JwtBearerTestHost.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 1}
+TestHelpers/McpInboundAuth/McpInboundAuthTestHost.cs {('ctor', 'new-factory'): 1, ('ctor', 'derived'): 1}
+TestHelpers/Telemetry/TelemetryTestHost.cs {('ctor', 'derived'): 1}
+TestHelpers/TestWebApplicationFactory.cs {('class-level', 'derived'): 1, ('helper', 'derived'): 1}
+TestHelpers/TestWebApplicationFactoryTest.cs {('test-body', 'new-factory'): 3, ('test-body', 'derived'): 1}
+TestHelpers/ViewerEmbedTestHost.cs {('ctor', 'new-factory'): 1, ('helper', 'derived'): 1}

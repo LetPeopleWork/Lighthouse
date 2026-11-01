@@ -1,0 +1,4 @@
+  Failed NoBuildFileWritesOrReadsTheBackendPublishOutputInsideTheBackendProjectFolder [115 ms]
+  Failed TheScanSeesTheFilesThatConsumeThePublishOutput [91 ms]
+Failed!  - Failed:     2, Passed: 11898, Skipped:     1, Total: 11901, Duration: 6 m 38 s - Lighthouse.Backend.Tests.dll (net10.0)
+wall 402 s (process incl. startup)
