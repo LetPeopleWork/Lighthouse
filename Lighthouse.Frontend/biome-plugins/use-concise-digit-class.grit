@@ -1,0 +1,4 @@
+JsRegexLiteralExpression() as $re where {
+    $re <: r".*\[0-9\].*",
+    register_diagnostic(span=$re, message="Write the digit class as \\d instead of [0-9] in a regular expression (Sonar S6353).", severity="error")
+}

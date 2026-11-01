@@ -10,7 +10,7 @@ export type TestWorkersEnvironment = Readonly<
 	Record<string, string | undefined>
 >;
 
-const explicitCount = /^[1-9][0-9]*$/;
+const explicitCount = /^[1-9]\d*$/;
 
 /**
  * The worker count for a test run, or `undefined` to leave it to the test runner's own default.

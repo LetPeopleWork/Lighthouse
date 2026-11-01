@@ -9,7 +9,8 @@
 		"./biome-plugins/use-dataset-for-data-attributes.grit",
 		"./biome-plugins/use-state-pair-naming.grit",
 		"./biome-plugins/wrap-own-reducer.grit",
-		"./biome-plugins/merge-consecutive-push.grit"
+		"./biome-plugins/merge-consecutive-push.grit",
+		"./biome-plugins/use-concise-digit-class.grit"
 	],
 	"linter": {
 		"rules": {
