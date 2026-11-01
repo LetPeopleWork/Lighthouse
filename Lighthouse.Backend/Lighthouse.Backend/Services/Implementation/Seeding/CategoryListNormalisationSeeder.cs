@@ -64,8 +64,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 return;
             }
 
-            var stored = CategoryLists.Of(owner);
-            var normalised = stored.NormalisedBy(owner);
+            var stored = ListsSnapshot.Of(owner);
+            var normalised = stored.NormalisedBy(owner.CategoryLists());
             if (normalised.SameAs(stored))
             {
                 return;
@@ -136,7 +136,7 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
         {
             var lists = owner.CategoryLists();
             var entries = lists.StoredLists()
-                .SelectMany(stored => stored.States.Select(entry => (Entry: entry, Kind: owner.ClassifyListEntry(stored.States, entry))))
+                .SelectMany(stored => stored.States.Select(entry => (Entry: entry, Kind: lists.ClassifyListEntry(stored.States, entry))))
                 .ToList();
 
             if (entries.Exists(classified => classified.Kind == ListEntryKind.Shadowing))
@@ -153,15 +153,15 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             => StateCategoryLists.MembersOf(lists.GroupNamed(groupName)!)
                 .Exists(member => !StateCategoryLists.IsSameState(member, groupName) && lists.GroupNamed(member) != null);
 
-        private sealed record CategoryLists(List<string> ToDo, List<string> Doing, List<string> Done)
+        private sealed record ListsSnapshot(List<string> ToDo, List<string> Doing, List<string> Done)
         {
-            public static CategoryLists Of(WorkTrackingSystemOptionsOwner owner)
+            public static ListsSnapshot Of(WorkTrackingSystemOptionsOwner owner)
                 => new([.. owner.ToDoStates], [.. owner.DoingStates], [.. owner.DoneStates]);
 
-            public CategoryLists NormalisedBy(WorkTrackingSystemOptionsOwner owner)
-                => new(owner.NormalisedStatesFor(ToDo), owner.NormalisedStatesFor(Doing), owner.NormalisedStatesFor(Done));
+            public ListsSnapshot NormalisedBy(StateCategoryLists lists)
+                => new(lists.NormalisedStatesFor(ToDo), lists.NormalisedStatesFor(Doing), lists.NormalisedStatesFor(Done));
 
-            public bool SameAs(CategoryLists other)
+            public bool SameAs(ListsSnapshot other)
                 => ToDo.SequenceEqual(other.ToDo, StringComparer.Ordinal)
                     && Doing.SequenceEqual(other.Doing, StringComparer.Ordinal)
                     && Done.SequenceEqual(other.Done, StringComparer.Ordinal);
