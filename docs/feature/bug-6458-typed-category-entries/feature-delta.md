@@ -164,8 +164,8 @@ Reuses `ItemListManager` chips and `WidgetShell` status; no new control.
 | UI4 | Dragging a mapping chip | Moves all its states together, so the group lands where it is dropped |
 | UI5 | Aging chart while settings load / fail | `WidgetShell` status: lone spinner while loading, the existing could-not-load message on failure; never an empty chart |
 | UI6 | Mapping state listed in none of To Do/Doing/Done | **No message** (overrides the informational warning in the design's V1 note); the backend allows it silently too |
-| UI7 | Copy for a mapping whose states sit in more than one category (**maintainer decision: default taken at 09:49 with no objection**) | Two states in different categories: `Mapping "Review" groups states from different categories: "Code Review" is in To Do and "Testing" is in Doing. Keep a mapping's states in one category.` One state in two categories: `Mapping "Review" groups "Testing", which is in both To Do and Done. Keep a mapping's states in one category.` |
-| UI8 | Copy for a mapping named like a state beside its own states | Doing uses the shipped Doing sentence (`Mapping "{name}" has the same name as the Doing state "{state}". Add "{name}" to this mapping to group it, or choose another name.`); To Do and Done use the shipped sentence from `stateMappingValidation.ts` (`Mapping "{name}" has the same name as the {To Do\|Done} state "{state}". Choose another name.`). Both stacks pin these exactly. This refines D4's single sentence |
+| UI7 | Copy for a mapping whose states sit in more than one category (**AFK default taken at 09:49; announced to the maintainer, who replied without objecting but did not explicitly approve the wording; confirm at the next review window**) | Two states in different categories: `Mapping "Review" groups states from different categories: "Code Review" is in To Do and "Testing" is in Doing. Keep a mapping's states in one category.` One state in two categories: `Mapping "Review" groups "Testing", which is in both To Do and Done. Keep a mapping's states in one category.` |
+| UI8 | Copy for a mapping named like a state beside its own states | Doing uses the shipped Doing sentence (`Mapping "{name}" has the same name as the Doing state "{state}". Add "{name}" to this mapping to group it, or choose another name.`); To Do and Done use the shipped sentence from `stateMappingValidation.ts` (`Mapping "{name}" has the same name as the {To Do\|Done} state "{state}". Choose another name.`). Both stacks pin these exactly (backend pending until DELIVER, frontend live). The backend To Do/Done assertions are pending until DELIVER; the frontend ones are live. This refines D4's single sentence |
 
 ```
 Doing
@@ -213,7 +213,7 @@ Doing and Done lists once, in C#, through the repositories.
   with no operator able to fix a row. The next start retries.
   **Correction after review (round 2, D12):** the seeder skips an owner only when reading or writing that row
   fails, so a persistent failure fails the user's save too and "a save repairs it" is false. Instead every
-  read normalises the stored lists through the owner's classifier (D12), so a skipped owner still loads every
+  read normalises the stored lists through the owner's classifier (D12), so once implemented a skipped owner will load every
   item; on a rewritten list the normaliser is the identity. The seeder retries on every start. The Warning
   remains the only signal; the maintainer declined a UI signal.
 - **Transactionality.** The seeder shares one scoped `DbContext`, so one owner's failure must not flush or lose
@@ -251,9 +251,9 @@ list equals the expansion of the original (property test); it is the backend-rol
 
 ## Wave: DEVOPS / [REF] Q3 - API v1 meaning change
 
-`doingStates` (and the To Do and Done lists) now hold raw states; a shadowing entry is a 400; read-only
+`doingStates` (and the To Do and Done lists) will hold raw states; a shadowing entry is a 400; read-only
 `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` are new. `docs/concepts/api-versioning.md`
-names `/api/v1` the compatibility boundary for clients, so the break will be stated at finalize in `docs/concepts/api-versioning.md` and the release note.
+names `/api/v1` the compatibility boundary for clients, so the meaning change will be stated at finalize in `docs/concepts/api-versioning.md` and the release note.
 
 Lighthouse-Clients, checked in `/storage/repos/lighthouse-clients`: no source file, test or changeset names
 `doingStates`, `stateMapping` or the lists; settings pass through as opaque JSON. **Owed: docs and skill text
@@ -691,7 +691,7 @@ suggestions for a collapsed stored owner, and the reads of an owner whose group 
 today a null group throws inside `GetRawStatesForCategory` and an empty one drops the entry). The earlier "raw state named like a group" connector
 scenarios are gone: an entry equal to a group's name with none of the group's states beside it is a collapsed
 group (D10), so that premise no longer exists. No scenario claims that a save repairs a skipped owner; the one
-that is true is kept: `SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates`
+that is true is pinned (pending until DELIVER): `SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates`
 (Team and Portfolio). The normalised save from today's editor is
 `SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace`, with its sync-level twin
 `SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace`.
@@ -938,3 +938,20 @@ D12 (normalise on read), D10's drop step and precedence, the D11 allow-list and 
 - **Red check.** All 145 backend and 35 frontend pending cases were run un-skipped again; `red-classification.md` is
   regenerated and the rows for the no-states reads and the suggestions are corrected.
 
+
+## Wave: DISTILL / [REF] Review gate disposition
+
+| Reviewer | Final verdict | Rounds |
+|---|---|---|
+| Requirements (Eclipse) | Last blocker overruled by the orchestrator; wording findings fixed | 4 reviews, 3 revision rounds (round 3 allowed by the maintainer) |
+| Design (Architect) | Conditionally approved, 0 blockers; remaining highs fixed in round 3 | 3 |
+| DEVOPS (Forge) | Conditionally approved, 0 blockers; findings fixed in round 1 | 1 |
+| Tests (Sentinel) | Conditionally approved, 0 blockers; remaining highs fixed in round 3 | 3 |
+
+Overruled: the requirements reviewer's final "blocker" was that the tests pinning a skipped owner's grouped
+states are pending. Pending is what DISTILL hands off: every scenario except the regression guards is skipped
+until DELIVER implements it, and each was run un-skipped and fails on the missing behaviour
+(`distill/red-classification.md`). The wording findings from the same review (tense of "loads", "is kept",
+"Both stacks pin", the UI7 label, "meaning change") were fixed.
+
+Carried into DELIVER: confirm UI7's wording with the maintainer at the first slice review window.
