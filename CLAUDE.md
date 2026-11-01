@@ -78,7 +78,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
   - which contexts the feature touches;
   - which new terms it introduces, named after the glossary, and which concepts are new;
   - which domain events it publishes or reacts to. Domain events are the default way one context reacts to
-    another.
+    another;
+  - if it shows anything to a user, which **UI surface** it lives on, after
+    `docs/product/architecture/adr-271-ui-surfaces-follow-units-and-levels-and-settings-split-by-audience.md`:
+    a tab of a unit's page, or Organisation, Access or System. The UI moves towards that target **step by
+    step**: put new things in their target surface, move what the feature touches one step closer where it is
+    cheap, and say so in the UI sketch. No big-bang reorganisation.
 
   If the feature adds a concept, a context or an edge, or changes one, update ADR-270 (map, glossary, the
   "target only" marks) and `ARCHITECTURE.md` §4 in the same feature, not later. `nw-finalize` checks that they

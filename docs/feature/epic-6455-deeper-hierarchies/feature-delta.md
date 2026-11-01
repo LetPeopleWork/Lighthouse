@@ -385,3 +385,23 @@ care about the intermediate items accepts seeing them as a level.
 - **Prevalence is treated as common.** The maintainer judges deeper hierarchies to be a common use case that Lighthouse must account for. G1's case count is accepted on that judgement plus the four reported customers (OA3 closed by decision).
 - **Jumping over a level is not Lighthouse's problem.** Items that skip a level can already be handled with the Parent Override Field. The new concept may require every item to go through all configured levels, and another option can be worked out later from feedback. O2/O6 shrink accordingly; the relay level is no longer required.
 - **Customer B is assumed to have the same problem as Customer A** until the 2026-11-02 session says otherwise.
+
+## Input for DISCUSS: UI surfaces and onboarding (maintainer, 2026-11-01)
+
+After the event storming (ADR-270), the maintainer accepted
+[ADR-271](../../product/architecture/adr-271-ui-surfaces-follow-units-and-levels-and-settings-split-by-audience.md)
+as the direction for the UI. This Epic is where most of it lands, so DISCUSS answers explicitly:
+
+- **One unit page, per-level navigation (ADR-271 U4).** Do Teams and Portfolios become units on levels with one page
+  whose tabs depend on leaf versus non-leaf? How does the Overview list units by level?
+- **Landing on your level.** Which level a person sees first is navigation, not Access. Does this Epic set it, and
+  how?
+- **Levels and their names live in Organisation.** Where are levels configured, and how do they relate to
+  Terminology, which today has one key pair per concept and no notion of a level?
+- **Org default, local override (U2).** If the Epic adds per-level settings, they use the one shared control.
+- **Onboarding (ADR-271 Decision 7, U5).** The maintainer's idea: once Organisation exists, first-run set-up asks
+  how the organisation works (tracker, levels and their names, what rolls up into what, which states mean started
+  and done) and fills the defaults from the answers. DISCUSS decides whether this Epic delivers a first slice of it
+  or only leaves room for it. Each Epic must ship on its own, so onboarding is its own Epic unless it is small.
+- **Splitting System Settings (ADR-271 U1) belongs to this Epic** (maintainer, 2026-11-01). No ADO Story yet: DISCUSS
+  scopes it (its own slice or folded into the levels work) and only then is it mirrored to the board.
