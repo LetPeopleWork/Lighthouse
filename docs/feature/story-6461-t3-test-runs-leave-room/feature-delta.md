@@ -320,3 +320,93 @@ points at the other).
   csproj `VSTestCLIRunSettings` property replaces both.
 - The brief's acceptance criterion "shown by the worker count in the logs" is not satisfiable as written for Vitest
   (nothing logs it); see open question 1.
+
+## Wave: DEVOPS / [REF] Platform decisions (2026-11-01)
+
+AFK mode, maintainer took the recommended option on each. Nothing is deployed or shipped differently: the product is
+unchanged, only how a developer's local test run sizes its worker pool.
+
+| Decision | Answer |
+|---|---|
+| Deployment target, orchestration, strategy | N/A, because nothing deploys: no artifact, image or runtime behaviour changes. Rollback is reverting the commits; nothing is persisted. |
+| CI/CD platform | GitHub Actions, existing `ci_frontend.yml` and `ci_backend.yml`, **UNCHANGED by design**: CI leaves the worker count unset, so Vitest keeps `cores-1` (3 on `ubuntu-latest`) and NUnit keeps `cores` (4). |
+| Branching | Trunk-based on `main` (project rule); push directly, no branch or PR. |
+| Observability, alerting, SLOs | N/A, because there is no runtime to observe; the payoff instrument is the measurement protocol (below). |
+| Continuous learning / feature flags | N/A, because nothing a user sees can be rolled out gradually; the knob is an environment variable. |
+| Mutation testing | Strategy stays `per-feature` (CLAUDE.md, not edited). For this item: **N/A for the csproj/MSBuild config, because it is declarative with no logic Stryker.NET can mutate.** The optional Stryker pass on `testWorkers.ts` (DESIGN open question 5) is **skipped by default**; the maintainer accepted the default. The resolver's own test pins each branch. |
+| Usage-data event | **N/A, because this is behaviour-free test tooling with no product surface; nothing a user does changes, so there is no use to count.** No `UsageDataEventName` entry, no `docs/settings/usagedata.md` line. |
+| Security | No secret, permission or token scope changes. The variable holds a small integer. |
+| Cross-cutting (RBAC, Lighthouse-Clients, Website, UI sketch, Terminology) | All N/A as answered in PICK-UP, because no code path, route, DTO, screen or user-facing word changes. |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+See `environments.yaml`.
+
+| Environment | Who | Worker count (frontend / backend) | Mechanism |
+|---|---|---|---|
+| local-uncapped-default | Maintainer and other contributors, Linux 12-core / 31 GB here; macOS and Windows dev machines | `floor(cores * 0.5)` (placeholder, 6 here) / same rule | `testWorkers.ts` resolver; csproj `VSTestCLIRunSettings` property |
+| local-override | Anyone running `LIGHTHOUSE_TEST_WORKERS=N` | N on both stacks | Same code paths; an explicit value wins in every environment |
+| ci | GitHub `ubuntu-latest`, 4 cores, `CI=true` | Tool default: Vitest 3, NUnit 4 (unchanged) | Nothing configured; the csproj property is unset and the resolver returns `undefined` |
+| IDE runner | Rider, VS, VS Code test explorers | Uncapped (tool default) | They do not evaluate `VSTestCLIRunSettings` and do not read the variable for NUnit; documented in CLAUDE.md |
+
+## Wave: DEVOPS / [REF] CI pipeline outline
+
+Unchanged. `ci_frontend.yml` and `ci_backend.yml` get no edit, and neither does any other file under `.github/`.
+
+- **Why no edit**: CI detection reuses the `CI` variable GitHub already sets; "leave room for other sessions" is a
+  local concern, and a 4-core runner is dedicated to one job. Writing an explicit count would change CI (Vitest
+  would go from 3 to 4), which the guardrail forbids.
+- **Backend CI step** passes `-- RunConfiguration.MaxCpuCount=0`; a `--` argument becomes a global MSBuild property and replaces the
+  csproj `VSTestCLIRunSettings`, so the cap is dropped there on its own, and the `CI` condition is a second guard.
+- **Where the change is exercised**: `ci_changes.yml` already routes a `Lighthouse.Frontend/` or `Lighthouse.Backend/` change to its
+  suite, so the push runs both. The new `testWorkers.test.ts` runs in the frontend suite; the backend change is proved
+  locally by `dotnet msbuild -getProperty:VSTestCLIRunSettings` in four cases (DELIVER), and by the backend suite staying green.
+- **Evidence CI is unchanged**: the CI logs on the push show the same test counts and no duration step change; compare the median
+  against the preceding runs on `main`.
+- **Quality gates**: unchanged (`pnpm build` with Biome and `tsc -b`, `dotnet build` with `TreatWarningsAsErrors`). Git hooks run no tests.
+- **DELIVER pre-push check**: grep `.github/` and `.githooks/` for `dotnet test` and `vitest` call sites to confirm none runs with `CI` unset (DESIGN open question 4).
+
+## Wave: DEVOPS / [REF] Monitoring and KPI contracts
+
+- **Outcome KPIs**: none touched (Epic guardrail only: CI test behaviour and duration unchanged).
+- **Monitoring / alerting / dashboards**: N/A, because there is no running system; nothing to alert on.
+- **Payoff instrument: the measurement protocol** (DESIGN, "Measurement protocol"): per stack and setting, wall time, peak
+  process-tree RSS (1 Hz `ps` sampling) and minimum `MemAvailable`, n runs alternating, same machine, quiet slot, equal
+  failure counts or the run is void.
+- **Reduced run now in progress** (main session): full (tool default) versus half (6 workers), n = 3 alternating, both stacks,
+  using the tools' own overrides (`vitest --maxWorkers`, `NUnit.NumberOfTestWorkers`). Valid before the new resolver exists,
+  because the outcome depends only on the worker count, not on how it is set. Script and raw output are in
+  `measurement/`. The quarter setting and the full 18-run protocol are not run; the fraction can be revisited.
+- **Follow-up, recorded not done**: re-measure the backend after T1 (testhost leak) lands.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+Things that must keep working; detail in `environments.yaml`.
+
+| Tool | Stays working because |
+|---|---|
+| `ci_frontend.yml`, `ci_backend.yml` | Not edited; CI sets nothing (see above). |
+| Stryker.NET configs | They set their own `concurrency`; the property's effect on Stryker's VSTest runner is unverified, so DELIVER dry-runs the smallest backend Stryker config before and after (DESIGN open question 2). |
+| StrykerJS (46 `vitest.stryker.*` configs) | None imports `vitest.config.ts`; they keep Vitest's default. |
+| IDE runners | Uncapped and documented; they never read the property. |
+| TZ runsettings pin (`lighthouse.runsettings`) | File untouched; DESIGN showed `TestHost_RunsUnderThePinnedInstanceTimeZone` passes with the setting applied. |
+| `BackendTestParallelizationGuardTest` | Parallel scope and the 7 serial fixtures are untouched; only the worker count changes. |
+| Playwright (`workers: 1`) | Out of scope and untouched. |
+| Git hooks (lefthook) | Run no tests; commits themselves verify Biome and the secret scan. |
+| Worktrees | The csproj and `vitest.config.ts` travel with the checkout; the variable is per shell. Gitignored fixtures (licence file) are unrelated. |
+
+## Wave: DEVOPS / [REF] Pre-requisites carried from DESIGN
+
+1. Placeholder fraction `0.5` ships first; the measured fraction is a one-constant follow-up in both stacks (two languages, each pointing at the other).
+2. Re-verify the csproj expression in the real project: `dotnet msbuild -getProperty:VSTestCLIRunSettings` for unset, `CI=true`, `CI=true` plus override, override only.
+3. Check a non-integer `LIGHTHOUSE_TEST_WORKERS` through the NUnit adapter; add an MSBuild `Error` if it fails obscurely.
+4. Stryker.NET dry run before and after (above).
+5. CLAUDE.md block (variable, defaults, overrides, `--` and IDE limits, `dotnet build-server shutdown`) lands in step 01-03; this DEVOPS wave does not edit it.
+6. Delete the misleading "Reduce memory usage on CI" comment in `vitest.config.ts`; `bail: 1` stays.
+7. Peer review of DESIGN and DEVOPS is dispatched by the lead session with `model` per the rigor profile.
+
+## Wave: DEVOPS / [REF] Risks for DISTILL and DELIVER
+
+- Do not run the reduced measurement and DELIVER's test runs at the same time; both depend on a quiet machine.
+- A contributor's own `-- ...` arguments to `dotnet test` replace the cap; this is documented, not fixed.
+- Local-only effect: a slower local run (fewer workers) is the intended trade; the measurement decides the fraction.
