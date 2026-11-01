@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Models
             var displayed = NormalisedStatesFor(StoredStatesOf(category))
                 .Select(state => GroupContaining(state)?.Name ?? state);
 
-            return [.. displayed.DistinctBy(name => name.Trim(), StringComparer.OrdinalIgnoreCase)];
+            return WithoutRepeats(displayed);
         }
 
         private List<string> StoredStatesOf(StateCategories category) => category switch
@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Models
             var entries = storedList.Where(entry => !string.IsNullOrWhiteSpace(entry)).ToList();
             var expanded = entries.SelectMany(entry => ExpandListEntry(entries, entry));
 
-            return [.. expanded.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
+            return WithoutRepeats(expanded);
         }
 
         private IEnumerable<string> ExpandListEntry(List<string> list, string entry)
@@ -284,7 +284,7 @@ namespace Lighthouse.Backend.Models
             return group.States;
         }
 
-        /// <summary>The one place that decides what a list entry that equals a mapping's name is.</summary>
+        /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
         public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
         {
             var group = GroupNamed(entry);
@@ -310,6 +310,9 @@ namespace Lighthouse.Backend.Models
         // Trackers and users pad and recase state names freely, so case and surrounding whitespace never tell two states apart.
         private static bool IsSameState(string? left, string? right)
             => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+        private static List<string> WithoutRepeats(IEnumerable<string> states)
+            => [.. states.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
 
         public List<string> GetRawStatesForCategory(List<string> categoryStates)
         {
