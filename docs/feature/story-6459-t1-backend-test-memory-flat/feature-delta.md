@@ -818,3 +818,20 @@ Commit `a296de15a`, 12 cores, `dotnet` 10.0.114, `LIGHTHOUSE_TEST_WORKERS=6`, th
 Raw line: `measurement/before.csv`. Reference for the 10 % repeat rule: 19.0 GB.
 Rigor profile (DELIVER, agreed at AFK entry for the whole test track): standard — crafter and designer on Sonnet,
 reviewers on Haiku; refactor and review at the end, mutation once on frozen code.
+
+## Wave: DELIVER / [REF] Maintainer decision — test configuration instead of reflection (2026-11-01, ~19:00, in chat)
+
+Asked why startup could fail after a .NET update, the maintainer weighed the reflection seam against a test-only
+configuration switch and chose the switch ("config approach sounds nicer"). It supersedes option 1:
+
+- Product rate-limiting code is unchanged: `app.UseRateLimiter()` stays under `RateLimits:Enabled`; no owner class, no
+  reflection, no startup failure mode, no ADR-005 addendum.
+- `TestWebApplicationFactory` runs test hosts with `RateLimits:Enabled=false` by default; every fixture that tests rate
+  limiting opts back in for its own hosts. A test pins the default so it cannot flip back silently.
+- Trade-off accepted: the bulk of the backend tests no longer exercise the pipeline with the limiter on; the rate-limit
+  fixtures still do. Their hosts stay reachable after disposal (a few dozen, about 5 MB each).
+- Evidence that it is enough: the fix experiment (rate limiting off plus per-request OAuth clients) collected disposed
+  hosts and peaked at 4.2 GB.
+- The OAuth per-request client (step 01-01) is still required; D1b (one-second test handler lifetime) stays.
+- Disclosed behaviour changes now: only the OAuth token clients' 2-minute handler rotation.
+- Roadmap step 01-02 rewritten (review resolution R7); DISTILL scenario 3 dropped; mutation scope: the two provider files.
