@@ -45,8 +45,8 @@ the same day, once the machine is quiet enough for test runs.
 |---|---|---|
 | Contexts (modules) | 9 (brief said 8) | 9 in ARCHITECTURE.md §4, to be confirmed or changed by the storming |
 | Domain event types in `Models/Events` | 15 | 14 (+ the `IDomainEvent` marker; the 15 counted the marker) |
-| `IDomainEventHandler<>` implementations | — | 23 files |
-| Background / hosted services | — | 11 files |
+| `IDomainEventHandler<>` implementations | — | 20 handler classes, 26 event → handler registrations (`Program.cs`); a raw grep finds 23 files |
+| Background / hosted services | — | 8 hosted services, plus `UpdateQueueService` and the start-up `OrphanedFeatureCleanupService`; `ForecastUpdater` runs only when triggered |
 | Controllers | — | 47 `*Controller.cs` under `API/` |
 | `Models` files | 242 (KPI 3: 252 after S04a) | 254 |
 | Loose `Services/Interfaces` / `Services/Implementation` files | 42 / 58 | 41 / 61 |
