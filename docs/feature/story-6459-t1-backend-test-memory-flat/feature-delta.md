@@ -842,7 +842,7 @@ configuration switch and chose the switch ("config approach sounds nicer"). It s
 Configuration added later (a fixture's `WithWebHostBuilder`, or a subclass after `base.ConfigureWebHost`) wins, so an explicit `true` opts in.
 
 **Search.** `grep -rlE "429|TooManyRequests|RateLimit|slow down|Retry-After"` over the test project found 13 files. Result per file:
-- Already set `RateLimits:Enabled=true` themselves, so the default is overridden and nothing changed: `S6_RateLimitingTests` (also sets `false` for its off cases), `UsageDataConsentRateLimitTests`, `UsageDataEventCeilingTests`, `ViewerEmbedTestHost.WithEmbedRateLimit` (used by `S9b_EmbedCookieConcurrencyTests`).
+- Already set `RateLimits:Enabled=true` themselves, so the default is overridden and nothing changed: `S6_RateLimitingTests` (also sets `false` for its off cases), `UsageDataConsentRateLimitTests`, `UsageDataEventCeilingTests`. (`ViewerEmbedTestHost.WithEmbedRateLimit` was listed here too; that was wrong, see the final review revision below.)
 - Relied on the shipped appsettings (`Enabled: true`) without saying so: `Slice11CastAVoteTest` (the thirty-first vote answers 429). It now opts in by overriding `WithAuthentication` to add `RateLimits:Enabled=true`. Assertions unchanged.
 - No dependence: `UsageDataConsentEndpointsTests`, `UsageDataAskEndpointsTests` (only raises a permit limit, harmless when off), `EmbedSessionSingleUseConcurrencyTests` (comment), `S12_EmbedSecurityReviewFindingsTests` (reads appsettings JSON), `Slice02ParentFromLinkScenarios` ("slow down" in prose), `JiraDeliveryForecastPublisherTest` (Jira HTTP 429), `BackendTestParallelizationGuardTest` (allowlist text).
 
@@ -881,3 +881,12 @@ standard filter, quiet machine, licence fixture present).
 - Tail monitor: not built. The guard's case C now proves in-suite that a host that used a client is released within
   about 11 s, which is what the tail check was meant to show; recorded as a deviation from the DEVOPS protocol.
 - Raw lines: `measurement/before.csv`, `measurement/after.csv`.
+
+## Wave: DELIVER / [REF] Final review revision (2026-11-01)
+
+- **Registrations.** The OAuth providers kept the interface form `AddSingleton<IOAuthProvider, X>()`. D1's "plain type registrations" means no factory lambda, not a concrete-type registration.
+- **D3 superseded.** D3's "rate limiting on by default in test hosts" is replaced by the test-configuration decision: `TestWebApplicationFactory` sets `RateLimits:Enabled=false`, and a fixture that tests rate limiting opts in.
+- **F1 (embed host precedence), proof before the fix.** `TestHostsRunWithoutRateLimitingByDefaultTest.TheEmbedHostThatAsksForARateLimitHasRateLimitingOn` builds a host through `WithEmbedRateLimit` and reads `RateLimits:Enabled` the way the default-off test does. On the old code it failed: `Expected: True / But was: False` (`Failed: 1, Passed: 1, Total: 2`). `UseSetting` values arrive as host settings and lose to the factory's in-memory `false`, so the earlier claim in the Evidence step 01-02 section, that `WithEmbedRateLimit` already overrides the default, was wrong: `S9b_EmbedCookieConcurrencyTests` ran with rate limiting off.
+- **F1, after the fix.** `ViewerEmbedTestHost.BuildHost` passes its extra settings through `ConfigureAppConfiguration` (`AddInMemoryCollection`), which is added after the factory's default and wins. The same test passes (`Passed: 2, Total: 2`), and the embed fixtures stay green in the focused run (97 passed, 0 failed).
+- **F2 accepted.** The default-off test repeats the configuration read that `Program` makes; the duplication stays, and its summary says the test must change together with that branch.
+- **F6 noted.** Watch the timing of the guard's case C (a host that created one HTTP client) on the first CI run after the push.
