@@ -176,6 +176,8 @@ export interface BaseMetricsViewProps<
 	featureWip?: number;
 	hasBlockedConfig?: boolean;
 	doingStates: string[];
+	/** SCAFFOLD: true. Whether the Doing columns have arrived; the aging chart never reads a pending or failed fetch as an empty Doing list. */
+	doingStatesStatus?: "loading" | "error" | "ready";
 	hasForecastFilter?: boolean;
 	forecastFilterConditions?: readonly EvaluatorCondition[];
 	stalenessThresholdDays?: number;

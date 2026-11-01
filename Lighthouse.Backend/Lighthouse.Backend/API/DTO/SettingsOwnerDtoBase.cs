@@ -59,6 +59,20 @@ namespace Lighthouse.Backend.API.DTO
 
         public List<string> DoneStates { get; set; } = [];
 
+        // SCAFFOLD: true
+        // Not yet on the wire: DELIVER fills these from the owner and drops the JsonIgnore, which also
+        // moves the approved settings payload.
+        [JsonIgnore]
+        public List<string> ToDoDisplayStates { get; } = [];
+
+        // SCAFFOLD: true
+        [JsonIgnore]
+        public List<string> DoingDisplayStates { get; } = [];
+
+        // SCAFFOLD: true
+        [JsonIgnore]
+        public List<string> DoneDisplayStates { get; } = [];
+
         public string? BlockedRuleSetJson { get; set; }
 
         public List<string> WaitStates { get; set; } = [];

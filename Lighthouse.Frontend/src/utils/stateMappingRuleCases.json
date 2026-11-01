@@ -1,0 +1,21 @@
+{
+	"sameNameOrNot": [
+		{ "a": "Review", "b": "Review", "same": true },
+		{ "a": "Review", "b": "review", "same": true },
+		{ "a": "Review", "b": "REVIEW", "same": true },
+		{ "a": "In Arbeit", "b": "in arbeit", "same": true },
+		{ "a": "Review", "b": "Reviews", "same": false },
+		{ "a": "ı", "b": "I", "same": false },
+		{ "a": "ſ", "b": "s", "same": false },
+		{ "a": "ß", "b": "SS", "same": false },
+		{ "a": "K", "b": "k", "same": false },
+		{ "a": "Å", "b": "å", "same": false }
+	],
+	"sameOnceTrimmed": [
+		{ "a": " Review", "b": "Review" },
+		{ "a": "Review ", "b": "review" },
+		{ "a": "\u0085Review", "b": "Review" },
+		{ "a": "Review\u0085", "b": "REVIEW" }
+	],
+	"blank": ["", " ", "\t", "\u0085", " ", " "]
+}

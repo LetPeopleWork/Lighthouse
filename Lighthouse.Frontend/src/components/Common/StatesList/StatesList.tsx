@@ -2,6 +2,7 @@ import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useMemo, useState } from "react";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { StatesCollection } from "../../../models/StatesCollection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import InputGroup from "../InputGroup/InputGroup";
@@ -25,6 +26,8 @@ interface StatesListComponentProps {
 
 	isForTeam?: boolean;
 	stateMappingNames?: string[];
+	/** SCAFFOLD: true. The lists above hold raw states; the mappings only group them on display. */
+	stateMappings?: IStateMapping[];
 }
 
 const StatesList: React.FC<StatesListComponentProps> = ({

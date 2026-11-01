@@ -205,6 +205,26 @@ namespace Lighthouse.Backend.Models
             return StateCategories.Unknown;
         }
 
+        // SCAFFOLD: true
+        /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
+        public List<string> DisplayStatesFor(StateCategories category)
+            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {category})");
+
+        // SCAFFOLD: true
+        /// <summary>The category of a raw tracker state, read from the lists as they are.</summary>
+        public StateCategories CategoryOfRawState(string rawState)
+            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {rawState})");
+
+        // SCAFFOLD: true
+        /// <summary>The category of a name an item or a stored transition carries: a raw state, or a mapping's name.</summary>
+        public StateCategories CategoryOfDisplayName(string displayName)
+            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {displayName})");
+
+        // SCAFFOLD: true
+        /// <summary>A stored or sent list with every mapping name replaced by the mapping's raw states, in order; a list of raw states passes through unchanged.</summary>
+        public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList)
+            => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {storedList.Count})");
+
         public List<string> GetRawStatesForCategory(List<string> categoryStates)
         {
             var rawStates = new List<string>();

@@ -358,6 +358,8 @@ function openTheDashboard(
 		queryClient?: QueryClient;
 		/** The instance's own words, by terminology key; the seeded words when absent. */
 		terms?: Record<string, string>;
+		/** Whether the team's Doing columns have arrived; the dashboard assumes they have when absent. */
+		doingStatesStatus?: WidgetStatus;
 	} = {},
 ): void {
 	held = createHeldMetricsService(owner);
@@ -390,6 +392,7 @@ function openTheDashboard(
 			title="Work Items"
 			defaultDateRange={30}
 			doingStates={["In Progress"]}
+			doingStatesStatus={options.doingStatesStatus}
 			hasForecastFilter
 			featuresInProgress={[]}
 		/>
@@ -1914,5 +1917,48 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 		]);
 
 		expect(rowsOf(openTheTable()).sort()).toEqual(["OE-001 4", "OE-011 4"]);
+	});
+});
+
+describe("a team's aging chart while its Doing columns are on their way", () => {
+	it.skip("shows a lone spinner and no chart while the columns load", async () => {
+		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "loading" });
+		await everythingHasLoaded();
+
+		expect(statusOf("aging")).toBe("loading");
+		expect(
+			within(frameOf("aging")).getByRole("progressbar"),
+		).toBeInTheDocument();
+		expect(
+			within(frameOf("aging")).queryByTestId("aging-chart"),
+		).not.toBeVisible();
+	});
+
+	it.skip("says it couldn't be loaded when the columns could not be fetched, and draws no empty chart", async () => {
+		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "error" });
+		await everythingHasLoaded();
+
+		expect(statusOf("aging")).toBe("error");
+		expect(
+			within(frameOf("aging")).getByText(COULD_NOT_LOAD_MESSAGE),
+		).toBeVisible();
+		expect(
+			within(frameOf("aging")).queryByRole("progressbar"),
+		).not.toBeInTheDocument();
+	});
+
+	it("shows the chart once the columns have arrived", async () => {
+		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "ready" });
+		await everythingHasLoaded();
+
+		expect(statusOf("aging")).toBe("ready");
+		expect(within(frameOf("aging")).getByTestId("aging-chart")).toBeVisible();
+	});
+
+	it("leaves every other chart to load on its own while the columns are missing", async () => {
+		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "loading" });
+		await everythingHasLoaded();
+
+		expect(statusOf("throughput")).toBe("ready");
 	});
 });
